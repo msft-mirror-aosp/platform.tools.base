@@ -37,7 +37,9 @@ bool parse_data(ptp::TraceProcessor* tp, const void* data, size_t size) {
   memcpy(buf.get(), data, size);
   fprintf(stderr, "memcpy end\n");
 
-  if (!tp->Parse(std::move(buf), size).ok()) {
+  auto status = tp->Parse(std::move(buf), size);
+  if (!status.ok()) {
+    fprintf(stderr, "Trace processor parse failed: %s\n", status.c_message());
     return false;
   }
 

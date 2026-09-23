@@ -39,6 +39,7 @@
 #include "protos/perfetto/trace/track_event/process_descriptor.pbzero.h"
 #include "protos/perfetto/trace/track_event/thread_descriptor.pbzero.h"
 #include "protos/perfetto/trace/track_event/track_descriptor.pbzero.h"
+#include "protos/third_party/android/frameworks/native/tracing/frameworks_native_trace_packet.pbzero.h"
 
 namespace sherlock {
 
@@ -577,7 +578,11 @@ absl::Status SplitGpuFrameTimeline(const uint8_t* data, size_t size,
         packet.has_process_descriptor() || packet.has_thread_descriptor() ||
         packet.has_track_event() || packet.has_ftrace_events() ||
         packet.has_graphics_frame_event() || packet.has_sys_stats() ||
-        packet.has_frame_timeline_event() || packet.has_vulkan_memory_event()) {
+        packet
+            .Get(com::android::internal::pbzero::FrameworksNativeTracePacket::
+                     kFrameTimelineEventFieldNumber)
+            .valid() ||
+        packet.has_vulkan_memory_event()) {
       continue;
     }
 

@@ -343,23 +343,20 @@ register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
 register_toolchains("@bazel_skylib//toolchains/unittest:cmd_toolchain", "@bazel_skylib//toolchains/unittest:bash_toolchain")
 
 bazel_dep(name = "rules_android_ndk", version = "0.1.5")
-bazel_dep(name = "perfetto", version = "56.0")
+bazel_dep(name = "perfetto", version = "58.2")
 archive_override(
     module_name = "perfetto",
-    integrity = "sha256-l0GTin/FNO0wJyPCssPJSSc6qS2/cl0OG3IpqTILbAc=",
+    integrity = "sha256-rVZlRtXEYRNaQZYulbaA83TkOM8tmTaGdgi4QTLsYQo=",
     patch_strip = 1,
     patches = [
-        "//tools/base/bazel/bzlmod:perfetto-fix-include-guard.patch",
-        "//tools/base/bazel/bzlmod:perfetto-fix-zlib-build.patch",
         "//tools/base/bazel/bzlmod:perfetto-no-android-sdk-ndk.patch",
-        "//tools/base/bazel/bzlmod:perfetto-pr-6121.patch",
         # b/528480763: Replaces fork() with posix_spawnp() on macOS to prevent kernel panics
         # (EXC_BREAKPOINT) when symbolizing traces from multithreaded gRPC daemon processes.
         # TODO[b/531691024] Remove the patch after migrating to traceconv.
         "//tools/base/bazel/bzlmod:perfetto-mac-fork-fix.patch",
     ],
-    strip_prefix = "perfetto-56.0",
-    urls = ["https://github.com/google/perfetto/archive/refs/tags/v56.0.tar.gz"],
+    strip_prefix = "perfetto-58.2",
+    urls = ["https://github.com/google/perfetto/archive/refs/tags/v58.2.tar.gz"],
 )
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")
