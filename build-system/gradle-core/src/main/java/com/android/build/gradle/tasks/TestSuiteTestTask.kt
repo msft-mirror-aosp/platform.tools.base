@@ -478,7 +478,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           logger,
         )
 
-        val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), this.modulePath.get())
+        val rootDir = this.rootProjectDir.get().asFile
+        val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), this.modulePath.get(), rootDir)
         aggregator.writeReport(htmlOutputDirFile)
       }
 
@@ -1373,6 +1374,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.modulePath.setDisallowChanges(services.projectInfo.path)
       task.rootProjectName.set(services.projectInfo.rootProjectName)
       task.rootProjectDir.set(services.projectInfo.rootDir)
+      task.rootProjectDir.disallowChanges()
     }
   }
 }

@@ -601,6 +601,7 @@ const TestReportApp = {
     this.state.variants = rootReport.variants;
     this.state.testSuites = rootReport.testSuites;
     this.state.targets = rootReport.targets || [];
+    this.state.relativeRootDir = rootReport.relativeRootDir;
     this.state.filters.variants = [...rootReport.variants];
 
     const actualSuites = (rootReport.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
@@ -2301,13 +2302,38 @@ const TestReportApp = {
 
   resolveImagePath(imagePath) {
     if (!imagePath) return '';
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:') || imagePath.startsWith('file://')) {
-      return imagePath;
-    }
-    let cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
-    if (cleanPath.startsWith('../')) {
+    let cleanPath = imagePath.replace(/\\/g, '/');
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://') || cleanPath.startsWith('data:') || cleanPath.startsWith('file://')) {
       return cleanPath;
     }
+    if (cleanPath.startsWith('file:/')) {
+      return 'file:///' + cleanPath.slice(6).replace(/^\/+/, '');
+    }
+    if (cleanPath.startsWith('./')) {
+      cleanPath = cleanPath.slice(2);
+    }
+
+    // Windows absolute path: e.g. C:/path/to/image.png
+    if (/^[a-zA-Z]:\//.test(cleanPath)) {
+      return 'file:///' + cleanPath;
+    }
+
+    // Unix absolute path: e.g. /path/to/image.png
+    if (cleanPath.startsWith('/')) {
+      return cleanPath.startsWith('//') ? 'file:' + cleanPath : 'file://' + cleanPath;
+    }
+
+    const relRoot = (this.state && this.state.relativeRootDir != null)
+      ? this.state.relativeRootDir
+      : (typeof TEST_DATA_SOURCE !== 'undefined' && TEST_DATA_SOURCE && TEST_DATA_SOURCE.relativeRootDir != null
+          ? TEST_DATA_SOURCE.relativeRootDir
+          : null);
+
+    if (typeof relRoot === 'string') {
+      const prefix = relRoot ? (relRoot.endsWith('/') ? relRoot : relRoot + '/') : '';
+      return prefix + cleanPath;
+    }
+
     return '../../../../../' + cleanPath;
   },
 
@@ -2315,7 +2341,9 @@ const TestReportApp = {
     if (!imagePath || typeof imagePath !== 'string') return false;
     const lower = imagePath.trim().toLowerCase();
     if (lower === 'no diff' || lower === 'images match' || lower === 'no diff (passed)' || lower === 'none' || lower === 'n/a') return false;
-    return lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.webp') || lower.endsWith('.svg');
+    if (lower.startsWith('data:image/')) return true;
+    const cleanForExt = lower.split('?')[0].split('#')[0];
+    return cleanForExt.endsWith('.png') || cleanForExt.endsWith('.jpg') || cleanForExt.endsWith('.jpeg') || cleanForExt.endsWith('.webp') || cleanForExt.endsWith('.svg');
   },
 
   /**
@@ -2678,8 +2706,8 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${hasValidRef ? `
-              <img src="${refUrl}" alt="Reference Image" class="preview-img" draggable="false" data-lightbox-src="${refUrl}" data-lightbox-title="Reference Image" data-error-title="Reference Image Missing">
-              <button class="img-zoom-btn" data-lightbox-src="${refUrl}" data-lightbox-title="Reference Image">
+              <img src="${UIUtils.escapeHTML(refUrl)}" alt="Reference Image" class="preview-img" draggable="false" data-lightbox-src="${UIUtils.escapeHTML(refUrl)}" data-lightbox-title="Reference Image" data-error-title="Reference Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${UIUtils.escapeHTML(refUrl)}" data-lightbox-title="Reference Image">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
               </button>
@@ -2706,8 +2734,8 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${hasValidDiff ? `
-              <img src="${diffUrl}" alt="Diff Image" class="preview-img" draggable="false" data-lightbox-src="${diffUrl}" data-lightbox-title="Difference Image" data-error-title="Diff Image Missing">
-              <button class="img-zoom-btn" data-lightbox-src="${diffUrl}" data-lightbox-title="Difference Image">
+              <img src="${UIUtils.escapeHTML(diffUrl)}" alt="Diff Image" class="preview-img" draggable="false" data-lightbox-src="${UIUtils.escapeHTML(diffUrl)}" data-lightbox-title="Difference Image" data-error-title="Diff Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${UIUtils.escapeHTML(diffUrl)}" data-lightbox-title="Difference Image">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
               </button>
@@ -2748,8 +2776,8 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${hasValidNew ? `
-              <img src="${newUrl}" alt="New Image" class="preview-img" draggable="false" data-lightbox-src="${newUrl}" data-lightbox-title="New Image" data-error-title="New Image Missing">
-              <button class="img-zoom-btn" data-lightbox-src="${newUrl}" data-lightbox-title="New Image">
+              <img src="${UIUtils.escapeHTML(newUrl)}" alt="New Image" class="preview-img" draggable="false" data-lightbox-src="${UIUtils.escapeHTML(newUrl)}" data-lightbox-title="New Image" data-error-title="New Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${UIUtils.escapeHTML(newUrl)}" data-lightbox-title="New Image">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
               </button>
@@ -2777,9 +2805,9 @@ const TestReportApp = {
           <div class="slider-container">
             <span class="slider-badge left-badge">Reference (Golden)</span>
             <span class="slider-badge right-badge">New (Rendered)</span>
-            <img src="${newUrl}" class="slider-img-base" alt="New Base" draggable="false">
+            <img src="${UIUtils.escapeHTML(newUrl)}" class="slider-img-base" alt="New Base" draggable="false">
             <div class="slider-img-overlay" style="clip-path: inset(0 50% 0 0);">
-              <img src="${refUrl}" alt="Reference Overlay" draggable="false">
+              <img src="${UIUtils.escapeHTML(refUrl)}" alt="Reference Overlay" draggable="false">
             </div>
             <div class="slider-divider" style="left: 50%;">
               <div class="slider-handle">↔</div>

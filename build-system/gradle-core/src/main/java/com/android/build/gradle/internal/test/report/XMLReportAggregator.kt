@@ -23,6 +23,7 @@ import com.google.gson.GsonBuilder
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.nio.file.Path
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -38,7 +39,11 @@ import org.gradle.internal.logging.ConsoleRenderer
  *
  * The `getReport()` method converts this internal map structure into the final list-based [RootReport] data model for serialization.
  */
-class XMLReportAggregator(private val files: List<File>, projectName: String) {
+class XMLReportAggregator(
+  private val files: List<File>,
+  projectName: String,
+  private val rootDir: File,
+) {
 
   private val logger = LoggerWrapper.getLogger(XMLReportAggregator::class.java)
 
@@ -59,11 +64,11 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
 
   /** Generates the RootReport and writes it to the specified output directory along with the necessary JSON, JS, and HTML resources. */
   fun writeReport(outputDir: File) {
-    val finalReport = generateReport()
-    val gson = GsonBuilder().create()
     if (!outputDir.exists()) {
       outputDir.mkdirs()
     }
+    val finalReport = generateReport(outputDir)
+    val gson = GsonBuilder().create()
 
     File(outputDir, "data.js").bufferedWriter().use { writer ->
       writer.write("const TEST_DATA_SOURCE = ")
@@ -87,7 +92,11 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
   fun getTestCount(): Int = lazyTestCount
 
   /** Generates the final [RootReport] by returning the cached report property. */
-  @VisibleForTesting fun generateReport(): RootReport = rootReport
+  @VisibleForTesting
+  fun generateReport(outputDir: File = rootDir): RootReport {
+    val relativeRoot = calculateRelativeRootDir(outputDir, rootDir)
+    return rootReport.copy(relativeRootDir = relativeRoot)
+  }
 
   private fun getInputFiles(): List<File> = files
 
@@ -314,6 +323,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         testSuites = testSuites,
         targets = targetsSorted,
         modules = modules,
+        relativeRootDir = "",
       )
     }
   }
@@ -643,6 +653,34 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
           TestSuiteSummary(suiteName, variantSummaries)
         }
         .sortedBy { it.name }
+    }
+
+    private fun formatRelativePath(path: Path): String {
+      val normalized = path.toString().replace(File.separatorChar, '/')
+      return if (normalized.isEmpty()) {
+        ""
+      } else if (normalized.endsWith('/')) {
+        normalized
+      } else {
+        "$normalized/"
+      }
+    }
+
+    @JvmStatic
+    fun calculateRelativeRootDir(outputDir: File, rootDir: File): String {
+      return try {
+        val outputCanonical = outputDir.canonicalFile.toPath()
+        val rootCanonical = rootDir.canonicalFile.toPath()
+        formatRelativePath(outputCanonical.relativize(rootCanonical))
+      } catch (_: Exception) {
+        try {
+          val outputNormalized = outputDir.toPath().toAbsolutePath().normalize()
+          val rootNormalized = rootDir.toPath().toAbsolutePath().normalize()
+          formatRelativePath(outputNormalized.relativize(rootNormalized))
+        } catch (_: Exception) {
+          ""
+        }
+      }
     }
   }
 

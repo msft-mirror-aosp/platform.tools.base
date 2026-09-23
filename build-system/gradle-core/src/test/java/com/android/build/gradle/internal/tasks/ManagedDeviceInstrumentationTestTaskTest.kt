@@ -202,6 +202,11 @@ class ManagedDeviceInstrumentationTestTaskTest {
     whenever(xmlResultsDirectory.asFile).thenReturn(xmlResultsFolder)
     doReturn(mockDirectoryProperty(xmlResultsDirectory)).whenever(task).xmlResultsDirectory
 
+    val rootProjectDirectory: Directory = mock()
+    val rootProjectFolder = temporaryFolderRule.newFolder("root_project")
+    whenever(rootProjectDirectory.asFile).thenReturn(rootProjectFolder)
+    doReturn(mockDirectoryProperty(rootProjectDirectory)).whenever(task).rootProjectDir
+
     doReturn(FakeGradleProperty(false)).whenever(task).testReportAggregationEnabled
     doReturn(FakeGradleProperty("variant_name")).whenever(task).testedVariantName
 

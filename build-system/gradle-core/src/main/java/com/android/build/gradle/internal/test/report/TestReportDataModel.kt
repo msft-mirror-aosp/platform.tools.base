@@ -30,6 +30,8 @@ package com.android.build.gradle.internal.test.report
  * @property testSuites A list of all unique test suite names.
  * @property targets A list of all unique test target names.
  * @property modules A list of modules in the project.
+ * @property relativeRootDir The relative path from the report output directory to the root project directory, used to resolve
+ *   project-relative assets in the HTML report.
  */
 data class RootReport(
   val projectName: String,
@@ -41,6 +43,7 @@ data class RootReport(
   val testSuites: List<String>,
   val targets: List<String>,
   val modules: List<Module>,
+  val relativeRootDir: String,
 )
 
 /**
