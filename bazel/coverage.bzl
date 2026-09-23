@@ -1,10 +1,21 @@
+"""Rules and macros for running tests with code coverage."""
+
 load(
     "@rules_android//android:rules.bzl",
     "android_local_test",
 )
 load("@rules_java//java:defs.bzl", "java_library", "java_test")
 
-def coverage_java_test(name, data = [], jvm_flags = [], visibility = None, test_excluded_packages = {}, **kwargs):
+def coverage_java_test(name, data = [], jvm_flags = [], visibility = None, **kwargs):
+    """A Java test rule with code coverage support.
+
+    Args:
+        name: The name of the test target.
+        data: Additional data dependencies for the test.
+        jvm_flags: Additional JVM flags to pass to the test runner.
+        visibility: The visibility of the target.
+        **kwargs: Additional arguments to pass to java_test.
+    """
     jacoco_jvm_agent = "//prebuilts/tools/common/jacoco:agent"
 
     jacoco_jvm_flag = "-javaagent:$(location " + jacoco_jvm_agent + ")=destfile=$$TEST_UNDECLARED_OUTPUTS_DIR/coverage/" + name + "_tests_jacoco.exec"
@@ -32,6 +43,15 @@ def coverage_java_test(name, data = [], jvm_flags = [], visibility = None, test_
     )
 
 def coverage_baseline(name, srcs, jar = None, tags = None):
+    """Generates baseline code coverage targets for source files.
+
+    Args:
+        name: The base name for the coverage targets.
+        srcs: The list of source files to include in baseline coverage.
+        jar: Optional jar target name; defaults to name if not provided.
+        tags: Optional list of tags to apply to the generated rules.
+    """
+
     # some rules produce multiple jars under their base name so this lets us overload if necessary
     if not jar:
         jar = name
@@ -78,6 +98,14 @@ def coverage_baseline(name, srcs, jar = None, tags = None):
     )
 
 def coverage_java_library(name, srcs = [], tags = [], **kwargs):
+    """A Java library rule with code coverage baseline generation.
+
+    Args:
+        name: The name of the library target.
+        srcs: The list of source files for the library.
+        tags: Optional list of tags to apply to the target.
+        **kwargs: Additional arguments to pass to java_library.
+    """
     java_library(
         name = name,
         srcs = srcs,
@@ -97,8 +125,16 @@ def coverage_android_local_test(
         data = [],
         jvm_flags = [],
         visibility = None,
-        test_excluded_packages = {},
         **kwargs):
+    """An Android local test rule with code coverage support.
+
+    Args:
+        name: The name of the test target.
+        data: Additional data dependencies for the test.
+        jvm_flags: Additional JVM flags to pass to the test runner.
+        visibility: The visibility of the target.
+        **kwargs: Additional arguments to pass to android_local_test.
+    """
     jacoco_jvm_agent = "//prebuilts/tools/common/jacoco:agent"
 
     jacoco_jvm_flag = "-javaagent:$(location " + jacoco_jvm_agent + ")=destfile=$$TEST_UNDECLARED_OUTPUTS_DIR/coverage/" + name + "_tests_jacoco.exec"
@@ -107,7 +143,7 @@ def coverage_android_local_test(
     if visibility == None:
         visibility = ["@results//:__pkg__"]
     elif "//visibility:public" not in visibility:
-        visibility.append("@results//:__pkg__")
+        visibility = visibility + ["@results//:__pkg__"]
 
     android_local_test(
         name = name,
