@@ -4,9 +4,9 @@ load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 
 # managed by go/iml_to_build
 iml_module(
-    name = "studio.android.sdktools.ui-inspector",
+    name = "studio.android.sdktools.ui-inspector.core",
     srcs = ["src/main/java"],
-    iml_files = ["android.sdktools.ui-inspector.iml"],
+    iml_files = ["android.sdktools.ui-inspector.core.iml"],
     test_deps = [
         "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
         "//tools/adt/idea/.idea/libraries:junit4",
@@ -32,7 +32,7 @@ iml_module(
 )
 
 kotlin_library(
-    name = "ui-inspector-host",
+    name = "core",
     srcs = glob([
         "src/main/java/**/*.kt",
         "src/main/java/**/*.java",
@@ -71,5 +71,5 @@ java_binary(
     ],
     main_class = "com.android.tools.ui.inspector.CliHostKt",
     visibility = ["//visibility:public"],
-    runtime_deps = [":ui-inspector-host"],
+    runtime_deps = [":core"],
 )
