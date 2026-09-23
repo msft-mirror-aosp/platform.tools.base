@@ -114,6 +114,16 @@ crate.spec(
     package = "rustls",
     version = "=0.23.38",
 )
+
+# Disable CPU jitter entropy to avoid https://github.com/aws/aws-lc/issues/3540 on Windows
+# (which leads to b/558351427). CPU jitter was added as an additional default source of entropy in
+# recent versions (starting in 2025), but it is not required, and it has some performance tradeoffs
+# that make it a poor fit for short-lived CLI processes anyway. For more details see
+# https://github.com/aws/aws-lc-rs/issues/899.
+crate.annotation(
+    build_script_env = {"AWS_LC_SYS_NO_JITTER_ENTROPY": "1"},
+    crate = "aws-lc-sys",
+)
 crate.from_specs(
     # Cargo upgrades crate versions during dependency resolution by default, which is
     # not what we want. We cache the dependency resolution step with toplevel.MODULE.bazel.lock,
@@ -322,6 +332,7 @@ android_sdk_repository_extension = use_extension(
 use_repo(android_sdk_repository_extension, "androidsdk")
 
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
+
 register_toolchains("@bazel_skylib//toolchains/unittest:cmd_toolchain", "@bazel_skylib//toolchains/unittest:bash_toolchain")
 
 bazel_dep(name = "rules_android_ndk", version = "0.1.5")
