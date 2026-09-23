@@ -25,12 +25,9 @@ import com.android.build.api.variant.TestAndroidComponentsExtension
 import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.TestComponentCallback
 import com.android.build.gradle.integration.common.output.JarSubject
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import java.io.File
 import org.gradle.api.DefaultTask
@@ -63,7 +60,6 @@ class PreAndPostCompilationCodeVisibilityTest {
         testImplementation("junit:junit:4.12")
         androidTestImplementation("junit:junit:4.12")
       }
-      pluginCallbacks += LegacyCallback::class.java
       pluginCallbacks += AddPostCompilationCallback::class.java
     }
     androidLibrary { pluginCallbacks += AddPostCompilationCallback::class.java }
@@ -71,12 +67,6 @@ class PreAndPostCompilationCodeVisibilityTest {
       android { targetProjectPath = ":app" }
       pluginCallbacks += CheckVisibilityCallback::class.java
     }
-    gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
-  }
-
-  open class LegacyCallback : LegacyApplicationCallback {
-
-    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {}
   }
 
   open class AddPostCompilationCallback : GenericCallback {
@@ -146,13 +136,12 @@ class PreAndPostCompilationCodeVisibilityTest {
     build.subProject(":test").files.update("build.gradle") {
       append(
         """
-        android {
-            applicationVariants.all { variant ->
-                def variantName = variant.name.capitalize()
-                tasks.getByName("verifyVisibility" + variantName +"Task").configure { task ->
-                  task.oldApiRuntimeConfiguration.from(variant.runtimeConfiguration)
-                }
+        androidComponents {
+          onVariants(selector().all()) { variant ->
+            tasks.getByName(variant.computeTaskName("verifyVisibility", "Task")).configure { task ->
+              task.oldApiRuntimeConfiguration.from(variant.runtimeConfiguration)
             }
+          }
         }
         """
           .trimIndent()
