@@ -208,6 +208,127 @@ class ScreenshotTestSuiteTest {
     assertThat(snapshotDirectory(layoutlibDataDir)).isEqualTo(extractedLayoutlib)
   }
 
+  @Test
+  fun runPreviewScreenshotTestWithParameterProviderDisplayName() {
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/main/java/com/DisplayNameParameterProviders.kt",
+            """
+            package pkg.name
+
+            import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+
+            class CustomDisplayNameParameterProvider : PreviewParameterProvider<String> {
+                override val values = sequenceOf(
+                    "Primary text",
+                    "Secondary text",
+                    "Tertiary text",
+                    "Quaternary text",
+                    "Fifth text",
+                    "Sixth text",
+                    "Seventh text",
+                    "Eighth text"
+                )
+
+                fun getDisplayName(index: Int): String? {
+                    return when (index) {
+                        0 -> "custom_first"
+                        1 -> "custom name with spaces"
+                        2 -> ""
+                        3 -> null
+                        4 -> "custom_emoji_🚀"
+                        5 -> "custom\\backslash"
+                        6 -> "duplicate_name"
+                        7 -> "duplicate_name"
+                        else -> null
+                    }
+                }
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/screenshotTest/java/com/DisplayNameTest.kt",
+            """
+            package pkg.name
+
+            import androidx.compose.ui.tooling.preview.Preview
+            import androidx.compose.ui.tooling.preview.PreviewParameter
+            import androidx.compose.runtime.Composable
+            import com.android.tools.screenshot.PreviewTest
+
+            class DisplayNameTest {
+                @PreviewTest
+                @Preview(name = "customProviderPreview")
+                @Composable
+                fun parameterProviderWithDisplayNameTest(
+                    @PreviewParameter(CustomDisplayNameParameterProvider::class) data: String
+                ) {
+                    SimpleComposable(data)
+                }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+    val appProject = build.androidApplication()
+
+    build.updateReferenceImageWithTestSuite()
+
+    val referenceDir = getTestSuiteReferenceDir(appProject, "pkg.name.DisplayNameTest")
+    val referenceFiles = referenceDir.listDirectoryEntries().map { it.name }
+    assertThat(referenceFiles).hasSize(8)
+    assertThat(referenceFiles.any { it.endsWith("_custom_first.png") }).isTrue()
+    assertThat(referenceFiles.any { it.endsWith("_custom_name_with_spaces.png") }).isTrue()
+    assertThat(referenceFiles.any { it.endsWith("_2.png") }).isTrue()
+    assertThat(referenceFiles.any { it.endsWith("_3.png") }).isTrue()
+    assertThat(referenceFiles.any { it.endsWith("_custom_emoji_🚀.png") }).isTrue()
+    assertThat(referenceFiles.any { it.endsWith("_custom_backslash.png") }).isTrue()
+    assertThat(referenceFiles.any { it.endsWith("_duplicate_name_6.png") }).isTrue()
+    assertThat(referenceFiles.any { it.endsWith("_duplicate_name_7.png") }).isTrue()
+    assertThat(referenceFiles.none { it.endsWith("_0.png") }).isTrue()
+    assertThat(referenceFiles.none { it.endsWith("_1.png") }).isTrue()
+
+    val validateResult = build.validateScreenshotTestWithTestSuite()
+    validateResult.assertTask(getTestSuiteValidateTaskName()).didWork()
+
+    val classHtmlReport = getTestSuiteHtmlReportClassFile(appProject, "pkg.name.DisplayNameTest")
+    assertThat(classHtmlReport).exists()
+    val classHtmlReportText = classHtmlReport.readText()
+    assertThat(classHtmlReportText).contains("parameterProviderWithDisplayNameTest")
+
+    val dataJs = getTestSuiteHtmlReportDir(appProject).resolve("data.js")
+    assertThat(dataJs).exists()
+    val dataJsText = dataJs.readText()
+    assertThat(dataJsText).contains("custom_first")
+    assertThat(dataJsText).contains("custom name with spaces")
+    assertThat(dataJsText).contains("_[{provider\\u003dpkg.name.CustomDisplayNameParameterProvider}]_custom_first")
+    assertThat(dataJsText).contains("_[{provider\\u003dpkg.name.CustomDisplayNameParameterProvider}]_custom name with spaces")
+    assertThat(dataJsText).contains("_[{provider\\u003dpkg.name.CustomDisplayNameParameterProvider}]_2")
+    assertThat(dataJsText).contains("_[{provider\\u003dpkg.name.CustomDisplayNameParameterProvider}]_3")
+    assertThat(dataJsText.contains("custom_emoji_🚀") || dataJsText.contains("custom_emoji_\\ud83d\\ude80")).isTrue()
+    assertThat(dataJsText.contains("custom\\backslash") || dataJsText.contains("custom\\\\backslash")).isTrue()
+    assertThat(dataJsText).contains("_[{provider\\u003dpkg.name.CustomDisplayNameParameterProvider}]_duplicate_name_6")
+    assertThat(dataJsText).contains("_[{provider\\u003dpkg.name.CustomDisplayNameParameterProvider}]_duplicate_name_7")
+    assertThat(dataJsText).doesNotContain("_[{provider\\u003dpkg.name.CustomDisplayNameParameterProvider}]_0")
+    assertThat(dataJsText).doesNotContain("_[{provider\\u003dpkg.name.CustomDisplayNameParameterProvider}]_1")
+
+    appProject.files.update("src/main/java/com/DisplayNameParameterProviders.kt").searchAndReplace("Primary text", " Primarytext")
+
+    build.validateScreenshotTestWithTestSuite(expectFailure = true)
+
+    val diffDir = getTestSuiteDiffDir(appProject, "pkg.name.DisplayNameTest")
+    val diffFiles = diffDir.listDirectoryEntries().map { it.name }
+    assertThat(diffFiles.any { it.endsWith("_custom_first.png") }).isTrue()
+    assertThat(diffFiles.none { it.endsWith("_custom_name_with_spaces.png") }).isTrue()
+    assertThat(diffFiles.none { it.endsWith("_duplicate_name_6.png") }).isTrue()
+    assertThat(diffFiles.none { it.endsWith("_duplicate_name_7.png") }).isTrue()
+  }
+
   private fun createVerifier(appProject: com.android.build.gradle.integration.common.fixture.project.GradleProject<*>) =
     ScreenshotTestVerifier(
       referenceDirResolver = { getTestSuiteReferenceDir(appProject, it) },

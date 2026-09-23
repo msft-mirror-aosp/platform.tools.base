@@ -42,6 +42,7 @@ private const val PREVIEW_ID = "previewId"
 private const val GLOBAL_ERROR = "globalError"
 private const val SCREENSHOT_RESULTS = "screenshotResults"
 private const val IMAGE_PATH = "imagePath"
+private const val DISPLAY_NAME = "displayName"
 private const val SCREENSHOT_ERROR = "error"
 private const val STATUS = "status"
 private const val MESSAGE = "message"
@@ -395,6 +396,7 @@ private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotRe
   var previewId: String? = null
   var methodFQN: String? = null
   var imagePath: String? = null
+  var displayName: String? = null
   reader.beginObject()
   while (reader.hasNext()) {
     when (reader.nextName()) {
@@ -407,6 +409,9 @@ private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotRe
       IMAGE_PATH -> {
         imagePath = reader.nextString()
       }
+      DISPLAY_NAME -> {
+        displayName = reader.nextString()
+      }
       SCREENSHOT_ERROR -> {
         screenshotError = readScreenshotError(reader)
       }
@@ -418,6 +423,7 @@ private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotRe
     methodFQN ?: throw IllegalArgumentException("Method FQN is missing"),
     imagePath ?: throw IllegalArgumentException("Image path missing"),
     screenshotError,
+    displayName,
   )
 }
 
@@ -428,7 +434,7 @@ fun readPreviewRenderingResultJson(jsonReader: Reader): PreviewRenderingResult {
   JsonReader(jsonReader).use { reader ->
     reader.beginObject()
     while (reader.hasNext()) {
-      when (reader.nextName()) {
+      when (val nextName = reader.nextName()) {
         GLOBAL_ERROR -> {
           globalError = reader.nextString()
         }
@@ -439,6 +445,9 @@ fun readPreviewRenderingResultJson(jsonReader: Reader): PreviewRenderingResult {
             screenshotResults.add(readPreviewScreenshotResult(reader))
           }
           reader.endArray()
+        }
+        else -> {
+          reader.skipValue()
         }
       }
     }
@@ -452,6 +461,7 @@ private fun writePreviewScreenshotResultToJson(writer: JsonWriter, screenshotRes
   writer.name(PREVIEW_ID).value(screenshotResult.previewId)
   writer.name(METHOD_FQN).value(screenshotResult.methodFQN)
   writer.name(IMAGE_PATH).value(screenshotResult.imagePath)
+  screenshotResult.displayName?.let { writer.name(DISPLAY_NAME).value(it) }
   screenshotResult.error?.let { screenshotError ->
     writer.name(SCREENSHOT_ERROR)
     writer.beginObject()

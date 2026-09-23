@@ -26,5 +26,10 @@ import java.io.Serializable
  * dependent. and [error] contains info about issues encountered during rendering. It is possible that we managed to render an image, but we
  * found a number of problems during its rendering that might have affected the fidelity of the result; so image and error would both exist
  */
-data class PreviewScreenshotResult(val previewId: String, val methodFQN: String, val imagePath: String, val error: ScreenshotError?) :
-  Serializable
+data class PreviewScreenshotResult(
+  val previewId: String,
+  val methodFQN: String,
+  val imagePath: String,
+  val error: ScreenshotError?,
+  val displayName: String? = null,
+) : Serializable
