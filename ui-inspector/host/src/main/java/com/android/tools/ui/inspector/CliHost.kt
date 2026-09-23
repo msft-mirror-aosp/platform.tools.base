@@ -24,6 +24,7 @@ import com.android.prefs.AndroidLocationsSingleton
 import com.android.tools.ui.inspector.printer.json.withJsonPrinter
 import java.io.PrintWriter
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -40,9 +41,6 @@ private const val DEVICE_OPTION_DESCRIPTION =
 /** Where the CLI keeps the Compose inspector jars it downloads, on the host cache. */
 private const val COMPOSE_INSPECTOR_CACHE_PATH = "ui-inspector/cache"
 
-/** Factory for creating [AdbSession]. Can be overridden in tests. */
-internal var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
-
 @Command(name = "ui-inspector", mixinStandardHelpOptions = true, version = ["1.0"], description = ["UI Inspector CLI"])
 internal class UiInspectorCommand : Callable<Int> {
   @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
@@ -53,8 +51,9 @@ internal class UiInspectorCommand : Callable<Int> {
   }
 }
 
+/** The `dump-ui` command; [sessionFactory] opens the adb session a run uses. */
 @Command(name = "dump-ui", description = ["Dump UI hierarchy"])
-internal class DumpUiCommand : Callable<Int> {
+internal class DumpUiCommand(private val sessionFactory: () -> AdbSession) : Callable<Int> {
   @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
   @Option(names = ["-h", "--help"], usageHelp = true, description = ["Show this help message and exit"]) private var helpRequested = false
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
@@ -91,20 +90,16 @@ internal class DumpUiCommand : Callable<Int> {
         }
       val err = spec.commandLine().err
       err.println("Executing dump-ui for package: $targetPackage on device: $serial")
-      val facets = requestedFacets(include)
+      val inspector =
+        UiInspector(
+          adbSession,
+          cacheDir = AndroidLocationsSingleton.prefsLocation.resolve(COMPOSE_INSPECTOR_CACHE_PATH),
+          composeInspectorJar = composeInspectorJarPath?.let(Paths::get),
+          logger = stderrLogger(err),
+        )
+      // The output is opened before the dump runs, so an unwritable path fails before the agent is injected.
       withJsonPrinter(output, prettyPrint) { printer ->
-        runBlocking {
-          doDumpUi(
-            adbSession = adbSession,
-            serial = serial,
-            packageName = targetPackage,
-            facets = facets,
-            composeInspectorJarPath = composeInspectorJarPath,
-            composeInspectorCacheDir = AndroidLocationsSingleton.prefsLocation.resolve(COMPOSE_INSPECTOR_CACHE_PATH),
-            printer = printer,
-            logger = stderrLogger(err),
-          )
-        }
+        printer.printDump(runBlocking { inspector.dump(serial, targetPackage, requestedFacets(include)) })
       }
       return EXIT_OK
     } catch (e: Exception) {
@@ -115,12 +110,14 @@ internal class DumpUiCommand : Callable<Int> {
 }
 
 /**
- * Creates the fully configured command line used by [main]. Tests use it too, so production command registration is what gets exercised.
+ * Creates the fully configured command line used by [main], whose commands open their adb session with [sessionFactory]. Tests use it too,
+ * so production command registration is what gets exercised.
  */
-internal fun createCommandLine(): CommandLine = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+internal fun createCommandLine(sessionFactory: () -> AdbSession): CommandLine =
+  CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand(sessionFactory))
 
 fun main(args: Array<String>) {
-  exitProcess(createCommandLine().execute(*args))
+  exitProcess(createCommandLine { createStandaloneSession(NO_LOGGING) }.execute(*args))
 }
 
 /** The CLI shows every log message on [err], warnings marked as such. */

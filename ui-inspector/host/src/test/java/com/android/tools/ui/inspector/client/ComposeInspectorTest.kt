@@ -37,7 +37,6 @@ import com.android.tools.ui.inspector.deploy.fileNameWithHash
 import com.android.tools.ui.inspector.fetchUiDump
 import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
-import com.android.tools.ui.inspector.sessionFactory
 import com.android.tools.ui.inspector.statProbeCommand
 import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
@@ -1215,36 +1214,29 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
     injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
-    val originalFactory = sessionFactory
-    sessionFactory = { testSession }
-
     val uiDump =
-      try {
-        CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
-          val composeInspectorConnected =
-            createComposeInspector(
-              commandSender = commandSender,
-              injectionManager = injectionManager,
-              logger = logger,
-              resolveJar = {
-                val fixedJar = tempFolder.newFile("compose-inspector.jar")
-                fixedJar.writeText("fake pre-compiled compose dex classes")
-                fixedJar
-              },
-            )
-          assertThat(composeInspectorConnected).isTrue()
-
-          fetchUiDump(
+      CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
+        val composeInspectorConnected =
+          createComposeInspector(
             commandSender = commandSender,
-            includeAttributes = true,
-            includeResolutionStack = false,
-            composeInspectorConnected = composeInspectorConnected,
-            includeSemantics = true,
+            injectionManager = injectionManager,
             logger = logger,
+            resolveJar = {
+              val fixedJar = tempFolder.newFile("compose-inspector.jar")
+              fixedJar.writeText("fake pre-compiled compose dex classes")
+              fixedJar
+            },
           )
-        }
-      } finally {
-        sessionFactory = originalFactory
+        assertThat(composeInspectorConnected).isTrue()
+
+        fetchUiDump(
+          commandSender = commandSender,
+          includeAttributes = true,
+          includeResolutionStack = false,
+          composeInspectorConnected = composeInspectorConnected,
+          includeSemantics = true,
+          logger = logger,
+        )
       }
 
     // 4. Assertions

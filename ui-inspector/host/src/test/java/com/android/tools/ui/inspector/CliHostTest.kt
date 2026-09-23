@@ -39,7 +39,7 @@ class CliHostTest {
   @get:Rule val tempFolder = TemporaryFolder()
 
   private fun parseDumpUi(vararg args: String): DumpUiCommand {
-    val parseResult = createCommandLine().parseArgs("dump-ui", *args)
+    val parseResult = createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", *args)
     return parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
   }
 
@@ -57,7 +57,7 @@ class CliHostTest {
 
   @Test
   fun testNoArgsReturnsError() {
-    val exitCode = createCommandLine().execute()
+    val exitCode = createCommandLine { FakeAdbSession() }.execute()
     assertThat(exitCode).isEqualTo(1)
   }
 
@@ -91,7 +91,9 @@ class CliHostTest {
   @Test
   fun testIncludeRejectsUnknownFacet() {
     val exception =
-      assertThrows(CommandLine.ParameterException::class.java) { createCommandLine().parseArgs("dump-ui", "--include", "everything") }
+      assertThrows(CommandLine.ParameterException::class.java) {
+        createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", "--include", "everything")
+      }
     assertThat(exception).hasMessageThat().contains("Invalid value for --include: 'everything'")
     assertThat(exception).hasMessageThat().contains("attributes, semantics, resolution-stack, system-composables, all")
   }
@@ -99,7 +101,9 @@ class CliHostTest {
   @Test
   fun testOldIncludeFlagsRemoved() {
     for (oldFlag in listOf("--include-attributes", "--include-resolution-stack", "--include-system-composables", "--include-semantics")) {
-      assertThrows(CommandLine.UnmatchedArgumentException::class.java) { createCommandLine().parseArgs("dump-ui", oldFlag) }
+      assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+        createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", oldFlag)
+      }
     }
   }
 
@@ -129,19 +133,19 @@ class CliHostTest {
   @Test
   fun testSerialOptionNoLongerSupported() {
     assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
-      createCommandLine().parseArgs("dump-ui", "--device", "123", "--serial", "456", "--package", "com.example")
+      createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", "--device", "123", "--serial", "456", "--package", "com.example")
     }
   }
 
   @Test
   fun testTrackChangesCommandRemoved() {
-    assertThrows(CommandLine.UnmatchedArgumentException::class.java) { createCommandLine().parseArgs("track-changes") }
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) { createCommandLine { FakeAdbSession() }.parseArgs("track-changes") }
   }
 
   @Test
   fun testRecordOptionsRemoved() {
     assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
-      createCommandLine().parseArgs("dump-ui", "--record", "--duration", "5s")
+      createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", "--record", "--duration", "5s")
     }
   }
 
@@ -150,22 +154,16 @@ class CliHostTest {
     val outputFile = tempFolder.newFile("dump.json").toPath()
     Files.write(outputFile, "existing content".toByteArray(Charsets.UTF_8))
     val noDevicesSession = FakeAdbSession().apply { hostServices.devices = DeviceList(emptyList(), emptyList()) }
-    val originalFactory = sessionFactory
-    sessionFactory = { noDevicesSession }
-    try {
-      val exitCode = createCommandLine().execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
+    val exitCode = createCommandLine { noDevicesSession }.execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
 
-      assertThat(exitCode).isEqualTo(1)
-      assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
-    } finally {
-      sessionFactory = originalFactory
-    }
+    assertThat(exitCode).isEqualTo(1)
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
   }
 
   @Test
   fun testDumpUiHelpPrintsUsageAndExitsZero() {
     val capturedOut = ByteArrayOutputStream()
-    val commandLine = createCommandLine()
+    val commandLine = createCommandLine { FakeAdbSession() }
     commandLine.setOut(PrintWriter(capturedOut, true, Charsets.UTF_8))
 
     val exitCode = commandLine.execute("dump-ui", "--help")
@@ -180,20 +178,14 @@ class CliHostTest {
   fun testDumpUiUnwritableOutputPathReportsReason() {
     val output = tempFolder.root.toPath().resolve("missing").resolve("dump.json")
     val session = FakeAdbSession().apply { hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList()) }
-    val originalFactory = sessionFactory
-    sessionFactory = { session }
-    try {
-      val capturedErr = StringWriter()
-      val cmd = createCommandLine()
-      cmd.setErr(PrintWriter(capturedErr))
+    val capturedErr = StringWriter()
+    val cmd = createCommandLine { session }
+    cmd.setErr(PrintWriter(capturedErr))
 
-      val exitCode = cmd.execute("dump-ui", "--package", "com.example", "-o", output.toString())
+    val exitCode = cmd.execute("dump-ui", "--package", "com.example", "-o", output.toString())
 
-      assertThat(exitCode).isEqualTo(1)
-      assertThat(capturedErr.toString()).contains("Error: Cannot write output file '$output': ${output.parent} does not exist")
-    } finally {
-      sessionFactory = originalFactory
-    }
+    assertThat(exitCode).isEqualTo(1)
+    assertThat(capturedErr.toString()).contains("Error: Cannot write output file '$output': ${output.parent} does not exist")
   }
 
   @Test
@@ -205,15 +197,9 @@ class CliHostTest {
         hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList())
         deviceServices.configureShellCommand(DeviceSelector.fromSerialNumber("abc"), TOP_ACTIVITY_SHELL_COMMAND, "", exitCode = 1)
       }
-    val originalFactory = sessionFactory
-    sessionFactory = { session }
-    try {
-      val exitCode = createCommandLine().execute("dump-ui", "-o", outputFile.toString())
+    val exitCode = createCommandLine { session }.execute("dump-ui", "-o", outputFile.toString())
 
-      assertThat(exitCode).isEqualTo(1)
-      assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
-    } finally {
-      sessionFactory = originalFactory
-    }
+    assertThat(exitCode).isEqualTo(1)
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
   }
 }

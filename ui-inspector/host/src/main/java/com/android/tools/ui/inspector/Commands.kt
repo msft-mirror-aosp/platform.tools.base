@@ -39,13 +39,11 @@ import com.android.tools.ui.inspector.device.parseTopActivityProcesses
 import com.android.tools.ui.inspector.model.UiDump
 import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.model.UiWindow
-import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.android.tools.ui.inspector.tree.attachComposeTree
 import com.android.tools.ui.inspector.tree.stripSystemComposables
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
-import java.nio.file.Paths
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
@@ -139,35 +137,6 @@ private fun foregroundAppResolutionException() =
   IllegalStateException(
     "Could not determine the foreground app. Unlock the device and bring the target app to the foreground, or select the app with --package."
   )
-
-/**
- * Dumps the UI of an app and prints it: the standalone CLI's entry point over [UiInspector].
- *
- * @param adbSession The session to the adb server.
- * @param serial The serial number of the target device.
- * @param packageName The package name of the app to dump.
- * @param facets The optional data to carry on top of the tree.
- * @param composeInspectorJarPath A local Compose inspector jar to use instead of the one Maven has for the app's Compose version.
- * @param composeInspectorCacheDir Where the Compose inspector jars downloaded from Maven are kept.
- * @param printer Prints the dump.
- * @param logger Receives what the dump has to say besides its result.
- * @param injectionManagerFactory Creates the [InjectionManager].
- */
-internal suspend fun doDumpUi(
-  adbSession: AdbSession,
-  serial: String,
-  packageName: String,
-  facets: Set<Facet>,
-  composeInspectorJarPath: String?,
-  composeInspectorCacheDir: Path,
-  printer: UiDumpPrinter,
-  logger: Logger,
-  injectionManagerFactory: InjectionManagerFactory = ::InjectionManager,
-) {
-  val inspector =
-    UiInspector(adbSession, composeInspectorCacheDir, composeInspectorJarPath?.let(Paths::get), logger, injectionManagerFactory)
-  printer.printDump(inspector.dump(serial, packageName, facets))
-}
 
 /** Creates the [InjectionManager] for a dump: session, serial, package, Compose inspector override jar, logger. */
 internal typealias InjectionManagerFactory = (AdbSession, String, String, Path?, Logger) -> InjectionManager

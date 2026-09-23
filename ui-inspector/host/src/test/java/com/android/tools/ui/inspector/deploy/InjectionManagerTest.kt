@@ -27,15 +27,13 @@ import com.android.tools.ui.inspector.RecordingLogger
 import com.android.tools.ui.inspector.TestAdbDeviceServices
 import com.android.tools.ui.inspector.TestAdbHostServices
 import com.android.tools.ui.inspector.TestAdbSession
+import com.android.tools.ui.inspector.UiInspector
 import com.android.tools.ui.inspector.client.CommandSender
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.PROCESS_PACKAGES_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
-import com.android.tools.ui.inspector.doDumpUi
-import com.android.tools.ui.inspector.model.UiDump
-import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.resolveTargetPackage
 import com.android.tools.ui.inspector.runWithConnectedInspectors
@@ -1408,14 +1406,14 @@ class InjectionManagerTest {
   }
 
   @Test
-  fun testDoDumpUi_removesForwardWhenConnectionFails() = runTest {
+  fun testDump_removesForwardWhenConnectionFails() = runTest {
     configureSuccessfulInjection()
     // Forward to a port that is guaranteed closed, so the CLI's socket connection fails on both attempts: the reconnect attempt (the
     // probed socket is present), then the forced full injection it falls back to. Each attempt must remove its own forward.
     testHostServices.forwardedPort = findClosedPort().toString()
 
     try {
-      doDumpUiWithNoopPrinter()
+      dumpWithDummyArtifacts()
       fail("Expected connection failure")
     } catch (e: Exception) {}
 
@@ -1426,7 +1424,7 @@ class InjectionManagerTest {
   }
 
   @Test
-  fun testDoDumpUi_killForwardFailure_preservesPrimaryFailure() = runTest {
+  fun testDump_killForwardFailure_preservesPrimaryFailure() = runTest {
     configureSuccessfulInjection()
     testHostServices.forwardedPort = findClosedPort().toString()
     testHostServices.throwOnKillForward = true
@@ -1434,7 +1432,7 @@ class InjectionManagerTest {
     var thrown: Exception? = null
     val logged = loggedDuring {
       try {
-        doDumpUiWithNoopPrinter()
+        dumpWithDummyArtifacts()
         fail("Expected connection failure")
       } catch (e: Exception) {
         thrown = e
@@ -1616,30 +1614,18 @@ class InjectionManagerTest {
   }
 
   @Test
-  fun testDoDumpUi_threadsComposeOverridePathToTheInjectionManager() = runTest {
-    val noopPrinter =
-      object : UiDumpPrinter {
-        override fun printDump(uiDump: UiDump) {}
-      }
+  fun testDump_handsTheComposeOverrideJarToTheInjectionManager() = runTest {
     val capturedOverridePaths = mutableListOf<Path?>()
     // The factory records what it was handed and aborts the run: only the threading is under test.
     class StopAfterCapture : Exception()
-    for (cliArgument in listOf("/some/override.jar", null)) {
+    for (overrideJar in listOf(Paths.get("/some/override.jar"), null)) {
+      val inspector =
+        UiInspector(testSession, tempFolder.root.toPath(), overrideJar, logger) { _, _, _, overridePath, _ ->
+          capturedOverridePaths.add(overridePath)
+          throw StopAfterCapture()
+        }
       try {
-        doDumpUi(
-          adbSession = testSession,
-          serial = deviceSerial,
-          packageName = packageName,
-          facets = emptySet(),
-          composeInspectorJarPath = cliArgument,
-          composeInspectorCacheDir = tempFolder.root.toPath(),
-          printer = noopPrinter,
-          logger = logger,
-          injectionManagerFactory = { _, _, _, overridePath, logger ->
-            capturedOverridePaths.add(overridePath)
-            throw StopAfterCapture()
-          },
-        )
+        inspector.dump(deviceSerial, packageName)
         fail("Expected the capturing factory to abort the run")
       } catch (e: StopAfterCapture) {}
     }
@@ -1893,7 +1879,7 @@ class InjectionManagerTest {
   }
 
   @Test
-  fun testDoDumpUi_emptyRootsAfterFallback_keepsStaleDiagnostic() = runBlocking {
+  fun testDump_emptyRootsAfterFallback_keepsStaleDiagnostic() = runBlocking {
     configureSuccessfulInjection()
     // The reconnect attempt dies on a closed port; the forced attempt reaches a live agent whose dump has no windows. The user-facing
     // empty-roots error must keep the stale-server failure as a suppressed diagnostic.
@@ -1944,7 +1930,7 @@ class InjectionManagerTest {
     var thrown: Exception? = null
     loggedDuring {
       try {
-        doDumpUiWithNoopPrinter()
+        dumpWithDummyArtifacts()
         fail("Expected the empty-roots failure to propagate")
       } catch (e: Exception) {
         thrown = e
@@ -2021,25 +2007,10 @@ class InjectionManagerTest {
     FramingProtocol.writeMessage(output, agentMessage.toByteArray())
   }
 
-  /**
-   * Runs a plain [doDumpUi] with all facets off and a printer that discards output, routing [injectionManagerFactory] to this test's dummy
-   * artifact paths for the duration of the call.
-   */
-  private suspend fun doDumpUiWithNoopPrinter() {
-    val noopPrinter =
-      object : UiDumpPrinter {
-        override fun printDump(uiDump: UiDump) {}
-      }
-    doDumpUi(
-      adbSession = testSession,
-      serial = deviceSerial,
-      packageName = packageName,
-      facets = emptySet(),
-      composeInspectorJarPath = null,
-      composeInspectorCacheDir = tempFolder.root.toPath(),
-      printer = noopPrinter,
-      logger = logger,
-      injectionManagerFactory = { session, serial, pkg, overridePath, logger ->
+  /** Dumps with all facets off, routing the [UiInspector] to this test's dummy artifact paths, and discards the result. */
+  private suspend fun dumpWithDummyArtifacts() {
+    val inspector =
+      UiInspector(testSession, tempFolder.root.toPath(), composeInspectorJar = null, logger) { session, serial, pkg, overridePath, logger ->
         InjectionManager(
           session,
           serial,
@@ -2052,8 +2023,8 @@ class InjectionManagerTest {
           dummyViewInspector,
           tempFileSuffixGenerator = { "test.tmp" },
         )
-      },
-    )
+      }
+    inspector.dump(deviceSerial, packageName)
   }
 
   /** Returns a local TCP port that nothing is listening on. */
