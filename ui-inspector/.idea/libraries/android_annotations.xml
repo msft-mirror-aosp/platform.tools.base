@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="android-annotations">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/annotations/annotations.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../annotations/src/main/java" />
+    </SOURCES>
+  </library>
+</component>

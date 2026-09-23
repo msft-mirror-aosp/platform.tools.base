@@ -52,12 +52,14 @@ internal fun UiNode.AttributeValue.format(): String {
     is UiNode.AttributeValue.ColorVal -> "#%08X".format(Locale.US, colorInt)
     is UiNode.AttributeValue.DimensionVal -> {
       val num = value
+      val spValue = sp
+      val dpValue = dp
       val numStr = if (num % 1.0f == 0.0f) num.toInt().toString() else "%.2f".format(Locale.US, num)
-      if (sp != null) {
-        val spStr = if (sp % 1.0f == 0.0f) sp.toInt().toString() else "%.2f".format(Locale.US, sp)
+      if (spValue != null) {
+        val spStr = if (spValue % 1.0f == 0.0f) spValue.toInt().toString() else "%.2f".format(Locale.US, spValue)
         "${numStr}px (${spStr}sp)"
-      } else if (dp != null) {
-        val dpStr = if (dp % 1.0f == 0.0f) dp.toInt().toString() else "%.2f".format(Locale.US, dp)
+      } else if (dpValue != null) {
+        val dpStr = if (dpValue % 1.0f == 0.0f) dpValue.toInt().toString() else "%.2f".format(Locale.US, dpValue)
         "${numStr}px (${dpStr}dp)"
       } else {
         "${numStr}px"
@@ -113,7 +115,8 @@ private fun formatComposeValue(value: UiNode.ComposeParameter.Value): String {
     }
     is UiNode.ComposeParameter.Value.LambdaVal -> {
       if (value.fileName != null) {
-        val lineSuffix = if (value.startLineNumber != null && value.startLineNumber > 0) ":${value.startLineNumber}" else ""
+        val startLineNumber = value.startLineNumber
+        val lineSuffix = if (startLineNumber != null && startLineNumber > 0) ":$startLineNumber" else ""
         "[lambda in ${value.fileName}$lineSuffix]"
       } else {
         "[lambda]"

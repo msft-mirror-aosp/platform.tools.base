@@ -13,4 +13,4 @@ To test against a real device without user intervention:
 3. **Resolve activity**: `adb shell cmd package resolve-activity --brief <pkg>` (use last line)
 4. **Force stop**: `adb shell am force-stop <pkg>` (mandatory on agent change)
 5. **Start**: `adb shell am start -n <resolved_component_name>`
-6. **Run CLI**: `tools/base/bazel/bazel run //tools/base/ui-inspector/core:cli -- dump-ui --package=<pkg> --serial=<serial>`
+6. **Run CLI**: `tools/base/bazel/bazel run //tools/base/ui-inspector/cli:dump-ui -- dump-ui --package=<pkg> --device=<serial>`

@@ -8,6 +8,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.agent.payload.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.agent.payload.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.agent.inspectors.view.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.agent.inspectors.view.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.core.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.cli.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.cli.iml" />
     </modules>
   </component>
 </project>

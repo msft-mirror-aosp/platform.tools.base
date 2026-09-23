@@ -18,6 +18,7 @@ package com.android.tools.ui.inspector.proto
 
 import com.android.tools.ui.inspector.model.ColorModeHdr
 import com.android.tools.ui.inspector.model.ColorModeWideGamut
+import com.android.tools.ui.inspector.model.DeviceLocale
 import com.android.tools.ui.inspector.model.Dimension
 import com.android.tools.ui.inspector.model.GrammaticalGender
 import com.android.tools.ui.inspector.model.HardKeyboardHidden
@@ -34,8 +35,6 @@ import com.android.tools.ui.inspector.model.TouchScreen
 import com.android.tools.ui.inspector.model.UiModeNight
 import com.android.tools.ui.inspector.model.UiModeType
 import com.android.tools.ui.inspector.model.UiNode
-import com.android.tools.ui.inspector.printer.text.format
-import com.android.tools.ui.inspector.printer.text.formatComposeParameter
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
@@ -147,37 +146,31 @@ class ProtoConvertersTest {
     val pString = composeNode.parameters[0] as UiNode.ComposeParameter.Single
     assertThat(pString.name).isEqualTo("paramString")
     assertThat(pString.value).isEqualTo(UiNode.ComposeParameter.Value.StringVal("Hello"))
-    assertThat(formatComposeParameter(pString)).isEqualTo("Hello")
 
     // 2. Double Value
     val pDouble = composeNode.parameters[1] as UiNode.ComposeParameter.Single
     assertThat(pDouble.name).isEqualTo("paramDouble")
     assertThat(pDouble.value).isEqualTo(UiNode.ComposeParameter.Value.NumberVal(3.14))
-    assertThat(formatComposeParameter(pDouble)).isEqualTo("3.14")
 
     // 3. Dimension Value
     val pDim = composeNode.parameters[2] as UiNode.ComposeParameter.Single
     assertThat(pDim.name).isEqualTo("paramDimension")
     assertThat(pDim.value).isEqualTo(UiNode.ComposeParameter.Value.DimensionVal(8f, UiNode.ComposeParameter.DimensionUnit.DP))
-    assertThat(formatComposeParameter(pDim)).isEqualTo("8.0dp")
 
     // 4. Color Value
     val pColor = composeNode.parameters[3] as UiNode.ComposeParameter.Single
     assertThat(pColor.name).isEqualTo("paramColor")
     assertThat(pColor.value).isEqualTo(UiNode.ComposeParameter.Value.ColorVal(-1))
-    assertThat(formatComposeParameter(pColor)).isEqualTo("#FFFFFFFF")
 
     // 5. Resource Value
     val pRes = composeNode.parameters[4] as UiNode.ComposeParameter.Single
     assertThat(pRes.name).isEqualTo("paramResource")
     assertThat(pRes.value).isEqualTo(UiNode.ComposeParameter.Value.ResourceVal("android", null, "textView"))
-    assertThat(formatComposeParameter(pRes)).isEqualTo("@android:textView")
 
     // 6. Lambda Value
     val pLambda = composeNode.parameters[5] as UiNode.ComposeParameter.Single
     assertThat(pLambda.name).isEqualTo("paramLambda")
     assertThat(pLambda.value).isEqualTo(UiNode.ComposeParameter.Value.LambdaVal("File.kt", 42))
-    assertThat(formatComposeParameter(pLambda)).isEqualTo("[lambda in File.kt:42]")
   }
 
   @Test
@@ -248,15 +241,19 @@ class ProtoConvertersTest {
     val pList = composeNode.parameters[0] as UiNode.ComposeParameter.Group
     assertThat(pList.name).isEqualTo("listParam")
     assertThat(pList.isCollection).isTrue()
-    assertThat(pList.elements).hasSize(2)
-    assertThat(formatComposeParameter(pList)).isEqualTo("[item1, item2]")
+    // Anonymous elements carry name ID 0, which the string table does not resolve.
+    assertThat(pList.elements)
+      .containsExactly(
+        UiNode.ComposeParameter.Single("unknown", UiNode.ComposeParameter.Value.StringVal("item1")),
+        UiNode.ComposeParameter.Single("unknown", UiNode.ComposeParameter.Value.StringVal("item2")),
+      )
+      .inOrder()
 
     // 2. Map object
     val pMap = composeNode.parameters[1] as UiNode.ComposeParameter.Group
     assertThat(pMap.name).isEqualTo("mapParam")
     assertThat(pMap.isCollection).isFalse()
-    assertThat(pMap.elements).hasSize(1)
-    assertThat(formatComposeParameter(pMap)).isEqualTo("{key1=val1}")
+    assertThat(pMap.elements).containsExactly(UiNode.ComposeParameter.Single("key1", UiNode.ComposeParameter.Value.StringVal("val1")))
   }
 
   @Test
@@ -346,7 +343,7 @@ class ProtoConvertersTest {
     assertThat(config.navigationHidden).isEqualTo(NavigationHidden.YES)
     assertThat(config.uiModeType).isEqualTo(UiModeType.NORMAL)
     assertThat(config.uiModeNight).isEqualTo(UiModeNight.YES)
-    assertThat(config.locale?.format()).isEqualTo("en-US-variant-Latn")
+    assertThat(config.locale).isEqualTo(DeviceLocale("en", "US", "variant", "Latn"))
     assertThat(config.grammaticalGender).isEqualTo(GrammaticalGender.FEMININE)
   }
 

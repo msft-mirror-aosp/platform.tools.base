@@ -2,21 +2,22 @@
 <module type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$/../../core">
-      <sourceFolder url="file://$MODULE_DIR$/../../core/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../../core/src/test/java" isTestSource="true" />
+    <content url="file://$MODULE_DIR$/../../cli">
+      <sourceFolder url="file://$MODULE_DIR$/../../cli/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../cli/src/test/java" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="ui-inspector.common" />
+    <orderEntry type="module" module-name="ui-inspector.core" />
     <orderEntry type="library" name="adblib" level="project" />
-    <orderEntry type="library" name="android-annotations" level="project" />
-    <orderEntry type="library" name="ui-inspector-proto-host" level="project" />
+    <orderEntry type="library" name="adblib-tools" level="project" />
+    <orderEntry type="library" name="tools.common" level="project" />
     <orderEntry type="library" name="kotlin-stdlib" level="project" />
     <orderEntry type="library" name="kotlinx-coroutines" level="project" />
-    <orderEntry type="library" name="guava" level="project" />
+    <orderEntry type="library" name="gson" level="project" />
+    <orderEntry type="library" name="picocli" level="project" />
+    <orderEntry type="library" scope="TEST" name="guava" level="project" />
     <orderEntry type="library" scope="TEST" name="junit4" level="project" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />
-    <orderEntry type="library" scope="TEST" name="kotlinx-coroutines-test" level="project" />
   </component>
 </module>

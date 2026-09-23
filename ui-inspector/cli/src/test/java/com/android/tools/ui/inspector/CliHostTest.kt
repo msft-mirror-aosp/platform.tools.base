@@ -18,10 +18,8 @@ package com.android.tools.ui.inspector
 
 import com.android.adblib.DeviceInfo
 import com.android.adblib.DeviceList
-import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
-import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayOutputStream
 import java.io.PrintWriter
@@ -195,11 +193,8 @@ class CliHostTest {
   fun testDumpUiPackageResolutionFailureLeavesOutputFileUntouched() {
     val outputFile = tempFolder.newFile("dump.json").toPath()
     Files.write(outputFile, "existing content".toByteArray(Charsets.UTF_8))
-    val session =
-      FakeAdbSession().apply {
-        hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList())
-        deviceServices.configureShellCommand(DeviceSelector.fromSerialNumber("abc"), TOP_ACTIVITY_SHELL_COMMAND, "", exitCode = 1)
-      }
+    // The fake session has no shell command configured, so the foreground app query fails.
+    val session = FakeAdbSession().apply { hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList()) }
     val exitCode = createCommandLine { session }.execute("dump-ui", "-o", outputFile.toString())
 
     assertThat(exitCode).isEqualTo(1)
