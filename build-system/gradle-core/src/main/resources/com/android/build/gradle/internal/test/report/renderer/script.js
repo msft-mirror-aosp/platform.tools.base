@@ -2482,7 +2482,7 @@ const TestReportApp = {
       const symbol = symbolMap[tcStatus] || '✓';
 
       return `
-        <li class="sidebar-test-item ${isSelected ? 'active' : ''}" data-module="${UIUtils.escapeHTML(moduleName)}" data-package="${UIUtils.escapeHTML(packageName)}" data-class="${UIUtils.escapeHTML(className)}" data-test-case="${UIUtils.escapeHTML(tc.name)}" onclick="TestReportApp.switchScreenshotTestCase(this)">
+        <li class="sidebar-test-item ${isSelected ? 'active' : ''}" data-module="${UIUtils.escapeHTML(moduleName)}" data-package="${UIUtils.escapeHTML(packageName)}" data-class="${UIUtils.escapeHTML(className)}" data-test-case="${UIUtils.escapeHTML(tc.name)}">
           <span class="tc-status-icon ${tcStatus}">${symbol}</span>
           <span class="tc-name truncate" title="${UIUtils.escapeHTML(tc.name)}">${UIUtils.escapeHTML(tc.name)}</span>
         </li>
@@ -2501,12 +2501,25 @@ const TestReportApp = {
         <span class="sidebar-count-badge">${classTestCases.length} test${classTestCases.length !== 1 ? 's' : ''}</span>
       </div>
       <div class="sidebar-search-box">
-        <input type="text" class="sidebar-search-input" placeholder="Search tests in file..." oninput="TestReportApp.filterSidebarTestCases(this)">
+        <input type="text" class="sidebar-search-input" placeholder="Search tests in file...">
       </div>
       <ul class="sidebar-test-list">
         ${testListHtml}
       </ul>
     `;
+
+    sidebar.addEventListener('click', (e) => {
+      const itemEl = e.target.closest('.sidebar-test-item');
+      if (itemEl) {
+        this.switchScreenshotTestCase(itemEl);
+      }
+    });
+    const searchInput = sidebar.querySelector('.sidebar-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        this.filterSidebarTestCases(searchInput);
+      });
+    }
 
     layout.appendChild(sidebar);
 
@@ -2630,10 +2643,10 @@ const TestReportApp = {
         </div>
         ${!disableSlider ? `
           <div class="mode-switcher" role="tablist" aria-label="Comparison View Mode">
-            <button class="mode-btn active" data-mode="side-by-side" onclick="TestReportApp.switchScreenshotMode('side-by-side', this)" role="tab" aria-selected="true">
+            <button class="mode-btn active" data-mode="side-by-side" role="tab" aria-selected="true">
               🔲 Side-by-Side
             </button>
-            <button class="mode-btn" data-mode="slider" onclick="TestReportApp.switchScreenshotMode('slider', this)" role="tab" aria-selected="false">
+            <button class="mode-btn" data-mode="slider" role="tab" aria-selected="false">
               ↔️ Split Slider
             </button>
           </div>
@@ -2652,8 +2665,8 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${hasValidRef ? `
-              <img src="${refUrl}" alt="Reference Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')" onerror="TestReportApp.handleImageError(this, 'Reference Image Missing')">
-              <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')">
+              <img src="${refUrl}" alt="Reference Image" class="preview-img" draggable="false" data-lightbox-src="${refUrl}" data-lightbox-title="Reference Image" data-error-title="Reference Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${refUrl}" data-lightbox-title="Reference Image">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
               </button>
@@ -2680,8 +2693,8 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${hasValidDiff ? `
-              <img src="${diffUrl}" alt="Diff Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')" onerror="TestReportApp.handleImageError(this, 'Diff Image Missing')">
-              <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')">
+              <img src="${diffUrl}" alt="Diff Image" class="preview-img" draggable="false" data-lightbox-src="${diffUrl}" data-lightbox-title="Difference Image" data-error-title="Diff Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${diffUrl}" data-lightbox-title="Difference Image">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
               </button>
@@ -2722,8 +2735,8 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${hasValidNew ? `
-              <img src="${newUrl}" alt="New Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${newUrl}', 'New Image')" onerror="TestReportApp.handleImageError(this, 'New Image Missing')">
-              <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${newUrl}', 'New Image')">
+              <img src="${newUrl}" alt="New Image" class="preview-img" draggable="false" data-lightbox-src="${newUrl}" data-lightbox-title="New Image" data-error-title="New Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${newUrl}" data-lightbox-title="New Image">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
               </button>
@@ -2762,6 +2775,23 @@ const TestReportApp = {
         </div>
       ` : ''}
     `;
+
+    comparisonCard.addEventListener('click', (e) => {
+      const modeBtn = e.target.closest('.mode-btn[data-mode]');
+      if (modeBtn) {
+        this.switchScreenshotMode(modeBtn.dataset.mode, modeBtn);
+        return;
+      }
+      const lightboxTrigger = e.target.closest('[data-lightbox-src]');
+      if (lightboxTrigger) {
+        this.openLightbox(lightboxTrigger.dataset.lightboxSrc, lightboxTrigger.dataset.lightboxTitle);
+      }
+    });
+    comparisonCard.querySelectorAll('img.preview-img[data-error-title]').forEach((imgEl) => {
+      imgEl.addEventListener('error', () => {
+        this.handleImageError(imgEl, imgEl.dataset.errorTitle);
+      });
+    });
 
     wrapper.appendChild(comparisonCard);
 
@@ -2913,12 +2943,14 @@ const TestReportApp = {
           <img id="lightbox-main-img" class="lightbox-img" src="" alt="">
           <div class="lightbox-toolbar">
             <span id="lightbox-title" class="font-bold"></span>
-            <button class="lightbox-btn" onclick="TestReportApp.closeLightbox()">✕ Close</button>
+            <button class="lightbox-btn">✕ Close</button>
           </div>
         </div>
       `;
       overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) TestReportApp.closeLightbox();
+        if (e.target === overlay || e.target.closest('.lightbox-btn')) {
+          TestReportApp.closeLightbox();
+        }
       });
       document.body.appendChild(overlay);
     }
