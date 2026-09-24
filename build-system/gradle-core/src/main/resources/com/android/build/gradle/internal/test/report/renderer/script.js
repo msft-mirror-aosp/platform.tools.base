@@ -13,6 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const AGGREGATED_SUITE_NAME = 'Aggregated';
+const TEST_STATUS = Object.freeze({
+  PASSED: 'passed',
+  FAILED: 'failed',
+  SKIPPED: 'skipped',
+  PASS: 'pass',
+  FAIL: 'fail',
+});
+const ALL_TEST_STATUSES = Object.freeze([
+  TEST_STATUS.PASSED,
+  TEST_STATUS.FAILED,
+  TEST_STATUS.SKIPPED,
+]);
+
 /**
  * UI Utilities
  * Collection of helper functions for DOM manipulation and common UI patterns.
@@ -365,7 +379,7 @@ const TestReportApp = {
     currentView: 'report',
     currentTestCase: null,
     currentStackTraceContext: {},
-    filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [], targets: [] },
+    filters: { variants: [], search: '', status: [...ALL_TEST_STATUSES], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [], targets: [] },
     sort: { by: 'fail', order: 'desc' },
     isResizing: false,
     columnWidths: {},
@@ -589,12 +603,12 @@ const TestReportApp = {
     this.state.targets = rootReport.targets || [];
     this.state.filters.variants = [...rootReport.variants];
 
-    const actualSuites = (rootReport.testSuites || []).filter(ts => ts !== 'Aggregated');
+    const actualSuites = (rootReport.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
     if (actualSuites.length === 1) {
       this.state.filters.testSuite = actualSuites[0];
     }
 
-    if ((this.state.sort.by === 'fail' || this.state.sort.by === 'failed') && rootReport.variants && rootReport.variants.length > 0) {
+    if ((this.state.sort.by === TEST_STATUS.FAIL || this.state.sort.by === TEST_STATUS.FAILED) && rootReport.variants && rootReport.variants.length > 0) {
       this.state.sort.by = `${rootReport.variants[0]}.fail`;
     }
 
@@ -651,7 +665,7 @@ const TestReportApp = {
 
   populateFilters() {
     // Test Suite Dropdown
-    const actualSuites = (this.state.testSuites || []).filter(ts => ts !== 'Aggregated');
+    const actualSuites = (this.state.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
     const isSingleSuite = actualSuites.length === 1;
 
     if (isSingleSuite) {
@@ -697,12 +711,12 @@ const TestReportApp = {
 
   buildStatusDropdown() {
     const statusOptions = [
-      { name: 'Passed', value: 'passed' },
-      { name: 'Failed', value: 'failed' },
-      { name: 'Skipped', value: 'skipped' }
+      { name: 'Passed', value: TEST_STATUS.PASSED },
+      { name: 'Failed', value: TEST_STATUS.FAILED },
+      { name: 'Skipped', value: TEST_STATUS.SKIPPED }
     ];
     if (!Array.isArray(this.state.filters.status)) {
-      this.state.filters.status = ['passed', 'failed', 'skipped'];
+      this.state.filters.status = [...ALL_TEST_STATUSES];
     }
 
     const updateStatusButtonText = () => {
@@ -840,7 +854,7 @@ const TestReportApp = {
     }
 
     this.elements.testSuiteFilterBtn.addEventListener('click', () => {
-      const actualSuites = (this.state.testSuites || []).filter(ts => ts !== 'Aggregated');
+      const actualSuites = (this.state.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
       if (actualSuites.length <= 1) return;
       this.toggleDropdown(this.elements.testSuiteFilterDropdown, this.elements.testSuiteFilterBtn);
     });
@@ -904,7 +918,7 @@ const TestReportApp = {
 
         if (config) {
           if (filterType === 'status') {
-            this.state.filters.status = ['passed', 'failed', 'skipped'];
+            this.state.filters.status = [...ALL_TEST_STATUSES];
             this.buildStatusDropdown();
           } else {
             this.state.filters[config.stateKey] = [];
@@ -1101,7 +1115,7 @@ const TestReportApp = {
   },
 
   updateTestSuiteUI() {
-    const actualSuites = (this.state.testSuites || []).filter(ts => ts !== 'Aggregated');
+    const actualSuites = (this.state.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
     const isSingleSuite = actualSuites.length === 1;
 
     if (isSingleSuite) {
@@ -1432,8 +1446,7 @@ const TestReportApp = {
         this.state.filters.classes.length > 0 ||
         this.state.filters.testCases.length > 0 ||
         (this.state.filters.targets && this.state.filters.targets.length > 0);
-      const ALL_STATUSES = ['passed', 'failed', 'skipped'];
-      const hasStatusFilters = this.state.filters.status.length < ALL_STATUSES.length;
+      const hasStatusFilters = this.state.filters.status.length < ALL_TEST_STATUSES.length;
       const hasTestSuiteFilter = this.state.filters.testSuite !== 'all';
       const isFiltering = hasSearch || hasDropdownFilters || hasStatusFilters || hasTestSuiteFilter;
 
@@ -1494,16 +1507,16 @@ const TestReportApp = {
             this.state.filters.variants.forEach(v => {
               const res = this.getVariantResultForTestCase(node, this.state.filters.testSuite, v);
               if (res) {
-                if (res.status === 'fail') hasFail = true;
-                if (res.status === 'pass') hasPass = true;
-                if (res.status === 'skipped') hasSkipped = true;
+                if (res.status === TEST_STATUS.FAIL) hasFail = true;
+                if (res.status === TEST_STATUS.PASS) hasPass = true;
+                if (res.status === TEST_STATUS.SKIPPED) hasSkipped = true;
               }
             });
 
             matchesStatus = false;
-            if (hasPass && this.state.filters.status.includes('passed')) matchesStatus = true;
-            if (hasFail && this.state.filters.status.includes('failed')) matchesStatus = true;
-            if (hasSkipped && this.state.filters.status.includes('skipped')) matchesStatus = true;
+            if (hasPass && this.state.filters.status.includes(TEST_STATUS.PASSED)) matchesStatus = true;
+            if (hasFail && this.state.filters.status.includes(TEST_STATUS.FAILED)) matchesStatus = true;
+            if (hasSkipped && this.state.filters.status.includes(TEST_STATUS.SKIPPED)) matchesStatus = true;
 
             if (!matchesStatus) return false;
           }
@@ -1971,9 +1984,9 @@ const TestReportApp = {
     for (const suite of suitesToSearch) {
       const res = suite.variantResults[variantName];
       if (res) {
-        if (res.status === 'fail') return res;
-        if (res.status === 'pass') finalRes = res;
-        if (res.status === 'skipped' && !finalRes) finalRes = res;
+        if (res.status === TEST_STATUS.FAIL) return res;
+        if (res.status === TEST_STATUS.PASS) finalRes = res;
+        if (res.status === TEST_STATUS.SKIPPED && !finalRes) finalRes = res;
       }
     }
     return finalRes;
@@ -2015,7 +2028,7 @@ const TestReportApp = {
 
     const suiteNames = summaries
       .map(ts => ts.name)
-      .filter(name => name && name !== 'Aggregated');
+      .filter(name => name && name !== AGGREGATED_SUITE_NAME);
 
     if (suiteNames.length === 0) {
       node._suiteBadges = '';
@@ -2042,7 +2055,7 @@ const TestReportApp = {
     return `${variantsToShow.map(v => {
       let variantSummary = null;
       if (suiteFilter === 'all') {
-        const aggregatedSuite = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === 'Aggregated') : null;
+        const aggregatedSuite = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === AGGREGATED_SUITE_NAME) : null;
         if (aggregatedSuite) {
           variantSummary = aggregatedSuite.variantSummaries.find(vs => vs.name === v);
         }
@@ -2060,9 +2073,9 @@ const TestReportApp = {
       const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
 
       const filter = this.state.filters.status;
-      const showPassed = filter.includes('passed');
-      const showFailed = filter.includes('failed');
-      const showSkipped = filter.includes('skipped');
+      const showPassed = filter.includes(TEST_STATUS.PASSED);
+      const showFailed = filter.includes(TEST_STATUS.FAILED);
+      const showSkipped = filter.includes(TEST_STATUS.SKIPPED);
 
       return `
             <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200" aria-label="${showPassed ? passed : '-'} passed tests for ${UIUtils.escapeHTML(v)}">${showPassed ? passed : '-'}</td>
@@ -2389,7 +2402,7 @@ const TestReportApp = {
   },
 
   getTestCaseOverallStatus(testCase) {
-    if (!testCase) return 'pass';
+    if (!testCase) return TEST_STATUS.PASS;
     const targets = testCase.target ? [testCase.target] : (testCase.targets || [testCase]);
     let hasFail = false;
     let hasPass = false;
@@ -2398,15 +2411,15 @@ const TestReportApp = {
       const results = t.testSuiteResults || [];
       results.forEach(sr => {
         for (const res of Object.values(sr.variantResults || {})) {
-          if (res.status === 'fail') hasFail = true;
-          if (res.status === 'pass') hasPass = true;
+          if (res.status === TEST_STATUS.FAIL) hasFail = true;
+          if (res.status === TEST_STATUS.PASS) hasPass = true;
         }
       });
     });
 
-    if (hasFail) return 'fail';
-    if (hasPass) return 'pass';
-    return 'skipped';
+    if (hasFail) return TEST_STATUS.FAIL;
+    if (hasPass) return TEST_STATUS.PASS;
+    return TEST_STATUS.SKIPPED;
   },
 
   filterSidebarTestCases(inputElement) {
@@ -2535,9 +2548,9 @@ const TestReportApp = {
 
   renderScreenshotMainContent(mainContent, testCase, item) {
     mainContent.innerHTML = '';
-    const isPassed = item.status === 'pass';
-    const isFailed = item.status === 'fail';
-    const statusClass = isPassed ? 'pass' : (isFailed ? 'fail' : 'error');
+    const isPassed = item.status === TEST_STATUS.PASS;
+    const isFailed = item.status === TEST_STATUS.FAIL;
+    const statusClass = isPassed ? TEST_STATUS.PASS : (isFailed ? TEST_STATUS.FAIL : 'error');
     const statusText = isPassed ? 'PASSED' : (isFailed ? 'FAILED' : 'ERROR');
 
     const wrapper = document.createElement('div');
@@ -3066,9 +3079,9 @@ const TestReportApp = {
   normalizeMetric(metric) {
     if (!metric) return '';
     const m = metric.toLowerCase();
-    if (m === 'pass' || m === 'passed') return 'passed';
-    if (m === 'fail' || m === 'failed') return 'failed';
-    if (m === 'skip' || m === 'skipped') return 'skipped';
+    if (m === TEST_STATUS.PASS || m === TEST_STATUS.PASSED) return TEST_STATUS.PASSED;
+    if (m === TEST_STATUS.FAIL || m === TEST_STATUS.FAILED) return TEST_STATUS.FAILED;
+    if (m === 'skip' || m === TEST_STATUS.SKIPPED) return TEST_STATUS.SKIPPED;
     if (m === 'rate' || m === 'passrate' || m === 'pass_rate') return 'rate';
     if (m === 'name') return 'name';
     return m;
@@ -3129,7 +3142,7 @@ const TestReportApp = {
     summariesList.forEach(testSuiteSummaries => {
       let suiteSummary = null;
       if (suiteFilter === 'all') {
-        suiteSummary = testSuiteSummaries.find(ts => ts.name === 'Aggregated');
+        suiteSummary = testSuiteSummaries.find(ts => ts.name === AGGREGATED_SUITE_NAME);
       } else {
         suiteSummary = testSuiteSummaries.find(ts => ts.name === suiteFilter);
       }
@@ -3144,14 +3157,14 @@ const TestReportApp = {
       });
     });
 
-    if (normMetric === 'passed') return totalPassed;
-    if (normMetric === 'failed') return totalFailed;
-    if (normMetric === 'skipped') return totalSkipped;
+    if (normMetric === TEST_STATUS.PASSED) return totalPassed;
+    if (normMetric === TEST_STATUS.FAILED) return totalFailed;
+    if (normMetric === TEST_STATUS.SKIPPED) return totalSkipped;
     if (normMetric === 'rate') {
       if (summariesList.length === 1 && targetVariants.length === 1) {
         const testSuiteSummaries = summariesList[0];
         const suiteSummary = (suiteFilter === 'all')
-          ? testSuiteSummaries.find(ts => ts.name === 'Aggregated')
+          ? testSuiteSummaries.find(ts => ts.name === AGGREGATED_SUITE_NAME)
           : testSuiteSummaries.find(ts => ts.name === suiteFilter);
         if (suiteSummary && suiteSummary.variantSummaries) {
           const vs = suiteSummary.variantSummaries.find(s => s.name === targetVariants[0]);
@@ -3269,7 +3282,7 @@ const Navigation = {
       ...state
     };
 
-    const actualSuites = (TestReportApp.state.testSuites || []).filter(ts => ts !== 'Aggregated');
+    const actualSuites = (TestReportApp.state.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
     if (actualSuites.length === 1) {
       TestReportApp.state.filters.testSuite = actualSuites[0];
     }

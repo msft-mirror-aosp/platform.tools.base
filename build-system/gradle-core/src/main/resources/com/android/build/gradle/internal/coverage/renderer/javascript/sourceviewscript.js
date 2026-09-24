@@ -646,7 +646,7 @@ const SourceViewApp = {
             if (specific) return specific.variantCoverage;
         }
 
-        const aggregated = testSuites.find(ts => ts.testSuiteName === 'Aggregated');
+        const aggregated = testSuites.find(ts => ts.testSuiteName === AGGREGATED_SUITE_NAME);
         if (aggregated) return aggregated.variantCoverage;
 
         return testSuites[0]?.variantCoverage || null;

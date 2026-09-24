@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+const AGGREGATED_SUITE_NAME = 'Aggregated';
+
 const Tooltip = {
     element: null,
     activeTarget: null,
@@ -583,18 +585,18 @@ const CoverageReportApp = {
         } else if (this.fullReport.modules) {
             suites = [...new Set(this.fullReport.modules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name)))];
         }
-        return suites.filter(name => name !== 'Aggregated');
+        return suites.filter(name => name !== AGGREGATED_SUITE_NAME);
     },
 
     getDefaultTestSuite() {
-        if (!this.fullReport) return 'Aggregated';
+        if (!this.fullReport) return AGGREGATED_SUITE_NAME;
         const actualSuites = this.getActualTestSuites();
         if (actualSuites.length === 1) {
             return actualSuites[0];
         }
         const testSuites = this.fullReport.testSuiteCoverages || [];
-        const hasAggregated = testSuites.some(ts => ts.name === 'Aggregated');
-        return (hasAggregated || testSuites.length === 0) ? 'Aggregated' : testSuites[0].name;
+        const hasAggregated = testSuites.some(ts => ts.name === AGGREGATED_SUITE_NAME);
+        return (hasAggregated || testSuites.length === 0) ? AGGREGATED_SUITE_NAME : testSuites[0].name;
     },
 
     state: {
@@ -602,7 +604,7 @@ const CoverageReportApp = {
         currentView: 'modules', // 'modules', 'packages', 'classes'
         selectedModule: null,
         selectedPackage: null,
-        filters: { modules: [], testSuite: 'Aggregated', packages: [], classes: [], variants: [], search: '' },
+        filters: { modules: [], testSuite: AGGREGATED_SUITE_NAME, packages: [], classes: [], variants: [], search: '' },
         density: 'comfy',
         sort: { by: 'name', order: 'asc' },
         columnWidths: {},
@@ -759,7 +761,7 @@ const CoverageReportApp = {
     getAggregatedVariants() {
         if (!this.fullReport.testSuiteCoverages) return [];
         const testSuites = this.fullReport.testSuiteCoverages;
-        const agg = testSuites.find(ts => ts.name === 'Aggregated') || testSuites[0];
+        const agg = testSuites.find(ts => ts.name === AGGREGATED_SUITE_NAME) || testSuites[0];
         return agg ? agg.variantCoverages : [];
     },
 
@@ -1296,7 +1298,7 @@ const CoverageReportApp = {
                 this.elements.testSuiteFilterBtn.setAttribute('aria-haspopup', 'listbox');
                 this.elements.testSuiteFilterBtn.tabIndex = 0;
             }
-            if (filters.testSuite === 'Aggregated') {
+            if (filters.testSuite === AGGREGATED_SUITE_NAME) {
                 if (this.elements.tsAllState) this.elements.tsAllState.classList.remove('hidden');
                 if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.add('hidden');
             } else {
@@ -1497,8 +1499,8 @@ const CoverageReportApp = {
         } else {
             const testSuiteOptions = [...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name)))]
                     .sort()
-                    .map(name => ({ name: name === 'Aggregated' ? 'All' : name, value: name }));
-            const aggIndex = testSuiteOptions.findIndex(o => o.value === 'Aggregated');
+                    .map(name => ({ name: name === AGGREGATED_SUITE_NAME ? 'All' : name, value: name }));
+            const aggIndex = testSuiteOptions.findIndex(o => o.value === AGGREGATED_SUITE_NAME);
             if (aggIndex > -1) {
                 testSuiteOptions.unshift(testSuiteOptions.splice(aggIndex, 1)[0]);
             }
