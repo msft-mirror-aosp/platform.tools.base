@@ -11,18 +11,20 @@ load(
 def _kotlin_common_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    # 1. Verify LEGACY_JVM_TARGETS contains "8"
+    # 1. Verify LEGACY_JVM_TARGETS contains "8" and "11"
     asserts.true(env, "8" in LEGACY_JVM_TARGETS, "Expected '8' in LEGACY_JVM_TARGETS")
+    asserts.true(env, "11" in LEGACY_JVM_TARGETS, "Expected '11' in LEGACY_JVM_TARGETS")
 
     # 2. Verify add_jvm_target_opts for legacy targets always uses --release / -Xjdk-release
     javac_8, kotlinc_8 = add_jvm_target_opts(None, "8", [], [])
     asserts.equals(env, ["--release", "8"], javac_8)
     asserts.equals(env, ["-Xjdk-release=1.8"], kotlinc_8)
 
-    # 3. Verify add_jvm_target_opts for modern targets (injects -jvm-target for kotlinc)
     javac_11, kotlinc_11 = add_jvm_target_opts(None, "11", [], [])
-    asserts.equals(env, [], javac_11)
-    asserts.equals(env, ["-jvm-target", "11"], kotlinc_11)
+    asserts.equals(env, ["--release", "11"], javac_11)
+    asserts.equals(env, ["-Xjdk-release=11"], kotlinc_11)
+
+    # 3. Verify add_jvm_target_opts for modern targets (injects -jvm-target for kotlinc)
 
     javac_17, kotlinc_17 = add_jvm_target_opts(None, "17", [], [])
     asserts.equals(env, [], javac_17)
