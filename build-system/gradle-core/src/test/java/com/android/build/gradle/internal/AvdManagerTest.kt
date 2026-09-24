@@ -22,12 +22,17 @@ import com.android.build.gradle.internal.fixtures.FakeGradleDirectory
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
 import com.android.build.gradle.internal.testing.AdbHelper
-import com.android.prefs.AndroidLocationsSingleton
+import com.android.prefs.AndroidLocationsProvider
 import com.android.repository.io.FileOpUtils
+import com.android.sdklib.devices.Device
+import com.android.sdklib.devices.DeviceManager
+import com.android.sdklib.devices.DeviceWriter
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.testutils.file.recordExistingFile
 import com.android.utils.ILogger
+import com.android.utils.NullLogger
 import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -62,6 +67,7 @@ class AvdManagerTest {
   private lateinit var adbExecutable: Path
   private lateinit var snapshotHandler: AvdSnapshotHandler
   private lateinit var versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader
+  private lateinit var sdkHandler: AndroidSdkHandler
 
   private val lockManager: ManagedVirtualDeviceLockManager = mock()
 
@@ -79,7 +85,7 @@ class AvdManagerTest {
     userImg.recordExistingFile()
     emulatorFolder = sdkFolder.resolve("tools/lib/emulator")
     Files.createDirectories(emulatorFolder)
-    androidPrefsFolder = rootDir.resolve("android-home")
+    androidPrefsFolder = Files.createDirectories(rootDir.resolve("android-home"))
     avdFolder = rootDir.resolve("avd")
     adbExecutable = rootDir.resolve("adb")
     Files.createDirectories(avdFolder)
@@ -87,7 +93,15 @@ class AvdManagerTest {
     snapshotHandler = mock<AvdSnapshotHandler>()
 
     versionedSdkLoader = setupVersionedSdkLoader()
-    val sdkHandler = setupSdkHandler()
+    sdkHandler = setupSdkHandler()
+
+    val androidLocationsProvider =
+      mock<AndroidLocationsProvider>().also {
+        whenever(it.prefsLocation).thenReturn(androidPrefsFolder)
+        whenever(it.avdLocation).thenReturn(avdFolder)
+        whenever(it.gradleAvdLocation).thenReturn(avdFolder)
+        whenever(it.userHomeLocation).thenReturn(rootDir)
+      }
 
     whenever(lockManager.lockAndExecute(any(), any<(DeviceLock) -> Unit>())).then {
       it.getArgument<(DeviceLock) -> Unit>(1)(DeviceLock(it.getArgument<Int>(0)))
@@ -98,7 +112,7 @@ class AvdManagerTest {
         FileOpUtils.toFile(avdFolder),
         FakeGradleProvider(versionedSdkLoader),
         sdkHandler,
-        AndroidLocationsSingleton,
+        androidLocationsProvider,
         snapshotHandler,
         lockManager,
         adbHelper,
@@ -295,6 +309,109 @@ class AvdManagerTest {
         """
           .trimIndent()
       )
+  }
+
+  @Test
+  fun userDefinedHardwareProfileShouldBeResolved() {
+    writeCustomDeviceXml(
+      androidPrefsFolder.resolve(SdkConstants.FN_DEVICES_XML),
+      displayName = "My Custom Profile",
+      id = "my_custom_profile",
+    )
+
+    manager.createAvd(
+      FakeGradleProvider(FakeGradleDirectory(FileOpUtils.toFile(systemImageFolder))),
+      "system-images;android-29;default;x86",
+      "device1",
+      "My Custom Profile",
+    )
+
+    val allAvds = manager.allAvds()
+    assertThat(allAvds).containsExactly("device1")
+  }
+
+  @Test
+  fun systemImageHardwareProfileShouldBeResolved() {
+    writeCustomDeviceXml(
+      systemImageFolder.resolve(SdkConstants.FN_DEVICES_XML),
+      displayName = "My SysImg Profile",
+      id = "my_sysimg_profile",
+    )
+
+    manager.createAvd(
+      FakeGradleProvider(FakeGradleDirectory(FileOpUtils.toFile(systemImageFolder))),
+      "system-images;android-29;default;x86",
+      "device1",
+      "My SysImg Profile",
+    )
+
+    val allAvds = manager.allAvds()
+    assertThat(allAvds).containsExactly("device1")
+  }
+
+  @Test
+  fun systemImageDevicesXmlWithExternalEntityShouldBeIgnored() {
+    val secretFile = rootDir.resolve("secret.txt")
+    Files.writeString(secretFile, "Pixel Secret")
+    writeCustomDeviceXml(
+      systemImageFolder.resolve(SdkConstants.FN_DEVICES_XML),
+      displayName = "XXE_PLACEHOLDER",
+      id = "xxe_profile",
+      transform = { xml ->
+        val doctype = "<!DOCTYPE devices [<!ENTITY xxe SYSTEM \"${secretFile.toUri()}\">]>"
+        val withDoctype =
+          if (xml.startsWith("<?xml")) {
+            val declarationEnd = xml.indexOf("?>") + 2
+            xml.substring(0, declarationEnd) + doctype + xml.substring(declarationEnd)
+          } else {
+            doctype + xml
+          }
+        assertThat(withDoctype).contains(">XXE_PLACEHOLDER<")
+        withDoctype.replace(">XXE_PLACEHOLDER<", ">&xxe;<")
+      },
+    )
+
+    // The hardened parser must reject the DOCTYPE, so the external entity is never expanded and no
+    // profile named after the secret file's content exists.
+    val errorMessage =
+      assertThrows(IllegalStateException::class.java) {
+        manager.createAvd(
+          FakeGradleProvider(FakeGradleDirectory(FileOpUtils.toFile(systemImageFolder))),
+          "system-images;android-29;default;x86",
+          "device1",
+          "Pixel Secret",
+        )
+      }
+    assertThat(errorMessage.message).contains("Failed to find hardware profile for name: Pixel Secret")
+
+    // A malformed system image devices.xml must not prevent resolving bundled profiles.
+    manager.createAvd(
+      FakeGradleProvider(FakeGradleDirectory(FileOpUtils.toFile(systemImageFolder))),
+      "system-images;android-29;default;x86",
+      "device2",
+      "Pixel 2",
+    )
+    assertThat(manager.allAvds()).containsExactly("device2")
+  }
+
+  private fun writeCustomDeviceXml(targetFile: Path, displayName: String, id: String, transform: (String) -> String = { it }) {
+    val baseDevice =
+      DeviceManager.createInstance(sdkHandler, NullLogger.getLogger()).getDevices(DeviceManager.DeviceCategory.VENDOR).first {
+        it.displayName == "Pixel 2"
+      }
+    val customDevice =
+      Device.Builder(baseDevice)
+        .apply {
+          setName(displayName)
+          setId(id)
+        }
+        .build()
+    val xml =
+      ByteArrayOutputStream().use { outputStream ->
+        DeviceWriter.writeToXml(outputStream, listOf(customDevice))
+        outputStream.toString(Charsets.UTF_8)
+      }
+    Files.writeString(targetFile, transform(xml))
   }
 
   private fun setupVersionedSdkLoader(): SdkComponentsBuildService.VersionedSdkLoader =
