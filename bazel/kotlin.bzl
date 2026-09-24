@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@rules_cc//cc:defs.bzl", "CcInfo")
+load("@rules_java//java:defs.bzl", "JavaInfo", "JavaPluginInfo")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file")
 load(":kotlin_common.bzl", "KtJvmToolchainInfo", "add_jvm_target_opts", "select_java_compile_toolchain", "select_java_runtime")
@@ -161,9 +162,7 @@ def kotlin_test(
 
     coverage_java_test(
         name = name + ".test",
-        runtime_deps = [
-            ":" + name + ".testlib",
-        ] + runtime_deps,
+        runtime_deps = [":" + name + ".testlib"],
         visibility = visibility,
         **kwargs
     )
@@ -453,7 +452,7 @@ def _kotlin_library_impl(ctx):
         source_jar = ctx.outputs.source_jar,
         deps = java_info_deps,
         exports = [dep[JavaInfo] for dep in ctx.attr.exports],
-        runtime_deps = java_info_deps,
+        runtime_deps = [dep[JavaInfo] for dep in ctx.attr.runtime_deps if JavaInfo in dep],
         native_libraries = [dep[CcInfo] for dep in ctx.attr.deps + ctx.attr.runtime_deps if CcInfo in dep],
     )
 

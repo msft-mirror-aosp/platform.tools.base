@@ -61,7 +61,26 @@ interface AndroidResources {
    */
   var failOnMissingConfigEntry: Boolean
 
-  /** List of additional parameters to pass to `aapt`. */
+  /**
+   * List of additional parameters to pass to `aapt`.
+   *
+   * These are passed to every AAPT2 resource link invocation for this module. For application and dynamic-feature modules that includes the
+   * link that produces the Android App Bundle, as well as the one that produces the APK, so parameters that remove resources affect the
+   * bundle too.
+   *
+   * This is the supported way to target a single screen density, now that the screen density support in [BaseFlavor.resourceConfigurations]
+   * is deprecated:
+   * ````
+   * android {
+   *     androidResources {
+   *         additionalParameters += ["--preferred-density", "hdpi"]
+   *     }
+   * }
+   * ````
+   *
+   * Note that this also removes the other densities from the bundle, which is rarely intended, since a bundle is normally expected to
+   * contain every density so that density-specific APKs can be generated from it.
+   */
   val additionalParameters: MutableList<String>
 
   /** Adds additional parameters to be passed to `aapt`. */

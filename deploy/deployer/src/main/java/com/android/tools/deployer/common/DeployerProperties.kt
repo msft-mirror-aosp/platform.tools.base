@@ -20,7 +20,9 @@ import com.android.adblib.AdbSessionHost
 
 object DeployerProperties {
   const val USE_CONNECTED_DEVICE_PROPERTY_NAME = "com.android.tools.deployer.use.connected.device"
-  const val USE_CONNECTED_DEVICE_DEFAULT_VALUE = false
+
+  // This default DOES NOT apply to Android Studio, as Android Studio controls the value of USE_CONNECTED_DEVICE through a Studio Flag
+  const val USE_CONNECTED_DEVICE_DEFAULT_VALUE = true
 
   /**
    * Property controlling whether deployment uses the adblib `ConnectedDevice` abstraction instead of legacy ddmlib `IDevice`.

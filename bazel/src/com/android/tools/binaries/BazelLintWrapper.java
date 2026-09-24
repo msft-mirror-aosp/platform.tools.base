@@ -346,8 +346,9 @@ public class BazelLintWrapper {
             // Check if the XML report contains issues worth of breaking the test target, which is
             // any issue which is not just information about the baseline being applied. We cannot
             // just disable the LintBaseline check, since we do want to fail if the baseline gets
-            // out of date and contains issues which are no longer in the project.
-            if ("LintBaseline".equals(id) && message != null) {
+            // out of date and contains issues which are no longer in the project (now reported as
+            // LintBaselineFixed).
+            if (("LintBaseline".equals(id) || "LintBaselineFixed".equals(id)) && message != null) {
                 if (message.contains("filtered out because")) {
                     // Ignore these.
                     continue;

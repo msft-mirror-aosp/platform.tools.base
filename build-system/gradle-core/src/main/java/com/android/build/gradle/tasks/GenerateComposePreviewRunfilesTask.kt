@@ -31,6 +31,7 @@ import java.io.File
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -104,6 +105,15 @@ abstract class GenerateComposePreviewRunfilesTask : NonIncrementalTask() {
     outputFile.writeText(data.toJson())
   }
 
+  companion object {
+    internal fun computePackageName(creationConfig: ComponentCreationConfig): Provider<String> =
+      if (creationConfig.componentType.isApk) {
+        creationConfig.applicationId.orElse(creationConfig.namespace)
+      } else {
+        creationConfig.namespace
+      }
+  }
+
   class CreationAction(creationConfig: ComponentCreationConfig) :
     VariantTaskCreationAction<GenerateComposePreviewRunfilesTask, ComponentCreationConfig>(creationConfig) {
 
@@ -126,7 +136,7 @@ abstract class GenerateComposePreviewRunfilesTask : NonIncrementalTask() {
       )
       val artifacts = creationConfig.artifacts
 
-      task.packageName.setDisallowChanges(creationConfig.namespace)
+      task.packageName.setDisallowChanges(computePackageName(creationConfig))
 
       task.projectClasses.from(artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES))
       task.projectClasses.disallowChanges()

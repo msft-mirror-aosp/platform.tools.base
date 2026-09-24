@@ -18,33 +18,18 @@ package com.android.tools.ui.inspector
 
 import picocli.CommandLine
 
-/** Optional data facets of a dump, selected via `--include`. */
-internal enum class IncludeFacet(val cliName: String) {
-  ATTRIBUTES("attributes"),
-  SEMANTICS("semantics"),
-  RESOLUTION_STACK("resolution-stack"),
-  SYSTEM_COMPOSABLES("system-composables"),
-  ALL("all"),
+/** The `--include` vocabulary: every [Facet] by its command-line name, plus `all`, which stands for all of them. */
+internal enum class IncludeFacet(val cliName: String, val facet: Facet?) {
+  ATTRIBUTES("attributes", Facet.ATTRIBUTES),
+  SEMANTICS("semantics", Facet.SEMANTICS),
+  RESOLUTION_STACK("resolution-stack", Facet.RESOLUTION_STACK),
+  SYSTEM_COMPOSABLES("system-composables", Facet.SYSTEM_COMPOSABLES),
+  ALL("all", null),
 }
 
-/**
- * Expands [facets] to the concrete facets to include: `all` becomes every concrete facet, and `resolution-stack` implies `attributes` since
- * resolution stacks are per-attribute data.
- */
-internal fun expandIncludeFacets(facets: Collection<IncludeFacet>): Set<IncludeFacet> {
-  val expanded = mutableSetOf<IncludeFacet>()
-  for (facet in facets) {
-    if (facet == IncludeFacet.ALL) {
-      expanded += IncludeFacet.entries.filter { it != IncludeFacet.ALL }
-    } else {
-      expanded += facet
-    }
-  }
-  if (IncludeFacet.RESOLUTION_STACK in expanded) {
-    expanded += IncludeFacet.ATTRIBUTES
-  }
-  return expanded
-}
+/** The facets [included] asks for: `all` stands for every facet. */
+internal fun requestedFacets(included: Collection<IncludeFacet>): Set<Facet> =
+  if (IncludeFacet.ALL in included) Facet.entries.toSet() else included.mapNotNull { it.facet }.toSet()
 
 /** Converts kebab-case `--include` values into [IncludeFacet]s. */
 internal class IncludeFacetConverter : CommandLine.ITypeConverter<IncludeFacet> {

@@ -250,6 +250,7 @@ def _for_target(x, y):
     else:
         prefix = ""
         target_name = x
+
     # We use the hash of the string rather than the whole string, since otherwise the path
     # gets to be too long on windows.
     return prefix + "for_" + str(abs(hash(target_name + "_for_" + y)))
@@ -330,10 +331,12 @@ def maven_import(
             )
 
     artifact_dir = _get_artifact_dir(repo_root_path, repo_path)
-    license(
-        name = name + "_license",
-        license_text = artifact_dir + "NOTICE",
-    )
+    license_texts = native.glob([artifact_dir + "NOTICE"])
+    if license_texts:
+        license(
+            name = name + "_license",
+            license_text = license_texts[0],
+        )
     _maven_import(
         name = name,
         java_deps = [":" + java_import_name],
@@ -346,7 +349,7 @@ def maven_import(
             include = [artifact_dir + "**"],
             exclude = [artifact_dir + "**/" + exclude for exclude in _REPO_GLOB_EXCLUDES],
         ),
-        package_metadata = [":" + name + "_license"],
+        package_metadata = [":" + name + "_license"] if license_texts else [],
         tags = ["require_license"],
         exports = renamed_exports.values(),
         **kwargs
@@ -365,7 +368,7 @@ def maven_import(
                 include = [artifact_dir + "**"],
                 exclude = [artifact_dir + "**/" + exclude for exclude in _REPO_GLOB_EXCLUDES],
             ),
-            package_metadata = [":" + name + "_license"],
+            package_metadata = [":" + name + "_license"] if license_texts else [],
             tags = ["require_license"],
             exports = [renamed for (e, renamed) in renamed_exports.items() if e not in exclusions],
             **kwargs

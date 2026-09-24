@@ -109,7 +109,13 @@ class ScreenshotTest {
     }
 
     // Rerun validation task - modified tests should fail and diffs are generated
-    build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+    val failedResult = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+
+    // The image diff percentage must be reported in the console output so that CI logs are useful
+    // on their own, and it must be reported only once per failing test (b/517787525).
+    failedResult.assertOutputContains("Image does not match. (")
+    failedResult.assertOutputContains("% difference)")
+    failedResult.assertOutputDoesNotContain("Difference:")
 
     assertThat(indexHtmlReport).exists()
     assertThat(classHtmlReport).exists()

@@ -75,6 +75,7 @@ cc_test(
         "testdata/bitmap-duplicates.hprof",
         "testdata/deobfuscated.heapprofd",
         "testdata/garbage.trace",
+        "testdata/profilertester.perfetto-java-heap-dump",
         "testdata/tank.trace",
         "testdata/unity.heapprofd",
         "testdata/unity.tar",

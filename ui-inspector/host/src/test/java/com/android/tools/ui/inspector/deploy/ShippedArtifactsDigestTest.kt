@@ -39,22 +39,22 @@ class ShippedArtifactsDigestTest {
 
   private fun digestsOf(
     agent: String,
-    service: String,
+    library: String,
     payload: String,
     viewInspector: String,
     composeOverride: String? = null,
   ): ShippedArtifactsDigests {
     return computeArtifactDigests(
       agentBinary = file("agent-${counter++}", agent),
-      serviceJar = file("service-${counter++}", service),
+      libraryDex = file("library-${counter++}", library),
       payloadJar = file("payload-${counter++}", payload),
       viewInspectorJar = file("view-${counter++}", viewInspector),
       composeInspectorOverrideJar = composeOverride?.let { file("compose-override-${counter++}", it) },
     )
   }
 
-  private fun digestOf(agent: String, service: String, payload: String, viewInspector: String, composeOverride: String? = null): String =
-    digestsOf(agent, service, payload, viewInspector, composeOverride).combined
+  private fun digestOf(agent: String, library: String, payload: String, viewInspector: String, composeOverride: String? = null): String =
+    digestsOf(agent, library, payload, viewInspector, composeOverride).combined
 
   @Test
   fun digest_matchesKnownVector() {
@@ -69,7 +69,7 @@ class ShippedArtifactsDigestTest {
 
   @Test
   fun digest_isTwelveLowercaseHexCharacters() {
-    assertThat(digestOf("agent", "service", "payload", "view")).matches("[0-9a-f]{12}")
+    assertThat(digestOf("agent", "library", "payload", "view")).matches("[0-9a-f]{12}")
   }
 
   @Test
@@ -90,11 +90,11 @@ class ShippedArtifactsDigestTest {
   @Test
   fun digest_absentOverride_isTheSameAsExplicitNull() {
     val agent = file("agent", "a")
-    val service = file("service", "bb")
+    val library = file("library", "bb")
     val payload = file("payload", "ccc")
     val view = file("view", "dddd")
-    assertThat(computeArtifactDigests(agent, service, payload, view))
-      .isEqualTo(computeArtifactDigests(agent, service, payload, view, composeInspectorOverrideJar = null))
+    assertThat(computeArtifactDigests(agent, library, payload, view))
+      .isEqualTo(computeArtifactDigests(agent, library, payload, view, composeInspectorOverrideJar = null))
   }
 
   @Test
@@ -116,7 +116,7 @@ class ShippedArtifactsDigestTest {
   fun digest_composeOverrideLeavesPerFileDigestsUnchanged() {
     val digests = digestsOf("", "abc", "", "abc", composeOverride = "anything")
     assertThat(digests.agentBinary).isEqualTo("e3b0c44298fc")
-    assertThat(digests.serviceJar).isEqualTo("ba7816bf8f01")
+    assertThat(digests.libraryDex).isEqualTo("ba7816bf8f01")
     assertThat(digests.payloadJar).isEqualTo("e3b0c44298fc")
     assertThat(digests.viewInspectorJar).isEqualTo("ba7816bf8f01")
   }
@@ -127,7 +127,7 @@ class ShippedArtifactsDigestTest {
     assertThrows(NoSuchFileException::class.java) {
       computeArtifactDigests(
         agentBinary = missing,
-        serviceJar = file("service", ""),
+        libraryDex = file("library", ""),
         payloadJar = file("payload", ""),
         viewInspectorJar = file("view", ""),
       )
@@ -139,7 +139,7 @@ class ShippedArtifactsDigestTest {
     // First 12 hex characters of the files' SHA-256: empty file and "abc".
     val digests = digestsOf("", "abc", "", "abc")
     assertThat(digests.agentBinary).isEqualTo("e3b0c44298fc")
-    assertThat(digests.serviceJar).isEqualTo("ba7816bf8f01")
+    assertThat(digests.libraryDex).isEqualTo("ba7816bf8f01")
     assertThat(digests.payloadJar).isEqualTo("e3b0c44298fc")
     assertThat(digests.viewInspectorJar).isEqualTo("ba7816bf8f01")
   }

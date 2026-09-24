@@ -227,14 +227,51 @@ TEST(SyntheticFilterTest, ComposeRecompositionSkippingBranchIsSynthetic) {
   lir::VReg cmp_vreg(0);
   last_bytecode.operands.push_back(&cmp_vreg);
 
+  // Prepend a mock getSkipping boundary after the branch under test,
+  // making the branch under test topologically locate inside the prologue
+  // range.
+  lir::Bytecode invoke_get_skipping;
+  invoke_get_skipping.opcode = dex::OP_INVOKE_INTERFACE;
+  ir::MethodDecl get_skipping_decl;
+  ir::Type parent_type;
+  parent_type.descriptor = &composer_descriptor;
+  get_skipping_decl.parent = &parent_type;
+  ir::String get_skipping_name;
+  get_skipping_name.data =
+      slicer::MemView("\x0bgetSkipping", sizeof("\x0bgetSkipping"));
+  get_skipping_decl.name = &get_skipping_name;
+  lir::Method method_operand(&get_skipping_decl, 0);
+  lir::VReg caller_vreg(2);  // Composer (p0) is register index 2
+  invoke_get_skipping.operands.push_back(&caller_vreg);
+  invoke_get_skipping.operands.push_back(&method_operand);
+
+  lir::Bytecode move_bytecode;
+  move_bytecode.opcode = dex::OP_MOVE_RESULT;
+  lir::VReg move_vreg(0);
+  move_bytecode.operands.push_back(&move_vreg);
+
+  lir::Bytecode get_skipping_branch;
+  get_skipping_branch.opcode = dex::OP_IF_EQZ;
+  lir::VReg branch_vreg(0);
+  get_skipping_branch.operands.push_back(&branch_vreg);
+
   // Link them
   first_bytecode.next = &last_bytecode;
   first_bytecode.prev = nullptr;
   last_bytecode.prev = &first_bytecode;
-  last_bytecode.next = nullptr;
+  last_bytecode.next = &invoke_get_skipping;
+
+  invoke_get_skipping.prev = &last_bytecode;
+  invoke_get_skipping.next = &move_bytecode;
+
+  move_bytecode.prev = &invoke_get_skipping;
+  move_bytecode.next = &get_skipping_branch;
+
+  get_skipping_branch.prev = &move_bytecode;
+  get_skipping_branch.next = nullptr;
 
   block.region.first = &first_bytecode;
-  block.region.last = &last_bytecode;
+  block.region.last = &get_skipping_branch;
 
   auto result = SyntheticFilter::IsSyntheticBranch(&method, block);
   EXPECT_TRUE(result);

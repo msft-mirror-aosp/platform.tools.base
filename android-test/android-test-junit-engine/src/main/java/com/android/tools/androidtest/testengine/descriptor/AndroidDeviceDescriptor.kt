@@ -444,7 +444,8 @@ class AndroidDeviceDescriptor(
       val ddmlibTestId = DdmlibTestIdentifier(fullClassName, testIdentifier.testMethod)
 
       if (testResult.status != AmInstrumentationParser.STATUS_CODE_OK) {
-        reporter?.testFailed(ddmlibTestId, testResult.stackTrace ?: "")
+        val trace = testResult.stackTrace?.takeIf { it.isNotBlank() } ?: "Test failed with status ${testResult.status}"
+        reporter?.testFailed(ddmlibTestId, trace)
       }
       reporter?.testEnded(ddmlibTestId, emptyMap())
 
@@ -501,11 +502,16 @@ class AndroidDeviceDescriptor(
       try {
         // In case of unexpected termination, ensure all pending results are completed exceptionally.
         val exception = RuntimeException("Instrumentation ended unexpectedly")
+        val hadIncompleteTests = testDescriptors.values.any { !it.resultDeferred.isCompleted }
         testDescriptors.values.forEach {
           if (!it.resultDeferred.isCompleted) {
             it.resultDeferred.completeExceptionally(exception)
           }
         }
+        if (hadIncompleteTests) {
+          reporter?.testRunFailed("Instrumentation ended unexpectedly")
+        }
+        reporter?.testRunEnded(0, emptyMap())
       } finally {
         // Close the channel once the instrumentation process finishes (or is terminated) to signal
         // that no more tests or report entries will be discovered.

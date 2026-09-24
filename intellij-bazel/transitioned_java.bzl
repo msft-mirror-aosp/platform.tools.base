@@ -2,6 +2,8 @@
  A set of rules to change default intellij platform i.e. "studio-sdk" .
 """
 
+load("@rules_java//java:defs.bzl", "JavaInfo")
+
 DEFAULT_INTELLIJ_PLATFORM = "studio-sdk"
 
 def _fixed_intellij_platform_transition_impl(_settings, attr):

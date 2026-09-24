@@ -22,6 +22,7 @@ import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.tools.ui.inspector.RecordingLogger
 import com.android.tools.ui.inspector.TestAdbDeviceServices
 import com.android.tools.ui.inspector.TestAdbHostServices
 import com.android.tools.ui.inspector.TestAdbSession
@@ -38,7 +39,9 @@ import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.sessionFactory
 import com.android.tools.ui.inspector.statProbeCommand
+import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
+import java.io.IOException
 import java.net.ServerSocket
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +51,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -58,25 +62,28 @@ private const val EMPTY_FILE_DIGEST = "e3b0c44298fc"
 /** The device staging directory every artifact is pushed into under its digest-carrying name. */
 private const val STAGING_DIR = "/data/local/tmp/ui-inspector"
 
-private const val EMPTY_SERVICE_JAR_NAME = "lib_ui_inspector_service.$EMPTY_FILE_DIGEST.jar"
+/** The ART Tooling agent class the attach command names, loaded from the payload dex. */
+private const val AGENT_CLASS_NAME = "com.android.tools.ui.inspector.payload.InspectorLauncher"
+
+private const val EMPTY_LIBRARY_DEX_NAME = "libarttooling.$EMPTY_FILE_DIGEST.jar"
 private const val EMPTY_PAYLOAD_JAR_NAME = "lib_ui_inspector_payload.$EMPTY_FILE_DIGEST.jar"
 
 /** The exact install command the production flow issues when all three base artifacts are empty files. */
 private fun emptyArtifactsInstallCommand(packageName: String): String =
   buildInstallCommand(
     packageName = packageName,
-    agentStagePath = "$STAGING_DIR/lib_ui_inspector_agent.$EMPTY_FILE_DIGEST.so",
-    serviceJarStagePath = "$STAGING_DIR/$EMPTY_SERVICE_JAR_NAME",
+    agentStagePath = "$STAGING_DIR/libarttooling_agent.$EMPTY_FILE_DIGEST.so",
+    libraryDexStagePath = "$STAGING_DIR/$EMPTY_LIBRARY_DEX_NAME",
     payloadJarStagePath = "$STAGING_DIR/$EMPTY_PAYLOAD_JAR_NAME",
-    serviceJarName = EMPTY_SERVICE_JAR_NAME,
+    libraryDexName = EMPTY_LIBRARY_DEX_NAME,
     payloadJarName = EMPTY_PAYLOAD_JAR_NAME,
     tempSuffix = "test.tmp",
   )
 
 /** The exact attach command the production flow issues when all three base artifacts are empty files. */
 private fun emptyArtifactsAttachCommand(packageName: String, serverToken: String): String =
-  "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=" +
-    "/data/data/$packageName/$EMPTY_SERVICE_JAR_NAME;/data/data/$packageName/$EMPTY_PAYLOAD_JAR_NAME;$serverToken\""
+  "cmd activity attach-agent 1234 \"/data/data/$packageName/libarttooling_agent.so=" +
+    "/data/data/$packageName/$EMPTY_LIBRARY_DEX_NAME;/data/data/$packageName/$EMPTY_PAYLOAD_JAR_NAME;$AGENT_CLASS_NAME;$serverToken\""
 
 class ComposeInspectorTest {
 
@@ -87,6 +94,7 @@ class ComposeInspectorTest {
     FramingProtocol.writeMessage(output, agentMessage.toByteArray())
   }
 
+  private val logger = RecordingLogger()
   private val deviceSerial = "123"
   private val packageName = "com.example"
 
@@ -170,8 +178,8 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -183,6 +191,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -203,6 +212,7 @@ class ComposeInspectorTest {
       createComposeInspector(
         commandSender = commandSender,
         injectionManager = injectionManager,
+        logger = logger,
         resolveJar = {
           val fixedJar = tempFolder.newFile("compose-inspector.jar")
           fixedJar.writeText("fake pre-compiled compose dex classes")
@@ -287,8 +297,9 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         { _: String -> tempFolder.newFile("unused-agent.so").toPath() },
-        tempFolder.newFile("unused-service.jar").toPath(),
+        tempFolder.newFile("unused-library.jar").toPath(),
         tempFolder.newFile("unused-payload.jar").toPath(),
         tempFolder.newFile("unused-view-inspector.jar").toPath(),
         tempFileSuffixGenerator = { "test.tmp" },
@@ -296,7 +307,12 @@ class ComposeInspectorTest {
 
     val connected =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
-        createComposeInspector(commandSender = commandSender, injectionManager = injectionManager, resolveJar = { fixedJar })
+        createComposeInspector(
+          commandSender = commandSender,
+          injectionManager = injectionManager,
+          logger = logger,
+          resolveJar = { fixedJar },
+        )
       }
 
     assertThat(connected).isTrue()
@@ -536,8 +552,8 @@ class ComposeInspectorTest {
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -549,6 +565,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -569,6 +586,7 @@ class ComposeInspectorTest {
           createComposeInspector(
             commandSender = commandSender,
             injectionManager = injectionManager,
+            logger = logger,
             resolveJar = {
               val fixedJar = tempFolder.newFile("compose-inspector.jar")
               fixedJar.writeText("fake pre-compiled compose dex classes")
@@ -583,6 +601,7 @@ class ComposeInspectorTest {
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
           includeSemantics = false,
+          logger = logger,
         )
       }
 
@@ -848,8 +867,8 @@ class ComposeInspectorTest {
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -861,6 +880,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -881,6 +901,7 @@ class ComposeInspectorTest {
           createComposeInspector(
             commandSender = commandSender,
             injectionManager = injectionManager,
+            logger = logger,
             resolveJar = {
               val fixedJar = tempFolder.newFile("compose-inspector.jar")
               fixedJar.writeText("fake pre-compiled compose dex classes")
@@ -895,6 +916,7 @@ class ComposeInspectorTest {
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
           includeSemantics = false,
+          logger = logger,
         )
       }
 
@@ -1164,8 +1186,8 @@ class ComposeInspectorTest {
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -1177,6 +1199,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -1202,6 +1225,7 @@ class ComposeInspectorTest {
             createComposeInspector(
               commandSender = commandSender,
               injectionManager = injectionManager,
+              logger = logger,
               resolveJar = {
                 val fixedJar = tempFolder.newFile("compose-inspector.jar")
                 fixedJar.writeText("fake pre-compiled compose dex classes")
@@ -1216,6 +1240,7 @@ class ComposeInspectorTest {
             includeResolutionStack = false,
             composeInspectorConnected = composeInspectorConnected,
             includeSemantics = true,
+            logger = logger,
           )
         }
       } finally {
@@ -1272,7 +1297,7 @@ class ComposeInspectorTest {
         queryComposeTree(commandSender, rootViewId = 2000, extractAllParameters = false)
       }
 
-    var current = received!!.getRoots(0).getNodes(0)
+    var current = received.getRoots(0).getNodes(0)
     var nodeCount = 1
     while (current.childrenCount > 0) {
       current = current.getChildren(0)
@@ -1307,13 +1332,251 @@ class ComposeInspectorTest {
         queryComposeParameters(commandSender, rootViewId = 2000)
       }
 
-    var current = received!!.getParameterGroups(0).getParameter(0)
+    var current = received.getParameterGroups(0).getParameter(0)
     var elementCount = 1
     while (current.elementsCount > 0) {
       current = current.getElements(0)
       elementCount++
     }
     assertThat(elementCount).isEqualTo(depth)
+  }
+
+  @Test
+  fun testCreateComposeInspector_failedVersionQuery_fails() {
+    val injectionManager = unusedInjectionManager()
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          respondingWith({ command ->
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(command.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.ERROR)
+              .setErrorMessage("version lookup crashed")
+              .build()
+          }) { commandSender ->
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { throw AssertionError("no jar resolution expected") },
+            )
+          }
+        }
+      }
+    // A failed query says nothing about whether the app uses Compose, so it is not "Compose not detected".
+    assertThat(exception).hasMessageThat().contains("version lookup crashed")
+  }
+
+  @Test
+  fun testCreateComposeInspector_wrongVersionResponseType_fails() {
+    val injectionManager = unusedInjectionManager()
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          respondingWith({ command ->
+            // A success of the wrong type: reading its (default) version map would pass for "Compose not detected".
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(command.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+              .build()
+          }) { commandSender ->
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { throw AssertionError("no jar resolution expected") },
+            )
+          }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().contains("expected GET_VERSION, got CREATE_INSPECTOR")
+  }
+
+  @Test
+  fun testCreateComposeInspector_composeNotDetected_returnsFalse(): Unit = runBlocking {
+    val injectionManager = unusedInjectionManager()
+    val connected =
+      respondingWith({ command ->
+        UiInspectorProtocol.Response.newBuilder()
+          .setCommandId(command.commandId)
+          .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+          .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
+          .build()
+      }) { commandSender ->
+        createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw AssertionError("no jar resolution expected") })
+      }
+
+    assertThat(connected).isFalse()
+  }
+
+  @Test
+  fun testCreateComposeInspector_unresolvableJar_fails() {
+    val injectionManager = unusedInjectionManager()
+    val downloadFailure = IOException("maven.google.com unreachable")
+    val exception =
+      assertThrows(IOException::class.java) {
+        runBlocking {
+          respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw downloadFailure })
+          }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().contains("Compose 1.6.0")
+    assertThat(exception).hasMessageThat().contains("maven.google.com unreachable")
+    assertThat(Throwables.getRootCause(exception)).isSameAs(downloadFailure)
+  }
+
+  @Test
+  fun testCreateComposeInspector_resolverDefect_propagatesAsIs() {
+    val injectionManager = unusedInjectionManager()
+    val defect = NullPointerException("resolver bug")
+    val thrown =
+      assertThrows(NullPointerException::class.java) {
+        runBlocking {
+          respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw defect })
+          }
+        }
+      }
+
+    // Nothing between the resolver and the caller swallows or rewraps what is not a resolution failure.
+    assertThat(thrown).isSameAs(defect)
+  }
+
+  @Test
+  fun testCreateComposeInspector_agentRejectsInspector_fails() {
+    val fakeSession = FakeAdbSession()
+    val testDeviceServices = TestAdbDeviceServices(fakeSession.deviceServices)
+    val testSession = TestAdbSession(fakeSession, testDeviceServices, TestAdbHostServices(fakeSession.hostServices))
+    testDeviceServices.session = testSession
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    // The jar is already staged, so the only device work left is the agent's answer to the create command.
+    val fixedJar = tempFolder.newFile("compose-inspector.jar")
+    fixedJar.writeText("fake pre-compiled compose dex classes")
+    val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-inspector.jar", computeContentDigest(fixedJar.toPath()))}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
+    val injectionManager = unusedInjectionManager(testSession)
+
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          respondingWith({ command ->
+            if (command.hasGetVersion()) {
+              composeVersionResponse(command, "1.6.0")
+            } else {
+              UiInspectorProtocol.Response.newBuilder()
+                .setCommandId(command.commandId)
+                .setStatus(UiInspectorProtocol.Response.Status.ERROR)
+                .setErrorMessage("dex load failed")
+                .build()
+            }
+          }) { commandSender ->
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { fixedJar })
+          }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().contains("dex load failed")
+  }
+
+  @Test
+  fun testQueryComposeTree_unexpectedResponse_fails() {
+    // A parameters response where a tree response was asked for.
+    val wrongResponse =
+      layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Response.newBuilder()
+        .setGetAllParametersResponse(
+          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetAllParametersResponse.getDefaultInstance()
+        )
+        .build()
+
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          respondingWithComposePayload(wrongResponse.toByteArray()) { commandSender ->
+            queryComposeTree(commandSender, rootViewId = 2000, extractAllParameters = false)
+          }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().contains("expected GET_COMPOSABLES_RESPONSE, got GET_ALL_PARAMETERS_RESPONSE")
+  }
+
+  @Test
+  fun testQueryComposeParameters_unexpectedResponse_fails() {
+    // A tree response where a parameters response was asked for.
+    val wrongResponse =
+      layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Response.newBuilder()
+        .setGetComposablesResponse(
+          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComposablesResponse.getDefaultInstance()
+        )
+        .build()
+
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          respondingWithComposePayload(wrongResponse.toByteArray()) { commandSender ->
+            queryComposeParameters(commandSender, rootViewId = 2000)
+          }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().contains("expected GET_ALL_PARAMETERS_RESPONSE, got GET_COMPOSABLES_RESPONSE")
+  }
+
+  /** A successful version answer to [command] reporting Compose [version]. */
+  private fun composeVersionResponse(command: UiInspectorProtocol.Command, version: String): UiInspectorProtocol.Response =
+    UiInspectorProtocol.Response.newBuilder()
+      .setCommandId(command.commandId)
+      .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+      .setGetVersion(UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, version))
+      .build()
+
+  /** An [InjectionManager] for flows that never stage anything, or stage against [session] alone. */
+  private fun unusedInjectionManager(session: com.android.adblib.AdbSession = FakeAdbSession()): InjectionManager =
+    InjectionManager(
+      session,
+      deviceSerial,
+      packageName,
+      composeInspectorOverrideJarPath = null,
+      logger,
+      { _: String -> tempFolder.newFile("unused-agent-${System.nanoTime()}.so").toPath() },
+      tempFolder.newFile("unused-library-${System.nanoTime()}.jar").toPath(),
+      tempFolder.newFile("unused-payload-${System.nanoTime()}.jar").toPath(),
+      tempFolder.newFile("unused-view-inspector-${System.nanoTime()}.jar").toPath(),
+      tempFileSuffixGenerator = { "test.tmp" },
+    )
+
+  /** Runs [block] against a loopback fake agent that answers every command with [respond], until the connection closes. */
+  private suspend fun <T> respondingWith(
+    respond: (UiInspectorProtocol.Command) -> UiInspectorProtocol.Response,
+    block: suspend (CommandSender) -> T,
+  ): T {
+    val serverSocket = ServerSocket(0)
+    val testScope = CoroutineScope(Dispatchers.Default + Job())
+    testScope.launch {
+      serverSocket.accept().use { socket ->
+        val input = socket.getInputStream()
+        try {
+          while (true) {
+            val command = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+            writeResponse(socket.getOutputStream(), respond(command))
+          }
+        } catch (_: IOException) {
+          // The client closing the connection ends the conversation.
+        }
+      }
+    }
+    try {
+      return coroutineScope {
+        CommandSender.connect("127.0.0.1", serverSocket.localPort, this).use { commandSender -> block(commandSender) }
+      }
+    } finally {
+      testScope.cancel()
+      serverSocket.close()
+    }
   }
 
   /** Runs [block] against a loopback fake agent that answers the single expected inspector command with [payload]. */
@@ -1348,8 +1611,8 @@ class ComposeInspectorTest {
 
   private fun configureAtomicMoveCommands(fakeSession: FakeAdbSession, deviceSelector: DeviceSelector) {
     listOf(
-        "lib_ui_inspector_agent.so" to EMPTY_FILE_DIGEST,
-        "lib_ui_inspector_service.jar" to EMPTY_FILE_DIGEST,
+        "libarttooling_agent.so" to EMPTY_FILE_DIGEST,
+        "libarttooling.jar" to EMPTY_FILE_DIGEST,
         "lib_ui_inspector_payload.jar" to EMPTY_FILE_DIGEST,
         // The compose fixture jar's content is "fake pre-compiled compose dex classes".
         "compose-inspector.jar" to "665e173983c8",

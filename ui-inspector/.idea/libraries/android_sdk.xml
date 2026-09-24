@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="android-sdk">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/studio/sdk/darwin/platforms/android-36/android.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/studio/sdk/linux/platforms/android-36/android.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/annotation/annotation-jvm/1.9.1/annotation-jvm-1.9.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

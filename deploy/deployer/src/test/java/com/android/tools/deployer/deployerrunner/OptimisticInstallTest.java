@@ -92,6 +92,7 @@ public class OptimisticInstallTest {
         dexDb = new SqlApkFileDatabase(dbFile, null);
         cacheDb = new DeploymentCacheDatabase(2);
         runner = new DeployerRunner(cacheDb, dexDb, service);
+        runner.setServerPort(connection.getServer().getPort());
     }
 
     @After

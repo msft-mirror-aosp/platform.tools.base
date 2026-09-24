@@ -255,6 +255,8 @@ def _write_launcher(ctx, partial_args):
             win_binary = ctx.executable._binary.short_path.replace("/", "\\"),
             xml = ctx.outputs.project_xml.short_path,
             win_xml = ctx.outputs.project_xml.short_path.replace("/", "\\"),
+            # Baseline is a source file (path == short_path), so this path resolves in
+            # both single-pass (short_path) and partial-analysis (path) runfiles.
             baseline = "--lint-baseline " + ctx.file.baseline.path if ctx.file.baseline else "",
             win_baseline = "--lint-baseline " + ctx.file.baseline.path.replace("/", "\\") if ctx.file.baseline else "",
             partial_args = partial_args,
@@ -402,7 +404,8 @@ def _lint_test_impl(ctx):
     for file in ctx.files.srcs:
         # TODO (b/382580568) support lint test on directories
         if not file.is_directory:
-            project_xml += "  <src file=\"{0}\" ".format(file.path)
+            # Single-pass runfiles are staged at short_path (needed for generated sources).
+            project_xml += "  <src file=\"{0}\" ".format(file.short_path)
             if ctx.attr.is_test_sources:
                 project_xml += "test=\"true\" "
             project_xml += "/>\n"

@@ -148,7 +148,7 @@ constructor(
     val rm = getRepoManagerAndLoadSynchronously(progress)
 
     synchronized(lock) {
-      return systemImageManager ?: SystemImageManager(rm, sysImgModule.createLatestFactory()).also { systemImageManager = it }
+      return systemImageManager ?: SystemImageManager(rm).also { systemImageManager = it }
     }
   }
 

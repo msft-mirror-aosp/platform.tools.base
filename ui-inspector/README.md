@@ -93,8 +93,9 @@ host is running on the user’s machine and the agent on the device.
 The agent acts as the server, when it launches it creates a socket bound
 to `localabstract:ui_inspector_<pid>_<digest>`, where `<digest>` is a
 12-hex-character SHA-256 fingerprint the host computes over the artifacts
-it ships (in order: the ABI-selected native agent, the service jar, the
-payload jar, the view inspector jar; each hashed as its 64-bit big-endian
+it ships (in order: the ABI-selected native agent, the ART Tooling
+library dex, the payload jar, the view inspector jar; each hashed as its
+64-bit big-endian
 length followed by its bytes). The compose inspector jar is excluded: it
 is selected by the app's compose version, which cannot change within a
 process's lifetime. The exception is a local override jar supplied via
@@ -107,10 +108,10 @@ artifacts: a resident server from the same build wins the bind race and
 is reused, while after a host rebuild the freshly attached agent binds
 its own name and the stale server expires through the inactivity
 timeout. The socket name minus the `ui_inspector_` prefix is the "server
-token": the host passes it as the third attach option, and the native,
-service, and payload layers treat it as an opaque string (the native
-library and service classes of a resident process cannot be reloaded, so
-they must accept tokens from hosts of any build).
+token": the host passes it as the agent options in the attach command,
+and the native, library, and payload layers treat it as an opaque string
+(the native library and ART Tooling library classes of a resident process
+cannot be reloaded, so they must accept tokens from hosts of any build).
 
 One thing the digest cannot do is refresh the two bottom layers of an
 agent already resident in the process — the platform pins them there:
@@ -118,17 +119,17 @@ agent already resident in the process — the platform pins them there:
 * The native library is loaded by path, and `dlopen` caches it: a
   re-attach at the same path re-runs the *already loaded* library's
   entry point, regardless of what bytes now sit on disk.
-* The service jar is appended to the bootstrap classloader's search path
-  on first attach, and a classloader never redefines a class it has
-  already loaded: later attaches keep resolving the original
-  `InspectorService`.
+* The ART Tooling library dex is appended to the bootstrap classloader's
+  search path on first attach, and a classloader never redefines a class
+  it has already loaded: later attaches keep resolving the original
+  `AgentLoader`.
 
-So in a resident process the native and service layers stay at their
+So in a resident process the native and library layers stay at their
 first-attach build until the app process restarts. The payload is the
 exception: every attach loads it through a fresh `DexClassLoader`, so
 the server, the protocol, and the inspectors — everything the host
 actually talks to over the socket — always come from the build that
-attached last. A native or service change still flips the digest and
+attached last. A native or library change still flips the digest and
 yields a fresh server; only those two thin pass-through layers keep
 running their old code.
 
@@ -145,50 +146,37 @@ The data exchanged over the socket is serialized using protocol buffers.
 
 ### Agent
 
-The agent is structured into three distinct layers to bypass Android's
-class loader restrictions. The design principle is a replica of what App
-Inspection already does, slightly adapted to our use case.
+The agent is structured into distinct layers to bypass Android's class
+loader restrictions. The JVMTI machinery and the bootstrap-classloader
+loading live in the reusable [ART Tooling](art-tooling/README.md) library;
+the UI Inspector supplies only its own payload on top of it.
 
-#### JVMTI entry point (agent/native)
+#### ART Tooling native agent + library (art-tooling)
 
-The agent uses JVMTI to inject all the other inspector classes into the
-app. This is done by using `AddToBootstrapClassLoaderSearch()` to load
-`lib_ui_inspector_service.jar` directly into the JVM. By doing this the
-contents of `lib_ui_inspector_service.jar` will be available to the
-bootstrap classloader.
+The `libarttooling_agent.so` native agent uses JVMTI to bootstrap the
+tool into the app. On attach it calls `AddToBootstrapClassLoaderSearch()`
+to load the ART Tooling library dex (`libarttooling.jar`) into the
+bootstrap classloader, then, using JNI, invokes the library's
+`AgentLoader`. The attach options carry the paths and the tool's agent
+class: `library_dex;agent_dex;agent_class;agent_options`, where the UI
+Inspector passes the server token as its agent options.
 
-Finally, using JNI, the native code locates the injected
-`InspectorService.java` (which is part of `lib_ui_inspector_service.jar`)
-and calls its static `initialize` method.
+`AgentLoader` finds the app class loader, creates a `DexClassLoader` (as a
+child of it) to load the payload JAR (`lib_ui_inspector_payload.jar`),
+instantiates the named agent class, and calls its `onAttach`. The payload
+is loaded app-parented, rather than on the bootstrap classloader, so that
+the application's own classes remain visible to it and interfaces like
+`androidx.inspection` are not forced into the bootstrap classloader
+(avoiding version conflicts if the app or other tools use them in the same
+process).
 
-#### Service loader (agent/service)
-
-The contents of `lib_ui_inspector_service.jar` act as a bridge between the
-bootstrap
-classloader and the app classloader. The bridge is necessary because in
-order to have access to the application classes `view-inspector.jar` and
-`compose-inspector.jar` need to be loaded with a class loader that
-descends from the app class loader.
-
-The main class of `lib_ui_inspector_service.jar` is `InspectorService`,
-which:
-
-* Receives the path to
-  the payload JAR (passed from C++).
-* Finds the app class loader.
-* Creates a new `DexClassLoader` (as a child of the app class loader) to
-  load the payload JAR (`lib_ui_inspector_payload.jar`).
-* Finds `InspectorLauncher` in the new class loader, and invokes its
-  entry point.
+Inspectors interact with the runtime — finding instances, hooking methods —
+through the library's `ArtTooling` facade.
 
 #### InspectorLauncher (agent/payload)
 
-This class is the entry point of the payload. Loading this class and its
-dependencies via a separate `DexClassLoader` is necessary to avoid
-loading interfaces like `androidx.appinspection` into the Bootstrap
-ClassLoader, preventing potential version conflicts if the app or other
-tools (like Android Studio's App Inspection) also use those libraries in
-the same process.
+This class is the entry point of the payload and the ART Tooling `Agent`
+that `AgentLoader` instantiates.
 
 It is responsible for:
 
@@ -203,8 +191,11 @@ It is responsible for:
 
 #### ViewInspector (agent/inspectors/view)
 
-This is the actual view inspector. It’s part of the dex that was loaded
-by `InspectorService`.
+This is the actual view inspector. It is built as its own jar
+(`view-inspector.jar`), staged on the device by the host alongside the
+payload, and loaded by the payload through a `DexClassLoader` whose
+parent is the payload's own class loader, so its class-loader chain
+descends from the app class loader.
 
 ### Host
 
@@ -213,10 +204,11 @@ invocation.
 It runs `adb devices` and `adb shell getprop` to find the device and
 hardware characteristics of the device.
 
-Selects the appropriate `.so` and payload `.jar` files matching the
-target devices and pushes them to the staging directory on the device
+Selects the appropriate `.so`, the ART Tooling library dex, and the
+payload `.jar` matching the target device and pushes them to the
+staging directory on the device
 (`/data/local/tmp/ui-inspector`). Every staged file — agent binary,
-service jar, payload jar, and inspector jars — is named by its own
+library dex, payload jar, and inspector jars — is named by its own
 content hash (`<base>.<hash12>.<ext>`, 12 hex characters of the file's
 SHA-256), so a file's staging path is determined by its base name and
 content. Concurrent pushes of the same content race only on
@@ -260,16 +252,16 @@ It then starts the injection sequence:
   each file is written to a run-unique temporary name, `chmod`-ed to read-only
   (`444`, required because the Dalvik classloader refuses dynamic bytecode from
   a writable app-data location), and renamed onto its final name. Renames are
-  atomic per file, not as a set: the content-hashed service and payload jars
+  atomic per file, not as a set: the content-hashed library dex and payload jar
   rename first (an interrupted install leaves at worst unreferenced
   content-named files), and the agent binary renames last under the fixed name
-  `lib_ui_inspector_agent.so` — its name is the only one shared across builds,
+  `libarttooling_agent.so` — its name is the only one shared across builds,
   so ordering it last means a failed install never replaces it. The fixed
   `.so` name itself exists because `dlopen` keys loaded libraries on their
   path, and the fixed path guarantees a process only ever hosts one native
   agent instance.
 * Triggers payload injection via
-  `adb shell cmd activity attach-agent <pid> <app-data-dir>/lib_ui_inspector_agent.so=<app-data-dir>/lib_ui_inspector_service.<hash12>.jar;<app-data-dir>/lib_ui_inspector_payload.<hash12>.jar;<pid>_<digest>`.
+  `adb shell cmd activity attach-agent <pid> <app-data-dir>/libarttooling_agent.so=<app-data-dir>/libarttooling.<hash12>.jar;<app-data-dir>/lib_ui_inspector_payload.<hash12>.jar;com.android.tools.ui.inspector.payload.InspectorLauncher;<pid>_<digest>`.
 * Periodically polls `/proc/net/unix` on the device using a retry loop until the
   agent's abstract Unix socket appears, preventing host connection race conditions.
 * Creates the adb tunnel to the agent's socket.

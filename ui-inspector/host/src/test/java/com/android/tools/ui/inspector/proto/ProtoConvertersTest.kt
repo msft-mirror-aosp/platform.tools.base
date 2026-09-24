@@ -516,6 +516,7 @@ class ProtoConvertersTest {
         idResource = null,
         layoutResource = null,
         attributes = emptyList(),
+        children = emptyList(),
       )
     val holder =
       UiNode.ViewNode(
@@ -525,7 +526,7 @@ class ProtoConvertersTest {
         idResource = null,
         layoutResource = null,
         attributes = emptyList(),
-        children = mutableListOf(payload),
+        children = listOf(payload),
       )
 
     val node =

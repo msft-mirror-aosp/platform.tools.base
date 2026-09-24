@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@com_google_protobuf//bazel:java_proto_library.bzl", protobuf_java_proto_library = "java_proto_library")
 load("@npm_android_vsix//:defs.bzl", "npm_link_all_packages")
 load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
@@ -42,11 +43,16 @@ py_binary(
     tags = ["no_windows"],
 )
 
+protobuf_java_proto_library(
+    name = "worker_protocol_java_proto",
+    deps = ["@bazel_tools//src/main/protobuf:worker_protocol_proto"],
+)
+
 java_library(
     name = "utils",
     srcs = glob(["src/com/android/tools/utils/*.java"]),
     visibility = ["//tools/base/bazel/sdk:__pkg__"],
-    deps = ["@bazel_tools//src/main/protobuf:worker_protocol_java_proto"],
+    deps = [":worker_protocol_java_proto"],
 )
 
 config_setting(

@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.deploy
 
-import com.android.prefs.AndroidLocationsSingleton
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -28,7 +27,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /** Abstraction for downloading remote artifacts. */
-interface ArtifactDownloader {
+internal interface ArtifactDownloader {
 
   /**
    * Downloads the artifact payload from the specified [url] and writes it to the [outputFile].
@@ -50,7 +49,7 @@ private val DEFAULT_READ_TIMEOUT = 30.seconds
  * server from hanging the CLI forever; a read timeout bounds each stall rather than the total transfer, so large artifacts on slow
  * connections still complete.
  */
-class HttpArtifactDownloader(
+internal class HttpArtifactDownloader(
   private val connectTimeout: Duration = DEFAULT_CONNECT_TIMEOUT,
   private val readTimeout: Duration = DEFAULT_READ_TIMEOUT,
 ) : ArtifactDownloader {
@@ -66,8 +65,6 @@ class HttpArtifactDownloader(
   }
 }
 
-private const val DEFAULT_CACHE_PATH = "ui-inspector/cache"
-
 /**
  * Resolves and downloads library artifacts from Google's Maven repository and extracts their nested payload jars.
  *
@@ -75,10 +72,9 @@ private const val DEFAULT_CACHE_PATH = "ui-inspector/cache"
  * @param cacheDir The local directory where resolved payload JARs are cached.
  * @param fileMover The function used to move the temporary extracted JAR to its final cached destination path.
  */
-class MavenArtifactResolver(
+internal class MavenArtifactResolver(
   private val downloader: ArtifactDownloader = HttpArtifactDownloader(),
-  // TODO: Integrate with the Android CLI's SysInfoService once UI Inspector is moved there.
-  private val cacheDir: File = AndroidLocationsSingleton.prefsLocation.resolve(DEFAULT_CACHE_PATH).toFile(),
+  private val cacheDir: File,
   private val fileMover: (File, File) -> Unit = ::defaultMoveFile,
 ) {
 

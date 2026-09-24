@@ -32,6 +32,9 @@ if [[ "${INCREMENTAL_BUILD}" == "true" ]]; then
   # as this directory persists between builds.
   echo "startup --output_user_root=${WORKSPACE}/out/bazel_user_root" >> ci.bazelrc
   echo "startup --output_base=${WORKSPACE}/out/bazel_out" >> ci.bazelrc
+  # But bazel does not allow repo contents cache living inside the workspace. So
+  # we disable it.
+  echo "common --repo_contents_cache=" >> ci.bazelrc
   export BAZELISK_HOME="${WORKSPACE}/out/bazelisk"
 fi
 

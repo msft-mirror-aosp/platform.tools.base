@@ -50,6 +50,7 @@ import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.util.GradleVersion
 
@@ -273,7 +274,14 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 it.excludeEngines("junit-jupiter")
                 it.includeEngines("preview-screenshot-test-engine")
               }
-              task.testLogging { it.showStandardStreams = true }
+              task.testLogging {
+                it.showStandardStreams = true
+                // Gradle's default SHORT exception format prints only the exception class name,
+                // which hides the image comparison details (paths and diff percentage). The
+                // screenshot exceptions carry no stack frames, so FULL prints the message once and
+                // adds no stack trace noise.
+                it.exceptionFormat = TestExceptionFormat.FULL
+              }
               task.isScanForTestClasses = false
               task.systemProperty("java.awt.headless", "true")
               task.reports {

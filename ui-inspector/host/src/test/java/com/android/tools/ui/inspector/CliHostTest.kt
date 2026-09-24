@@ -44,6 +44,18 @@ class CliHostTest {
   }
 
   @Test
+  fun testStderrLogger_marksWarningsOnly() {
+    val err = StringWriter()
+    val logger = stderrLogger(PrintWriter(err))
+
+    logger.log(LogLevel.PROGRESS, "Compose detected: 1.7.0")
+    logger.log(LogLevel.WARNING, "failed to remove adb forward tcp:1234: boom")
+
+    assertThat(err.toString().replace(System.lineSeparator(), "\n"))
+      .isEqualTo("Compose detected: 1.7.0\nWarning: failed to remove adb forward tcp:1234: boom\n")
+  }
+
+  @Test
   fun testNoArgsReturnsError() {
     val exitCode = createCommandLine().execute()
     assertThat(exitCode).isEqualTo(1)

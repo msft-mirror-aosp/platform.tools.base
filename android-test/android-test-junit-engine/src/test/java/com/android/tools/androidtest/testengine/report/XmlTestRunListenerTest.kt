@@ -85,4 +85,69 @@ class XmlTestRunListenerTest {
     assertThat(xml).contains("<testcase name=\"testFail\" classname=\"com.example.FooTest\"")
     assertThat(xml).contains("<failure>AssertionError: expected true</failure>")
   }
+
+  @Test
+  fun `generate report with testRunFailed marking in-flight test as failed`() {
+    val out = ByteArrayOutputStream()
+    listener.testRunStarted("testRun", 2)
+
+    val test1 = DdmlibTestIdentifier("com.example.FooTest", "testPass")
+    listener.testStarted(test1)
+    listener.testEnded(test1, emptyMap())
+
+    val test2 = DdmlibTestIdentifier("com.example.FooTest", "testCrashed")
+    listener.testStarted(test2)
+    listener.testRunFailed("Instrumentation run failed due to 'Process crashed.'")
+
+    listener.writeXml(out, "2026-06-24T12:00:00", 3000L)
+
+    val xml = out.toString(Charsets.UTF_8.name())
+    assertThat(xml)
+      .contains(
+        "<testsuites tests=\"2\" failures=\"1\" errors=\"0\" skipped=\"0\" time=\"3.000\" timestamp=\"2026-06-24T12:00:00\" hostname=\"localhost\">"
+      )
+    assertThat(xml).contains("<testsuite name=\"com.example.FooTest\" tests=\"2\" failures=\"1\" errors=\"0\" skipped=\"0\"")
+    assertThat(xml).contains("<testcase name=\"testPass\" classname=\"com.example.FooTest\"")
+    assertThat(xml).contains("<testcase name=\"testCrashed\" classname=\"com.example.FooTest\"")
+    assertThat(xml).contains("<failure>Instrumentation run failed due to 'Process crashed.'</failure>")
+  }
+
+  @Test
+  fun `generate report with testRunFailed creating synthetic test failure when no test in-flight`() {
+    val out = ByteArrayOutputStream()
+    listener.testRunStarted("myTestSuite", 0)
+    listener.testRunFailed("Unable to find instrumentation runner")
+
+    listener.writeXml(out, "2026-06-24T12:00:00", 1000L)
+
+    val xml = out.toString(Charsets.UTF_8.name())
+    assertThat(xml)
+      .contains(
+        "<testsuites tests=\"1\" failures=\"1\" errors=\"0\" skipped=\"0\" time=\"1.000\" timestamp=\"2026-06-24T12:00:00\" hostname=\"localhost\">"
+      )
+    assertThat(xml).contains("<testsuite name=\"myTestSuite\" tests=\"1\" failures=\"1\" errors=\"0\" skipped=\"0\"")
+    assertThat(xml).contains("<testcase name=\"testRunFailed\" classname=\"myTestSuite\"")
+    assertThat(xml).contains("<failure>Unable to find instrumentation runner</failure>")
+  }
+
+  @Test
+  fun `generate report marks incomplete test as failed on testRunEnded`() {
+    val out = ByteArrayOutputStream()
+    listener.testRunStarted("testRun", 1)
+
+    val test = DdmlibTestIdentifier("com.example.FooTest", "testIncomplete")
+    listener.testStarted(test)
+    // testEnded not called
+    listener.testRunEnded(2000L, null)
+
+    listener.writeXml(out, "2026-06-24T12:00:00", 2000L)
+
+    val xml = out.toString(Charsets.UTF_8.name())
+    assertThat(xml)
+      .contains(
+        "<testsuites tests=\"1\" failures=\"1\" errors=\"0\" skipped=\"0\" time=\"2.000\" timestamp=\"2026-06-24T12:00:00\" hostname=\"localhost\">"
+      )
+    assertThat(xml).contains("<testcase name=\"testIncomplete\" classname=\"com.example.FooTest\"")
+    assertThat(xml).contains("<failure>Test did not complete before test run ended.</failure>")
+  }
 }

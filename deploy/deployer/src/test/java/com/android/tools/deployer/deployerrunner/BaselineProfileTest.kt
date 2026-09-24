@@ -16,7 +16,6 @@
 package com.android.tools.deployer.deployerrunner
 
 import com.android.testutils.TestUtils
-import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.DeployerTestUtils
 import com.android.tools.deployer.rules.ApiLevel
 import org.junit.Assert
@@ -30,7 +29,7 @@ class BaselineProfileTest : DeployRunnerTestBase() {
   @Throws(Exception::class)
   fun testBaselineInstall() {
     Assert.assertTrue(device.apps.isEmpty())
-    val runner: DeployerRunner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val apk = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
     val baseline = TestUtils.resolveWorkspacePath(BASE + "sample.dm")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()

@@ -21,6 +21,8 @@ import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
+import com.android.tools.ui.inspector.LogLevel
+import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.AgentSocketChecker
 import com.android.tools.ui.inspector.device.DebugViewAttributes
@@ -39,11 +41,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
-/** The name of the agent binary file. */
-private const val AGENT_FILE_NAME = "lib_ui_inspector_agent.so"
+/** The name of the ART Tooling native agent binary. */
+private const val AGENT_FILE_NAME = "libarttooling_agent.so"
 
-/** The name of the service jar file. */
-private const val SERVICE_JAR_FILE_NAME = "lib_ui_inspector_service.jar"
+/** The name of the ART Tooling library dex. The native agent adds it to the bootstrap class loader search path. */
+private const val LIBRARY_DEX_FILE_NAME = "libarttooling.jar"
+
+/** The fully qualified name of the UI Inspector's ART Tooling agent, loaded from the payload dex. */
+private const val AGENT_CLASS_NAME = "com.android.tools.ui.inspector.payload.InspectorLauncher"
 
 /** The name of the payload jar file. */
 private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
@@ -52,10 +57,10 @@ private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
 private const val HOST_PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/payload/$PAYLOAD_JAR_FILE_NAME"
 
 /** The relative path to the agent directory in the source tree or runfiles. */
-private const val HOST_AGENT_PATH = "tools/base/ui-inspector/agent/native/$AGENT_FILE_NAME"
+private const val HOST_AGENT_PATH = "tools/base/ui-inspector/art-tooling/native/$AGENT_FILE_NAME"
 
-/** The relative path to the service jar in the runfiles. */
-private const val HOST_SERVICE_JAR_PATH = "tools/base/ui-inspector/agent/service/$SERVICE_JAR_FILE_NAME"
+/** The relative path to the library dex in the runfiles. */
+private const val HOST_LIBRARY_DEX_PATH = "tools/base/ui-inspector/art-tooling/java/$LIBRARY_DEX_FILE_NAME"
 
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
@@ -67,16 +72,18 @@ private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(H
  * @param composeInspectorOverrideJarPath A local Compose inspector jar substituting the maven-resolved one, or null when no override is
  *   configured. When present, its bytes join the server digest, so a changed override yields a new server instead of reconnecting to one
  *   that already loaded different inspector code.
+ * @param logger Receives what injection has to say besides its result.
  * @param agentPathResolver A function that takes a device ABI string and returns the [Path] to the agent binary on the host.
  * @param tempFileSuffixGenerator A function that generates unique suffixes for temporary files pushed to the device.
  */
-class InjectionManager(
+internal class InjectionManager(
   private val adbSession: AdbSession,
   val serial: String,
   val packageName: String,
   private val composeInspectorOverrideJarPath: Path?,
+  private val logger: Logger,
   private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
-  private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
+  private val libraryDexPath: Path = Paths.get(HOST_LIBRARY_DEX_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
   private val viewInspectorJarPath: Path = InspectorRegistry.VIEW_INSPECTOR.localJarPath,
   internal val tempFileSuffixGenerator: () -> String = { "${UUID.randomUUID()}.tmp" },
@@ -89,7 +96,7 @@ class InjectionManager(
   private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
   private val uidResolver = UidResolver(adbSession, deviceSelector)
   private val artifactStaging = ArtifactStaging(adbSession, deviceSelector, tempFileSuffixGenerator)
-  private val debugViewAttributes = DebugViewAttributes(adbSession, deviceSelector, packageName)
+  private val debugViewAttributes = DebugViewAttributes(adbSession, deviceSelector, packageName, logger)
   private val agentSocketChecker = AgentSocketChecker(adbSession, deviceSelector)
 
   /** The local TCP spec of the adb forward created by [injectAndAttach]. Cleared by [removeAdbForward]. */
@@ -135,7 +142,7 @@ class InjectionManager(
 
     // Resolve local paths before touching device settings, so a missing host artifact cannot restart the app's activities for nothing.
     val agentLocalPath = getAgentLocalPath(deviceAbi)
-    val serviceJarLocalPath = getServiceJarLocalPath()
+    val libraryDexLocalPath = getLibraryDexLocalPath()
     val payloadJarLocalPath = getPayloadJarLocalPath()
     val viewInspectorJarLocalPath = resolveLocalPathOrExtractFromClasspath(viewInspectorJarPath)
 
@@ -144,7 +151,7 @@ class InjectionManager(
     val digests =
       computeArtifactDigests(
         agentLocalPath,
-        serviceJarLocalPath,
+        libraryDexLocalPath,
         payloadJarLocalPath,
         viewInspectorJarLocalPath,
         composeInspectorOverrideJarPath,
@@ -164,12 +171,12 @@ class InjectionManager(
             serverToken,
             digests,
             agentLocalPath,
-            serviceJarLocalPath,
+            libraryDexLocalPath,
             payloadJarLocalPath,
           )
         }
       InjectionMode.FORCE_FULL_INJECTION ->
-        performFullInjection(needsDebugViewAttributes, pid, serverToken, digests, agentLocalPath, serviceJarLocalPath, payloadJarLocalPath)
+        performFullInjection(needsDebugViewAttributes, pid, serverToken, digests, agentLocalPath, libraryDexLocalPath, payloadJarLocalPath)
     }
   }
 
@@ -186,7 +193,7 @@ class InjectionManager(
     serverToken: String,
     digests: ShippedArtifactsDigests,
     agentLocalPath: Path,
-    serviceJarLocalPath: Path,
+    libraryDexLocalPath: Path,
     payloadJarLocalPath: Path,
   ): InjectionResult.Injected = coroutineScope {
     // Query the app data dir synchronously before mutating device settings or pushing files, to verify that the app is accessible
@@ -195,22 +202,22 @@ class InjectionManager(
 
     val debugViewAttributesSetup = async { if (needsDebugViewAttributes) debugViewAttributes.enable() }
 
-    val serviceJarName = fileNameWithHash(SERVICE_JAR_FILE_NAME, digests.serviceJar)
+    val libraryDexName = fileNameWithHash(LIBRARY_DEX_FILE_NAME, digests.libraryDex)
     val payloadJarName = fileNameWithHash(PAYLOAD_JAR_FILE_NAME, digests.payloadJar)
-    val (agentStagePath, serviceJarStagePath, payloadJarStagePath) =
+    val (agentStagePath, libraryDexStagePath, payloadJarStagePath) =
       artifactStaging.stage(
         listOf(
           ArtifactToStage(agentLocalPath, AGENT_FILE_NAME, digests.agentBinary),
-          ArtifactToStage(serviceJarLocalPath, SERVICE_JAR_FILE_NAME, digests.serviceJar),
+          ArtifactToStage(libraryDexLocalPath, LIBRARY_DEX_FILE_NAME, digests.libraryDex),
           ArtifactToStage(payloadJarLocalPath, PAYLOAD_JAR_FILE_NAME, digests.payloadJar),
         )
       )
     debugViewAttributesSetup.await()
 
-    installFiles(deviceSelector, packageName, agentStagePath, serviceJarStagePath, payloadJarStagePath, serviceJarName, payloadJarName)
+    installFiles(deviceSelector, packageName, agentStagePath, libraryDexStagePath, payloadJarStagePath, libraryDexName, payloadJarName)
 
     val attachStartTime = captureAttachStartTime()
-    attachAgent(deviceSelector, pid, serverToken, appDataDir, serviceJarName, payloadJarName)
+    attachAgent(deviceSelector, pid, serverToken, appDataDir, libraryDexName, payloadJarName)
 
     val socketName = ProtocolConstants.getSocketName(serverToken)
     agentSocketChecker.waitUntilPresent(socketName, pid, attachStartTime)
@@ -239,7 +246,7 @@ class InjectionManager(
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
-      System.err.println("Warning: failed to remove adb forward ${localSpec.toQueryString()}: ${e.message}")
+      logger.log(LogLevel.WARNING, "failed to remove adb forward ${localSpec.toQueryString()}: ${e.message}")
     }
   }
 
@@ -362,9 +369,9 @@ class InjectionManager(
     return resolveLocalPathOrExtractFromClasspath(agentPathResolver(deviceAbi))
   }
 
-  /** Resolves the local path to the service jar. */
-  private fun getServiceJarLocalPath(): Path {
-    return resolveLocalPathOrExtractFromClasspath(serviceJarPath)
+  /** Resolves the local path to the library dex. */
+  private fun getLibraryDexLocalPath(): Path {
+    return resolveLocalPathOrExtractFromClasspath(libraryDexPath)
   }
 
   /** Resolves the local path to the payload jar. */
@@ -377,18 +384,18 @@ class InjectionManager(
     deviceSelector: DeviceSelector,
     packageName: String,
     agentStagePath: String,
-    serviceJarStagePath: String,
+    libraryDexStagePath: String,
     payloadJarStagePath: String,
-    serviceJarName: String,
+    libraryDexName: String,
     payloadJarName: String,
   ) {
     val installCmd =
       buildInstallCommand(
         packageName = packageName,
         agentStagePath = agentStagePath,
-        serviceJarStagePath = serviceJarStagePath,
+        libraryDexStagePath = libraryDexStagePath,
         payloadJarStagePath = payloadJarStagePath,
-        serviceJarName = serviceJarName,
+        libraryDexName = libraryDexName,
         payloadJarName = payloadJarName,
         tempSuffix = tempFileSuffixGenerator(),
       )
@@ -422,13 +429,14 @@ class InjectionManager(
     pid: String,
     serverToken: String,
     appDataDir: String,
-    serviceJarName: String,
+    libraryDexName: String,
     payloadJarName: String,
   ) {
     val appPath = "$appDataDir/$AGENT_FILE_NAME"
-    val appJarPath = "$appDataDir/$serviceJarName"
+    val appLibraryDexPath = "$appDataDir/$libraryDexName"
     val appPayloadJarPath = "$appDataDir/$payloadJarName"
-    val attachCmd = "cmd activity attach-agent $pid \"$appPath=$appJarPath;$appPayloadJarPath;$serverToken\""
+    // Options are library_dex;agent_dex;agent_class;agent_options, where the UI Inspector passes the server token as its agent options.
+    val attachCmd = "cmd activity attach-agent $pid \"$appPath=$appLibraryDexPath;$appPayloadJarPath;$AGENT_CLASS_NAME;$serverToken\""
     adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, attachCmd)
   }
 
@@ -462,34 +470,34 @@ private class UnverifiableProcessException(packageName: String, cause: Exception
 internal fun buildInstallCommand(
   packageName: String,
   agentStagePath: String,
-  serviceJarStagePath: String,
+  libraryDexStagePath: String,
   payloadJarStagePath: String,
-  serviceJarName: String,
+  libraryDexName: String,
   payloadJarName: String,
   tempSuffix: String,
 ): String {
   val agentTmp = "$AGENT_FILE_NAME.$tempSuffix"
-  val serviceTmp = "$serviceJarName.$tempSuffix"
+  val libraryDexTmp = "$libraryDexName.$tempSuffix"
   val payloadTmp = "$payloadJarName.$tempSuffix"
-  val staleServiceJarsPattern = fileNameWithHash(SERVICE_JAR_FILE_NAME, CONTENT_DIGEST_PATTERN)
+  val staleLibraryDexesPattern = fileNameWithHash(LIBRARY_DEX_FILE_NAME, CONTENT_DIGEST_PATTERN)
   val stalePayloadJarsPattern = fileNameWithHash(PAYLOAD_JAR_FILE_NAME, CONTENT_DIGEST_PATTERN)
   return "run-as $packageName sh -c '" +
     // Use trap to delete temporary files at the end.
-    "trap \"rm -f $agentTmp $serviceTmp $payloadTmp\" 0 && " +
-    "test ! -d $AGENT_FILE_NAME && test ! -d $serviceJarName && test ! -d $payloadJarName && " +
+    "trap \"rm -f $agentTmp $libraryDexTmp $payloadTmp\" 0 && " +
+    "test ! -d $AGENT_FILE_NAME && test ! -d $libraryDexName && test ! -d $payloadJarName && " +
     // Sweep other installed versions of the jars first.
-    "rm -f $staleServiceJarsPattern $stalePayloadJarsPattern && " +
+    "rm -f $staleLibraryDexesPattern $stalePayloadJarsPattern && " +
     "cat $agentStagePath > $agentTmp && " +
-    "cat $serviceJarStagePath > $serviceTmp && " +
+    "cat $libraryDexStagePath > $libraryDexTmp && " +
     "cat $payloadJarStagePath > $payloadTmp && " +
-    "chmod 444 $agentTmp $serviceTmp $payloadTmp && " +
-    "mv -f $serviceTmp $serviceJarName && " +
+    "chmod 444 $agentTmp $libraryDexTmp $payloadTmp && " +
+    "mv -f $libraryDexTmp $libraryDexName && " +
     "mv -f $payloadTmp $payloadJarName && " +
     "mv -f $agentTmp $AGENT_FILE_NAME'"
 }
 
 /** Whether [InjectionManager.injectAndAttach] may reuse an already-running agent server. */
-enum class InjectionMode {
+internal enum class InjectionMode {
   /**
    * Reconnect to a running server whose socket matches the target pid and artifact digest; perform a full injection only when none does.
    */
@@ -499,7 +507,7 @@ enum class InjectionMode {
 }
 
 /** The outcome of [InjectionManager.injectAndAttach]: how the agent server was obtained, and the adb forward that reaches it. */
-sealed interface InjectionResult {
+internal sealed interface InjectionResult {
   /** The forwarded TCP port number on the host. Connect to this port to communicate with the agent. */
   val forwardedPort: String
 

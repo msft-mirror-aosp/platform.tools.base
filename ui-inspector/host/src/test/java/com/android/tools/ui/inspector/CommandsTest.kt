@@ -25,8 +25,6 @@ import com.android.tools.ui.inspector.device.PackageUid
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.android.tools.ui.inspector.model.UiNode
 import com.google.common.truth.Truth.assertThat
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
 import kotlinx.coroutines.runBlocking
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import org.junit.Assert.assertThrows
@@ -215,11 +213,12 @@ class CommandsTest {
   }
 
   @Test
-  fun testMergeComposeRootsWarnsOnStderrWhenTargetViewIsMissing() {
+  fun testMergeComposeRootsWarnsWhenTargetViewIsMissing() {
     val viewRoot = viewNode(1)
     val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100))
+    val logger = RecordingLogger()
 
-    val stderr = captureStderr {
+    val merged =
       mergeComposeRoots(
         viewRoot,
         composeRoots,
@@ -227,12 +226,15 @@ class CommandsTest {
         parameters = null,
         includeParameters = false,
         includeSemantics = false,
+        logger = logger,
       )
-    }
 
-    assertThat(stderr).contains("target view id 999")
-    assertThat(stderr).contains("view root 1")
-    assertThat(viewRoot.children).isEmpty()
+    val (level, message) = logger.messages.single()
+    assertThat(level).isEqualTo(LogLevel.WARNING)
+    assertThat(message).contains("target view id 999")
+    assertThat(message).contains("view root 1")
+    // Nothing attached: the tree comes back as it was.
+    assertThat(merged).isSameAs(viewRoot)
   }
 
   @Test
@@ -241,7 +243,8 @@ class CommandsTest {
     val viewRoot = viewNode(1, composeView)
     val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100), composableRoot(targetViewId = 20, composableId = 200))
 
-    val stderr = captureStderr {
+    val logger = RecordingLogger()
+    val merged =
       mergeComposeRoots(
         viewRoot,
         composeRoots,
@@ -249,12 +252,15 @@ class CommandsTest {
         parameters = null,
         includeParameters = false,
         includeSemantics = false,
+        logger = logger,
       )
-    }
 
     // The missing target is warned about; the valid root after it still attaches.
-    assertThat(stderr).contains("target view id 999")
-    assertThat(composeView.children.map { it.id }).containsExactly(200L)
+    assertThat(logger.text()).contains("target view id 999")
+    val mergedComposeView = merged.children.single { it.id == 20L }
+    assertThat(mergedComposeView.children.map { it.id }).containsExactly(200L)
+    // The input tree is untouched.
+    assertThat(composeView.children).isEmpty()
   }
 
   @Test
@@ -266,7 +272,8 @@ class CommandsTest {
       val composeRoots =
         listOf(composableRoot(targetViewId = 20, composableId = 100), composableRoot(targetViewId = 30, composableId = 200))
 
-      val stderr = captureStderr {
+      val logger = RecordingLogger()
+      val merged =
         mergeComposeRoots(
           viewRoot,
           if (reversed) composeRoots.reversed() else composeRoots,
@@ -274,11 +281,13 @@ class CommandsTest {
           parameters = null,
           includeParameters = false,
           includeSemantics = false,
+          logger = logger,
         )
-      }
 
-      assertThat(stderr).isEmpty()
-      assertThat(innerComposeView.children.map { it.id }).containsExactly(200L)
+      assertThat(logger.messages).isEmpty()
+      val mergedInnerComposeView = merged.children.single { it.id == 20L }.children.single { it.id == 30L }
+      assertThat(mergedInnerComposeView.children.map { it.id }).containsExactly(200L)
+      assertThat(innerComposeView.children).isEmpty()
     }
   }
 
@@ -290,7 +299,7 @@ class CommandsTest {
       idResource = null,
       layoutResource = null,
       attributes = emptyList(),
-      children = children.toMutableList(),
+      children = children.toList(),
     )
 
   private fun composableRoot(targetViewId: Long, composableId: Long): LayoutInspectorComposeProtocol.ComposableRoot =
@@ -298,16 +307,4 @@ class CommandsTest {
       .setViewId(targetViewId)
       .addNodes(LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(composableId))
       .build()
-
-  private fun captureStderr(block: () -> Unit): String {
-    val original = System.err
-    val buffer = ByteArrayOutputStream()
-    System.setErr(PrintStream(buffer, true, Charsets.UTF_8))
-    try {
-      block()
-    } finally {
-      System.setErr(original)
-    }
-    return buffer.toString(Charsets.UTF_8)
-  }
 }

@@ -1,6 +1,7 @@
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//tools/base/bazel:android.bzl", "dex_library")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 
 kotlin_library(
     name = "fakeandroid",
@@ -13,6 +14,18 @@ kotlin_library(
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
+)
+
+kotlin_test(
+    name = "ProcessRunnerTest",
+    srcs = ["testSrcs/com/android/tools/fakeandroid/ProcessRunnerTest.kt"],
+    tags = ["noci:studio-win"],
+    test_class = "com.android.tools.fakeandroid.ProcessRunnerTest",
+    deps = [
+        ":fakeandroid",
+        "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
     ],
 )
 

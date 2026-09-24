@@ -30,7 +30,6 @@ import androidx.inspection.InspectorFactory;
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
-import com.android.tools.ui.inspector.service.ArtToolingBridge;
 
 import dalvik.system.DexClassLoader;
 
@@ -40,7 +39,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -121,32 +119,7 @@ public final class AppInspectionUtils {
         return new InspectorEnvironment() {
             @Override
             public ArtTooling artTooling() {
-                return new ArtTooling() {
-                    @Override
-                    public <T> List<T> findInstances(Class<T> clazz) {
-                        return ArtToolingBridge.findInstances(clazz);
-                    }
-
-                    @Override
-                    public void registerEntryHook(
-                            Class<?> originClass, String originMethod, EntryHook entryHook) {
-                        ArtToolingBridge.registerEntryHook(
-                                originClass,
-                                originMethod,
-                                inspectorId,
-                                (thisObject, args) -> entryHook.onEntry(thisObject, args));
-                    }
-
-                    @Override
-                    public <T> void registerExitHook(
-                            Class<?> originClass, String originMethod, ExitHook<T> exitHook) {
-                        ArtToolingBridge.registerExitHook(
-                                originClass,
-                                originMethod,
-                                inspectorId,
-                                returnValue -> exitHook.onExit((T) returnValue));
-                    }
-                };
+                return new AppInspectionArtTooling(inspectorId);
             }
 
             @Override

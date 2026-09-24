@@ -114,6 +114,16 @@ crate.spec(
     package = "rustls",
     version = "=0.23.38",
 )
+
+# Disable CPU jitter entropy to avoid https://github.com/aws/aws-lc/issues/3540 on Windows
+# (which leads to b/558351427). CPU jitter was added as an additional default source of entropy in
+# recent versions (starting in 2025), but it is not required, and it has some performance tradeoffs
+# that make it a poor fit for short-lived CLI processes anyway. For more details see
+# https://github.com/aws/aws-lc-rs/issues/899.
+crate.annotation(
+    build_script_env = {"AWS_LC_SYS_NO_JITTER_ENTROPY": "1"},
+    crate = "aws-lc-sys",
+)
 crate.from_specs(
     # Cargo upgrades crate versions during dependency resolution by default, which is
     # not what we want. We cache the dependency resolution step with toplevel.MODULE.bazel.lock,
@@ -172,7 +182,7 @@ single_version_override(
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 bazel_dep(name = "aspect_rules_js", version = "2.0.0")
 bazel_dep(name = "aspect_rules_ts", version = "3.0.0")
-bazel_dep(name = "rules_nodejs", version = "6.2.0")
+bazel_dep(name = "rules_nodejs", version = "6.7.5")
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
 node.toolchain(node_version = "20.14.0")
@@ -219,6 +229,13 @@ use_repo(rules_ts_ext, "npm_typescript")
 single_version_override(
     module_name = "rules_apple",
     version = "4.5.3",
+)
+
+# grpc (google_benchmark) depends on rules_foreign_cc, but the version it pulls
+# in (0.10.1) is too old to support bazel 9
+single_version_override(
+    module_name = "rules_foreign_cc",
+    version = "0.15.1",
 )
 
 bazel_dep(name = "re2")
@@ -322,25 +339,24 @@ android_sdk_repository_extension = use_extension(
 use_repo(android_sdk_repository_extension, "androidsdk")
 
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
+
 register_toolchains("@bazel_skylib//toolchains/unittest:cmd_toolchain", "@bazel_skylib//toolchains/unittest:bash_toolchain")
 
 bazel_dep(name = "rules_android_ndk", version = "0.1.5")
-bazel_dep(name = "perfetto", version = "56.0")
+bazel_dep(name = "perfetto", version = "58.2")
 archive_override(
     module_name = "perfetto",
-    integrity = "sha256-l0GTin/FNO0wJyPCssPJSSc6qS2/cl0OG3IpqTILbAc=",
+    integrity = "sha256-rVZlRtXEYRNaQZYulbaA83TkOM8tmTaGdgi4QTLsYQo=",
     patch_strip = 1,
     patches = [
-        "//tools/base/bazel/bzlmod:perfetto-fix-include-guard.patch",
-        "//tools/base/bazel/bzlmod:perfetto-fix-zlib-build.patch",
         "//tools/base/bazel/bzlmod:perfetto-no-android-sdk-ndk.patch",
-        "//tools/base/bazel/bzlmod:perfetto-pr-6121.patch",
         # b/528480763: Replaces fork() with posix_spawnp() on macOS to prevent kernel panics
         # (EXC_BREAKPOINT) when symbolizing traces from multithreaded gRPC daemon processes.
+        # TODO[b/531691024] Remove the patch after migrating to traceconv.
         "//tools/base/bazel/bzlmod:perfetto-mac-fork-fix.patch",
     ],
-    strip_prefix = "perfetto-56.0",
-    urls = ["https://github.com/google/perfetto/archive/refs/tags/v56.0.tar.gz"],
+    strip_prefix = "perfetto-58.2",
+    urls = ["https://github.com/google/perfetto/archive/refs/tags/v58.2.tar.gz"],
 )
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")

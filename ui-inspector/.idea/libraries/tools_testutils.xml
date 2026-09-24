@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="tools.testutils">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/testutils/studio.android.sdktools.testutils.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/testutils/tools.testutils.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../testutils/src/main/java" />
+    </SOURCES>
+  </library>
+</component>

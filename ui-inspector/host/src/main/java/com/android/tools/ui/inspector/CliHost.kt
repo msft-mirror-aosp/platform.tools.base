@@ -20,7 +20,9 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
+import com.android.prefs.AndroidLocationsSingleton
 import com.android.tools.ui.inspector.printer.json.withJsonPrinter
+import java.io.PrintWriter
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
@@ -35,11 +37,14 @@ private const val EXIT_ERROR = 1
 private const val DEVICE_OPTION_DESCRIPTION =
   "The device serial number. Defaults to the only online device; required when multiple online devices are connected"
 
+/** Where the CLI keeps the Compose inspector jars it downloads, on the host cache. */
+private const val COMPOSE_INSPECTOR_CACHE_PATH = "ui-inspector/cache"
+
 /** Factory for creating [AdbSession]. Can be overridden in tests. */
-var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
+internal var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
 
 @Command(name = "ui-inspector", mixinStandardHelpOptions = true, version = ["1.0"], description = ["UI Inspector CLI"])
-class UiInspectorCommand : Callable<Int> {
+internal class UiInspectorCommand : Callable<Int> {
   @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
 
   override fun call(): Int {
@@ -49,7 +54,7 @@ class UiInspectorCommand : Callable<Int> {
 }
 
 @Command(name = "dump-ui", description = ["Dump UI hierarchy"])
-class DumpUiCommand : Callable<Int> {
+internal class DumpUiCommand : Callable<Int> {
   @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
   @Option(names = ["-h", "--help"], usageHelp = true, description = ["Show this help message and exit"]) private var helpRequested = false
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
@@ -84,20 +89,20 @@ class DumpUiCommand : Callable<Int> {
           val serial = resolveDeviceSerial(adbSession, device)
           serial to resolveTargetPackage(adbSession, serial, packageName)
         }
-      spec.commandLine().err.println("Executing dump-ui for package: $targetPackage on device: $serial")
-      val facets = expandIncludeFacets(include)
+      val err = spec.commandLine().err
+      err.println("Executing dump-ui for package: $targetPackage on device: $serial")
+      val facets = requestedFacets(include)
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
           doDumpUi(
             adbSession = adbSession,
             serial = serial,
             packageName = targetPackage,
-            includeAttributes = IncludeFacet.ATTRIBUTES in facets,
-            includeResolutionStack = IncludeFacet.RESOLUTION_STACK in facets,
-            includeSystemComposables = IncludeFacet.SYSTEM_COMPOSABLES in facets,
-            includeSemantics = IncludeFacet.SEMANTICS in facets,
+            facets = facets,
             composeInspectorJarPath = composeInspectorJarPath,
+            composeInspectorCacheDir = AndroidLocationsSingleton.prefsLocation.resolve(COMPOSE_INSPECTOR_CACHE_PATH),
             printer = printer,
+            logger = stderrLogger(err),
           )
         }
       }
@@ -116,6 +121,11 @@ internal fun createCommandLine(): CommandLine = CommandLine(UiInspectorCommand()
 
 fun main(args: Array<String>) {
   exitProcess(createCommandLine().execute(*args))
+}
+
+/** The CLI shows every log message on [err], warnings marked as such. */
+internal fun stderrLogger(err: PrintWriter) = Logger { level, message ->
+  err.println(if (level == LogLevel.WARNING) "Warning: $message" else message)
 }
 
 /** A logger factory that silences all adblib logs to keep the CLI output clean. */

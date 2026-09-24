@@ -36,11 +36,13 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.junit.After
+import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
 import org.junit.Test
 
@@ -390,6 +392,47 @@ class CommandSenderTest {
           assertThat(String(responseBytes)).isEqualTo("olleh")
         }
 
+        serverTask.await()
+      } finally {
+        serverSocket.close()
+      }
+    }
+  }
+
+  @Test
+  fun testSendInspectorCommand_wrongResponseType_fails() = runTest {
+    val serverSocket = ServerSocket(0)
+    val port = serverSocket.localPort
+
+    coroutineScope {
+      val serverTask =
+        async(dispatcher) {
+          try {
+            serverSocket.accept().use { clientSocket ->
+              val request = Command.parseFrom(FramingProtocol.readMessage(clientSocket.getInputStream()))
+              // A success of the wrong type: its (default) inspector message would carry an empty payload for the wrong inspector.
+              val response =
+                Response.newBuilder()
+                  .setCommandId(request.commandId)
+                  .setStatus(Response.Status.SUCCESS)
+                  .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
+                  .build()
+              val agentMessage = AgentMessage.newBuilder().setResponse(response).build()
+              FramingProtocol.writeMessage(clientSocket.getOutputStream(), agentMessage.toByteArray())
+            }
+          } catch (e: Exception) {
+            // Silence socket exceptions during close/cancellation
+          }
+        }
+
+      try {
+        CommandSender.connect("127.0.0.1", port, this).use { sender ->
+          val exception =
+            assertThrows(IllegalStateException::class.java) {
+              runBlocking { sender.sendInspectorCommand("my-inspector", "hello".toByteArray()) }
+            }
+          assertThat(exception).hasMessageThat().contains("expected INSPECTOR_MESSAGE, got GET_VERSION")
+        }
         serverTask.await()
       } finally {
         serverSocket.close()

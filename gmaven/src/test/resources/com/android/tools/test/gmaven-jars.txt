@@ -151,9 +151,12 @@ com/android/tools/analytics-library/protos
   META-INF/MANIFEST.MF
   NOTICE
   analytics_enums.proto
+  analytics_settings.proto
   com/
   com/android/
   com/android/tools/
+  com/android/tools/analytics/
+  com/android/tools/analytics/proto/
   com/android/tools/build/
   com/android/tools/build/gradle/
   com/android/tools/build/gradle/internal/
@@ -167,6 +170,7 @@ com/android/tools/analytics-library/protos
   com/google/wireless/android/sdk/
   com/google/wireless/android/sdk/stats/
   google_logs_publishing.proto
+  model_registry.proto
   studio_stats.proto
 
 com/android/tools/analytics-library/publisher
@@ -457,6 +461,9 @@ com/android/tools/build/builder
   r8-version.properties
   resources/
   resources/api_database.ser
+  resources/hidden.api.txt
+  resources/hidden.jar.txt
+  resources/missing.api.txt
 
 com/android/tools/build/builder-model
   META-INF/

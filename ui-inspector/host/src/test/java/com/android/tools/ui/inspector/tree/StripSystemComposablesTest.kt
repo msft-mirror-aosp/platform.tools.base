@@ -16,7 +16,7 @@
 
 package com.android.tools.ui.inspector.tree
 
-import com.android.tools.ui.inspector.model.DeviceConfiguration
+import com.android.tools.ui.inspector.configuration
 import com.android.tools.ui.inspector.model.Dimension
 import com.android.tools.ui.inspector.model.DisplayInfo
 import com.android.tools.ui.inspector.model.UiDump
@@ -95,7 +95,7 @@ class StripSystemComposablesTest {
         id = 10,
         className = "Text",
         bounds = UiNode.Bounds(1, 2, 3, 4),
-        children = mutableListOf(),
+        children = listOf(),
         sourceLocation = UiNode.SourceLocation("Main.kt", 7),
         parameters = emptyList(),
         mergedSemantics = emptyList(),
@@ -107,13 +107,13 @@ class StripSystemComposablesTest {
         id = 1,
         className = "DecorView",
         bounds = UiNode.Bounds(0, 0, 100, 200),
-        children = mutableListOf(child),
+        children = listOf(child),
         idResource = "root",
         layoutResource = "main",
         attributes = emptyList(),
       )
 
-    val configuration = DeviceConfiguration(density = Dimension.Dpi(420), fontScale = 1.2f)
+    val configuration = configuration(density = Dimension.Dpi(420), fontScale = 1.2f)
     val displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 0))
     val input =
       UiDump(windows = listOf(UiWindow(root = root, configuration = configuration, theme = "@style/Theme.Main")), displays = displays)
@@ -136,7 +136,7 @@ class StripSystemComposablesTest {
       id = id,
       className = "View",
       bounds = UiNode.Bounds(0, 0, 10, 10),
-      children = children.toMutableList(),
+      children = children.toList(),
       idResource = null,
       layoutResource = null,
       attributes = emptyList(),
@@ -147,7 +147,7 @@ class StripSystemComposablesTest {
       id = id,
       className = "Composable",
       bounds = UiNode.Bounds(0, 0, 10, 10),
-      children = children.toMutableList(),
+      children = children.toList(),
       sourceLocation = null,
       parameters = emptyList(),
       mergedSemantics = emptyList(),

@@ -22,6 +22,8 @@ import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.tools.ui.inspector.LogLevel
+import com.android.tools.ui.inspector.RecordingLogger
 import com.android.tools.ui.inspector.TestAdbDeviceServices
 import com.android.tools.ui.inspector.TestAdbHostServices
 import com.android.tools.ui.inspector.TestAdbSession
@@ -41,9 +43,7 @@ import com.android.tools.ui.inspector.statProbeCommand
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
-import java.io.ByteArrayOutputStream
 import java.io.OutputStream
-import java.io.PrintStream
 import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
@@ -68,11 +68,14 @@ private const val EMPTY_FILE_DIGEST = "e3b0c44298fc"
 /** The device staging directory every artifact is pushed into under its digest-carrying name. */
 private const val STAGING_DIR = "/data/local/tmp/ui-inspector"
 
+/** The ART Tooling agent class the attach command names, loaded from the payload dex. */
+private const val AGENT_CLASS_NAME = "com.android.tools.ui.inspector.payload.InspectorLauncher"
+
 /** The digest-named staging paths of the three (empty) base artifacts, in the order the staging batch lists them. */
 private val BASE_STAGING_PATHS =
   arrayOf(
-    "$STAGING_DIR/lib_ui_inspector_agent.$EMPTY_FILE_DIGEST.so",
-    "$STAGING_DIR/lib_ui_inspector_service.$EMPTY_FILE_DIGEST.jar",
+    "$STAGING_DIR/libarttooling_agent.$EMPTY_FILE_DIGEST.so",
+    "$STAGING_DIR/libarttooling.$EMPTY_FILE_DIGEST.jar",
     "$STAGING_DIR/lib_ui_inspector_payload.$EMPTY_FILE_DIGEST.jar",
   )
 
@@ -89,6 +92,7 @@ class InjectionManagerTest {
   private lateinit var dummyPayload: Path
   private lateinit var dummyViewInspector: Path
   private lateinit var agentPathResolver: (String) -> Path
+  private val logger = RecordingLogger()
 
   private val deviceSerial = "123"
   private val packageName = "com.example"
@@ -116,8 +120,8 @@ class InjectionManagerTest {
 
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
-    dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -128,8 +132,8 @@ class InjectionManagerTest {
     listOf(
         "my-inspector.jar" to EMPTY_FILE_DIGEST,
         "view-inspector.jar" to EMPTY_FILE_DIGEST,
-        "lib_ui_inspector_agent.so" to EMPTY_FILE_DIGEST,
-        "lib_ui_inspector_service.jar" to EMPTY_FILE_DIGEST,
+        "libarttooling_agent.so" to EMPTY_FILE_DIGEST,
+        "libarttooling.jar" to EMPTY_FILE_DIGEST,
         "lib_ui_inspector_payload.jar" to EMPTY_FILE_DIGEST,
       )
       .forEach { (baseName, digest) -> configureStagedPush(baseName, digest) }
@@ -143,6 +147,7 @@ class InjectionManagerTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -300,6 +305,7 @@ class InjectionManagerTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -331,6 +337,7 @@ class InjectionManagerTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -376,6 +383,7 @@ class InjectionManagerTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -400,8 +408,8 @@ class InjectionManagerTest {
     // 2. Configure logcat command to return a mock agent crash log
     val logcatCmd = "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E"
     val mockErrorLog =
-      "06-24 15:44:32.764  7191  7191 E studio.ui-inspector.InspectorService: Error in InspectorService initialization\n" +
-        "06-24 15:44:32.764  7191  7191 E studio.ui-inspector.InspectorService: java.lang.RuntimeException: Simulated bootstrap failure"
+      "06-24 15:44:32.764  7191  7191 E studio.arttooling: Exception in com/android/tools/arttooling/AgentLoader.attach\n" +
+        "06-24 15:44:32.764  7191  7191 E studio.arttooling: java.lang.RuntimeException: Simulated bootstrap failure"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, logcatCmd, mockErrorLog)
 
     try {
@@ -409,7 +417,7 @@ class InjectionManagerTest {
       fail("Expected IllegalStateException due to agent bootstrap failure")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to attach UI Inspector agent. Agent error in logcat:")
-      assertThat(e.message).contains("Error in InspectorService initialization")
+      assertThat(e.message).contains("Exception in com/android/tools/arttooling/AgentLoader.attach")
       assertThat(e.message).contains("java.lang.RuntimeException: Simulated bootstrap failure")
     }
   }
@@ -423,6 +431,7 @@ class InjectionManagerTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -466,7 +475,7 @@ class InjectionManagerTest {
   fun testInjectAndAttach_partiallyStagedArtifacts_pushesOnlyWrongModeAndMissing() = runTest {
     val injectionManager = createInjectionManager()
     configureSuccessfulInjection()
-    // The agent is correctly staged; the service jar's path holds an entry with the wrong mode; the payload jar is missing entirely
+    // The agent is correctly staged; the library dex's path holds an entry with the wrong mode; the payload jar is missing entirely
     // (no record, nonzero exit, as stat behaves when a file is absent).
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
@@ -656,10 +665,10 @@ class InjectionManagerTest {
     val command =
       buildInstallCommand(
         packageName = "com.example",
-        agentStagePath = "$STAGING_DIR/lib_ui_inspector_agent.aaaaaaaaaaaa.so",
-        serviceJarStagePath = "$STAGING_DIR/lib_ui_inspector_service.bbbbbbbbbbbb.jar",
+        agentStagePath = "$STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so",
+        libraryDexStagePath = "$STAGING_DIR/libarttooling.bbbbbbbbbbbb.jar",
         payloadJarStagePath = "$STAGING_DIR/lib_ui_inspector_payload.cccccccccccc.jar",
-        serviceJarName = "lib_ui_inspector_service.bbbbbbbbbbbb.jar",
+        libraryDexName = "libarttooling.bbbbbbbbbbbb.jar",
         payloadJarName = "lib_ui_inspector_payload.cccccccccccc.jar",
         tempSuffix = "suffix.tmp",
       )
@@ -667,19 +676,19 @@ class InjectionManagerTest {
     assertThat(command)
       .isEqualTo(
         "run-as com.example sh -c '" +
-          "trap \"rm -f lib_ui_inspector_agent.so.suffix.tmp lib_ui_inspector_service.bbbbbbbbbbbb.jar.suffix.tmp " +
+          "trap \"rm -f libarttooling_agent.so.suffix.tmp libarttooling.bbbbbbbbbbbb.jar.suffix.tmp " +
           "lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp\" 0 && " +
-          "test ! -d lib_ui_inspector_agent.so && test ! -d lib_ui_inspector_service.bbbbbbbbbbbb.jar && " +
+          "test ! -d libarttooling_agent.so && test ! -d libarttooling.bbbbbbbbbbbb.jar && " +
           "test ! -d lib_ui_inspector_payload.cccccccccccc.jar && " +
-          "rm -f lib_ui_inspector_service.$CONTENT_DIGEST_PATTERN.jar lib_ui_inspector_payload.$CONTENT_DIGEST_PATTERN.jar && " +
-          "cat $STAGING_DIR/lib_ui_inspector_agent.aaaaaaaaaaaa.so > lib_ui_inspector_agent.so.suffix.tmp && " +
-          "cat $STAGING_DIR/lib_ui_inspector_service.bbbbbbbbbbbb.jar > lib_ui_inspector_service.bbbbbbbbbbbb.jar.suffix.tmp && " +
+          "rm -f libarttooling.$CONTENT_DIGEST_PATTERN.jar lib_ui_inspector_payload.$CONTENT_DIGEST_PATTERN.jar && " +
+          "cat $STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so > libarttooling_agent.so.suffix.tmp && " +
+          "cat $STAGING_DIR/libarttooling.bbbbbbbbbbbb.jar > libarttooling.bbbbbbbbbbbb.jar.suffix.tmp && " +
           "cat $STAGING_DIR/lib_ui_inspector_payload.cccccccccccc.jar > lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp && " +
-          "chmod 444 lib_ui_inspector_agent.so.suffix.tmp lib_ui_inspector_service.bbbbbbbbbbbb.jar.suffix.tmp " +
+          "chmod 444 libarttooling_agent.so.suffix.tmp libarttooling.bbbbbbbbbbbb.jar.suffix.tmp " +
           "lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp && " +
-          "mv -f lib_ui_inspector_service.bbbbbbbbbbbb.jar.suffix.tmp lib_ui_inspector_service.bbbbbbbbbbbb.jar && " +
+          "mv -f libarttooling.bbbbbbbbbbbb.jar.suffix.tmp libarttooling.bbbbbbbbbbbb.jar && " +
           "mv -f lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp lib_ui_inspector_payload.cccccccccccc.jar && " +
-          "mv -f lib_ui_inspector_agent.so.suffix.tmp lib_ui_inspector_agent.so'"
+          "mv -f libarttooling_agent.so.suffix.tmp libarttooling_agent.so'"
       )
   }
 
@@ -687,7 +696,7 @@ class InjectionManagerTest {
   fun testQueryAppDataDir_Fails() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -718,7 +727,7 @@ class InjectionManagerTest {
   fun testInjectAndAttach_notRunningPreservesError() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -957,7 +966,7 @@ class InjectionManagerTest {
   fun testInjectAndAttach_psAdbExceptionPropagates() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -1046,6 +1055,7 @@ class InjectionManagerTest {
         deviceSerial,
         resolvedPackage,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -1064,7 +1074,17 @@ class InjectionManagerTest {
   fun testInvalidPackageName_Throws() {
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, deviceSerial, "com.example; id", null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+        InjectionManager(
+          testSession,
+          deviceSerial,
+          "com.example; id",
+          null,
+          logger,
+          agentPathResolver,
+          dummyJar,
+          dummyPayload,
+          dummyViewInspector,
+        )
       }
     assertThat(exception.message).contains("Invalid package name")
   }
@@ -1074,7 +1094,17 @@ class InjectionManagerTest {
     val longPackageName = "a".repeat(256)
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, deviceSerial, longPackageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+        InjectionManager(
+          testSession,
+          deviceSerial,
+          longPackageName,
+          null,
+          logger,
+          agentPathResolver,
+          dummyJar,
+          dummyPayload,
+          dummyViewInspector,
+        )
       }
     assertThat(exception.message).contains("Invalid package name")
   }
@@ -1083,7 +1113,17 @@ class InjectionManagerTest {
   fun testInvalidSerial_Throws() {
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, "serial; rm -rf /", packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+        InjectionManager(
+          testSession,
+          "serial; rm -rf /",
+          packageName,
+          null,
+          logger,
+          agentPathResolver,
+          dummyJar,
+          dummyPayload,
+          dummyViewInspector,
+        )
       }
     assertThat(exception.message).contains("Invalid serial number")
   }
@@ -1091,7 +1131,7 @@ class InjectionManagerTest {
   @Test
   fun testUnsupportedApi_Throws() = runTest {
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -1109,7 +1149,7 @@ class InjectionManagerTest {
   @Test
   fun testFailedToRetrieveSdkVersion_Throws() = runTest {
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -1126,7 +1166,7 @@ class InjectionManagerTest {
   @Test
   fun testFailedToRetrieveAbi_Throws() = runTest {
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -1149,6 +1189,7 @@ class InjectionManagerTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -1192,8 +1233,9 @@ class InjectionManagerTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger = logger,
         agentPathResolver = agentPathResolver,
-        serviceJarPath = dummyJar,
+        libraryDexPath = dummyJar,
         payloadJarPath = dummyPayload,
         viewInspectorJarPath = dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
@@ -1265,13 +1307,15 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, "")
 
-    val stderr = captureStderr {
+    val logged = loggedDuring {
       injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
     }
 
     val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
     assertThat(commands).contains(putSettingsCmd)
-    assertThat(stderr).contains("settings delete global debug_view_attributes_application_package")
+    assertThat(logged).contains("settings delete global debug_view_attributes_application_package")
+    // The app's activities restart and a device setting stays behind: the person must see this.
+    assertThat(logger.messages.last().first).isEqualTo(LogLevel.WARNING)
     // The pid is captured before the settings flip: the activity relaunch keeps the process alive, and reading the pid first avoids
     // mutating settings when the target is not running.
     val processLookupIndex = commands.indexOf("ps -A -o PID,UID,NAME")
@@ -1321,7 +1365,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, stdout = "", stderr = "denied", exitCode = 1)
 
-    val stderr = captureStderr {
+    val logged = loggedDuring {
       try {
         injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
         fail("Expected IllegalStateException for failing settings put")
@@ -1330,7 +1374,7 @@ class InjectionManagerTest {
       }
     }
 
-    assertThat(stderr).doesNotContain("settings delete global")
+    assertThat(logged).doesNotContain("settings delete global")
   }
 
   @Test
@@ -1388,7 +1432,7 @@ class InjectionManagerTest {
     testHostServices.throwOnKillForward = true
 
     var thrown: Exception? = null
-    val stderr = captureStderr {
+    val logged = loggedDuring {
       try {
         doDumpUiWithNoopPrinter()
         fail("Expected connection failure")
@@ -1399,7 +1443,8 @@ class InjectionManagerTest {
 
     // The connection failure stays the primary error; the cleanup failure is only a warning.
     assertThat(thrown!!.message).doesNotContain("Simulated killForward failure")
-    assertThat(stderr).contains("failed to remove adb forward")
+    assertThat(logged).contains("failed to remove adb forward")
+    assertThat(logger.messages.last().first).isEqualTo(LogLevel.WARNING)
   }
 
   @Test
@@ -1412,7 +1457,7 @@ class InjectionManagerTest {
     testHostServices.queuedForwardPorts.addAll(listOf(findClosedPort().toString(), liveServer.localPort.toString()))
 
     var blockRuns = 0
-    val stderr = captureStderr {
+    val logged = loggedDuring {
       runWithConnectedInspectorsForTest { _, composeInspectorConnected ->
         blockRuns++
         assertThat(composeInspectorConnected).isFalse()
@@ -1422,11 +1467,12 @@ class InjectionManagerTest {
     liveServer.close()
 
     assertThat(blockRuns).isEqualTo(1)
-    assertThat(stderr).contains("injecting a fresh agent")
+    assertThat(logged).contains("injecting a fresh agent")
+    assertThat(logger.messages.single { (_, message) -> "injecting a fresh agent" in message }.first).isEqualTo(LogLevel.PROGRESS)
     // The forced attempt performed the full injection: three base artifact pushes and one attach. The view inspector jar was pushed only
     // by the second attempt — the first one failed before reaching it.
     val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
-    assertThat(pushedPaths.filter { it.contains("/lib_ui_inspector_") }).hasSize(3)
+    assertThat(pushedPaths.filter { path -> baseStagingPaths().any { path.startsWith(it) } }).hasSize(3)
     assertThat(pushedPaths.filter { it.contains("/view-inspector.") }).hasSize(1)
     assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
       .hasSize(1)
@@ -1447,7 +1493,7 @@ class InjectionManagerTest {
     testHostServices.queuedForwardPorts.addAll(listOf(acceptAndClose.localPort.toString(), liveServer.localPort.toString()))
 
     var blockRuns = 0
-    captureStderr { runWithConnectedInspectorsForTest { _, _ -> blockRuns++ } }
+    loggedDuring { runWithConnectedInspectorsForTest { _, _ -> blockRuns++ } }
     acceptThread.join(5000)
     serverThread.join(5000)
     acceptAndClose.close()
@@ -1456,7 +1502,7 @@ class InjectionManagerTest {
     assertThat(blockRuns).isEqualTo(1)
     // Both attempts reached the view inspector push; only the forced one pushed the base artifacts.
     val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
-    assertThat(pushedPaths.filter { it.contains("/lib_ui_inspector_") }).hasSize(3)
+    assertThat(pushedPaths.filter { path -> baseStagingPaths().any { path.startsWith(it) } }).hasSize(3)
     assertThat(pushedPaths.filter { it.contains("/view-inspector.") }).hasSize(2)
     assertThat(testHostServices.recordedForwardCalls).hasSize(2)
     assertThat(testHostServices.recordedKillForwardCalls).hasSize(2)
@@ -1499,7 +1545,10 @@ class InjectionManagerTest {
     assertThat(thrown).isNotNull()
     // No fallback happened: one forward, no base artifact pushes, no attach.
     assertThat(testHostServices.recordedForwardCalls).hasSize(1)
-    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { it.contains("/lib_ui_inspector_") }).isEmpty()
+    assertThat(
+        testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { path -> baseStagingPaths().any { path.startsWith(it) } }
+      )
+      .isEmpty()
     assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
       .isEmpty()
   }
@@ -1581,13 +1630,12 @@ class InjectionManagerTest {
           adbSession = testSession,
           serial = deviceSerial,
           packageName = packageName,
-          includeAttributes = false,
-          includeResolutionStack = false,
-          includeSystemComposables = false,
-          includeSemantics = false,
+          facets = emptySet(),
           composeInspectorJarPath = cliArgument,
+          composeInspectorCacheDir = tempFolder.root.toPath(),
           printer = noopPrinter,
-          injectionManagerFactory = { _, _, _, overridePath ->
+          logger = logger,
+          injectionManagerFactory = { _, _, _, overridePath, logger ->
             capturedOverridePaths.add(overridePath)
             throw StopAfterCapture()
           },
@@ -1718,7 +1766,52 @@ class InjectionManagerTest {
 
     assertThat(thrown).isInstanceOf(InspectorCrashException::class.java)
     assertThat(testHostServices.recordedForwardCalls).hasSize(1)
-    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { it.contains("/lib_ui_inspector_") }).isEmpty()
+    assertThat(
+        testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { path -> baseStagingPaths().any { path.startsWith(it) } }
+      )
+      .isEmpty()
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_wrongAnswerOnReconnectIsNotRetried() = runBlocking {
+    configureSuccessfulInjection()
+    // The reused server answers the first command with a success of the wrong type: it is alive, so the failure must propagate instead
+    // of triggering a full injection.
+    val server = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        server.accept().use { socket ->
+          val create = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(socket.getInputStream()))
+          writeAgentResponse(
+            socket.getOutputStream(),
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(create.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
+              .build(),
+          )
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.add(server.localPort.toString())
+
+    var thrown: Exception? = null
+    try {
+      runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run after a wrong answer") }
+      fail("Expected the wrong answer to propagate")
+    } catch (e: Exception) {
+      thrown = e
+    }
+    serverThread.join(5000)
+    server.close()
+
+    assertThat(thrown).isInstanceOf(IllegalStateException::class.java)
+    assertThat(thrown!!.message).contains("expected CREATE_INSPECTOR, got GET_VERSION")
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    assertThat(
+        testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { path -> baseStagingPaths().any { path.startsWith(it) } }
+      )
+      .isEmpty()
   }
 
   @Test
@@ -1730,7 +1823,7 @@ class InjectionManagerTest {
     testHostServices.forwardedPort = findClosedPort().toString()
 
     var thrown: Exception? = null
-    val stderr = captureStderr {
+    val logged = loggedDuring {
       try {
         runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run when the connection fails") }
         fail("Expected the connection failure to propagate")
@@ -1740,7 +1833,7 @@ class InjectionManagerTest {
     }
 
     assertThat(thrown).isNotNull()
-    assertThat(stderr).doesNotContain("injecting a fresh agent")
+    assertThat(logged).doesNotContain("injecting a fresh agent")
     assertThat(testHostServices.recordedForwardCalls).hasSize(1)
     assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
       .hasSize(1)
@@ -1785,7 +1878,7 @@ class InjectionManagerTest {
     }
     testHostServices.queuedForwardPorts.add(server.localPort.toString())
 
-    val stderr = captureStderr {
+    val logged = loggedDuring {
       val job = launch { runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run when the run is cancelled") } }
       commandReceived.await()
       job.cancelAndJoin()
@@ -1793,7 +1886,7 @@ class InjectionManagerTest {
     server.close()
     serverThread.join(5000)
 
-    assertThat(stderr).doesNotContain("injecting a fresh agent")
+    assertThat(logged).doesNotContain("injecting a fresh agent")
     assertThat(testHostServices.recordedForwardCalls).hasSize(1)
     // The cancelled attempt still removed its own forward.
     assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
@@ -1849,7 +1942,7 @@ class InjectionManagerTest {
     testHostServices.queuedForwardPorts.addAll(listOf(findClosedPort().toString(), server.localPort.toString()))
 
     var thrown: Exception? = null
-    captureStderr {
+    loggedDuring {
       try {
         doDumpUiWithNoopPrinter()
         fail("Expected the empty-roots failure to propagate")
@@ -1875,12 +1968,15 @@ class InjectionManagerTest {
       packageName = packageName,
       needsDebugViewAttributes = false,
       composeInspectorOverrideJarPath = composeInspectorOverrideJarPath,
-      injectionManagerFactory = { session, serial, pkg, overridePath ->
+      composeInspectorCacheDir = tempFolder.root.toPath(),
+      logger = logger,
+      injectionManagerFactory = { session, serial, pkg, overridePath, logger ->
         InjectionManager(
           session,
           serial,
           pkg,
           composeInspectorOverrideJarPath = overridePath,
+          logger,
           agentPathResolver,
           dummyJar,
           dummyPayload,
@@ -1938,18 +2034,18 @@ class InjectionManagerTest {
       adbSession = testSession,
       serial = deviceSerial,
       packageName = packageName,
-      includeAttributes = false,
-      includeResolutionStack = false,
-      includeSystemComposables = false,
-      includeSemantics = false,
+      facets = emptySet(),
       composeInspectorJarPath = null,
+      composeInspectorCacheDir = tempFolder.root.toPath(),
       printer = noopPrinter,
-      injectionManagerFactory = { session, serial, pkg, overridePath ->
+      logger = logger,
+      injectionManagerFactory = { session, serial, pkg, overridePath, logger ->
         InjectionManager(
           session,
           serial,
           pkg,
           composeInspectorOverrideJarPath = overridePath,
+          logger,
           agentPathResolver,
           dummyJar,
           dummyPayload,
@@ -1970,9 +2066,10 @@ class InjectionManagerTest {
     injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
     testHostServices.throwOnKillForward = true
 
-    val stderr = captureStderr { injectionManager.removeAdbForward() }
+    val logged = loggedDuring { injectionManager.removeAdbForward() }
 
-    assertThat(stderr).contains("failed to remove adb forward")
+    assertThat(logged).contains("failed to remove adb forward")
+    assertThat(logger.messages.last().first).isEqualTo(LogLevel.WARNING)
     assertThat(testHostServices.recordedKillForwardCalls).isEmpty()
   }
 
@@ -1982,6 +2079,7 @@ class InjectionManagerTest {
       deviceSerial,
       packageName,
       composeInspectorOverrideJarPath = composeInspectorOverrideJarPath,
+      logger,
       agentPathResolver,
       dummyJar,
       dummyPayload,
@@ -2028,8 +2126,8 @@ class InjectionManagerTest {
     configurePackageUidAndProcesses(targetPackage, processOutput = "PID UID NAME\n$pid 10123 $processName\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $targetPackage pwd", "/data/data/$targetPackage\n")
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)
-    configureStagedPush("lib_ui_inspector_agent.so", digests.agentBinary)
-    configureStagedPush("lib_ui_inspector_service.jar", digests.serviceJar)
+    configureStagedPush("libarttooling_agent.so", digests.agentBinary)
+    configureStagedPush("libarttooling.jar", digests.libraryDex)
     configureStagedPush("lib_ui_inspector_payload.jar", digests.payloadJar)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, installCommand(targetPackage), "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCommand(targetPackage, pid, token), "")
@@ -2052,8 +2150,8 @@ class InjectionManagerTest {
   private fun baseStagingPaths(): List<String> {
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)
     return listOf(
-      "$STAGING_DIR/${fileNameWithHash("lib_ui_inspector_agent.so", digests.agentBinary)}",
-      "$STAGING_DIR/${fileNameWithHash("lib_ui_inspector_service.jar", digests.serviceJar)}",
+      "$STAGING_DIR/${fileNameWithHash("libarttooling_agent.so", digests.agentBinary)}",
+      "$STAGING_DIR/${fileNameWithHash("libarttooling.jar", digests.libraryDex)}",
       "$STAGING_DIR/${fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar)}",
     )
   }
@@ -2065,9 +2163,9 @@ class InjectionManagerTest {
     return buildInstallCommand(
       packageName = targetPackage,
       agentStagePath = stagingPaths[0],
-      serviceJarStagePath = stagingPaths[1],
+      libraryDexStagePath = stagingPaths[1],
       payloadJarStagePath = stagingPaths[2],
-      serviceJarName = fileNameWithHash("lib_ui_inspector_service.jar", digests.serviceJar),
+      libraryDexName = fileNameWithHash("libarttooling.jar", digests.libraryDex),
       payloadJarName = fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar),
       tempSuffix = "test.tmp",
     )
@@ -2081,22 +2179,16 @@ class InjectionManagerTest {
     appDataDir: String = "/data/data/$targetPackage",
   ): String {
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)
-    val serviceJarName = fileNameWithHash("lib_ui_inspector_service.jar", digests.serviceJar)
+    val libraryDexName = fileNameWithHash("libarttooling.jar", digests.libraryDex)
     val payloadJarName = fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar)
-    return "cmd activity attach-agent $pid \"$appDataDir/lib_ui_inspector_agent.so=" +
-      "$appDataDir/$serviceJarName;$appDataDir/$payloadJarName;$token\""
+    return "cmd activity attach-agent $pid \"$appDataDir/libarttooling_agent.so=" +
+      "$appDataDir/$libraryDexName;$appDataDir/$payloadJarName;$AGENT_CLASS_NAME;$token\""
   }
 
-  /** Runs [block] with [System.err] redirected and returns everything it printed. */
-  private inline fun captureStderr(block: () -> Unit): String {
-    val originalErr = System.err
-    val buffer = ByteArrayOutputStream()
-    System.setErr(PrintStream(buffer))
-    try {
-      block()
-    } finally {
-      System.setErr(originalErr)
-    }
-    return buffer.toString()
+  /** Runs [block] and returns what it logged, one message per line, in order. */
+  private inline fun loggedDuring(block: () -> Unit): String {
+    val before = logger.messages.size
+    block()
+    return logger.messages.drop(before).joinToString(separator = "") { (_, message) -> message + "\n" }
   }
 }

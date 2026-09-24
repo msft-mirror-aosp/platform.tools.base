@@ -26,12 +26,12 @@ import java.nio.file.Paths
  * @param id The unique ID of the inspector, used in protocol messages.
  * @param localJarPath The full local path on the host to the payload jar file.
  */
-data class InspectorMetadata(val id: String, val localJarPath: Path)
+internal data class InspectorMetadata(val id: String, val localJarPath: Path)
 
 private const val PAYLOAD_DIR_PATH = "tools/base/ui-inspector/agent/inspectors/view"
 private const val VIEW_INSPECTOR_JAR_NAME = "view-inspector.jar"
 
-object InspectorRegistry {
+internal object InspectorRegistry {
   val VIEW_INSPECTOR =
     InspectorMetadata(id = ProtocolConstants.VIEW_INSPECTOR_ID, localJarPath = Paths.get("$PAYLOAD_DIR_PATH/$VIEW_INSPECTOR_JAR_NAME"))
 }

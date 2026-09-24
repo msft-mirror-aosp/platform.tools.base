@@ -26,6 +26,7 @@ import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.client.createComposeInspector
 import com.android.tools.ui.inspector.client.createViewInspector
 import com.android.tools.ui.inspector.client.dumpViews
+import com.android.tools.ui.inspector.client.mavenComposeInspectorResolver
 import com.android.tools.ui.inspector.client.queryComposeParameters
 import com.android.tools.ui.inspector.client.queryComposeTree
 import com.android.tools.ui.inspector.deploy.InjectionManager
@@ -41,6 +42,7 @@ import com.android.tools.ui.inspector.model.UiWindow
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.android.tools.ui.inspector.tree.attachComposeTree
 import com.android.tools.ui.inspector.tree.stripSystemComposables
+import java.io.File
 import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -139,88 +141,78 @@ private fun foregroundAppResolutionException() =
   )
 
 /**
- * Ensures the UI Inspector agent is running in the target application (injecting it, or reconnecting to an already-running server of the
- * same version), and dumps the unified View and Compose tree structure to the console.
+ * Dumps the UI of an app and prints it: the standalone CLI's entry point over [UiInspector].
  *
- * @param adbSession The [AdbSession] to communicate with the local ADB server.
+ * @param adbSession The session to the adb server.
  * @param serial The serial number of the target device.
- * @param packageName The application package name to dump.
- * @param includeAttributes If true, includes view attributes in the dump output.
- * @param includeResolutionStack If true, includes attribute resolution stacks in the dump output.
- * @param includeSystemComposables If true, includes system/framework composable nodes.
- * @param includeSemantics If true, includes accessibility semantics in the Compose dump.
- * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
+ * @param packageName The package name of the app to dump.
+ * @param facets The optional data to carry on top of the tree.
+ * @param composeInspectorJarPath A local Compose inspector jar to use instead of the one Maven has for the app's Compose version.
+ * @param composeInspectorCacheDir Where the Compose inspector jars downloaded from Maven are kept.
+ * @param printer Prints the dump.
+ * @param logger Receives what the dump has to say besides its result.
  * @param injectionManagerFactory Creates the [InjectionManager].
  */
 internal suspend fun doDumpUi(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
-  includeAttributes: Boolean,
-  includeResolutionStack: Boolean,
-  includeSystemComposables: Boolean,
-  includeSemantics: Boolean,
+  facets: Set<Facet>,
   composeInspectorJarPath: String?,
+  composeInspectorCacheDir: Path,
   printer: UiDumpPrinter,
-  injectionManagerFactory: (AdbSession, String, String, Path?) -> InjectionManager = { session, serial, pkg, overridePath ->
-    InjectionManager(session, serial, pkg, overridePath)
-  },
+  logger: Logger,
+  injectionManagerFactory: InjectionManagerFactory = ::InjectionManager,
 ) {
-  val composeInspectorOverrideJarPath = composeInspectorJarPath?.let(Paths::get)
-  runWithConnectedInspectors(
-    adbSession,
-    serial,
-    packageName,
-    includeResolutionStack,
-    composeInspectorOverrideJarPath,
-    injectionManagerFactory,
-  ) { commandSender, composeInspectorConnected ->
-    dumpUi(
-      commandSender = commandSender,
-      includeAttributes = includeAttributes,
-      includeResolutionStack = includeResolutionStack,
-      composeInspectorConnected = composeInspectorConnected,
-      includeSystemComposables = includeSystemComposables,
-      includeSemantics = includeSemantics,
-      printer = printer,
-    )
-  }
+  val inspector =
+    UiInspector(adbSession, composeInspectorCacheDir, composeInspectorJarPath?.let(Paths::get), logger, injectionManagerFactory)
+  printer.printDump(inspector.dump(serial, packageName, facets))
 }
+
+/** Creates the [InjectionManager] for a dump: session, serial, package, Compose inspector override jar, logger. */
+internal typealias InjectionManagerFactory = (AdbSession, String, String, Path?, Logger) -> InjectionManager
 
 /**
  * Connects to the device, ensures the inspector agent is running in the target app (reusing an already-running server when possible),
- * starts the View and Compose inspectors, and runs [block] with the active connection.
+ * starts the View and Compose inspectors, and returns what [block] produces with the active connection.
  *
  * A reused server can prove stale — see [connectAndRunInspectors] — in which case a single retry performs a full injection. A failure of
  * the retry attempt carries the stale-server failure as a suppressed exception.
  */
-internal suspend fun runWithConnectedInspectors(
+internal suspend fun <T> runWithConnectedInspectors(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
   needsDebugViewAttributes: Boolean,
   composeInspectorOverrideJarPath: Path?,
-  injectionManagerFactory: (AdbSession, String, String, Path?) -> InjectionManager,
-  block: suspend (CommandSender, Boolean) -> Unit,
-) {
-  val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath)
-  try {
+  composeInspectorCacheDir: Path,
+  logger: Logger,
+  injectionManagerFactory: InjectionManagerFactory,
+  block: suspend (CommandSender, Boolean) -> T,
+): T {
+  val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath, logger)
+  val resolveComposeInspectorJar =
+    composeInspectorOverrideJarPath?.let { path -> { _: String -> path.toFile() } }
+      ?: mavenComposeInspectorResolver(composeInspectorCacheDir)
+  return try {
     try {
       connectAndRunInspectors(
         injectionManager,
         InjectionMode.RECONNECT_IF_AVAILABLE,
         needsDebugViewAttributes,
-        composeInspectorOverrideJarPath,
+        resolveComposeInspectorJar,
+        logger,
         block,
       )
     } catch (stale: StaleReconnectException) {
-      System.err.println("The running UI Inspector server did not respond (${stale.cause?.message}); injecting a fresh agent.")
+      logger.log(LogLevel.PROGRESS, "The running UI Inspector server did not respond (${stale.cause?.message}); injecting a fresh agent.")
       try {
         connectAndRunInspectors(
           injectionManager,
           InjectionMode.FORCE_FULL_INJECTION,
           needsDebugViewAttributes,
-          composeInspectorOverrideJarPath,
+          resolveComposeInspectorJar,
+          logger,
           block,
         )
       } catch (e: Throwable) {
@@ -250,13 +242,14 @@ internal suspend fun runWithConnectedInspectors(
  * reported as [StaleReconnectException]. Anything after the first response, and any [InspectorCrashException] (an explicit agent-side
  * report, so the server is alive), propagates unchanged. A freshly injected server ([InjectionResult.Injected]) never reports staleness.
  */
-private suspend fun connectAndRunInspectors(
+private suspend fun <T> connectAndRunInspectors(
   injectionManager: InjectionManager,
   mode: InjectionMode,
   needsDebugViewAttributes: Boolean,
-  composeInspectorOverrideJarPath: Path?,
-  block: suspend (CommandSender, Boolean) -> Unit,
-) = coroutineScope {
+  resolveComposeInspectorJar: (version: String) -> File,
+  logger: Logger,
+  block: suspend (CommandSender, Boolean) -> T,
+): T = coroutineScope {
   try {
     val injection = injectionManager.injectAndAttach(needsDebugViewAttributes, mode)
     val commandSender =
@@ -281,14 +274,7 @@ private suspend fun connectAndRunInspectors(
         throw e
       }
 
-      val localJarProvider = composeInspectorOverrideJarPath?.let { path -> { _: String -> path.toFile() } }
-
-      val composeInspectorConnected =
-        if (localJarProvider != null) {
-          createComposeInspector(commandSender, injectionManager, localJarProvider)
-        } else {
-          createComposeInspector(commandSender, injectionManager)
-        }
+      val composeInspectorConnected = createComposeInspector(commandSender, injectionManager, logger, resolveComposeInspectorJar)
 
       block(commandSender, composeInspectorConnected)
     }
@@ -297,7 +283,7 @@ private suspend fun connectAndRunInspectors(
   }
 }
 
-/** Dumps the View tree, enriches it with Compose if active, and prints the unified tree to console. */
+/** Dumps the View tree, enriches it with Compose if active, and returns the unified tree. */
 internal suspend fun dumpUi(
   commandSender: CommandSender,
   includeAttributes: Boolean,
@@ -305,15 +291,14 @@ internal suspend fun dumpUi(
   composeInspectorConnected: Boolean,
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
-  printer: UiDumpPrinter,
-) {
-  val uiDump = fetchUiDump(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected, includeSemantics)
+  logger: Logger,
+): UiDump {
+  val uiDump = fetchUiDump(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected, includeSemantics, logger)
   if (uiDump.windows.isEmpty()) {
     throw EmptyViewRootsException()
   }
 
-  val outputDump = if (includeSystemComposables) uiDump else stripSystemComposables(uiDump)
-  printer.printDump(outputDump)
+  return if (includeSystemComposables) uiDump else stripSystemComposables(uiDump)
 }
 
 internal suspend fun fetchUiDump(
@@ -322,56 +307,50 @@ internal suspend fun fetchUiDump(
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
   includeSemantics: Boolean,
+  logger: Logger,
 ): UiDump {
   val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
-  if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, result.windows, includeAttributes, includeSemantics)
-  }
-  return result
+  if (!composeInspectorConnected) return result
+  val windows = fetchAndMergeComposeTrees(commandSender, result.windows, includeAttributes, includeSemantics, logger)
+  return result.copy(windows = windows)
 }
 
-/** Queries the Compose Layout Inspector on the device and merges its trees into [windows] in-place. */
+/** Queries the Compose Layout Inspector on the device and returns [windows] with its trees merged into their roots. */
 private suspend fun fetchAndMergeComposeTrees(
   commandSender: CommandSender,
   windows: List<UiWindow>,
   includeParameters: Boolean,
   includeSemantics: Boolean,
-) {
-  windows.forEach { window ->
-    val viewRoot = window.root
-    // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
-    // Each facet is still an independent demand, so the conversion below only copies the requested ones into the tree.
-    val fetchComposeDetails = includeParameters || includeSemantics
+  logger: Logger,
+): List<UiWindow> = windows.map { window ->
+  val viewRoot = window.root
+  // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
+  // Each facet is still an independent demand, so the conversion below only copies the requested ones into the tree.
+  val fetchComposeDetails = includeParameters || includeSemantics
 
-    val composeResult =
-      queryComposeTree(commandSender = commandSender, rootViewId = viewRoot.id, extractAllParameters = fetchComposeDetails)
-    if (composeResult != null) {
-      val stringsMap = composeResult.stringsList.associate { it.id to it.str }
-      val roots = composeResult.rootsList
+  val composeResult = queryComposeTree(commandSender = commandSender, rootViewId = viewRoot.id, extractAllParameters = fetchComposeDetails)
+  val stringsMap = composeResult.stringsList.associate { it.id to it.str }
+  val roots = composeResult.rootsList
 
-      val composeParameters =
-        if (fetchComposeDetails) {
-          // An explicit --include facet is a demand: if the details it needs cannot be fetched, fail loudly instead of
-          // silently emitting a dump that is missing exactly what was asked for.
-          queryComposeParameters(commandSender, viewRoot.id)
-            ?: throw IllegalStateException("The requested attributes/semantics facets could not be fetched from the Compose inspector.")
-        } else {
-          null
-        }
+  val composeParameters = if (fetchComposeDetails) queryComposeParameters(commandSender, viewRoot.id) else null
 
-      mergeComposeRoots(
-        viewRoot = viewRoot,
-        composeRoots = roots,
-        stringTable = stringsMap,
-        parameters = composeParameters,
-        includeParameters = includeParameters,
-        includeSemantics = includeSemantics,
-      )
-    }
-  }
+  val mergedRoot =
+    mergeComposeRoots(
+      viewRoot = viewRoot,
+      composeRoots = roots,
+      stringTable = stringsMap,
+      parameters = composeParameters,
+      includeParameters = includeParameters,
+      includeSemantics = includeSemantics,
+      logger = logger,
+    )
+  window.copy(root = mergedRoot)
 }
 
-/** Grafts each Compose root under [viewRoot], warning on stderr when a root's target view is not present in the tree. */
+/**
+ * Returns [viewRoot] with each Compose root grafted under its target view, warning through [logger] for a root whose target view is not
+ * present in the tree.
+ */
 internal fun mergeComposeRoots(
   viewRoot: UiNode.ViewNode,
   composeRoots: List<LayoutInspectorComposeProtocol.ComposableRoot>,
@@ -379,27 +358,26 @@ internal fun mergeComposeRoots(
   parameters: LayoutInspectorComposeProtocol.GetAllParametersResponse?,
   includeParameters: Boolean,
   includeSemantics: Boolean,
-) {
-  composeRoots.forEach { composeRoot ->
-    val attached =
-      attachComposeTree(
-        viewNode = viewRoot,
-        targetViewId = composeRoot.viewId,
-        composeNodes = composeRoot.nodesList,
-        stringTable = stringTable,
-        viewsToSkip = composeRoot.viewsToSkipList,
-        parameters = parameters,
-        includeParameters = includeParameters,
-        includeSemantics = includeSemantics,
-      )
-    if (!attached) {
-      System.err.println(
-        "Warning: could not attach a Compose tree (target view id ${composeRoot.viewId}) under view root ${viewRoot.id}; " +
-          "the dump may be incomplete."
-      )
-    }
+  logger: Logger,
+): UiNode.ViewNode =
+  composeRoots.fold(viewRoot) { root, composeRoot ->
+    attachComposeTree(
+      root = root,
+      targetViewId = composeRoot.viewId,
+      composeNodes = composeRoot.nodesList,
+      stringTable = stringTable,
+      viewsToSkip = composeRoot.viewsToSkipList,
+      parameters = parameters,
+      includeParameters = includeParameters,
+      includeSemantics = includeSemantics,
+    )
+      ?: root.also {
+        logger.log(
+          LogLevel.WARNING,
+          "could not attach a Compose tree (target view id ${composeRoot.viewId}) under view root ${viewRoot.id}; the dump may be incomplete.",
+        )
+      }
   }
-}
 
 private class EmptyViewRootsException : Exception()
 

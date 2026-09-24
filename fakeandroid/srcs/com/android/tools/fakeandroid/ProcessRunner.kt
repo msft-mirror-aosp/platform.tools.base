@@ -20,6 +20,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.util.regex.Pattern
+import kotlin.streams.toList
 import kotlinx.coroutines.*
 
 private const val SLEEP_TIME_MS: Long = 100
@@ -113,12 +114,19 @@ open class ProcessRunner protected constructor(private val processArgs: Array<St
 
   fun stop() {
     try {
-      process.destroy()
+      destroyTree(process.toHandle())
       process.waitFor()
       job.cancel()
     } catch (ex: InterruptedException) {
       // Do nothing.
     }
+  }
+
+  private fun destroyTree(handle: ProcessHandle) {
+    // Snapshot children before killing parent so they aren't re-parented to init first.
+    val children = handle.children().toList()
+    handle.destroyForcibly()
+    children.forEach(::destroyTree)
   }
 
   companion object {

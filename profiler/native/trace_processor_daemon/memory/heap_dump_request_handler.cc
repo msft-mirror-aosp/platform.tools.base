@@ -121,6 +121,32 @@ void HeapDumpRequestHandler::PopulateEvents(proto::HeapDumpResult* result) {
     class_overview->set_retained_native_size(
         it.Get(9).is_null() ? 0 : it.Get(9).AsLong());
   }
+
+  std::string heap_query = R"(
+    SELECT
+      IFNULL(o.heap_type, 'default') AS heap_name,
+      SUM(IFNULL(o.native_size, 0)) AS retained_native_size,
+      SUM(IFNULL(o.self_size, 0)) AS retained_size
+    FROM heap_graph_object o
+    WHERE o.reachable != 0
+    GROUP BY heap_name
+  )";
+
+  auto heap_it = processor_->ExecuteQuery(heap_query);
+  if (!heap_it.Status().ok()) {
+    std::cerr << "Heap aggregation query failed: " << heap_it.Status().message()
+              << std::endl;
+    return;
+  }
+  while (heap_it.Next()) {
+    auto* heap_overview = result->add_heap_overview();
+    heap_overview->set_heap_name(
+        heap_it.Get(0).is_null() ? "default" : heap_it.Get(0).AsString());
+    heap_overview->set_retained_native_size(
+        heap_it.Get(1).is_null() ? 0 : heap_it.Get(1).AsLong());
+    heap_overview->set_retained_size(
+        heap_it.Get(2).is_null() ? 0 : heap_it.Get(2).AsLong());
+  }
 }
 
 void HeapDumpRequestHandler::PopulateInstances(
@@ -305,12 +331,22 @@ void HeapDumpRequestHandler::PopulateReferences(
   std::string id_list = absl::StrJoin(request.instance_ids(), ",");
 
   std::string ref_query = "";
+  // Unnamed edges are array elements. Their index is the edge's offset from
+  // the start of the owner's reference set, which reference_set_id points at.
+  // The offset is derived per row rather than with ROW_NUMBER() because the
+  // reverse query filters on owned_id, which would leave a window function
+  // numbering only the surviving rows of a set.
+  std::string array_index_sql =
+      "IIF(r.field_name IS NULL OR r.field_name = '', r.id - "
+      "r.reference_set_id, -1) AS array_index";
   if (request.fetch_forward()) {
     ref_query += R"(
       SELECT
         r.owner_id,
         r.owned_id,
-        r.field_name
+        r.field_name,
+        )" + array_index_sql +
+                 R"(
       FROM heap_graph_reference r
       WHERE r.owner_id IN ()" +
                  id_list + R"()
@@ -325,7 +361,9 @@ void HeapDumpRequestHandler::PopulateReferences(
       SELECT
         r.owner_id,
         r.owned_id,
-        r.field_name
+        r.field_name,
+        )" + array_index_sql +
+                 R"(
       FROM heap_graph_reference r
       WHERE r.owned_id IN ()" +
                  id_list + R"()
@@ -347,6 +385,7 @@ void HeapDumpRequestHandler::PopulateReferences(
     ref->set_owned_id(ref_it.Get(1).is_null() ? 0 : ref_it.Get(1).AsLong());
     ref->set_field_name(ref_it.Get(2).is_null() ? ""
                                                 : ref_it.Get(2).AsString());
+    ref->set_array_index(ref_it.Get(3).is_null() ? -1 : ref_it.Get(3).AsLong());
   }
 }
 

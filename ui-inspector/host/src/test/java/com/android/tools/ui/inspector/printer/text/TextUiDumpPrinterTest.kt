@@ -16,7 +16,7 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.model.DeviceConfiguration
+import com.android.tools.ui.inspector.configuration
 import com.android.tools.ui.inspector.model.Dimension
 import com.android.tools.ui.inspector.model.DisplayInfo
 import com.android.tools.ui.inspector.model.UiDump
@@ -38,12 +38,12 @@ class TextUiDumpPrinterTest {
           listOf(
             UiWindow(
               root = view(1, "DecorView", 1080, 1920),
-              configuration = DeviceConfiguration(density = Dimension.Dpi(420), fontScale = 1.0f),
+              configuration = configuration(density = Dimension.Dpi(420), fontScale = 1.0f),
               theme = "@style/Theme.Main",
             ),
             UiWindow(
               root = view(2, "PresentationDecorView", 800, 600),
-              configuration = DeviceConfiguration(density = Dimension.Dpi(160)),
+              configuration = configuration(density = Dimension.Dpi(160)),
               theme = null,
             ),
           ),
@@ -106,6 +106,7 @@ View Hierarchy:
       idResource = null,
       layoutResource = null,
       attributes = emptyList(),
+      children = emptyList(),
     )
 
   private fun String.normalizeLineEndings(): String = replace("\r\n", "\n").replace('\r', '\n')

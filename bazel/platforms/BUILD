@@ -110,5 +110,5 @@ platform(
         "@bazel_tools//tools/cpp:clang",
     ],
     # N.B. we pick the CPU based on the host (x86_64 or arm64).
-    parents = ["@local_config_platform//:host"],
+    parents = ["@platforms//host"],
 )

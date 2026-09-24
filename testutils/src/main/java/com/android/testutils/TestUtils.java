@@ -61,7 +61,7 @@ public class TestUtils {
      * <p>This version needs to be present in prebuilts for tests to pass (see
      * tools/base/bazel/README.md).
      */
-    public static final String KOTLIN_VERSION_FOR_TESTS = "2.4.20-RC3";
+    public static final String KOTLIN_VERSION_FOR_TESTS = "2.4.20";
 
     /** KSP version used by AGP integration tests. */
     public static final String KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2";
@@ -463,11 +463,13 @@ public class TestUtils {
      */
     @NonNull
     public static Path getLocalMavenRepoFile(@NonNull String path) {
-        if (runningFromBazel()) {
-            return resolveWorkspacePath("../+_repo_rules2+maven/repository/" + path);
-        } else {
+        if (!runningFromBazel()) {
             return resolveWorkspacePath("prebuilts/tools/common/m2/repository/" + path);
         }
+        // The test utils library is shipped to gMaven. We have to hardcode the
+        // canonical name of maven repository instead of using the repo map so
+        // we don't add a repo map resource to the jar.
+        return resolveWorkspacePath("../+new_local_repository+maven/" + path);
     }
 
     @NonNull
@@ -512,27 +514,6 @@ public class TestUtils {
             }
         }
         return stringBuilder.toString();
-    }
-
-    @NonNull
-    public static Path getJava8Jdk() {
-        OsType osType = OsType.getHostOs();
-        String hostDir;
-        switch (osType) {
-            case LINUX:
-                hostDir = "linux";
-                break;
-            case DARWIN:
-                hostDir = "mac/Contents/Home";
-                break;
-            case WINDOWS:
-                hostDir = "win64";
-                break;
-            default:
-                throw new IllegalStateException(
-                        "Java8 JDK not found for platform: " + OsType.getOsName());
-        }
-        return resolveWorkspacePath("prebuilts/studio/jdk/jdk8/" + hostDir);
     }
 
     @NonNull

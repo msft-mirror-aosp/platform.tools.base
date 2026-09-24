@@ -18,6 +18,7 @@ package com.android.sdklib.repository.targets
 import com.android.SdkConstants
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.repository.AndroidSdkHandler
+import com.android.sdklib.testing.PathContext
 import com.android.sdklib.testing.TestSystemImages
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.collect.ImmutableList
@@ -98,6 +99,32 @@ class SystemImageManagerTest {
     assertThat(img.abiTypes).containsExactly("x86_64", "x86")
     assertThat(img.translatedAbiTypes).containsExactly(SdkConstants.ABI_ARM64_V8A)
     assertThat(img.tags).containsExactly(SystemImageTags.PLAY_STORE_TAG, SystemImageTags.TABLET_TAG)
+  }
+
+  @Test
+  fun clearCache() {
+    val manager = handler.getSystemImageManager(testImages.progress)
+    val img1 = sysImg23.image
+
+    assertThat(manager.images).containsExactly(img1)
+    assertThat(manager.getImageAt(img1.location)).isEqualTo(img1)
+    assertThat(manager.getImageAt(googleApisSysImg23.path)).isNull()
+
+    // Write a second system image to disk and reload the local repo packages
+    PathContext(googleApisSysImg23.path).apply(googleApisSysImg23.definition)
+    val repoManager = handler.getRepoManager(testImages.progress)
+    repoManager.markInvalid()
+    repoManager.reloadLocalIfNeeded(testImages.progress)
+
+    // Before clearing cache, manager still returns the cached image collection and lookup
+    assertThat(manager.images).containsExactly(img1)
+    assertThat(manager.getImageAt(googleApisSysImg23.path)).isNull()
+
+    // After clearing cache, the newly added image is discovered
+    manager.clearCache()
+    val img2 = googleApisSysImg23.image
+    assertThat(manager.images).containsExactly(img1, img2)
+    assertThat(manager.getImageAt(img2.location)).isEqualTo(img2)
   }
 
   val platform13 =
@@ -306,47 +333,6 @@ class SystemImageManagerTest {
               <display-name>Google Play ARM 64 v8a System Image</display-name>
             </localPackage>
           </ns2:repository>
-          """
-            .trimIndent(),
-        )
-      }
-    }
-
-  val googleApis13 =
-    with(testImages) {
-      TestSdkPackage("add-ons/addon-google_apis-google-13") {
-        write("images/system.img")
-
-        write(
-          "package.xml",
-          """
-          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-          <ns5:sdk-addon xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01"
-                         xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
-                         xmlns:ns4="http://schemas.android.com/repository/android/common/01"
-                         xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
-            <localPackage path="add-ons;addon-google_apis-google-13" obsolete="false">
-              <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:addonDetailsType">
-                <api-level>13</api-level>
-                <vendor>
-                  <id>google</id>
-                  <display>Google Inc.</display>
-                </vendor>
-                <tag>
-                  <id>google_apis</id>
-                  <display>
-                    Google APIs
-                  </display>
-                </tag>
-              </type-details>
-              <revision>
-                <major>1</major>
-                <minor>0</minor>
-                <micro>0</micro>
-              </revision>
-              <display-name>Google APIs, Android 13</display-name>
-            </localPackage>
-          </ns5:sdk-addon>
           """
             .trimIndent(),
         )

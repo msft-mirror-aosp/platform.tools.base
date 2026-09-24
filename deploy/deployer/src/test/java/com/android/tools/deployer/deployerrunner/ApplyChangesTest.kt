@@ -17,7 +17,6 @@ package com.android.tools.deployer.deployerrunner
 
 import com.android.testutils.AssumeUtil
 import com.android.testutils.TestUtils
-import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.DeployerTestUtils
 import com.android.tools.deployer.Sites
 import com.android.tools.deployer.SqlApkFileDatabase
@@ -42,7 +41,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.getApps().isEmpty())
-    val runner: DeployerRunner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     var file = TestUtils.resolveWorkspacePath(DeployRunnerTestBase.BASE + "apks/simple.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -208,7 +207,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     var file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -297,7 +296,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     var file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -387,7 +386,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     var file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -538,7 +537,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     val file = TestUtils.resolveWorkspacePath(BASE + "apks/simple+code.apk")
 
@@ -577,7 +576,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     val newApk = TestUtils.resolveWorkspacePath(BASE + "apks/simple+code.apk")
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
 
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -612,7 +611,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     // Install the base apk:
     Assert.assertTrue(device.apps.isEmpty())
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
-    var runner = DeployerRunner(cacheDb, dexDB, service)
+    var runner = createDeployerRunner()
     var file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     var args = arrayOf("install", "com.example.simpleapp", file.toString(), "--installers-path=$installersPath")
     var retcode = runner.run(args)
@@ -632,7 +631,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     // We create a empty database. This simulate an installed APK not found in the database.
     dexDB = SqlApkFileDatabase(File.createTempFile("test_db_empty", ".bin"), null)
     device.shell.clearHistory()
-    runner = DeployerRunner(cacheDb, dexDB, service)
+    runner = createDeployerRunner()
     retcode = runner.run(args)
     if (device.supportsJvmti()) {
       // TODO WIP. This is WRONG, this is where optimistic swap should fail because of
@@ -685,7 +684,7 @@ class ApplyChangesTest : DeployRunnerTestBase() {
     val newApk = TestUtils.resolveWorkspacePath(BASE + "apks/simple+code.apk")
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
 
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 

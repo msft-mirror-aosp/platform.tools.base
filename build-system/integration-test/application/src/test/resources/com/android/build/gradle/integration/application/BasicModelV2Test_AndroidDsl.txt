@@ -57,7 +57,7 @@
          * "size -> medium"
       - testHandleProfiling                = false
       - testFunctionalTest                 = (null)
-      - resourceConfigurations             = ["en", "hdpi"]
+      - resourceConfigurations             = []
       - signingConfig                      = (null)
       - wearAppUnbundled                   = (null)
       - vectorDrawables:
