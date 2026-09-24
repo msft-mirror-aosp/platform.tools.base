@@ -1225,7 +1225,6 @@ _CLASS_JARS = [
     "com.google.truth:truth:1.4.0",
     "com.googlecode.jarjar:jarjar:1.3",
     "com.jakewharton.auto.value:auto-value-annotations:1.2-update1",
-    "com.jakewharton:butterknife:7.0.1",
     "com.jakewharton:butterknife-gradle-plugin:9.0.0-rc1",
     "com.jakewharton:butterknife-gradle-plugin:9.0.0-rc2",
     "com.jakewharton.timber:timber:5.0.1",  # Dependency of architecture-samples

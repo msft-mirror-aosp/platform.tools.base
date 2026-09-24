@@ -93219,15 +93219,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.jakewharton.butterknife_7.0.1",
-    pom = "com/jakewharton/butterknife/7.0.1/butterknife-7.0.1.pom",
-    repo_root_path = "",
-    repo_path = "com/jakewharton/butterknife/7.0.1",
-    parent = "com.jakewharton.butterknife-parent_7.0.1",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.jetbrains.intellij.java.java-compiler-ant-tasks_243.22562.145",
     pom = "com/jetbrains/intellij/java/java-compiler-ant-tasks/243.22562.145/java-compiler-ant-tasks-243.22562.145.pom",
     repo_root_path = "",
@@ -119039,14 +119030,6 @@ maven_artifact(
     pom = "com/ibm/icu/icu4j-root/75.1/icu4j-root-75.1.pom",
     repo_root_path = "",
     repo_path = "com/ibm/icu/icu4j-root/75.1",
-)
-
-maven_artifact(
-    name = "com.jakewharton.butterknife-parent_7.0.1",
-    pom = "com/jakewharton/butterknife-parent/7.0.1/butterknife-parent-7.0.1.pom",
-    repo_root_path = "",
-    repo_path = "com/jakewharton/butterknife-parent/7.0.1",
-    parent = "org.sonatype.oss.oss-parent_7",
 )
 
 maven_artifact(
