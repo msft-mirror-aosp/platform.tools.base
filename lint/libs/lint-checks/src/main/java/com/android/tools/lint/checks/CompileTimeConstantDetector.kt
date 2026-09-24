@@ -30,13 +30,13 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.nameFromSource
+import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.CommonClassNames.JAVA_LANG_STRING
 import com.intellij.psi.JavaElementVisitor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLocalVariable
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.PsiVariable
@@ -598,16 +598,11 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
 
 internal val JVM_FIELD_ANNOTATION = JvmStandardClassIds.Annotations.JvmField.asSingleFqName().asString()
 
-internal fun PsiVariable.isEffectivelyFinal(): Boolean {
-  if (hasModifierProperty(PsiModifier.FINAL)) return true
+internal fun PsiParameter.isEffectivelyFinal(): Boolean {
+  if (hasModifier(JvmModifier.FINAL)) return true
 
-  val scope =
-    when (this) {
-      is PsiParameter -> declarationScope
-      else -> PsiUtil.getVariableCodeBlock(this, null) ?: return false
-    }
   var effectivelyFinal = true
-  scope.accept(
+  declarationScope.accept(
     object : JavaElementVisitor() {
       override fun visitElement(element: PsiElement) {
         if (!effectivelyFinal) return // End traversal ASAP
