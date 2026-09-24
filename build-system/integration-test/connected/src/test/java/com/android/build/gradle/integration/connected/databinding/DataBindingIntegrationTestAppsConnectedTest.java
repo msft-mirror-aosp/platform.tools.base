@@ -97,9 +97,6 @@ public class DataBindingIntegrationTestAppsConnectedTest {
     public void connectedCheck() throws Exception {
         project.executor()
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .with(
-                        BooleanOption.USE_NON_FINAL_RES_IDS,
-                        !"ProguardedAppWithTest".equals(projectName))
                 .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .run("connectedCheck");
     }
