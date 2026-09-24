@@ -380,18 +380,6 @@ const TestReportApp = {
     this.cacheDOMElements();
     Tooltip.init();
 
-    // Default to Flat Test Cases View on initial page open unless hash/history specifies otherwise
-    if (!window.location.hash || window.location.hash === '#report-view' || window.location.hash === '#') {
-      this.state.viewMode = 'flat';
-      this.state.currentFlatView = 'testCases';
-      this.state.selectedModule = null;
-      this.state.selectedPackage = null;
-      this.state.selectedClass = null;
-      this.state.currentView = 'report';
-      this.state.currentTestCase = null;
-      this.state.sort = { by: 'fail', order: 'desc' };
-    }
-
     // Directly access the global variable from data.js
     if (typeof TEST_DATA_SOURCE !== 'undefined') {
       this.setupTestResults(TEST_DATA_SOURCE);
