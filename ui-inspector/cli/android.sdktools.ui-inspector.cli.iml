@@ -29,7 +29,6 @@
     <orderEntry type="module" module-name="android.sdktools.adblib" />
     <orderEntry type="module" module-name="android.sdktools.adblib.tools" />
     <orderEntry type="library" name="picocli" level="project" />
-    <orderEntry type="library" name="gson" level="project" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />
     <orderEntry type="library" scope="TEST" name="junit4" level="project" />
   </component>

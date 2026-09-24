@@ -19,7 +19,7 @@ package com.android.tools.ui.inspector.printer
 import com.android.tools.ui.inspector.model.UiDump
 
 /** Interface for formatting and outputting UI inspection dumps. */
-internal interface UiDumpPrinter {
+interface UiDumpPrinter {
   /** Prints a single [UiDump]. */
   fun printDump(uiDump: UiDump)
 }

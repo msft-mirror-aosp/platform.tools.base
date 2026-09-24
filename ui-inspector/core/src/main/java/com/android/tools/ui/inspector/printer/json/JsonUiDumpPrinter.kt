@@ -44,7 +44,7 @@ private val GSON_PRETTY: Gson = GsonBuilder().serializeNulls().setPrettyPrinting
  * Runs [block] with a JSON printer targeting the destination selected by [output]: the given file, or standard output when null. File
  * streams are closed on completion and write failures are reported as [IOException].
  */
-internal fun withJsonPrinter(output: Path?, prettyPrint: Boolean, block: (UiDumpPrinter) -> Unit) {
+fun withJsonPrinter(output: Path?, prettyPrint: Boolean, block: (UiDumpPrinter) -> Unit) {
   if (output == null) {
     val stdout = System.out
     block(JsonUiDumpPrinter(out = stdout, prettyPrint = prettyPrint))
