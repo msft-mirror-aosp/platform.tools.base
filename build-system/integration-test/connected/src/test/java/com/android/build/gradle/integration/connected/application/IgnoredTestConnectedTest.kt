@@ -21,6 +21,8 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.platform.proto.api.core.TestStatusProto
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
@@ -30,7 +32,7 @@ import org.junit.runners.Parameterized
 
 /**
  * Connected integration test verifying that tests annotated with `@Ignore` or failing JUnit assumptions are reported as skipped/ignored in
- * the generated JUnit XML report, rather than as failures.
+ * the generated JUnit XML report and test result proto, rather than as failures.
  */
 @RunWith(Parameterized::class)
 class IgnoredTestConnectedTest(private val runWithBuiltInPlatform: Boolean) {
@@ -132,6 +134,16 @@ class IgnoredTestConnectedTest(private val runWithBuiltInPlatform: Boolean) {
 
     assertThat(xmlContent).named("XML content in:\n$xmlContent").contains("""failures="0"""")
     assertThat(xmlContent).named("XML content in:\n$xmlContent").contains("""skipped="2"""")
+
+    val pbFiles = resultsDir.walkTopDown().filter { it.name == "test-result.pb" }.toList()
+    assertThat(pbFiles).named("test-result.pb files in $resultsDir").isNotEmpty()
+    val testSuiteResult = pbFiles.first().inputStream().use { TestSuiteResult.parseFrom(it) }
+    assertThat(testSuiteResult.testStatus).named("test-result.pb testStatus").isEqualTo(TestStatusProto.TestStatus.PASSED)
+
+    val testResults = testSuiteResult.testResultList.associateBy { it.testCase.testMethod }
+    assertThat(testResults["testPassing"]?.testStatus).isEqualTo(TestStatusProto.TestStatus.PASSED)
+    assertThat(testResults["testIgnored"]?.testStatus).isEqualTo(TestStatusProto.TestStatus.IGNORED)
+    assertThat(testResults["testAssumptionFailure"]?.testStatus).isEqualTo(TestStatusProto.TestStatus.IGNORED)
   }
 
   private fun getTestCaseXml(xmlContent: String, testName: String): String {
