@@ -1,3 +1,4 @@
+load("//tools/base/android-test/coverage:version.bzl", "COVERAGE_AGENT_VERSION")
 load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
@@ -11,7 +12,6 @@ merge_jars(
         "//tools/base/android-test/coverage/agent/runtime:coverage_rt_java",
         "//tools/base/android-test/coverage/agent/native:coverage_agent_jni.jar",
     ],
-    tags = ["testonly"],
 )
 
 # Wrap the raw JAR in a target that provides JavaInfo, so maven_library can bundle it.
@@ -19,7 +19,6 @@ merge_jars(
 jvm_import(
     name = "coverage_agent_support_java",
     jars = [":coverage_agent_support_jar"],
-    tags = ["testonly"],
 )
 
 maven_library(
@@ -27,7 +26,6 @@ maven_library(
     srcs = [],
     bundled_deps = [":coverage_agent_support_java"],
     coordinates = "com.android.tools.test:coverage-agent",
-    tags = ["testonly"],
-    version = "1.0.0",
+    version = COVERAGE_AGENT_VERSION,
     visibility = ["//visibility:public"],
 )

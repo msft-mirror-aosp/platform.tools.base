@@ -169,7 +169,6 @@ class AndroidTestUtil(
 
   fun enableOnTheFlyCoverage(projectDef: AndroidProjectDefinition<out CommonExtension>) {
     projectDef.android.experimentalProperties["android.experimental.testOptions.coverage.coverageType"] = "ON_THE_FLY"
-    projectDef.dependencies { add("androidTestImplementation", "com.android.tools.test:coverage-agent:1.0.0") }
   }
 
   fun enableTestStorageService(projectDef: AndroidProjectDefinition<out CommonExtension>) {
