@@ -747,6 +747,7 @@ internal open class Analysis<FX : Any>(
           val (t, fx) = lastM(::loop, e.elems) ?: return pure(Type.EmptyArray)
           Result(Type.Ellipsis(t), fx)
         }
+        is OverloadBody -> callMethod(null, e.canonical, e.args)
         is UParenthesizedExpression -> loop(e.expression)
         is ULabeledExpression -> loop(e.expression)
         is UBreakExpression,
@@ -1810,6 +1811,40 @@ private sealed class OpaqueConstant : UExpression {
   data class Pure(override val type: Type<Nothing>) : OpaqueConstant()
 
   data class Default(override val type: Type<Nothing>, val compute: Type.MethodRef) : OpaqueConstant()
+}
+
+/**
+ * The body of a generated JVM overload that calls to the [canonical] method, passing the overload's own parameters, whose types [env]
+ * binds, and leaving the rest to their defaults
+ */
+internal class OverloadBody(override val uastParent: UMethod, val canonical: PsiMethod, env: Env<Nothing>) : UExpression {
+  val args: List<UExpression> = run {
+    val suppliedParams = uastParent.javaPsi.parameters.asSequence().mapNotNull { it.name }.toSet()
+    val canonicalRef = Type.MethodRef(canonical)
+    canonical.parameterList.parameters.drop(if (canonical.isExtension()) 1 else 0).map { param ->
+      when (param.name) {
+        in suppliedParams -> OpaqueConstant.Pure(env.vars[param.name]!!)
+        else ->
+          OpaqueConstant.Default(
+            PsiTypeAdapter.translate(env.boundParamNames, param.type),
+            canonicalRef.copy(method = canonicalRef.method.defaultArgumentOf(param.name)),
+          )
+      }
+    }
+  }
+
+  override val psi = null
+
+  override fun asLogString() = "↪ ${canonical.name}(${args.joinToString(transform = UExpression::asLogString)})"
+
+  override fun asRenderString() = asLogString()
+
+  override fun asSourceString() = asLogString()
+
+  override fun toString() = asLogString()
+
+  override val uAnnotations
+    get() = listOf<UAnnotation>()
 }
 
 // TODO (b/406877361)

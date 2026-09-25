@@ -28,7 +28,6 @@ import com.android.tools.lint.checks.fx.result.MethodId
 import com.android.tools.lint.checks.fx.result.PsiClassAdapter
 import com.android.tools.lint.checks.fx.result.PsiTypeAdapter
 import com.android.tools.lint.checks.fx.result.Scope
-import com.android.tools.lint.checks.fx.result.TermEnv
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.Sym
 import com.android.tools.lint.checks.fx.result.TypeAdapter
@@ -45,21 +44,18 @@ import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.psi.PsiAnonymousClass
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiTypeParameterListOwner
 import com.intellij.psi.impl.source.PsiClassReferenceType
-import com.intellij.util.containers.with
-import java.util.IdentityHashMap
 import kotlin.time.Duration
 import kotlin.time.measureTime
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
-import org.jetbrains.kotlin.name.JvmStandardClassIds
+import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
@@ -152,7 +148,6 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
   class Builder<FX : Any>(private val annotationParser: AnnotationParser<FX>) {
     private val classes = LinkedHashMap<ClassId, ClassBody<FX>>()
     private var elapsed: Duration = Duration.Companion.ZERO
-    private val overloadingCache = IdentityHashMap<PsiElement, TermEnv<Nothing>>()
 
     fun build(): Module<FX> = Module(classes)
 
@@ -288,7 +283,10 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           klass.methods.fold(persistentMapOf()) { methods, method ->
             val env = if (method.javaPsi.isStatic()) Env.empty else env
             val id = MethodId(method.javaPsi)
-            methods.withMethod(id, buildMethod(id, context, method, env, classAdapter), method.uastParameters)
+            val canonical = method.canonicalOverload()
+            // A generated overload delegates to the canonical method's defaults, so it needs (and must not re-check) none of its own
+            val params = if (canonical == null) method.uastParameters else emptyList()
+            methods.withMethod(id, buildMethod(id, context, method, env, classAdapter, canonical), params)
           },
         initEnvironment = env,
       )
@@ -300,6 +298,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       method: UMethod,
       classEnv: Env<Nothing>,
       classAdapter: TypeAdapter<PsiClass>,
+      canonicalOverload: PsiMethod?,
     ): MethodBody<FX> {
       val initTypeParams: TypeBounds<Nothing> = classEnv.types + method.javaPsi.typeParams(id)
       val (moreTypeParams, domains) = generateDomain(context, initTypeParams.paramNames(), method, classAdapter)
@@ -312,17 +311,9 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           params.size + 1 -> classEnv.vars to domains.subList(1, domains.size)
           else -> throw IllegalStateException("Got domains $domains for method ${method.name} with parameters $params")
         }
-      val env =
-        when (val status = method.getOverloadingStatus()) {
-          is OverloadingStatus.None -> paramDomains.foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
-          is OverloadingStatus.Primary ->
-            paramDomains
-              .foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
-              .also { overloadingCache[status.source] = it }
-          is OverloadingStatus.Secondary -> overloadingCache[status.source]!!
-        }
-      val body = method.uastBody
+      val env = paramDomains.foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
       val methodEnv = classEnv.copy(types = typeParams, vars = env)
+      val body = canonicalOverload?.let { OverloadBody(method, it, methodEnv) } ?: method.uastBody
 
       return MethodBody(
         domains = domains,
@@ -382,10 +373,10 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
     private fun PersistentMap<MethodId, MethodBody<FX>>.withMethod(
       id: MethodId,
       body: MethodBody<FX>,
-      params: List<UParameter>,
+      defaultedParams: List<UParameter>,
     ): PersistentMap<MethodId, MethodBody<FX>> {
       var acc = putting(id, body)
-      for (param in params) {
+      for (param in defaultedParams) {
         val init = param.uastInitializer ?: continue
         val paramPsi = param.javaPsi as PsiParameter
         val status =
@@ -557,22 +548,6 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
         m.put(Sym.Param(param.name!!, scope), persistentSetOf())
       }
 
-    private fun UMethod.getOverloadingStatus(): OverloadingStatus {
-      val methodSource = sourcePsi as? KtFunction ?: return OverloadingStatus.None
-      return if (
-        methodSource.annotationEntries.any { it.shortName?.asString() == JvmStandardClassIds.JVM_OVERLOADS_FQ_NAME.shortName().asString() }
-      ) {
-        val firstMethod = (uastParent as? UClass)?.uastDeclarations?.find { it.sourcePsi === methodSource } as? UMethod
-        when {
-          firstMethod == null -> OverloadingStatus.None
-          firstMethod.uastParameters.size == javaPsi.parameters.size -> OverloadingStatus.Primary(methodSource)
-          else -> OverloadingStatus.Secondary(methodSource)
-        }
-      } else {
-        OverloadingStatus.None
-      }
-    }
-
     internal fun loTechDebug() {
       println("Took $elapsed to index ${classes.size} classes and ${classes.asSequence().sumOf { (_, c) -> c.methods.size }} methods:")
 
@@ -590,14 +565,6 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           println("    + $mId: $mSummary")
         }
       }
-    }
-
-    private sealed interface OverloadingStatus {
-      class Primary(val source: KtFunction) : OverloadingStatus
-
-      class Secondary(val source: KtFunction) : OverloadingStatus
-
-      object None : OverloadingStatus
     }
   }
 
@@ -639,6 +606,18 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       }
     }
   }
+}
+
+/**
+ * If [this] method is a compiler-generated JVM overload, return the canonical method with all default parameters. Generated overloads share
+ * their [UMethod.sourcePsi] with the declaration, which is the light method with all the parameters.
+ */
+internal fun UMethod.canonicalOverload(): PsiMethod? {
+  val declaration = sourcePsi as? KtFunction ?: return null
+  val canonical =
+    javaPsi.containingClass?.methods?.filter { (it as? KtLightMethod)?.kotlinOrigin === declaration }?.maxByOrNull { it.parameters.size }
+      ?: return null
+  return canonical.takeIf { it.parameters.size > javaPsi.parameters.size }
 }
 
 internal fun UMethod.isKtProperty() =

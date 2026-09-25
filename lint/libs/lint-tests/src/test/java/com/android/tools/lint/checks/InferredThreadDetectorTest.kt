@@ -250,6 +250,156 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test generated no-arg constructor running primary constructor's defaults`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            // Kotlin emits a no-arg `Simple()` for Java, which has no body but runs the default `loadId()`
+            class Simple(val id: Int = loadId())
+
+            open class Base
+
+            // UAST gives the no-arg `Impl()` a copy of the primary constructor's body (the superclass call and `init` block), without the default
+            class Impl(val id: Int = loadId()) : Base() {
+              init {
+                require(id >= 0)
+              }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+
+            public class Client {
+                @UiThread
+                void ui() {
+                    new Simple(); // error
+                    new Simple(1);
+                    new Impl(); // error
+                    new Impl(1);
+                }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Client.java:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                new Simple(); // error
+                ~~~~~~~~~~~~
+        src/test/pkg/Client.java:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                new Impl(); // error
+                ~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test JvmOverloads-generated overloads running defaults`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            // `@JvmOverloads` overloads supply their own parameters (and receiver) and default the rest
+            class Config @JvmOverloads constructor(val a: Int = 0, val b: Int = loadId())
+            @JvmOverloads fun load(a: Int = 0, b: Int = loadId()) {}
+            @JvmOverloads fun String.tag(n: Int = loadId()) = this
+
+            // Default reported once, not once per overload
+            class Widget @UiThread @JvmOverloads constructor(val x: Int = loadId()) // error
+            @UiThread @JvmOverloads fun show(x: Int = loadId()) {} // error
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            public class Client {
+                @UiThread
+                void ui() {
+                    new Config(); // error
+                    new Config(1); // error
+                    new Config(1, 2);
+                    ConfigKt.load(); // error
+                    ConfigKt.load(1); // error
+                    ConfigKt.load(1, 2);
+                    ConfigKt.tag("s"); // error
+                    ConfigKt.tag("s", 1);
+                    new Widget();
+                    ConfigKt.show();
+                }
+
+                @WorkerThread
+                void worker() {
+                    new Widget(); // error
+                    ConfigKt.show(); // error
+                }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Client.java:9: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                new Config(); // error
+                ~~~~~~~~~~~~
+        src/test/pkg/Client.java:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                new Config(1); // error
+                ~~~~~~~~~~~~~
+        src/test/pkg/Client.java:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                ConfigKt.load(); // error
+                         ~~~~~~
+        src/test/pkg/Client.java:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                ConfigKt.load(1); // error
+                         ~~~~~~~
+        src/test/pkg/Client.java:15: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                ConfigKt.tag("s"); // error
+                         ~~~~~~~~
+        src/test/pkg/Client.java:23: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                new Widget(); // error
+                ~~~~~~~~~~~~
+        src/test/pkg/Client.java:24: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                ConfigKt.show(); // error
+                         ~~~~~~
+        src/test/pkg/Config.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        class Widget @UiThread @JvmOverloads constructor(val x: Int = loadId()) // error
+                                                                      ~~~~~~~~
+        src/test/pkg/Config.kt:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread @JvmOverloads fun show(x: Int = loadId()) {} // error
+                                                  ~~~~~~~~
+        9 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testBaseAssumption_forEach() {
     lint()
       .files(
