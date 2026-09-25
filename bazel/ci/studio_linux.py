@@ -44,6 +44,7 @@ _EXTRA_TARGETS = [
     '//tools/base/studio-leakcanary:studio_leakcanary_gmaven_repo.zip',
     '//tools/base/firebase/testlab/testlab-gradle-plugin:testlab-gradle-plugin.zip',
     '//tools/base/android-test:android-test-maven-repo.zip',
+    '//tools/base/android-test/coverage:coverage_agent_gmaven_repo.zip',
     '//tools/adt/idea/studio:test_studio_artifacts',
     '//tools/adt/idea/studio:android-studio.canary.test_studio_files',
     '//tools/adt/idea/studio:android-studio.stable.test_studio_files',
@@ -151,6 +152,7 @@ _AGP_ARTIFACTS = [
     ('tools/base/preview/screenshot/preview_screenshot_maven_repo.zip', 'artifacts'),
     ('tools/base/studio-leakcanary/studio_leakcanary_gmaven_repo.zip', 'artifacts'),
     ('tools/base/android-test/android-test-maven-repo.zip', 'artifacts'),
+    ('tools/base/android-test/coverage/coverage_agent_gmaven_repo.zip', 'artifacts'),
     ('tools/base/build-system/android_gradle_plugin_9.zip', 'artifacts'),
 ]
 

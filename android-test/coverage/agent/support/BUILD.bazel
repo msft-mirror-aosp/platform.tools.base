@@ -27,5 +27,9 @@ maven_library(
     bundled_deps = [":coverage_agent_support_java"],
     coordinates = "com.android.tools.test:coverage-agent",
     version = COVERAGE_AGENT_VERSION,
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//tools/base:__pkg__",
+        "//tools/base/android-test/coverage:__pkg__",
+        "//tools/base/build-system:__pkg__",
+    ],
 )
