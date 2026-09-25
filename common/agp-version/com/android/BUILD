@@ -3,6 +3,11 @@ load(
     "DEV_ANDROID_TEST_ENGINE_VERSION",
     "RELEASE_ANDROID_TEST_ENGINE_VERSION",
 )
+load(
+    "//tools/base/android-test/coverage:version.bzl",
+    "DEV_COVERAGE_AGENT_VERSION",
+    "RELEASE_COVERAGE_AGENT_VERSION",
+)
 load("//tools/base/bazel:expand_template.bzl", "expand_template")
 load(
     "//tools/base/common:release_version.bzl",
@@ -28,6 +33,7 @@ expand_template(
             "{BASE_VERSION}": RELEASE_BASE_VERSION,
             "{BUILD_VERSION}": RELEASE_BUILD_VERSION,
             "{COMMANDLINE_TOOLS_VERSION}": RELEASE_COMMANDLINE_TOOLS_VERSION,
+            "{COVERAGE_AGENT_VERSION}": RELEASE_COVERAGE_AGENT_VERSION,
             "{IS_AGP_RELEASE_BRANCH}": IS_AGP_RELEASE_BRANCH,
             "{LAST_STABLE_BUILD_VERSION}": LAST_STABLE_BUILD_VERSION,
         },
@@ -36,6 +42,7 @@ expand_template(
             "{BASE_VERSION}": DEV_BASE_VERSION,
             "{BUILD_VERSION}": DEV_BUILD_VERSION,
             "{COMMANDLINE_TOOLS_VERSION}": DEV_COMMANDLINE_TOOLS_VERSION,
+            "{COVERAGE_AGENT_VERSION}": DEV_COVERAGE_AGENT_VERSION,
             "{IS_AGP_RELEASE_BRANCH}": IS_AGP_RELEASE_BRANCH,
             "{LAST_STABLE_BUILD_VERSION}": LAST_STABLE_BUILD_VERSION,
         },

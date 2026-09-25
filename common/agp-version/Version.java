@@ -32,6 +32,7 @@ public final class Version {
     public static final String LAST_STABLE_ANDROID_GRADLE_PLUGIN_VERSION;
     public static final Boolean IS_AGP_RELEASE_BRANCH;
     public static final String ANDROID_TEST_ENGINE_VERSION;
+    public static final String COVERAGE_AGENT_VERSION;
 
     static {
         Properties properties = new Properties();
@@ -56,6 +57,7 @@ public final class Version {
                 Integer.parseInt(properties.getProperty("nativeApiVersion"));
         IS_AGP_RELEASE_BRANCH = Boolean.valueOf(properties.getProperty("isAgpReleaseBranch"));
         ANDROID_TEST_ENGINE_VERSION = properties.getProperty("androidTestEngineVersion");
+        COVERAGE_AGENT_VERSION = properties.getProperty("coverageAgentVersion");
     }
 
     private Version() {}
