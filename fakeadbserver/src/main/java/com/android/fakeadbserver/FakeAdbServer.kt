@@ -642,6 +642,8 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
             "server_status",
             "devicetracker_proto_format",
             "app_info",
+            "sendrecv_v2",
+            "sendrecv_v2_lz4",
           )
         )
       )

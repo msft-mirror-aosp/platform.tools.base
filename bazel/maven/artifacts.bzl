@@ -32,6 +32,7 @@ ARTIFACTS = [
     "androidx.test:runner:1.4.0",
     "androidx.test.uiautomator:uiautomator:2.3.0",
     "androidx.tracing:tracing-wire-desktop:2.0.0",
+    "at.yawk.lz4:lz4-java:1.11.4",
     "com.android.tools.build:bundletool:1.18.3",
     "com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10",
     "com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10",

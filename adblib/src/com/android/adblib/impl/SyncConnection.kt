@@ -96,6 +96,14 @@ internal class SyncConnection(
     return session.hostServices.availableFeatures(device).contains(AdbFeatures.STAT_V2)
   }
 
+  suspend fun canUseSendV2(): Boolean {
+    return session.hostServices.availableFeatures(device).contains(AdbFeatures.SENDRECV_V2)
+  }
+
+  suspend fun canUseSendV2Lz4(): Boolean {
+    return session.hostServices.availableFeatures(device).contains(AdbFeatures.SENDRECV_V2_LZ4)
+  }
+
   suspend fun readExactly(length: Int): ByteBuffer {
     workBuffer.clear()
     inputChannel.readExactly(workBuffer.forChannelRead(length))
@@ -113,6 +121,34 @@ internal class SyncConnection(
     workBuffer.appendInt(0) // Set later
     workBuffer.appendString(remoteFilePath, AdbProtocolUtils.ADB_CHARSET)
     workBuffer.setInt(lengthPos, workBuffer.position - 8)
+
+    outputChannel.writeExactly(workBuffer.forChannelWrite())
+  }
+
+  /**
+   * Sends a `SND2` request, i.e. a sync request with the remote file path followed by a `sync_send_v2` structure, see
+   * [file_sync_protocol.h](https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/adb/file_sync_protocol.h)
+   */
+  suspend fun startSyncSendV2Request(remoteFilePath: String, modeBits: Int, flags: Int) {
+    logger.debug { "sending \"${Constants.SEND_V2}\" command to device $device (mode=$modeBits, flags=$flags)" }
+    // Bytes 0-3: 'SND2'
+    // Bytes 4-7: request size (little endian)
+    // Bytes 8-xx: An utf-8 string with the remote file path
+    workBuffer.clear()
+    workBuffer.appendString(Constants.SEND_V2, AdbProtocolUtils.ADB_CHARSET)
+    val lengthPos = workBuffer.position
+    workBuffer.appendInt(0) // Set later
+    workBuffer.appendString(remoteFilePath, AdbProtocolUtils.ADB_CHARSET)
+    workBuffer.setInt(lengthPos, workBuffer.position - 8)
+
+    //  struct __attribute__((packed)) sync_send_v2 {
+    //    uint32_t id;    /* 'SND2' */
+    //    uint32_t mode;  /* File type and mode */
+    //    uint32_t flags; /* Compression and other flags */
+    //  };
+    workBuffer.appendString(Constants.SEND_V2, AdbProtocolUtils.ADB_CHARSET)
+    workBuffer.appendInt(modeBits)
+    workBuffer.appendInt(flags)
 
     outputChannel.writeExactly(workBuffer.forChannelWrite())
   }
@@ -452,5 +488,15 @@ internal class SyncConnection(
 
     const val DENT_V2_ID = 0x32544E44 // "DNT2"
     const val DENT_V2_BUFFER_SIZE = STAT_V2_BUFFER_SIZE + 4
+
+    /** Size (in bytes) of the header of a `DATA` packet, i.e. `'DATA'` followed by the length of the payload */
+    const val DATA_HEADER_SIZE = 8
+
+    const val SEND_V2 = "SND2"
+
+    // See `kSyncFlagXxx` values in
+    // https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/adb/file_sync_protocol.h
+    const val SEND_V2_FLAG_NONE = 0
+    const val SEND_V2_FLAG_LZ4 = 2
   }
 }

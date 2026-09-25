@@ -43,6 +43,7 @@ maven_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/common:tools.common",
+        "@maven//:at.yawk.lz4.lz4-java",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect",

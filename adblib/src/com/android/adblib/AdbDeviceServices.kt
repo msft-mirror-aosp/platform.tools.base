@@ -840,6 +840,47 @@ suspend fun AdbDeviceServices.syncSend(
 }
 
 /**
+ * Uploads a single file to a remote device transferring the contents of [sourceChannel], using the "sync v2" protocol (with compression)
+ * when the device supports it.
+ *
+ * @see [AdbDeviceSyncServices.sendV2]
+ */
+suspend fun AdbDeviceServices.syncSendV2(
+  device: DeviceSelector,
+  sourceChannel: AdbInputChannel,
+  remoteFilePath: String,
+  remoteFileMode: RemoteFileMode,
+  remoteFileTime: FileTime? = null,
+  progress: SyncProgress? = null,
+  bufferSize: Int = SYNC_DATA_MAX,
+  options: AdbDeviceSyncServices.SendV2Options = AdbDeviceSyncServices.SendV2Options(),
+) {
+  withSyncServices(device) { it.sendV2(sourceChannel, remoteFilePath, remoteFileMode, remoteFileTime, progress, bufferSize, options) }
+}
+
+/**
+ * Uploads a single file to a remote device transferring the contents of [sourcePath], using the "sync v2" protocol (with compression) when
+ * the device supports it.
+ *
+ * @see [AdbDeviceSyncServices.sendV2]
+ */
+suspend fun AdbDeviceServices.syncSendV2(
+  device: DeviceSelector,
+  sourcePath: Path,
+  remoteFilePath: String,
+  remoteFileMode: RemoteFileMode,
+  remoteFileTime: FileTime? = null,
+  progress: SyncProgress? = null,
+  bufferSize: Int = SYNC_DATA_MAX,
+  options: AdbDeviceSyncServices.SendV2Options = AdbDeviceSyncServices.SendV2Options(),
+) {
+  session.channelFactory.openFile(sourcePath).use { source ->
+    syncSendV2(device, source, remoteFilePath, remoteFileMode, remoteFileTime, progress, bufferSize, options)
+    source.close()
+  }
+}
+
+/**
  * Retrieves a single file from a remote device and writes its contents to a [destinationChannel].
  *
  * @see [AdbDeviceSyncServices.recv]

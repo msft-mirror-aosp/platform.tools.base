@@ -96,4 +96,41 @@ object AdbFeatures {
    * TODO(b/412571872) add version
    */
   const val TRACK_MDNS_SERVICE = "track_mdns"
+
+  /**
+   * If the result of [AdbHostServices.features] contains this value, the [AdbDeviceSyncServices.sendV2] invocation is supported by the
+   * specified device, i.e. the device supports the `SND2` and `RCV2` "sync v2" requests.
+   *
+   * Note: This feature was initially implemented for API=31
+   */
+  const val SENDRECV_V2 = "sendrecv_v2"
+
+  /**
+   * If the result of [AdbHostServices.features] contains this value, the "sync v2" requests support the Brotli compression algorithm.
+   *
+   * Note: This feature was initially implemented for API=31
+   */
+  const val SENDRECV_V2_BROTLI = "sendrecv_v2_brotli"
+
+  /**
+   * If the result of [AdbHostServices.features] contains this value, the "sync v2" requests support the LZ4 compression algorithm (see
+   * [AdbDeviceSyncServices.SendV2Compression.LZ4]).
+   *
+   * Note: This feature was initially implemented for API=31
+   */
+  const val SENDRECV_V2_LZ4 = "sendrecv_v2_lz4"
+
+  /**
+   * If the result of [AdbHostServices.features] contains this value, the "sync v2" requests support the Zstandard compression algorithm.
+   *
+   * Note: This feature was initially implemented for API=31
+   */
+  const val SENDRECV_V2_ZSTD = "sendrecv_v2_zstd"
+
+  /**
+   * If the result of [AdbHostServices.features] contains this value, the "sync v2" `SND2` request supports the "dry run" flag.
+   *
+   * Note: This feature was initially implemented for API=31
+   */
+  const val SENDRECV_V2_DRY_RUN_SEND = "sendrecv_v2_dry_run_send"
 }

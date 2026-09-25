@@ -3788,6 +3788,27 @@ maven_import(
 )
 
 maven_artifact(
+    name = "at.yawk.lz4.lz4-java_1.11.4",
+    pom = "at/yawk/lz4/lz4-java/1.11.4/lz4-java-1.11.4.pom",
+    repo_root_path = "",
+    repo_path = "at/yawk/lz4/lz4-java/1.11.4",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "at.yawk.lz4.lz4-java",
+    classifiers = [],
+    jars = [
+        "at/yawk/lz4/lz4-java/1.11.4/lz4-java-1.11.4.jar"
+    ],
+    original_deps = [],
+    pom = "at/yawk/lz4/lz4-java/1.11.4/lz4-java-1.11.4.pom",
+    repo_root_path = "",
+    repo_path = "at/yawk/lz4/lz4-java/1.11.4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.almworks.sqlite4java.sqlite4java_1.0.392",
     pom = "com/almworks/sqlite4java/sqlite4java/1.0.392/sqlite4java-1.0.392.pom",
     repo_root_path = "",

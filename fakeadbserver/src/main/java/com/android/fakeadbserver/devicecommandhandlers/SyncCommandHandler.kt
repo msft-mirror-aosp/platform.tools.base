@@ -18,7 +18,10 @@ package com.android.fakeadbserver.devicecommandhandlers
 import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
+import com.android.fakeadbserver.SyncSendRequest
 import com.android.fakeadbserver.shutdownGracefully
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.EOFException
 import java.io.IOException
 import java.io.InputStream
@@ -29,6 +32,9 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.charset.StandardCharsets.UTF_8
 import kotlinx.coroutines.CoroutineScope
+import net.jpountz.lz4.LZ4Factory
+import net.jpountz.lz4.LZ4FrameInputStream
+import net.jpountz.xxhash.XXHashFactory
 
 /** Implementation of the '`sync` protocol, using [DeviceFileState] as the backing "file system" */
 class SyncCommandHandler : DeviceCommandHandler("sync") {
@@ -71,6 +77,15 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
           }
           handleListV2Protocol(device, input, output)
         }
+        "SND2" -> {
+          if (!device.features.contains("sendrecv_v2")) {
+            closeSocketWithUnknownCommand(socket, syncRequest)
+            break
+          }
+          if (!handleSendV2Protocol(device, socket, input, output)) {
+            break
+          }
+        }
 
         "QUIT" -> {
           handleQuitProtocol(input, socket)
@@ -103,6 +118,7 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
         "DONE" -> {
           val modifiedDate = readDonePacket(input)
           val bytes = bytePackets.flatMap { it.asIterable() }.toByteArray()
+          device.addSyncSendRequest(SyncSendRequest("SEND", path, permission, 0, bytePackets.map { it.size }, bytes))
           if (path.isEmpty()) {
             sendSyncFail(output, "'$path' not a directory")
             return
@@ -118,6 +134,101 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
         }
       }
     }
+  }
+
+  /**
+   * Data is sent by the peer using 'DATA' and 'DONE' packets, after a `SND2` header that specifies how the file contents are compressed.
+   * When compression is enabled, the payloads of all the 'DATA' packets form a single compressed stream.
+   *
+   * Returns `false` if the socket has been closed, i.e. if no other request can be processed.
+   *
+   * See `do_send_v2` in
+   * [file_sync_service.cpp](https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/adb/daemon/file_sync_service.cpp)
+   */
+  private fun handleSendV2Protocol(device: DeviceState, socket: Socket, input: InputStream, output: OutputStream): Boolean {
+    val header = readSendV2Header(input, output)
+    val useLz4 =
+      when (header.flags) {
+        SEND_V2_FLAG_NONE -> false
+        SEND_V2_FLAG_LZ4 -> true
+        else -> {
+          // Note: The ADB daemon also supports Brotli, Zstd and "dry run", but we don't implement them.
+          sendSyncFail(output, "unknown flags: ${header.flags}")
+          socket.shutdownGracefully()
+          return false
+        }
+      }
+    val payloadStream = ByteArrayOutputStream()
+    val dataPacketSizes = ArrayList<Int>()
+    while (true) {
+      // Bytes 0-3: 'DATA' or 'DONE'
+      when (readSyncRequest(input)) {
+        "DATA" -> {
+          val bytes = readDataPacket(input)
+          if (bytes.size > SYNC_DATA_MAX) {
+            sendSyncFail(output, "oversize data message: ${bytes.size} bytes")
+            socket.shutdownGracefully()
+            return false
+          }
+          payloadStream.write(bytes)
+          dataPacketSizes.add(bytes.size)
+        }
+        "DONE" -> {
+          val modifiedDate = readDonePacket(input)
+          val payload = payloadStream.toByteArray()
+          device.addSyncSendRequest(SyncSendRequest("SND2", header.path, header.mode, header.flags, dataPacketSizes, payload))
+          if (header.path.isEmpty()) {
+            sendSyncFail(output, "'${header.path}' not a directory")
+            return true
+          }
+          // Note: The ADB daemon ignores compression for symbolic links
+          val isSymbolicLink = (header.mode and S_IFMT) == S_IFLNK
+          val bytes =
+            if (useLz4 && !isSymbolicLink) {
+              try {
+                decompressLz4Frame(payload)
+              } catch (e: IOException) {
+                sendSyncFail(output, "decompress failed: ${e.message}")
+                return true
+              }
+            } else {
+              payload
+            }
+          device.createFile(DeviceFileState(header.path, header.mode, modifiedDate, bytes))
+          sendSyncOkay(output)
+          return true
+        }
+        else -> {
+          sendSyncFail(output, "invalid data message")
+          socket.shutdownGracefully()
+          return false
+        }
+      }
+    }
+  }
+
+  /**
+   * Decompresses [payload], which must contain exactly one [LZ4 frame](https://github.com/lz4/lz4/blob/dev/doc/lz4_Frame_format.md), as
+   * expected by the ADB daemon.
+   */
+  private fun decompressLz4Frame(payload: ByteArray): ByteArray {
+    if (payload.isEmpty()) {
+      // Note: The ADB daemon waits for the end of the LZ4 frame before acknowledging the "DONE" packet, i.e. it would wait forever
+      throw IOException("LZ4 frame is missing")
+    }
+    val payloadStream = ByteArrayInputStream(payload)
+    val bytes =
+      LZ4FrameInputStream(
+          payloadStream,
+          LZ4Factory.safeInstance().safeDecompressor(),
+          XXHashFactory.safeInstance().hash32(),
+          /* readSingleFrame= */ true,
+        )
+        .use { it.readAllBytes() }
+    if (payloadStream.available() > 0) {
+      throw IOException("LZ4 stream hit end before reading all data")
+    }
+    return bytes
   }
 
   /** Response is sent to the peer using 'DATA', 'DONE' or 'FAIL' packets */
@@ -295,6 +406,31 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
     return SendHeader(header.substring(0, index), header.substring(index + 1, header.length).toInt())
   }
 
+  private data class SendV2Header(val path: String, val mode: Int, val flags: Int)
+
+  private fun readSendV2Header(input: InputStream, output: OutputStream): SendV2Header {
+    // Bytes 0-3: 'SND2'
+    // Bytes 4-7: request size (little endian)
+    // Bytes 8-xx: An utf-8 string with the remote file path
+    val length = readLength(input)
+    val path = String(readExactly(input, length), UTF_8)
+
+    //  struct __attribute__((packed)) sync_send_v2 {
+    //    uint32_t id;    /* 'SND2' */
+    //    uint32_t mode;  /* File type and mode */
+    //    uint32_t flags; /* Compression and other flags */
+    //  };
+    val id = readSyncRequest(input)
+    if (id != "SND2") {
+      val errorMessage = "Send v2 protocol error: expected 'SND2' setup packet, got '$id'"
+      sendSyncFail(output, errorMessage)
+      throw IOException(errorMessage)
+    }
+    val mode = readInt32(input)
+    val flags = readInt32(input)
+    return SendV2Header(path, mode, flags)
+  }
+
   private fun readRecvHeader(input: InputStream): String {
     // Bytes 0-3: 'RECV'
     // Bytes 4-7: request size (little endian)
@@ -408,5 +544,22 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
       pos += byteCount
     }
     return buffer
+  }
+
+  companion object {
+
+    /** Maximum size of the payload of a `DATA` packet */
+    private const val SYNC_DATA_MAX = 64 * 1024
+
+    // See `kSyncFlagXxx` values in
+    // https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/adb/file_sync_protocol.h
+    private const val SEND_V2_FLAG_NONE = 0
+    private const val SEND_V2_FLAG_LZ4 = 2
+
+    /** Bit mask for the file type bits of a file mode */
+    private const val S_IFMT = 0xF000
+
+    /** Symbolic link file type */
+    private const val S_IFLNK = 0xA000
   }
 }

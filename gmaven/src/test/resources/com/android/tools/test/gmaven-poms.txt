@@ -316,6 +316,7 @@ com.android.tools.adblib:adblib
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
     com.google.protobuf:protobuf-java (runtime)
+    at.yawk.lz4:lz4-java (runtime)
 
 com.android.tools.adblib:adblib-ddmlibcompatibility
   pomName=com.android.tools.adblib.adblib-ddmlibcompatibility
@@ -688,6 +689,7 @@ com.android.tools.fakeadbserver:fakeadbserver
   description=Library implementing the ADB Server protocol
   dependencies:
     com.android.tools:common (runtime)
+    at.yawk.lz4:lz4-java (runtime)
     com.google.protobuf:protobuf-java (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.jetbrains.kotlin:kotlin-reflect (runtime)

@@ -67,6 +67,37 @@ interface AdbDeviceSyncServices : AutoShutdown {
   )
 
   /**
+   * Sends the contents of an [AdbInputChannel] to the [remoteFilePath] file on the remote device using the `SND2` command of the "sync v2"
+   * protocol, which supports compressing the file contents on the fly (see [SendV2Options.compression]).
+   *
+   * Note: Requires the [AdbFeatures.SENDRECV_V2] feature from [AdbHostServices.availableFeatures] (API 31+), or the implementation falls
+   * back to [send] if [SendV2Options.fallbackToSendV1] is `true` (the default).
+   *
+   * Note: The contents of symbolic links (see [RemoteFileMode.isSymbolicLink]) are never compressed, as the ADB daemon does not support it.
+   *
+   * If [remoteFileTime] is not provided, it defaults to the current system time.
+   *
+   * [progress] reports the number of (uncompressed) bytes read from [sourceChannel]. [bufferSize] is the maximum size of the `DATA` packets
+   * sent to the device, i.e. it should not exceed [SYNC_DATA_MAX].
+   *
+   * Note: If the directory for [remoteFilePath] does not exist on the device, an attempt is made to create this directory (and its parent).
+   * This may fail for various reasons, in which case an [AdbFailResponseException] is thrown.
+   *
+   * @throws AdbFailResponseException if the ADB daemon cannot process the file contents
+   * @throws AdbProtocolErrorException if there is an unexpected ADB protocol error
+   * @throws IOException if there is an I/O error
+   */
+  suspend fun sendV2(
+    sourceChannel: AdbInputChannel,
+    remoteFilePath: String,
+    remoteFileMode: RemoteFileMode,
+    remoteFileTime: FileTime?,
+    progress: SyncProgress?,
+    bufferSize: Int = SYNC_DATA_MAX,
+    options: SendV2Options = defaultSendV2Options,
+  )
+
+  /**
    * Retrieves the contents of the [remoteFilePath] file from the remote device to an [AdbOutputChannel] (`RECV` command)
    *
    * @throws AdbFailResponseException if the ADB daemon cannot send the file contents
@@ -156,12 +187,42 @@ interface AdbDeviceSyncServices : AutoShutdown {
     val fallbackToListV1: Boolean = true,
   )
 
+  /** Options of [AdbDeviceSyncServices.sendV2] */
+  data class SendV2Options(
+    /** The compression algorithm used to transfer the file contents to the device */
+    val compression: SendV2Compression = SendV2Compression.AUTO,
+    /** Fallback to executing [AdbDeviceSyncServices.send] when [AdbDeviceSyncServices.sendV2] is not supported (older devices). */
+    val fallbackToSendV1: Boolean = true,
+  )
+
+  /** Compression algorithm used by [AdbDeviceSyncServices.sendV2] to transfer file contents to the device */
+  enum class SendV2Compression {
+    /**
+     * Use the best compression algorithm supported by both the ADB host and the device, i.e. [LZ4] if [AdbFeatures.SENDRECV_V2_LZ4] is
+     * available (see [AdbHostServices.availableFeatures]), [NONE] otherwise.
+     */
+    AUTO,
+
+    /** Transfer file contents without compression */
+    NONE,
+
+    /**
+     * Compress file contents using the [LZ4 frame format](https://github.com/lz4/lz4/blob/dev/doc/lz4_Frame_format.md).
+     *
+     * Note: This value is used even if [AdbFeatures.SENDRECV_V2_LZ4] is not available (see [AdbHostServices.availableFeatures]), in which
+     * case the file transfer fails if the device does not support LZ4 compression. Use [AUTO] to select LZ4 only when it is supported.
+     */
+    LZ4,
+  }
+
   companion object {
     private val defaultListOptions = ListOptions()
 
     private val defaultStatV2Options = StatV2Options()
 
     private val defaultListV2Options = ListV2Options()
+
+    private val defaultSendV2Options = SendV2Options()
   }
 }
 
