@@ -101,6 +101,56 @@ class DefaultFileStorageTest(private val fileSystemId: FileSystemId) {
   }
 
   @Test
+  fun `check destination directory is empty succeeds if not empty and overwrite is enabled`() {
+    // Prepare
+    val messageSink = DefaultTemplateMessageSink(TemplateMessageSink.Severity.Error)
+    val rootPath = getTestRootPath()
+    val storage = DefaultFileStorage(messageSink, destinationPathProvider = { rootPath }, overwriteExistingFiles = true)
+
+    // Act
+    Files.createDirectories(rootPath)
+    Files.createFile(rootPath.resolve("someFile.txt"))
+
+    // Assert
+    storage.checkDestinationDirectoryIsEmpty()
+  }
+
+  @Test
+  fun `check destination directory is empty fails if destination is a file even if overwrite is enabled`() {
+    // Prepare
+    val messageSink = DefaultTemplateMessageSink(TemplateMessageSink.Severity.Error)
+    val rootPath = getTestRootPath()
+    val storage = DefaultFileStorage(messageSink, destinationPathProvider = { rootPath }, overwriteExistingFiles = true)
+
+    // Act
+    Files.createDirectories(rootPath.parent)
+    Files.deleteIfExists(rootPath)
+    Files.createFile(rootPath)
+
+    // Assert
+    assertThrows(IOException::class.java) { storage.checkDestinationDirectoryIsEmpty() }
+  }
+
+  @Test
+  fun `save file overwrites existing file and preserves unrelated files if overwrite is enabled`() {
+    // Prepare
+    val messageSink = DefaultTemplateMessageSink(TemplateMessageSink.Severity.Error)
+    val rootPath = getTestRootPath()
+    val storage = DefaultFileStorage(messageSink, destinationPathProvider = { rootPath }, overwriteExistingFiles = true)
+    Files.createDirectories(rootPath)
+    Files.write(rootPath.resolve("existing.txt"), "old".toByteArray())
+    Files.write(rootPath.resolve("unrelated.txt"), "keep".toByteArray())
+
+    // Act
+    storage.checkDestinationDirectoryIsEmpty()
+    storage.saveFile(TemplateFile("existing.txt", "new".toByteArray()))
+
+    // Assert
+    assertThat(String(Files.readAllBytes(rootPath.resolve("existing.txt")))).isEqualTo("new")
+    assertThat(String(Files.readAllBytes(rootPath.resolve("unrelated.txt")))).isEqualTo("keep")
+  }
+
+  @Test
   fun `create destination directory`() {
     // Prepare
     val messageSink = DefaultTemplateMessageSink(TemplateMessageSink.Severity.Error)

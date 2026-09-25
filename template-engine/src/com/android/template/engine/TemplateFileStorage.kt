@@ -25,7 +25,10 @@ import java.nio.file.attribute.PosixFilePermission
 internal interface TemplateFileStorage {
   val destinationPath: Path
 
-  /** Check if destination directory exists, throws an exception if not */
+  /**
+   * Checks that the destination path is usable, throws an exception if not. The destination must either not exist or be a directory. Unless
+   * overwriting existing files is enabled, the directory must also be empty.
+   */
   fun checkDestinationDirectoryIsEmpty()
 
   fun createDestinationDirectory()
@@ -34,8 +37,11 @@ internal interface TemplateFileStorage {
   fun saveFile(templateFile: TemplateFile)
 }
 
-internal class DefaultFileStorage(private val messageSink: TemplateMessageSink, private val destinationPathProvider: () -> Path) :
-  TemplateFileStorage {
+internal class DefaultFileStorage(
+  private val messageSink: TemplateMessageSink,
+  private val destinationPathProvider: () -> Path,
+  private val overwriteExistingFiles: Boolean = false,
+) : TemplateFileStorage {
 
   override val destinationPath by lazy { destinationPathProvider() }
 
@@ -43,6 +49,9 @@ internal class DefaultFileStorage(private val messageSink: TemplateMessageSink, 
     if (Files.exists(destinationPath)) {
       if (!Files.isDirectory(destinationPath)) {
         throw IOException("Path '$destinationPath' exists but is not a directory")
+      }
+      if (overwriteExistingFiles) {
+        return
       }
       val isNotEmpty = Files.list(destinationPath).use { it.findAny().isPresent }
       if (isNotEmpty) {
@@ -64,6 +73,10 @@ internal class DefaultFileStorage(private val messageSink: TemplateMessageSink, 
 
     // In case it's just a directory
     if (!Files.isDirectory(targetFile)) {
+      if (Files.exists(targetFile)) {
+        // Only reachable when overwriting is enabled, since the destination directory is otherwise required to be empty.
+        messageSink.message(Severity.Info) { "Overwriting existing file '$targetFile'" }
+      }
       messageSink.message(Severity.Verbose) { "Saving destination file '$targetFile' (${templateFile.content.size} byte(s))" }
       Files.write(targetFile, templateFile.content)
 
@@ -80,12 +93,21 @@ internal class DefaultFileStorage(private val messageSink: TemplateMessageSink, 
   }
 }
 
-internal class DryRunFileStorage(private val messageSink: TemplateMessageSink, destinationPathProvider: () -> Path) : TemplateFileStorage {
+internal class DryRunFileStorage(
+  private val messageSink: TemplateMessageSink,
+  destinationPathProvider: () -> Path,
+  private val overwriteExistingFiles: Boolean = false,
+) : TemplateFileStorage {
   override val destinationPath by lazy { destinationPathProvider() }
 
   override fun checkDestinationDirectoryIsEmpty() {
     if (Files.exists(destinationPath)) {
-      throw IOException("Directory (or file) '$destinationPath' already exists")
+      if (!overwriteExistingFiles) {
+        throw IOException("Directory (or file) '$destinationPath' already exists")
+      }
+      if (!Files.isDirectory(destinationPath)) {
+        throw IOException("Path '$destinationPath' exists but is not a directory")
+      }
     }
   }
 
@@ -96,6 +118,9 @@ internal class DryRunFileStorage(private val messageSink: TemplateMessageSink, d
   override fun saveFile(templateFile: TemplateFile) {
     val targetFile = destinationPath.resolve(templateFile.relativePath)
 
+    if (Files.isRegularFile(targetFile)) {
+      messageSink.message(Severity.Info) { "DryRun: Would overwrite existing file '$targetFile'" }
+    }
     messageSink.message(Severity.Verbose) { "DryRun: Would create file '$targetFile' (${templateFile.content.size} byte(s))" }
   }
 }

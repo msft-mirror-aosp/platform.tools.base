@@ -21,13 +21,28 @@ import java.nio.file.Path
 interface TemplateEngineFactory {
   fun createTemplateListBuilder(messageSink: TemplateMessageSink): TemplateListBuilder
 
+  /**
+   * Creates an engine that writes template files to disk.
+   *
+   * By default, the destination directory must either not exist or be empty. When [overwriteExistingFiles] is `true`, a non-empty
+   * destination directory is accepted and existing files are overwritten by template files with the same relative path.
+   */
   fun createDefaultEngine(
     messageSink: TemplateMessageSink,
     dependencyInstaller: DependencyInstaller,
     destinationPathProvider: () -> Path,
+    overwriteExistingFiles: Boolean = false,
   ): TemplateEngine
 
-  fun createDryRunEngine(messageSink: TemplateMessageSink, destinationPathProvider: () -> Path): TemplateEngine
+  /**
+   * Creates an engine that processes templates without writing to disk. See [createDefaultEngine] for the meaning of
+   * [overwriteExistingFiles].
+   */
+  fun createDryRunEngine(
+    messageSink: TemplateMessageSink,
+    destinationPathProvider: () -> Path,
+    overwriteExistingFiles: Boolean = false,
+  ): TemplateEngine
 
   companion object {
     fun createDefault(filterTemplateDefinitionStrategy: FilterTemplateDefinitionStrategy = DefaultStrategy()): TemplateEngineFactory {
