@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.Level
 import java.util.logging.Logger
 import org.junit.platform.commons.JUnitException
@@ -66,7 +67,7 @@ class AndroidTestResultListener : TestExecutionListener {
   private val perDeviceDeviceInfoPath = ConcurrentHashMap<String, String>()
 
   /** Tracks test results for each device serial. */
-  private val perDeviceTestResults = ConcurrentHashMap<String, MutableList<TestResultProto.TestResult>>()
+  private val perDeviceTestResults = ConcurrentHashMap<String, ConcurrentLinkedQueue<TestResultProto.TestResult>>()
 
   /**
    * Tracks logcat file paths for each test. UniqueId -> LogcatPath.
@@ -174,6 +175,7 @@ class AndroidTestResultListener : TestExecutionListener {
   }
 
   /** Emits a TestSuiteStarted event for the given [deviceId] with the specified [scheduledTestCount]. */
+  @Synchronized
   private fun emitTestSuiteStarted(deviceId: String, scheduledTestCount: Int) {
     if (perDeviceTestSuiteStartedEmitted[deviceId] == true) return
     try {
@@ -203,7 +205,7 @@ class AndroidTestResultListener : TestExecutionListener {
         TestResultProto.TestResult.newBuilder().setTestCase(testCaseProto).setTestStatus(TestStatusProto.TestStatus.IGNORED).build()
 
       if (deviceId.isNotEmpty()) {
-        perDeviceTestResults.getOrPut(deviceId) { mutableListOf() }.add(testResult)
+        perDeviceTestResults.getOrPut(deviceId) { ConcurrentLinkedQueue() }.add(testResult)
       }
 
       val testCaseFinished = TestResultEvent.TestCaseFinished.newBuilder().setTestCaseResult(Any.pack(testResult)).build()
@@ -322,7 +324,7 @@ class AndroidTestResultListener : TestExecutionListener {
           .build()
 
       if (deviceId.isNotEmpty()) {
-        perDeviceTestResults.getOrPut(deviceId) { mutableListOf() }.add(testResult)
+        perDeviceTestResults.getOrPut(deviceId) { ConcurrentLinkedQueue() }.add(testResult)
       }
 
       val testCaseFinished = TestResultEvent.TestCaseFinished.newBuilder().setTestCaseResult(Any.pack(testResult)).build()

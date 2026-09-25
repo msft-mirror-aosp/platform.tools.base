@@ -432,6 +432,53 @@ class AndroidTestResultListenerTest {
   }
 
   @Test
+  fun testSuiteFinished_concurrentExecutionFinished_recordsAllTestResults() {
+    val tempFile = File.createTempFile("test-results-concurrent", ".pb")
+    systemPropertyOverrides.setProperty(AndroidTestResultListenerKeys.TEST_RESULTS_FILE, tempFile.absolutePath)
+    try {
+      val listener = AndroidTestResultListener()
+      val deviceIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
+      whenever(deviceIdentifier.isContainer).thenReturn(true)
+      listener.executionStarted(deviceIdentifier)
+
+      val testCount = 50
+      val testIdentifiers =
+        (0 until testCount).map { i ->
+          val id = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:test_$i]")
+          val methodSource = MethodSource.from("com.example.MyTest", "test_$i")
+          whenever(id.source).thenReturn(Optional.of(methodSource))
+          id
+        }
+
+      val executor = java.util.concurrent.Executors.newFixedThreadPool(10)
+      val startLatch = CountDownLatch(1)
+      val doneLatch = CountDownLatch(testCount)
+
+      for (testId in testIdentifiers) {
+        executor.submit {
+          try {
+            startLatch.await()
+            listener.executionFinished(testId, TestExecutionResult.successful())
+          } finally {
+            doneLatch.countDown()
+          }
+        }
+      }
+
+      startLatch.countDown()
+      assertThat(doneLatch.await(10, TimeUnit.SECONDS)).isTrue()
+      executor.shutdown()
+
+      listener.executionFinished(deviceIdentifier, TestExecutionResult.successful())
+
+      val testSuiteResult = tempFile.inputStream().use { TestSuiteResultProto.TestSuiteResult.parseFrom(it) }
+      assertThat(testSuiteResult.testResultCount).isEqualTo(testCount)
+    } finally {
+      tempFile.delete()
+    }
+  }
+
+  @Test
   fun printTestResultEvent_disabled() {
     systemPropertyOverrides.setProperty(AndroidTestResultListenerKeys.STREAM_BASE64_ENCODED_RESULT, "false")
     val listener = AndroidTestResultListener()
