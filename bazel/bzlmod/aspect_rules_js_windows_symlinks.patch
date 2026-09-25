@@ -1,0 +1,44 @@
+# Patch aspect_rules_js for Windows compatibility:
+# 1. bash.bzl: Add RUNFILES_DIR, RUNFILES, and <binary>.bat.runfiles fallback discovery.
+# 2. utils.bzl: Pass target_type = "directory" to ctx.actions.symlink so Windows creates
+#    NTFS directory symlinks rather than file symlinks for npm packages.
+
+diff -ruN a/js/private/bash.bzl b/js/private/bash.bzl
+--- a/js/private/bash.bzl	2024-08-14 14:39:35.000000000 -0700
++++ b/js/private/bash.bzl	2026-08-18 18:44:54.627345500 -0700
+@@ -72,6 +72,11 @@
+         logf_fatal "Unexpected RUNFILES_MANIFEST_FILE value $RUNFILES_MANIFEST_FILE"
+         exit 1
+     fi
++# [Local & RBE] Discover runfiles from standard RUNFILES_DIR or RUNFILES environment variables exported by Bazel
++elif [ "${RUNFILES_DIR:-}" ]; then
++    RUNFILES=$(_normalize_path "$RUNFILES_DIR")
++elif [ "${RUNFILES:-}" ]; then
++    RUNFILES=$(_normalize_path "$RUNFILES")
+ else
+     case "$0" in
+     /*) self="$0" ;;
+@@ -83,6 +88,12 @@
+             break
+         fi
+ 
++        # [Local] On Windows, binary targets have .bat wrappers where runfiles are placed under <binary>.bat.runfiles
++        if [ -e "$self.bat.runfiles" ]; then
++            RUNFILES="$self.bat.runfiles"
++            break
++        fi
++
+         if [[ "$self" == *.runfiles/* ]]; then
+             RUNFILES="${self%%.runfiles/*}.runfiles"
+             # don't break; this is a last resort for case 6b
+diff -ruN a/npm/private/utils.bzl b/npm/private/utils.bzl
+--- a/npm/private/utils.bzl	2024-08-14 14:39:35.000000000 -0700
++++ b/npm/private/utils.bzl	2026-08-18 18:44:54.625315300 -0700
+@@ -71,6 +71,7 @@
+     ctx.actions.symlink(
+         output = symlink,
+         target_path = relative_file(target_path, symlink.path),
++        target_type = "directory",
+     )
+     return symlink
+ 
