@@ -53,8 +53,10 @@ public class AndroidSdkHandlerTest extends TestCase {
         FakeLocalPackage qr2_1 = new FakeLocalPackage("q;r;2.1", sdkRoot.resolve("q/r/2.1"));
         qr2_1.setRevision(Revision.parseRevision("2.1"));
 
-        RepositoryPackages packages = new RepositoryPackages();
-        packages.setLocalPkgInfos(ImmutableList.of(p1_1, p1_20, p2_1, p2_2_rc3, qr2_0, qr2_1));
+        RepositoryPackages packages =
+                new RepositoryPackages(
+                        ImmutableList.of(p1_1, p1_20, p2_1, p2_2_rc3, qr2_0, qr2_1),
+                        ImmutableList.of());
 
         LocalPackage latest =
                 AndroidSdkHandler.getLatestPackageFromPrefixCollection(
@@ -163,9 +165,8 @@ public class AndroidSdkHandlerTest extends TestCase {
         FakeLocalPackage pgarbage = new FakeLocalPackage("p;garbage");
         pgarbage.setRevision(Revision.parseRevision("1.2.3"));
 
-        RepositoryPackages packages = new RepositoryPackages();
-
-        packages.setLocalPkgInfos(ImmutableList.of(p1_1, pgarbage));
+        RepositoryPackages packages =
+                new RepositoryPackages(ImmutableList.of(p1_1, pgarbage), ImmutableList.of());
         try {
             AndroidSdkHandler.getLatestPackageFromPrefixCollection(
                     packages.getLocalPackagesForPrefix("p"),

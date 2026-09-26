@@ -87,7 +87,7 @@ class RepositoryPackages() {
   /**
    * Sets the collection of known [LocalPackage]s, and recomputes the list of updates and new packages, if [RemotePackage]s have been set.
    */
-  fun setLocalPkgInfos(packages: Collection<LocalPackage>) {
+  internal fun setLocalPkgInfos(packages: Collection<LocalPackage>) {
     synchronized(lock) {
       this.localPackages = ImmutableSortedMap.copyOf(packages.associateBy { it.path })
       invalidate()
