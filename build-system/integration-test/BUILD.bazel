@@ -1,5 +1,5 @@
 load("//tools/base/bazel:maven.bzl", "maven_repository")
-load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_FOR_TESTS", "KSP_VERSION_FOR_TESTS")
+load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_2_3_10", "KGP_FOR_TESTS", "KSP_VERSION_FOR_TESTS")
 
 [
     filegroup(
@@ -144,6 +144,20 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# KGP 2.5+ requires Gradle 8.14+, so the sync benchmarks that use older AGP
+# versions (e.g. AGP 8.13 with Gradle 8.13) use KGP 2.3.10 instead.
+maven_repository(
+    name = "kotlin_gradle_plugin_2_3_10_prebuilts_for_sync_benchmarks",
+    artifacts = KGP_2_3_10 + [
+        # The benchmark project also applies the Compose compiler plugin.
+        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.3.10",
+        "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )

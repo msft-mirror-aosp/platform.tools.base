@@ -56,6 +56,9 @@ class KotlinSourcesModelTest {
 
   @Test
   fun kotlinSourcesLocationNotAllowedAndHasNoEffectWhenBuiltInKotlinEnabled() {
+    // Don't use the nested `kotlin { sourceSets { main { ... } } }` block: since KGP 2.5, Groovy
+    // resolves `sourceSets { }` to a (deprecated) `sourceSets(Function1)` member, which passes the
+    // container as the closure argument instead of its delegate, so `main { }` can't be resolved.
     project.buildFile.appendText(
       """
       buildscript {
@@ -64,15 +67,7 @@ class KotlinSourcesModelTest {
           }
       }
 
-      kotlin {
-          sourceSets {
-              main {
-                   kotlin {
-                       srcDir "src/main/kotlinDir"
-                   }
-              }
-          }
-      }
+      kotlin.sourceSets.maybeCreate("main").kotlin.srcDir("src/main/kotlinDir")
       """
         .trimIndent()
     )
@@ -88,6 +83,8 @@ class KotlinSourcesModelTest {
 
   @Test
   fun kotlinSourcesLocationUsingKotlinAndroid() {
+    // See kotlinSourcesLocationNotAllowedAndHasNoEffectWhenBuiltInKotlinEnabled for why the nested
+    // `kotlin { sourceSets { main { ... } } }` block isn't used.
     project.buildFile.appendText(
       """
       buildscript {
@@ -97,15 +94,7 @@ class KotlinSourcesModelTest {
       }
 
       apply plugin: 'kotlin-android'
-      kotlin {
-          sourceSets {
-              main {
-                   kotlin {
-                       srcDir "src/main/kotlinDir"
-                   }
-              }
-          }
-      }
+      kotlin.sourceSets.maybeCreate("main").kotlin.srcDir("src/main/kotlinDir")
       """
         .trimIndent()
     )
