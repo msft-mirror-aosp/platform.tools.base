@@ -36,12 +36,6 @@ dex_library(
     visibility = ["//tools/base/android-test/coverage/agent/native:__pkg__"],
 )
 
-# This is what AGP bundles into the Test APK.
-dex_library(
-    name = "coverage_rt",
-    jars = [":coverage_rt_java"],
-)
-
 java_test(
     name = "coverage_tracker_test",
     srcs = ["src/test/java/com/android/tools/coverage/CoverageTrackerTest.java"],
