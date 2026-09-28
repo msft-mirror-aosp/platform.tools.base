@@ -35,6 +35,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.PsiType
+import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiTreeUtil
@@ -334,7 +335,7 @@ internal fun UField.getKtPropertySetter(): PsiMethod? {
     ?.filter { it.name == setterName || it.name.startsWith("$setterName$") }
     ?.singleOrNull { method ->
       method.parameterList.parameters.singleOrNull()?.type == type &&
-        method.returnType == PsiType.VOID &&
+        method.returnType == PsiTypes.voidType() &&
         (method as? KtLightMethod)?.isSetter == true
     }
 }
