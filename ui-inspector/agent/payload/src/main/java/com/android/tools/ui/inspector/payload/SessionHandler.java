@@ -92,9 +92,9 @@ public final class SessionHandler {
       Log.i(TAG, "Client disconnected (EOF)");
     } catch (IOException e) {
       Log.i(TAG, "Client connection lost: " + e.getMessage());
-    } catch (Exception e) {
-      Log.e(TAG, "Error handling client session", e);
-      crashListener.onCrash(e);
+    } catch (Throwable t) {
+      Log.e(TAG, "Error handling client session", t);
+      crashListener.onCrash(t);
     } finally {
       // Clear active connections in each inspector
       for (InspectorBridge bridge : inspectorBridges.values()) {
@@ -125,9 +125,9 @@ public final class SessionHandler {
             }
     } catch (IOException e) {
       throw e;
-    } catch (Exception e) {
-      Log.e(TAG, "Error handling command", e);
-      replyError(commandId, "Error handling command: " + e.getMessage());
+    } catch (Throwable t) {
+      Log.e(TAG, "Error handling command", t);
+      replyError(commandId, "Error handling command: " + t);
       return false;
     }
   }

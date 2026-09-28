@@ -335,6 +335,108 @@ public final class SessionHandlerTest {
   }
 
   @Test
+  public void testHandle_inspectorThrowsError_repliesErrorAndKeepsSession() throws Exception {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+    UiInspectorProtocol.Command command1 = UiInspectorProtocol.Command.newBuilder()
+        .setCommandId(1)
+        .setInspectorMessage(UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+            .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+            .setPayload(com.android.tools.idea.protobuf.ByteString.copyFrom(new byte[]{10}))
+            .build())
+        .build();
+
+    UiInspectorProtocol.Command command2 = UiInspectorProtocol.Command.newBuilder()
+        .setCommandId(2)
+        .setInspectorMessage(UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+            .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+            .setPayload(com.android.tools.idea.protobuf.ByteString.copyFrom(new byte[]{20}))
+            .build())
+        .build();
+
+    ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+    FramingProtocol.writeMessage(inputStreamData, command1.toByteArray());
+    FramingProtocol.writeMessage(inputStreamData, command2.toByteArray());
+    ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+    Inspector throwingInspector = new Inspector(mockConnection) {
+      @Override
+      public void onReceiveCommand(byte[] data, CommandCallback callback) {
+        if (data[0] == 10) {
+          throw new UnsatisfiedLinkError("No implementation found for nativeMethod");
+        }
+        callback.reply(new byte[]{30});
+      }
+
+      @Override
+      public void onDispose() {}
+    };
+
+    CountDownLatch shutdownLatch = new CountDownLatch(1);
+    Map<String, InspectorBridge> bridges = new HashMap<>();
+    HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test_thread_error", t -> {
+      throw new RuntimeException(t);
+    });
+    bridges.put(
+        ProtocolConstants.VIEW_INSPECTOR_ID,
+        InspectorBridge.createForTesting(
+            ProtocolConstants.VIEW_INSPECTOR_ID,
+            throwingInspector,
+            new AppInspectionUtils.DelegatingConnection(),
+            primaryExecutor));
+
+    SessionHandler sessionHandler = new SessionHandler(
+        inputStream,
+        outputStream,
+        t -> {
+          throw new RuntimeException(t);
+        },
+        shutdownLatch,
+        bridges
+    );
+
+    sessionHandler.processCommands();
+    primaryExecutor.quitSafely();
+
+    ByteArrayInputStream responseInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+    UiInspectorProtocol.Response response1 =
+        UiInspectorProtocol.AgentMessage.parseFrom(FramingProtocol.readMessage(responseInputStream)).getResponse();
+    assertThat(response1.getCommandId()).isEqualTo(1);
+    assertThat(response1.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+    assertThat(response1.getErrorMessage()).contains("No implementation found for nativeMethod");
+
+    UiInspectorProtocol.Response response2 =
+        UiInspectorProtocol.AgentMessage.parseFrom(FramingProtocol.readMessage(responseInputStream)).getResponse();
+    assertThat(response2.getCommandId()).isEqualTo(2);
+    assertThat(response2.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
+  }
+
+  @Test
+  public void testProcessCommands_errorWhileReading_reportsCrashAndReturns() {
+    OutOfMemoryError error = new OutOfMemoryError("simulated");
+    InputStream throwingInputStream = new InputStream() {
+      @Override
+      public int read() {
+        throw error;
+      }
+    };
+
+    List<Throwable> crashes = new ArrayList<>();
+    SessionHandler sessionHandler = new SessionHandler(
+        throwingInputStream,
+        new ByteArrayOutputStream(),
+        crashes::add,
+        new CountDownLatch(1),
+        new HashMap<>()
+    );
+
+    sessionHandler.processCommands();
+
+    assertThat(crashes).containsExactly(error);
+  }
+
+  @Test
   public void testHandle_getVersion_composeAbsent() throws Exception {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
