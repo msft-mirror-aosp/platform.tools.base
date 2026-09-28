@@ -202,6 +202,7 @@ internal class InjectionManager(
 
     val debugViewAttributesSetup = async { if (needsDebugViewAttributes) debugViewAttributes.enable() }
 
+    val agentName = fileNameWithHash(AGENT_FILE_NAME, digests.agentBinary)
     val libraryDexName = fileNameWithHash(LIBRARY_DEX_FILE_NAME, digests.libraryDex)
     val payloadJarName = fileNameWithHash(PAYLOAD_JAR_FILE_NAME, digests.payloadJar)
     val (agentStagePath, libraryDexStagePath, payloadJarStagePath) =
@@ -214,10 +215,27 @@ internal class InjectionManager(
       )
     debugViewAttributesSetup.await()
 
-    installFiles(deviceSelector, packageName, agentStagePath, libraryDexStagePath, payloadJarStagePath, libraryDexName, payloadJarName)
+    installFiles(
+      deviceSelector,
+      packageName,
+      agentStagePath = agentStagePath,
+      libraryDexStagePath = libraryDexStagePath,
+      payloadJarStagePath = payloadJarStagePath,
+      agentName = agentName,
+      libraryDexName = libraryDexName,
+      payloadJarName = payloadJarName,
+    )
 
     val attachStartTime = captureAttachStartTime()
-    attachAgent(deviceSelector, pid, serverToken, appDataDir, libraryDexName, payloadJarName)
+    attachAgent(
+      deviceSelector,
+      pid,
+      serverToken,
+      appDataDir,
+      agentName = agentName,
+      libraryDexName = libraryDexName,
+      payloadJarName = payloadJarName,
+    )
 
     val socketName = ProtocolConstants.getSocketName(serverToken)
     agentSocketChecker.waitUntilPresent(socketName, pid, attachStartTime)
@@ -386,6 +404,7 @@ internal class InjectionManager(
     agentStagePath: String,
     libraryDexStagePath: String,
     payloadJarStagePath: String,
+    agentName: String,
     libraryDexName: String,
     payloadJarName: String,
   ) {
@@ -395,6 +414,7 @@ internal class InjectionManager(
         agentStagePath = agentStagePath,
         libraryDexStagePath = libraryDexStagePath,
         payloadJarStagePath = payloadJarStagePath,
+        agentName = agentName,
         libraryDexName = libraryDexName,
         payloadJarName = payloadJarName,
         tempSuffix = tempFileSuffixGenerator(),
@@ -429,10 +449,11 @@ internal class InjectionManager(
     pid: String,
     serverToken: String,
     appDataDir: String,
+    agentName: String,
     libraryDexName: String,
     payloadJarName: String,
   ) {
-    val appPath = "$appDataDir/$AGENT_FILE_NAME"
+    val appPath = "$appDataDir/$agentName"
     val appLibraryDexPath = "$appDataDir/$libraryDexName"
     val appPayloadJarPath = "$appDataDir/$payloadJarName"
     // Options are library_dex;agent_dex;agent_class;agent_options, where the UI Inspector passes the server token as its agent options.
@@ -466,34 +487,42 @@ private class UnverifiableProcessException(packageName: String, cause: Exception
 /**
  * Builds the `run-as` shell command that installs the staged artifacts into the app's data directory. Each file is written to a run-unique
  * temporary name and renamed onto its final name once the install is complete.
+ *
+ * The agent is only installed when [agentName] is absent. The dynamic linker recognizes an already-loaded library by its inode, not by its
+ * path. Replacing the file would give it a new inode. The next attach would then load a second copy of the agent into the process.
  */
 internal fun buildInstallCommand(
   packageName: String,
   agentStagePath: String,
   libraryDexStagePath: String,
   payloadJarStagePath: String,
+  agentName: String,
   libraryDexName: String,
   payloadJarName: String,
   tempSuffix: String,
 ): String {
-  val agentTmp = "$AGENT_FILE_NAME.$tempSuffix"
+  val agentTmp = "$agentName.$tempSuffix"
   val libraryDexTmp = "$libraryDexName.$tempSuffix"
   val payloadTmp = "$payloadJarName.$tempSuffix"
+  val otherAgentsPattern = fileNameWithHash(AGENT_FILE_NAME, CONTENT_DIGEST_PATTERN)
   val staleLibraryDexesPattern = fileNameWithHash(LIBRARY_DEX_FILE_NAME, CONTENT_DIGEST_PATTERN)
   val stalePayloadJarsPattern = fileNameWithHash(PAYLOAD_JAR_FILE_NAME, CONTENT_DIGEST_PATTERN)
   return "run-as $packageName sh -c '" +
     // Use trap to delete temporary files at the end.
     "trap \"rm -f $agentTmp $libraryDexTmp $payloadTmp\" 0 && " +
-    "test ! -d $AGENT_FILE_NAME && test ! -d $libraryDexName && test ! -d $payloadJarName && " +
-    // Sweep other installed versions of the jars first.
-    "rm -f $staleLibraryDexesPattern $stalePayloadJarsPattern && " +
-    "cat $agentStagePath > $agentTmp && " +
+    "test ! -d $agentName && test ! -d $libraryDexName && test ! -d $payloadJarName && " +
+    // Sweep other installed versions of the jars first. Also remove the agent installed under the unhashed name.
+    "rm -f $AGENT_FILE_NAME $staleLibraryDexesPattern $stalePayloadJarsPattern && " +
+    // Sweep other installed versions of the agent, but keep the current one.
+    "for f in $otherAgentsPattern; do test \"\$f\" = $agentName || rm -f \"\$f\" || exit 1; done && " +
     "cat $libraryDexStagePath > $libraryDexTmp && " +
     "cat $payloadJarStagePath > $payloadTmp && " +
-    "chmod 444 $agentTmp $libraryDexTmp $payloadTmp && " +
+    "chmod 444 $libraryDexTmp $payloadTmp && " +
     "mv -f $libraryDexTmp $libraryDexName && " +
     "mv -f $payloadTmp $payloadJarName && " +
-    "mv -f $agentTmp $AGENT_FILE_NAME'"
+    "if test ! -f $agentName; then " +
+    "cat $agentStagePath > $agentTmp && chmod 444 $agentTmp && mv -f $agentTmp $agentName; " +
+    "fi'"
 }
 
 /** Whether [InjectionManager.injectAndAttach] may reuse an already-running agent server. */

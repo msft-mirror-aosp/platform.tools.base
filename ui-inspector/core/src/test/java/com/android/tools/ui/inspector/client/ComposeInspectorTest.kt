@@ -64,6 +64,7 @@ private const val STAGING_DIR = "/data/local/tmp/ui-inspector"
 /** The ART Tooling agent class the attach command names, loaded from the payload dex. */
 private const val AGENT_CLASS_NAME = "com.android.tools.ui.inspector.payload.InspectorLauncher"
 
+private const val EMPTY_AGENT_NAME = "libarttooling_agent.$EMPTY_FILE_DIGEST.so"
 private const val EMPTY_LIBRARY_DEX_NAME = "libarttooling.$EMPTY_FILE_DIGEST.jar"
 private const val EMPTY_PAYLOAD_JAR_NAME = "lib_ui_inspector_payload.$EMPTY_FILE_DIGEST.jar"
 
@@ -71,9 +72,10 @@ private const val EMPTY_PAYLOAD_JAR_NAME = "lib_ui_inspector_payload.$EMPTY_FILE
 private fun emptyArtifactsInstallCommand(packageName: String): String =
   buildInstallCommand(
     packageName = packageName,
-    agentStagePath = "$STAGING_DIR/libarttooling_agent.$EMPTY_FILE_DIGEST.so",
+    agentStagePath = "$STAGING_DIR/$EMPTY_AGENT_NAME",
     libraryDexStagePath = "$STAGING_DIR/$EMPTY_LIBRARY_DEX_NAME",
     payloadJarStagePath = "$STAGING_DIR/$EMPTY_PAYLOAD_JAR_NAME",
+    agentName = EMPTY_AGENT_NAME,
     libraryDexName = EMPTY_LIBRARY_DEX_NAME,
     payloadJarName = EMPTY_PAYLOAD_JAR_NAME,
     tempSuffix = "test.tmp",
@@ -81,7 +83,7 @@ private fun emptyArtifactsInstallCommand(packageName: String): String =
 
 /** The exact attach command the production flow issues when all three base artifacts are empty files. */
 private fun emptyArtifactsAttachCommand(packageName: String, serverToken: String): String =
-  "cmd activity attach-agent 1234 \"/data/data/$packageName/libarttooling_agent.so=" +
+  "cmd activity attach-agent 1234 \"/data/data/$packageName/$EMPTY_AGENT_NAME=" +
     "/data/data/$packageName/$EMPTY_LIBRARY_DEX_NAME;/data/data/$packageName/$EMPTY_PAYLOAD_JAR_NAME;$AGENT_CLASS_NAME;$serverToken\""
 
 class ComposeInspectorTest {

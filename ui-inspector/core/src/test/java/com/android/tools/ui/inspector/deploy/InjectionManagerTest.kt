@@ -666,6 +666,7 @@ class InjectionManagerTest {
         agentStagePath = "$STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so",
         libraryDexStagePath = "$STAGING_DIR/libarttooling.bbbbbbbbbbbb.jar",
         payloadJarStagePath = "$STAGING_DIR/lib_ui_inspector_payload.cccccccccccc.jar",
+        agentName = "libarttooling_agent.aaaaaaaaaaaa.so",
         libraryDexName = "libarttooling.bbbbbbbbbbbb.jar",
         payloadJarName = "lib_ui_inspector_payload.cccccccccccc.jar",
         tempSuffix = "suffix.tmp",
@@ -674,19 +675,22 @@ class InjectionManagerTest {
     assertThat(command)
       .isEqualTo(
         "run-as com.example sh -c '" +
-          "trap \"rm -f libarttooling_agent.so.suffix.tmp libarttooling.bbbbbbbbbbbb.jar.suffix.tmp " +
+          "trap \"rm -f libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp libarttooling.bbbbbbbbbbbb.jar.suffix.tmp " +
           "lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp\" 0 && " +
-          "test ! -d libarttooling_agent.so && test ! -d libarttooling.bbbbbbbbbbbb.jar && " +
+          "test ! -d libarttooling_agent.aaaaaaaaaaaa.so && test ! -d libarttooling.bbbbbbbbbbbb.jar && " +
           "test ! -d lib_ui_inspector_payload.cccccccccccc.jar && " +
-          "rm -f libarttooling.$CONTENT_DIGEST_PATTERN.jar lib_ui_inspector_payload.$CONTENT_DIGEST_PATTERN.jar && " +
-          "cat $STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so > libarttooling_agent.so.suffix.tmp && " +
+          "rm -f libarttooling_agent.so libarttooling.$CONTENT_DIGEST_PATTERN.jar lib_ui_inspector_payload.$CONTENT_DIGEST_PATTERN.jar && " +
+          "for f in libarttooling_agent.$CONTENT_DIGEST_PATTERN.so; do " +
+          "test \"\$f\" = libarttooling_agent.aaaaaaaaaaaa.so || rm -f \"\$f\" || exit 1; done && " +
           "cat $STAGING_DIR/libarttooling.bbbbbbbbbbbb.jar > libarttooling.bbbbbbbbbbbb.jar.suffix.tmp && " +
           "cat $STAGING_DIR/lib_ui_inspector_payload.cccccccccccc.jar > lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp && " +
-          "chmod 444 libarttooling_agent.so.suffix.tmp libarttooling.bbbbbbbbbbbb.jar.suffix.tmp " +
-          "lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp && " +
+          "chmod 444 libarttooling.bbbbbbbbbbbb.jar.suffix.tmp lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp && " +
           "mv -f libarttooling.bbbbbbbbbbbb.jar.suffix.tmp libarttooling.bbbbbbbbbbbb.jar && " +
           "mv -f lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp lib_ui_inspector_payload.cccccccccccc.jar && " +
-          "mv -f libarttooling_agent.so.suffix.tmp libarttooling_agent.so'"
+          "if test ! -f libarttooling_agent.aaaaaaaaaaaa.so; then " +
+          "cat $STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so > libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp && " +
+          "chmod 444 libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp && " +
+          "mv -f libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp libarttooling_agent.aaaaaaaaaaaa.so; fi'"
       )
   }
 
@@ -2136,6 +2140,7 @@ class InjectionManagerTest {
       agentStagePath = stagingPaths[0],
       libraryDexStagePath = stagingPaths[1],
       payloadJarStagePath = stagingPaths[2],
+      agentName = fileNameWithHash("libarttooling_agent.so", digests.agentBinary),
       libraryDexName = fileNameWithHash("libarttooling.jar", digests.libraryDex),
       payloadJarName = fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar),
       tempSuffix = "test.tmp",
@@ -2150,9 +2155,10 @@ class InjectionManagerTest {
     appDataDir: String = "/data/data/$targetPackage",
   ): String {
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)
+    val agentName = fileNameWithHash("libarttooling_agent.so", digests.agentBinary)
     val libraryDexName = fileNameWithHash("libarttooling.jar", digests.libraryDex)
     val payloadJarName = fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar)
-    return "cmd activity attach-agent $pid \"$appDataDir/libarttooling_agent.so=" +
+    return "cmd activity attach-agent $pid \"$appDataDir/$agentName=" +
       "$appDataDir/$libraryDexName;$appDataDir/$payloadJarName;$AGENT_CLASS_NAME;$token\""
   }
 
