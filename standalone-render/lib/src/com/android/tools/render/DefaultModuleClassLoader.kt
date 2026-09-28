@@ -19,6 +19,7 @@ package com.android.tools.render
 import com.android.tools.rendering.classloading.ClassTransform
 import com.android.tools.rendering.classloading.ModuleClassLoader
 import com.android.tools.rendering.classloading.ModuleClassLoaderDiagnosticsRead
+import com.android.tools.rendering.classloading.NopModuleClassLoadedDiagnostics
 import java.net.URL
 import java.util.Enumeration
 
@@ -42,12 +43,7 @@ class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private
   }
 
   private val loadedClasses = mutableSetOf<String>()
-  override val stats: ModuleClassLoaderDiagnosticsRead =
-    object : ModuleClassLoaderDiagnosticsRead {
-      override val classesFound: Long = 0
-      override val accumulatedFindTimeMs: Long = 0
-      override val accumulatedRewriteTimeMs: Long = 0
-    }
+  override val stats: ModuleClassLoaderDiagnosticsRead = NopModuleClassLoadedDiagnostics
   override val isUserCodeUpToDate: Boolean = true
 
   override fun hasLoadedClass(fqcn: String): Boolean = loadedClasses.contains(fqcn)
@@ -67,7 +63,7 @@ class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private
 
   override fun areDependenciesUpToDate(): Boolean = true
 
-  override fun onAfterLoadClass(fqcn: String, loaded: Boolean, durationMs: Long) {
+  override fun onAfterLoadClass(fqcn: String, loaded: Boolean, durationNs: Long) {
     if (loaded) {
       loadedClasses.add(fqcn)
     }
