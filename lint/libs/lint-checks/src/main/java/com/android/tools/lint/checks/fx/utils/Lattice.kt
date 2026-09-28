@@ -34,11 +34,11 @@ interface Lattice<L> {
   fun meetOf(first: L, second: L): L
 
   // Syntactic sugar
-  infix fun L.precedes(that: L) = precede(this, that)
+  infix fun L.precedes(that: L): Boolean = precede(this, that)
 
-  infix fun L.join(that: L) = joinOf(this, that)
+  infix fun L.join(that: L): L = joinOf(this, that)
 
-  infix fun L.meet(that: L) = meetOf(this, that)
+  infix fun L.meet(that: L): L = meetOf(this, that)
 
   fun <X> Iterable<X>.joinedOver(f: (X) -> L): L = joinedOver(this@Lattice, f)
 
