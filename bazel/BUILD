@@ -1,4 +1,4 @@
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@com_google_protobuf//bazel:java_proto_library.bzl", protobuf_java_proto_library = "java_proto_library")
@@ -432,25 +432,6 @@ config_setting(
     },
     visibility = ["//visibility:public"],
 )
-
-string_flag(
-    name = "migration_java_language_version",
-    build_setting_default = "11",
-    visibility = ["//visibility:private"],
-)
-
-[
-    config_setting(
-        name = "java_language_version_%s" % v,
-        # TODO switch to checking java_language_version, when 17 is fully supported
-        #values = {"java_language_version": v},
-        flag_values = {
-            ":migration_java_language_version": v,
-        },
-        visibility = ["//visibility:public"],
-    )
-    for v in ("8", "11", "17")
-]
 
 coverage_java_test(
     name = "iml_to_build_tests",
