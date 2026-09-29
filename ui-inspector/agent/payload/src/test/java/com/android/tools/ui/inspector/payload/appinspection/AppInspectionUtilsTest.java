@@ -19,6 +19,9 @@ package com.android.tools.ui.inspector.payload.appinspection;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
 
 import android.os.Build;
 
@@ -34,6 +37,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.robolectric.RobolectricTestRunner;
 
 import java.io.ByteArrayInputStream;
@@ -279,6 +283,36 @@ public final class AppInspectionUtilsTest {
                                 returnValue -> returnValue));
 
         primaryExecutor.quitSafely();
+    }
+
+    @Test
+    public void testCreateInspectorEnvironment_artToolingRegistersHooksUnderTheOwnerId() {
+        HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test-thread", t -> {});
+        InspectorEnvironment environment =
+                AppInspectionUtils.createInspectorEnvironment(
+                        "hook_owner", primaryExecutor, t -> {});
+        String method = "toString()Ljava/lang/String;";
+
+        // The library facade shares the simple name of the App Inspection interface, so it is
+        // referenced fully qualified.
+        try (MockedStatic<com.android.tools.arttooling.ArtTooling> engine =
+                mockStatic(com.android.tools.arttooling.ArtTooling.class)) {
+            environment.artTooling().registerEntryHook(Object.class, method, (self, params) -> {});
+            environment
+                    .artTooling()
+                    .registerExitHook(Object.class, method, returnValue -> returnValue);
+
+            engine.verify(
+                    () ->
+                            com.android.tools.arttooling.ArtTooling.registerEntryHook(
+                                    eq(Object.class), eq(method), eq("hook_owner"), any()));
+            engine.verify(
+                    () ->
+                            com.android.tools.arttooling.ArtTooling.registerExitHook(
+                                    eq(Object.class), eq(method), eq("hook_owner"), any()));
+        } finally {
+            primaryExecutor.quitSafely();
+        }
     }
 
     /**

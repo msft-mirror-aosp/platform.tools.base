@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
 
+import com.android.tools.arttooling.ArtTooling;
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.common.ProtocolConstants;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
@@ -91,7 +92,8 @@ public final class SessionHandlerTest {
                         ProtocolConstants.VIEW_INSPECTOR_ID,
                         mockInspector,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor));
+                        primaryExecutor,
+                        ArtTooling::clear));
 
         SessionHandler sessionHandler =
                 new SessionHandler(
@@ -159,7 +161,8 @@ public final class SessionHandlerTest {
                         ProtocolConstants.VIEW_INSPECTOR_ID,
                         mockInspector,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor));
+                        primaryExecutor,
+                        ArtTooling::clear));
 
         SessionHandler sessionHandler =
                 new SessionHandler(
@@ -327,7 +330,8 @@ public final class SessionHandlerTest {
                         ProtocolConstants.VIEW_INSPECTOR_ID,
                         mockInspector,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor));
+                        primaryExecutor,
+                        ArtTooling::clear));
 
         SessionHandler sessionHandler =
                 new SessionHandler(
@@ -426,7 +430,8 @@ public final class SessionHandlerTest {
                         ProtocolConstants.VIEW_INSPECTOR_ID,
                         throwingInspector,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor));
+                        primaryExecutor,
+                        ArtTooling::clear));
 
         SessionHandler sessionHandler =
                 new SessionHandler(

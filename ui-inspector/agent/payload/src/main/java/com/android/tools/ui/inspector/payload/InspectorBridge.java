@@ -27,10 +27,12 @@ import com.android.tools.arttooling.ArtTooling;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Consumer;
 
 /**
  * Bridges communication between the server and a specific [Inspector], enabling persistence across
@@ -39,20 +41,25 @@ import java.util.concurrent.RejectedExecutionException;
 public final class InspectorBridge {
     private static final String THREAD_NAME_PREFIX = "ui_inspector_";
 
-    private final String inspectorId;
+    /** Owns every ART Tooling hook that the inspector of this bridge registers. */
+    private final String hookOwnerId;
+
     private final Inspector inspector;
     private final AppInspectionUtils.DelegatingConnection connection;
     private final HandlerThreadExecutor primaryExecutor;
+    private final Consumer<String> clearHooks;
 
     private InspectorBridge(
-            String inspectorId,
+            String hookOwnerId,
             Inspector inspector,
             AppInspectionUtils.DelegatingConnection connection,
-            HandlerThreadExecutor primaryExecutor) {
-        this.inspectorId = inspectorId;
+            HandlerThreadExecutor primaryExecutor,
+            Consumer<String> clearHooks) {
+        this.hookOwnerId = hookOwnerId;
         this.inspector = inspector;
         this.connection = connection;
         this.primaryExecutor = primaryExecutor;
+        this.clearHooks = clearHooks;
     }
 
     /**
@@ -130,9 +137,9 @@ public final class InspectorBridge {
                         } catch (Throwable t) {
                             Log.e("InspectorBridge", "Error during inspector disposal", t);
                         } finally {
-                            // Clear all bytecode hooks registered by this inspector session to
-                            // prevent ClassLoader memory leaks.
-                            ArtTooling.clear(inspectorId);
+                            // Clear the bytecode hooks that this bridge's inspector registered, to
+                            // prevent class loader memory leaks.
+                            clearHooks.accept(hookOwnerId);
                         }
                     });
         } catch (RejectedExecutionException e) {
@@ -153,9 +160,10 @@ public final class InspectorBridge {
             throws Exception {
         HandlerThreadExecutor primaryExecutor =
                 new HandlerThreadExecutor(THREAD_NAME_PREFIX + inspectorId, crashListener);
+        String hookOwnerId = createHookOwnerId(inspectorId);
         InspectorEnvironment inspectorEnvironment =
                 AppInspectionUtils.createInspectorEnvironment(
-                        inspectorId, primaryExecutor, crashListener);
+                        hookOwnerId, primaryExecutor, crashListener);
 
         CompletableFuture<Inspector> future = new CompletableFuture<>();
         primaryExecutor.execute(
@@ -200,18 +208,32 @@ public final class InspectorBridge {
             throw new RuntimeException(cause);
         }
 
-        return new InspectorBridge(inspectorId, inspector, connection, primaryExecutor);
+        return new InspectorBridge(
+                hookOwnerId, inspector, connection, primaryExecutor, ArtTooling::clear);
     }
 
     /**
      * Creates a new [InspectorBridge] for testing with a mocked or stubbed [Inspector] instance.
+     *
+     * @param clearHooks removes the hooks of the given owner ID when the bridge is disposed
      */
     @VisibleForTesting
     public static InspectorBridge createForTesting(
             String inspectorId,
             Inspector inspector,
             AppInspectionUtils.DelegatingConnection connection,
-            HandlerThreadExecutor primaryExecutor) {
-        return new InspectorBridge(inspectorId, inspector, connection, primaryExecutor);
+            HandlerThreadExecutor primaryExecutor,
+            Consumer<String> clearHooks) {
+        return new InspectorBridge(
+                createHookOwnerId(inspectorId), inspector, connection, primaryExecutor, clearHooks);
+    }
+
+    /**
+     * Creates a hook owner ID that is unique in the process. ART Tooling keeps one hook registry
+     * per process, and several servers can each hold an inspector with the same inspector ID. A
+     * random UUID stays unique even across payload versions, whose classes do not share state.
+     */
+    private static String createHookOwnerId(String inspectorId) {
+        return inspectorId + "/" + UUID.randomUUID();
     }
 }

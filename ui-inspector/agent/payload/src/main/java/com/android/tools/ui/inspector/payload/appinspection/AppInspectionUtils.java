@@ -130,13 +130,13 @@ public final class AppInspectionUtils {
     }
 
     public static InspectorEnvironment createInspectorEnvironment(
-            String inspectorId,
+            String hookOwnerId,
             HandlerThreadExecutor primaryExecutor,
             HandlerThreadExecutor.CrashListener crashListener) {
         return new InspectorEnvironment() {
             @Override
             public ArtTooling artTooling() {
-                return new AppInspectionArtTooling(inspectorId);
+                return new AppInspectionArtTooling(hookOwnerId);
             }
 
             @Override

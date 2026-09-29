@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
 
+import com.android.tools.arttooling.ArtTooling;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 
@@ -91,7 +92,8 @@ public final class InspectorBridgeTest {
                         "test_inspector",
                         mockInspectorSeq,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
+                        primaryExecutor,
+                        ArtTooling::clear);
 
         CountDownLatch latch = new CountDownLatch(2);
         List<Throwable> errors = new CopyOnWriteArrayList<>();
@@ -144,7 +146,8 @@ public final class InspectorBridgeTest {
                         "test_inspector",
                         mockInspector,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
+                        primaryExecutor,
+                        ArtTooling::clear);
 
         bridge.sendCommand(new byte[] {1});
 
@@ -169,7 +172,8 @@ public final class InspectorBridgeTest {
                         "test_inspector",
                         mockInspector,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
+                        primaryExecutor,
+                        ArtTooling::clear);
 
         boolean exceptionThrown = false;
         try {
@@ -196,7 +200,11 @@ public final class InspectorBridgeTest {
 
         InspectorBridge bridge =
                 InspectorBridge.createForTesting(
-                        "test_inspector", mockInspector, delegatingConnection, primaryExecutor);
+                        "test_inspector",
+                        mockInspector,
+                        delegatingConnection,
+                        primaryExecutor,
+                        ArtTooling::clear);
 
         Connection newConnection =
                 new Connection() {
@@ -228,7 +236,8 @@ public final class InspectorBridgeTest {
                         "test_inspector",
                         mockInspector,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
+                        primaryExecutor,
+                        ArtTooling::clear);
 
         bridge.dispose();
 
@@ -271,7 +280,8 @@ public final class InspectorBridgeTest {
                         "test_inspector",
                         mockInspector,
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
+                        primaryExecutor,
+                        ArtTooling::clear);
 
         // Call dispose
         bridge.dispose();
@@ -291,5 +301,51 @@ public final class InspectorBridgeTest {
 
         assertThat(rejected).isTrue();
         assertThat(commandExecutedAfterDispose.get()).isFalse();
+    }
+
+    @Test
+    public void testDispose_clearsOnlyTheHooksOfItsOwnBridge() throws Exception {
+        List<String> clearedOwnerIds = new CopyOnWriteArrayList<>();
+        HandlerThreadExecutor secondExecutor =
+                new HandlerThreadExecutor(
+                        "test_bridge_thread_2",
+                        t -> {
+                            throw new RuntimeException(t);
+                        });
+        // Two servers in one process can each hold an inspector with the same inspector ID.
+        InspectorBridge firstBridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        createIdleInspector(),
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor,
+                        clearedOwnerIds::add);
+        InspectorBridge secondBridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        createIdleInspector(),
+                        new AppInspectionUtils.DelegatingConnection(),
+                        secondExecutor,
+                        clearedOwnerIds::add);
+
+        firstBridge.dispose();
+        primaryExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        secondBridge.dispose();
+        secondExecutor.awaitTermination(5, TimeUnit.SECONDS);
+
+        assertThat(clearedOwnerIds).hasSize(2);
+        assertThat(clearedOwnerIds.get(0)).isNotEqualTo(clearedOwnerIds.get(1));
+        assertThat(clearedOwnerIds.get(0)).startsWith("test_inspector/");
+        assertThat(clearedOwnerIds.get(1)).startsWith("test_inspector/");
+    }
+
+    private Inspector createIdleInspector() {
+        return new Inspector(mockConnection) {
+            @Override
+            public void onReceiveCommand(byte[] data, CommandCallback callback) {}
+
+            @Override
+            public void onDispose() {}
+        };
     }
 }

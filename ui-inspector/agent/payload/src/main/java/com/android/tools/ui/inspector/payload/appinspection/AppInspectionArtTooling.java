@@ -22,19 +22,20 @@ import java.util.List;
 
 /**
  * Adapts the App Inspection {@link ArtTooling} interface, which inspectors are written against,
- * onto the ART Tooling library facade. Every hook registered through this adapter is scoped to the
- * owning inspector's id, so {@link com.android.tools.arttooling.ArtTooling#clear} can remove them
- * all when the inspector is disposed.
+ * onto the ART Tooling library facade. Every hook registered through this adapter is scoped to one
+ * hook owner ID, so {@link com.android.tools.arttooling.ArtTooling#clear} can remove them all when
+ * the inspector is disposed. Each inspector instance has its own owner ID, so clearing it leaves
+ * the hooks of other inspectors with the same inspector ID in place.
  *
  * <p>The library facade shares this type's simple name, so it is referenced fully qualified
  * throughout.
  */
 final class AppInspectionArtTooling implements ArtTooling {
 
-    private final String inspectorId;
+    private final String hookOwnerId;
 
-    AppInspectionArtTooling(String inspectorId) {
-        this.inspectorId = inspectorId;
+    AppInspectionArtTooling(String hookOwnerId) {
+        this.hookOwnerId = hookOwnerId;
     }
 
     @Override
@@ -45,13 +46,13 @@ final class AppInspectionArtTooling implements ArtTooling {
     @Override
     public void registerEntryHook(Class<?> originClass, String originMethod, EntryHook entryHook) {
         com.android.tools.arttooling.ArtTooling.registerEntryHook(
-                originClass, originMethod, inspectorId, entryHook::onEntry);
+                originClass, originMethod, hookOwnerId, entryHook::onEntry);
     }
 
     @Override
     public <T> void registerExitHook(
             Class<?> originClass, String originMethod, ExitHook<T> exitHook) {
         com.android.tools.arttooling.ArtTooling.registerExitHook(
-                originClass, originMethod, inspectorId, exitHook::onExit);
+                originClass, originMethod, hookOwnerId, exitHook::onExit);
     }
 }
