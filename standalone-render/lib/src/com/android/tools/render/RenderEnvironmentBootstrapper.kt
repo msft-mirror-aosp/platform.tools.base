@@ -28,7 +28,6 @@ import com.android.tools.render.configuration.StandaloneConfigurationSettings
 import com.android.tools.render.environment.StandaloneEnvironmentContext
 import com.android.tools.render.framework.IJFramework
 import com.android.tools.rendering.RenderService
-import com.android.tools.rendering.classloading.ModuleClassLoaderManager
 import com.android.tools.res.FrameworkOverlay
 import com.android.tools.res.LocalResourceRepository
 import com.android.tools.res.SingleRepoResourceRepositoryManager
@@ -36,14 +35,7 @@ import com.android.tools.res.apk.ApkResourceRepository
 import com.android.tools.res.ids.apk.ApkResourceIdManager
 import com.android.tools.sdk.AndroidPlatform
 import com.android.tools.sdk.AndroidSdkData
-import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.application.ReadAndWriteScope
-import com.intellij.openapi.application.ReadConstraint
-import com.intellij.openapi.application.ReadResult
-import com.intellij.openapi.application.ReadWriteActionSupport
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.ThrowableComputable
 import java.io.File
 import java.nio.file.Path
 import java.util.TimeZone
@@ -100,42 +92,6 @@ class RenderEnvironmentBootstrapper(
     val androidPlatform = AndroidPlatform(androidSdkData, androidTarget)
 
     val resourceRepositoryManager = SingleRepoResourceRepositoryManager(resourcesRepo)
-
-    IJFramework.registerService(ModuleClassLoaderManager::class.java, moduleClassLoaderManager, project)
-
-    IJFramework.registerService(
-      ReadWriteActionSupport::class.java,
-      object : ReadWriteActionSupport {
-        override fun committedDocumentsConstraint(project: Project): ReadConstraint = ReadConstraint.withDocumentsCommitted(project)
-
-        override fun <X, E : Throwable> computeCancellable(action: ThrowableComputable<X, E>): X = ReadAction.compute(action)
-
-        override suspend fun <X> executeReadAction(
-          constraints: List<ReadConstraint>,
-          undispatched: Boolean,
-          blocking: Boolean,
-          action: () -> X,
-        ): X {
-          throw UnsupportedOperationException()
-        }
-
-        override suspend fun <X> executeReadAndWriteAction(
-          constraints: Array<out ReadConstraint>,
-          runWriteActionOnEdt: Boolean,
-          undispatched: Boolean,
-          action: ReadAndWriteScope.() -> ReadResult<X>,
-        ): X {
-          throw UnsupportedOperationException()
-        }
-
-        override fun smartModeConstraint(project: Project): ReadConstraint = ReadConstraint.inSmartMode(project)
-
-        override suspend fun <T> runWriteAction(action: () -> T): T {
-          throw UnsupportedOperationException()
-        }
-      },
-      project,
-    )
 
     val environment = StandaloneEnvironmentContext(project, moduleClassLoaderManager, StandaloneFontCacheService(fontsPath))
     val moduleDependencies = StandaloneModuleDependencies(rClassPackages)
