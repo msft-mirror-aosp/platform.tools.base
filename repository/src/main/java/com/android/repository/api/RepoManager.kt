@@ -15,6 +15,7 @@
  */
 package com.android.repository.api
 
+import com.android.ProgressManagerAdapter
 import com.android.annotations.concurrency.Slow
 import com.android.repository.api.ProgressRunner.ProgressRunnable
 import com.android.repository.impl.manager.RepoManagerImpl
@@ -26,7 +27,11 @@ import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.w3c.dom.ls.LSResourceResolver
 
 /**
@@ -233,7 +238,7 @@ abstract class RepoManager {
     override fun runAsyncWithProgress(r: ProgressRunnable) = throw UnsupportedOperationException()
 
     override fun runSyncWithProgress(r: ProgressRunnable) {
-      runBlocking { r.run(progress) }
+      runBlockingCancellable { r.run(progress) }
     }
   }
 
@@ -277,4 +282,41 @@ abstract class RepoManager {
       return RepoManagerImpl(localPath, sourceProviders, schemaModules, fallbackLocalRepoLoader, fallbackRemoteRepoLoader)
     }
   }
+}
+
+/** How often [runBlockingCancellable] checks for cancellation while its block is suspended. */
+private val CANCELLATION_CHECK_INTERVAL: Duration = 10.milliseconds
+
+/**
+ * Like [runBlocking], but while [block] is suspended, periodically invokes [checkCanceled]. If [checkCanceled] throws, [block] is cancelled
+ * and the exception is rethrown. This is like IntelliJ's runBlockingCancellable, but simpler and usable in tools/base.
+ *
+ * A plain [runBlocking] coroutine is not linked to any environment-specific cancellation mechanism (e.g. the IntelliJ thread-local progress
+ * indicator), so a thread parked waiting on a suspended coroutine (for example, a load piggybacking on a load running on another thread)
+ * never notices that it has been cancelled. In Studio, this can cause a non-blocking read action to hold the read lock and block a pending
+ * write action for the entire duration of an SDK scan (b/424192015).
+ *
+ * Blocking work performed directly by [block] is not interrupted by this mechanism; it is expected to check for cancellation itself (e.g.
+ * by using [com.android.io.CancellableFileIo]).
+ */
+@VisibleForTesting
+internal fun <T> runBlockingCancellable(
+  checkCanceled: () -> Unit = ProgressManagerAdapter::checkCanceled,
+  checkInterval: Duration = CANCELLATION_CHECK_INTERVAL,
+  block: suspend CoroutineScope.() -> T,
+): T = runBlocking {
+  // Run undispatched so that the common case (which completes without suspending) doesn't need
+  // to go through the event loop, and never observes a cancellation check.
+  val result = async(start = CoroutineStart.UNDISPATCHED, block = block)
+  while (!result.isCompleted) {
+    if (withTimeoutOrNull(checkInterval) { result.join() } == null) {
+      try {
+        checkCanceled()
+      } catch (t: Throwable) {
+        result.cancel()
+        throw t
+      }
+    }
+  }
+  result.await()
 }

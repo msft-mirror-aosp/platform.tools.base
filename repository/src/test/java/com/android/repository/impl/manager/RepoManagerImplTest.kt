@@ -22,6 +22,7 @@ import com.android.repository.api.RemotePackage
 import com.android.repository.api.RepoManager
 import com.android.repository.api.RepoManager.RepoLoadedListener
 import com.android.repository.api.RepoPackage
+import com.android.repository.api.runBlockingCancellable
 import com.android.repository.impl.meta.RepositoryPackages
 import com.android.repository.testframework.FakeDownloader
 import com.android.repository.testframework.FakeLoader
@@ -31,6 +32,7 @@ import com.android.repository.testframework.FakeProgressIndicator
 import com.android.repository.testframework.FakeProgressRunner
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -315,6 +317,77 @@ class RepoManagerImplTest {
         canFinishFirst.countDown()
       }
     }
+
+  /**
+   * A synchronous caller that is piggybacking on a load running on another thread should notice environment cancellation (e.g. IntelliJ
+   * progress indicator cancellation) while waiting, rather than blocking until the other load completes (b/424192015). The original load
+   * should be unaffected.
+   */
+  @Test
+  fun testSynchronousPiggybackCallerIsCancellable() {
+    val firstInvocationStarted = CountDownLatch(1)
+    val canFinishFirst = CountDownLatch(1)
+    val loaderInvocationCount = AtomicInteger(0)
+    val fakePackage = FakeLocalPackage("foo")
+    val fakeLoader =
+      object : FakeLoader<LocalPackage>() {
+        override fun run(): Map<String, LocalPackage> {
+          loaderInvocationCount.incrementAndGet()
+          firstInvocationStarted.countDown()
+          assertTrue("Loader timed out waiting to proceed", canFinishFirst.await(5, TimeUnit.SECONDS))
+          return mapOf("foo" to fakePackage)
+        }
+      }
+    val repoRoot = createInMemoryFileSystemAndFolder("repo")
+    val mgr = RepoManagerImpl(repoRoot, fakeLoader, FakeLoader<RemotePackage>())
+
+    val firstCallerResult = CompletableFuture<List<LocalPackage>>()
+    val firstCaller = Thread {
+      firstCallerResult.complete(runBlocking { mgr.loadLocalPackages(FakeProgressIndicator(), Duration.ZERO) })
+    }
+    firstCaller.start()
+    assertTrue("Loader was not started by the first caller", firstInvocationStarted.await(5, TimeUnit.SECONDS))
+
+    class TestCancellationException : RuntimeException()
+    val cancelled = AtomicBoolean(false)
+    val cancellationChecked = CountDownLatch(1)
+    // Mirrors RepoManager.DirectProgressRunner, but with a controllable cancellation check.
+    val runner =
+      object : ProgressRunner {
+        override fun runAsyncWithProgress(r: ProgressRunner.ProgressRunnable) = throw UnsupportedOperationException()
+
+        override fun runSyncWithProgress(r: ProgressRunner.ProgressRunnable) {
+          runBlockingCancellable(
+            checkCanceled = {
+              cancellationChecked.countDown()
+              if (cancelled.get()) throw TestCancellationException()
+            }
+          ) {
+            r.run(FakeProgressIndicator())
+          }
+        }
+      }
+
+    val canceller = Thread {
+      assertTrue(cancellationChecked.await(5, TimeUnit.SECONDS))
+      cancelled.set(true)
+    }
+    canceller.start()
+
+    // The second caller piggybacks on the first load, which is still blocked; it should be
+    // cancelled rather than waiting for the first load to finish.
+    assertThrows(TestCancellationException::class.java) {
+      mgr.loadSynchronously(cacheExpirationMs = RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, runner = runner)
+    }
+    canceller.join()
+
+    // The first load should still complete normally.
+    canFinishFirst.countDown()
+    assertThat(firstCallerResult.get(5, TimeUnit.SECONDS).map { it.path }).containsExactly("foo")
+    firstCaller.join()
+    assertThat(loaderInvocationCount.get()).isEqualTo(1)
+    assertThat(mgr.packages.localPackages).containsExactly("foo", fakePackage)
+  }
 
   // test multiple loads at same time only kick off one load, and callbacks are invoked
   @Test
