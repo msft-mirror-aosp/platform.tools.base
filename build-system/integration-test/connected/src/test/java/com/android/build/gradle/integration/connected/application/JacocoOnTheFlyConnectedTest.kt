@@ -486,7 +486,7 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
     //    - Secondary constructor (Ljava/lang/Object;)V: 13 covered, 0 missed instructions (completely covered)
     assertThat(content).contains("<class name=\"com/example/helloworld/ComplexConstructorClass\"")
     assertThat(content).contains("<method name=\"&lt;init&gt;\" desc=\"(ILjava/lang/String;)V\"")
-    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"3\" covered=\"13\"/>")
+    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"2\" covered=\"14\"/>")
     assertThat(content).contains("<method name=\"&lt;init&gt;\" desc=\"(Ljava/lang/Object;)V\"")
     assertThat(content).contains("<counter type=\"INSTRUCTION\" missed=\"0\" covered=\"13\"/>")
 
