@@ -63,6 +63,15 @@ platform(
 )
 
 platform(
+    name = "linux-arm64",
+    constraint_values = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+        "@bazel_tools//tools/cpp:clang",
+    ],
+)
+
+platform(
     name = "windows",
     constraint_values = [
         "@platforms//cpu:x86_64",
