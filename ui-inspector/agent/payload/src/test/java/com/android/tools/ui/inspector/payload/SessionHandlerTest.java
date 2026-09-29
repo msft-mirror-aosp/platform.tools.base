@@ -205,7 +205,7 @@ public final class SessionHandlerTest {
 
     assertThat(response.getCommandId()).isEqualTo(1);
     assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
-    assertThat(response.getErrorMessage()).contains("Failed to find InspectorFactory");
+    assertThat(response.getErrorMessage()).contains("Failed to prepare native libraries of /path/to/test.dex");
   }
 
   @Test

@@ -27,22 +27,45 @@ import androidx.inspection.InspectorExecutors;
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
 
+import android.os.Build;
+
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.UncheckedIOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 @RunWith(RobolectricTestRunner.class)
 public final class AppInspectionUtilsTest {
 
+  @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
   private final Connection mockConnection = new Connection() {
     @Override
     public void sendEvent(byte[] data) {}
+  };
+
+  private final InspectorEnvironment unusedEnvironment = new InspectorEnvironment() {
+    @Override
+    public InspectorExecutors executors() {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public ArtTooling artTooling() {
+      throw new UnsupportedOperationException("Not implemented");
+    }
   };
 
   @Test
@@ -129,27 +152,51 @@ public final class AppInspectionUtilsTest {
 
   @Test
   public void testLoadInspectorDynamically_throwsOnInvalidPath() {
-    InspectorEnvironment mockEnvironment = new InspectorEnvironment() {
-      @Override
-      public InspectorExecutors executors() {
-        throw new UnsupportedOperationException("Not implemented");
-      }
+    UncheckedIOException exception = assertThrows(
+        UncheckedIOException.class,
+        () -> AppInspectionUtils.loadInspectorDynamically("test_id", "/invalid/path.dex", mockConnection, unusedEnvironment));
 
-      @Override
-      public ArtTooling artTooling() {
-        throw new UnsupportedOperationException("Not implemented");
-      }
-    };
+    assertThat(exception).hasMessageThat().contains("Failed to prepare native libraries of /invalid/path.dex");
+  }
 
-    boolean exceptionThrown = false;
-    try {
-            AppInspectionUtils.loadInspectorDynamically(
-                    "test_id", "/invalid/path.dex", mockConnection, mockEnvironment);
-    } catch (Exception e) {
-      exceptionThrown = true;
-      assertThat(e.getMessage()).contains("Failed to find InspectorFactory");
-    }
-    assertThat(exceptionThrown).isTrue();
+  @Test
+  public void testLoadInspectorDynamically_retriesDexWhoseNativeLibrariesFailed() throws Exception {
+    File dex = new File(temporaryFolder.getRoot(), "retried_inspector.jar");
+
+    assertThrows(
+        UncheckedIOException.class,
+        () -> AppInspectionUtils.loadInspectorDynamically("test_id", dex.getPath(), mockConnection, unusedEnvironment));
+
+    writeJar(dex, "META-INF/");
+    // The second call gets past class loader creation and fails only because the jar has no inspector.
+    Exception exception = assertThrows(
+        Exception.class,
+        () -> AppInspectionUtils.loadInspectorDynamically("test_id", dex.getPath(), mockConnection, unusedEnvironment));
+    assertThat(exception).hasMessageThat().contains("Failed to find InspectorFactory with id test_id");
+  }
+
+  @Test
+  public void testLoadInspectorDynamically_extractsNativeLibrariesOncePerDex() throws Exception {
+    // Extraction happens under java.io.tmpdir in a directory named after the jar, so the jar name must be unique to this test run.
+    String jarName = temporaryFolder.getRoot().getName() + "_native_inspector.jar";
+    File dex = new File(temporaryFolder.getRoot(), jarName);
+    String abiDirectory = "lib/" + Build.SUPPORTED_ABIS[0] + "/";
+    writeJar(dex, "lib/", abiDirectory, abiDirectory + "libinspector.so");
+    File extractedLibrary = new File(System.getProperty("java.io.tmpdir"), jarName + "_unpacked_lib/libinspector.so");
+
+    // Both calls get past class loader creation and fail only because the jar has no inspector.
+    Exception firstException = assertThrows(
+        Exception.class,
+        () -> AppInspectionUtils.loadInspectorDynamically("test_id", dex.getPath(), mockConnection, unusedEnvironment));
+    assertThat(firstException).hasMessageThat().contains("Failed to find InspectorFactory with id test_id");
+    assertThat(extractedLibrary.exists()).isTrue();
+    assertThat(extractedLibrary.delete()).isTrue();
+
+    Exception secondException = assertThrows(
+        Exception.class,
+        () -> AppInspectionUtils.loadInspectorDynamically("test_id", dex.getPath(), mockConnection, unusedEnvironment));
+    assertThat(secondException).hasMessageThat().contains("Failed to find InspectorFactory with id test_id");
+    assertThat(extractedLibrary.exists()).isFalse();
   }
 
     @Test
@@ -181,4 +228,14 @@ public final class AppInspectionUtilsTest {
 
         primaryExecutor.quitSafely();
     }
+
+  /** Writes a jar with the given entries. Names ending in a slash are directories; other names are empty files. */
+  private static void writeJar(File jar, String... entryNames) throws Exception {
+    try (JarOutputStream output = new JarOutputStream(new FileOutputStream(jar))) {
+      for (String entryName : entryNames) {
+        output.putNextEntry(new JarEntry(entryName));
+        output.closeEntry();
+      }
+    }
+  }
 }
