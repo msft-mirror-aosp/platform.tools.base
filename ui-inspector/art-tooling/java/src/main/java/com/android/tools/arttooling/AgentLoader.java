@@ -24,7 +24,10 @@ import dalvik.system.DexClassLoader;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Loads a tool's {@link Agent} from its dex and starts it inside the target process — the handoff
@@ -34,12 +37,16 @@ final class AgentLoader {
 
     private static final String TAG = "studio.arttooling";
 
+    /** The class loader of each agent dex, by path. Later attaches of the same path reuse it. */
+    private static final Map<String, ClassLoader> agentClassLoaders = new ConcurrentHashMap<>();
+
     private AgentLoader() {}
 
     /**
      * Runs the Java side of attachment: makes the {@link ArtTooling} API usable, loads the tool's
      * agent dex in a class loader that descends from the app's (so it can see the app's own
-     * classes), creates the tool's {@link Agent}, and calls its {@code onAttach}.
+     * classes), creates the tool's {@link Agent}, and calls its {@code onAttach}. A later attach of
+     * the same agent dex path reuses the class loader of the first one.
      *
      * <p>Called from native code, which turns any exception thrown here into an attach failure.
      *
@@ -57,14 +64,33 @@ final class AgentLoader {
 
         ArtTooling.initialize(toolingPtr);
 
-        ClassLoader appClassLoader = findAppClassLoader();
-        if (appClassLoader == null) {
-            throw new IllegalStateException("Could not find the application class loader");
-        }
+        startAgent(agentDex, agentClass, agentOptions, AgentLoader::findAppClassLoader);
+    }
 
-        DexClassLoader dexClassLoader = new DexClassLoader(agentDex, null, null, appClassLoader);
+    /**
+     * Creates a new instance of {@code agentClass} from {@code agentDex} and calls its {@code
+     * onAttach}. The first call for a path creates the path's class loader as a child of the class
+     * loader that {@code appClassLoader} supplies; later calls for the same path reuse it.
+     */
+    static void startAgent(
+            String agentDex,
+            String agentClass,
+            String agentOptions,
+            Supplier<ClassLoader> appClassLoader)
+            throws ReflectiveOperationException {
+        ClassLoader agentClassLoader =
+                agentClassLoaders.computeIfAbsent(
+                        agentDex,
+                        path -> {
+                            ClassLoader parent = appClassLoader.get();
+                            if (parent == null) {
+                                throw new IllegalStateException(
+                                        "Could not find the application class loader");
+                            }
+                            return new DexClassLoader(path, null, null, parent);
+                        });
         Class<? extends Agent> loadedClass =
-                Class.forName(agentClass, true, dexClassLoader).asSubclass(Agent.class);
+                Class.forName(agentClass, true, agentClassLoader).asSubclass(Agent.class);
         Agent agent = loadedClass.getDeclaredConstructor().newInstance();
         agent.onAttach(agentOptions);
     }

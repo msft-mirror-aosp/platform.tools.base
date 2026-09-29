@@ -44,7 +44,8 @@ The agent is attached with a four-field options string:
 `library_dex;agent_dex;agent_class;agent_options`
 
 - `library_dex` — path to `libarttooling.jar`.
-- `agent_dex` — path to the tool's agent dex.
+- `agent_dex` — path to the tool's agent dex. ART Tooling loads each path only once per process,
+  so a path must always point to the same content. See `Agent` for what this means for `onAttach`.
 - `agent_class` — binary name of the tool's `Agent` implementation inside `agent_dex`.
 - `agent_options` — opaque; passed to `Agent#onAttach` unchanged (may contain semicolons).
 

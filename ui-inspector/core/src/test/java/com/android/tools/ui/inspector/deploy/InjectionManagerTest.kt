@@ -1469,8 +1469,8 @@ class InjectionManagerTest {
     liveServer.close()
 
     assertThat(blockRuns).isEqualTo(1)
-    assertThat(logged).contains("injecting a fresh agent")
-    assertThat(logger.messages.single { (_, message) -> "injecting a fresh agent" in message }.first).isEqualTo(LogLevel.PROGRESS)
+    assertThat(logged).contains("attaching the agent again")
+    assertThat(logger.messages.single { (_, message) -> "attaching the agent again" in message }.first).isEqualTo(LogLevel.PROGRESS)
     // The forced attempt performed the full injection: three base artifact pushes and one attach. The view inspector jar was pushed only
     // by the second attempt — the first one failed before reaching it.
     val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
@@ -1823,7 +1823,7 @@ class InjectionManagerTest {
     }
 
     assertThat(thrown).isNotNull()
-    assertThat(logged).doesNotContain("injecting a fresh agent")
+    assertThat(logged).doesNotContain("attaching the agent again")
     assertThat(testHostServices.recordedForwardCalls).hasSize(1)
     assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
       .hasSize(1)
@@ -1876,7 +1876,7 @@ class InjectionManagerTest {
     server.close()
     serverThread.join(5000)
 
-    assertThat(logged).doesNotContain("injecting a fresh agent")
+    assertThat(logged).doesNotContain("attaching the agent again")
     assertThat(testHostServices.recordedForwardCalls).hasSize(1)
     // The cancelled attempt still removed its own forward.
     assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)

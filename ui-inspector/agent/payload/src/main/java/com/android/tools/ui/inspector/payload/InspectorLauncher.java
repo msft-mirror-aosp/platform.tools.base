@@ -20,6 +20,8 @@ import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 import com.android.tools.arttooling.Agent;
 import com.android.tools.ui.inspector.common.ProtocolConstants;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -28,8 +30,12 @@ import java.util.function.Consumer;
  */
 public final class InspectorLauncher implements Agent {
   private static final String TAG = ProtocolConstants.LOG_TAG_PREFIX + ".InspectorLauncher";
+  /**
+   * The thread of each server, by server token. ART Tooling reuses the payload's classes when the host attaches again, so this map keeps
+   * its entries across attaches. Keying the map by token means that a new token still gets its own server.
+   */
   @VisibleForTesting
-  static Thread serverThread = null;
+  static final Map<String, Thread> serverThreads = new HashMap<>();
 
   public InspectorLauncher() {}
 
@@ -49,11 +55,12 @@ public final class InspectorLauncher implements Agent {
   }
 
   public static synchronized void start(String serverToken, Consumer<String> serverStarter) {
-    if (serverThread != null && serverThread.isAlive()) {
+    Thread runningThread = serverThreads.get(serverToken);
+    if (runningThread != null && runningThread.isAlive()) {
       Log.i(TAG, "Inspector server is already running.");
       return;
     }
-    serverThread = new Thread(() -> {
+    Thread serverThread = new Thread(() -> {
       try {
         serverStarter.accept(serverToken);
       } catch (Throwable t) {
@@ -62,6 +69,7 @@ public final class InspectorLauncher implements Agent {
         Log.e(TAG, "Uncaught exception in inspector", t);
       }
     }, "ui-inspector-server");
+    serverThreads.put(serverToken, serverThread);
     serverThread.start();
   }
 }

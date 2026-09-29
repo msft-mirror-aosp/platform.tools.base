@@ -78,7 +78,7 @@ internal suspend fun <T> runWithConnectedInspectors(
         block,
       )
     } catch (stale: StaleReconnectException) {
-      logger.log(LogLevel.PROGRESS, "The running UI Inspector server did not respond (${stale.cause?.message}); injecting a fresh agent.")
+      logger.log(LogLevel.PROGRESS, "The running UI Inspector server did not respond (${stale.cause?.message}); attaching the agent again.")
       try {
         connectAndRunInspectors(
           injectionManager,

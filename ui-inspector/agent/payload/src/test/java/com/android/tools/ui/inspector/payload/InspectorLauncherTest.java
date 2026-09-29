@@ -18,6 +18,9 @@ package com.android.tools.ui.inspector.payload;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,12 +36,11 @@ public final class InspectorLauncherTest {
 
   @After
   public void tearDown() throws Exception {
-    Thread thread = InspectorLauncher.serverThread;
-    if (thread != null) {
+    for (Thread thread : InspectorLauncher.serverThreads.values()) {
       thread.interrupt();
       thread.join(5_000);
-      InspectorLauncher.serverThread = null;
     }
+    InspectorLauncher.serverThreads.clear();
   }
 
   @Test
@@ -67,6 +69,46 @@ public final class InspectorLauncherTest {
 
     assertThat(callCount.get()).isEqualTo(1);
     assertThat(receivedToken.get()).isEqualTo("1234_0123456789ab");
+  }
+
+  @Test
+  public void testStart_startsServerForNewTokenWhileAnotherRuns() throws Exception {
+    List<String> startedTokens = Collections.synchronizedList(new ArrayList<>());
+    CountDownLatch bothStarted = new CountDownLatch(2);
+    CountDownLatch release = new CountDownLatch(1);
+
+    Consumer<String> starter = serverToken -> {
+      startedTokens.add(serverToken);
+      bothStarted.countDown();
+      try {
+        release.await();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    };
+
+    try {
+      InspectorLauncher.start("1234_0123456789ab", starter);
+      InspectorLauncher.start("1234_ba9876543210", starter);
+
+      assertThat(bothStarted.await(5, TimeUnit.SECONDS)).isTrue();
+      assertThat(startedTokens).containsExactly("1234_0123456789ab", "1234_ba9876543210");
+    } finally {
+      release.countDown();
+    }
+  }
+
+  @Test
+  public void testStart_restartsServerForTokenAfterItsServerStops() throws Exception {
+    AtomicInteger callCount = new AtomicInteger(0);
+    Consumer<String> starter = serverToken -> callCount.incrementAndGet();
+
+    InspectorLauncher.start("1234_0123456789ab", starter);
+    InspectorLauncher.serverThreads.get("1234_0123456789ab").join(5_000);
+    InspectorLauncher.start("1234_0123456789ab", starter);
+    InspectorLauncher.serverThreads.get("1234_0123456789ab").join(5_000);
+
+    assertThat(callCount.get()).isEqualTo(2);
   }
 
   @Test
