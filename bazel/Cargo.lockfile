@@ -267,6 +267,7 @@ dependencies = [
  "libloading",
  "log",
  "rustls",
+ "rustls-platform-verifier",
  "sha1",
  "ureq",
  "windows",
