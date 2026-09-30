@@ -130,6 +130,23 @@ public class ImlToIr {
             irProject.modules.add(module);
             imlToIr.put(jpsModule, module);
 
+            // Check that the module has either prod roots or test roots, never both (b/565759009).
+            boolean hasProdRoots = false;
+            boolean hasTestRoots = false;
+            for (JpsModuleSourceRoot sourceRoot : jpsModule.getSourceRoots()) {
+                if (sourceRoot.getRootType().isForTests()) {
+                    hasTestRoots = true;
+                } else {
+                    hasProdRoots = true;
+                }
+            }
+            if (hasProdRoots && hasTestRoots && !config.allowMixedSourceRoots(workspace, module)) {
+                logger.error(
+                        "Module %s has both production and test source roots. Please move the test"
+                                + " roots to a separate test module. (b/565759009)",
+                        jpsModule.getName());
+            }
+
             // Check if this is a test module with an associated production module that should be
             // treated as a Kotlin friend. I.e., detect an iml line like this:
             // <component name="TestModuleProperties" production-module="module.name" />
