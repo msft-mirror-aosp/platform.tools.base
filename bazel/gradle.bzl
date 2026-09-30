@@ -18,10 +18,8 @@ def _convert_problems(ctx):
 def _java_runtime(java_version):
     if java_version == 17:
         return "//prebuilts/studio/jdk/jdk17:java_runtime"
-    elif java_version == 11:
-        return "//prebuilts/studio/jdk/jdk11:java_runtime"
     else:
-        fail("unexpected java version " + java_version)
+        fail("unexpected java version %s" % java_version)
 
 def _gradle_build_impl(ctx):
     # TODO (b/182291459) --singlejar is a workaround for the Windows classpath jar bug.
