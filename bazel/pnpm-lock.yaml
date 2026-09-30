@@ -21,6 +21,37 @@ importers:
 
   .: {}
 
+  ../../vendor/google/android-sidecars/compose-preview/web:
+    dependencies:
+      react:
+        specifier: 19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: 19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^18.16.0
+        version: 18.19.130
+      '@types/react':
+        specifier: 19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      esbuild:
+        specifier: 0.28.1
+        version: 0.28.1
+      happy-dom:
+        specifier: 18.0.1
+        version: 18.0.1
+      typescript:
+        specifier: 5.0.4
+        version: 5.0.4
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@18.19.130)(happy-dom@18.0.1)(jiti@2.7.0)(lightningcss@1.32.0)
+
   ../../vendor/google/android-sidecars/device-hub/web:
     dependencies:
       react:
