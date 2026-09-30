@@ -1,3 +1,4 @@
 packages:
   - '../../vendor/google/android-vsix'
   - '../../vendor/google/cli/android-device-hub/electron'
+  - '../../vendor/google/android-sidecars/device-hub/web'

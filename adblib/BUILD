@@ -65,6 +65,7 @@ maven_library(
         "//tools/base/ui-inspector:__subpackages__",
         "//tools/profiler:__subpackages__",
         "//tools/vendor/google/android-cli:__subpackages__",
+        "//tools/vendor/google/android-sidecars:__subpackages__",
         "//tools/vendor/google/directaccess-client:__subpackages__",
     ],
     deps = [
