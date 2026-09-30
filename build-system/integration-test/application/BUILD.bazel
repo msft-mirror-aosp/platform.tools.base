@@ -787,12 +787,17 @@ single_gradle_integration_test_per_source(
     timeout = "long",
     srcs = [
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotPerformanceTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotPerformanceTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTestSuiteTest.kt",
     ],
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",

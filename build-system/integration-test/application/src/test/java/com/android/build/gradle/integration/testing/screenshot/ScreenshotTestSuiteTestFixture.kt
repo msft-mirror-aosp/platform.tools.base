@@ -26,9 +26,12 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.test.report.Package
+import com.android.build.gradle.internal.test.report.RootReport
 import com.android.testutils.TestUtils
 import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
+import com.google.gson.Gson
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -39,6 +42,7 @@ import java.util.stream.Collectors
 import kotlin.io.path.inputStream
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
+import kotlin.io.path.readText
 import org.gradle.api.Project
 import org.gradle.api.tasks.testing.Test as GradleTest
 
@@ -563,6 +567,61 @@ fun getTestSuiteXmlReportFile(
   val xmlDir = project.buildDir.resolve("intermediates/$variantName/$taskName/results")
   val fileName = if (testClassFqcn != null) "TEST-$testClassFqcn.xml" else "TEST-preview-screenshot-test-engine.xml"
   return xmlDir.resolve(fileName)
+}
+
+/** The status of a passed test in the HTML report of a screenshot test suite. */
+const val TEST_SUITE_REPORT_PASSED = "pass"
+
+/** The status of a failed test in the HTML report of a screenshot test suite. */
+const val TEST_SUITE_REPORT_FAILED = "fail"
+
+/**
+ * Returns the statuses of the tests of [testClassFqcn] in the HTML report of the validation task of a screenshot test suite, by test name.
+ *
+ * The statuses are the ones that the report renders, so they are the counterpart of the `<h3 class="success">` and `<h3 class="failures">`
+ * headings of the report of the screenshot test plugin. The report of a single validation task has one result per test.
+ */
+fun getTestSuiteHtmlReportTestStatuses(
+  project: GradleProject<*>,
+  testClassFqcn: String,
+  variantName: String = "debug",
+  suiteName: String = "screenshotTest",
+  targetName: String = "default",
+): Map<String, String> {
+  val packageName = testClassFqcn.substringBeforeLast('.', "")
+  val className = testClassFqcn.substringAfterLast('.')
+  return getTestSuiteHtmlReportPackages(project, variantName, suiteName, targetName)
+    .filter { it.name == packageName }
+    .flatMap { it.classes }
+    .filter { it.name == className }
+    .flatMap { it.testCases }
+    .associate { testCase ->
+      testCase.name to testCase.targets.flatMap { it.testSuiteResults }.flatMap { it.variantResults.values }.single().status
+    }
+}
+
+/**
+ * Returns the names of the packages in the HTML report of the validation task of a screenshot test suite.
+ *
+ * The report has no page per package, so this is the counterpart of the package pages of the report of the screenshot test plugin.
+ */
+fun getTestSuiteHtmlReportPackageNames(
+  project: GradleProject<*>,
+  variantName: String = "debug",
+  suiteName: String = "screenshotTest",
+  targetName: String = "default",
+): List<String> = getTestSuiteHtmlReportPackages(project, variantName, suiteName, targetName).map { it.name }
+
+/** Returns the packages of the data that the HTML report of the validation task of a screenshot test suite renders. */
+private fun getTestSuiteHtmlReportPackages(
+  project: GradleProject<*>,
+  variantName: String,
+  suiteName: String,
+  targetName: String,
+): List<Package> {
+  val dataJs = getTestSuiteHtmlReportDir(project, variantName, suiteName, targetName).resolve("data.js")
+  val report = Gson().fromJson(dataJs.readText().removePrefix("const TEST_DATA_SOURCE = "), RootReport::class.java)
+  return report.modules.flatMap { it.packages }
 }
 
 fun getTestSuiteEngineInputs(
