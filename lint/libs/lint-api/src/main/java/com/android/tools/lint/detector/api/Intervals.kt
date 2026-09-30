@@ -15,9 +15,6 @@
  */
 package com.android.tools.lint.detector.api
 
-import com.android.tools.lint.detector.api.ApiConstraint.Companion.deserialize
-import com.android.tools.lint.detector.api.ApiConstraint.SdkApiConstraint.Companion.deserialize
-
 /**
  * Represents a series of half-open intervals, such as `[10, 12), [14, 25), [30,∞)`, and operations for taking intersections of these,
  * checking for membership, and so on. Note that the lowest possible starting point is 1 rather than negative infinity. This is because of
@@ -58,11 +55,48 @@ sealed class Intervals {
    */
   abstract fun toString(variable: String = "x", compact: Boolean = false): String
 
-  /** Intersects to intervals */
-  abstract infix fun and(other: Intervals): Intervals
+  /** Intersects two intervals */
+  infix fun and(other: Intervals): Intervals =
+    when {
+      isEmpty() -> NONE
+      other.isEmpty() -> NONE
+      this is Span && other is Span -> {
+        // Fast path for the overwhelmingly common single-interval operands, skipping the general sweep
+        val start = kotlin.math.max(this.from.bits, other.from.bits)
+        val end = kotlin.math.min(this.to.bits, other.to.bits)
+        when {
+          start >= end -> NONE
+          start == this.from.bits && end == this.to.bits -> this
+          start == other.from.bits && end == other.to.bits -> other
+          else -> Span(MajorMinor(start), MajorMinor(end))
+        }
+      }
+      else -> combine(boundsArray(), other.boundsArray(), minCoverage = 2)
+    }
 
   /** Returns the union of two intervals */
-  abstract infix fun or(other: Intervals): Intervals
+  infix fun or(other: Intervals): Intervals =
+    when {
+      isEmpty() -> other
+      other.isEmpty() -> this
+      this is Span && other is Span ->
+        // Fast path for the overwhelmingly common single-interval operands, skipping the general sweep
+        when {
+          this.from.bits <= other.to.bits && other.from.bits <= this.to.bits -> {
+            // Overlapping or touching intervals merge into a single one
+            val start = kotlin.math.min(this.from.bits, other.from.bits)
+            val end = kotlin.math.max(this.to.bits, other.to.bits)
+            when {
+              start == this.from.bits && end == this.to.bits -> this
+              start == other.from.bits && end == other.to.bits -> other
+              else -> Span(MajorMinor(start), MajorMinor(end))
+            }
+          }
+          this.from < other.from -> Spans(intArrayOf(this.from.bits, this.to.bits, other.from.bits, other.to.bits))
+          else -> Spans(intArrayOf(other.from.bits, other.to.bits, this.from.bits, this.to.bits))
+        }
+      else -> combine(boundsArray(), other.boundsArray(), minCoverage = 1)
+    }
 
   /** Returns the inverse of the current interval */
   abstract operator fun not(): Intervals
@@ -95,7 +129,14 @@ sealed class Intervals {
   private fun lowestBound(): MajorMinor =
     when (this) {
       is Span -> from
-      is Spans -> if (spans.isEmpty()) ZERO else spans.first().from
+      is Spans -> if (bounds.isEmpty()) ZERO else MajorMinor(bounds[0])
+    }
+
+  /** This set as a boundary array in the [Spans] encoding, for the general [combine] sweep; [Span] materializes it on demand. */
+  private fun boundsArray(): IntArray =
+    when (this) {
+      is Span -> intArrayOf(from.bits, to.bits)
+      is Spans -> bounds
     }
 
   /**
@@ -105,19 +146,42 @@ sealed class Intervals {
    * That's what this method is for; this [ApiConstraint] is the SDK_INT check, and the passed in [minSdk] represents the minimum value of
    * SDK_INT (the known constraint from minSdkVersion).
    */
-  fun alwaysAtLeast(minSdk: Intervals): Boolean {
-    return minSdk and this == minSdk
-  }
+  fun alwaysAtLeast(minSdk: Intervals): Boolean = containsAll(minSdk)
 
   fun alwaysAtLeast(apiLevel: Int): Boolean {
-    val minSdk = atLeast(apiLevel)
-    return minSdk and this == minSdk
+    // Same as `containsAll(atLeast(apiLevel))` without allocating: the last interval must be open-ended and start no later than the level
+    val version = MajorMinor(apiLevel, 0)
+    val level = if (version < ZERO) ZERO else version
+    return when (this) {
+      is Span -> to == INFINITY && from <= level
+      is Spans -> bounds.isNotEmpty() && bounds.last() == INFINITY.bits && MajorMinor(bounds[bounds.size - 2]) <= level
+    }
+  }
+
+  /** Is every value in [other] also in this set? Both are canonical, so this is a single pass over the intervals of each. */
+  private fun containsAll(other: Intervals): Boolean {
+    if (other.isEmpty()) return true
+    if (this is Span && other is Span) return from <= other.from && other.to <= to
+    val outer = boundsArray()
+    val inner = other.boundsArray()
+    var i = 0
+    var j = 0
+    while (j < inner.size) {
+      // Skip the intervals of this set that end before the current interval of the other starts
+      while (i < outer.size && outer[i + 1] <= inner[j]) i += 2
+      if (i == outer.size || inner[j] < outer[i] || outer[i + 1] < inner[j + 1]) return false
+      j += 2
+    }
+    return true
   }
 
   /** Returns true if this interval contains any numbers higher than the given level. */
   fun everHigher(apiLevel: Int): Boolean {
-    val minSdk = atLeast(apiLevel + 1)
-    return (minSdk and this).isNotEmpty()
+    val threshold = MajorMinor(apiLevel + 1, 0)
+    return when (this) {
+      is Span -> to > threshold
+      is Spans -> bounds.isNotEmpty() && MajorMinor(bounds.last()) > threshold
+    }
   }
 
   /**
@@ -171,113 +235,22 @@ sealed class Intervals {
 
     override fun isEmpty(): Boolean = false
 
-    private fun Span.intersects(other: Span): Boolean {
-      return (this.from <= other.to) && (other.from <= this.to)
-    }
-
     override fun contains(value: Int): Boolean {
       return MajorMinor(value, 0) in from..<to
     }
 
-    override fun serialize(): String {
-      val sb = StringBuilder()
-      val fromInclusive = fromInclusive()
-      val fromInclusiveMinor = fromInclusiveMinor()
-
-      sb.append(fromInclusive.toString())
-      if (fromInclusiveMinor > 0) {
-        sb.append('.').append(fromInclusiveMinor.toString())
-      }
-      sb.append('-')
-      if (to == INFINITY) {
-        sb.append('∞')
-      } else {
-        val toExclusive = toExclusive()
-        val toExclusiveMinor = toExclusiveMinor()
-        sb.append(toExclusive.toString())
-        if (toExclusiveMinor > 0) {
-          sb.append('.').append(toExclusiveMinor.toString())
-        }
-      }
-      return sb.toString()
-    }
+    override fun serialize() = buildString { appendInterval(from, to) }
 
     override fun not(): Intervals {
       return when {
         this == ALL -> NONE
         from == ZERO -> Span(to, INFINITY)
         to == INFINITY -> Span(ZERO, from)
-        else -> Spans(listOf(Span(ZERO, from), Span(to, INFINITY)))
+        else -> Spans(intArrayOf(ZERO.bits, from.bits, to.bits, INFINITY.bits))
       }
     }
 
-    override fun and(other: Intervals): Intervals {
-      when (other) {
-        is Span -> {
-          val start = kotlin.math.max(this.from.bits, other.from.bits)
-          val end = kotlin.math.min(this.to.bits, other.to.bits)
-          return when {
-            start >= end -> NONE
-            start == this.from.bits && end == this.to.bits -> this
-            start == other.from.bits && end == other.to.bits -> other
-            else -> Span(MajorMinor(start), MajorMinor(end))
-          }
-        }
-        is Spans -> return other.and(this)
-      }
-    }
-
-    override fun or(other: Intervals): Intervals {
-      when (other) {
-        is Span -> {
-          if (this.intersects(other)) {
-            // If they intersect, merge into a new range
-            val start = kotlin.math.min(this.from.bits, other.from.bits)
-            val end = kotlin.math.max(this.to.bits, other.to.bits)
-            return when {
-              start >= end -> NONE
-              start == this.from.bits && end == this.to.bits -> this
-              start == other.from.bits && end == other.to.bits -> other
-              else -> Span(MajorMinor(start), MajorMinor(end))
-            }
-          } else {
-            val first: Intervals
-            val second: Intervals
-            if (this.from < other.from) {
-              first = this
-              second = other
-            } else {
-              first = other
-              second = this
-            }
-            return Spans(listOf(first, second))
-          }
-        }
-        is Spans -> return other.or(this)
-      }
-    }
-
-    override fun toString(variable: String, compact: Boolean): String {
-      val fromString = from.toString()
-      val toString = to.toString()
-      return when {
-        adjacent(from, to) -> "$variable = $fromString"
-        to <= from -> "No ${variable}s"
-        from == ZERO ->
-          if (to == INFINITY) {
-            "All ${variable}s"
-          } else {
-            "$variable < $toString"
-          }
-        to == INFINITY -> "$variable ≥ $fromString"
-        else ->
-          if (compact) {
-            "$fromString ≤ $variable < $toString"
-          } else {
-            "$variable ≥ $fromString and $variable < $toString"
-          }
-      }
-    }
+    override fun toString(variable: String, compact: Boolean): String = intervalToString(from, to, variable, compact)
 
     override fun isAll(): Boolean {
       return from == ZERO && to == INFINITY
@@ -293,42 +266,45 @@ sealed class Intervals {
     }
 
     override fun hashCode(): Int {
-      return 31 * fromInclusive() + toExclusive()
+      return 31 * from.bits + to.bits
     }
   }
 
-  /** 0 or 2+ intervals: sorted, non-empty, non-overlapping and non-adjacent. */
-  private class Spans(val spans: List<Span>) : Intervals() {
+  /**
+   * 0 or 2+ intervals: sorted, non-empty, non-overlapping and non-adjacent. The [IntArray] encodes the [MajorMinor] bits: elements at even
+   * indices are interval starts, and odd indices (exclusive) ends.
+   */
+  private class Spans(val bounds: IntArray) : Intervals() {
     override fun fromInclusive(): Int {
-      if (spans.isEmpty()) {
+      if (bounds.isEmpty()) {
         return -1
       }
-      return spans.first().fromInclusive()
+      return MajorMinor(bounds[0]).major
     }
 
     override fun fromInclusiveMinor(): Int {
-      if (spans.isEmpty()) {
+      if (bounds.isEmpty()) {
         return 0
       }
-      return spans.first().fromInclusiveMinor()
+      return MajorMinor(bounds[0]).minor
     }
 
     override fun toExclusive(): Int {
-      if (spans.isEmpty()) {
+      if (bounds.isEmpty()) {
         return ZERO.major
       }
-      return spans.last().toExclusive()
+      return MajorMinor(bounds.last()).major
     }
 
     override fun toExclusiveMinor(): Int {
-      if (spans.isEmpty()) {
+      if (bounds.isEmpty()) {
         return 0
       }
-      return spans.last().toExclusiveMinor()
+      return MajorMinor(bounds.last()).minor
     }
 
     override fun isEmpty(): Boolean {
-      return spans.isEmpty()
+      return bounds.isEmpty()
     }
 
     override fun isAll(): Boolean {
@@ -337,63 +313,52 @@ sealed class Intervals {
     }
 
     override fun contains(value: Int): Boolean {
-      return spans.any { it.contains(value) }
+      val index = bounds.binarySearch(MajorMinor(value, 0).bits)
+      // Matching a start (even index) means inclusion, and matching an end (odd index) exclusion; otherwise the value is inside an
+      // interval exactly when the insertion point is past a start but before its end, i.e. odd.
+      return if (index >= 0) index % 2 == 0 else (-index - 1) % 2 == 1
     }
 
     override fun toString(variable: String, compact: Boolean): String {
-      if (spans.isEmpty()) {
+      if (bounds.isEmpty()) {
         return "No ${variable}s"
       }
-      // Special case: if these intervals cover `{(1, X), [X+1,∞)}`, meaning everything except X,
-      // special case that to just show "x != X" instead of these intervals.
-      if (spans.size == 2) {
-        val left = spans[0]
-        val right = spans[1]
-        if (isNotXInterval(left, right)) {
-          return "$variable ≠ ${left.to}"
-        }
+      // Special case: if these intervals cover `{[1, X), [X+1,∞)}`, meaning everything except X, show just "x ≠ X" instead. See
+      // [adjacent] for how "everything except X" is identified.
+      if (
+        bounds.size == 4 && bounds[0] == ZERO.bits && bounds[3] == INFINITY.bits && adjacent(MajorMinor(bounds[1]), MajorMinor(bounds[2]))
+      ) {
+        return "$variable ≠ ${MajorMinor(bounds[1])}"
       }
-      return spans.joinToString(" or ") { it.toString(variable, compact) }
-    }
-
-    override infix fun or(other: Intervals): Intervals {
-      val merged =
-        when (other) {
-          is Span -> joinIntervals(this.spans, listOf(other))
-          is Spans -> joinIntervals(this.spans, other.spans)
-        }
-      return create(merged)
-    }
-
-    override infix fun and(other: Intervals): Intervals {
-      val merged =
-        when (other) {
-          is Span -> intersectIntervals(this.spans, listOf(other))
-          is Spans -> intersectIntervals(this.spans, other.spans)
-        }
-      return create(merged)
+      return (bounds.indices step 2).joinToString(" or ") { index ->
+        intervalToString(MajorMinor(bounds[index]), MajorMinor(bounds[index + 1]), variable, compact)
+      }
     }
 
     override fun not(): Intervals {
-      val spans = mutableListOf<Span>()
-      var prevTo = ZERO
-      for (span in this.spans) {
-        if (span.from > prevTo) {
-          spans.add(Span(prevTo, span.from))
-        }
-        prevTo = span.to
-      }
-      if (prevTo != INFINITY) {
-        spans.add(Span(prevTo, INFINITY))
-      }
-      return create(spans)
+      // The complement within `[ZERO, ∞)` just toggles the presence of ZERO at the front and INFINITY at the back
+      val hasZero = bounds.isNotEmpty() && bounds.first() == ZERO.bits
+      val hasInfinity = bounds.isNotEmpty() && bounds.last() == INFINITY.bits
+      val from = if (hasZero) 1 else 0
+      val to = if (hasInfinity) bounds.size - 1 else bounds.size
+      val inverse = IntArray((if (hasZero) 0 else 1) + (to - from) + (if (hasInfinity) 0 else 1))
+      var next = 0
+      if (!hasZero) inverse[next++] = ZERO.bits
+      for (index in from until to) inverse[next++] = bounds[index]
+      if (!hasInfinity) inverse[next] = INFINITY.bits
+      return create(inverse)
     }
 
     override fun serialize(): String {
-      if (spans.isEmpty()) {
+      if (bounds.isEmpty()) {
         return "0"
       }
-      return spans.joinToString(",") { it.serialize() }
+      return buildString {
+        for (index in bounds.indices step 2) {
+          if (index > 0) append(',')
+          appendInterval(MajorMinor(bounds[index]), MajorMinor(bounds[index + 1]))
+        }
+      }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -402,11 +367,11 @@ sealed class Intervals {
 
       other as Spans
 
-      return spans == other.spans
+      return bounds.contentEquals(other.bounds)
     }
 
     override fun hashCode(): Int {
-      return spans.hashCode()
+      return bounds.contentHashCode()
     }
   }
 
@@ -500,71 +465,85 @@ sealed class Intervals {
       return range(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor)
     }
 
-    val NONE: Intervals = Spans(emptyList())
+    val NONE: Intervals = Spans(IntArray(0))
     val ALL: Intervals = Span(ZERO, INFINITY)
 
-    private fun create(spans: List<Span>): Intervals {
-      return when {
-        spans.isEmpty() -> NONE
-        spans.size == 1 -> spans.first()
-        else -> Spans(spans)
+    private fun create(bounds: IntArray): Intervals =
+      when (bounds.size) {
+        0 -> NONE
+        2 -> Span(MajorMinor(bounds[0]), MajorMinor(bounds[1]))
+        else -> Spans(bounds)
       }
-    }
 
     /**
-     * Merge two canonical lists of spans, using union semantics. Spans are taken in order of their start, and each one either extends the
-     * previously emitted span when they overlap or touch, or starts a new one, so the result is canonical again.
+     * Combines two sets of intervals, returning their union when [minCoverage] is 1 and their intersection when it is 2.
+     *
+     * Each of [bounds1] and [bounds2] is a strictly increasing array of boundaries, where even indices start an interval and odd indices
+     * end it, so crossing any boundary toggles membership.
+     *
+     * We sweep over the boundaries of both arrays in increasing order while counting how many intervals cover the current position (0, 1 or
+     * 2): passing a start boundary adds 1; passing an end boundary subtracts 1. Whenever the coverage crosses [minCoverage], we emit the
+     * current position as a result boundary. A boundary value may appear in both arrays (as two starts, two ends, or one of each); we
+     * process both before deciding whether a crossing happened, so touching intervals coalesce in unions and zero-width regions vanish in
+     * intersections, keeping the result canonical. The sweep stops as soon as one array runs out, since the rest of the other one is then
+     * copied verbatim by a union and dropped by an intersection.
      */
-    private fun joinIntervals(intervals1: List<Span>, intervals2: List<Span>): List<Span> {
-      val mergedIntervals = mutableListOf<Span>()
-      var i = 0
-      var j = 0
-
-      while (i < intervals1.size || j < intervals2.size) {
-        val next =
-          when {
-            j == intervals2.size -> intervals1[i++]
-            i == intervals1.size -> intervals2[j++]
-            intervals1[i].from <= intervals2[j].from -> intervals1[i++]
-            else -> intervals2[j++]
-          }
-        val last = mergedIntervals.lastOrNull()
-        if (last != null && next.from <= last.to) {
-          if (next.to > last.to) {
-            mergedIntervals[mergedIntervals.size - 1] = Span(last.from, next.to)
-          }
-        } else {
-          mergedIntervals.add(next)
+    private fun combine(bounds1: IntArray, bounds2: IntArray, minCoverage: Int): Intervals {
+      val result = IntArray(bounds1.size + bounds2.size)
+      var resultLength = 0
+      var i1 = 0
+      var i2 = 0
+      var coverage = 0
+      while (i1 < bounds1.size && i2 < bounds2.size) {
+        val nextBound = minOf(bounds1[i1], bounds2[i2])
+        val wasCovered = coverage >= minCoverage
+        if (bounds1[i1] == nextBound) {
+          coverage += if (i1 % 2 == 0) 1 else -1
+          i1++
+        }
+        if (bounds2[i2] == nextBound) {
+          coverage += if (i2 % 2 == 0) 1 else -1
+          i2++
+        }
+        if (wasCovered != coverage >= minCoverage) {
+          result[resultLength++] = nextBound
         }
       }
-
-      return mergedIntervals
+      // One operand is exhausted and contributes no coverage from here on, so every remaining boundary of the other crosses a threshold
+      // of 1 and none reaches a threshold of 2
+      if (minCoverage == 1) {
+        bounds1.copyInto(result, destinationOffset = resultLength, startIndex = i1)
+        resultLength += bounds1.size - i1
+        bounds2.copyInto(result, destinationOffset = resultLength, startIndex = i2)
+        resultLength += bounds2.size - i2
+      }
+      return when (resultLength) {
+        0 -> NONE
+        2 -> Span(MajorMinor(result[0]), MajorMinor(result[1]))
+        else -> Spans(if (resultLength == result.size) result else result.copyOf(resultLength))
+      }
     }
 
-    /** Merge two canonical lists of spans, using intersection semantics. */
-    private fun intersectIntervals(intervals1: List<Span>, intervals2: List<Span>): List<Span> {
-      val intersectedIntervals = mutableListOf<Span>()
-      var i = 0
-      var j = 0
+    /** Appends the single interval `[from, to)` in its serialized form; see [serialize] and [deserialize]. */
+    private fun StringBuilder.appendInterval(from: MajorMinor, to: MajorMinor) {
+      append(from.toString())
+      append('-')
+      if (to == INFINITY) append('∞') else append(to.toString())
+    }
 
-      while (i < intervals1.size && j < intervals2.size) {
-        val current1 = intervals1[i]
-        val current2 = intervals2[j]
-
-        if (current1.to > current2.from && current2.to > current1.from) {
-          val newFrom = maxOf(current1.from, current2.from)
-          val newTo = minOf(current1.to, current2.to)
-          intersectedIntervals.add(Span(newFrom, newTo))
-        }
-
-        if (current1.to < current2.to) {
-          i++
-        } else {
-          j++
-        }
+    /** Represents the single interval `[from, to)` as a string; see [Intervals.toString]. */
+    private fun intervalToString(from: MajorMinor, to: MajorMinor, variable: String, compact: Boolean): String {
+      return when {
+        adjacent(from, to) -> "$variable = $from"
+        from == ZERO ->
+          when (to) {
+            INFINITY -> "All ${variable}s"
+            else -> "$variable < $to"
+          }
+        to == INFINITY -> "$variable ≥ $from"
+        compact -> "$from ≤ $variable < $to"
+        else -> "$variable ≥ $from and $variable < $to"
       }
-
-      return intersectedIntervals
     }
 
     /**
@@ -573,17 +552,6 @@ sealed class Intervals {
      */
     fun isInfinity(level: Int): Boolean {
       return level == INFINITY.bits
-    }
-
-    /**
-     * Returns true if these two spans represent the intervals that include everything except value "X". For example, for
-     * `exactly(21).not()`, we have the intervals 1 up to 21, and 22 up to infinity.
-     *
-     * In short, this identifies the scenario where we have this exact span list: `{(1, X), [X+1,∞)}`, meaning everything except X. We use
-     * this to identify this scenario to for example display this as just "x != X" instead of these more complicated intervals.
-     */
-    private fun isNotXInterval(first: Span, adjacent: Span): Boolean {
-      return first.from == ZERO && adjacent.to == INFINITY && adjacent(first.to, adjacent.from)
     }
 
     /**
