@@ -1,0 +1,21 @@
+# Patch aspect_rules_js 2.0.0 so that changes to pnpm-lock.yaml are picked up by incremental builds.
+#
+# The npm module extension and the npm_translate_lock repository rule parse the lock file by running yq on its path
+# (rctx.execute), which Bazel does not track. So a change to pnpm-lock.yaml alone (without a change to MODULE.bazel)
+# does not re-evaluate them, and builds keep using stale @npm_* repositories. Watch the lock file explicitly, as
+# upstream rules_js does in later versions (rctx.watch(attr.pnpm_lock) in npm_translate_lock_state.bzl).
+
+--- a/npm/private/npm_translate_lock_state.bzl
++++ b/npm/private/npm_translate_lock_state.bzl
+@@ -487,6 +487,11 @@
+     lock_version = None
+     lock_parse_err = None
+ 
++    # The lock file is only read by yq (through rctx.execute), which Bazel does not track: watch it, so that the module extension
++    # and the repository rule are re-evaluated when it changes. Upstream rules_js does the same (rctx.watch(attr.pnpm_lock)).
++    if hasattr(rctx, "watch"):
++        rctx.watch(label_store.path("pnpm_lock"))
++
+     yq_args = [
+         str(label_store.path("host_yq")),
+         str(label_store.path("pnpm_lock")),

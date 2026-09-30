@@ -199,6 +199,8 @@ single_version_override(
         # 1. Force directory symlinks (target_type = "directory") on Windows for npm packages.
         # 2. Add RUNFILES_DIR / RUNFILES / <binary>.bat.runfiles discovery in bash.bzl on Windows.
         "//tools/base/bazel/bzlmod:aspect_rules_js_windows_symlinks.patch",
+        # Watch pnpm-lock.yaml, so that changing it alone re-evaluates the npm repositories in incremental builds.
+        "//tools/base/bazel/bzlmod:aspect_rules_js_watch_pnpm_lock.patch",
     ],
     version = "2.0.0",
 )

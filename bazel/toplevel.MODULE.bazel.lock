@@ -441,7 +441,7 @@
   "moduleExtensions": {
     "@@aspect_rules_js+//npm:extensions.bzl%pnpm": {
       "general": {
-        "bzlTransitiveDigest": "uxm9nA4vIjUOIgQ03lfE+JBCsb8pyU8rCyiAmGgEzt4=",
+        "bzlTransitiveDigest": "0lP/OFg7CNPCLp4dNDvKaOQwoDYW5XEd/1JvMIYXM2Q=",
         "usagesDigest": "VmbbTOy4zj+esGLkNxyxz9r0ttlQbVCrr1l97Q4Fgqw=",
         "recordedInputs": [
           "REPO_MAPPING:aspect_bazel_lib+,bazel_lib bazel_lib+",
