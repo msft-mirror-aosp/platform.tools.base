@@ -17,7 +17,10 @@
 package com.android.tools.ui.inspector.payload.appinspection;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertThrows;
+
+import android.os.Build;
 
 import androidx.inspection.ArtTooling;
 import androidx.inspection.Connection;
@@ -26,8 +29,6 @@ import androidx.inspection.InspectorExecutors;
 
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
-
-import android.os.Build;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,46 +50,49 @@ import java.util.jar.JarOutputStream;
 @RunWith(RobolectricTestRunner.class)
 public final class AppInspectionUtilsTest {
 
-  @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-  private final Connection mockConnection = new Connection() {
-    @Override
-    public void sendEvent(byte[] data) {}
-  };
+    private final Connection mockConnection =
+            new Connection() {
+                @Override
+                public void sendEvent(byte[] data) {}
+            };
 
-  private final InspectorEnvironment unusedEnvironment = new InspectorEnvironment() {
-    @Override
-    public InspectorExecutors executors() {
-      throw new UnsupportedOperationException("Not implemented");
-    }
+    private final InspectorEnvironment unusedEnvironment =
+            new InspectorEnvironment() {
+                @Override
+                public InspectorExecutors executors() {
+                    throw new UnsupportedOperationException("Not implemented");
+                }
 
-    @Override
-    public ArtTooling artTooling() {
-      throw new UnsupportedOperationException("Not implemented");
-    }
-  };
+                @Override
+                public ArtTooling artTooling() {
+                    throw new UnsupportedOperationException("Not implemented");
+                }
+            };
 
-  @Test
-  public void testCreateInspectorEnvironment_ioExecutorDelegates() throws InterruptedException {
-    HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test-thread", t -> {});
+    @Test
+    public void testCreateInspectorEnvironment_ioExecutorDelegates() throws InterruptedException {
+        HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test-thread", t -> {});
         InspectorEnvironment environment =
                 AppInspectionUtils.createInspectorEnvironment(
                         "test_inspector", primaryExecutor, t -> {});
 
-    CountDownLatch latch = new CountDownLatch(1);
-    environment.executors().io().execute(latch::countDown);
+        CountDownLatch latch = new CountDownLatch(1);
+        environment.executors().io().execute(latch::countDown);
 
-    boolean completed = latch.await(5, TimeUnit.SECONDS);
-    assertThat(completed).isTrue();
-    primaryExecutor.quitSafely();
-  }
+        boolean completed = latch.await(5, TimeUnit.SECONDS);
+        assertThat(completed).isTrue();
+        primaryExecutor.quitSafely();
+    }
 
-  @Test
-  public void testCreateInspectorEnvironment_ioExecutorCatchesException() throws InterruptedException {
-    HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test-thread", t -> {});
-    AtomicReference<Throwable> caughtThrowable = new AtomicReference<>();
-    CountDownLatch latch = new CountDownLatch(1);
-    RuntimeException exception = new RuntimeException("Test exception");
+    @Test
+    public void testCreateInspectorEnvironment_ioExecutorCatchesException()
+            throws InterruptedException {
+        HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test-thread", t -> {});
+        AtomicReference<Throwable> caughtThrowable = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        RuntimeException exception = new RuntimeException("Test exception");
 
         InspectorEnvironment environment =
                 AppInspectionUtils.createInspectorEnvironment(
@@ -99,105 +103,153 @@ public final class AppInspectionUtilsTest {
                             latch.countDown();
                         });
 
-    environment.executors().io().execute(() -> {
-      throw exception;
-    });
+        environment
+                .executors()
+                .io()
+                .execute(
+                        () -> {
+                            throw exception;
+                        });
 
-    boolean completed = latch.await(5, TimeUnit.SECONDS);
-    assertThat(completed).isTrue();
-    assertThat(caughtThrowable.get()).isEqualTo(exception);
-    primaryExecutor.quitSafely();
-  }
+        boolean completed = latch.await(5, TimeUnit.SECONDS);
+        assertThat(completed).isTrue();
+        assertThat(caughtThrowable.get()).isEqualTo(exception);
+        primaryExecutor.quitSafely();
+    }
 
-  @Test
-  public void testCreateAppInspectionConnection_wrapsEventWithId() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    String inspectorId = "test_inspector_id";
-    Connection connection = AppInspectionUtils.createAppInspectionConnection(inspectorId, outputStream, t -> {});
+    @Test
+    public void testCreateAppInspectionConnection_wrapsEventWithId() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        String inspectorId = "test_inspector_id";
+        Connection connection =
+                AppInspectionUtils.createAppInspectionConnection(
+                        inspectorId, outputStream, t -> {});
 
-    byte[] eventPayload = new byte[]{1, 2, 3};
-    connection.sendEvent(eventPayload);
+        byte[] eventPayload = new byte[] {1, 2, 3};
+        connection.sendEvent(eventPayload);
 
-    byte[] writtenBytes = outputStream.toByteArray();
-    byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
+        byte[] writtenBytes = outputStream.toByteArray();
+        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
         UiInspectorProtocol.AgentMessage agentMessage =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
         assertThat(agentMessage.hasEvent()).isTrue();
         UiInspectorProtocol.Event event = agentMessage.getEvent();
 
-    assertThat(event.getSpecializedCase())
-        .isEqualTo(UiInspectorProtocol.Event.SpecializedCase.INSPECTOR_MESSAGE);
-    assertThat(event.getInspectorMessage().getInspectorId()).isEqualTo(inspectorId);
-    assertThat(event.getInspectorMessage().getPayload().toByteArray()).isEqualTo(eventPayload);
-  }
+        assertThat(event.getSpecializedCase())
+                .isEqualTo(UiInspectorProtocol.Event.SpecializedCase.INSPECTOR_MESSAGE);
+        assertThat(event.getInspectorMessage().getInspectorId()).isEqualTo(inspectorId);
+        assertThat(event.getInspectorMessage().getPayload().toByteArray()).isEqualTo(eventPayload);
+    }
 
-  @Test
-  public void testDelegatingConnection_delegates() {
-    AtomicReference<byte[]> capturedEvent = new AtomicReference<>();
-    Connection realConnection = new Connection() {
-      @Override
-      public void sendEvent(byte[] data) {
-        capturedEvent.set(data);
-      }
-    };
+    @Test
+    public void testDelegatingConnection_delegates() {
+        AtomicReference<byte[]> capturedEvent = new AtomicReference<>();
+        Connection realConnection =
+                new Connection() {
+                    @Override
+                    public void sendEvent(byte[] data) {
+                        capturedEvent.set(data);
+                    }
+                };
 
-    AppInspectionUtils.DelegatingConnection delegatingConnection = new AppInspectionUtils.DelegatingConnection();
-    delegatingConnection.activeConnection = realConnection;
+        AppInspectionUtils.DelegatingConnection delegatingConnection =
+                new AppInspectionUtils.DelegatingConnection();
+        delegatingConnection.activeConnection = realConnection;
 
-    byte[] eventPayload = new byte[]{4, 5};
-    delegatingConnection.sendEvent(eventPayload);
+        byte[] eventPayload = new byte[] {4, 5};
+        delegatingConnection.sendEvent(eventPayload);
 
-    assertThat(capturedEvent.get()).isEqualTo(eventPayload);
-  }
+        assertThat(capturedEvent.get()).isEqualTo(eventPayload);
+    }
 
-  @Test
-  public void testLoadInspectorDynamically_throwsOnInvalidPath() {
-    UncheckedIOException exception = assertThrows(
-        UncheckedIOException.class,
-        () -> AppInspectionUtils.loadInspectorDynamically("test_id", "/invalid/path.dex", mockConnection, unusedEnvironment));
+    @Test
+    public void testLoadInspectorDynamically_throwsOnInvalidPath() {
+        UncheckedIOException exception =
+                assertThrows(
+                        UncheckedIOException.class,
+                        () ->
+                                AppInspectionUtils.loadInspectorDynamically(
+                                        "test_id",
+                                        "/invalid/path.dex",
+                                        mockConnection,
+                                        unusedEnvironment));
 
-    assertThat(exception).hasMessageThat().contains("Failed to prepare native libraries of /invalid/path.dex");
-  }
+        assertThat(exception)
+                .hasMessageThat()
+                .contains("Failed to prepare native libraries of /invalid/path.dex");
+    }
 
-  @Test
-  public void testLoadInspectorDynamically_retriesDexWhoseNativeLibrariesFailed() throws Exception {
-    File dex = new File(temporaryFolder.getRoot(), "retried_inspector.jar");
+    @Test
+    public void testLoadInspectorDynamically_retriesDexWhoseNativeLibrariesFailed()
+            throws Exception {
+        File dex = new File(temporaryFolder.getRoot(), "retried_inspector.jar");
 
-    assertThrows(
-        UncheckedIOException.class,
-        () -> AppInspectionUtils.loadInspectorDynamically("test_id", dex.getPath(), mockConnection, unusedEnvironment));
+        assertThrows(
+                UncheckedIOException.class,
+                () ->
+                        AppInspectionUtils.loadInspectorDynamically(
+                                "test_id", dex.getPath(), mockConnection, unusedEnvironment));
 
-    writeJar(dex, "META-INF/");
-    // The second call gets past class loader creation and fails only because the jar has no inspector.
-    Exception exception = assertThrows(
-        Exception.class,
-        () -> AppInspectionUtils.loadInspectorDynamically("test_id", dex.getPath(), mockConnection, unusedEnvironment));
-    assertThat(exception).hasMessageThat().contains("Failed to find InspectorFactory with id test_id");
-  }
+        writeJar(dex, "META-INF/");
+        // The second call gets past class loader creation and fails only because the jar has no
+        // inspector.
+        Exception exception =
+                assertThrows(
+                        Exception.class,
+                        () ->
+                                AppInspectionUtils.loadInspectorDynamically(
+                                        "test_id",
+                                        dex.getPath(),
+                                        mockConnection,
+                                        unusedEnvironment));
+        assertThat(exception)
+                .hasMessageThat()
+                .contains("Failed to find InspectorFactory with id test_id");
+    }
 
-  @Test
-  public void testLoadInspectorDynamically_extractsNativeLibrariesOncePerDex() throws Exception {
-    // Extraction happens under java.io.tmpdir in a directory named after the jar, so the jar name must be unique to this test run.
-    String jarName = temporaryFolder.getRoot().getName() + "_native_inspector.jar";
-    File dex = new File(temporaryFolder.getRoot(), jarName);
-    String abiDirectory = "lib/" + Build.SUPPORTED_ABIS[0] + "/";
-    writeJar(dex, "lib/", abiDirectory, abiDirectory + "libinspector.so");
-    File extractedLibrary = new File(System.getProperty("java.io.tmpdir"), jarName + "_unpacked_lib/libinspector.so");
+    @Test
+    public void testLoadInspectorDynamically_extractsNativeLibrariesOncePerDex() throws Exception {
+        // Extraction happens under java.io.tmpdir in a directory named after the jar, so the jar
+        // name must be unique to this test run.
+        String jarName = temporaryFolder.getRoot().getName() + "_native_inspector.jar";
+        File dex = new File(temporaryFolder.getRoot(), jarName);
+        String abiDirectory = "lib/" + Build.SUPPORTED_ABIS[0] + "/";
+        writeJar(dex, "lib/", abiDirectory, abiDirectory + "libinspector.so");
+        File extractedLibrary =
+                new File(
+                        System.getProperty("java.io.tmpdir"),
+                        jarName + "_unpacked_lib/libinspector.so");
 
-    // Both calls get past class loader creation and fail only because the jar has no inspector.
-    Exception firstException = assertThrows(
-        Exception.class,
-        () -> AppInspectionUtils.loadInspectorDynamically("test_id", dex.getPath(), mockConnection, unusedEnvironment));
-    assertThat(firstException).hasMessageThat().contains("Failed to find InspectorFactory with id test_id");
-    assertThat(extractedLibrary.exists()).isTrue();
-    assertThat(extractedLibrary.delete()).isTrue();
+        // Both calls get past class loader creation and fail only because the jar has no inspector.
+        Exception firstException =
+                assertThrows(
+                        Exception.class,
+                        () ->
+                                AppInspectionUtils.loadInspectorDynamically(
+                                        "test_id",
+                                        dex.getPath(),
+                                        mockConnection,
+                                        unusedEnvironment));
+        assertThat(firstException)
+                .hasMessageThat()
+                .contains("Failed to find InspectorFactory with id test_id");
+        assertThat(extractedLibrary.exists()).isTrue();
+        assertThat(extractedLibrary.delete()).isTrue();
 
-    Exception secondException = assertThrows(
-        Exception.class,
-        () -> AppInspectionUtils.loadInspectorDynamically("test_id", dex.getPath(), mockConnection, unusedEnvironment));
-    assertThat(secondException).hasMessageThat().contains("Failed to find InspectorFactory with id test_id");
-    assertThat(extractedLibrary.exists()).isFalse();
-  }
+        Exception secondException =
+                assertThrows(
+                        Exception.class,
+                        () ->
+                                AppInspectionUtils.loadInspectorDynamically(
+                                        "test_id",
+                                        dex.getPath(),
+                                        mockConnection,
+                                        unusedEnvironment));
+        assertThat(secondException)
+                .hasMessageThat()
+                .contains("Failed to find InspectorFactory with id test_id");
+        assertThat(extractedLibrary.exists()).isFalse();
+    }
 
     @Test
     public void testCreateInspectorEnvironment_artToolingReachesTheEngine() {
@@ -229,13 +281,16 @@ public final class AppInspectionUtilsTest {
         primaryExecutor.quitSafely();
     }
 
-  /** Writes a jar with the given entries. Names ending in a slash are directories; other names are empty files. */
-  private static void writeJar(File jar, String... entryNames) throws Exception {
-    try (JarOutputStream output = new JarOutputStream(new FileOutputStream(jar))) {
-      for (String entryName : entryNames) {
-        output.putNextEntry(new JarEntry(entryName));
-        output.closeEntry();
-      }
+    /**
+     * Writes a jar with the given entries. Names ending in a slash are directories; other names are
+     * empty files.
+     */
+    private static void writeJar(File jar, String... entryNames) throws Exception {
+        try (JarOutputStream output = new JarOutputStream(new FileOutputStream(jar))) {
+            for (String entryName : entryNames) {
+                output.putNextEntry(new JarEntry(entryName));
+                output.closeEntry();
+            }
+        }
     }
-  }
 }

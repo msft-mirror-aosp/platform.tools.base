@@ -22,30 +22,32 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 public final class ComposeInspectionUtils {
-  private ComposeInspectionUtils() {}
+    private ComposeInspectionUtils() {}
 
-  private static final String COMPOSE_UI_VERSION_RESOURCE_PATH = "META-INF/androidx.compose.ui_ui.version";
+    private static final String COMPOSE_UI_VERSION_RESOURCE_PATH =
+            "META-INF/androidx.compose.ui_ui.version";
 
-  public static String detectComposeVersion(ClassLoader classLoader) {
-    try {
-      classLoader.loadClass("androidx.compose.ui.Modifier");
-    } catch (ClassNotFoundException e) {
-      return null;
-    }
-    try (InputStream is = classLoader.getResourceAsStream(COMPOSE_UI_VERSION_RESOURCE_PATH)) {
-      if (is == null) {
-        return null;
-      }
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-          sb.append(line);
+    public static String detectComposeVersion(ClassLoader classLoader) {
+        try {
+            classLoader.loadClass("androidx.compose.ui.Modifier");
+        } catch (ClassNotFoundException e) {
+            return null;
         }
-        return sb.toString().trim();
-      }
-    } catch (Exception e) {
-      return null;
+        try (InputStream is = classLoader.getResourceAsStream(COMPOSE_UI_VERSION_RESOURCE_PATH)) {
+            if (is == null) {
+                return null;
+            }
+            try (BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+                return sb.toString().trim();
+            }
+        } catch (Exception e) {
+            return null;
+        }
     }
-  }
 }

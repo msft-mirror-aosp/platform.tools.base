@@ -48,29 +48,37 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public final class AppInspectionUtils {
-  private AppInspectionUtils() {}
+    private AppInspectionUtils() {}
 
-  private static final String TAG = "studio.AppInspectionUtils";
-  /** Executor for disk I/O operations. We use a fixed thread pool of size 4, matching the behavior of AppInspectionService. */
-  private static final Executor IoExecutor = Executors.newFixedThreadPool(4);
-  /**
-   * The class loader of each inspector loaded so far, by dex path.
-   * If an inspector has native libraries, they can't be loaded across different class loaders (b/187342510).
-   * This map is static so it outlives individual inspector instances. ART Tooling also reuses the payload's classes across attaches,
-   * so each dex path keeps a single class loader for the life of the process, as long as the payload jar doesn't change.
-   */
-  private static final ConcurrentHashMap<String, ClassLoader> inspectorClassLoaders = new ConcurrentHashMap<>();
+    private static final String TAG = "studio.AppInspectionUtils";
 
-  /**
-   * Creates a {@link Connection} that writes events to the given {@link OutputStream} using {@link FramingProtocol}.
-   *
-   * <p>Provides an interoperability bridge with the App Inspection framework, adapting its standard
-   * interfaces to the UI Inspector's custom transport and routing protocol.
-   */
-  public static Connection createAppInspectionConnection(
-      String inspectorId,
-      OutputStream outputStream,
-      HandlerThreadExecutor.CrashListener crashListener) {
+    /**
+     * Executor for disk I/O operations. We use a fixed thread pool of size 4, matching the behavior
+     * of AppInspectionService.
+     */
+    private static final Executor IoExecutor = Executors.newFixedThreadPool(4);
+
+    /**
+     * The class loader of each inspector loaded so far, by dex path. If an inspector has native
+     * libraries, they can't be loaded across different class loaders (b/187342510). This map is
+     * static so it outlives individual inspector instances. ART Tooling also reuses the payload's
+     * classes across attaches, so each dex path keeps a single class loader for the life of the
+     * process, as long as the payload jar doesn't change.
+     */
+    private static final ConcurrentHashMap<String, ClassLoader> inspectorClassLoaders =
+            new ConcurrentHashMap<>();
+
+    /**
+     * Creates a {@link Connection} that writes events to the given {@link OutputStream} using
+     * {@link FramingProtocol}.
+     *
+     * <p>Provides an interoperability bridge with the App Inspection framework, adapting its
+     * standard interfaces to the UI Inspector's custom transport and routing protocol.
+     */
+    public static Connection createAppInspectionConnection(
+            String inspectorId,
+            OutputStream outputStream,
+            HandlerThreadExecutor.CrashListener crashListener) {
         return new Connection() {
             @Override
             public void sendEvent(byte[] event) {
@@ -101,25 +109,25 @@ public final class AppInspectionUtils {
                 }
             }
         };
-  }
-
-  /**
-   * A {@link Connection} that delegates to another {@link Connection}. Used to support reconnecting to
-   * existing inspectors across different sessions.
-   */
-  public static final class DelegatingConnection extends Connection {
-    public volatile Connection activeConnection = null;
-
-    @Override
-    public void sendEvent(byte[] event) {
-      Connection connection = activeConnection;
-      if (connection != null) {
-        connection.sendEvent(event);
-      } else {
-        Log.w(TAG, "No active connection to send event");
-      }
     }
-  }
+
+    /**
+     * A {@link Connection} that delegates to another {@link Connection}. Used to support
+     * reconnecting to existing inspectors across different sessions.
+     */
+    public static final class DelegatingConnection extends Connection {
+        public volatile Connection activeConnection = null;
+
+        @Override
+        public void sendEvent(byte[] event) {
+            Connection connection = activeConnection;
+            if (connection != null) {
+                connection.sendEvent(event);
+            } else {
+                Log.w(TAG, "No active connection to send event");
+            }
+        }
+    }
 
     public static InspectorEnvironment createInspectorEnvironment(
             String inspectorId,
@@ -151,104 +159,122 @@ public final class AppInspectionUtils {
                 };
             }
         };
-  }
-
-  /** Creates an executor that delegates work to the given one and forwards all uncaught exceptions to {@code crashListener}. */
-  private static Executor createDelegateExecutor(
-      Executor delegate,
-      HandlerThreadExecutor.CrashListener crashListener) {
-    return command -> delegate.execute(() -> {
-      try {
-        command.run();
-      } catch (Throwable t) {
-        crashListener.onCrash(t);
-      }
-    });
-  }
-
-  /**
-   * Dynamically loads an inspector from a dex file using {@link ServiceLoader}, matching the mechanism used
-   * by App Inspection's {@code InspectorContext.java}.
-   *
-   * <p>Like App Inspection, it creates one {@link DexClassLoader} per dex path and reuses it for later inspectors of that dex. Each call
-   * creates a new inspector.
-   *
-   * <p>Note that there are a few differences from App Inspection's implementation:
-   * <ol>
-   *   <li>It uses the payload's class loader ({@code AppInspectionUtils.class.getClassLoader()}) as the parent class loader,
-   *       whereas App Inspection uses the application's class loader. Since the payload's loader is already a child of the
-   *       application's class loader, app classes remain visible through delegation.
-   *   <li>It does not support native pointers in {@link InspectorEnvironment}.
-   * </ol>
-   */
-  public static Inspector loadInspectorDynamically(
-      String inspectorId,
-      String dexPath,
-      Connection connection,
-      InspectorEnvironment environment) throws Exception {
-    ClassLoader classLoader = inspectorClassLoaders.computeIfAbsent(dexPath, AppInspectionUtils::createInspectorClassLoader);
-    ServiceLoader<InspectorFactory> loader = ServiceLoader.load(InspectorFactory.class, classLoader);
-    Inspector inspector = null;
-    for (InspectorFactory factory : loader) {
-      if (factory.getInspectorId().equals(inspectorId)) {
-        inspector = factory.createInspector(connection, environment);
-        break;
-      }
     }
-    if (inspector == null) {
-      throw new Exception("Failed to find InspectorFactory with id " + inspectorId);
+
+    /**
+     * Creates an executor that delegates work to the given one and forwards all uncaught exceptions
+     * to {@code crashListener}.
+     */
+    private static Executor createDelegateExecutor(
+            Executor delegate, HandlerThreadExecutor.CrashListener crashListener) {
+        return command ->
+                delegate.execute(
+                        () -> {
+                            try {
+                                command.run();
+                            } catch (Throwable t) {
+                                crashListener.onCrash(t);
+                            }
+                        });
     }
-    return inspector;
-  }
 
-  /** Creates the class loader for an inspector dex, after extracting the dex's native libraries. */
-  private static ClassLoader createInspectorClassLoader(String dexPath) {
-    String optimizedDir = System.getProperty("java.io.tmpdir");
-    String nativePath = prepareNativeLibraries(dexPath);
-    return new DexClassLoader(dexPath, optimizedDir, nativePath, AppInspectionUtils.class.getClassLoader());
-  }
+    /**
+     * Dynamically loads an inspector from a dex file using {@link ServiceLoader}, matching the
+     * mechanism used by App Inspection's {@code InspectorContext.java}.
+     *
+     * <p>Like App Inspection, it creates one {@link DexClassLoader} per dex path and reuses it for
+     * later inspectors of that dex. Each call creates a new inspector.
+     *
+     * <p>Note that there are a few differences from App Inspection's implementation:
+     *
+     * <ol>
+     *   <li>It uses the payload's class loader ({@code AppInspectionUtils.class.getClassLoader()})
+     *       as the parent class loader, whereas App Inspection uses the application's class loader.
+     *       Since the payload's loader is already a child of the application's class loader, app
+     *       classes remain visible through delegation.
+     *   <li>It does not support native pointers in {@link InspectorEnvironment}.
+     * </ol>
+     */
+    public static Inspector loadInspectorDynamically(
+            String inspectorId,
+            String dexPath,
+            Connection connection,
+            InspectorEnvironment environment)
+            throws Exception {
+        ClassLoader classLoader =
+                inspectorClassLoaders.computeIfAbsent(
+                        dexPath, AppInspectionUtils::createInspectorClassLoader);
+        ServiceLoader<InspectorFactory> loader =
+                ServiceLoader.load(InspectorFactory.class, classLoader);
+        Inspector inspector = null;
+        for (InspectorFactory factory : loader) {
+            if (factory.getInspectorId().equals(inspectorId)) {
+                inspector = factory.createInspector(connection, environment);
+                break;
+            }
+        }
+        if (inspector == null) {
+            throw new Exception("Failed to find InspectorFactory with id " + inspectorId);
+        }
+        return inspector;
+    }
 
-  /**
-   * Dynamically extracts JNI native libraries from the inspector's jar if present, matching the mechanism
-   * used by App Inspection's {@code InspectorContext.java}. Returns null when the jar has no {@code lib/} directory entry. A failed
-   * extraction throws, so that no class loader without its native libraries gets cached.
-   */
-  private static String prepareNativeLibraries(String dexPath) {
-    try {
-      String abi = Build.SUPPORTED_ABIS[0];
-      try (JarFile jarFile = new JarFile(dexPath)) {
-        JarEntry libEntry = jarFile.getJarEntry("lib/");
-        if (libEntry == null || !libEntry.isDirectory()) {
-          return null;
-        }
-        File dexFile = new File(dexPath);
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        File workingDir = new File(tmpDir, dexFile.getName() + "_unpacked_lib");
-        if (!workingDir.exists() && !workingDir.mkdir()) {
-          throw new IOException("Failed to create working dir: " + workingDir);
-        }
-        java.util.Enumeration<JarEntry> entries = jarFile.entries();
-        String targetFolder = "lib/" + abi + "/";
-        while (entries.hasMoreElements()) {
-          JarEntry entry = entries.nextElement();
+    /**
+     * Creates the class loader for an inspector dex, after extracting the dex's native libraries.
+     */
+    private static ClassLoader createInspectorClassLoader(String dexPath) {
+        String optimizedDir = System.getProperty("java.io.tmpdir");
+        String nativePath = prepareNativeLibraries(dexPath);
+        return new DexClassLoader(
+                dexPath, optimizedDir, nativePath, AppInspectionUtils.class.getClassLoader());
+    }
+
+    /**
+     * Dynamically extracts JNI native libraries from the inspector's jar if present, matching the
+     * mechanism used by App Inspection's {@code InspectorContext.java}. Returns null when the jar
+     * has no {@code lib/} directory entry. A failed extraction throws, so that no class loader
+     * without its native libraries gets cached.
+     */
+    private static String prepareNativeLibraries(String dexPath) {
+        try {
+            String abi = Build.SUPPORTED_ABIS[0];
+            try (JarFile jarFile = new JarFile(dexPath)) {
+                JarEntry libEntry = jarFile.getJarEntry("lib/");
+                if (libEntry == null || !libEntry.isDirectory()) {
+                    return null;
+                }
+                File dexFile = new File(dexPath);
+                String tmpDir = System.getProperty("java.io.tmpdir");
+                File workingDir = new File(tmpDir, dexFile.getName() + "_unpacked_lib");
+                if (!workingDir.exists() && !workingDir.mkdir()) {
+                    throw new IOException("Failed to create working dir: " + workingDir);
+                }
+                java.util.Enumeration<JarEntry> entries = jarFile.entries();
+                String targetFolder = "lib/" + abi + "/";
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
                     if (entry.getName().startsWith(targetFolder)
                             && !entry.isDirectory()
                             && entry.getName().endsWith(".so")) {
-            String name = entry.getName().substring(entry.getName().lastIndexOf('/') + 1);
-            File file = new File(workingDir, name);
-            try (InputStream inputStream = jarFile.getInputStream(entry)) {
-              Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        String name =
+                                entry.getName().substring(entry.getName().lastIndexOf('/') + 1);
+                        File file = new File(workingDir, name);
+                        try (InputStream inputStream = jarFile.getInputStream(entry)) {
+                            Files.copy(
+                                    inputStream,
+                                    file.toPath(),
+                                    StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        file.setReadable(true, false);
+                        file.setWritable(true, false);
+                        file.setExecutable(true, false);
+                        file.deleteOnExit();
+                    }
+                }
+                return workingDir.getAbsolutePath();
             }
-            file.setReadable(true, false);
-            file.setWritable(true, false);
-            file.setExecutable(true, false);
-            file.deleteOnExit();
-          }
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to prepare native libraries of " + dexPath, e);
         }
-        return workingDir.getAbsolutePath();
-      }
-    } catch (IOException e) {
-      throw new UncheckedIOException("Failed to prepare native libraries of " + dexPath, e);
     }
-  }
 }
