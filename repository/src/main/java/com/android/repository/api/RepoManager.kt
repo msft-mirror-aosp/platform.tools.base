@@ -272,14 +272,23 @@ abstract class RepoManager {
     val genericModule = SchemaModule<GenericFactory>(GENERIC_OBJECT_FACTORY_PATTERN, GENERIC_XSD_PATTERN, RepoManager::class.java)
 
     @JvmStatic
+    @JvmOverloads
     fun createRepoManager(
       localPath: Path?,
       schemaModules: List<SchemaModule<*>>,
       sourceProviders: List<RepositorySourceProvider>,
       fallbackLocalRepoLoader: FallbackLocalRepoLoader?,
       fallbackRemoteRepoLoader: FallbackRemoteRepoLoader?,
+      knownTopLevelPackageDirs: Set<String> = emptySet(),
     ): RepoManager {
-      return RepoManagerImpl(localPath, sourceProviders, schemaModules, fallbackLocalRepoLoader, fallbackRemoteRepoLoader)
+      return RepoManagerImpl(
+        localPath,
+        sourceProviders,
+        schemaModules,
+        fallbackLocalRepoLoader,
+        fallbackRemoteRepoLoader,
+        knownTopLevelPackageDirs,
+      )
     }
   }
 }

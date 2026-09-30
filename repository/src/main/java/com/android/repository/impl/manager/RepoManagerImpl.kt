@@ -75,6 +75,8 @@ internal constructor(
    *   for them.
    * @param fallbackRemoteRepoLoader the [FallbackRemoteRepoLoader] to use if the normal [RemoteRepoLoaderImpl] can't understand a
    *   downloaded repository xml file. (This is currently used for parsing the old repository XML format.)
+   * @param knownTopLevelPackageDirs names of top-level directories under [localPath] where packages are normally installed. If non-empty,
+   *   and no packages are found in any of them, other directories under [localPath] will not be scanned for packages.
    */
   constructor(
     localPath: Path?,
@@ -82,10 +84,18 @@ internal constructor(
     additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
     fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null,
     fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null,
+    knownTopLevelPackageDirs: Set<String> = emptySet(),
   ) : this(
     localPath = localPath,
     localRepoLoader =
-      localPath?.let { LocalRepoLoaderImpl(it, setOf(commonModule, genericModule) + additionalSchemaModules, fallbackLocalRepoLoader) },
+      localPath?.let {
+        LocalRepoLoaderImpl(
+          it,
+          setOf(commonModule, genericModule) + additionalSchemaModules,
+          fallbackLocalRepoLoader,
+          knownTopLevelPackageDirs,
+        )
+      },
     remoteRepoLoader = RemoteRepoLoaderImpl(sourceProviders, fallbackRemoteRepoLoader),
     additionalSchemaModules = additionalSchemaModules,
   )
