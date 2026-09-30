@@ -1146,6 +1146,7 @@ _CLASS_JARS = [
     "com.google.protobuf:protobuf-java-util:4.33.2",
     "com.google.protobuf:protobuf-javalite:4.28.2",  # XR template
     "com.google.protobuf:protobuf-kotlin:3.24.4",
+    "com.google.protobuf:protobuf-kotlin:3.25.5",
     "com.google.protobuf:protobuf-kotlin-lite:4.28.2",
     "com.google.protobuf:protobuf-parent:pom:3.19.3",
     "com.google.protobuf:protobuf-parent:pom:3.22.3",
@@ -1157,21 +1158,25 @@ _CLASS_JARS = [
     "com.google.protobuf:protoc:exe:linux-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.25.3",
+    "com.google.protobuf:protoc:exe:linux-x86_64:3.25.5",
     "com.google.protobuf:protoc:exe:linux-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.24.4",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.25.3",
+    "com.google.protobuf:protoc:exe:osx-aarch_64:3.25.5",
     "com.google.protobuf:protoc:exe:osx-aarch_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:osx-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.25.3",
+    "com.google.protobuf:protoc:exe:osx-x86_64:3.25.5",
     "com.google.protobuf:protoc:exe:osx-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:windows-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.25.3",
+    "com.google.protobuf:protoc:exe:windows-x86_64:3.25.5",
     "com.google.protobuf:protoc:exe:windows-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.testing.compile:compile-testing:0.18",
     "com.google.testing.platform:android-device-provider-local:0.0.9-alpha03",  # Used by Studio integration test (BuildAndRunInstrumentedTest)

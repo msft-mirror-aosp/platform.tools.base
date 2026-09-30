@@ -6653,10 +6653,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.google.protobuf.protoc_3.22.3",
-    pom = "com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
+    name = "com.google.protobuf.protoc_3.25.5",
+    pom = "com/google/protobuf/protoc/3.25.5/protoc-3.25.5.pom",
     repo_root_path = "",
-    repo_path = "com/google/protobuf/protoc/3.22.3",
+    repo_path = "com/google/protobuf/protoc/3.25.5",
     parent = "com.google.google_5",
     visibility = ["//visibility:public"],
 )
@@ -6666,9 +6666,9 @@ maven_import(
     classifiers = [],
     parent = "com.google.google_5",
     original_deps = [],
-    pom = "com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
+    pom = "com/google/protobuf/protoc/3.25.5/protoc-3.25.5.pom",
     repo_root_path = "",
-    repo_path = "com/google/protobuf/protoc/3.22.3",
+    repo_path = "com/google/protobuf/protoc/3.25.5",
     visibility = ["//visibility:public"],
 )
 
@@ -6677,9 +6677,9 @@ maven_import(
     classifiers = [],
     parent = "com.google.google_5",
     original_deps = [],
-    pom = "com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
+    pom = "com/google/protobuf/protoc/3.25.5/protoc-3.25.5.pom",
     repo_root_path = "",
-    repo_path = "com/google/protobuf/protoc/3.22.3",
+    repo_path = "com/google/protobuf/protoc/3.25.5",
     visibility = ["//visibility:public"],
 )
 
@@ -6688,9 +6688,9 @@ maven_import(
     classifiers = [],
     parent = "com.google.google_5",
     original_deps = [],
-    pom = "com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
+    pom = "com/google/protobuf/protoc/3.25.5/protoc-3.25.5.pom",
     repo_root_path = "",
-    repo_path = "com/google/protobuf/protoc/3.22.3",
+    repo_path = "com/google/protobuf/protoc/3.25.5",
     visibility = ["//visibility:public"],
 )
 
@@ -6699,9 +6699,9 @@ maven_import(
     classifiers = [],
     parent = "com.google.google_5",
     original_deps = [],
-    pom = "com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
+    pom = "com/google/protobuf/protoc/3.25.5/protoc-3.25.5.pom",
     repo_root_path = "",
-    repo_path = "com/google/protobuf/protoc/3.22.3",
+    repo_path = "com/google/protobuf/protoc/3.25.5",
     visibility = ["//visibility:public"],
 )
 
@@ -89270,6 +89270,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-kotlin_3.25.5",
+    pom = "com/google/protobuf/protobuf-kotlin/3.25.5/protobuf-kotlin-3.25.5.pom",
+    repo_root_path = "",
+    repo_path = "com/google/protobuf/protobuf-kotlin/3.25.5",
+    parent = "com.google.protobuf.protobuf-parent_3.25.5",
+    deps = [
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.6.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protobuf-kotlin_4.28.3",
     pom = "com/google/protobuf/protobuf-kotlin/4.28.3/protobuf-kotlin-4.28.3.pom",
     repo_root_path = "",
@@ -89352,6 +89365,15 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "com/google/protobuf/protoc/3.19.6",
     parent = "com.google.google_1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.protobuf.protoc_3.22.3",
+    pom = "com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
+    repo_root_path = "",
+    repo_path = "com/google/protobuf/protoc/3.22.3",
+    parent = "com.google.google_5",
     visibility = ["//visibility:public"],
 )
 
