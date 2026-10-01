@@ -163,6 +163,19 @@ filegroup(
 )
 
 http_archive(
+    name = "electron_linux_arm64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "all_files",
+    srcs = glob(["**/*"]),
+)
+""",
+    sha256 = "9e2b5cfbd387e138f06c7bb19b399bb3ee487dbb4110215df097d94e80431892",
+    urls = ["https://github.com/electron/electron/releases/download/v43.4.1/electron-v43.4.1-linux-arm64.zip"],
+)
+
+http_archive(
     name = "electron_darwin_x64",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
