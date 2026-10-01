@@ -135,9 +135,7 @@ public class RepositoryPackagesTest extends TestCase {
         FakeRemotePackage remoteOnly = new FakeRemotePackage("r");
         remotes.add(remoteOnly);
 
-        RepositoryPackages packages = new RepositoryPackages();
-        packages.setLocalPkgInfos(locals);
-        packages.setRemotePkgInfos(remotes);
+        RepositoryPackages packages = new RepositoryPackages(locals, remotes);
 
         Collection<LocalPackage> localPackages = packages.getLocalPackagesForPrefix("a");
         assertEquals(3, localPackages.size());

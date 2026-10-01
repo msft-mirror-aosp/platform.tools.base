@@ -47,6 +47,8 @@ import java.util.TreeMap
 import kotlin.io.path.createFile
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.exists
+import kotlin.time.Duration
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -743,6 +745,9 @@ class AvdManagerTest {
 
     // Delete the system image of the AVD.
     PathUtils.deleteRecursivelyIfExists(systemImages.api23.image.location)
+    runBlocking {
+      androidSdkHandler.getRepoManager(systemImages.progress).loadLocalPackages(systemImages.progress, cacheExpiration = Duration.ZERO)
+    }
     avdManager.reloadAvds()
     avd = avdManager.getAvd(avd.name, false)!!
     assertNotNull(avd)

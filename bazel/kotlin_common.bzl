@@ -17,7 +17,7 @@ See also discussion in https://youtrack.jetbrains.com/issue/KT-29974
 
 load("@rules_java//java:defs.bzl", "java_common")
 
-LEGACY_JVM_TARGETS = ["8"]
+LEGACY_JVM_TARGETS = ["8", "11"]
 
 _PROHIBITED_JVM_TARGET_FLAGS = [
     "--release",
@@ -105,8 +105,6 @@ def add_jvm_target_opts(toolchain_info, jvm_target, javac_opts, kotlinc_opts, la
         kotlinc_target_ver = "1.8" if jvm_target == "8" else jvm_target
         javac_opts = javac_opts + ["--release", jvm_target]
         kotlinc_opts = kotlinc_opts + ["-Xjdk-release=" + kotlinc_target_ver]
-    elif jvm_target == "11":
-        kotlinc_opts = kotlinc_opts + ["-jvm-target", "11"]
     elif jvm_target == "17":
         kotlinc_opts = kotlinc_opts + ["-jvm-target", "17"]
     elif jvm_target == "21":
@@ -132,8 +130,6 @@ def select_java_compile_toolchain(toolchain_info, jvm_target):
     if jvm_target in LEGACY_JVM_TARGETS:
         # see add_jvm_target_opts for how it works
         return toolchain_info[KtJvmToolchainInfo].java_compile_toolchain_25
-    elif jvm_target == "11":
-        return toolchain_info[KtJvmToolchainInfo].java_compile_toolchain_11
     elif jvm_target == "17":
         return toolchain_info[KtJvmToolchainInfo].java_compile_toolchain_17
     elif jvm_target == "21":
@@ -157,8 +153,6 @@ def select_java_runtime(toolchain_info, jvm_target):
     if jvm_target in LEGACY_JVM_TARGETS:
         # see add_jvm_target_opts for how it works
         return toolchain_info[KtJvmToolchainInfo].java_runtime_25
-    elif jvm_target == "11":
-        return toolchain_info[KtJvmToolchainInfo].java_runtime_11
     elif jvm_target == "17":
         return toolchain_info[KtJvmToolchainInfo].java_runtime_17
     elif jvm_target == "21":
@@ -171,11 +165,9 @@ def select_java_runtime(toolchain_info, jvm_target):
 KtJvmToolchainInfo = provider(
     doc = "Info about java runtimes used for compiling to different `jvm_target`.",
     fields = [
-        "java_runtime_11",
         "java_runtime_17",
         "java_runtime_21",
         "java_runtime_25",
-        "java_compile_toolchain_11",
         "java_compile_toolchain_17",
         "java_compile_toolchain_21",
         "java_compile_toolchain_25",
@@ -186,11 +178,9 @@ KtJvmToolchainInfo = provider(
 def _kt_java_toolchain_bundle_impl(ctx):
     return [
         KtJvmToolchainInfo(
-            java_runtime_11 = ctx.attr.kt_java_runtime_11[java_common.JavaRuntimeInfo],
             java_runtime_17 = ctx.attr.kt_java_runtime_17[java_common.JavaRuntimeInfo],
             java_runtime_21 = ctx.attr.kt_java_runtime_21[java_common.JavaRuntimeInfo],
             java_runtime_25 = ctx.attr.kt_java_runtime_25[java_common.JavaRuntimeInfo],
-            java_compile_toolchain_11 = ctx.attr.kt_java_compile_toolchain_11[java_common.JavaToolchainInfo],
             java_compile_toolchain_17 = ctx.attr.kt_java_compile_toolchain_17[java_common.JavaToolchainInfo],
             java_compile_toolchain_21 = ctx.attr.kt_java_compile_toolchain_21[java_common.JavaToolchainInfo],
             java_compile_toolchain_25 = ctx.attr.kt_java_compile_toolchain_25[java_common.JavaToolchainInfo],
@@ -209,10 +199,6 @@ kt_java_toolchain_bundle = rule(
     # could be simplified if kotlinc support --bootclasspath option directly,
     # instead of extracting it from jdk location
     attrs = {
-        "kt_java_runtime_11": attr.label(
-            default = Label("//prebuilts/studio/jdk/jdk11:java_runtime"),
-            providers = [java_common.JavaRuntimeInfo],
-        ),
         "kt_java_runtime_17": attr.label(
             default = Label("//prebuilts/studio/jdk/jdk17:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
@@ -224,10 +210,6 @@ kt_java_toolchain_bundle = rule(
         "kt_java_runtime_25": attr.label(
             default = Label("//prebuilts/studio/jdk/jbr25:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
-        ),
-        "kt_java_compile_toolchain_11": attr.label(
-            default = Label("//prebuilts/studio/jdk:java11_compile_toolchain"),
-            providers = [java_common.JavaToolchainInfo],
         ),
         "kt_java_compile_toolchain_17": attr.label(
             default = Label("//prebuilts/studio/jdk:java17_compile_toolchain"),

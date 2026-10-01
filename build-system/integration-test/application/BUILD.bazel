@@ -109,7 +109,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/genFolderApiOld",
     "//tools/base/build-system/integration-test:test-projects/gradleDeclarative",
     "//tools/base/build-system/integration-test:test-projects/jacocoOnlySubprojectBuildScriptDependency",
-    "//tools/base/build-system/integration-test:test-projects/jacocoWithButterKnife",
     "//tools/base/build-system/integration-test:test-projects/jarjarIntegration",
     "//tools/base/build-system/integration-test:test-projects/jetifier",
     "//tools/base/build-system/integration-test:test-projects/kotlinApp",
@@ -775,7 +774,10 @@ single_gradle_integration_test_per_source(
 
 kotlin_library(
     name = "screenshot_fixture",
-    srcs = ["src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestFixture.kt"],
+    srcs = [
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestFixture.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestSuiteTestFixture.kt",
+    ],
     deps = TEST_DEPS,
 )
 
@@ -785,11 +787,17 @@ single_gradle_integration_test_per_source(
     timeout = "long",
     srcs = [
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotPerformanceTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotPerformanceTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTestSuiteTest.kt",
     ],
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",
@@ -1263,7 +1271,6 @@ maven_repository(
         "@maven//:com.googlecode.jarjar.jarjar_1.3",
         "@maven//:com.jakewharton.butterknife-gradle-plugin_9.0.0-rc1",
         "@maven//:com.jakewharton.butterknife-gradle-plugin_9.0.0-rc2",
-        "@maven//:com.jakewharton.butterknife_7.0.1",
         "@maven//:com.squareup.dagger.dagger-compiler_1.2.2",
         "@maven//:com.squareup.kotlinpoet_2.1.0",
         "@maven//:javax.annotation.jsr250-api_1.0",

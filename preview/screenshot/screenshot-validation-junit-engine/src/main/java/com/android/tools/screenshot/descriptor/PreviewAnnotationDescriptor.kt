@@ -151,7 +151,18 @@ class PreviewAnnotationDescriptor(
         }
       }
 
-    context.renderer.render(previewScreenshot, context.previewImageOutputDir.absolutePath).forEachIndexed { idx, result ->
+    val results = context.renderer.render(previewScreenshot, context.previewImageOutputDir.absolutePath)
+    val seenParamNames = mutableSetOf<String>()
+    val duplicateParamNames = mutableSetOf<String>()
+    for (result in results) {
+      val name = result.displayName?.takeIf { it.isNotBlank() }
+      if (name != null && !seenParamNames.add(name)) {
+        duplicateParamNames.add(name)
+      }
+    }
+
+    val usedParamSuffixes = mutableSetOf<String>()
+    results.forEachIndexed { idx, result ->
       val previewNameBuilder = StringBuilder()
       val nameParam = previewScreenshot.previewParams["name"]
       nameParam?.let { previewNameBuilder.append("_$it") }
@@ -166,9 +177,25 @@ class PreviewAnnotationDescriptor(
             }
           }
       }
+      val paramDisplayName = result.displayName?.takeIf { it.isNotBlank() }
+      var paramSuffix: String? = null
       if (previewScreenshot is ComposeScreenshot) {
         if (previewScreenshot.methodParams.isNotEmpty()) {
-          otherParamsBuilder.append("_${previewScreenshot.methodParams}_$idx")
+          val baseParamSuffix =
+            when {
+              paramDisplayName == null -> idx.toString()
+              paramDisplayName in duplicateParamNames -> "${paramDisplayName}_$idx"
+              else -> paramDisplayName
+            }
+          paramSuffix =
+            if (usedParamSuffixes.add(baseParamSuffix)) {
+              baseParamSuffix
+            } else {
+              val nameWithIndex = "${baseParamSuffix}_$idx"
+              usedParamSuffixes.add(nameWithIndex)
+              nameWithIndex
+            }
+          otherParamsBuilder.append("_${previewScreenshot.methodParams}_$paramSuffix")
         }
       }
 
@@ -177,7 +204,19 @@ class PreviewAnnotationDescriptor(
       }
 
       val previewDisplayName =
-        nameParam?.toString() ?: otherParamsBuilder.toString().removePrefix("_").takeIf { it.isNotEmpty() } ?: methodName
+        if (nameParam != null && paramDisplayName != null) {
+          if (paramSuffix != null && paramSuffix != paramDisplayName) {
+            "$nameParam - $paramSuffix"
+          } else {
+            "$nameParam - $paramDisplayName"
+          }
+        } else {
+          nameParam?.toString()
+            ?: paramSuffix
+            ?: paramDisplayName
+            ?: otherParamsBuilder.toString().removePrefix("_").takeIf { it.isNotEmpty() }
+            ?: methodName
+        }
 
       val childNode =
         PreviewScreenshotDescriptor(

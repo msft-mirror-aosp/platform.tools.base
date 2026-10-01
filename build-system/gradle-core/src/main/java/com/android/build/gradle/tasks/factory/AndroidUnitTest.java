@@ -130,6 +130,9 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
     @Optional
     public abstract DirectoryProperty getXmlResultsDirectory();
 
+    @Internal
+    public abstract DirectoryProperty getRootProjectDir();
+
     @InputFiles
     @Optional
     @PathSensitive(PathSensitivity.RELATIVE)
@@ -215,8 +218,10 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
 
                 File resultsDir = getXmlResultsDirectory().get().getAsFile();
                 File htmlOutputDirFile = getReports().getHtml().getOutputLocation().get().getAsFile();
-                XMLReportAggregator aggregator = new XMLReportAggregator(
-                        List.of(resultsDir), getModulePath().get());
+                File rootDir = getRootProjectDir().get().getAsFile();
+                XMLReportAggregator aggregator =
+                        new XMLReportAggregator(
+                                List.of(resultsDir), getModulePath().get(), rootDir);
                 aggregator.writeReport(htmlOutputDirFile);
             }
         }
@@ -285,6 +290,9 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
             task.getTestedVariantName().set(hostTestCreationConfig.getMainVariant().getName());
             task.getTestSuiteName().set(CURRENT_TEST_SUITE);
             task.getTestSuiteTarget().set("host");
+            task.getRootProjectDir()
+                    .set(creationConfig.getServices().getProjectInfo().getRootDir());
+            task.getRootProjectDir().disallowChanges();
 
             JacocoTaskExtension jacocoTaskExtension =
                     task.getExtensions().findByType(JacocoTaskExtension.class);

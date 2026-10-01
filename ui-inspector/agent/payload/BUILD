@@ -37,6 +37,7 @@ robolectric_test(
     srcs = glob(["src/test/java/**/*.java"]),
     deps = [
         ":ui_inspector_payload_src",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:truth",

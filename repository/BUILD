@@ -115,6 +115,7 @@ kotlin_library(
         "src/testFixtures/java/**/*.java",
         "src/testFixtures/java/**/*.kt",
     ]),
+    friends = [":tools.repository"],
     visibility = ["//visibility:public"],  # contains com.android.repository.testframework
     deps = [
         ":tools.repository",

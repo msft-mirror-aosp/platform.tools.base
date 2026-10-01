@@ -230,6 +230,105 @@ class DryRunTemplateEngineTest(private val fileSystemId: FileSystemId) {
     assertThat(messageSink.messages.map { it.message }).contains("Failed to create project 'Template Name' due to previous error(s)")
   }
 
+  @Test
+  fun `verifies existing destination directory produces an error by default`() {
+    val messageSink =
+      object : DefaultTemplateMessageSink(Severity.Info) {
+        override fun onMessage(entry: MessageEntry) {
+          // Nothing to do, we capture in memory only
+        }
+      }
+    val factory = TemplateEngineFactory.createDefault()
+    val template = createSimpleTemplate(factory, messageSink, listOf(createTemplateFile("file1.txt", "new content")))
+    val testRootPath = getTestRootPath()
+    // Note: Dry run rejects any existing destination, even an empty directory
+    java.nio.file.Files.createDirectories(testRootPath)
+
+    val engine = factory.createDryRunEngine(messageSink, destinationPathProvider = { testRootPath })
+    engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
+
+    assertThat(messageSink.messages.map { it.severity }).contains(Severity.Error)
+    assertThat(messageSink.messages.map { it.message }.any { it.contains("already exists") }).isTrue()
+    assertThat(messageSink.messages.map { it.message }).contains("Failed to create project 'Template Name' due to previous error(s)")
+  }
+
+  @Test
+  fun `verifies overwritten files are reported and disk is untouched when overwrite is enabled`() {
+    val messageSink =
+      object : DefaultTemplateMessageSink(Severity.Info) {
+        override fun onMessage(entry: MessageEntry) {
+          // Nothing to do, we capture in memory only
+        }
+      }
+    val factory = TemplateEngineFactory.createDefault()
+    val template =
+      createSimpleTemplate(
+        factory,
+        messageSink,
+        listOf(createTemplateFile("file1.txt", "new content"), createTemplateFile("file2.txt", "file2 content")),
+      )
+    val testRootPath = getTestRootPath()
+    java.nio.file.Files.createDirectories(testRootPath)
+    java.nio.file.Files.write(testRootPath.resolve("file1.txt"), "old content".toByteArray(Charsets.UTF_8))
+
+    val engine = factory.createDryRunEngine(messageSink, destinationPathProvider = { testRootPath }, overwriteExistingFiles = true)
+    engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
+
+    assertThat(messageSink.messages.map { it.severity }).doesNotContain(Severity.Error)
+    assertThat(messageSink.messages.map { it.message })
+      .contains("DryRun: Would overwrite existing file '${testRootPath.resolve("file1.txt")}'")
+    assertThat(messageSink.messages.count { it.message.startsWith("DryRun: Would overwrite existing file") }).isEqualTo(1)
+    // Nothing should be written to disk
+    assertThat(String(java.nio.file.Files.readAllBytes(testRootPath.resolve("file1.txt")), Charsets.UTF_8)).isEqualTo("old content")
+    assertThat(java.nio.file.Files.exists(testRootPath.resolve("file2.txt"))).isFalse()
+  }
+
+  @Test
+  fun `verifies destination path that is a file produces an error even when overwrite is enabled`() {
+    val messageSink =
+      object : DefaultTemplateMessageSink(Severity.Info) {
+        override fun onMessage(entry: MessageEntry) {
+          // Nothing to do, we capture in memory only
+        }
+      }
+    val factory = TemplateEngineFactory.createDefault()
+    val template = createSimpleTemplate(factory, messageSink, listOf(createTemplateFile("file1.txt", "new content")))
+    val testRootPath = getTestRootPath()
+    java.nio.file.Files.createDirectories(testRootPath.parent)
+    java.nio.file.Files.write(testRootPath, "I am a file".toByteArray(Charsets.UTF_8))
+
+    val engine = factory.createDryRunEngine(messageSink, destinationPathProvider = { testRootPath }, overwriteExistingFiles = true)
+    engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
+
+    assertThat(messageSink.messages.map { it.severity }).contains(Severity.Error)
+    assertThat(messageSink.messages.map { it.message }.any { it.contains("exists but is not a directory") }).isTrue()
+  }
+
+  private fun createSimpleTemplate(
+    factory: TemplateEngineFactory,
+    messageSink: TemplateMessageSink,
+    files: List<TemplateFile>,
+  ): TemplateDefinition {
+    @Language("json")
+    val jsonFile =
+      """
+      {
+        "name": "Template Name",
+        "short-name": "template-name",
+        "tags": ["tag1"]
+      }
+      """
+        .trimIndent()
+    val metadata = factory.createTemplateListBuilder(messageSink).parseTemplateMetadata("template.json", jsonFile)
+    assertThat(metadata).isNotNull()
+    return TemplateDefinition(
+      metadata = metadata!!,
+      files = files.map { TemplateFileEntry(it.relativePath) },
+      extraFiles = emptyList(),
+      loader = TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } },
+    )
+  }
+
   private fun createTemplateFile(relativePath: String, content: String): TemplateFile {
     return TemplateFile(relativePath, content = content.toByteArray(Charsets.UTF_8))
   }

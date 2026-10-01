@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.Level
 import java.util.logging.Logger
 import org.junit.platform.commons.JUnitException
@@ -66,7 +67,7 @@ class AndroidTestResultListener : TestExecutionListener {
   private val perDeviceDeviceInfoPath = ConcurrentHashMap<String, String>()
 
   /** Tracks test results for each device serial. */
-  private val perDeviceTestResults = ConcurrentHashMap<String, MutableList<TestResultProto.TestResult>>()
+  private val perDeviceTestResults = ConcurrentHashMap<String, ConcurrentLinkedQueue<TestResultProto.TestResult>>()
 
   /**
    * Tracks logcat file paths for each test. UniqueId -> LogcatPath.
@@ -174,6 +175,7 @@ class AndroidTestResultListener : TestExecutionListener {
   }
 
   /** Emits a TestSuiteStarted event for the given [deviceId] with the specified [scheduledTestCount]. */
+  @Synchronized
   private fun emitTestSuiteStarted(deviceId: String, scheduledTestCount: Int) {
     if (perDeviceTestSuiteStartedEmitted[deviceId] == true) return
     try {
@@ -184,6 +186,33 @@ class AndroidTestResultListener : TestExecutionListener {
       perDeviceTestSuiteStartedEmitted[deviceId] = true
     } catch (t: Throwable) {
       logger.log(Level.SEVERE, "failed to report testSuiteStarted for device $deviceId", t)
+    }
+  }
+
+  override fun executionSkipped(testIdentifier: TestIdentifier, reason: String) {
+    val deviceId = testIdentifier.getDeviceId() ?: ""
+    if (!testIdentifier.isTest) return
+    try {
+      if (deviceId.isNotEmpty()) {
+        emitTestSuiteStarted(deviceId, 0)
+      }
+      val testCaseProto = testIdentifier.toTestCaseProto()
+      val testCaseStarted = TestResultEvent.TestCaseStarted.newBuilder().setTestCase(Any.pack(testCaseProto)).build()
+      val startEvent = TestResultEvent.newBuilder().setTestCaseStarted(testCaseStarted).setDeviceId(deviceId).build()
+      printTestResultEvent(startEvent)
+
+      val testResult =
+        TestResultProto.TestResult.newBuilder().setTestCase(testCaseProto).setTestStatus(TestStatusProto.TestStatus.IGNORED).build()
+
+      if (deviceId.isNotEmpty()) {
+        perDeviceTestResults.getOrPut(deviceId) { ConcurrentLinkedQueue() }.add(testResult)
+      }
+
+      val testCaseFinished = TestResultEvent.TestCaseFinished.newBuilder().setTestCaseResult(Any.pack(testResult)).build()
+      val finishEvent = TestResultEvent.newBuilder().setTestCaseFinished(testCaseFinished).setDeviceId(deviceId).build()
+      printTestResultEvent(finishEvent)
+    } catch (t: Throwable) {
+      logger.log(Level.SEVERE, "failed to report executionSkipped for ${testIdentifier.displayName}", t)
     }
   }
 
@@ -244,7 +273,7 @@ class AndroidTestResultListener : TestExecutionListener {
     if (!testIdentifier.isTest) return
     try {
       val status = testExecutionResult.toTestStatus()
-      if (status != TestStatusProto.TestStatus.PASSED) {
+      if (status != TestStatusProto.TestStatus.PASSED && status != TestStatusProto.TestStatus.IGNORED) {
         perDeviceAllTestsPassed[deviceId] = false
       }
 
@@ -295,7 +324,7 @@ class AndroidTestResultListener : TestExecutionListener {
           .build()
 
       if (deviceId.isNotEmpty()) {
-        perDeviceTestResults.getOrPut(deviceId) { mutableListOf() }.add(testResult)
+        perDeviceTestResults.getOrPut(deviceId) { ConcurrentLinkedQueue() }.add(testResult)
       }
 
       val testCaseFinished = TestResultEvent.TestCaseFinished.newBuilder().setTestCaseResult(Any.pack(testResult)).build()
@@ -377,7 +406,14 @@ class AndroidTestResultListener : TestExecutionListener {
     return when (status) {
       TestExecutionResult.Status.SUCCESSFUL -> TestStatusProto.TestStatus.PASSED
       TestExecutionResult.Status.FAILED -> TestStatusProto.TestStatus.FAILED
-      TestExecutionResult.Status.ABORTED -> TestStatusProto.TestStatus.ABORTED
+      // In JUnit Platform, assumption failures and tests dynamically skipped/ignored
+      // at runtime (via TestAbortedException) are reported as Status.ABORTED.
+      // In test-result proto, TestStatus.IGNORED represents assumption failures
+      // and intentionally skipped tests ("Assumption failure or test was filtered intentionally"),
+      // whereas TestStatus.ABORTED represents abnormal external cancellation (e.g. SIGTERM).
+      // Mapping to IGNORED ensures consumers like Android Studio correctly report
+      // these test cases as skipped rather than failed.
+      TestExecutionResult.Status.ABORTED -> TestStatusProto.TestStatus.IGNORED
       else -> TestStatusProto.TestStatus.TEST_STATUS_UNSPECIFIED
     }
   }

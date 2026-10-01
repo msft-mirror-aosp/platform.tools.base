@@ -138,6 +138,33 @@ class ScreenshotTestReportTest {
   }
 
   @Test
+  fun generateScreenshotReportSkipsUnparsableResultFile() {
+    createTestReportXmlFile()
+    // Simulates a report file left behind by an interrupted run: the <testsuite> start tag is
+    // damaged, so the file fails to parse with 'Element type "testsuite" must be followed by
+    // either attribute specifications, ">" or "/>".' (b/479862361)
+    val corruptedXml = File(resultsOutDir, "TEST-corrupted.xml")
+    Files.asCharSink(corruptedXml, Charsets.UTF_8)
+      .write(
+        """
+        <?xml version='1.0' encoding='UTF-8' ?>
+        <testsuite name="com.example.myapplication.CorruptedTest" tests="1" ="0">
+        </testsuite>
+        """
+          .trimIndent()
+      )
+
+    // Must not throw: the corrupted file is skipped, the valid one is still reported.
+    TestReport(resultsOutDir, reportOutDir).generateScreenshotTestReport()
+
+    assertThat(File(reportOutDir, "index.html")).exists()
+    val classHtml = File(reportOutDir, "com.example.myapplication.ExampleInstrumentedTest.html")
+    assertThat(classHtml).exists()
+    assertThat(classHtml.readText()).contains("useAppContext1")
+    assertThat(File(reportOutDir, "com.example.myapplication.CorruptedTest.html")).doesNotExist()
+  }
+
+  @Test
   fun generateScreenshotReportErrorWithoutImageProperties() {
     val reportXml = File(resultsOutDir, "TEST-render-error-no-properties.xml")
     Files.asCharSink(reportXml, Charsets.UTF_8)

@@ -180,7 +180,28 @@ single_version_override(
 
 # rules for typescript + node support
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+single_version_override(
+    module_name = "aspect_bazel_lib",
+    patch_strip = 1,
+    patches = [
+        # Patch Windows native batch launcher:
+        # 1. Resolves runfiles directly (from RUNFILES_DIR / adjacent files) if MANIFEST is missing (e.g. on RBE).
+        # 2. Normalizes Windows drive letters (C:\... -> /c/...) for MSYS2 bash compatibility.
+        "//tools/base/bazel/bzlmod:aspect_bazel_lib_windows_rbe.patch",
+    ],
+    version = "2.22.5",
+)
 bazel_dep(name = "aspect_rules_js", version = "2.0.0")
+single_version_override(
+    module_name = "aspect_rules_js",
+    patch_strip = 1,
+    patches = [
+        # 1. Force directory symlinks (target_type = "directory") on Windows for npm packages.
+        # 2. Add RUNFILES_DIR / RUNFILES / <binary>.bat.runfiles discovery in bash.bzl on Windows.
+        "//tools/base/bazel/bzlmod:aspect_rules_js_windows_symlinks.patch",
+    ],
+    version = "2.0.0",
+)
 bazel_dep(name = "aspect_rules_ts", version = "3.0.0")
 bazel_dep(name = "rules_nodejs", version = "6.7.5")
 

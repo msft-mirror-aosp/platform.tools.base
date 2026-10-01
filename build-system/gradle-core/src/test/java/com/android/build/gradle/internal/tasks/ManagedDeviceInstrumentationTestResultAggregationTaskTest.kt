@@ -89,6 +89,8 @@ class ManagedDeviceInstrumentationTestResultAggregationTaskTest {
     verify(task.testReportAggregationEnabled).set(any<Boolean>())
     verify(task.testedVariantName).set(eq("AndroidDebugTest"))
     verify(task.xmlResultsDirectory).set(eq(File(testReportOutputDir.parentFile, "xml_results_merged_AndroidDebugTest")))
+    verify(task.rootProjectDir).set(eq(creationConfig.services.projectInfo.rootDir))
+    verify(task.rootProjectDir).disallowChanges()
   }
 
   @Test
@@ -161,6 +163,11 @@ class ManagedDeviceInstrumentationTestResultAggregationTaskTest {
     whenever(xmlResultsDirectoryProperty.isPresent).thenReturn(true)
     whenever(xmlResultsDirectoryProperty.get().asFile).thenReturn(xmlResultsDir)
     doReturn(xmlResultsDirectoryProperty).whenever(task).xmlResultsDirectory
+
+    val rootProjectDir = temporaryFolderRule.newFolder("rootProject")
+    val rootProjectDirProperty = mock<DirectoryProperty>(defaultAnswer = RETURNS_DEEP_STUBS)
+    whenever(rootProjectDirProperty.get().asFile).thenReturn(rootProjectDir)
+    doReturn(rootProjectDirProperty).whenever(task).rootProjectDir
 
     task.taskAction()
 

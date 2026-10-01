@@ -139,6 +139,7 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaLauncher
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.jvm.toolchain.JavaToolchainSpec
@@ -170,6 +171,8 @@ abstract class LintTool {
   @get:Input @get:Optional abstract val workerHeapSize: Property<String>
 
   @get:Internal abstract val javaExecutablePath: Property<String>
+
+  @get:Internal abstract val javaMajorVersion: Property<JavaLanguageVersion>
 
   /** The lint cache parent dir for artifacts recomputable by lint that save analysis time */
   @get:Internal abstract val lintCacheDirectory: DirectoryProperty
@@ -224,6 +227,9 @@ abstract class LintTool {
     )
     val launcherProvider = getLintJavaLauncherProvider(task.project, lintOptions, projectTargetCompatibility, projectOptions)
     javaExecutablePath.setDisallowChanges(launcherProvider.map { it.executablePath.asFile.absolutePath })
+    javaMajorVersion.setDisallowChanges(
+      launcherProvider.map { it.metadata.languageVersion }.orElse(JavaLanguageVersion.of(JavaVersion.current().majorVersion))
+    )
   }
 
   @VisibleForTesting
@@ -289,6 +295,14 @@ abstract class LintTool {
           it.forkOptions.maxHeapSize =
             LintParallelBuildService.calculateLintHeapSize(workerHeapSize.orNull, Runtime.getRuntime().maxMemory())
           it.forkOptions.systemProperty("java.awt.headless", "true")
+          // b/553121473 Suppress JDK 24+ sun.misc.Unsafe and native access warnings emitted by
+          // lint's kotlin-compiler / intellij-core dependencies (see IJPL-191435 and KT-76111).
+          if (javaMajorVersion.get() >= JavaLanguageVersion.of(24)) {
+            it.forkOptions.jvmArgs(
+              "--sun-misc-unsafe-memory-access=allow",
+              "--enable-native-access=ALL-UNNAMED",
+            )
+          }
         }
       }
     workQueue.submit(AndroidLintWorkAction::class.java) { parameters ->

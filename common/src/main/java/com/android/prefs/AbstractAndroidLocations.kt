@@ -281,7 +281,15 @@ private open class PathLocator(private val environmentProvider: EnvironmentProvi
                 Please correct and use only one way to inject the preference location.
                 """
                   .trimIndent(),
-              suffix = "It is recommended to use ANDROID_USER_HOME as other methods are deprecated",
+              suffix =
+                """
+                Note that ANDROID_USER_HOME is the .android folder itself, while the deprecated ANDROID_PREFS_ROOT and ANDROID_SDK_HOME
+                are its *parent* folder. Setting them to the same value therefore points to two different folders.
+                It is recommended to unset the deprecated variables and use only ANDROID_USER_HOME.
+                These values may also be injected by your IDE or build environment, and not only by your system settings.
+                """
+                  .trimIndent(),
+              resolvedPath = { v -> v.correctPath.toString().takeIf { it != v.path.toString() } },
             )
 
           throw AndroidLocationsException(message)
@@ -396,11 +404,21 @@ private class AndroidPathLocator(environmentProvider: EnvironmentProvider, priva
   }
 }
 
+/**
+ * Renders [values] into a human readable list, one entry per line.
+ *
+ * @param modifier optional extra information, rendered in parentheses after the value.
+ * @param resolvedPath optional path that the value ultimately resolves to. It is rendered only when it differs from the raw value. Some
+ *   variables are the .android folder itself (ANDROID_USER_HOME) while the deprecated ones are its *parent* and get ".android" appended
+ *   (ANDROID_PREFS_ROOT, ANDROID_SDK_HOME), so two variables holding the same literal value can point at different folders. Disclosing the
+ *   resolved path is what makes such a conflict readable. See b/555796808.
+ */
 private fun <T : LocationValue> combineLocationValuesIntoMessage(
   values: List<T>,
   prefix: String = "",
   suffix: String = "",
   modifier: ((T) -> String?)? = null,
+  resolvedPath: ((T) -> String?)? = null,
 ): String {
 
   val buffer = StringBuffer(prefix)
@@ -409,9 +427,10 @@ private fun <T : LocationValue> combineLocationValuesIntoMessage(
     buffer.append('\n')
   }
   for (value in values.sorted()) {
-    // use the path instead of correct since this is what is injected by the user
+    // Always show the raw path, since that is what the user injected, and disclose the resolved one only when it adds information.
     val modifierStr = modifier?.let { it(value)?.let { "(${it})" } } ?: ""
-    buffer.append("\n- ${value.propertyName}(${value.queryType}): ${value.value}$modifierStr")
+    val resolvedStr = resolvedPath?.invoke(value)?.let { " -> resolves to $it" } ?: ""
+    buffer.append("\n- ${value.propertyName}(${value.queryType}): ${value.value}$resolvedStr$modifierStr")
   }
 
   if (suffix.isNotBlank()) {

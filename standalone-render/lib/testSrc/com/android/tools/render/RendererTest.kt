@@ -83,7 +83,7 @@ class RendererTest {
       """
         .trimIndent()
 
-    val request = RenderRequest({}) { sequenceOf(layout) }
+    val request = RenderRequest({}, { sequenceOf(layout) })
 
     val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
 
@@ -137,7 +137,7 @@ class RendererTest {
       )
     val renderResults =
       bootstrapper.bootstrap().use {
-        val invalidRequest = RenderRequest({}) { sequenceOf("") }
+        val invalidRequest = RenderRequest({}, { sequenceOf("") })
         it.render(invalidRequest).map { it.second }.toList()
       }
 
@@ -177,7 +177,7 @@ class RendererTest {
         projectClassPath = emptyList(),
         layoutlibPath = layoutlibPath.absolutePathString(),
       )
-    val renderResults = bootstrapper.bootstrap().use { it.render(RenderRequest({}) { sequenceOf(layout) }).map { it.second }.toList() }
+    val renderResults = bootstrapper.bootstrap().use { it.render(RenderRequest({}, { sequenceOf(layout) })).map { it.second }.toList() }
 
     assertEquals(1, renderResults.size)
     val renderResult = renderResults[0]

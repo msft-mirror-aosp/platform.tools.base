@@ -95,14 +95,6 @@ public class JacocoConnectedTest {
 
     @Test
     public void onTheFlyConnectedCheck() throws Exception {
-        TestFileUtils.appendToFile(
-                project.getBuildFile(),
-                "\n"
-                        + "dependencies {\n"
-                        + "  androidTestImplementation"
-                        + " 'com.android.tools.test:coverage-agent:1.0.0'\n"
-                        + "}");
-
         project.executor()
                 .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
                 .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)

@@ -67,7 +67,7 @@ class RenderEnvironmentBootstrapper(
     TimeZone.getDefault()
 
     val project = IJFramework.createProject()
-    val moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
+    val moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath + rClassJars, projectClassPath)
 
     val apkIdManager = ApkResourceIdManager()
     resourceApkPath?.let { apkIdManager.loadApkResources(it) }

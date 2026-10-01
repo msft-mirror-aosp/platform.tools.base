@@ -24,125 +24,119 @@ import com.android.sdklib.SystemImageTags
 import com.android.sdklib.devices.Abi
 import com.android.sdklib.repository.PackageParserUtils
 import com.android.sdklib.repository.meta.DetailsTypes
-import com.google.common.collect.HashMultimap
-import com.google.common.collect.Multimap
 import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-/** `SystemImageManager` finds [SystemImage]s in the sdk, using a [RepoManager]. */
-class SystemImageManager(private val repoManager: RepoManager) {
+/** `SystemImageManager` finds [SystemImage]s in the SDK, using a [RepoManager]. */
+class SystemImageManager(repoManager: RepoManager) {
 
-  private var _imageMap: Multimap<LocalPackage, SystemImage>? = null
+  private val _systemImages = MutableStateFlow(buildImageMap(repoManager.packages.localPackages.values))
 
-  /** Gets a map from all our [SystemImage]s to their containing [LocalPackage]s. */
-  val imageMap: Multimap<LocalPackage, SystemImage>
-    get() = _imageMap ?: buildImageMap().also { _imageMap = it }
-
-  private var _pathToImage: Map<Path, SystemImage>? = null
-
-  /** Map of directories containing `system.img` files to [SystemImage]s. */
-  private val pathToImage: Map<Path, SystemImage>
-    get() = _pathToImage ?: imageMap.values().associateBy { it.location }.also { _pathToImage = it }
+  /** [StateFlow] of the current map of system image directory [Path]s to [SystemImage]s. */
+  val systemImageFlow: StateFlow<Map<Path, SystemImage>> = _systemImages.asStateFlow()
 
   /** Gets all the [SystemImage]s. */
   val images: Collection<SystemImage>
-    get() = imageMap.values()
+    get() = systemImageFlow.value.values
 
-  private fun buildImageMap(): Multimap<LocalPackage, SystemImage> {
-    val result: Multimap<LocalPackage, SystemImage> = HashMultimap.create()
-    val packages: Collection<LocalPackage> = repoManager.packages.localPackages.values
-    for (p in packages) {
-      val typeDetails = p.typeDetails
-      if (
-        typeDetails is DetailsTypes.SysImgDetailsType ||
-          typeDetails is DetailsTypes.PlatformDetailsType ||
-          typeDetails is DetailsTypes.AddonDetailsType
-      ) {
-        collectImages(p.location, p, result)
-      }
+  /**
+   * Gets all [SystemImage]s contained in the given [localPackage]. While it is theoretically possible, no current SDK packages contain
+   * multiple images.
+   */
+  fun getImagesInPackage(localPackage: LocalPackage): List<SystemImage> = images.filter { it.`package` == localPackage }
+
+  /**
+   * Gets the system image in the specified directory. Note that this is the directory containing system.img, not necessarily the top-level
+   * package directory: platform and add-on packages have images nested deeper within the package.
+   */
+  fun getImageAt(imageDir: Path): ISystemImage? = systemImageFlow.value[imageDir]
+
+  init {
+    // This object has the same lifecycle as RepoManager, so we don't need to remove the listener.
+    repoManager.addLocalChangeListener { repositoryPackages ->
+      _systemImages.value = buildImageMap(repositoryPackages.localPackages.values)
     }
-    return result
-  }
-
-  private fun collectImages(dir: Path, localPackage: LocalPackage, collector: Multimap<LocalPackage, SystemImage>) {
-    try {
-      CancellableFileIo.walkFileTree(
-        dir,
-        emptySet(),
-        MAX_DEPTH,
-        object : SimpleFileVisitor<Path>() {
-          override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-            return when (dir.fileName?.toString()) {
-              SdkConstants.FD_DATA,
-              SdkConstants.FD_SAMPLES,
-              SdkConstants.FD_SKINS -> FileVisitResult.SKIP_SUBTREE
-              else -> FileVisitResult.CONTINUE
-            }
-          }
-
-          override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-            if (file.endsWith(SYS_IMG_NAME)) {
-              file.parent?.let { collector.put(localPackage, createSysImg(localPackage, it)) }
-            }
-            return FileVisitResult.CONTINUE
-          }
-        },
-      )
-    } catch (_: IOException) {}
-  }
-
-  private fun createSysImg(localPackage: LocalPackage, dir: Path): SystemImage {
-    val containingDir = dir.fileName.toString()
-    val details = localPackage.typeDetails
-    val (abis, translatedAbis) =
-      if (details is DetailsTypes.SysImgDetailsType) {
-        readSysImgAbis(localPackage.location, details)
-      } else if (Abi.getEnum(containingDir) != null) {
-        AbiLists(listOf(containingDir), emptyList())
-      } else {
-        AbiLists(listOf(SdkConstants.ABI_ARMEABI), emptyList())
-      }
-
-    val vendor =
-      when (details) {
-        is DetailsTypes.AddonDetailsType -> details.vendor
-        is DetailsTypes.SysImgDetailsType -> details.vendor
-        else -> null
-      }
-
-    val skinDir = dir.resolve(SdkConstants.FD_SKINS)
-    val skins =
-      when {
-        CancellableFileIo.exists(skinDir) -> PackageParserUtils.parseSkinFolder(skinDir)
-        else -> emptyList()
-      }
-    return SystemImage(dir, SystemImageTags.getTags(localPackage), vendor, abis, translatedAbis, skins, localPackage)
-  }
-
-  fun getImageAt(imageDir: Path): ISystemImage? {
-    return pathToImage[imageDir]
-  }
-
-  fun clearCache() {
-    _imageMap = null
-    _pathToImage = null
   }
 
   companion object {
     const val SYS_IMG_NAME: String = "system.img"
 
-    /** How far down the directory hierarchy we'll search for system images (starting from a package root). */
-    private const val MAX_DEPTH = 4
+    private fun buildImageMap(packages: Collection<LocalPackage>): Map<Path, SystemImage> {
+      val result = mutableMapOf<Path, SystemImage>()
+      for (p in packages) {
+        val typeDetails = p.typeDetails
+        if (
+          typeDetails is DetailsTypes.SysImgDetailsType ||
+            typeDetails is DetailsTypes.PlatformDetailsType ||
+            typeDetails is DetailsTypes.AddonDetailsType
+        ) {
+          collectImages(p.location, p, result)
+        }
+      }
+      return result
+    }
+
+    private fun collectImages(dir: Path, localPackage: LocalPackage, collector: MutableMap<Path, SystemImage>) {
+      if (CancellableFileIo.isRegularFile(dir.resolve(SYS_IMG_NAME))) {
+        collector[createSysImg(localPackage, dir).location] = createSysImg(localPackage, dir)
+        return
+      }
+
+      try {
+        CancellableFileIo.walkFileTree(
+          dir.resolve(SdkConstants.FD_IMAGES).takeIf { CancellableFileIo.isDirectory(it) } ?: return,
+          emptySet(),
+          2,
+          object : SimpleFileVisitor<Path>() {
+            override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+              if (CancellableFileIo.isRegularFile(dir.resolve(SYS_IMG_NAME))) {
+                collector[createSysImg(localPackage, dir).location] = createSysImg(localPackage, dir)
+                return FileVisitResult.SKIP_SUBTREE
+              }
+              return FileVisitResult.CONTINUE
+            }
+          },
+        )
+      } catch (_: IOException) {}
+    }
+
+    private fun createSysImg(localPackage: LocalPackage, dir: Path): SystemImage {
+      val containingDir = dir.fileName.toString()
+      val details = localPackage.typeDetails
+      val (abis, translatedAbis) =
+        if (details is DetailsTypes.SysImgDetailsType) {
+          readSysImgAbis(localPackage.location, details)
+        } else if (Abi.getEnum(containingDir) != null) {
+          AbiLists(listOf(containingDir), emptyList())
+        } else {
+          AbiLists(listOf(SdkConstants.ABI_ARMEABI), emptyList())
+        }
+
+      val vendor =
+        when (details) {
+          is DetailsTypes.AddonDetailsType -> details.vendor
+          is DetailsTypes.SysImgDetailsType -> details.vendor
+          else -> null
+        }
+
+      val skinDir = dir.resolve(SdkConstants.FD_SKINS)
+      val skins =
+        when {
+          CancellableFileIo.exists(skinDir) -> PackageParserUtils.parseSkinFolder(skinDir)
+          else -> emptyList()
+        }
+      return SystemImage(dir, SystemImageTags.getTags(localPackage), vendor, abis, translatedAbis, skins, localPackage)
+    }
 
     private fun getCpuFamily(abiString: String): String? = Abi.getEnum(abiString)?.displayName
 
-    private fun readSysImgAbis(
-      location: Path,
-      details: DetailsTypes.SysImgDetailsType,
-    ): AbiLists {
+    private fun readSysImgAbis(location: Path, details: DetailsTypes.SysImgDetailsType): AbiLists {
       val detailsClassName = details.javaClass.name
       if (
         detailsClassName.endsWith("v1.SysImgDetailsType") ||

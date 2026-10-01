@@ -315,6 +315,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 getTestData().get(),
                 getTargetSerials(),
                 getProjectPath().get(),
+                getRootProjectDir().get().getAsFile(),
                 getInstallOptions().getOrElse(ImmutableList.of()),
                 testsFound(),
                 getWorkerExecutor(),
@@ -342,6 +343,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             TestData testData,
             List<String> targetSerials,
             String projectPath,
+            File rootDir,
             List<String> installOptions,
             boolean testsFound,
             WorkerExecutor workerExecutor,
@@ -433,7 +435,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     logger);
             XMLReportAggregator aggregator =
                     new XMLReportAggregator(
-                            List.of(xmlResultsDirectory.get().getAsFile()), projectPath);
+                            List.of(xmlResultsDirectory.get().getAsFile()), projectPath, rootDir);
             aggregator.writeReport(reportOutDir);
             testCount = aggregator.getTestCount();
         } else {
@@ -597,6 +599,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @Optional
     @OutputDirectory
     public abstract DirectoryProperty getXmlResultsDirectory();
+
+    @Internal
+    public abstract DirectoryProperty getRootProjectDir();
 
     @Optional
     @OutputDirectory
@@ -1070,6 +1075,10 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     creationConfig.getGlobal().getCompileSdkHashString(),
                     creationConfig.getGlobal().getBuildToolsRevision()
             );
+
+            task.getRootProjectDir()
+                    .set(creationConfig.getServices().getProjectInfo().getRootDir());
+            task.getRootProjectDir().disallowChanges();
         }
     }
 }

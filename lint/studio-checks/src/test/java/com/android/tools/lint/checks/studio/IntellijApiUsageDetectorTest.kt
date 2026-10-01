@@ -245,6 +245,65 @@ class IntellijApiUsageDetectorTest {
         """
       )
   }
+
+  @Test
+  fun testBinaryCompatibilityShimIsIgnored() {
+    studioLint()
+      .files(
+        API_STATUS_ANNOTATION_STUB,
+        // Compiles to the facade class ReferenceUtilKt, a known binary compatibility shim.
+        kotlin(
+            "src/org/jetbrains/kotlin/idea/references/referenceUtil.kt",
+            """
+            package org.jetbrains.kotlin.idea.references
+
+            import org.jetbrains.annotations.ApiStatus
+
+            @ApiStatus.ScheduledForRemoval
+            fun shimmedApi() {}
+            """,
+          )
+          .indented(),
+        // Compiles to ReferenceUtilsKt. Same package, so this verifies the shim is ignored by class
+        // rather than by package.
+        kotlin(
+            "src/org/jetbrains/kotlin/idea/references/referenceUtils.kt",
+            """
+            package org.jetbrains.kotlin.idea.references
+
+            import org.jetbrains.annotations.ApiStatus
+
+            @ApiStatus.ScheduledForRemoval
+            fun genuinelyDeprecatedApi() {}
+            """,
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            import org.jetbrains.kotlin.idea.references.genuinelyDeprecatedApi
+            import org.jetbrains.kotlin.idea.references.shimmedApi
+
+            fun test() {
+              shimmedApi() // OK
+              genuinelyDeprecatedApi() // ERROR
+            }
+            """
+          )
+          .indented(),
+      )
+      .issues(IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL)
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:8: Warning: genuinelyDeprecatedApi is @ScheduledForRemoval [ScheduledForRemoval]
+          genuinelyDeprecatedApi() // ERROR
+          ~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
+      )
+  }
 }
 
 private val API_STATUS_ANNOTATION_STUB =

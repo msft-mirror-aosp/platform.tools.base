@@ -62,7 +62,8 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
     val inputDirectories: List<File> = testResults.get().map { it.asFile }
     val testReport = testReport.get().asFile
 
-    XMLReportAggregator(inputDirectories, rootProjectName.get()).writeReport(testReport)
+    val rootDir = rootProjectDir.get().asFile
+    XMLReportAggregator(inputDirectories, rootProjectName.get(), rootDir).writeReport(testReport)
 
     // --- CODE COVERAGE REPORT GENERATION ---
     if (coverageXmlReports.isPresent && coverageXmlReports.get().isNotEmpty()) {
@@ -151,6 +152,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
       task.coverageXmlReports.set(creationConfig.globalArtifacts.getAll(coverageArtifactType))
       task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
+      task.rootProjectDir.disallowChanges()
     }
   }
 }

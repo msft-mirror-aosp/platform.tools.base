@@ -127,15 +127,83 @@ class AbstractAndroidLocationsTest {
                 Several environment variables and/or system properties contain different paths to the Android Preferences folder.
                 Please correct and use only one way to inject the preference location.
 
-                - ANDROID_PREFS_ROOT(system property): $androidPrefsRootLocation
-                - ANDROID_SDK_HOME(system property): $androidSdkHomeLocation
+                - ANDROID_PREFS_ROOT(system property): $androidPrefsRootLocation -> resolves to ${File(androidPrefsRootLocation, ".android").path}
+                - ANDROID_SDK_HOME(system property): $androidSdkHomeLocation -> resolves to ${File(androidSdkHomeLocation, ".android").path}
 
-                It is recommended to use ANDROID_USER_HOME as other methods are deprecated
+                Note that ANDROID_USER_HOME is the .android folder itself, while the deprecated ANDROID_PREFS_ROOT and ANDROID_SDK_HOME
+                are its *parent* folder. Setting them to the same value therefore points to two different folders.
+                It is recommended to unset the deprecated variables and use only ANDROID_USER_HOME.
+                These values may also be injected by your IDE or build environment, and not only by your system settings.
             """
         .trimIndent()
     ) {
       AndroidLocations(provider, logger).prefsLocation
     }
+  }
+
+  /**
+   * Regression test for b/555796808.
+   *
+   * Setting ANDROID_USER_HOME and ANDROID_PREFS_ROOT to the same literal value is a conflict, because the latter has ".android" appended.
+   * The resulting message must disclose the resolved paths, otherwise the two entries render identically and the conflict looks
+   * nonsensical.
+   */
+  @Test
+  fun `ANDROID_USER_HOME and ANDROID_PREFS_ROOT with the same literal value`() {
+    val androidFolder = folder.newFolder(".android")
+    val location = androidFolder.absolutePath
+    val provider =
+      FakeProvider(
+        sysProp = mapOf(),
+        envVar =
+          mapOf(
+            AbstractAndroidLocations.ANDROID_USER_HOME to location,
+            AbstractAndroidLocations.ANDROID_PREFS_ROOT to location,
+          ),
+      )
+    val logger = RecordingLogger()
+
+    checkException(
+      """
+                Several environment variables and/or system properties contain different paths to the Android Preferences folder.
+                Please correct and use only one way to inject the preference location.
+
+                - ANDROID_PREFS_ROOT(environment variable): $location -> resolves to ${File(location, ".android").path}
+                - ANDROID_USER_HOME(environment variable): $location
+
+                Note that ANDROID_USER_HOME is the .android folder itself, while the deprecated ANDROID_PREFS_ROOT and ANDROID_SDK_HOME
+                are its *parent* folder. Setting them to the same value therefore points to two different folders.
+                It is recommended to unset the deprecated variables and use only ANDROID_USER_HOME.
+                These values may also be injected by your IDE or build environment, and not only by your system settings.
+            """
+        .trimIndent()
+    ) {
+      AndroidLocations(provider, logger).prefsLocation
+    }
+  }
+
+  /** Companion to the above: pointing ANDROID_PREFS_ROOT at the *parent* agrees with ANDROID_USER_HOME and must resolve cleanly. */
+  @Test
+  fun `ANDROID_USER_HOME and ANDROID_PREFS_ROOT that agree`() {
+    val parent = folder.newFolder()
+    val androidFolder = File(parent, ".android").also { it.mkdirs() }
+    val provider =
+      FakeProvider(
+        sysProp = mapOf(),
+        envVar =
+          mapOf(
+            AbstractAndroidLocations.ANDROID_USER_HOME to androidFolder.absolutePath,
+            AbstractAndroidLocations.ANDROID_PREFS_ROOT to parent.absolutePath,
+          ),
+      )
+    val logger = RecordingLogger()
+
+    val result = AndroidLocations(provider, logger).prefsLocation
+
+    // Use PathSubject rather than Truth.that(): a Path is also an Iterable, so Truth.that() would bind to the Iterable overload
+    // and trip the PathAsIterable lint check.
+    PathSubject.assertThat(result).isEqualTo(androidFolder.toPath())
+    Truth.assertWithMessage("Emitted Warnings").that(logger.warnings).isEmpty()
   }
 
   @Test

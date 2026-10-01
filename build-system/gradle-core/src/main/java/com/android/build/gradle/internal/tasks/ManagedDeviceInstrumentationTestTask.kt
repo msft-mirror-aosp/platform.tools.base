@@ -200,6 +200,8 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
 
   @get:Optional @get:OutputDirectory abstract val xmlResultsDirectory: DirectoryProperty
 
+  @get:Internal abstract val rootProjectDir: DirectoryProperty
+
   @get:Input abstract val testReportAggregationEnabled: Property<Boolean>
 
   @get:Input abstract val testedVariantName: Property<String>
@@ -263,7 +265,12 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
         device.name,
         logger,
       )
-      val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), projectPath.get())
+      val aggregator =
+        XMLReportAggregator(
+          listOf(xmlResultsDirectory.get().asFile),
+          projectPath.get(),
+          rootProjectDir.get().asFile,
+        )
       aggregator.writeReport(reportOutDir)
       testCount = aggregator.getTestCount()
     } else {
@@ -432,6 +439,9 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
         task.rClasses.from(it.getCompiledRClasses(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH))
       }
       task.rClasses.disallowChanges()
+
+      task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
+      task.rootProjectDir.disallowChanges()
     }
   }
 }

@@ -1,3 +1,9 @@
-package(default_visibility = ["//visibility:public"])
+load("//tools/base/bazel:maven.bzl", "maven_repository")
 
-# Placeholder for future common rules
+maven_repository(
+    name = "coverage_agent_gmaven_repo",
+    artifacts = [
+        "//tools/base/android-test/coverage/agent/support:coverage-agent",
+    ],
+    include_transitive_deps = False,
+)

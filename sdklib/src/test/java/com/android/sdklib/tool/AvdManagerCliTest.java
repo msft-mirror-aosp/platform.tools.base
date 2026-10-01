@@ -137,7 +137,7 @@ public class AvdManagerCliTest {
         Path hardwareDefs = emuLibPath.resolve(SdkConstants.FN_HARDWARE_INI);
         createHardwarePropertiesFile(hardwareDefs);
 
-        packages.setLocalPkgInfos(ImmutableList.of(p1, p2, p3, p4));
+        packages = new RepositoryPackages(ImmutableList.of(p1, p2, p3, p4), ImmutableList.of());
 
         RepoManager mgr = new FakeRepoManager(sdkPath, packages);
 
@@ -393,7 +393,7 @@ public class AvdManagerCliTest {
         InMemoryFileSystems.recordExistingFile(
                 p2.getLocation().resolve(SdkConstants.FN_BUILD_PROP));
 
-        repoManager.getPackages().setLocalPkgInfos(ImmutableList.of(p1, p2));
+        ((FakeRepoManager) repoManager).setLocalPackages(ImmutableList.of(p1, p2));
 
         mCli.run(new String[] {"list", "targets"});
         assertEquals(
@@ -648,11 +648,11 @@ public class AvdManagerCliTest {
 
         assertEquals(
                 "E Package path (-k) not specified. Valid system image paths are:\n"
+                        + android25GoogleApisSdkPath
+                        + "\n"
                         + android25GoogleApisPlayStoreSdkPath
                         + "\n"
-                        + android26WearSdkPath
-                        + "\n"
-                        + android25GoogleApisSdkPath,
+                        + android26WearSdkPath,
                 Joiner.on("").join(mLogger.getMessages()));
         mLogger.clear();
         try {
@@ -667,11 +667,11 @@ public class AvdManagerCliTest {
 
         assertEquals(
                 "E Package path is not valid. Valid system image paths are:\n"
+                        + android25GoogleApisSdkPath
+                        + "\n"
                         + android25GoogleApisPlayStoreSdkPath
                         + "\n"
-                        + android26WearSdkPath
-                        + "\n"
-                        + android25GoogleApisSdkPath,
+                        + android26WearSdkPath,
                 Joiner.on("").join(mLogger.getMessages()));
     }
 

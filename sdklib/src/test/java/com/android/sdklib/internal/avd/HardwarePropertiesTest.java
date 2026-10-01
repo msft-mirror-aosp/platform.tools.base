@@ -89,6 +89,24 @@ public class HardwarePropertiesTest {
         assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
         assertThat(properties.get("hw.lcd.transparent")).isEqualTo("yes");
         assertThat(properties.get("hw.ledIndicators")).isEqualTo("yes");
+        assertThat(properties.get("hw.displayless")).isNull();
+    }
+
+    @Test
+    public final void testGetAudioGlassesHardwareProperties() {
+        final Device glassesDevice = dm.getDevice("ai_glasses_displayless", "Google");
+
+        Map<String, String> properties = HardwareProperties.getHardwareProperties(glassesDevice);
+        assertThat(properties.get("hw.camera.back.orientation")).isEqualTo("0");
+        assertThat(properties.get("hw.touchpad0")).isEqualTo("yes");
+        assertThat(properties.get("hw.touchpad0.width")).isEqualTo("1542");
+        assertThat(properties.get("hw.touchpad0.height")).isEqualTo("297");
+        assertThat(properties.get("environment.width")).isEqualTo("1200");
+        assertThat(properties.get("environment.height")).isEqualTo("900");
+        assertThat(properties.get("hw.screen")).isNull();
+        assertThat(properties.get("hw.lcd.transparent")).isEqualTo("yes");
+        assertThat(properties.get("hw.ledIndicators")).isEqualTo("yes");
+        assertThat(properties.get("hw.displayless")).isEqualTo("yes");
     }
 
     @Test

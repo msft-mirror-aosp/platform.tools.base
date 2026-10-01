@@ -13,7 +13,6 @@ genrule(
     cmd = "$(location //tools/base/bazel:bin2c) -lang=cxx -variable=coverage_rt_jar" +
           " -output=$(location coverage_rt.cc)" +
           " $(location //tools/base/android-test/coverage/agent/runtime:coverage_tracker_dex)",
-    tags = ["testonly"],
     tools = [
         "//tools/base/bazel:bin2c",
     ],
@@ -52,7 +51,6 @@ cc_library(
         "tagging_manager.h",
     ],
     copts = ANDROID_COPTS,
-    tags = ["testonly"],
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/android-test/coverage/common:log",
@@ -71,7 +69,6 @@ cc_binary(
     copts = ANDROID_COPTS,
     linkopts = ANDROID_LINKOPTS,
     linkshared = 1,
-    tags = ["testonly"],
     deps = [
         ":agent_lib",
     ],
@@ -81,14 +78,11 @@ android_cc_binary(
     name = "android_coverage_agent",
     binary = ":coverage_agent.so",
     filename = "coverage_agent.so",
-    tags = ["testonly"],
-    visibility = ["//visibility:public"],
 )
 
 jni_library(
     name = "coverage_agent_jni",
-    tags = ["testonly"],
-    visibility = ["//visibility:public"],
+    visibility = ["//tools/base/android-test/coverage/agent/support:__pkg__"],
     deps = select({
         "//tools/base/bazel:without_vendor": [":placeholder"],
         "//conditions:default": [
@@ -106,7 +100,6 @@ genrule(
     name = "placeholder",
     outs = ["placeholder.txt"],
     cmd = "touch $@",
-    tags = ["testonly"],
 )
 
 cc_test(

@@ -25,11 +25,22 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 @RunWith(RobolectricTestRunner.class)
 public final class AgentLoaderTest {
+
+    /**
+     * Attaching an agent needs API 28. Robolectric's default SDK here is older, and its
+     * DexClassLoader rejects the null optimized directory that AgentLoader passes.
+     */
+    private static final int ATTACH_SDK = 28;
 
     @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -63,5 +74,86 @@ public final class AgentLoaderTest {
                 () -> AgentLoader.attach(missingPath, "com.example.Agent", "options", 1L));
 
         assertThrows(IllegalStateException.class, () -> ArtTooling.findInstances(String.class));
+    }
+
+    @Test
+    @Config(sdk = ATTACH_SDK)
+    public void startAgentReusesTheClassLoaderForTheSamePath() throws Exception {
+        String agentDex = temporaryFolder.newFile("agent.jar").getPath();
+        AtomicInteger parentLookups = new AtomicInteger();
+        Supplier<ClassLoader> appClassLoader = countingAppClassLoader(parentLookups);
+        RecordingAgent.instances.clear();
+
+        AgentLoader.startAgent(agentDex, RecordingAgent.class.getName(), "first", appClassLoader);
+        AgentLoader.startAgent(agentDex, RecordingAgent.class.getName(), "second", appClassLoader);
+
+        assertThat(parentLookups.get()).isEqualTo(1);
+        assertThat(RecordingAgent.instances).hasSize(2);
+        assertThat(RecordingAgent.instances.get(0)).isNotSameAs(RecordingAgent.instances.get(1));
+        assertThat(RecordingAgent.instances.get(0).options).isEqualTo("first");
+        assertThat(RecordingAgent.instances.get(1).options).isEqualTo("second");
+    }
+
+    @Test
+    @Config(sdk = ATTACH_SDK)
+    public void startAgentCreatesAClassLoaderForEachPath() throws Exception {
+        String firstAgentDex = temporaryFolder.newFile("first.jar").getPath();
+        String secondAgentDex = temporaryFolder.newFile("second.jar").getPath();
+        AtomicInteger parentLookups = new AtomicInteger();
+        Supplier<ClassLoader> appClassLoader = countingAppClassLoader(parentLookups);
+
+        AgentLoader.startAgent(
+                firstAgentDex, RecordingAgent.class.getName(), "options", appClassLoader);
+        AgentLoader.startAgent(
+                secondAgentDex, RecordingAgent.class.getName(), "options", appClassLoader);
+
+        assertThat(parentLookups.get()).isEqualTo(2);
+    }
+
+    @Test
+    @Config(sdk = ATTACH_SDK)
+    public void startAgentRetriesAPathWhoseAppClassLoaderWasMissing() throws Exception {
+        String agentDex = temporaryFolder.newFile("agent.jar").getPath();
+
+        assertThrows(
+                IllegalStateException.class,
+                () ->
+                        AgentLoader.startAgent(
+                                agentDex, RecordingAgent.class.getName(), "options", () -> null));
+
+        AtomicInteger parentLookups = new AtomicInteger();
+        AgentLoader.startAgent(
+                agentDex,
+                RecordingAgent.class.getName(),
+                "options",
+                countingAppClassLoader(parentLookups));
+
+        assertThat(parentLookups.get()).isEqualTo(1);
+    }
+
+    /**
+     * Supplies the test's class loader, which can load {@link RecordingAgent}, and counts calls.
+     */
+    private static Supplier<ClassLoader> countingAppClassLoader(AtomicInteger calls) {
+        return () -> {
+            calls.incrementAndGet();
+            return AgentLoaderTest.class.getClassLoader();
+        };
+    }
+
+    /** An agent that records each instance and the options it received. */
+    public static final class RecordingAgent implements Agent {
+        static final List<RecordingAgent> instances = new ArrayList<>();
+
+        String options;
+
+        public RecordingAgent() {
+            instances.add(this);
+        }
+
+        @Override
+        public void onAttach(String options) {
+            this.options = options;
+        }
     }
 }

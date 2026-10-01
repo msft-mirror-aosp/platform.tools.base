@@ -17,12 +17,35 @@
 package com.android.tools.render
 
 import com.android.tools.configurations.Configuration
+import com.android.tools.render.common.ResolvedScreenshotLayout
 
 /**
  * Data required to perform rendering by the standalone rendering library:
  *
- * @param configurationModifier - a way to apply custom [Configuration] for rendering.
- * @param xmlLayoutsProvider - a provider for the xml layouts to render. Generating layouts might require rendering environment, therefore
+ * @param configurationModifier A way to apply custom [Configuration] for rendering.
+ * @param xmlLayoutsProvider A provider for the XML layouts to render. Generating layouts might require a rendering environment, therefore
  *   we allow their creation to be postponed.
+ * @param resolvedLayoutsProvider An optional provider for [ResolvedScreenshotLayout]s. When provided, this preserves layout metadata such
+ *   as custom parameter display names (from `PreviewParameterProvider.getDisplayName`) alongside the XML layout strings.
  */
-class RenderRequest(val configurationModifier: Configuration.() -> Unit, val xmlLayoutsProvider: () -> Sequence<String>)
+class RenderRequest(
+  val configurationModifier: Configuration.() -> Unit,
+  val xmlLayoutsProvider: () -> Sequence<String>,
+  val resolvedLayoutsProvider: (() -> Sequence<ResolvedScreenshotLayout>)? = null,
+) {
+  companion object {
+    /**
+     * Creates a [RenderRequest] from a [resolvedLayoutsProvider], automatically deriving [xmlLayoutsProvider] by extracting
+     * [ResolvedScreenshotLayout.xmlLayout] from each layout.
+     */
+    fun withResolvedLayouts(
+      configurationModifier: Configuration.() -> Unit,
+      resolvedLayoutsProvider: () -> Sequence<ResolvedScreenshotLayout>,
+    ): RenderRequest =
+      RenderRequest(
+        configurationModifier,
+        { resolvedLayoutsProvider().map { it.xmlLayout } },
+        resolvedLayoutsProvider,
+      )
+  }
+}

@@ -16,16 +16,17 @@
 
 package com.android.build.gradle.internal.coverage
 
+import com.android.Version
 import com.android.build.gradle.internal.services.BaseServices
 
 /** Configurations for the on-the-fly coverage agent. */
 object CoverageAgentConfigurations {
   private const val AGENT_DEPENDENCY_GROUP = "com.android.tools.test"
   private const val AGENT_DEPENDENCY_NAME = "coverage-agent"
-  private const val DEFAULT_AGENT_VERSION = "1.0.0"
+  private val AGENT_VERSION: String = Version.COVERAGE_AGENT_VERSION
 
   @JvmStatic
   fun getAgentRuntimeDependency(services: BaseServices): String {
-    return "$AGENT_DEPENDENCY_GROUP:$AGENT_DEPENDENCY_NAME:$DEFAULT_AGENT_VERSION"
+    return "$AGENT_DEPENDENCY_GROUP:$AGENT_DEPENDENCY_NAME:$AGENT_VERSION"
   }
 }

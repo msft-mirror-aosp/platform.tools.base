@@ -251,17 +251,16 @@ It then starts the injection sequence:
 * Copies the staged files into the app's data directory with `run-as <package>`:
   each file is written to a run-unique temporary name, `chmod`-ed to read-only
   (`444`, required because the Dalvik classloader refuses dynamic bytecode from
-  a writable app-data location), and renamed onto its final name. Renames are
-  atomic per file, not as a set: the content-hashed library dex and payload jar
-  rename first (an interrupted install leaves at worst unreferenced
-  content-named files), and the agent binary renames last under the fixed name
-  `libarttooling_agent.so` — its name is the only one shared across builds,
-  so ordering it last means a failed install never replaces it. The fixed
-  `.so` name itself exists because `dlopen` keys loaded libraries on their
-  path, and the fixed path guarantees a process only ever hosts one native
-  agent instance.
+  a writable app-data location), and renamed onto its final name. All three
+  final names are content-hashed. Other installed versions are swept.
+  The agent binary `libarttooling_agent.<hash12>.so` is only copied when it is
+  absent. The dynamic linker recognizes an already-loaded library by its
+  inode, not by its path. Replacing the file would give it a new inode. The
+  next attach would then load a second copy of the agent into the process,
+  with its own globals and JVMTI environment. Keeping the file lets a
+  re-injection of the same build reuse the loaded copy.
 * Triggers payload injection via
-  `adb shell cmd activity attach-agent <pid> <app-data-dir>/libarttooling_agent.so=<app-data-dir>/libarttooling.<hash12>.jar;<app-data-dir>/lib_ui_inspector_payload.<hash12>.jar;com.android.tools.ui.inspector.payload.InspectorLauncher;<pid>_<digest>`.
+  `adb shell cmd activity attach-agent <pid> <app-data-dir>/libarttooling_agent.<hash12>.so=<app-data-dir>/libarttooling.<hash12>.jar;<app-data-dir>/lib_ui_inspector_payload.<hash12>.jar;com.android.tools.ui.inspector.payload.InspectorLauncher;<pid>_<digest>`.
 * Periodically polls `/proc/net/unix` on the device using a retry loop until the
   agent's abstract Unix socket appears, preventing host connection race conditions.
 * Creates the adb tunnel to the agent's socket.

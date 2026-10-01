@@ -1,0 +1,115 @@
+# Patch aspect_bazel_lib Windows native launcher for RBE and local Windows compatibility:
+# 1. Look up runfiles directly from RUNFILES_DIR, adjacent to the launcher (%~dp0%~nx1),
+#    or direct path (%~1) when MANIFEST is absent or in RBE sandboxes.
+# 2. Convert Windows drive letters (C:\... -> /c/...) to MSYS2 POSIX paths before invoking bash.exe.
+# 3. Discover RUNFILES_DIR and RUNFILES_MANIFEST_FILE from standard fallback locations.
+--- a/lib/windows_utils.bzl
++++ b/lib/windows_utils.bzl
+@@ -35,33 +35,39 @@
+   echo>&2 ERROR: Expected two arguments for rlocation function.
+   exit 1
+ )
+-if "%RUNFILES_MANIFEST_ONLY%" neq "1" (
+-  set %~2=%~1
++:: [Local & RBE] Look for file directly in RUNFILES_DIR if set by Bazel or parent runner
++if exist "%RUNFILES_DIR%\%~1" (
++  set "%~2=%RUNFILES_DIR%\%~1"
+   exit /b 0
+ )
+-if exist "%RUNFILES_DIR%" (
+-  set RUNFILES_MANIFEST_FILE=%RUNFILES_DIR%_manifest
+-)
+-if "%RUNFILES_MANIFEST_FILE%" equ "" (
+-  set RUNFILES_MANIFEST_FILE=%~f0.runfiles\MANIFEST
+-)
+-if not exist "%RUNFILES_MANIFEST_FILE%" (
+-  set RUNFILES_MANIFEST_FILE=%~f0.runfiles_manifest
+-)
+-set MF=%RUNFILES_MANIFEST_FILE:/=\%
+-if not exist "%MF%" (
+-  echo>&2 ERROR: Manifest file %MF% does not exist.
+-  exit 1
+-)
+-set runfile_path=%~1
+-for /F "tokens=2* usebackq" %%i in (`%SYSTEMROOT%\system32\findstr.exe /l /c:"!runfile_path! " "%MF%"`) do (
+-  set abs_path=%%i
+-)
+-if "!abs_path!" equ "" (
+-  echo>&2 ERROR: !runfile_path! not found in runfiles manifest
+-  exit 1
+-)
+-set %~2=!abs_path!
++:: [RBE] In remote execution sandboxes with flattened directory trees, files may be adjacent to the launcher
++if exist "%~dp0%~nx1" (
++  set "%~2=%~dp0%~nx1"
++  exit /b 0
++)
++:: [Local & RBE] Check if the path is already valid relative to the current working directory
++if exist "%~1" (
++  set "%~2=%~1"
++  exit /b 0
++)
++:: [Local] Fallback to querying the text runfiles manifest (used on Windows when symlinks are disabled)
++if "%RUNFILES_MANIFEST_FILE%" neq "" (
++  set MF=%RUNFILES_MANIFEST_FILE:/=\%
++  if exist "!MF!" (
++    set "runfile_path=%~1"
++    for /F "tokens=2* usebackq" %%i in (`%SYSTEMROOT%\system32\findstr.exe /l /c:"!runfile_path! " "!MF!"`) do (
++      set abs_path=%%i
++    )
++    if "!abs_path!" neq "" (
++      set "%~2=!abs_path!"
++      exit /b 0
++    )
++  )
++)
++:: [RBE & Sandboxed] Return original relative path as fallback to avoid hard abort when manifest is absent
++set "%~2=%~1"
+ exit /b 0
+ :rlocation_end
+ :: End of rlocation
+@@ -88,9 +94,30 @@
+         content = r"""@echo off
+ SETLOCAL ENABLEEXTENSIONS
+ SETLOCAL ENABLEDELAYEDEXPANSION
+-set RUNFILES_MANIFEST_ONLY=1
++:: [Local & RBE] Discover RUNFILES_DIR and MANIFEST from standard launcher layout if not provided in environment
++if "%RUNFILES_DIR%" equ "" (
++  if exist "%~f0.runfiles" (
++    set "RUNFILES_DIR=%~f0.runfiles"
++  ) else if exist "%~dp0%~n0.runfiles" (
++    set "RUNFILES_DIR=%~dp0%~n0.runfiles"
++  )
++)
++if "%RUNFILES_MANIFEST_FILE%" equ "" (
++  if exist "%~f0.runfiles_manifest" (
++    set "RUNFILES_MANIFEST_FILE=%~f0.runfiles_manifest"
++  ) else if exist "%~f0.runfiles\MANIFEST" (
++    set "RUNFILES_MANIFEST_FILE=%~f0.runfiles\MANIFEST"
++  )
++)
+ {rlocation_function}
+ call :rlocation "{sh_script}" run_script
++:: [Local & RBE] Convert Windows drive letter paths (C:\... -> /c/...) so MSYS2/Git bash interprets them in "bash -c"
++set run_script=!run_script:\=/!
++for %%d in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do (
++  if /i "!run_script:~0,2!" equ "%%d:" (
++    set "run_script=/%%d!run_script:~2!"
++  )
++)
+ for %%a in ("{bash_bin}") do set "bash_bin_dir=%%~dpa"
+ set PATH=%bash_bin_dir%;%PATH%
+ set args=%*
+@@ -98,8 +126,10 @@
+ if defined args (
++  set args=!args: {{\"= "{{\"!
++  if "!args:~-1!" equ "}}" set args=!args!"
+   set args=!args:\=\\\\!
+   set args=!args:"=\"!
+ )
+-"{bash_bin}" -c "!run_script! !args!"
++"{bash_bin}" -c "\"!run_script!\" !args!"
+ """.format(
+             bash_bin = ctx.toolchains["@bazel_tools//tools/sh:toolchain_type"].path,
+             sh_script = paths.to_rlocation_path(ctx, shell_script),
+

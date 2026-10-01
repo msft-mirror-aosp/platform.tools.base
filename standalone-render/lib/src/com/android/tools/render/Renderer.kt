@@ -58,6 +58,10 @@ class Renderer(
   private val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
   private val previewValidator = PreviewValidator()
 
+  companion object {
+    private val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>| ]+""".toRegex()
+  }
+
   /**
    * Renders a given [PreviewScreenshot] and saves the output as PNG files.
    *
@@ -148,13 +152,45 @@ class Renderer(
     nextImageIndex: () -> Int,
   ): List<PreviewScreenshotResult> {
     val previewElement = screenshot.toPreviewElement(module)
-    val renderRequest =
-      RenderRequest(configurationModifier = previewElement::applyTo, xmlLayoutsProvider = { previewElement.resolveXmlLayouts() })
+    val resolvedLayouts = previewElement.resolveLayouts().toList()
+    val seenNames = mutableSetOf<String>()
+    val duplicateNames = mutableSetOf<String>()
+    for (layout in resolvedLayouts) {
+      val name = layout.displayName?.replace(invalidCharsRegex, "_")?.trim('_')
+      if (!name.isNullOrBlank() && !seenNames.add(name)) {
+        duplicateNames.add(name)
+      }
+    }
 
-    return render(renderRequest)
-      .map { (config, renderResult) ->
+    val renderRequest =
+      RenderRequest.withResolvedLayouts(
+        configurationModifier = previewElement::applyTo,
+        resolvedLayoutsProvider = { resolvedLayouts.asSequence() },
+      )
+
+    val usedSuffixes = mutableSetOf<String>()
+    return renderResolvedLayouts(renderRequest)
+      .map { (config, renderResult, layout) ->
         val index = nextImageIndex()
-        val resultId = "${baseResultId}_$index"
+        // If a custom display name is provided (e.g. from PreviewParameterProvider.getDisplayName),
+        // sanitize it for filesystem paths by replacing whitespace and reserved characters with underscores.
+        // If duplicate, append the preview index to disambiguate. If blank or not provided, fall back to numerical index.
+        val sanitizedDisplayName = layout.displayName?.replace(invalidCharsRegex, "_")?.trim('_')
+        val baseSuffix =
+          when {
+            sanitizedDisplayName.isNullOrBlank() -> index.toString()
+            sanitizedDisplayName in duplicateNames -> "${sanitizedDisplayName}_$index"
+            else -> sanitizedDisplayName
+          }
+        val suffix =
+          if (usedSuffixes.add(baseSuffix)) {
+            baseSuffix
+          } else {
+            val nameWithIndex = "${baseSuffix}_$index"
+            usedSuffixes.add(nameWithIndex)
+            nameWithIndex
+          }
+        val resultId = "${baseResultId}_$suffix"
         val imageName = "$resultId.png"
         val relativeImagePath = packagePath + File.separator + imageName
         try {
@@ -164,9 +200,10 @@ class Renderer(
           }
 
           val screenshotError = renderResult.toScreenshotError(imageRendered)
-          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, screenshotError)
+          // Pass the raw unsanitized display name so downstream test descriptors can display it in reports.
+          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, screenshotError, layout.displayName)
         } catch (t: Throwable) {
-          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, t.toScreenshotError())
+          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, t.toScreenshotError(), layout.displayName)
         } finally {
           Disposer.dispose(renderResult)
         }
@@ -191,6 +228,28 @@ class Renderer(
       val configuration = baseConfiguration.clone()
       request.configurationModifier(configuration)
       configuration to render(configuration, it)
+    }
+  }
+
+  /**
+   * Renders the given [RenderRequest] while preserving each layout's metadata (such as custom parameter display names in
+   * [ResolvedScreenshotLayout]).
+   *
+   * If [RenderRequest.resolvedLayoutsProvider] is null, falls back to rendering each layout from [RenderRequest.xmlLayoutsProvider] wrapped
+   * in a [ResolvedScreenshotLayout] with null display name.
+   */
+  fun renderResolvedLayouts(
+    request: RenderRequest
+  ): Sequence<Triple<Configuration, RenderResult, com.android.tools.render.common.ResolvedScreenshotLayout>> {
+    val layoutsProvider =
+      request.resolvedLayoutsProvider
+        ?: {
+          request.xmlLayoutsProvider().map { com.android.tools.render.common.ResolvedScreenshotLayout(it) }
+        }
+    return layoutsProvider().map {
+      val configuration = baseConfiguration.clone()
+      request.configurationModifier(configuration)
+      Triple(configuration, render(configuration, it.xmlLayout), it)
     }
   }
 

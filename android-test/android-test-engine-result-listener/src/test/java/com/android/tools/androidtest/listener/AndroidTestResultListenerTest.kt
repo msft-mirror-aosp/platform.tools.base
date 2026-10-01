@@ -256,6 +256,68 @@ class AndroidTestResultListenerTest {
   }
 
   @Test
+  fun executionFinished_aborted() {
+    val listener = AndroidTestResultListener()
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:myTest]")
+    val methodSource = MethodSource.from("com.example.MyTest", "myMethod")
+    whenever(testIdentifier.source).thenReturn(Optional.of(methodSource))
+
+    val throwable = org.opentest4j.TestAbortedException("Test ignored")
+    listener.executionFinished(testIdentifier, TestExecutionResult.aborted(throwable))
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.hasTestCaseFinished()).isTrue()
+    val testResult = event.testCaseFinished.testCaseResult.unpack(TestResultProto.TestResult::class.java)
+    assertThat(testResult.testStatus).isEqualTo(TestStatusProto.TestStatus.IGNORED)
+    assertThat(event.deviceId).isEqualTo("my-device")
+  }
+
+  @Test
+  fun testSuiteFinished_aborted() {
+    val listener = AndroidTestResultListener()
+    val deviceIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
+    whenever(deviceIdentifier.isContainer).thenReturn(true)
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:myTest]")
+
+    listener.executionStarted(deviceIdentifier)
+    listener.executionStarted(testIdentifier)
+    listener.executionFinished(testIdentifier, TestExecutionResult.aborted(org.opentest4j.TestAbortedException("Test ignored")))
+    outputStream.reset()
+    listener.executionFinished(deviceIdentifier, TestExecutionResult.successful())
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.hasTestSuiteFinished()).isTrue()
+    val suiteResult = event.testSuiteFinished.testSuiteResult.unpack(TestSuiteResultProto.TestSuiteResult::class.java)
+    assertThat(suiteResult.testStatus).isEqualTo(TestStatusProto.TestStatus.PASSED)
+  }
+
+  @Test
+  fun executionSkipped() {
+    val listener = AndroidTestResultListener()
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:myTest]")
+    val methodSource = MethodSource.from("com.example.MyTest", "myMethod")
+    whenever(testIdentifier.source).thenReturn(Optional.of(methodSource))
+
+    listener.executionSkipped(testIdentifier, "Test ignored")
+
+    val output = outputStream.toString()
+    val lines = output.trim().lines()
+    assertThat(lines).hasSize(3)
+
+    val event1 = decodeEvent(lines[0])
+    assertThat(event1.hasTestSuiteStarted()).isTrue()
+
+    val event2 = decodeEvent(lines[1])
+    assertThat(event2.hasTestCaseStarted()).isTrue()
+
+    val event3 = decodeEvent(lines[2])
+    assertThat(event3.hasTestCaseFinished()).isTrue()
+    val testResult = event3.testCaseFinished.testCaseResult.unpack(TestResultProto.TestResult::class.java)
+    assertThat(testResult.testStatus).isEqualTo(TestStatusProto.TestStatus.IGNORED)
+    assertThat(event3.deviceId).isEqualTo("my-device")
+  }
+
+  @Test
   fun testPlanExecutionFinished() {
     val listener = AndroidTestResultListener()
     val testPlan = mock<TestPlan>()
@@ -366,6 +428,53 @@ class AndroidTestResultListenerTest {
       assertThat(testSuiteResult.testResultCount).isEqualTo(1)
     } finally {
       tempDir.deleteRecursively()
+    }
+  }
+
+  @Test
+  fun testSuiteFinished_concurrentExecutionFinished_recordsAllTestResults() {
+    val tempFile = File.createTempFile("test-results-concurrent", ".pb")
+    systemPropertyOverrides.setProperty(AndroidTestResultListenerKeys.TEST_RESULTS_FILE, tempFile.absolutePath)
+    try {
+      val listener = AndroidTestResultListener()
+      val deviceIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
+      whenever(deviceIdentifier.isContainer).thenReturn(true)
+      listener.executionStarted(deviceIdentifier)
+
+      val testCount = 50
+      val testIdentifiers =
+        (0 until testCount).map { i ->
+          val id = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:test_$i]")
+          val methodSource = MethodSource.from("com.example.MyTest", "test_$i")
+          whenever(id.source).thenReturn(Optional.of(methodSource))
+          id
+        }
+
+      val executor = java.util.concurrent.Executors.newFixedThreadPool(10)
+      val startLatch = CountDownLatch(1)
+      val doneLatch = CountDownLatch(testCount)
+
+      for (testId in testIdentifiers) {
+        executor.submit {
+          try {
+            startLatch.await()
+            listener.executionFinished(testId, TestExecutionResult.successful())
+          } finally {
+            doneLatch.countDown()
+          }
+        }
+      }
+
+      startLatch.countDown()
+      assertThat(doneLatch.await(10, TimeUnit.SECONDS)).isTrue()
+      executor.shutdown()
+
+      listener.executionFinished(deviceIdentifier, TestExecutionResult.successful())
+
+      val testSuiteResult = tempFile.inputStream().use { TestSuiteResultProto.TestSuiteResult.parseFrom(it) }
+      assertThat(testSuiteResult.testResultCount).isEqualTo(testCount)
+    } finally {
+      tempFile.delete()
     }
   }
 

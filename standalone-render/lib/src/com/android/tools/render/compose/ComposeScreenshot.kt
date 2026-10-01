@@ -18,6 +18,7 @@ package com.android.tools.render.compose
 
 import com.android.tools.preview.ComposePreviewElement
 import com.android.tools.preview.ConfigurablePreviewElement
+import com.android.tools.preview.ParametrizedComposePreviewElementInstance
 import com.android.tools.preview.ParametrizedComposePreviewElementTemplate
 import com.android.tools.preview.PreviewParameter
 import com.android.tools.preview.SingleComposePreviewElementInstance
@@ -26,6 +27,7 @@ import com.android.tools.render.StandaloneRenderModelModule
 import com.android.tools.render.common.DeserializedAnnotatedMethod
 import com.android.tools.render.common.DeserializedAnnotationAttributesProvider
 import com.android.tools.render.common.PreviewScreenshot
+import com.android.tools.render.common.ResolvedScreenshotLayout
 import com.android.tools.render.common.ScreenshotPreviewElement
 import com.android.tools.rendering.api.RenderModelModule
 import com.android.tools.rendering.classloading.ClassTransform
@@ -61,6 +63,17 @@ data class ComposeScreenshotPreviewElement(private val composePreviewElement: Co
   ScreenshotPreviewElement, ConfigurablePreviewElement<Unit> by composePreviewElement {
 
   override fun resolveXmlLayouts() = composePreviewElement.resolve().map { it.toPreviewXml().buildString() }
+
+  override fun resolveLayouts(): Sequence<ResolvedScreenshotLayout> =
+    composePreviewElement.resolve().map { instance ->
+      val displayName =
+        if (instance is ParametrizedComposePreviewElementInstance<*>) {
+          instance.displayName?.takeIf { it.isNotBlank() }
+        } else {
+          null
+        }
+      ResolvedScreenshotLayout(instance.toPreviewXml().buildString(), displayName)
+    }
 }
 
 private fun parameterizedElementConstructor(

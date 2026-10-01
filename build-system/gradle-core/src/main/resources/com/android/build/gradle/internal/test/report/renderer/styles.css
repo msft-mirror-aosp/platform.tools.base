@@ -46,6 +46,9 @@
 
   --text-green-600: #16a34a;
   --text-red-600: #dc2626;
+  --text-red-700: #b91c1c;
+  --text-red-800: #991b1b;
+  --text-red-900: #7f1d1d;
   --text-yellow-600: #854d0e;
 
   --border-color: #e2e8f0;
@@ -255,6 +258,26 @@ header {
 
 .ts-selector-btn:hover {
   background-color: var(--bg-hover);
+}
+
+.ts-selector-btn:disabled,
+.ts-selector-btn.unclickable {
+  cursor: default;
+  pointer-events: none;
+  background: transparent;
+  outline: none;
+}
+
+.ts-selector-btn:disabled:hover,
+.ts-selector-btn.unclickable:hover {
+  background-color: transparent;
+}
+
+.ts-selector-btn:disabled .ts-value-container svg,
+.ts-selector-btn.unclickable .ts-value-container svg,
+.ts-selector-btn:disabled #ts-all-state svg,
+.ts-selector-btn.unclickable #ts-all-state svg {
+  display: none;
 }
 
 #ts-all-state {
@@ -586,7 +609,11 @@ header {
   font-size: 0.75rem;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.15s;
+  visibility: hidden;
+  /* No transition on the hidden state: the tooltip disappears instantly.
+     Fading it out would make it translucent on the way, revealing whatever it
+     overlaps (e.g. checkboxes in an open dropdown) through the box. */
+  transition: none;
   box-shadow: var(--shadow-lg);
   max-width: 300px;
   word-wrap: break-word;
@@ -594,6 +621,8 @@ header {
 
 #a11y-tooltip.visible {
   opacity: 1;
+  visibility: visible;
+  transition: opacity 0.15s;
   pointer-events: auto;
   /* Allow hovering over the tooltip itself */
 }
@@ -1137,7 +1166,8 @@ th:last-child {
   border-right: none;
 }
 
-th[data-sort-by]:hover {
+th[data-sort-by]:hover,
+th[data-sort-by]:focus-visible {
   cursor: pointer;
   text-decoration: underline;
   color: var(--text-blue-600);
@@ -1308,31 +1338,45 @@ a.breadcrumb-link:hover {
   display: inline-flex;
   align-items: center;
   background-color: var(--bg-selected);
-  color: var(--text-blue-600);
-  padding: 0.125rem 0.5rem;
+  color: var(--text-blue-800);
+  padding: 0.25rem 0.625rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  margin-top: 0.25rem;
 }
 
+/* The header and code area intentionally have no background of their own: an
+   opaque child would paint over the rounded 1px border of .variant-code-view at
+   the corners. The card's own surface provides the white background. */
 .variant-header {
   flex: 0 0 auto;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-subtle);
+  background-color: transparent;
 }
 
 .code-container {
   flex: 1 1 auto;
   overflow: auto;
   position: relative;
-  background-color: var(--bg-body);
+  background-color: transparent;
   min-height: 0;
   padding: 1.5rem;
   max-height: calc(100vh - 250px);
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
+}
+
+.code-container pre,
+.stack-trace-pre {
+  background-color: transparent;
+  font-family: 'SF Mono', 'Consolas', 'Liberation Mono', Menlo, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-red-800);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
 }
 
 .code-container:focus-visible {
@@ -1675,6 +1719,18 @@ a.breadcrumb-link:hover {
   color: var(--text-red-600);
 }
 
+.text-red-700 {
+  color: var(--text-red-700);
+}
+
+.text-red-800 {
+  color: var(--text-red-800);
+}
+
+.text-red-900 {
+  color: var(--text-red-900);
+}
+
 .text-yellow-600 {
   color: var(--text-yellow-600);
 }
@@ -1859,17 +1915,20 @@ a.breadcrumb-link:hover {
    HELP HUB STYLES
    ========================================================================== */
 
+/* Icon-only FAB: fixed square box + full radius keeps the glyph centred. */
 .fab {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 2rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 9999px;
   background-color: var(--text-gray-900);
   color: var(--text-inverse);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
   box-shadow: var(--shadow-lg);
   cursor: pointer;
   transition: transform 0.2s, background-color 0.2s;
@@ -2227,7 +2286,7 @@ a.breadcrumb-link:hover {
   padding: 1rem;
   font-family: 'SF Mono', 'Consolas', 'Liberation Mono', Menlo, monospace;
   font-size: 0.8125rem;
-  color: #991b1b;
+  color: var(--text-red-800);
   white-space: pre-wrap;
   word-break: break-all;
   max-height: 220px;

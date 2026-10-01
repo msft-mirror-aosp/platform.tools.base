@@ -285,7 +285,8 @@ class JsonSerializationTest {
           {
             "previewId": "previewId1",
             "methodFQN": "methodFQN1",
-            "imagePath": "pkg/class/image1.png"
+            "imagePath": "pkg/class/image1.png",
+            "displayName": "customDisplayName"
           },
           {
             "previewId": "previewId2",
@@ -337,7 +338,7 @@ class JsonSerializationTest {
       PreviewRenderingResult(
         null,
         listOf(
-          PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image1.png", null),
+          PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image1.png", null, "customDisplayName"),
           PreviewScreenshotResult(
             "previewId2",
             "methodFQN2",
@@ -423,7 +424,7 @@ class JsonSerializationTest {
       PreviewRenderingResult(
         null,
         listOf(
-          PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image.png", null),
+          PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image.png", null, "customDisplayName"),
           PreviewScreenshotResult(
             "previewId2",
             "methodFQN2",

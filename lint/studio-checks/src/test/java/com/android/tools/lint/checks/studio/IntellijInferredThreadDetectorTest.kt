@@ -529,6 +529,160 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
     )
 
   @Test
+  fun testAssumedVirtualOnUnknownReceiver() {
+    studioLint()
+      .setUp()
+      .files(
+        java(
+            """
+                    package test.pkg;
+                    import com.intellij.openapi.application.Application;
+                    import com.intellij.openapi.application.ApplicationManager;
+                    import com.android.annotations.concurrency.Slow;
+
+                    public class Test {
+                        @Slow
+                        public boolean slowMethod() { return true; }
+
+                        private void indirect() { slowMethod(); }
+
+                        public void methodRef() {
+                            ApplicationManager.getApplication().invokeLater(this::indirect); // ERROR
+                        }
+
+                        public void lambdaViaFinalVariable() {
+                            final Runnable r = () -> indirect();
+                            ApplicationManager.getApplication().invokeLater(r); // ERROR
+                        }
+
+                        public void lambdaViaEffectivelyFinalVariable() {
+                            Runnable r = () -> indirect();
+                            ApplicationManager.getApplication().invokeLater(r); // ERROR
+                        }
+
+                        public void lambdaViaReassignedVariable() {
+                            Runnable r = () -> indirect();
+                            r = () -> { };
+                            ApplicationManager.getApplication().invokeLater(r); // ERROR ideally, related but not quite b/558856995
+                        }
+
+                        public void lambda() {
+                            ApplicationManager.getApplication().invokeLater(() -> indirect()); // ERROR inside, exactly once
+                        }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    // Stub until test infrastructure passes the right class path for non-Android
+                    // modules.
+                    package com.intellij.openapi.application;
+                    import org.jetbrains.annotations.NotNull;
+
+                    @SuppressWarnings("ALL")
+                    public class Application {
+                        public void invokeLater(@NotNull Runnable run) { run.run(); }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    // The receiver comes out of a stub whose value the analysis knows nothing about,
+                    // like production's binary `ApplicationManager`.
+                    package com.intellij.openapi.application;
+
+                    public class ApplicationManager {
+                        public static Application getApplication() { return null; }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    package org.jetbrains.annotations;
+
+                    @Documented
+                    @Retention(RetentionPolicy.CLASS)
+                    @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
+                    public @interface NotNull {}
+                """
+          )
+          .indented(),
+        *annotationDefinitions,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:13: Error: Argument must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread} [WrongThread]
+                ApplicationManager.getApplication().invokeLater(this::indirect); // ERROR
+                                                                ~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:18: Error: Argument must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread} [WrongThread]
+                ApplicationManager.getApplication().invokeLater(r); // ERROR
+                                                                ~
+        src/test/pkg/Test.java:23: Error: Argument must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread} [WrongThread]
+                ApplicationManager.getApplication().invokeLater(r); // ERROR
+                                                                ~
+        src/test/pkg/Test.java:33: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+                ApplicationManager.getApplication().invokeLater(() -> indirect()); // ERROR inside, exactly once
+                                                                      ~~~~~~~~~~
+        4 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testEffectivelyFinalLocalOfSymbolicValue() {
+    studioLint()
+      .setUp()
+      .files(
+        java(
+            """
+                    package test.pkg;
+                    import com.android.annotations.concurrency.Slow;
+                    import com.android.annotations.concurrency.UiThread;
+                    import java.util.List;
+
+                    public class Test {
+                        @Slow
+                        public boolean slowMethod() { return true; }
+
+                        @UiThread
+                        public void effectivelyFinal(List<Test> xs) {
+                            Test t = xs.get(0);
+                            t.slowMethod(); // ERROR
+                        }
+
+                        @UiThread
+                        public void reassigned(List<Test> xs) {
+                            Test t = xs.get(0);
+                            t = t;
+                            t.slowMethod(); // ERROR
+                        }
+                    }
+                """
+          )
+          .indented(),
+        *annotationDefinitions,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:13: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
+                t.slowMethod(); // ERROR
+                  ~~~~~~~~~~~~
+        src/test/pkg/Test.java:20: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
+                t.slowMethod(); // ERROR
+                  ~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
   fun testEdtAndReadActionAssumptions() {
     studioLint()
       .setUp()

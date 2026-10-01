@@ -1,0 +1,203 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.tools.ui.inspector
+
+import com.android.adblib.DeviceInfo
+import com.android.adblib.DeviceList
+import com.android.adblib.DeviceState
+import com.android.adblib.testing.FakeAdbSession
+import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayOutputStream
+import java.io.PrintWriter
+import java.io.StringWriter
+import java.nio.file.Files
+import java.nio.file.Paths
+import org.junit.Assert.assertThrows
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import picocli.CommandLine
+
+class CliHostTest {
+
+  @get:Rule val tempFolder = TemporaryFolder()
+
+  private fun parseDumpUi(vararg args: String): DumpUiCommand {
+    val parseResult = createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", *args)
+    return parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+  }
+
+  @Test
+  fun testStderrLogger_marksWarningsOnly() {
+    val err = StringWriter()
+    val logger = stderrLogger(PrintWriter(err))
+
+    logger.log(LogLevel.PROGRESS, "Compose detected: 1.7.0")
+    logger.log(LogLevel.WARNING, "failed to remove adb forward tcp:1234: boom")
+
+    assertThat(err.toString().replace(System.lineSeparator(), "\n"))
+      .isEqualTo("Compose detected: 1.7.0\nWarning: failed to remove adb forward tcp:1234: boom\n")
+  }
+
+  @Test
+  fun testNoArgsReturnsError() {
+    val exitCode = createCommandLine { FakeAdbSession() }.execute()
+    assertThat(exitCode).isEqualTo(1)
+  }
+
+  @Test
+  fun testDumpUiParsesWithNoOptions() {
+    val dumpCmd = parseDumpUi()
+    assertThat(dumpCmd.device).isNull()
+    assertThat(dumpCmd.packageName).isNull()
+  }
+
+  @Test
+  fun testCommandLineOptionsDefaults() {
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example")
+    assertThat(dumpCmd.include).isEmpty()
+    assertThat(dumpCmd.composeInspectorJarPath).isNull()
+    assertThat(dumpCmd.output).isNull()
+  }
+
+  @Test
+  fun testIncludeParsesSingleFacet() {
+    val dumpCmd = parseDumpUi("--include", "system-composables")
+    assertThat(dumpCmd.include).containsExactly(IncludeFacet.SYSTEM_COMPOSABLES)
+  }
+
+  @Test
+  fun testIncludeParsesCommaSeparatedAndRepeatedForms() {
+    val dumpCmd = parseDumpUi("--include", "attributes,semantics", "--include", "resolution-stack")
+    assertThat(dumpCmd.include).containsExactly(IncludeFacet.ATTRIBUTES, IncludeFacet.SEMANTICS, IncludeFacet.RESOLUTION_STACK).inOrder()
+  }
+
+  @Test
+  fun testIncludeRejectsUnknownFacet() {
+    val exception =
+      assertThrows(CommandLine.ParameterException::class.java) {
+        createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", "--include", "everything")
+      }
+    assertThat(exception).hasMessageThat().contains("Invalid value for --include: 'everything'")
+    assertThat(exception).hasMessageThat().contains("attributes, semantics, resolution-stack, system-composables, all")
+  }
+
+  @Test
+  fun testOldIncludeFlagsRemoved() {
+    for (oldFlag in listOf("--include-attributes", "--include-resolution-stack", "--include-system-composables", "--include-semantics")) {
+      assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+        createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", oldFlag)
+      }
+    }
+  }
+
+  @Test
+  fun testCommandLineOptionsComposeInspector() {
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example", "--compose-inspector", "local/path/to/inspector.jar")
+    assertThat(dumpCmd.composeInspectorJarPath).isEqualTo("local/path/to/inspector.jar")
+  }
+
+  @Test
+  fun testCommandLineOptionsOutput() {
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example", "--output", "out/dump.json")
+    assertThat(dumpCmd.output).isEqualTo(Paths.get("out/dump.json"))
+  }
+
+  @Test
+  fun testCommandLineOptionsOutputShortName() {
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example", "-o", "dump.json")
+    assertThat(dumpCmd.output).isEqualTo(Paths.get("dump.json"))
+  }
+
+  @Test
+  fun testDeviceOptionIsOptional() {
+    assertThat(parseDumpUi("--package", "com.example").device).isNull()
+  }
+
+  @Test
+  fun testSerialOptionNoLongerSupported() {
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+      createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", "--device", "123", "--serial", "456", "--package", "com.example")
+    }
+  }
+
+  @Test
+  fun testTrackChangesCommandRemoved() {
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) { createCommandLine { FakeAdbSession() }.parseArgs("track-changes") }
+  }
+
+  @Test
+  fun testRecordOptionsRemoved() {
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+      createCommandLine { FakeAdbSession() }.parseArgs("dump-ui", "--record", "--duration", "5s")
+    }
+  }
+
+  @Test
+  fun testDumpUiDeviceResolutionFailureLeavesOutputFileUntouched() {
+    val outputFile = tempFolder.newFile("dump.json").toPath()
+    Files.write(outputFile, "existing content".toByteArray(Charsets.UTF_8))
+    val noDevicesSession = FakeAdbSession().apply { hostServices.devices = DeviceList(emptyList(), emptyList()) }
+    val capturedErr = StringWriter()
+    val cmd = createCommandLine { noDevicesSession }.apply { setErr(PrintWriter(capturedErr)) }
+    val exitCode = cmd.execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
+
+    assertThat(exitCode).isEqualTo(1)
+    assertThat(capturedErr.toString()).contains("--device")
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
+  }
+
+  @Test
+  fun testDumpUiHelpPrintsUsageAndExitsZero() {
+    val capturedOut = ByteArrayOutputStream()
+    val commandLine = createCommandLine { FakeAdbSession() }
+    commandLine.setOut(PrintWriter(capturedOut, true, Charsets.UTF_8))
+
+    val exitCode = commandLine.execute("dump-ui", "--help")
+
+    val output = capturedOut.toString(Charsets.UTF_8)
+    assertThat(exitCode).isEqualTo(0)
+    assertThat(output).contains("Usage: ui-inspector dump-ui")
+    assertThat(output).contains("--include")
+  }
+
+  @Test
+  fun testDumpUiUnwritableOutputPathReportsReason() {
+    val output = tempFolder.root.toPath().resolve("missing").resolve("dump.json")
+    val session = FakeAdbSession().apply { hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList()) }
+    val capturedErr = StringWriter()
+    val cmd = createCommandLine { session }
+    cmd.setErr(PrintWriter(capturedErr))
+
+    val exitCode = cmd.execute("dump-ui", "--package", "com.example", "-o", output.toString())
+
+    assertThat(exitCode).isEqualTo(1)
+    assertThat(capturedErr.toString()).contains("Error: Cannot write output file '$output': ${output.parent} does not exist")
+  }
+
+  @Test
+  fun testDumpUiPackageResolutionFailureLeavesOutputFileUntouched() {
+    val outputFile = tempFolder.newFile("dump.json").toPath()
+    Files.write(outputFile, "existing content".toByteArray(Charsets.UTF_8))
+    // The fake session has no shell command configured, so the foreground app query fails.
+    val session = FakeAdbSession().apply { hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList()) }
+    val exitCode = createCommandLine { session }.execute("dump-ui", "-o", outputFile.toString())
+
+    assertThat(exitCode).isEqualTo(1)
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
+  }
+}

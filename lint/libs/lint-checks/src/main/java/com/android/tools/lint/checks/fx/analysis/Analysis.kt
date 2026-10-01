@@ -65,6 +65,7 @@ import com.android.tools.lint.checks.fx.utils.mapM
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
 import com.android.tools.lint.checks.fx.utils.pure
 import com.android.tools.lint.checks.fx.utils.unionedWith
+import com.android.tools.lint.checks.isEffectivelyFinal
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.android.tools.lint.detector.api.asCall
@@ -287,48 +288,21 @@ internal open class Analysis<FX : Any>(
         fun <R : EffectResult.Eval<FX>> Mode<FX, R>.eval(body: UExpression): Result<Type<FX>, R> =
           eval(rec, method.initEnvironment, body, persistentListOf(ReturnRecord(body.uastParent!!)))
 
-        // Analyze the default argument computation as part of the method's code, not at every call site!
-        fun <R : EffectResult.Eval<FX>> Mode<FX, R>.defaultParameterEffects(): R {
-          val params =
-            when (val source = method.source) {
-              is UMethod -> source.uastParameters
-              is ULambdaExpression -> source.valueParameters
-              else -> emptyList()
-            }
-          return params
-            .asSequence()
-            .mapNotNull { it.uastInitializer }
-            .fold(bottom) { acc, initExpr ->
-              acc join eval(rec, method.initEnvironment /* TODO previous args */, initExpr, persistentListOf(ReturnRecord(initExpr))).effect
-            }
-        }
-
         when (val status = method.status) {
           is MethodBody.Status.Abstract -> Result(method.returnTypeAnnotation, Inapplicable)
-          is MethodBody.Status.BasicConstructor ->
-            with(unboundedInferenceMode) {
-              Result(method.returnTypeAnnotation, fxInferenceLattice.catchError { defaultParameterEffects() })
-            }
+          is MethodBody.Status.BasicConstructor -> unboundedInferenceMode.pure(method.returnTypeAnnotation)
           is MethodBody.Status.ForChecking ->
             with(checkingMode(status.upperBound)) {
-              val defaultParamFx = fxCheckingLattice.catchError { defaultParameterEffects() }
               when (val body = status.body) {
-                null -> Result(method.returnTypeAnnotation, defaultParamFx)
-                else -> {
-                  val (t, bodyFx) = checkingLattice.catchError { eval(body) }
-                  Result(t, defaultParamFx join bodyFx)
-                }
+                null -> pure(method.returnTypeAnnotation)
+                else -> checkingLattice.catchError { eval(body) }
               }
             }
           is MethodBody.Status.ForInference -> {
             // Guards first: inference blames the first conflicting base, and the guards' call-anchored message should win
             val guards = assumedObjectLiteralGuards(method)
             val base = if (guards.isEmpty()) status.base else EffectAnnotation.Implicit(guards + status.base.nearestBaseAnnotations)
-            with(inferenceMode(base)) {
-              val defaultParamFx = fxInferenceLattice.catchError { defaultParameterEffects() }
-              val (t, fx) = inferenceLattice.catchError { eval(status.body) }
-              Result(t, defaultParamFx join fx)
-            }
+            with(inferenceMode(base)) { inferenceLattice.catchError { eval(status.body) } }
           }
         }
       }
@@ -438,6 +412,43 @@ internal open class Analysis<FX : Any>(
       fun UExpression.staticContext(): Scope =
         Scope.Generated(textRange?.startOffset ?: /* slow case for synthetic UAST */ asSourceString().hashCode())
 
+      /**
+       * Given [argsSuppliedAnalyzed] as the preliminary analysis result of [args], where user-supplied arguments are analyzed, but
+       * [OpaqueConstant]s are left as-is, analyze all [OpaqueConstant.Default]s and revise [argsSuppliedAnalyzed].
+       *
+       * @param recvs analyzed receivers
+       * @param args syntactic user-supplied arguments as well as analysis-inserted [OpaqueConstant]
+       * @param argsSuppliedAnalyzed analyzed arguments, parallel to [args], where analysis-inserted [OpaqueConstant]s are the conservative
+       *   upper bounds from the parameters' types
+       * @return A [Result] like [argsSuppliedAnalyzed], but types from [OpaqueConstant.Default]s refined, and effects joined with those
+       *   from instantiating defaults
+       */
+      fun instDefaults(
+        recvs: List<Result<Type<FX>, R>>,
+        args: List<UExpression>,
+        argsSuppliedAnalyzed: Result<List<Type<FX>>, R>,
+      ): Result<List<Type<FX>>, R> {
+        // common fast path
+        if (args.none { it is OpaqueConstant.Default }) return argsSuppliedAnalyzed
+
+        // Effects are order-insensitive, so it's ok here to compute default arguments "out of order"
+        // after user-supplied arguments.
+        val (suppliedTypes, suppliedFx) = argsSuppliedAnalyzed
+        val types = suppliedTypes.toMutableList()
+        var fx = suppliedFx
+        var subst = recvs.fold(fx.subst) { subst, recv -> substLattice.joinOf(subst, recv.effect.subst) }!!
+        val recvTypes = recvs.map { it.value }
+        for ((i, arg) in args.withIndex()) {
+          val default = (arg as? OpaqueConstant.Default)?.compute ?: continue
+          val (defaultT, defaultFxInst) = subst.apply(rec, default, recvTypes + types)
+          types[i] = defaultT
+          val defaultFx = onInvocationEffect(e, defaultFxInst)
+          subst = substLattice.joinOf(subst, defaultFx.subst)!!
+          fx = fx join defaultFx
+        }
+        return Result(types, fx)
+      }
+
       fun callMethod(
         receiver: UExpression?,
         method: PsiMethod,
@@ -461,7 +472,7 @@ internal open class Analysis<FX : Any>(
             else -> pure(env.innermostExtensionReceiver() ?: implicitThis())
           }
 
-        val (restTypes, restFx) = mapM(::loopCached, args)
+        val (restTypes, restFx) = instDefaults(listOfNotNull(virRecvAns, extRecvAns), args, mapM(::loopCached, args))
 
         return when {
           // virtual extension
@@ -480,6 +491,7 @@ internal open class Analysis<FX : Any>(
                     MethodId(method),
                     (listOf(extRecvType) + restTypes) to (substLattice.joinOf(extRecvFx.subst, restFx.subst)!!),
                     Type.Sym.Param("virt*", e.staticContext()),
+                    method.containingClass?.let { Type.MethodRef(method) },
                   )
               }
             Result(appType, virRecvFx join extRecvFx join restFx join onInvocationEffect(e, appFx))
@@ -498,6 +510,7 @@ internal open class Analysis<FX : Any>(
                     MethodId(method),
                     restTypes to restFx.subst!!,
                     Type.Sym.Param("virt", e.staticContext()),
+                    method.containingClass?.let { Type.MethodRef(method) },
                   )
               }
             Result(appType, virRecvFx join restFx join onInvocationEffect(e, appFx))
@@ -520,7 +533,7 @@ internal open class Analysis<FX : Any>(
       fun callLambda(receiver: UExpression?, method: ULambdaExpression, args: List<UExpression>): Result<Type<FX>, R> {
 
         val methodRef =
-          containerChain(method)?.let { (c, m) -> Type.MethodRef(c, m) }
+          localFunctionRef(method)
             ?: method.nameFromSource?.let { env.funAt(it) { it.method.isCompatible(args) } }
             ?: return unsureResult.also { log { "Warning: Don't know what `${method.nameFromSource}` is in `${targetName()}`" } }
 
@@ -546,7 +559,7 @@ internal open class Analysis<FX : Any>(
             else -> null
           }
 
-        val (argTypes, argsFx) = mapM(::loop, args)
+        val (argTypes, argsFx) = instDefaults(listOfNotNull(receiver), args, mapM(::loop, args))
 
         return when {
           receiver == null -> {
@@ -573,10 +586,13 @@ internal open class Analysis<FX : Any>(
           method is UMethod -> {
             val psiMethod = method.javaPsi
             val extReceiver = if (psiMethod.isExtension() && isJava(call.lang)) call.valueArguments.firstOrNull() else call.callReceiver()
-            callMethod(call.callReceiver(), psiMethod, completeArguments(typeParams, call, method, UMethod::uastParameters), extReceiver)
+            val args = completeArguments(typeParams, call, method, Type.MethodRef(psiMethod), UMethod::uastParameters)
+            callMethod(call.callReceiver(), psiMethod, args, extReceiver)
           }
-          method is ULambdaExpression ->
-            callLambda(call.callReceiver(), method, completeArguments(typeParams, call, method, ULambdaExpression::valueParameters))
+          method is ULambdaExpression -> {
+            val args = completeArguments(typeParams, call, method, localFunctionRef(method), ULambdaExpression::valueParameters)
+            callLambda(call.callReceiver(), method, args)
+          }
           else -> {
             fun fail() =
               giveUp(e) {
@@ -587,7 +603,7 @@ internal open class Analysis<FX : Any>(
             when (val recvDecl = recv.tryResolveUDeclaration()) {
               is UVariable -> {
                 val rhs = recvDecl.uastInitializer as? ULambdaExpression ?: return fail()
-                callLambda(call.callReceiver(), rhs, completeArguments(typeParams, call, rhs, ULambdaExpression::valueParameters))
+                callLambda(call.callReceiver(), rhs, completeArguments(typeParams, call, rhs, null, ULambdaExpression::valueParameters))
               }
               // TODO shot in the dark below
               else -> {
@@ -731,6 +747,7 @@ internal open class Analysis<FX : Any>(
           val (t, fx) = lastM(::loop, e.elems) ?: return pure(Type.EmptyArray)
           Result(Type.Ellipsis(t), fx)
         }
+        is OverloadBody -> callMethod(null, e.canonical, e.args)
         is UParenthesizedExpression -> loop(e.expression)
         is ULabeledExpression -> loop(e.expression)
         is UBreakExpression,
@@ -793,14 +810,16 @@ internal open class Analysis<FX : Any>(
                   val rhs = dec.uastInitializer?.let(::loop)
                   val delegeteExpr = (dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression
                   val delegate = if (delegeteExpr != null) loop(delegeteExpr) else null
+                  val rhsLam =
+                    when (val v = rhs?.value) {
+                      is Type.Lambda -> v
+                      is Type.Sym.Name -> rhs.effect.subst?.get(v) as? Type.Lambda
+                      else -> null
+                    }
                   val rhsType =
                     // For immutable local bindings, we bypass even the user-declared type to
-                    // use
-                    // the inferred more precise type.
-                    when {
-                      rhs != null && (rhs.value is Type.Lambda || rhs.value is Type.Sym.Name) && dec.isImmutable() -> rhs.value
-                      else -> translate(decPsi.type)
-                    }
+                    // use the inferred more precise type.
+                    if (rhsLam != null && (dec.isImmutable() || decPsi.isEffectivelyFinal())) rhsLam else translate(decPsi.type)
                   // We update the local environment imperatively instead of accumulating it
                   // functionally, because later declarations need to see updates by earlier
                   // declarations.
@@ -1034,8 +1053,14 @@ internal open class Analysis<FX : Any>(
     method: MethodId,
     args: Pair<List<Type<FX>>, Subst<FX>>,
     name: Type.Sym.Name?,
+    // Avoid silently dropping the call when the analysis knows nothing about the receiver.
+    staticTarget: Type.MethodRef? = null,
   ): InstAns<FX> {
     val (receiver, rSubst) = receiver
+    if ((receiver == Type.None || receiver == Type.WildCard) && staticTarget != null && assumptions[staticTarget] != null) {
+      val (argTypes, aSubst) = args
+      return substLattice.joinOf(rSubst, aSubst)!!.apply(rec, staticTarget, listOf(receiver) + argTypes)
+    }
     fun go(receiver: Type<FX>): InstAns<FX> =
       when (receiver) {
         is Type.Sym -> applyType(rec, receiver to rSubst, method, args, name)
@@ -1439,6 +1464,7 @@ internal open class Analysis<FX : Any>(
     typeParams: Map<String, Type.Sym.Param>,
     call: UCallExpression,
     method: M,
+    methodRef: Type.MethodRef?,
     params: M.() -> List<UParameter>,
   ): List<UExpression> {
     val allParams = method.params()
@@ -1450,15 +1476,16 @@ internal open class Analysis<FX : Any>(
       firstParam != null && (firstParam.nameFromSource?.startsWith("$") != false) -> {
         val offset = if (call.isArrayAccess()) /* TODO hack against ArrayAccessAsCall */ 0 else 1
         val paramsSansReceiver = allParams.subList(1, allParams.size)
-        completeArguments(typeParams, call, paramsSansReceiver, offset)
+        completeArguments(typeParams, call, methodRef, paramsSansReceiver, offset)
       }
-      else -> completeArguments(typeParams, call, method.params())
+      else -> completeArguments(typeParams, call, methodRef, method.params())
     }
   }
 
   private fun completeArguments(
     typeParams: Map<String, Type.Sym.Param>,
     call: UCallExpression,
+    methodRef: Type.MethodRef?,
     params: List<UParameter>,
     argOffset: Int = 0,
   ) =
@@ -1471,14 +1498,20 @@ internal open class Analysis<FX : Any>(
           val paramName = paramPsi.name
           val arg =
             call.getArgumentForParameter(i + argOffset)
-              ?: OpaqueConstant(PsiTypeAdapter.translate(typeParams, paramPsi.type)).also {
-                if (param.uastInitializer == null) log { "WARNING: Can't retrieve default argument for $paramName, supplying $it" }
+              ?: run {
+                val type = PsiTypeAdapter.translate(typeParams, paramPsi.type)
+                val default =
+                  if (param.uastInitializer == null) null else methodRef?.let { it.copy(method = it.method.defaultArgumentOf(paramName)) }
+                if (default == null) {
+                  log { "WARNING: Can't retrieve default argument for $paramName, supplying $type" }
+                  OpaqueConstant.Pure(type)
+                } else OpaqueConstant.Default(type, default)
               }
           // TODO (b/406877361)
           when {
             paramPsi.type !is PsiEllipsisType -> arg
             arg is UExpressionList || arg is OpaqueConstant -> arg
-            i >= call.valueArguments.size -> OpaqueConstant(Type.EmptyArray)
+            i >= call.valueArguments.size -> OpaqueConstant.Pure(Type.EmptyArray)
             else -> {
               // TODO hack against `ArrayAccessAsCallExpression`
               val max = call.valueArgumentCount - (if (call.isArrayAccess()) 1 else 0)
@@ -1758,11 +1791,51 @@ private fun <R> UnboundedSet<R>.format() =
     else -> "(errors: ${joinToString()})"
   }
 
-private data class OpaqueConstant(val type: Type<Nothing>) : UExpression {
+private sealed class OpaqueConstant : UExpression {
+  abstract val type: Type<Nothing>
+
   override val uastParent = null
   override val psi = null
 
   override fun asLogString() = "⦉$type⦊"
+
+  override fun asRenderString() = asLogString()
+
+  override fun asSourceString() = asLogString()
+
+  override fun toString() = asLogString()
+
+  override val uAnnotations
+    get() = listOf<UAnnotation>()
+
+  data class Pure(override val type: Type<Nothing>) : OpaqueConstant()
+
+  data class Default(override val type: Type<Nothing>, val compute: Type.MethodRef) : OpaqueConstant()
+}
+
+/**
+ * The body of a generated JVM overload that calls to the [canonical] method, passing the overload's own parameters, whose types [env]
+ * binds, and leaving the rest to their defaults
+ */
+internal class OverloadBody(override val uastParent: UMethod, val canonical: PsiMethod, env: Env<Nothing>) : UExpression {
+  val args: List<UExpression> = run {
+    val suppliedParams = uastParent.javaPsi.parameters.asSequence().mapNotNull { it.name }.toSet()
+    val canonicalRef = Type.MethodRef(canonical)
+    canonical.parameterList.parameters.drop(if (canonical.isExtension()) 1 else 0).map { param ->
+      when (param.name) {
+        in suppliedParams -> OpaqueConstant.Pure(env.vars[param.name]!!)
+        else ->
+          OpaqueConstant.Default(
+            PsiTypeAdapter.translate(env.boundParamNames, param.type),
+            canonicalRef.copy(method = canonicalRef.method.defaultArgumentOf(param.name)),
+          )
+      }
+    }
+  }
+
+  override val psi = null
+
+  override fun asLogString() = "↪ ${canonical.name}(${args.joinToString(transform = UExpression::asLogString)})"
 
   override fun asRenderString() = asLogString()
 

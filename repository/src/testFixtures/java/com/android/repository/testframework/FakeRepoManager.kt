@@ -104,9 +104,13 @@ class FakeRepoManager(
     localListeners.remove(listener)
   }
 
-  fun updateLocalPackages(localPackages: Collection<LocalPackage>) {
+  fun setLocalPackages(localPackages: Collection<LocalPackage>) {
     packages.setLocalPkgInfos(localPackages)
     localListeners.forEach { it.loaded(packages) }
+  }
+
+  fun setLocalPackages(vararg localPackages: LocalPackage) {
+    setLocalPackages(localPackages.toList())
   }
 
   override fun addRemoteChangeListener(listener: RepoLoadedListener) {
@@ -117,7 +121,7 @@ class FakeRepoManager(
     remoteListeners.remove(listener)
   }
 
-  fun updateRemotePackages(localPackages: Collection<RemotePackage>) {
+  fun setRemotePackages(localPackages: Collection<RemotePackage>) {
     packages.setRemotePkgInfos(localPackages)
     remoteListeners.forEach { it.loaded(packages) }
   }

@@ -34,6 +34,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
@@ -57,6 +58,8 @@ abstract class ManagedDeviceInstrumentationTestResultAggregationTask : NonIncrem
 
   @get:Optional @get:OutputDirectory abstract val xmlResultsDirectory: DirectoryProperty
 
+  @get:Internal abstract val rootProjectDir: DirectoryProperty
+
   override fun doTaskAction() {
     if (testReportAggregationEnabled.getOrElse(false) && xmlResultsDirectory.isPresent) {
       val xmlResultsDirFile = xmlResultsDirectory.get().asFile
@@ -73,7 +76,12 @@ abstract class ManagedDeviceInstrumentationTestResultAggregationTask : NonIncrem
           logger,
         )
       }
-      val aggregator = XMLReportAggregator(listOf(xmlResultsDirFile), projectPath.get())
+      val aggregator =
+        XMLReportAggregator(
+          listOf(xmlResultsDirFile),
+          projectPath.get(),
+          rootProjectDir.get().asFile,
+        )
       aggregator.writeReport(outputTestReportHtmlDir.get().asFile)
     } else {
       TestReport(ReportType.SINGLE_FLAVOR, deviceTestResultDirs.files.toList(), outputTestReportHtmlDir.get().asFile).generateReport()
@@ -118,6 +126,9 @@ abstract class ManagedDeviceInstrumentationTestResultAggregationTask : NonIncrem
 
       task.xmlResultsDirectory.set(File(testReportHtmlOutputDir.parentFile, "xml_results_merged_${creationConfig.name}"))
       task.xmlResultsDirectory.disallowChanges()
+
+      task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
+      task.rootProjectDir.disallowChanges()
     }
   }
 }

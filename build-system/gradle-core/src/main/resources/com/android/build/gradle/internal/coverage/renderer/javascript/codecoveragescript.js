@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+const AGGREGATED_SUITE_NAME = 'Aggregated';
+
 const Tooltip = {
     element: null,
     activeTarget: null,
@@ -575,11 +577,26 @@ const CoverageReportApp = {
             .replace(/'/g, "&#39;");
     },
 
+    getActualTestSuites() {
+        if (!this.fullReport) return [];
+        let suites = [];
+        if (this.fullReport.testSuiteCoverages && this.fullReport.testSuiteCoverages.length > 0) {
+            suites = this.fullReport.testSuiteCoverages.map(ts => ts.name);
+        } else if (this.fullReport.modules) {
+            suites = [...new Set(this.fullReport.modules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name)))];
+        }
+        return suites.filter(name => name !== AGGREGATED_SUITE_NAME);
+    },
+
     getDefaultTestSuite() {
-        if (!this.fullReport) return 'Aggregated';
+        if (!this.fullReport) return AGGREGATED_SUITE_NAME;
+        const actualSuites = this.getActualTestSuites();
+        if (actualSuites.length === 1) {
+            return actualSuites[0];
+        }
         const testSuites = this.fullReport.testSuiteCoverages || [];
-        const hasAggregated = testSuites.some(ts => ts.name === 'Aggregated');
-        return (hasAggregated || testSuites.length === 0) ? 'Aggregated' : testSuites[0].name;
+        const hasAggregated = testSuites.some(ts => ts.name === AGGREGATED_SUITE_NAME);
+        return (hasAggregated || testSuites.length === 0) ? AGGREGATED_SUITE_NAME : testSuites[0].name;
     },
 
     state: {
@@ -587,7 +604,7 @@ const CoverageReportApp = {
         currentView: 'modules', // 'modules', 'packages', 'classes'
         selectedModule: null,
         selectedPackage: null,
-        filters: { modules: [], testSuite: 'Aggregated', packages: [], classes: [], variants: [], search: '' },
+        filters: { modules: [], testSuite: AGGREGATED_SUITE_NAME, packages: [], classes: [], variants: [], search: '' },
         density: 'comfy',
         sort: { by: 'name', order: 'asc' },
         columnWidths: {},
@@ -604,6 +621,9 @@ const CoverageReportApp = {
         this.populateHeaderInfo();
         this.populateGlobalStats();
         this.populateFilters();
+        // Apply header filter button state (incl. test suite selection) on first load,
+        // otherwise the button keeps the static markup until a filter event fires.
+        this.updateFilterButtons();
         this.bindEvents();
         this.initResizableColumns();
         this.render();
@@ -673,6 +693,12 @@ const CoverageReportApp = {
     },
 
     toggleDropdown(dropdownToToggle) {
+        if (dropdownToToggle) {
+            const config = this.getDropdownConfigs().find(c => c.dropdown === dropdownToToggle);
+            if (config && config.btn && (config.btn.disabled || config.btn.classList.contains('unclickable') || config.btn.getAttribute('aria-disabled') === 'true')) {
+                return;
+            }
+        }
         this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
             if (dropdown && dropdown !== dropdownToToggle) {
                 dropdown.classList.add('hidden');
@@ -735,7 +761,7 @@ const CoverageReportApp = {
     getAggregatedVariants() {
         if (!this.fullReport.testSuiteCoverages) return [];
         const testSuites = this.fullReport.testSuiteCoverages;
-        const agg = testSuites.find(ts => ts.name === 'Aggregated') || testSuites[0];
+        const agg = testSuites.find(ts => ts.name === AGGREGATED_SUITE_NAME) || testSuites[0];
         return agg ? agg.variantCoverages : [];
     },
 
@@ -791,7 +817,12 @@ const CoverageReportApp = {
             currentFilters.variants.length = 0;
             currentFilters.variants.push(...newFilters.variants);
         }
-        if (newFilters.testSuite !== undefined) currentFilters.testSuite = newFilters.testSuite;
+        const actualSuites = this.getActualTestSuites();
+        if (actualSuites.length === 1) {
+            currentFilters.testSuite = actualSuites[0];
+        } else if (newFilters.testSuite !== undefined) {
+            currentFilters.testSuite = newFilters.testSuite;
+        }
         currentFilters.search = newFilters.search || '';
     },
 
@@ -878,10 +909,16 @@ const CoverageReportApp = {
         this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
             if (btn && dropdown) {
                 btn.addEventListener('click', (e) => {
+                    if (btn.disabled || btn.classList.contains('unclickable') || btn.getAttribute('aria-disabled') === 'true') {
+                        return;
+                    }
                     e.stopPropagation();
                     this.toggleDropdown(dropdown);
                 });
                 btn.addEventListener('keydown', (e) => {
+                    if (btn.disabled || btn.classList.contains('unclickable') || btn.getAttribute('aria-disabled') === 'true') {
+                        return;
+                    }
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1232,13 +1269,45 @@ const CoverageReportApp = {
             }
         }
 
-        if (filters.testSuite === 'Aggregated') {
-            this.elements.tsAllState.classList.remove('hidden');
-            this.elements.tsSelectedState.classList.add('hidden');
+        const actualSuites = this.getActualTestSuites();
+        const isSingleSuite = actualSuites.length === 1;
+
+        if (isSingleSuite) {
+            filters.testSuite = actualSuites[0];
+            if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
+            if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
+            if (this.elements.testSuiteFilterText) {
+                this.elements.testSuiteFilterText.textContent = actualSuites[0];
+            }
+            if (this.elements.testSuiteFilterBtn) {
+                this.elements.testSuiteFilterBtn.disabled = true;
+                this.elements.testSuiteFilterBtn.classList.add('unclickable');
+                this.elements.testSuiteFilterBtn.setAttribute('aria-disabled', 'true');
+                this.elements.testSuiteFilterBtn.setAttribute('aria-expanded', 'false');
+                this.elements.testSuiteFilterBtn.removeAttribute('aria-haspopup');
+                this.elements.testSuiteFilterBtn.tabIndex = -1;
+            }
+            if (this.elements.testSuiteFilterDropdown) {
+                this.elements.testSuiteFilterDropdown.classList.add('hidden');
+            }
         } else {
-            this.elements.tsAllState.classList.add('hidden');
-            this.elements.tsSelectedState.classList.remove('hidden');
-            this.elements.testSuiteFilterText.textContent = filters.testSuite;
+            if (this.elements.testSuiteFilterBtn) {
+                this.elements.testSuiteFilterBtn.disabled = false;
+                this.elements.testSuiteFilterBtn.classList.remove('unclickable');
+                this.elements.testSuiteFilterBtn.removeAttribute('aria-disabled');
+                this.elements.testSuiteFilterBtn.setAttribute('aria-haspopup', 'listbox');
+                this.elements.testSuiteFilterBtn.tabIndex = 0;
+            }
+            if (filters.testSuite === AGGREGATED_SUITE_NAME) {
+                if (this.elements.tsAllState) this.elements.tsAllState.classList.remove('hidden');
+                if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.add('hidden');
+            } else {
+                if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
+                if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
+                if (this.elements.testSuiteFilterText) {
+                    this.elements.testSuiteFilterText.textContent = filters.testSuite;
+                }
+            }
         }
     },
 
@@ -1419,12 +1488,36 @@ const CoverageReportApp = {
 
         const moduleOptions = this.fullReport.modules.map(m => ({ name: m.name, value: m.name }));
 
-        const testSuiteOptions = [...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name)))]
-                .sort()
-                .map(name => ({ name: name === 'Aggregated' ? 'All' : name, value: name }));
-        const aggIndex = testSuiteOptions.findIndex(o => o.value === 'Aggregated');
-        if (aggIndex > -1) {
-            testSuiteOptions.unshift(testSuiteOptions.splice(aggIndex, 1)[0]);
+        const actualSuites = this.getActualTestSuites();
+        const isSingleSuite = actualSuites.length === 1;
+
+        if (isSingleSuite) {
+            filters.testSuite = actualSuites[0];
+            if (this.elements.testSuiteFilterDropdown) {
+                this.elements.testSuiteFilterDropdown.innerHTML = '';
+            }
+        } else {
+            const testSuiteOptions = [...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name)))]
+                    .sort()
+                    .map(name => ({ name: name === AGGREGATED_SUITE_NAME ? 'All' : name, value: name }));
+            const aggIndex = testSuiteOptions.findIndex(o => o.value === AGGREGATED_SUITE_NAME);
+            if (aggIndex > -1) {
+                testSuiteOptions.unshift(testSuiteOptions.splice(aggIndex, 1)[0]);
+            }
+
+            UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, filters.testSuite, (newVal) => {
+                filters.testSuite = newVal || this.getDefaultTestSuite();
+                this.updateFilterButtons();
+                this.render(true);
+                Navigation.push();
+
+                if (typeof SourceViewApp !== 'undefined' && SourceViewApp.classData) {
+                    SourceViewApp.context.testSuiteName = filters.testSuite;
+                    if (!document.getElementById('source-view').classList.contains('hidden-view')) {
+                        SourceViewApp.render();
+                    }
+                }
+            }, false, false);
         }
 
         const packageOptions = [...new Set(basePackages.map(p => p.name))]
@@ -1444,20 +1537,6 @@ const CoverageReportApp = {
             this.render(true);
             Navigation.push();
         });
-
-        UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, filters.testSuite, (newVal) => {
-            filters.testSuite = newVal || this.getDefaultTestSuite();
-            this.updateFilterButtons();
-            this.render(true);
-            Navigation.push();
-
-            if (typeof SourceViewApp !== 'undefined' && SourceViewApp.classData) {
-                SourceViewApp.context.testSuiteName = filters.testSuite;
-                if (!document.getElementById('source-view').classList.contains('hidden-view')) {
-                    SourceViewApp.render();
-                }
-            }
-        }, false, false);
 
         UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, (newArr) => {
             filters.packages = newArr;

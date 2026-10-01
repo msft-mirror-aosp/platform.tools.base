@@ -28,6 +28,8 @@ kotlin {
         compileSdk = $compileSdk
         minSdk = $minSdk
 
+        withHostTest {}
+
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
         }

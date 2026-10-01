@@ -54,6 +54,7 @@ import org.jetbrains.jps.model.serialization.JpsProjectLoader;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -65,6 +66,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Converts a jps project to an internal representation (IrProject).
@@ -112,12 +114,38 @@ public class ImlToIr {
         Map<JpsModule, IrModule> imlToIr = new HashMap<>();
         Map<JpsLibrary, IrLibrary> libraryToIr = new HashMap<>();
         for (JpsModule jpsModule : graph.getModulesInTopologicalOrder()) {
+            // Check for missing source roots.
+            for (JpsModuleSourceRoot sourceRoot : jpsModule.getSourceRoots()) {
+                if (!containsFiles(sourceRoot.getFile())) {
+                    logger.error(
+                            "Module %s: source root is missing or empty: %s",
+                            jpsModule.getName(), sourceRoot.getFile());
+                }
+            }
+
             IrModule module = createIrModule(jpsModule);
             if (config.ignoreModule(workspace, module)) {
                 continue;
             }
             irProject.modules.add(module);
             imlToIr.put(jpsModule, module);
+
+            // Check that the module has either prod roots or test roots, never both (b/565759009).
+            boolean hasProdRoots = false;
+            boolean hasTestRoots = false;
+            for (JpsModuleSourceRoot sourceRoot : jpsModule.getSourceRoots()) {
+                if (sourceRoot.getRootType().isForTests()) {
+                    hasTestRoots = true;
+                } else {
+                    hasProdRoots = true;
+                }
+            }
+            if (hasProdRoots && hasTestRoots && !config.allowMixedSourceRoots(workspace, module)) {
+                logger.error(
+                        "Module %s has both production and test source roots. Please move the test"
+                                + " roots to a separate test module. (b/565759009)",
+                        jpsModule.getName());
+            }
 
             // Check if this is a test module with an associated production module that should be
             // treated as a Kotlin friend. I.e., detect an iml line like this:
@@ -141,13 +169,11 @@ public class ImlToIr {
             }
 
             for (JpsModuleSourceRoot folder : jpsModule.getSourceRoots()) {
+                // Projects can exclude specific files from compilation
                 File root = folder.getFile();
-                if (root.exists()) {
-                    // Projects can exclude specific files from compilation
-                    for (File excludeFile : excludedFiles) {
-                        if (excludeFile.toPath().startsWith(root.toPath())) {
-                            module.addExcludeFile(excludeFile);
-                        }
+                for (File excludeFile : excludedFiles) {
+                    if (excludeFile.toPath().startsWith(root.toPath())) {
+                        module.addExcludeFile(excludeFile);
                     }
                 }
             }
@@ -318,6 +344,17 @@ public class ImlToIr {
         }
 
         return irProject;
+    }
+
+    private static boolean containsFiles(File root) {
+        if (!root.isDirectory()) {
+            return false;
+        }
+        try (Stream<Path> files = java.nio.file.Files.walk(root.toPath())) {
+            return files.anyMatch(java.nio.file.Files::isRegularFile);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**

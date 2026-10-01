@@ -40,6 +40,9 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
 
   override fun toString(): String = "$name${(paramTags.hashCode() % 1000).subscript()}"
 
+  /** Synthetic method computing parameter [paramName]'s default argument */
+  fun defaultArgumentOf(paramName: String): MethodId = MethodId(isVirtual, "$name\$default\$$paramName", paramTags)
+
   companion object {
     private val paramListPool = InterningPool<List<ClassId?>>()
 

@@ -13,3 +13,5 @@ isAgpReleaseBranch = {IS_AGP_RELEASE_BRANCH}
 
 androidTestEngineVersion = {ANDROID_TEST_ENGINE_VERSION}
 
+coverageAgentVersion = {COVERAGE_AGENT_VERSION}
+

@@ -84,17 +84,41 @@ class TestReportDataModelTest {
         testSuites = listOf("unitTest"),
         targets = listOf(UNKNOWN_TARGET),
         modules = listOf(module),
+        relativeRootDir = "",
       )
 
     val jsonString = gson.toJson(rootReport)
 
     val expectedJson =
       """
-      {"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"testSuites":["unitTest"],"targets":["$UNKNOWN_TARGET"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","targets":[{"name":"$UNKNOWN_TARGET","testSuiteSummaries":[],"testSuiteResults":[{"testSuiteName":"unitTest","variantResults":{"debug":{"status":"pass"}}}],"commonStackTraces":[]}]}]}]}]}]}
+      {"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"testSuites":["unitTest"],"targets":["$UNKNOWN_TARGET"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","targets":[{"name":"$UNKNOWN_TARGET","testSuiteSummaries":[],"testSuiteResults":[{"testSuiteName":"unitTest","variantResults":{"debug":{"status":"pass"}}}],"commonStackTraces":[]}]}]}]}]}],"relativeRootDir":""}
       """
         .trimIndent()
         .replace(Regex("\\s"), "")
 
     assertThat(jsonString.replace(Regex("\\s"), "")).isEqualTo(expectedJson)
+  }
+
+  @Test
+  fun `test RootReport serialization with relativeRootDir`() {
+    val rootReport =
+      RootReport(
+        projectName = "project",
+        timestamp = "Mar 4, 2026, 6:09PM",
+        numberOfModules = 0,
+        numberOfPackages = 0,
+        numberOfClasses = 0,
+        variants = emptyList(),
+        testSuites = emptyList(),
+        targets = emptyList(),
+        modules = emptyList(),
+        relativeRootDir = "../../../../../../",
+      )
+
+    val jsonString = gson.toJson(rootReport)
+    assertThat(jsonString).contains("\"relativeRootDir\":\"../../../../../../\"")
+
+    val deserialized = gson.fromJson(jsonString, RootReport::class.java)
+    assertThat(deserialized.relativeRootDir).isEqualTo("../../../../../../")
   }
 }

@@ -40,6 +40,16 @@ public class VersionTest {
     }
 
     @Test
+    public void testCoverageAgentVersion() {
+        Assert.assertNotNull(Version.COVERAGE_AGENT_VERSION);
+        if (!Version.IS_AGP_RELEASE_BRANCH) {
+            Assert.assertTrue(
+                    "Non-release branch must have -dev suffix in coverageAgentVersion",
+                    Version.COVERAGE_AGENT_VERSION.endsWith("-dev"));
+        }
+    }
+
+    @Test
     public void testAgpAndBaseRelationship() {
         // The Base libraries such as lint are expected to be exactly
         // the AGP version plus 23 (to make it easy for example for

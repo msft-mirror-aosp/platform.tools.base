@@ -443,9 +443,20 @@ class AndroidDeviceDescriptor(
       val fullClassName = if (packageName.isNotEmpty()) "$packageName.${testIdentifier.testClass}" else testIdentifier.testClass
       val ddmlibTestId = DdmlibTestIdentifier(fullClassName, testIdentifier.testMethod)
 
-      if (testResult.status != AmInstrumentationParser.STATUS_CODE_OK) {
-        val trace = testResult.stackTrace?.takeIf { it.isNotBlank() } ?: "Test failed with status ${testResult.status}"
-        reporter?.testFailed(ddmlibTestId, trace)
+      when (testResult.status) {
+        AmInstrumentationParser.STATUS_CODE_OK -> {
+          // Success
+        }
+        AmInstrumentationParser.STATUS_CODE_IGNORED -> {
+          reporter?.testIgnored(ddmlibTestId)
+        }
+        AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE -> {
+          reporter?.testAssumptionFailure(ddmlibTestId, testResult.stackTrace ?: "")
+        }
+        else -> {
+          val trace = testResult.stackTrace?.takeIf { it.isNotBlank() } ?: "Test failed with status ${testResult.status}"
+          reporter?.testFailed(ddmlibTestId, trace)
+        }
       }
       reporter?.testEnded(ddmlibTestId, emptyMap())
 

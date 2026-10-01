@@ -782,6 +782,103 @@ class AiGlassesPairingTest {
       assertEquals(expectedStates, states)
     }
 
+  @Test
+  fun pairToGlasses_tapsButtonWhenCdmDialogInForeground() = runBlockingWithTimeout {
+    val device = createConnectedDevice(api = 37)
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
+      "state=UI_CDM_ASSOCIATING\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    setupDeviceMocks()
+    registerBroadcastResponse("input keyevent KEYCODE_TAB", "")
+    registerBroadcastResponse("input keyevent KEYCODE_DPAD_CENTER", "")
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mFocusedApp=ActivityRecord{12345 u0 com.google.android.glasses.companion/MainActivity}\n" +
+        "  mCurrentFocus=Window{67890 u0 com.android.companiondevicemanager/com.android.companiondevicemanager.CompanionDeviceActivity}\n",
+    )
+    registerDumpsysResponse("dumpsys activity activities", "")
+
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+    var cdmCount = 0
+    flow
+      .takeWhile {
+        if (it == "UI_CDM_ASSOCIATING") {
+          cdmCount++
+        }
+        cdmCount < 3
+      }
+      .collect()
+
+    assertTrue(executedCommands.contains("input keyevent KEYCODE_TAB"))
+    assertTrue(executedCommands.contains("input keyevent KEYCODE_DPAD_CENTER"))
+  }
+
+  @Test
+  fun pairToGlasses_exceedingMaxAssociatingPollsEmitsAssociationFailed() =
+    runBlockingWithTimeout(java.time.Duration.ofSeconds(60)) {
+      val device = createConnectedDevice()
+      val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+      registerBroadcastResponse(
+        "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
+        "state=UI_CDM_ASSOCIATING\n",
+      )
+      registerBroadcastResponse(
+        "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+        "Broadcast completed: result=-1\n",
+      )
+      registerBroadcastResponse(
+        "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
+        "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+      )
+
+      setupDeviceMocks()
+      registerBroadcastResponse("input keyevent KEYCODE_TAB", "")
+      registerBroadcastResponse("input keyevent KEYCODE_DPAD_CENTER", "")
+
+      val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+      registerDumpsysResponse(
+        "dumpsys window displays",
+        "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/com.google.android.glasses.companion.setup.ui.SetupActivity}\n",
+      )
+
+      val states = mutableListOf<String>()
+      val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+      flow.collect { states.add(it) }
+
+      val expectedStates =
+        listOf(AiGlassesPairing.AWAITING_FOREGROUND, "POLLING") + List(15) { "UI_CDM_ASSOCIATING" } + listOf("UI_CDM_ASSOCIATION_FAILED")
+      assertEquals(expectedStates, states)
+    }
+
+  @Test
+  fun ensureBluetoothAndLocationEnabled_enablesLocationAndBluetoothWhenDisabled() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    registerBroadcastResponse("cmd location set-location-enabled true", "")
+    registerBroadcastResponse("settings get global bluetooth_on", "0")
+    registerBroadcastResponse("cmd bluetooth_manager enable", "")
+
+    AiGlassesPairing(fakeAdbRule.adbSession).run { device.ensureBluetoothAndLocationEnabled() }
+
+    assertTrue(executedCommands.contains("cmd location set-location-enabled true"))
+    assertTrue(executedCommands.contains("settings get global bluetooth_on"))
+    assertTrue(executedCommands.contains("cmd bluetooth_manager enable"))
+  }
+
   private fun setupDeviceMocks() {
     registerBroadcastResponse("settings get global bluetooth_on", "1")
     registerBroadcastResponse("cmd location set-location-enabled true", "")

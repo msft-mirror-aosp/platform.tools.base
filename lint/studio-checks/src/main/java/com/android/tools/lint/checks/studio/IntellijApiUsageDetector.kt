@@ -76,7 +76,7 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
     if (!isDeprecatedForRemoval(annotationInfo.annotation)) {
       return
     }
-    if (isInIgnoredPackage(annotationInfo.annotation)) {
+    if (isIgnoredApi(annotationInfo.annotation)) {
       return
     }
     if (annotationInfo.origin == AnnotationOrigin.PACKAGE) {
@@ -127,11 +127,17 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
     context.report(SCHEDULED_FOR_REMOVAL, element, context.getNameLocation(element), "$toBlame is $annotationDisplayName")
   }
 
-  private fun isInIgnoredPackage(annotation: UAnnotation): Boolean {
+  private fun isIgnoredApi(annotation: UAnnotation): Boolean {
+    val containingFile = annotation.javaPsi?.containingFile as? PsiClassOwner ?: return false
+    // Ignore binary compatibility shims, which are never a deliberate call target but are
+    // indistinguishable from the live API they shadow.
+    if (containingFile.classes.any { it.qualifiedName in BINARY_COMPATIBILITY_SHIMS }) {
+      return true
+    }
     // Ignore our own packages, since the focus is on IntelliJ APIs that might change during
     // platform updates.
     // Also ignore JDK APIs since these are removed very infrequently.
-    val packageName = (annotation.javaPsi?.containingFile as? PsiClassOwner)?.packageName ?: return false
+    val packageName = containingFile.packageName
     return packageName.startsWith("com.android.") ||
       packageName.startsWith("com.google") ||
       packageName.startsWith("org.jetbrains.android.") ||
@@ -175,6 +181,14 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
 
   companion object {
     private val IMPLEMENTATION = Implementation(IntellijApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
+
+    /**
+     * Kotlin facade classes whose deprecated members exist only to preserve a JVM signature for already-compiled plugins.
+     *
+     * Such a member is renamed at the Kotlin level to avoid clashing with the live API, then annotated with `@get:JvmName` to reproduce the
+     * original JVM signature. For example `ReferenceUtilKt.mainReferenceCompat` shadows `ReferenceUtilsKt.mainReference`.
+     */
+    private val BINARY_COMPATIBILITY_SHIMS = setOf("org.jetbrains.kotlin.idea.references.ReferenceUtilKt")
 
     @JvmField
     val SCHEDULED_FOR_REMOVAL =

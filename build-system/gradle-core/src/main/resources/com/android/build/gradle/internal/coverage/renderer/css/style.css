@@ -218,6 +218,26 @@ header {
     background-color: var(--bg-hover);
 }
 
+.ts-selector-btn:disabled,
+.ts-selector-btn.unclickable {
+    cursor: default;
+    pointer-events: none;
+    background: transparent;
+    outline: none;
+}
+
+.ts-selector-btn:disabled:hover,
+.ts-selector-btn.unclickable:hover {
+    background-color: transparent;
+}
+
+.ts-selector-btn:disabled .ts-value-container svg,
+.ts-selector-btn.unclickable .ts-value-container svg,
+.ts-selector-btn:disabled #ts-all-state svg,
+.ts-selector-btn.unclickable #ts-all-state svg {
+    display: none;
+}
+
 #ts-all-state {
     display: flex;
     align-items: center;
@@ -473,13 +493,19 @@ header {
     font-size: 0.75rem;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s;
+    visibility: hidden;
+    /* No transition on the hidden state: the tooltip disappears instantly.
+       Fading it out would make it translucent on the way, revealing whatever it
+       overlaps (e.g. checkboxes in an open dropdown) through the box. */
+    transition: none;
     box-shadow: var(--shadow-lg);
     max-width: 300px;
     word-wrap: break-word;
 }
 #a11y-tooltip.visible {
     opacity: 1;
+    visibility: visible;
+    transition: opacity 0.15s;
     pointer-events: auto; /* Allow hovering over the tooltip itself */
 }
 #a11y-tooltip::after {
@@ -1258,17 +1284,20 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
    HELP HUB STYLES
    ========================================================================== */
 
+/* Icon-only FAB: fixed square box + full radius keeps the glyph centred. */
 .fab {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 2rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 9999px;
   background-color: var(--text-gray-900);
   color: var(--text-inverse);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
   box-shadow: var(--shadow-lg);
   cursor: pointer;
   transition: transform 0.2s, background-color 0.2s;
