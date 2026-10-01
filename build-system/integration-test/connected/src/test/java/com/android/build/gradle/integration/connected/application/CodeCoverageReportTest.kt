@@ -211,7 +211,7 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
     val result = rule.build.executor.run(":app:testAllSuites")
 
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
-    val outputDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")
+    val outputDir = FileUtils.join(appBuildDir, "reports", "testAllSuites", "coverage-report")
 
     assertThat(result.didWorkTasks.contains(":app:testDebugUnitTest")).isTrue()
     assertThat(result.didWorkTasks.contains(":app:testReleaseUnitTest")).isTrue()
@@ -232,7 +232,7 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
     val appBuildDir = build.androidLibrary(":lib").buildDir.toFile()
 
-    val taskOutputDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")
+    val taskOutputDir = FileUtils.join(appBuildDir, "reports", "testAllSuites", "coverage-report")
 
     verifyIndexFileExists(taskOutputDir)
   }
@@ -242,7 +242,7 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
     val result = rule.build.executor.run(":app:testAllSuitesWithDependencies")
 
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
-    val outputDir = FileUtils.join(appBuildDir, "reports", "aggregated_code_coverage_html_report", "global")
+    val outputDir = FileUtils.join(appBuildDir, "reports", "testAllSuitesWithDependencies", "coverage-report")
 
     verifyHtmlReport(
       outputDir = outputDir,
@@ -271,7 +271,7 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
     val libBuildDir = build.androidLibrary(":lib2").buildDir.toFile()
 
-    val taskOutputDir = FileUtils.join(libBuildDir, "reports", "aggregated_code_coverage_html_report", "global")
+    val taskOutputDir = FileUtils.join(libBuildDir, "reports", "testAllSuitesWithDependencies", "coverage-report")
 
     verifyIndexFileExists(taskOutputDir)
   }
@@ -292,8 +292,8 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
     val result = rule.build.executor.run("clean", ":app:testAllSuites")
 
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
-    val testReportDir = FileUtils.join(appBuildDir, "reports", "tests", "test-report")
-    val coverageReportDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")
+    val testReportDir = FileUtils.join(appBuildDir, "reports", "testAllSuites", "test-report")
+    val coverageReportDir = FileUtils.join(appBuildDir, "reports", "testAllSuites", "coverage-report")
 
     verifyIndexFileExists(testReportDir)
     assertThat(File(coverageReportDir, "index.html")).doesNotExist()

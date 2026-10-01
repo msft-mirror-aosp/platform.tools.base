@@ -429,7 +429,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName, ":test:testAllSuites")
 
-    val reportDir = project.resolve("test/build/reports/tests/test-report")
+    val reportDir = project.resolve("test/build/reports/testAllSuites/test-report")
     val expectedContents =
       if (!runWithBuiltInPlatform) {
         listOf("\"projectName\":\"project\"", "\"name\":\":test\"", "\"numberOfModules\":1")
