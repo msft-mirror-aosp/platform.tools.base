@@ -364,6 +364,12 @@ const Navigation = {
  * Collection of helper functions for DOM manipulation and common UI patterns.
  */
 const UIUtils = {
+    formatSuiteName(name) {
+        if (!name) return "";
+        const str = String(name);
+        return str.charAt(0).toLowerCase() + str.slice(1);
+    },
+
     /**
      * Builds a multi-select dropdown with "Select All" / "Clear" actions
      * and a scrollable list of options.
@@ -1277,7 +1283,7 @@ const CoverageReportApp = {
             if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
             if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
             if (this.elements.testSuiteFilterText) {
-                this.elements.testSuiteFilterText.textContent = actualSuites[0];
+                this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(actualSuites[0]);
             }
             if (this.elements.testSuiteFilterBtn) {
                 this.elements.testSuiteFilterBtn.disabled = true;
@@ -1305,7 +1311,7 @@ const CoverageReportApp = {
                 if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
                 if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
                 if (this.elements.testSuiteFilterText) {
-                    this.elements.testSuiteFilterText.textContent = filters.testSuite;
+                    this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(filters.testSuite);
                 }
             }
         }
@@ -1498,8 +1504,8 @@ const CoverageReportApp = {
             }
         } else {
             const testSuiteOptions = [...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name)))]
-                    .sort()
-                    .map(name => ({ name: name === AGGREGATED_SUITE_NAME ? 'All' : name, value: name }));
+                    .sort((a, b) => UIUtils.formatSuiteName(a).localeCompare(UIUtils.formatSuiteName(b)))
+                    .map(name => ({ name: name === AGGREGATED_SUITE_NAME ? 'all' : UIUtils.formatSuiteName(name), value: name }));
             const aggIndex = testSuiteOptions.findIndex(o => o.value === AGGREGATED_SUITE_NAME);
             if (aggIndex > -1) {
                 testSuiteOptions.unshift(testSuiteOptions.splice(aggIndex, 1)[0]);

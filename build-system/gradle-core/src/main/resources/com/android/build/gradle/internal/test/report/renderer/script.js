@@ -45,6 +45,12 @@ const UIUtils = {
       .replace(/'/g, "&#39;");
   },
 
+  formatSuiteName(name) {
+    if (!name) return "";
+    const str = String(name);
+    return str.charAt(0).toLowerCase() + str.slice(1);
+  },
+
   /**
    * Builds a multi-select dropdown with "Select All" / "Clear" actions
    * and a scrollable list of options.
@@ -676,8 +682,10 @@ const TestReportApp = {
       }
     } else {
       const testSuiteOptions = [
-        { name: 'All', value: 'all' },
-        ...actualSuites.map(ts => ({ name: ts, value: ts }))
+        { name: 'all', value: 'all' },
+        ...[...actualSuites]
+          .sort((a, b) => UIUtils.formatSuiteName(a).localeCompare(UIUtils.formatSuiteName(b)))
+          .map(ts => ({ name: UIUtils.formatSuiteName(ts), value: ts }))
       ];
       UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
         this.state.filters.testSuite = newVal;
@@ -1124,7 +1132,7 @@ const TestReportApp = {
       if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
       if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
       if (this.elements.testSuiteFilterText) {
-        this.elements.testSuiteFilterText.textContent = actualSuites[0];
+        this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(actualSuites[0]);
       }
       if (this.elements.testSuiteFilterBtn) {
         this.elements.testSuiteFilterBtn.disabled = true;
@@ -1153,7 +1161,7 @@ const TestReportApp = {
           this.elements.tsAllState.classList.add('hidden');
           this.elements.tsSelectedState.classList.remove('hidden');
           if (this.elements.testSuiteFilterText) {
-            this.elements.testSuiteFilterText.textContent = this.state.filters.testSuite;
+            this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(this.state.filters.testSuite);
           }
         }
       }
@@ -2037,7 +2045,7 @@ const TestReportApp = {
     }
 
     node._suiteBadges = suiteNames
-      .map(name => `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem;">${UIUtils.escapeHTML(name)}</span>`)
+      .map(name => `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem;">${UIUtils.escapeHTML(UIUtils.formatSuiteName(name))}</span>`)
       .join('');
     return node._suiteBadges;
   },
@@ -2231,7 +2239,7 @@ const TestReportApp = {
       for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
         const tag = document.createElement("span");
         tag.className = "occurrence-tag";
-        tag.textContent = `${suite} (${variants.join(", ")})`;
+        tag.textContent = `${UIUtils.formatSuiteName(suite)} (${variants.join(", ")})`;
         titleDiv.appendChild(tag);
       }
       header.appendChild(titleDiv);
@@ -2601,7 +2609,7 @@ const TestReportApp = {
           <span class="meta-pill"><span class="meta-pill-label">Method:</span> ${UIUtils.escapeHTML(item.methodName)}</span>
           <span class="meta-pill"><span class="meta-pill-label">Preview:</span> ${UIUtils.escapeHTML(item.previewName)}</span>
           <span class="meta-pill"><span class="meta-pill-label">Variant:</span> ${UIUtils.escapeHTML(item.variantName)}</span>
-          <span class="meta-pill"><span class="meta-pill-label">Suite:</span> ${UIUtils.escapeHTML(item.suiteName)}</span>
+          <span class="meta-pill"><span class="meta-pill-label">Suite:</span> ${UIUtils.escapeHTML(UIUtils.formatSuiteName(item.suiteName))}</span>
         </div>
       </div>
       <div>
