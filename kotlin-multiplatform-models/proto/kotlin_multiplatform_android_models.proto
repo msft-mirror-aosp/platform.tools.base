@@ -78,9 +78,22 @@ message AndroidTarget {
     optional string resource_prefix = 16;
 }
 
-// Sources included in a kotlin multiplatform sourceSet.
+// Android data attached to the default kotlin sourceSet of each android compilation.
+message AndroidSourceSet {
+    optional SourceProvider source_provider = 1;
+}
+
+// Android sources of the component whose default kotlin sourceSet this is attached to.
 message SourceProvider {
     optional File manifest_file = 1;
+
+    // Non-generated res directories besides the default one, e.g. added with
+    // `variant.sources.res.addStaticSourceDirectory()`.
+    repeated File extra_res_directories = 2;
+
+    // Non-generated assets directories besides the default one, e.g. added with
+    // `variant.sources.assets.addStaticSourceDirectory()`.
+    repeated File extra_assets_directories = 3;
 }
 
 // Generated sources included in a kotlin multiplatform compilation.
@@ -179,10 +192,6 @@ message AndroidCompilation {
         UNIT_TEST = 1;
         INSTRUMENTED_TEST = 2;
     }
-}
-
-message AndroidSourceSet {
-    optional SourceProvider source_provider = 1;
 }
 
 // Extra information to identify a dependency that is outgoing from an android kotlin sourceSet.

@@ -12,7 +12,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/src/androidDeviceTest/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }
@@ -76,7 +78,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/src/androidHostTest/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }
@@ -126,7 +130,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/src/androidMain/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }

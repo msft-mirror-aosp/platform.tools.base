@@ -21,6 +21,7 @@ import com.android.Version
 import com.android.build.api.component.impl.KmpAndroidTestImpl
 import com.android.build.api.component.impl.KmpHostTestImpl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+import com.android.build.api.variant.impl.LayeredSourceDirectoriesImpl
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
@@ -74,7 +75,8 @@ object KotlinModelBuildingConfigurator {
    * As each [KmpComponentCreationConfig] corresponds to a kotlin compilation, this method adds extra android-specific information to the
    * android kotlin compilations. That includes, the main compilation and the unitTest and instrumentedTest compilations if enabled.
    *
-   * This method also adds android-specific data about the default sourceSet in each compilation, mainly the android manifest location.
+   * This method also adds android-specific data about the default sourceSet in each compilation, mainly the android manifest location and
+   * any static res/assets directories added through the variant API.
    */
   fun setupAndroidCompilations(
     components: List<KmpComponentCreationConfig>,
@@ -109,10 +111,24 @@ object KotlinModelBuildingConfigurator {
 
       compilation.defaultSourceSet.extras[androidSourceSetKey] =
         AndroidSourceSet.newBuilder()
-          .setSourceProvider(SourceProvider.newBuilder().setManifestFile(component.sources.manifestFile.convert()))
+          .setSourceProvider(
+            SourceProvider.newBuilder()
+              .setManifestFile(component.sources.manifestFile.convert())
+              .addAllExtraResDirectories(component.sources.res.userAddedStaticDirectories().map { it.convert() })
+              .addAllExtraAssetsDirectories(component.sources.assets.userAddedStaticDirectories().map { it.convert() })
+          )
           .build()
     }
   }
+
+  /**
+   * Returns the static directories added by the user through the variant API (e.g. `addStaticSourceDirectory`).
+   *
+   * The default directories (e.g. `src/androidMain/res`) are derived by the IDE from the kotlin sourceSet, and generated directories are
+   * reported as part of the compilation info, so both are excluded here.
+   */
+  private fun LayeredSourceDirectoriesImpl?.userAddedStaticDirectories(): Collection<File> =
+    this?.variantSourcesForModel { it.isUserAdded && it.shouldBeAddedToIdeModel && !it.isGenerated } ?: emptyList()
 
   private fun getExtraClassesFolders(creationConfig: KmpComponentCreationConfig): MutableIterable<File> {
     val extraFolders = mutableListOf<File>()
