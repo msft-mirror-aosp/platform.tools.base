@@ -89,7 +89,6 @@ internal constructor(
     // ----------- COMPILE CLASSPATH
     val compileClasspathName: String = identifier + "CompileClasspath"
     val compileClasspath: Configuration = configurations.maybeCreate(compileClasspathName)
-    compileClasspath.isVisible = false
     compileClasspath.description = "Resolved configuration for compilation for test suite: $testSuiteName in $testedVariantName"
     populateClasspath(compileClasspath, gatherCollectors { listOf(it.compileOnly, it.implementation) })
     addAttributes(compileClasspath, factory.named(Usage::class.java, Usage.JAVA_API))
@@ -192,7 +191,6 @@ internal constructor(
 
   private fun addAttributes(configuration: Configuration, usage: Usage) {
     configuration.isCanBeConsumed = false
-    configuration.isVisible = false
     configuration.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
     val attributes = configuration.attributes
     attributes.attribute(Usage.USAGE_ATTRIBUTE, usage)
@@ -205,7 +203,6 @@ internal constructor(
 
   private fun addAttributesForHost(configuration: Configuration, usage: Usage) {
     configuration.isCanBeConsumed = false
-    configuration.isVisible = false
     configuration.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
     val attributes = configuration.attributes
     attributes.attribute(Usage.USAGE_ATTRIBUTE, usage)

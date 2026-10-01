@@ -262,7 +262,6 @@ fun maybeCreateUtpConfigurations(configurations: ConfigurationContainer, depende
   UtpDependency.entries.forEach { utpDependency ->
     if (!configurations.names.contains(utpDependency.configurationName)) {
       configurations.register(utpDependency.configurationName) {
-        it.isVisible = false
         it.isTransitive = true
         it.isCanBeConsumed = false
         it.description = "A configuration to resolve the Unified Test Platform dependencies."

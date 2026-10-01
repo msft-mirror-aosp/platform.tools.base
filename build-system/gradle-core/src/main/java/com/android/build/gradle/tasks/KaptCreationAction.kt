@@ -45,7 +45,6 @@ class KaptCreationAction(
 
   private val kaptWorkersDependencies = run {
     project.configurations.maybeRegister(KAPT_WORKERS_CONFIGURATION) {
-      isVisible = false
       isCanBeConsumed = false
       dependencies.add(project.dependencies.create("$KOTLIN_GROUP:$KAPT_ARTIFACT:${kotlinServices.kgpVersion}"))
       dependencies.add(project.dependencies.create("$KOTLIN_GROUP:$KOTLIN_STDLIB:${kotlinServices.kgpVersion}"))

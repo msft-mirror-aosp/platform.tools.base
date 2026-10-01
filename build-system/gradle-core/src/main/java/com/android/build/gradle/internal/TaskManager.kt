@@ -2099,7 +2099,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     private fun createCoreLibraryDesugaringConfig(project: Project) {
       if (!project.configurations.names.contains(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING)) {
         project.configurations.register(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING) {
-          it.isVisible = false
           it.isCanBeConsumed = false
           it.description = "Configuration to desugar libraries"
         }

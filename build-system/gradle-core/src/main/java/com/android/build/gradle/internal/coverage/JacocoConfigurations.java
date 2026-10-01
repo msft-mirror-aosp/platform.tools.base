@@ -44,7 +44,6 @@ public final class JacocoConfigurations {
 
         configuration = project.getConfigurations().create(ANT_CONFIGURATION_NAME);
 
-        configuration.setVisible(false);
         configuration.setTransitive(true);
         configuration.setCanBeConsumed(false);
         configuration.setDescription("The Jacoco agent to use to get coverage data.");
