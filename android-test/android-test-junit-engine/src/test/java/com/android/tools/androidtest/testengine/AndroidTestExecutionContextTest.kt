@@ -186,6 +186,78 @@ class AndroidTestExecutionContextTest {
   }
 
   @Test
+  fun `AndroidTestConfiguration parses instrumentationArgs with unescaped comma-separated values`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_ARGS))
+      .thenReturn(Optional.of("clearPackageData=true,class=com.example.ATest,com.example.BTest,useTestStorageService=false"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.instrumentationArgs)
+      .containsExactly(
+        "clearPackageData",
+        "true",
+        "class",
+        "com.example.ATest,com.example.BTest",
+        "useTestStorageService",
+        "false",
+      )
+  }
+
+  @Test
+  fun `AndroidTestConfiguration parses instrumentationArgs with escaped commas, equals, and backslashes`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_ARGS))
+      .thenReturn(
+        Optional.of(
+          "class=com.example.ATest\\,com.example.BTest," +
+            "filter=a=1\\,b=2," +
+            "tests_regex=com.example.Foo\\[.*\\]," +
+            "trailing=foo\\\\," +
+            "escaped_delimiters=a\\\\\\,b\\\\=c\\\\\\d," +
+            "key\\,with\\=special\\chars=value," +
+            "key\\\\\\,with\\\\\\=trailing\\\\=v"
+        )
+      )
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.instrumentationArgs)
+      .containsExactly(
+        "class",
+        "com.example.ATest,com.example.BTest",
+        "filter",
+        "a=1,b=2",
+        "tests_regex",
+        "com.example.Foo\\[.*\\]",
+        "trailing",
+        "foo\\",
+        "escaped_delimiters",
+        "a\\,b\\=c\\\\d",
+        "key,with=special\\chars",
+        "value",
+        "key\\,with\\=trailing\\",
+        "v",
+      )
+  }
+
+  @Test
   fun `AndroidTestConfiguration parses on-the-fly coverage properties`() {
     val configParams = mock<ConfigurationParameters>()
     whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))

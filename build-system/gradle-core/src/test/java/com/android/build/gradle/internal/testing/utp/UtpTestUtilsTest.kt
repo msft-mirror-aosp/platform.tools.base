@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.gradle.internal.SdkComponentsBuildService
+import com.android.build.gradle.internal.testing.INSTRUMENTATION_ARGS_KEY
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.UtpDependencies
@@ -205,5 +206,63 @@ class UtpTestUtilsTest {
     val results = runUtp(expectedResultCode = 1)
 
     assertThat(results).isFalse()
+  }
+
+  private fun captureWorkerSystemProperties(instrumentationArgs: Map<String, String>): Map<String, Any?> {
+    val utpResultDir = temporaryFolderRule.newFolder()
+
+    val mockProvider: Provider<String> = mock()
+    whenever(mockProvider.orNull).thenReturn(null)
+    val mockProviderFactory: ProviderFactory = mock()
+    whenever(mockProviderFactory.gradleProperty(any<String>())).thenReturn(mockProvider)
+
+    val config: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+    configureMockConfig(config, "device1", "serial1", utpResultDir, File(utpResultDir, "utp-result.pb"))
+    val testDataProp = mockProperty(testData.copy(instrumentationRunnerArguments = instrumentationArgs))
+    val forceCompilationProp = mockProperty(false)
+    val pccProp = mockProperty(false)
+    val coverageOutputDirProp = mockDirectoryProperty(utpResultDir)
+    whenever(config.testData).thenReturn(testDataProp)
+    whenever(config.forceCompilation).thenReturn(forceCompilationProp)
+    whenever(config.privateComputeCoreInstrumentationEnabled).thenReturn(pccProp)
+    whenever(config.coverageOutputDir).thenReturn(coverageOutputDirProp)
+    whenever(config.additionalTestOutputOnDeviceDir.isPresent).thenReturn(false)
+    whenever(config.additionalTestOutputDir.isPresent).thenReturn(false)
+
+    val systemProperties = mutableMapOf<String, Any?>()
+    whenever(mockWorkerExecutor.processIsolation(any())).then { invocation ->
+      val specAction = invocation.getArgument<org.gradle.api.Action<org.gradle.workers.ProcessWorkerSpec>>(0)
+      val mockSpec = mock<org.gradle.workers.ProcessWorkerSpec>(defaultAnswer = RETURNS_DEEP_STUBS)
+      whenever(mockSpec.forkOptions(any())).then { forkInvocation ->
+        val forkAction = forkInvocation.getArgument<org.gradle.api.Action<org.gradle.process.JavaForkOptions>>(0)
+        val mockFork = mock<org.gradle.process.JavaForkOptions>()
+        whenever(mockFork.systemProperty(any(), any())).then { propInvocation ->
+          systemProperties[propInvocation.getArgument(0)] = propInvocation.getArgument(1)
+          mockFork
+        }
+        forkAction.execute(mockFork)
+      }
+      specAction.execute(mockSpec)
+      mockWorkQueue
+    }
+
+    runUtpTestSuiteAndWait(
+      listOf(config),
+      mockWorkerExecutor,
+      "projectName",
+      "variantName",
+      utpResultDir,
+      mockUtpDependencies,
+      mockVersionedSdkLoader,
+      mockProviderFactory,
+    )
+    return systemProperties
+  }
+
+  @Test
+  fun escapesCommaSeparatedInstrumentationArgs() {
+    val systemProperties = captureWorkerSystemProperties(mapOf("class" to "com.example.ATest,com.example.BTest", "trailing" to "foo\\"))
+
+    assertThat(systemProperties[INSTRUMENTATION_ARGS_KEY]).isEqualTo("class=com.example.ATest\\,com.example.BTest,trailing=foo\\\\")
   }
 }

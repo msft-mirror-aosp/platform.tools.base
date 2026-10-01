@@ -29,12 +29,15 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /**
- * Regression test for `tests_regex` filters containing shell metacharacters.
+ * Regression test for `tests_regex` filters containing shell metacharacters and comma-separated `class` filters.
  *
  * A filter selecting a single method of a `@RunWith(Parameterized::class)` class has to match the `[...]` suffix, e.g.
  * `pkg.Class.method\[.*\]`. `AmInstrumentCommandBuilder` used to append `-e` values to the `adb shell` command line unquoted, so the device
  * shell stripped the backslashes and the runner received `method[.*]` — a character class matching nothing. The build then succeeded having
  * run zero tests.
+ *
+ * Also verifies that comma-separated `class` filters and instrumentation arguments containing commas and `=` are escaped and parsed intact
+ * rather than truncated at the first comma.
  *
  * Run on both execution platforms: UTP currently wraps android-test-engine, so both build the `am instrument` command the same way and must
  * filter identically.
@@ -143,6 +146,19 @@ class ParameterizedTestFilterConnectedTest(private val runWithBuiltInPlatform: B
     val executed = executedTestCases()
 
     assertThat(executed).containsExactlyElementsIn(PARAM_NAMES.map { "checkValue[$it]" })
+  }
+
+  /** A comma-separated `class` filter and arguments containing `,key=` must reach the runner intact. */
+  @Test
+  fun commaSeparatedClassFilterRunsAllSpecifiedTests() {
+    rule.build.executor
+      .withArgument("-Pandroid.testInstrumentationRunnerArguments.class=$TEST_CLASS#checkValue[alpha],$TEST_CLASS#otherTest[beta]")
+      .withArgument("-Pandroid.testInstrumentationRunnerArguments.customArg=a=1,class=$TEST_CLASS#otherTest[gamma]")
+      .run(":app:connectedDebugAndroidTest")
+
+    val executed = executedTestCases()
+
+    assertThat(executed).containsExactly("checkValue[alpha]", "otherTest[beta]")
   }
 
   /** Returns the names of the test cases recorded in the connected test result XML. */

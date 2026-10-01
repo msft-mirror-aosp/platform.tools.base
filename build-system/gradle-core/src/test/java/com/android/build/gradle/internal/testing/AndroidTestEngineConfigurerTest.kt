@@ -170,4 +170,24 @@ class AndroidTestEngineConfigurerTest {
     assertThat(spyTask.engineInputPropertiesFiles.get().asFile.absolutePath)
       .isEqualTo("$buildDir/intermediates/androidTest/debugAndroidTest/mySubFolder/junit_inputs.txt".replace('/', File.separatorChar))
   }
+
+  @Test
+  fun testConfigureWithCommaSeparatedInstrumentationArgs() {
+    val testApkDirectory = project.objects.directoryProperty().fileValue(tempFolderRule.newFolder("test_apks"))
+    whenever(creationConfig.artifacts.get(SingleArtifact.APK)).thenReturn(testApkDirectory)
+    whenever(testData.instrumentationRunnerArguments)
+      .thenReturn(
+        project.providers.provider {
+          mapOf("class" to "com.example.ATest,com.example.BTest", "trailing" to "foo\\")
+        }
+      )
+
+    configureAndroidTestEngine(spyTask, creationConfig, testData, "mySubFolder")
+
+    assertThat(spyTask.engineInputProperties.get())
+      .containsEntry(
+        INSTRUMENTATION_ARGS_KEY,
+        "class=com.example.ATest\\,com.example.BTest,trailing=foo\\\\",
+      )
+  }
 }
