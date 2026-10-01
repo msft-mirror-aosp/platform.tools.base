@@ -37,10 +37,10 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /**
- * Integration test for [com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask].
+ * Integration test for code coverage report generation in [com.android.build.gradle.internal.test.tasks.TestReportTask].
  *
- * This test verifies the generation of the final HTML code coverage report by running the `createCoverageReport` and
- * `createAggregatedCoverageReport` tasks. It checks for the existence of the report files, parses the generated JSON data, and verifies the
+ * This test verifies the generation of the final HTML code coverage report by running the `testAllSuites` and
+ * `testAllSuitesWithDependencies` tasks. It checks for the existence of the report files, parses the generated JSON data, and verifies the
  * accuracy of the aggregated coverage metrics.
  */
 @RunWith(Parameterized::class)
