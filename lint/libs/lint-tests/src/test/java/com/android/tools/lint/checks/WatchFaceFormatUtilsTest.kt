@@ -89,6 +89,7 @@ class WatchFaceFormatUtilsTest {
     )
 
     assertThat(hasDeclarativeWatchFaceFile(project)).isTrue()
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
   }
 
   @Test
@@ -120,5 +121,26 @@ class WatchFaceFormatUtilsTest {
     )
 
     assertThat(hasDeclarativeWatchFaceFile(project)).isTrue()
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
+  }
+
+  @Test
+  fun `test hasWatchFaceFormatVersionProperty with Project`() {
+    val projectFolder = temporaryFolder.newFolder("manifest_project")
+    val project = Project.create(TestLintClient(), projectFolder, projectFolder)
+
+    val manifestFile = File(projectFolder, "AndroidManifest.xml")
+    manifestFile.writeText(
+      // language=XML
+      """
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
+        <application>
+          <property android:name='$WATCH_FACE_FORMAT_VERSION_PROPERTY' android:value='1' />
+        </application>
+      </manifest>
+      """
+    )
+    assertThat(hasWatchFaceFormatVersionProperty(project)).isTrue()
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
   }
 }

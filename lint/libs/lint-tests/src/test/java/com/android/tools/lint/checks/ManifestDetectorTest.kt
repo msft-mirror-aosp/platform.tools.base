@@ -969,6 +969,55 @@ class ManifestDetectorTest : AbstractCheckTest() {
     lint().files(manifest().minSdk(14), strings).issues(ManifestDetector.APPLICATION_ICON).run().expectClean()
   }
 
+  fun testMissingApplicationIconWatchFaceFormat() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.watchface">
+              <application
+                  android:hasCode="false"
+                  android:label="@string/app_name">
+                  <property
+                      android:name="com.google.wear.watchface.format.version"
+                      android:value="1" />
+              </application>
+          </manifest>
+          """,
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.APPLICATION_ICON)
+      .run()
+      .expectClean()
+  }
+
+  fun testMissingApplicationIconWatchFaceFormatRawFile() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.watchface">
+              <application
+                  android:hasCode="false"
+                  android:label="@string/app_name" />
+          </manifest>
+          """,
+          )
+          .indented(),
+        xml("res/raw/watchface.xml", "<WatchFace width=\"450\" height=\"450\" />"),
+        strings,
+      )
+      .issues(ManifestDetector.APPLICATION_ICON)
+      .run()
+      .expectClean()
+  }
+
   fun testDeviceAdmin() {
     val expected =
       """

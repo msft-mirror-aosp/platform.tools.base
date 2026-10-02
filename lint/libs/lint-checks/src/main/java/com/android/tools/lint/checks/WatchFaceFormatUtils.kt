@@ -30,8 +30,8 @@ import org.w3c.dom.Element
 
 object WatchFaceFormatUtils {
   /**
-   * Returns `true` if an `<application>` [Element] has a `<property>` element with an
-   * `android:name` attribute equal to `[WATCH_FACE_FORMAT_VERSION_PROPERTY]`.
+   * Returns `true` if an `<application>` [Element] has a `<property>` element with an `android:name` attribute equal to
+   * `[WATCH_FACE_FORMAT_VERSION_PROPERTY]`.
    */
   fun hasWatchFaceFormatVersionProperty(application: Element): Boolean {
     assert(application.tagName == TAG_APPLICATION)
@@ -41,20 +41,43 @@ object WatchFaceFormatUtils {
   }
 
   /**
-   * Returns `true` if there is a Declarative Watch Face file (a file with a `<WatchFace>` root tag)
-   * in a `res/raw` folder.
+   * Returns `true` if the project manifest defines a `<property>` in `<application>` with an `android:name` attribute equal to
+   * `[WATCH_FACE_FORMAT_VERSION_PROPERTY]`.
    */
+  fun hasWatchFaceFormatVersionProperty(project: Project): Boolean {
+    val merged = project.mergedManifest?.documentElement
+    if (merged != null) {
+      val application = XmlUtils.getFirstSubTagByName(merged, TAG_APPLICATION)
+      return application != null && hasWatchFaceFormatVersionProperty(application)
+    }
+    return project.manifestFiles.any { file ->
+      if (!file.isFile) return@any false
+      val xml = project.client.readFile(file).toString()
+      val manifest = XmlUtils.parseDocumentSilently(xml, true)?.documentElement
+      val application = manifest?.let { XmlUtils.getFirstSubTagByName(it, TAG_APPLICATION) }
+      application != null && hasWatchFaceFormatVersionProperty(application)
+    }
+  }
+
+  /** Returns `true` if there is a Declarative Watch Face file (a file with a `<WatchFace>` root tag) in a `res/raw` folder. */
   fun hasDeclarativeWatchFaceFile(project: Project) =
-      project.resourceFolders
-          .flatMap { it.listFiles()?.toList() ?: emptyList() }
-          .filter { it.name.startsWith(FD_RES_RAW) }
-          .any { rawFolder ->
-            rawFolder.listFiles()?.any {
-              if (!it.isFile || !it.name.endsWith(DOT_XML)) return@any false
-              val xml = project.client.readFile(it).toString()
-              val document = XmlUtils.parseDocumentSilently(xml, false)
-              val rootTag = document?.documentElement?.tagName
-              rootTag == TAG_WATCH_FACE
-            } ?: false
-          }
+    project.resourceFolders
+      .flatMap { it.listFiles()?.toList() ?: emptyList() }
+      .filter { it.name.startsWith(FD_RES_RAW) }
+      .any { rawFolder ->
+        rawFolder.listFiles()?.any {
+          if (!it.isFile || !it.name.endsWith(DOT_XML)) return@any false
+          val xml = project.client.readFile(it).toString()
+          val document = XmlUtils.parseDocumentSilently(xml, false)
+          val rootTag = document?.documentElement?.tagName
+          rootTag == TAG_WATCH_FACE
+        } ?: false
+      }
+
+  /**
+   * Returns `true` if the project is a Watch Face Format (WFF) project, determined either by declaring the WFF version property in its
+   * manifest or by containing a declarative watch face file in `res/raw/`.
+   */
+  fun isWatchFaceFormatProject(project: Project): Boolean =
+    hasWatchFaceFormatVersionProperty(project) || hasDeclarativeWatchFaceFile(project)
 }
