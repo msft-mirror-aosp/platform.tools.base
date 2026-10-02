@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.checks.infrastructure.TestMode
+
 class WatchFaceEditorDetectorTest : AbstractCheckTest() {
   override fun getDetector() = WatchFaceEditorDetector()
 
@@ -85,5 +87,78 @@ class WatchFaceEditorDetectorTest : AbstractCheckTest() {
       )
       .run()
       .expectClean()
+  }
+
+  fun testWatchFaceFormatAppClean() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                        package="test.pkg">
+                        <application>
+                            <activity
+                                android:name=".WatchFaceEditor"
+                                android:exported="true"
+                                android:launchMode="singleTask">
+                                <intent-filter>
+                                    <action android:name="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
+                                </intent-filter>
+                            </activity>
+                        </application>
+                    </manifest>""",
+          )
+          .indented(),
+        xml("res/raw/watchface.xml", "<WatchFace width=\"450\" height=\"450\" />"),
+      )
+      .run()
+      .expectClean()
+  }
+
+  /** It is unlikely to have multi-module DWF projects, but it's not impossible. */
+  fun testMultiProjectWatchFaceFormatAppClean() {
+    val lib =
+      project(
+          manifest(
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                  package="test.pkg.lib">
+                  <application>
+                      <activity
+                          android:name=".WatchFaceEditor"
+                          android:exported="true"
+                          android:launchMode="singleTask">
+                          <intent-filter>
+                              <action android:name="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
+                          </intent-filter>
+                      </activity>
+                  </application>
+              </manifest>
+              """
+            )
+            .indented()
+        )
+        .name("lib")
+
+    val app =
+      project(
+          manifest(
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                  package="test.pkg">
+                  <application>
+                      <property android:name="com.google.wear.watchface.format.version" android:value="1" />
+                  </application>
+              </manifest>
+              """
+            )
+            .indented(),
+          xml("res/raw/watchface.xml", "<WatchFace width=\"450\" height=\"450\" />"),
+        )
+        .name("app")
+        .dependsOn(lib)
+
+    lint().projects(app, lib).testModes(TestMode.DEFAULT).run().expectClean()
   }
 }

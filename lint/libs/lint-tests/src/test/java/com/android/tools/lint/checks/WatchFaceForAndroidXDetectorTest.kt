@@ -98,6 +98,38 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testWatchFaceFormatAppClean() {
+    lint()
+      .files(
+        gradle(
+            """
+                apply plugin: 'com.android.application'
+
+                dependencies {
+                    implementation "androidx.wear.watchface:watchface:1.2.3"
+                }
+                """
+          )
+          .indented(),
+        manifest(
+            """
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="androidx.wear.watchface.samples.minimal.complications">
+
+                    <meta-data
+                        android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
+                        android:value="androidx.wear.watchface.editor.action.SOME_OTHER_EDITOR"
+                    />
+                </manifest>
+                          """
+          )
+          .indented(),
+        xml("src/main/res/raw/watchface.xml", "<WatchFace width=\"450\" height=\"450\" />"),
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testMissingAttribute() {
     lint()
       .files(

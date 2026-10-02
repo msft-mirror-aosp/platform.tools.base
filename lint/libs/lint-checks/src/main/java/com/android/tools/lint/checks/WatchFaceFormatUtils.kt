@@ -22,6 +22,7 @@ import com.android.SdkConstants.TAG_APPLICATION
 import com.android.SdkConstants.TAG_PROPERTY
 import com.android.SdkConstants.TAG_WATCH_FACE
 import com.android.SdkConstants.WATCH_FACE_FORMAT_VERSION_PROPERTY
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Project
 import com.android.utils.XmlUtils
 import com.android.utils.subtags
@@ -116,4 +117,11 @@ object WatchFaceFormatUtils {
     project.putClientProperty(KEY_IS_WFF_PROJECT, result)
     return result
   }
+
+  /**
+   * Returns `true` if the project associated with the [context] (or the main project during global analysis) is a Watch Face Format (WFF)
+   * project.
+   */
+  fun isWatchFaceFormatProject(context: Context): Boolean =
+    isWatchFaceFormatProject(context.project) || (context.isGlobalAnalysis() && isWatchFaceFormatProject(context.mainProject))
 }
