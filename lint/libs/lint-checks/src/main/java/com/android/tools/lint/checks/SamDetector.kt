@@ -217,7 +217,7 @@ class SamDetector : Detector(), SourceCodeScanner {
 
   private fun KaSession.getParameterType(callExpression: KtCallExpression, argument: UExpression): KaType? {
     val callInfo = callExpression.resolveToCall()?.singleFunctionCallOrNull() ?: return null
-    val mapping = callInfo.argumentMapping
+    val mapping = callInfo.valueArgumentMapping
     val parameterSignature = mapping[argument.sourcePsi] ?: mapping[argument.skipParenthesizedExprDown().sourcePsi] ?: return null
     return parameterSignature.returnType
   }

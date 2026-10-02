@@ -1324,7 +1324,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   private fun KaSession.getArgumentToParameterIndices(resolvedCall: KaFunctionCall<*>): IntArray {
     val called = resolvedCall.symbol
     val parameters = called.valueParameters
-    val callArgumentMapping = resolvedCall.argumentMapping
+    val callArgumentMapping = resolvedCall.valueArgumentMapping
     val result = IntArray(callArgumentMapping.size) { -1 }
     // The argument mapping is a LinkedHashMap, an ordered map,
     // corresponding to the argument order

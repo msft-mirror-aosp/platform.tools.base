@@ -118,7 +118,7 @@ internal fun KaImplicitReceiverValue.getImplicitReceiverPsi(): PsiElement? {
 
 /** Returns the implicit receiver value of the call-like expression [ktExpression] (can include property accesses, for example). */
 internal fun KaSession.getImplicitReceiverValue(ktExpression: KtExpression): KaImplicitReceiverValue? {
-  val partiallyAppliedSymbol =
+  val (extensionReceiver, dispatchReceiver) =
     when (val call = ktExpression.resolveToCall()?.singleCallOrNull<KaCall>()) {
       // Note: Calls that are a `KaCompoundAccessCall` (especially, `KaCompoundArrayAccessCall`)
       // are
@@ -130,11 +130,10 @@ internal fun KaSession.getImplicitReceiverValue(ktExpression: KtExpression): KaI
       // the second call, which can only exist in this example if the extension function also
       // requires a dispatch receiver (an instance of a class in which the extension function is
       // declared).
-      is KaCompoundAccessCall -> call.compoundOperation.operationPartiallyAppliedSymbol
-      is KaCallableMemberCall<*, *> -> call.partiallyAppliedSymbol
+      is KaCompoundAccessCall -> call.compoundOperation.operationCall.let { it.extensionReceiver to it.dispatchReceiver }
+      is KaCallableMemberCall<*, *> -> call.partiallyAppliedSymbol.let { it.extensionReceiver to it.dispatchReceiver }
       else -> null
     } ?: return null
 
-  return partiallyAppliedSymbol.extensionReceiver as? KaImplicitReceiverValue
-    ?: partiallyAppliedSymbol.dispatchReceiver as? KaImplicitReceiverValue
+  return extensionReceiver as? KaImplicitReceiverValue ?: dispatchReceiver as? KaImplicitReceiverValue
 }

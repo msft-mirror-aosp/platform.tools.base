@@ -164,7 +164,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
         val sourcePsi = node.sourcePsi as? KtCallElement ?: return false
         analyze(sourcePsi) {
           val call = sourcePsi.resolveToCall()?.successfulConstructorCallOrNull() ?: return false
-          val parameters = call.partiallyAppliedSymbol.signature.valueParameters
+          val parameters = call.signature.valueParameters
           return parameters.any { param -> typeForValueClass(param.returnType) }
         }
       }
