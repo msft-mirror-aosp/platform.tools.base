@@ -19,6 +19,10 @@ import com.android.SdkConstants.ANDROID_URI
 import com.android.SdkConstants.ATTR_EXCLUDE_FROM_RECENTS
 import com.android.SdkConstants.ATTR_NO_HISTORY
 import com.android.SdkConstants.ATTR_TASK_AFFINITY
+import com.android.SdkConstants.CLASS_ACTIVITY
+import com.android.SdkConstants.CLASS_APPLICATION
+import com.android.SdkConstants.CLASS_BROADCASTRECEIVER
+import com.android.SdkConstants.CLASS_SERVICE
 import com.android.SdkConstants.Intent.REF_FLAG_ACTIVITY_CLEAR_TOP
 import com.android.SdkConstants.Intent.REF_FLAG_ACTIVITY_NEW_TASK
 import com.android.SdkConstants.TAG_ACTIVITY
@@ -33,7 +37,10 @@ import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.XmlScanner
 import com.intellij.psi.PsiElement
 import java.util.EnumSet
+import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UReferenceExpression
+import org.jetbrains.uast.getParentOfType
 import org.w3c.dom.Element
 
 class WearRecentsDetector : WearDetector(), XmlScanner, SourceCodeScanner {
@@ -107,6 +114,42 @@ class WearRecentsDetector : WearDetector(), XmlScanner, SourceCodeScanner {
     if (!isWearProject) {
       return
     }
+    if (reference.resolvedName == REF_FLAG_ACTIVITY_NEW_TASK && isExempt(context, reference)) {
+      return
+    }
     context.report(ISSUE, context.getLocation(reference), "Avoid using `FLAG_ACTIVITY_NEW_TASK` and `FLAG_ACTIVITY_CLEAR_TOP`")
+  }
+
+  /**
+   * Returns `true` if the [reference] to `FLAG_ACTIVITY_NEW_TASK` is enclosed within a non-Activity context class ([Service],
+   * [BroadcastReceiver], or [Application]), which requires the flag at runtime when calling `startActivity`. Walks up the enclosing class
+   * hierarchy so that calls inside anonymous classes, lambdas, or runnables (e.g. `executor.execute { startActivity(...) }`) within a
+   * service are exempted, while calls enclosed within an [Activity] are not.
+   */
+  private fun isExempt(context: JavaContext, reference: UReferenceExpression): Boolean {
+    var curr: UElement? = reference
+    while (curr != null) {
+      val enclosingClass = curr.getParentOfType<UClass>() ?: break
+      if (isActivityClass(context, enclosingClass)) {
+        return false
+      }
+      if (isNonActivityContextClass(context, enclosingClass)) {
+        return true
+      }
+      curr = enclosingClass.uastParent
+    }
+    return false
+  }
+
+  private fun isActivityClass(context: JavaContext, uClass: UClass): Boolean {
+    return context.evaluator.inheritsFrom(uClass.javaPsi, CLASS_ACTIVITY, false)
+  }
+
+  private fun isNonActivityContextClass(context: JavaContext, uClass: UClass): Boolean {
+    val evaluator = context.evaluator
+    val psiClass = uClass.javaPsi
+    return evaluator.inheritsFrom(psiClass, CLASS_SERVICE, false) ||
+      evaluator.inheritsFrom(psiClass, CLASS_BROADCASTRECEIVER, false) ||
+      evaluator.inheritsFrom(psiClass, CLASS_APPLICATION, false)
   }
 }
