@@ -49,7 +49,7 @@ class TileProviderDetectorTest : AbstractCheckTest() {
                     AndroidManifest.xml:8: Warning: TileProvider does not specify BIND_TILE_PROVIDER permission [TileProviderPermissions]
                         <service
                          ~~~~~~~
-                    AndroidManifest.xml:8: Warning: Tiles need preview assets [SquareAndRoundTilePreviews]
+                    AndroidManifest.xml:8: Warning: Tiles need preview assets [TilePreviews]
                         <service
                         ^
                     0 errors, 2 warnings
@@ -102,7 +102,7 @@ class TileProviderDetectorTest : AbstractCheckTest() {
                 AndroidManifest.xml:8: Warning: TileProvider does not specify BIND_TILE_PROVIDER permission [TileProviderPermissions]
                     <service
                      ~~~~~~~
-                AndroidManifest.xml:8: Warning: Tiles need preview assets [SquareAndRoundTilePreviews]
+                AndroidManifest.xml:8: Warning: Tiles need preview assets [TilePreviews]
                     <service
                     ^
                 0 errors, 2 warnings
@@ -149,7 +149,7 @@ class TileProviderDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-            AndroidManifest.xml:8: Warning: Tiles need preview assets [SquareAndRoundTilePreviews]
+            AndroidManifest.xml:8: Warning: Tiles need preview assets [TilePreviews]
                 <service
                 ^
             0 errors, 1 warnings
@@ -508,7 +508,7 @@ class TileProviderDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-            AndroidManifest.xml:7: Warning: Tiles need preview assets [SquareAndRoundTilePreviews]
+            AndroidManifest.xml:7: Warning: Tiles need preview assets [TilePreviews]
                 <service android:name=".MyTileProvider"
                 ^
             0 errors, 1 warnings
@@ -548,14 +548,7 @@ class TileProviderDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .run()
-      .expect(
-        """
-            AndroidManifest.xml:13: Warning: Tiles need a preview asset in both drawable-round and drawable [SquareAndRoundTilePreviews]
-                               android:resource="@drawable/ic_walk" />
-                                                 ~~~~~~~~~~~~~~~~~
-            0 errors, 1 warnings
-        """
-      )
+      .expectClean()
   }
 
   fun testOnlyRoundIconsWithLocale() {
@@ -584,13 +577,66 @@ class TileProviderDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .run()
-      .expect(
-        """
-            AndroidManifest.xml:13: Warning: Tiles need a preview asset in both drawable-round and drawable [SquareAndRoundTilePreviews]
-                               android:resource="@drawable/ic_walk" />
-                                                 ~~~~~~~~~~~~~~~~~
-            0 errors, 1 warnings
-        """
+      .expectClean()
+  }
+
+  fun testWearWidgetServiceIgnoredForTilePreview() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="test.pkg">
+              <uses-feature android:name="android.hardware.type.watch" />
+              <application
+                  android:icon="@drawable/ic_launcher"
+                  android:label="@string/app_name" >
+                  <service
+                      android:name=".MyWidgetService"
+                      android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+                      <intent-filter>
+                          <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+                          <action android:name="androidx.glance.wear.action.BIND_WIDGET_PROVIDER" />
+                      </intent-filter>
+                      <meta-data
+                          android:name="androidx.glance.wear.widget.provider"
+                          android:resource="@xml/my_widget_info" />
+                  </service>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
       )
+      .run()
+      .expectClean()
+  }
+
+  fun testSuppressionWithOldAlias() {
+    lint()
+      .files(
+        manifest(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="test.pkg">
+                <application>
+                    <service
+                        android:name="test.pkg.TileService"
+                        android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER"
+                        tools:ignore="SquareAndRoundTilePreviews">
+                        <intent-filter>
+                            <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+                        </intent-filter>
+                    </service>
+                </application>
+            </manifest>
+            """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 }
