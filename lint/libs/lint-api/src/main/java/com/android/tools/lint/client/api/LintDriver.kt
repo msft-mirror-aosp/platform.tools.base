@@ -2239,7 +2239,7 @@ class LintDriver(
               resourceFileCount++
             }
           )
-        } else if (binaryChecks != null && (isBitmapFile(file) || type == ResourceFolderType.RAW)) {
+        } else if (binaryChecks != null && (isBitmapFile(file) || type == ResourceFolderType.RAW || type == ResourceFolderType.FONT)) {
           val context =
             object : ResourceContext(this@LintDriver, project, main, file, type, "") {
               override val resourceFolder: File?
@@ -2308,11 +2308,11 @@ class LintDriver(
             )
           }
         }
-      } else if (binaryChecks != null && file.isFile && isBitmapFile(file)) {
+      } else if (binaryChecks != null && file.isFile) {
         // Yes, find out its resource type
         val folderName = file.parentFile.name
         val type = ResourceFolderType.getFolderType(folderName)
-        if (type != null) {
+        if (type != null && (isBitmapFile(file) || type == ResourceFolderType.RAW || type == ResourceFolderType.FONT)) {
           val visitor = getVisitor(type, xmlDetectors, binaryChecks)
           if (visitor != null) {
             val context = ResourceContext(this, project, main, file, type, "")

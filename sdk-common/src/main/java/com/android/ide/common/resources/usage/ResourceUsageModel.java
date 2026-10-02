@@ -39,6 +39,7 @@ import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_LAYOUT;
 import static com.android.SdkConstants.TAG_NAVIGATION;
 import static com.android.SdkConstants.TAG_STYLE;
+import static com.android.SdkConstants.TAG_WATCH_FACE;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VALUE_SAFE;
 import static com.android.SdkConstants.VALUE_STRICT;
@@ -680,6 +681,11 @@ public class ResourceUsageModel {
             String name = fileNameToResourceName(file.getName());
 
             from = declareResource(type, name, document.getDocumentElement());
+            if (folderType == ResourceFolderType.RAW
+                    && document.getDocumentElement() != null
+                    && TAG_WATCH_FACE.equals(document.getDocumentElement().getTagName())) {
+                markReachable(from);
+            }
         } else if (isAnalyticsFile(file)) {
             return;
         }
@@ -776,6 +782,36 @@ public class ResourceUsageModel {
                             Splitter splitter = Splitter.on(',').trimResults().omitEmptyStrings();
                             for (String id : splitter.split(value)) {
                                 markReachable(addResource(ResourceType.ID, id, null));
+                            }
+                        } else {
+                            Element root = element.getOwnerDocument().getDocumentElement();
+                            if (root != null && TAG_WATCH_FACE.equals(root.getTagName())) {
+                                String trimmedValue = value.trim();
+                                if (!trimmedValue.isEmpty()) {
+                                    String attrName = attr.getLocalName();
+                                    if (attrName == null) {
+                                        attrName = attr.getName();
+                                    }
+                                    if (("resource".equals(attrName)
+                                                    || "icon".equals(attrName)
+                                                    || "defaultImageResource".equals(attrName))
+                                            && !trimmedValue.startsWith("[")) {
+                                        Resource res =
+                                                addResource(
+                                                        ResourceType.DRAWABLE,
+                                                        resourceNameToFieldName(trimmedValue),
+                                                        null);
+                                        from.addReference(res);
+                                    } else if ("family".equals(attrName)
+                                            && !"SYNC_TO_DEVICE".equals(trimmedValue)) {
+                                        Resource res =
+                                                addResource(
+                                                        ResourceType.FONT,
+                                                        resourceNameToFieldName(trimmedValue),
+                                                        null);
+                                        from.addReference(res);
+                                    }
+                                }
                             }
                         }
 

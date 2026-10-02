@@ -28,6 +28,7 @@ import com.android.SdkConstants.DOT_XML
 import com.android.SdkConstants.FD_RESOURCES
 import com.android.SdkConstants.TAG_DATA
 import com.android.SdkConstants.TAG_LAYOUT
+import com.android.SdkConstants.TAG_WATCH_FACE
 import com.android.SdkConstants.TOOLS_PREFIX
 import com.android.SdkConstants.TOOLS_URI
 import com.android.SdkConstants.VALUE_FALSE
@@ -600,11 +601,21 @@ class UnusedResourceDetector : ResourceXmlDetector(), SourceCodeScanner, BinaryR
               resource.recordLocation(context.project, xmlContext.getLocation((node as? Element)?.getAttributeNode(ATTR_NAME) ?: node))
           }
         }
-        if (type == ResourceType.RAW && isKeepFile(name, xmlContext)) {
-          // Don't flag raw.keep: these are used for resource shrinking
-          // keep lists
-          //    https://developer.android.com/studio/build/shrink-code.html
-          resource.isReachable = true
+        if (type == ResourceType.RAW) {
+          if (isKeepFile(name, xmlContext)) {
+            // Don't flag raw.keep: these are used for resource shrinking
+            // keep lists
+            //    https://developer.android.com/studio/build/shrink-code.html
+            resource.isReachable = true
+          } else if (
+            xmlContext?.document?.documentElement?.tagName == TAG_WATCH_FACE ||
+              (node as? Element)?.tagName == TAG_WATCH_FACE ||
+              (node as? Element)?.ownerDocument?.documentElement?.tagName == TAG_WATCH_FACE
+          ) {
+            // Declarative Watch Face Format files in res/raw/ are entry points
+            // read directly by the Wear OS system without an @raw/ reference.
+            resource.isReachable = true
+          }
         }
       }
       return resource
