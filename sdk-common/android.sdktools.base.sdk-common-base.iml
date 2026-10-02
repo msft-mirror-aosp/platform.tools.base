@@ -21,7 +21,6 @@
     <orderEntry type="module" module-name="android.sdktools.testutils" scope="TEST" />
     <orderEntry type="module" module-name="android.sdktools.builder-model" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
-    <orderEntry type="module" module-name="android.sdktools.builder-test-api" />
     <orderEntry type="module" module-name="android.sdktools.base.sdklib-base" />
     <orderEntry type="library" name="bouncy-castle" level="project" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />
@@ -31,7 +30,6 @@
     <orderEntry type="library" name="kotlin-reflect" level="project" />
     <orderEntry type="library" name="jimfs" level="project" />
     <orderEntry type="module" module-name="android.sdktools.android-annotations" />
-    <orderEntry type="module" module-name="android.sdktools.ddmlib-studio" />
     <orderEntry type="library" name="Guava" level="project" />
     <orderEntry type="library" scope="TEST" name="equalsverifier" level="project" />
     <orderEntry type="library" exported="" name="protobuf" level="project" />
