@@ -106,7 +106,7 @@ coverage_report(
     name = "app-inspection",
     srcpath_include = ["tools/adt/idea/app-inspection"],
     tests = [
-        "//tools/adt/idea/app-inspection/api:app-inspection.api_tests",
+        "//tools/adt/idea/app-inspection/api:app-inspection.api.tests_tests",
         "//tools/adt/idea/app-inspection/ide:app-inspection.ide.tests_tests",
     ],
 )
@@ -120,7 +120,7 @@ coverage_report(
         "tools/adt/idea/app-quality-insights/ui/src",
     ],
     tests = [
-        "//tools/adt/idea/app-quality-insights/api:intellij.android.app-quality-insights.api_tests",
+        "//tools/adt/idea/app-quality-insights/api:intellij.android.app-quality-insights.api.tests_tests",
         "//tools/adt/idea/app-quality-insights/ide:intellij.android.app-quality-insights.ide.tests_tests",
         "//tools/adt/idea/app-quality-insights/ui:intellij.android.app-quality-insights.ui.tests_tests",
     ],
@@ -146,7 +146,7 @@ coverage_report(
     ],
     tests = [
         "//tools/adt/idea/app-quality-insights/play-vitals/ide:intellij.android.app-quality-insights.play-vitals.ide.tests_tests",
-        "//tools/adt/idea/app-quality-insights/play-vitals/model:intellij.android.app-quality-insights.play-vitals.model_tests",
+        "//tools/adt/idea/app-quality-insights/play-vitals/model:intellij.android.app-quality-insights.play-vitals.model.tests_tests",
         "//tools/adt/idea/app-quality-insights/play-vitals/view:intellij.android.app-quality-insights.play-vitals.view.tests_tests",
     ],
 )
@@ -160,7 +160,7 @@ coverage_report(
         "tools/base/app-inspection/inspectors/backgroundtask/src",
     ],
     tests = [
-        "//tools/adt/idea/app-inspection/inspectors/backgroundtask/model:app-inspection.inspectors.backgroundtask.model_tests",
+        "//tools/adt/idea/app-inspection/inspectors/backgroundtask/model:app-inspection.inspectors.backgroundtask.model.tests_tests",
         "//tools/adt/idea/app-inspection/inspectors/backgroundtask/view:app-inspection.inspectors.backgroundtask.view.tests_tests",
         "//tools/base/app-inspection/inspectors/backgroundtask:agent_tests.test",
     ],
@@ -291,7 +291,7 @@ coverage_report(
         "//tools/adt/idea/compose-designer:intellij.android.compose-designer.tests_tests",
         "//tools/adt/idea/designer:intellij.android.designer.tests_tests",
         "//tools/adt/idea/layout-inspector:intellij.android.layout-inspector.tests_tests",
-        "//tools/adt/idea/layout-ui:intellij.android.layout-ui_tests",
+        "//tools/adt/idea/layout-ui:intellij.android.layout-ui.tests_tests",
         "//tools/adt/idea/layoutlib:intellij.android.layoutlib.tests_tests",
         "//tools/adt/idea/nav/editor:intellij.android.nav.editor.tests_tests",
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api_tests",
@@ -350,8 +350,8 @@ coverage_report(
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/memory",
     ],
     tests = [
-        "//tools/adt/idea/profilers:intellij.android.profilers_tests",
-        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui_tests",
+        "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
+        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui.tests_tests",
     ],
 )
 
@@ -362,7 +362,7 @@ coverage_report(
         "tools/adt/idea/gmd-code-completion/src/com/android/gmdcodecompletion",
     ],
     tests = [
-        "//tools/adt/idea/gmd-code-completion:intellij.android.gmd-code-completion_tests",
+        "//tools/adt/idea/gmd-code-completion:intellij.android.gmd-code-completion.tests_tests",
     ],
 )
 
@@ -405,7 +405,7 @@ coverage_report(
         "//tools/adt/idea/android-templates:intellij.android.templates.tests_tests",
         "//tools/adt/idea/compose-designer:intellij.android.compose-designer.tests_tests",
         "//tools/adt/idea/designer:intellij.android.designer.tests_tests",
-        "//tools/adt/idea/layout-ui:intellij.android.layout-ui_tests",
+        "//tools/adt/idea/layout-ui:intellij.android.layout-ui.tests_tests",
         "//tools/adt/idea/layoutlib:intellij.android.layoutlib.tests_tests",
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api_tests",
         "//tools/base/layoutlib-api:tools.tests",
@@ -432,8 +432,8 @@ coverage_report(
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/memory/MainMemoryProfilerStageView.kt",
     ],
     tests = [
-        "//tools/adt/idea/profilers:intellij.android.profilers_tests",
-        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui_tests",
+        "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
+        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui.tests_tests",
     ],
 )
 
@@ -515,7 +515,7 @@ coverage_report(
     ],
     tests = [
         "//tools/adt/idea/app-inspection/inspectors/network/ide:app-inspection.inspectors.network.ide.tests_tests",
-        "//tools/adt/idea/app-inspection/inspectors/network/model:app-inspection.inspectors.network.model_tests",
+        "//tools/adt/idea/app-inspection/inspectors/network/model:app-inspection.inspectors.network.model.tests_tests",
         "//tools/adt/idea/app-inspection/inspectors/network/view:app-inspection.inspectors.network.view.tests_tests",
         "//tools/base/app-inspection/inspectors/network:agent_tests.test",
     ],
@@ -565,8 +565,8 @@ coverage_report(
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/memory/MainMemoryProfilerStageView.kt",
     ],
     tests = [
-        "//tools/adt/idea/profilers:intellij.android.profilers_tests",
-        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui_tests",
+        "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
+        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui.tests_tests",
     ],
 )
 
@@ -580,11 +580,11 @@ coverage_report(
         "tools/adt/idea/transport-database/src/main/java/com/android/tools/datastore",
     ],
     tests = [
-        "//tools/adt/idea/android-transport:intellij.android.transport_tests",
-        "//tools/adt/idea/profilers:intellij.android.profilers_tests",
-        "//tools/adt/idea/profilers-android:intellij.android.profilersAndroid_tests",
-        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui_tests",
-        "//tools/adt/idea/transport-database:intellij.android.transportDatabase_tests",
+        "//tools/adt/idea/android-transport:intellij.android.transport.tests_tests",
+        "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
+        "//tools/adt/idea/profilers-android:intellij.android.profilersAndroid.tests_tests",
+        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui.tests_tests",
+        "//tools/adt/idea/transport-database:intellij.android.transportDatabase.tests_tests",
     ],
 )
 
@@ -648,10 +648,10 @@ coverage_report(
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/PathUtils.kt",
     ],
     tests = [
-        "//tools/adt/idea/adt-ui:intellij.android.adt.ui_tests",
-        "//tools/adt/idea/adt-ui-model:intellij.android.adt.ui.model_tests",
-        "//tools/adt/idea/profilers:intellij.android.profilers_tests",
-        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui_tests",
+        "//tools/adt/idea/adt-ui:intellij.android.adt.ui.tests_tests",
+        "//tools/adt/idea/adt-ui-model:intellij.android.adt.ui.model.tests_tests",
+        "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
+        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui.tests_tests",
     ],
 )
 
@@ -748,10 +748,10 @@ coverage_report(
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/cpu/JankyFrameTrackRenderer.kt",
     ],
     tests = [
-        "//tools/adt/idea/adt-ui:intellij.android.adt.ui_tests",
-        "//tools/adt/idea/adt-ui-model:intellij.android.adt.ui.model_tests",
-        "//tools/adt/idea/profilers:intellij.android.profilers_tests",
-        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui_tests",
+        "//tools/adt/idea/adt-ui:intellij.android.adt.ui.tests_tests",
+        "//tools/adt/idea/adt-ui-model:intellij.android.adt.ui.model.tests_tests",
+        "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
+        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui.tests_tests",
     ],
 )
 
@@ -764,10 +764,10 @@ coverage_report(
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/cpu",
     ],
     tests = [
-        "//tools/adt/idea/adt-ui:intellij.android.adt.ui_tests",
-        "//tools/adt/idea/adt-ui-model:intellij.android.adt.ui.model_tests",
-        "//tools/adt/idea/profilers:intellij.android.profilers_tests",
-        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui_tests",
+        "//tools/adt/idea/adt-ui:intellij.android.adt.ui.tests_tests",
+        "//tools/adt/idea/adt-ui-model:intellij.android.adt.ui.model.tests_tests",
+        "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
+        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui.tests_tests",
     ],
 )
 
@@ -847,7 +847,7 @@ coverage_report(
         "tools/base/utp",
     ],
     tests = [
-        "//tools/adt/idea/utp:utp_tests",
+        "//tools/adt/idea/utp:utp.tests_tests",
         "//tools/base/build-system/gradle-core:tests.test",
         "//tools/base/build-system/integration-test/connected:AndroidConnectedTest",
     ],
@@ -888,7 +888,7 @@ coverage_report(
     ],
     tests = [
         "//tools/adt/idea/designer:intellij.android.designer.tests_tests",
-        "//tools/adt/idea/layout-ui:intellij.android.layout-ui_tests",
+        "//tools/adt/idea/layout-ui:intellij.android.layout-ui.tests_tests",
     ],
 )
 
@@ -968,8 +968,8 @@ combine_report_definitions(
 coverage_report(
     name = "all",
     tests = [
-        "//tools/adt/idea/adt-ui:intellij.android.adt.ui_tests",
-        "//tools/adt/idea/adt-ui-model:intellij.android.adt.ui.model_tests",
+        "//tools/adt/idea/adt-ui:intellij.android.adt.ui.tests_tests",
+        "//tools/adt/idea/adt-ui-model:intellij.android.adt.ui.model.tests_tests",
         "//tools/adt/idea/android:intellij.android.core.agp-integration-tests_tests",
         "//tools/adt/idea/android:intellij.android.core.tests_tests",
         "//tools/adt/idea/android-adb:intellij.android.adb.tests_tests",
@@ -981,14 +981,14 @@ coverage_report(
         "//tools/adt/idea/android-npw:intellij.android.newProjectWizard.tests_tests",
         "//tools/adt/idea/android-templates:intellij.android.templates.tests_tests",
         "//tools/adt/idea/android-test-framework:intellij.android.testFramework_tests",
-        "//tools/adt/idea/android-transport:intellij.android.transport_tests",
+        "//tools/adt/idea/android-transport:intellij.android.transport.tests_tests",
         "//tools/adt/idea/android/actions:intellij.android.core.actions_tests",
         "//tools/adt/idea/android/apk:intellij.android.core.apk_tests",
         "//tools/adt/idea/android/configurations:intellij.android.core.configurations_tests",
         "//tools/adt/idea/android/diagnostics:intellij.android.core.diagnostics_tests",
         "//tools/adt/idea/android/editing:intellij.android.core.editing.tests_tests",
-        "//tools/adt/idea/android/editing/documentation:intellij.android.core.editing.documentation_tests",
-        "//tools/adt/idea/android/editing/metrics:intellij.android.core.editing.metrics_tests",
+        "//tools/adt/idea/android/editing/documentation:intellij.android.core.editing.documentation.tests_tests",
+        "//tools/adt/idea/android/editing/metrics:intellij.android.core.editing.metrics.tests_tests",
         "//tools/adt/idea/android/editors.fast:intellij.android.core.editors.fast_tests",
         "//tools/adt/idea/android/editors:intellij.android.core.editors_tests",
         "//tools/adt/idea/android/editors.manifest:intellij.android.core.editors.manifest_tests",
@@ -1010,19 +1010,19 @@ coverage_report(
         "//tools/adt/idea/android/ui:intellij.android.core.ui_tests",
         "//tools/adt/idea/android/ui.resourcemanager:intellij.android.core.ui.resourcemanager_tests",
         "//tools/adt/idea/apkanalyzer:intellij.android.apkanalyzer.tests_tests",
-        "//tools/adt/idea/app-inspection/api:app-inspection.api_tests",
+        "//tools/adt/idea/app-inspection/api:app-inspection.api.tests_tests",
         "//tools/adt/idea/app-inspection/ide:app-inspection.ide.tests_tests",
-        "//tools/adt/idea/app-inspection/inspectors/backgroundtask/model:app-inspection.inspectors.backgroundtask.model_tests",
+        "//tools/adt/idea/app-inspection/inspectors/backgroundtask/model:app-inspection.inspectors.backgroundtask.model.tests_tests",
         "//tools/adt/idea/app-inspection/inspectors/backgroundtask/view:app-inspection.inspectors.backgroundtask.view.tests_tests",
         # TODO(b/182573662, b/217469630): too flaky
         # "//tools/adt/idea/app-inspection/inspectors/database:app-inspection.inspectors.database.tests_tests",
         "//tools/adt/idea/app-inspection/inspectors/network/ide:app-inspection.inspectors.network.ide.tests_tests",
-        "//tools/adt/idea/app-inspection/inspectors/network/model:app-inspection.inspectors.network.model_tests",
+        "//tools/adt/idea/app-inspection/inspectors/network/model:app-inspection.inspectors.network.model.tests_tests",
         "//tools/adt/idea/app-inspection/inspectors/network/view:app-inspection.inspectors.network.view.tests_tests",
-        "//tools/adt/idea/app-quality-insights/api:intellij.android.app-quality-insights.api_tests",
+        "//tools/adt/idea/app-quality-insights/api:intellij.android.app-quality-insights.api.tests_tests",
         "//tools/adt/idea/app-quality-insights/ide:intellij.android.app-quality-insights.ide.tests_tests",
         "//tools/adt/idea/app-quality-insights/play-vitals/ide:intellij.android.app-quality-insights.play-vitals.ide.tests_tests",
-        "//tools/adt/idea/app-quality-insights/play-vitals/model:intellij.android.app-quality-insights.play-vitals.model_tests",
+        "//tools/adt/idea/app-quality-insights/play-vitals/model:intellij.android.app-quality-insights.play-vitals.model.tests_tests",
         "//tools/adt/idea/app-quality-insights/play-vitals/view:intellij.android.app-quality-insights.play-vitals.view.tests_tests",
         "//tools/adt/idea/app-quality-insights/ui:intellij.android.app-quality-insights.ui.tests_tests",
         "//tools/adt/idea/assistant:assistant-test_tests",
@@ -1035,7 +1035,7 @@ coverage_report(
         #"//tools/adt/idea/dagger:intellij.android.dagger.tests_tests",
         "//tools/adt/idea/databinding:intellij.android.databinding.tests_tests",
         "//tools/adt/idea/debuggers:intellij.android.debuggers.tests_tests",
-        "//tools/adt/idea/deploy:intellij.android.deploy_tests",
+        "//tools/adt/idea/deploy:intellij.android.deploy.tests_tests",
         # TODO(b/280794485): test are too flaky, disabling studio-coverage until we solve all the studio-linux flakes
         #"//tools/adt/idea/designer:intellij.android.designer.tests_tests",
         # TODO(b/280794485): test are too flaky, disabling studio-coverage until we solve all the studio-linux flakes
@@ -1043,14 +1043,14 @@ coverage_report(
         "//tools/adt/idea/device-explorer:intellij.android.device-explorer.tests_tests",
         "//tools/adt/idea/device-explorer-files:intellij.android.device-explorer-files.tests_tests",
         "//tools/adt/idea/device-explorer-monitor:intellij.android.device-explorer-monitor.tests_tests",
-        "//tools/adt/idea/device-manager-v2:intellij.android.device-manager-v2_tests",
-        "//tools/adt/idea/gmd-code-completion:intellij.android.gmd-code-completion_tests",
+        "//tools/adt/idea/device-manager-v2:intellij.android.device-manager-v2.tests_tests",
+        "//tools/adt/idea/gmd-code-completion:intellij.android.gmd-code-completion.tests_tests",
         "//tools/adt/idea/gradle-dsl:intellij.android.gradle.dsl.tests_tests",
         "//tools/adt/idea/intellij-integration:intellij-integration-tests_tests",
         "//tools/adt/idea/intellij.android.avdmanager.tests:intellij.android.avdmanager.tests_tests",
         "//tools/adt/idea/intellij.android.device.tests:intellij.android.device.tests_tests",
         "//tools/adt/idea/layout-inspector:intellij.android.layout-inspector.tests_tests",
-        "//tools/adt/idea/layout-ui:intellij.android.layout-ui_tests",
+        "//tools/adt/idea/layout-ui:intellij.android.layout-ui.tests_tests",
         "//tools/adt/idea/layoutlib:intellij.android.layoutlib.tests_tests",
         "//tools/adt/idea/logcat:intellij.android.logcat.tests_tests",
         "//tools/adt/idea/mlkit:intellij.android.mlkit.tests_tests",
@@ -1058,27 +1058,27 @@ coverage_report(
         "//tools/adt/idea/nav/editor:intellij.android.nav.editor.tests_tests",
         "//tools/adt/idea/nav/safeargs/tests/common:intellij.android.nav.safeargs.tests.common_tests",
         "//tools/adt/idea/nav/safeargs/tests/k2:intellij.android.nav.safeargs.tests.k2_tests",
-        "//tools/adt/idea/observable:intellij.android.observable_tests",
-        "//tools/adt/idea/observable-ui:intellij.android.observable.ui_tests",
-        "//tools/adt/idea/profilers:intellij.android.profilers_tests",
-        "//tools/adt/idea/profilers-android:intellij.android.profilersAndroid_tests",
-        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui_tests",
+        "//tools/adt/idea/observable:intellij.android.observable.tests_tests",
+        "//tools/adt/idea/observable-ui:intellij.android.observable.ui.tests_tests",
+        "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
+        "//tools/adt/idea/profilers-android:intellij.android.profilersAndroid.tests_tests",
+        "//tools/adt/idea/profilers-ui:intellij.android.profilers.ui.tests_tests",
         # TODO(b/136028658) too flaky for coverage
         #"//tools/adt/idea/project-system-gradle:intellij.android.projectSystem.gradle.tests_tests",
         "//tools/adt/idea/project-system-gradle-psd:intellij.android.projectSystem.gradle.psd.tests_tests",
         "//tools/adt/idea/project-system-gradle-upgrade:intellij.android.projectSystem.gradle.upgrade.tests_tests",
         "//tools/adt/idea/sdk-updates:intellij.android.sdkUpdates.tests_tests",
-        "//tools/adt/idea/smali:intellij.android.smali_tests",
+        "//tools/adt/idea/smali:intellij.android.smali.tests_tests",
         "//tools/adt/idea/streaming:intellij.android.streaming.tests_tests",
         "//tools/adt/idea/studio-updater:integration_test",
-        "//tools/adt/idea/swingp:intellij.android.adt.swingp_tests",
+        "//tools/adt/idea/swingp:intellij.android.adt.swingp.tests_tests",
         "//tools/adt/idea/testartifacts:intellij.android.testartifacts.tests_tests",
-        "//tools/adt/idea/transport-database:intellij.android.transportDatabase_tests",
-        "//tools/adt/idea/utp:utp_tests",
+        "//tools/adt/idea/transport-database:intellij.android.transportDatabase.tests_tests",
+        "//tools/adt/idea/utp:utp.tests_tests",
         "//tools/adt/idea/wear-pairing:intellij.android.wear-pairing.tests_tests",
         "//tools/adt/idea/whats-new-assistant:whats-new-assistant-test_tests",
         "//tools/adt/idea/wizard:intellij.android.wizard.tests_tests",
-        "//tools/adt/idea/wizard-model:intellij.android.wizard.model_tests",
+        "//tools/adt/idea/wizard-model:intellij.android.wizard.model.tests_tests",
         "//tools/analytics-library/crash:analytics-crash.tests_tests",
         "//tools/analytics-library/crash:tools.analytics-crash_tests.test",
         "//tools/analytics-library/publisher:analytics-publisher.tests_tests",
