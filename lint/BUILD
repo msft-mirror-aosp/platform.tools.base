@@ -90,6 +90,12 @@ iml_module(
     deps = [
         "//tools/adt/idea/.idea/libraries:asm-tools",
         "@intellij//:intellij-sdk",
+        "@intellij//:intellij.kotlin.codeInsight.shared",
+        "@intellij//:intellij.kotlin.references",
+        "@intellij//:intellij.kotlin.uast.base",
+        "@intellij//:intellij.libraries.kotlinc.analysis.api",
+        "@intellij//:intellij.libraries.kotlinc.analysis.api.platform.interface",
+        "@intellij//:intellij.libraries.kotlinc.symbol.light.classes",
         "@intellij//:com.intellij.java",
         "@intellij//:org.jetbrains.kotlin",
         "@intellij//:intellij.platform.uast",
@@ -172,6 +178,13 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
+        "@intellij//:intellij.kotlin.base.util",
+        "@intellij//:intellij.kotlin.codeInsight.shared",
+        "@intellij//:intellij.kotlin.references",
+        "@intellij//:intellij.kotlin.uast.base",
+        "@intellij//:intellij.libraries.kotlinc.analysis.api",
+        "@intellij//:intellij.libraries.kotlinc.analysis.api.platform.interface",
+        "@intellij//:intellij.libraries.kotlinc.symbol.light.classes",
         "@intellij//:com.intellij.java",
         "@intellij//:org.jetbrains.kotlin",
         "//tools/base/lint:studio.android.sdktools.lint-api",

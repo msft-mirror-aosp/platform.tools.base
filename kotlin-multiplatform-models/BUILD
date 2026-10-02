@@ -33,6 +33,7 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
+        "@intellij//:intellij.libraries.kotlin.gradle.plugin.idea",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:studio-proto",
         "@intellij//:org.jetbrains.kotlin",

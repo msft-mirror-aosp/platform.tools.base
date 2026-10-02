@@ -13,6 +13,7 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
+        "@intellij//:intellij.libraries.asm.tools",
     ],
 )
 
