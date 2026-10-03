@@ -10,23 +10,23 @@ startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
 # Building runfile trees is unnecessary, unless executing binaries in bazel-bin/ manually (use 'bazel run' instead)
 # See: https://github.com/bazelbuild/bazel/commit/03246077f948f2790a83520e7dccc2625650e6df
-build --nobuild_runfile_links
+common --nobuild_runfile_links
 
 # An always true definition, to be able to force config_setting rules
-build --define=always_true=true
+common --define=always_true=true
 
 # Enforces UTF-8 encoding in bazel tests.
-build --test_env='LC_ALL=en_US.UTF-8'
-build --jvmopt='-Dsun.jnu.encoding=UTF-8'
-build --jvmopt='-Dfile.encoding=UTF-8'
-build --jvmopt='-Xmx4G'
-build --jvmopt='-XX:+UseG1GC'
-build --jvmopt='-XX:+ErrorFileToStderr'
-build --verbose_failures
+common --test_env='LC_ALL=en_US.UTF-8'
+common --jvmopt='-Dsun.jnu.encoding=UTF-8'
+common --jvmopt='-Dfile.encoding=UTF-8'
+common --jvmopt='-Xmx4G'
+common --jvmopt='-XX:+UseG1GC'
+common --jvmopt='-XX:+ErrorFileToStderr'
+common --verbose_failures
 
 common --noincompatible_disallow_empty_glob
 # TODO(b/416777191) PerfgateDataCollector relies on zipped test outputs.
-build --zip_undeclared_test_outputs
+common --zip_undeclared_test_outputs
 
 # Needed by rules_android.
 common --experimental_google_legacy_api
@@ -50,68 +50,68 @@ common --@rules_go//go/config:linkmode=pie
 
 # JetBrainsRuntime version to bundle into Android Studio
 # and java runtime for running tests
-build:jbr25 --//prebuilts/studio/jdk:jdk_bundle_version=25
-build:jbr25 --java_runtime_version=jbr25
+common:jbr25 --//prebuilts/studio/jdk:jdk_bundle_version=25
+common:jbr25 --java_runtime_version=jbr25
 
 # Enable Kotlin K2 mode (b/373746515).
-build --jvmopt='-Didea.kotlin.plugin.use.k1=false'
+common --jvmopt='-Didea.kotlin.plugin.use.k1=false'
 # Enable K2 UAST by default (b/448273436)
-build --jvmopt='-Dlint.use.fir.uast=true'
+common --jvmopt='-Dlint.use.fir.uast=true'
 
 # Local runs require longer timeouts.
-build:local --test_timeout=120,600,1800,7200
+common:local --test_timeout=120,600,1800,7200
 
 # Don't use JUnit from Bazel.
-build --explicit_java_test_deps
+common --explicit_java_test_deps
 
 # Tests depend on not having a real user name, but bazel now returns the
 # real one. This flag keeps the old behavior of not having a home directory.
-build --sandbox_fake_username
+common --sandbox_fake_username
 
 # The --sandbox_fake_username option changes the user to "nobody".
 # This causes tests that rely on HOME (e.g., those using adb) to fail.
 # Explicitly set HOME="$TEST_TMPDIR" to ensure these tests can run.
-build --test_env=HOME="$TEST_TMPDIR"
+common --test_env=HOME="$TEST_TMPDIR"
 
-build:ignored --jvmopt=-Dignored.tests.only=true
+common:ignored --jvmopt=-Dignored.tests.only=true
 
 # Attach aspects for validation of targets
-build --aspects=tools/base/bazel/validations/timeout.bzl%no_eternal_tests
-build --aspects=tools/base/bazel/validations/flaky.bzl%limit_flaky_tests
-build --aspects=tools/base/bazel/validations/py2.bzl%no_py2_targets
+common --aspects=tools/base/bazel/validations/timeout.bzl%no_eternal_tests
+common --aspects=tools/base/bazel/validations/flaky.bzl%limit_flaky_tests
+common --aspects=tools/base/bazel/validations/py2.bzl%no_py2_targets
 # Generates a ${TARGET}.datasize.txt output which shows the size of data
 # dependencies for each target. See the aspect definition for more.
-build:datasize_aspect --aspects=tools/base/bazel/validations/size.bzl%data_size
-build:datasize_aspect --output_groups=+data_size
+common:datasize_aspect --aspects=tools/base/bazel/validations/size.bzl%data_size
+common:datasize_aspect --output_groups=+data_size
 
-build --incompatible_strict_action_env # Ensures actions don't pick up env changes
+common --incompatible_strict_action_env # Ensures actions don't pick up env changes
 # TODO (b/141269926): this generates a warning on windows when building for host,
 # but is required when building for android.
-build --copt=-fvisibility=hidden
+common --copt=-fvisibility=hidden
 
-build --define=grpc_no_ares=true
+common --define=grpc_no_ares=true
 
 # Bazel will find the matching java toolchain registered in bzlmod/toolchains.MODULE.bazel
 ## Java version for build tools
-build --tool_java_language_version=25
-build --tool_java_runtime_version=jbr25
+common --tool_java_language_version=25
+common --tool_java_runtime_version=jbr25
 ## Java version for compiling source code (javac)
-build --java_language_version=25
+common --java_language_version=25
 ## Java version for running tests and targets (java)
-build --java_runtime_version=jbr25
+common --java_runtime_version=jbr25
 ## JetBrainsRuntime version to bundle into Android Studio
-build --//prebuilts/studio/jdk:jdk_bundle_version=25
-build --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr25'
+common --//prebuilts/studio/jdk:jdk_bundle_version=25
+common --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr25'
 
-build --stripopt=--strip-unneeded
+common --stripopt=--strip-unneeded
 
 # Do not register auto-generated cpp toolchains
 common --repo_env='BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1'
 
 # Use protobuf toolchain resolution.
-build --incompatible_enable_proto_toolchain_resolution
+common --incompatible_enable_proto_toolchain_resolution
 # Disable one_output_per_message, which has problem with virtual imports
-build --features=-proto_one_output_per_message
+common --features=-proto_one_output_per_message
 
 # default android native abis
 # LINT.IfChange(android_platforms)
@@ -126,86 +126,86 @@ common --noincompatible_disable_autoloads_in_main_repo
 ## Options to make bazel less memory/cpu intensive.
 ## Recommended to use with rcache config to avoid building outputs already
 ## present in the remote cache.
-build:nice --worker_max_instances=1
-build:nice --jobs=HOST_CPUS*.5
+common:nice --worker_max_instances=1
+common:nice --jobs=HOST_CPUS*.5
 
 # Optimize c/c++ compilation.
 # See opt_feature in build/bazel/toolchains/cc/*/features.bzl
 # to see flags added in opt mode.
-build:release -c opt
-build:release --strip=always
-build:release --@rules_rust//rust/settings:lto=fat
-build:release --//tools/base/bazel:studio-release
+common:release -c opt
+common:release --strip=always
+common:release --@rules_rust//rust/settings:lto=fat
+common:release --//tools/base/bazel:studio-release
 # Disable Clang diagnostics for release builds, to reduce the amount of noise
 # # in the output in continuous builds and --config=remote runs.
-build:release --copt=-w
+common:release --copt=-w
 
 ## Base RBE configuration
 startup --experimental_remote_repo_contents_cache
-build:_remote_base --bes_timeout=240s
-build:_remote_base --grpc_keepalive_time=30s
-build:_remote_base --build_event_upload_max_retries=10
+common:_remote_base --bes_timeout=240s
+common:_remote_base --grpc_keepalive_time=30s
+common:_remote_base --build_event_upload_max_retries=10
 common:_remote_base --remote_cache=remotebuildexecution.googleapis.com
 common:_remote_base --remote_instance_name=projects/google.com:android-studio-alphasource/instances/default_instance
 # Input file attribute affects the output of zipper. It should always run
 # locally (b/198297058#comment42)
-build:_remote_base --strategy=zipper=local
+common:_remote_base --strategy=zipper=local
 
 # Publish to the private BES backend.
-build:sponge --bes_keywords=android-devtools
-build:sponge --bes_backend=buildeventservice-pa.googleapis.com
-build:sponge --bes_results_url=https://fusion2.corp.google.com/invocations/
+common:sponge --bes_keywords=android-devtools
+common:sponge --bes_backend=buildeventservice-pa.googleapis.com
+common:sponge --bes_results_url=https://fusion2.corp.google.com/invocations/
 
 # Enable go/antswatcher to process test results.
 # This config must be used with the sponge config as it relies on the same bes_backend.
 # NOTE: Bazel invocations must still supply --build_metadata values for ab_target and ab_build_id
 # to be create a successful AnTS result.
-build:ants --bes_keywords=android-test-storage
-build:ants --build_metadata="test_definition_name=android_studio/bazel"
-build:ants --build_metadata=generate_test_uri=fusion
-build:ants --build_metadata=run_type=critical
-build:ants --bes_keywords=antswatcher:skip_tests_if_timeout
-build:ants --bes_keywords=antswatcher:use_dependent_jobs
-build:ants --bes_keywords=antswatcher:android_module_behavior
-build:ants --bes_keywords=antswatcher:enable_resultdb
+common:ants --bes_keywords=android-test-storage
+common:ants --build_metadata="test_definition_name=android_studio/bazel"
+common:ants --build_metadata=generate_test_uri=fusion
+common:ants --build_metadata=run_type=critical
+common:ants --bes_keywords=antswatcher:skip_tests_if_timeout
+common:ants --bes_keywords=antswatcher:use_dependent_jobs
+common:ants --bes_keywords=antswatcher:android_module_behavior
+common:ants --bes_keywords=antswatcher:enable_resultdb
 
 ## Base config for using the remote cache.
 ## This avoids building things which were already built by CI.
-build:_rcache --config=_remote_base
-build:_rcache --noremote_upload_local_results
+common:_rcache --config=_remote_base
+common:_rcache --noremote_upload_local_results
 # remote_local_fallback allows bazel to continue if there are
 # network connectivity failures (e.g., offline)
-build:_rcache --remote_local_fallback
+common:_rcache --remote_local_fallback
 # NOWAIT_FOR_UPLOAD_COMPLETE speeds up bazel slightly by returning when the
 # build is complete, not when BES upload finishes.
 # This improves offline use cases as well, otherwise bazel does not complete
 # until the BES upload times out (10 seconds).
-build:_rcache --bes_upload_mode=NOWAIT_FOR_UPLOAD_COMPLETE
+common:_rcache --bes_upload_mode=NOWAIT_FOR_UPLOAD_COMPLETE
 
 ## Enables the remote cache and uploading to Sponge.
 ## This config should be commonly used to avoid building outputs that
 ## already exist in the cache.
-build:rcache --config=_rcache
-build:rcache --config=sponge
+common:rcache --config=_rcache
+common:rcache --config=sponge
 
 ## Enables the remote cache, but without uploading to Sponge (for hosts with
 ## poor uplink).
-build:rcache_no_sponge --config=_rcache
+common:rcache_no_sponge --config=_rcache
 
 ## Enables remote execution so actions are performed on the remote systems.
-build:remote-exec --remote_executor=remotebuildexecution.googleapis.com
-build:remote-exec --remote_timeout=3600
-build:remote-exec --show_timestamps
+common:remote-exec --remote_executor=remotebuildexecution.googleapis.com
+common:remote-exec --remote_timeout=3600
+common:remote-exec --show_timestamps
 # Depending on how many machines are in the remote execution instance, setting
 # this higher can make builds faster by allowing more jobs to run in parallel.
 # Setting it too high can result in jobs that timeout, however, while waiting
 # for a remote machine to execute them.
-build:remote-exec --jobs=350
+common:remote-exec --jobs=350
 
 ## Remote combines all the configs used for remote execution.
-build:remote --config=_remote_base
-build:remote --config=remote-exec
-build:remote --config=sponge
+common:remote --config=_remote_base
+common:remote --config=remote-exec
+common:remote --config=sponge
 
 common:dl-staging --downloader_config=tools/base/bazel/ci/data/downloader-staging.cfg
 common:dl-ci --downloader_config=tools/base/bazel/ci/data/downloader.cfg
@@ -223,28 +223,28 @@ common:ci --config=_remote_base
 common:prebuild_test_fixtures --//tools/adt/idea/emulator-snapshots:enable_snapshots=True
 
 # Optimization: CI/CD runs always use prebuilt fixtures to reduce latency and compute costs.
-build:ci --config=prebuild_test_fixtures
-build:ci --config=sponge
-build:ci --config=release
-build:ci --//tools/base/bazel/ci:is_ci
+common:ci --config=prebuild_test_fixtures
+common:ci --config=sponge
+common:ci --config=release
+common:ci --//tools/base/bazel/ci:is_ci
 # Increase worker visibility in case there are issues.
-build:ci --worker_verbose
+common:ci --worker_verbose
 # Prevents b/156952249. Android Build (buildbot) kills bazel between builds,
 # so there is no need to keep workers alive after the build.
-build:ci --worker_quit_after_build
+common:ci --worker_quit_after_build
 # The CI runs a lot of targets and when they are all cached the BES upload
 # may take a long time.
-build:ci --bes_timeout=1200s
+common:ci --bes_timeout=1200s
 # Capture network stats in CI runs.
-build:ci --experimental_collect_system_network_usage
+common:ci --experimental_collect_system_network_usage
 # Limit the progress avoid spammy build logs.
-build:ci --show_progress_rate_limit=60
+common:ci --show_progress_rate_limit=60
 # Avoid incompatible targets when targets are set explicitly with selective
 # presubmit.
-build:ci --skip_incompatible_explicit_targets
-build:ci --strategy=Javac=worker
-build:ci --strategy=kotlinc=worker
-build:ci --strategy=Turbine=local
+common:ci --skip_incompatible_explicit_targets
+common:ci --strategy=Javac=worker
+common:ci --strategy=kotlinc=worker
+common:ci --strategy=Turbine=local
 # Verify lockfile for CI runs.
 common:ci --lockfile_mode=error
 # Upload artifacts to RBE cache.
@@ -252,35 +252,35 @@ common:ci --remote_build_event_upload=all
 
 ## Enables dynamic scheduling. This will run some actions locally
 ## as well as remotely, choosing whichever finishes first.
-build:dynamic --config=remote-exec
-build:dynamic --internal_spawn_scheduler
-build:dynamic --strategy=Javac=dynamic
-build:dynamic --strategy=kotlinc=dynamic
-build:dynamic --strategy=formc=dynamic
-build:dynamic --strategy=singlejar=dynamic
-build:dynamic --strategy=MergedZip=dynamic
-build:dynamic --strategy=CreateJvmCompileJar=dynamic
+common:dynamic --config=remote-exec
+common:dynamic --internal_spawn_scheduler
+common:dynamic --strategy=Javac=dynamic
+common:dynamic --strategy=kotlinc=dynamic
+common:dynamic --strategy=formc=dynamic
+common:dynamic --strategy=singlejar=dynamic
+common:dynamic --strategy=MergedZip=dynamic
+common:dynamic --strategy=CreateJvmCompileJar=dynamic
 # Configure auxiliary java mnemonics to run dynamically
-build:dynamic --strategy=JavaIjar=dynamic
-build:dynamic --strategy=JavaDeployJar=dynamic
-build:dynamic --strategy=JavaSourceJar=dynamic
-build:dynamic --strategy=Turbine=dynamic
-build:dynamic --strategy=JavacTurbine=dynamic
+common:dynamic --strategy=JavaIjar=dynamic
+common:dynamic --strategy=JavaDeployJar=dynamic
+common:dynamic --strategy=JavaSourceJar=dynamic
+common:dynamic --strategy=Turbine=dynamic
+common:dynamic --strategy=JavacTurbine=dynamic
 # Studio build actions, see b/171900265 for details
-build:dynamic --strategy=zipmerger=dynamic
-build:dynamic --strategy=chkplugin=dynamic
-build:dynamic --strategy=stamper=dynamic
-build:dynamic --strategy=PythonZipper=dynamic
+common:dynamic --strategy=zipmerger=dynamic
+common:dynamic --strategy=chkplugin=dynamic
+common:dynamic --strategy=stamper=dynamic
+common:dynamic --strategy=PythonZipper=dynamic
 # Multiplex workers are not sandboxed, and are not ready to be used with
 # dynamic scheduling.
-build:dynamic --noexperimental_worker_multiplex
+common:dynamic --noexperimental_worker_multiplex
 
 # Lockfile includes deps that are not available when building without vendor
 # so we disable checking.
 common:without_vendor --lockfile_mode=off
-build:without_vendor --//tools/base/bazel:without-vendor
+common:without_vendor --//tools/base/bazel:without-vendor
 
 # Build arguments for IntelliJ Platform targets (@tools_idea//...).
-build --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k25
-build --strategy=JvmCompile=worker
-build --strategy=HavenCli=worker
+common --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k25
+common --strategy=JvmCompile=worker
+common --strategy=HavenCli=worker
