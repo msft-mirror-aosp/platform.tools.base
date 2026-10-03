@@ -44,6 +44,7 @@ import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.psi.PsiAnonymousClass
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
@@ -578,6 +579,8 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
 
     fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod): FX?
 
+    fun parseClassImmediateAnnotations(evaluator: JavaEvaluator, klass: PsiClass): FX? = null
+
     /** When both the method's annotation and its supers' are present */
     fun resolveAnnotations(
       context: JavaContext,
@@ -591,22 +594,44 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
     companion object {
       fun <FX : Any> AnnotationParser<FX>.parseMethodAnnotations(context: JavaContext, method: UMethod): EffectAnnotation<FX> {
         val evaluator = context.evaluator
-        val bases = nearestBaseAnns(evaluator, method.javaPsi.findSuperMethods())
+        val bases =
+          nearestBaseAnns(evaluator, method.javaPsi.findSuperMethods()) { base ->
+            when (base) {
+              // A compiled base isn't in scope for inference, so overriding it takes its superclasses' default, as calling it does
+              is PsiCompiledElement -> nearestSuperclassAnns(evaluator, base)
+              else -> null
+            }
+          }
         return when (val targetAnn = parseMethodImmediateAnnotations(evaluator, method)) {
           null -> inheritAnnotations(evaluator, bases)
           else -> resolveAnnotations(context, EffectAnnotation.Explicit(targetAnn, method), bases)
         }
       }
 
+      /** The nearest annotations of each of [baseMethods], or [default] for a base without any annotation of its own or inherited */
       internal fun <FX : Any> AnnotationParser<FX>.nearestBaseAnns(
         evaluator: JavaEvaluator,
         baseMethods: Array<PsiMethod>,
+        default: (PsiMethod) -> FX? = { null },
       ): List<EffectAnnotation.Explicit<FX>> = baseMethods.flatMap { base ->
         val baseMethod = base.toUElement() as UMethod
         when (val baseAnn = parseMethodImmediateAnnotations(evaluator, baseMethod)) {
-          null -> nearestBaseAnns(evaluator, base.findSuperMethods())
+          null ->
+            nearestBaseAnns(evaluator, base.findSuperMethods(), default).ifEmpty {
+              listOfNotNull(default(base)?.let { EffectAnnotation.Explicit(it, baseMethod) })
+            }
           else -> listOf(EffectAnnotation.Explicit(baseAnn, baseMethod))
         }
+      }
+
+      /** The class-level default from the nearest annotated superclass of [method]'s class; statics and constructors take none */
+      internal fun <FX : Any> AnnotationParser<FX>.nearestSuperclassAnns(
+        evaluator: JavaEvaluator,
+        method: PsiMethod,
+        classAnn: (PsiClass) -> FX? = { parseClassImmediateAnnotations(evaluator, it) },
+      ): FX? {
+        if (method.isConstructor || evaluator.isStatic(method)) return null
+        return generateSequence(method.containingClass?.superClass, PsiClass::getSuperClass).firstNotNullOfOrNull(classAnn)
       }
     }
   }

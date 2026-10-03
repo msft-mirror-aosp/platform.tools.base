@@ -21,6 +21,7 @@ import com.android.tools.lint.checks.fx.analysis.EffectResult
 import com.android.tools.lint.checks.fx.analysis.LocalFun
 import com.android.tools.lint.checks.fx.analysis.Module
 import com.android.tools.lint.checks.fx.analysis.Module.AnnotationParser.Companion.nearestBaseAnns
+import com.android.tools.lint.checks.fx.analysis.Module.AnnotationParser.Companion.nearestSuperclassAnns
 import com.android.tools.lint.checks.fx.result.AssumptionTable
 import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.Constraint
@@ -65,6 +66,7 @@ import com.android.tools.lint.detector.api.PartialResult
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiTypeParameter
 import java.io.Closeable
@@ -258,11 +260,14 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
 
   /** Best-effort lookup of the explicit effect annotation on a method not in the current scope or the assumption table */
   private fun externalAnnotationFinder(evaluator: JavaEvaluator, findPsiMethod: (Type.MethodRef) -> PsiMethod?): (Type.MethodRef) -> FX? {
+    // Each class in a hierarchy is queried once, even as every method on every descendant walks through it
+    val classAnn = memoizeNullable<PsiClass, FX> { parseClassImmediateAnnotations(evaluator, it) }
     fun find(ref: Type.MethodRef): FX? {
       val psiMethod = findPsiMethod(ref) ?: return null
       val uMethod = psiMethod.toUElement() as? UMethod ?: return null
       return parseMethodImmediateAnnotations(evaluator, uMethod)
         ?: nearestBaseAnns(evaluator, psiMethod.findSuperMethods()).map { it.annotated }.reduceOrNull(effects::meetOf)
+        ?: nearestSuperclassAnns(evaluator, psiMethod, classAnn)
     }
 
     return memoizeNullable(::find)

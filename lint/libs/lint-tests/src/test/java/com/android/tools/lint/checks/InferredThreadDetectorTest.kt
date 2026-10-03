@@ -3865,6 +3865,203 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test super-class's annotation as default for compiled subclasses' methods`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import android.content.Context
+            import android.view.View
+            import android.widget.EditText
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun worker() { }
+
+            @WorkerThread
+            fun update(editText: EditText) {
+                editText.post { editText.setText("!") } // OK: `post` is assumed safe from any thread, and the runnable runs on the UI thread
+                editText.setVisibility(View.GONE) // ERROR: `setVisibility` is declared by the annotated `View` itself
+                editText.setText("!") // ERROR: `setText` is declared by `TextView`, class-annotated via `View`
+                editText.setSelection(0) // ERROR: `setSelection` is declared by `EditText`, class-annotated via `TextView` and `View`
+            }
+
+            open class MyEditText(context: Context) : EditText(context) {
+                override fun setSelection(index: Int) { worker() } // ERROR: overriding `EditText.setSelection` takes the same default
+            }
+
+            class MyOtherEditText(context: Context) : MyEditText(context) {
+                override fun setSelection(index: Int) { worker() } // ERROR: so does overriding it through an override in scope
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        VIEW_UI_THREAD_ANNOTATIONS,
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/MyEditText.kt:12: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            editText.setVisibility(View.GONE) // ERROR: `setVisibility` is declared by the annotated `View` itself
+                     ~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/MyEditText.kt:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            editText.setText("!") // ERROR: `setText` is declared by `TextView`, class-annotated via `View`
+                     ~~~~~~~~~~~~
+        src/test/pkg/MyEditText.kt:14: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            editText.setSelection(0) // ERROR: `setSelection` is declared by `EditText`, class-annotated via `TextView` and `View`
+                     ~~~~~~~~~~~~~~~
+        src/test/pkg/MyEditText.kt:18: Error: Call must be from @WorkerThread, but super method EditText.setSelection(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            override fun setSelection(index: Int) { worker() } // ERROR: overriding `EditText.setSelection` takes the same default
+                                                    ~~~~~~~~
+        src/test/pkg/MyEditText.kt:22: Error: Call must be from @WorkerThread, but super method EditText.setSelection(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            override fun setSelection(index: Int) { worker() } // ERROR: so does overriding it through an override in scope
+                                                    ~~~~~~~~
+        5 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test new methods in scope inferred despite annotated superclass`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import android.content.Context
+            import android.widget.EditText
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun worker() { }
+
+            class MyEditText(context: Context) : EditText(context) {
+                fun refresh() { worker() } // OK: a method introduced in scope is inferred rather than defaulted to `View`'s annotation
+            }
+
+            @WorkerThread
+            fun background(editText: MyEditText) {
+                editText.refresh() // OK: `refresh` is inferred to require the worker thread
+            }
+
+            @UiThread
+            fun foreground(editText: MyEditText) {
+                editText.refresh() // ERROR: the inferred requirement is checked at the call site instead
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        VIEW_UI_THREAD_ANNOTATIONS,
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/MyEditText.kt:20: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            editText.refresh() // ERROR: the inferred requirement is checked at the call site instead
+                     ~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test statics not defaulted to their class's annotation`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.UiThread;
+
+            @UiThread
+            public class Util {
+                public static void helper() { }
+                public void refresh() { }
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+            import android.view.View
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread
+            fun work(util: Util) {
+                Util.helper() // OK: statics aren't defaulted to their class's annotation, in scope...
+                View.generateViewId() // OK: ...or out
+                util.refresh() // ERROR: instance methods take the class's annotation
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        VIEW_UI_THREAD_ANNOTATIONS,
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:9: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            util.refresh() // ERROR: instance methods take the class's annotation
+                 ~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test compiled base's default honored alongside other annotated bases`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import android.content.Context
+            import android.widget.EditText
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun worker() { }
+
+            interface Selectable {
+                @WorkerThread fun setSelection(index: Int)
+            }
+
+            class MyEditText(context: Context) : EditText(context), Selectable {
+                override fun setSelection(index: Int) { worker() } // ERROR: `Selectable`'s annotation doesn't hide `EditText.setSelection`'s default
+            }
+
+            class MyOtherEditText(context: Context) : EditText(context), Selectable {
+                @WorkerThread override fun setSelection(index: Int) { } // ERROR: likewise conflicting with `EditText.setSelection`'s default
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        VIEW_UI_THREAD_ANNOTATIONS,
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Selectable.kt:13: Error: Call must be from @WorkerThread, but super method EditText.setSelection(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            override fun setSelection(index: Int) { worker() } // ERROR: `Selectable`'s annotation doesn't hide `EditText.setSelection`'s default
+                                                    ~~~~~~~~
+        src/test/pkg/Selectable.kt:17: Error: @WorkerThread restricts @{Main,Ui}Thread (from super method EditText.setSelection(…)) [ThreadConstraint]
+            @WorkerThread override fun setSelection(index: Int) { } // ERROR: likewise conflicting with `EditText.setSelection`'s default
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testRunOnUiThread() {
     lint()
       .files(
@@ -5893,3 +6090,20 @@ private val CROSS_FILE_CALLEE =
       """
     )
     .indented()
+
+// Mirrors the class-level `@UiThread` on `android.view.View` in the SDK's external annotations (android-36 and up)
+private val VIEW_UI_THREAD_ANNOTATIONS =
+  LintDetectorTest.jar(
+    "annotations.zip",
+    LintDetectorTest.xml(
+        "android/view/annotations.xml",
+        """
+        <root>
+          <item name="android.view.View">
+            <annotation name="androidx.annotation.UiThread"/>
+          </item>
+        </root>
+        """,
+      )
+      .indented(),
+  )

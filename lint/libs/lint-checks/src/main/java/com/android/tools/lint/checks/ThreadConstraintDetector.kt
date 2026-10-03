@@ -44,6 +44,7 @@ import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiParameter
 import java.util.Date
 import java.util.TimerTask
@@ -311,9 +312,12 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       else -> EffectAnnotation.Implicit(baseAnns)
     }
 
+  override fun parseClassImmediateAnnotations(evaluator: JavaEvaluator, klass: PsiClass): ThreadConstraint<T>? =
+    parseAnnotations(evaluator.getAnnotations(klass, false))
+
   override fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod): ThreadConstraint<T>? {
     fun fromMethod() = parseAnnotations(evaluator.getAnnotations(method.javaPsi, false))
-    fun fromClass() = parseAnnotations(evaluator.getAnnotations(method.getContainingUClass()?.javaPsi, false))
+    fun fromClass() = method.getContainingUClass()?.javaPsi?.let { parseClassImmediateAnnotations(evaluator, it) }
     fun fromClassOrDefault() =
       when {
         // Constructors don't inherit from class annotations.
@@ -334,6 +338,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
         // inferred.
         method.sourcePsi is KtProperty -> if (method.isFinal) lattice.AnyThread else fromClass()
         method.sourcePsi is KtPropertyAccessor -> if (method.isFinal) null else fromClass()
+        evaluator.isStatic(method.javaPsi) -> null
         else -> fromClass()
       }
 
