@@ -192,25 +192,27 @@ single_version_override(
     version = "2.22.5",
 )
 
-bazel_dep(name = "aspect_rules_js", version = "2.0.0")
+bazel_dep(name = "aspect_rules_js", version = "3.5.1")
+bazel_dep(name = "aspect_rules_ts", version = "3.10.1")
 single_version_override(
-    module_name = "aspect_rules_js",
+    module_name = "aspect_rules_ts",
     patch_strip = 1,
     patches = [
-        # 1. Force directory symlinks (target_type = "directory") on Windows for npm packages.
-        # 2. Add RUNFILES_DIR / RUNFILES / <binary>.bat.runfiles discovery in bash.bzl on Windows.
-        "//tools/base/bazel/bzlmod:aspect_rules_js_windows_symlinks.patch",
-        # Watch pnpm-lock.yaml, so that changing it alone re-evaluates the npm repositories in incremental builds.
-        "//tools/base/bazel/bzlmod:aspect_rules_js_watch_pnpm_lock.patch",
+        # Fix ts_project validation (TsValidateOptions) on Windows with the hermetic launcher:
+        # parse the JSON-encoded attributes as-is before falling back to the backslash workaround.
+        "//tools/base/bazel/bzlmod:aspect_rules_ts_windows_validator_args.patch",
     ],
-    version = "2.0.0",
+    version = "3.10.1",
 )
 
-bazel_dep(name = "aspect_rules_ts", version = "3.0.0")
 bazel_dep(name = "rules_nodejs", version = "6.7.5")
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
-node.toolchain(node_version = "20.14.0")
+
+# Node >= 22.8 is required on Windows: earlier versions fail to resolve the "main" of a package
+# imported from ESM when its path exceeds MAX_PATH (legacyMainResolve drops the \\?\ prefix),
+# which happens for npm packages in deep runfiles trees on RBE.
+node.toolchain(node_version = "22.23.1")
 use_repo(node, "nodejs_toolchains")
 
 npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependency = True)
@@ -243,11 +245,11 @@ pnpm.pnpm(
 )
 use_repo(pnpm, "pnpm")
 
-rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "ext", dev_dependency = True)
-rules_ts_ext.deps(
-    ts_version_from = "//tools/vendor/google/android-vsix:package.json",
+typescript = use_extension("@aspect_rules_ts//ts:extensions.bzl", "typescript", dev_dependency = True)
+typescript.deps(
+    version_from = "//tools/vendor/google/android-vsix:package.json",
 )
-use_repo(rules_ts_ext, "npm_typescript")
+use_repo(typescript, "npm_typescript")
 
 # rules_apple is included by grpc, but override to a newer version to pick up
 # fixes for Bazel 9.

@@ -1,0 +1,39 @@
+# Fix ts_project validation on Windows with the rules_js hermetic launcher
+# (--@aspect_rules_js//js:use_hermetic_launcher, set in common.bazelrc).
+# The validator unconditionally replaced every backslash in its JSON argument with a quote,
+# a workaround for the .bat launcher stripping quotes. The hermetic launcher (validator.exe)
+# preserves them, so {\"a\":1} became {""a"":1} and JSON.parse failed with
+# "Expected ':' after property name in JSON at position 3".
+# Now escaped quotes are unescaped first, and the blanket replacement is only a fallback.
+--- a/ts/private/ts_project_options_validator.cjs
++++ b/ts/private/ts_project_options_validator.cjs
+@@ -130,15 +130,26 @@
+         }
+     }
+ }
++// Parses the json-encoded Bazel ts_project attributes.
++// On Windows the argument may arrive quoted wrong, depending on the launcher:
++// - the hermetic launcher (validator.exe) preserves escaped quotes: {\"a\":1}
++// - the .bat launcher replaces quotes with backslashes: {\a\:1}
++// Unescape the quotes first, so that a blanket backslash replacement does not
++// corrupt {\"a\":1} into {""a"":1}. This is a no-op on unmangled JSON (e.g. on Linux and
++// macOS), since the encoded attributes contain no backslashes.
++function parseAttrs(attrsStr) {
++    try {
++        return JSON.parse(attrsStr.replace(/\\"/g, '"'))
++    } catch (e) {}
++    return JSON.parse(attrsStr.replace(/\\/g, '"'))
++}
+ function main(_a) {
+     var tsconfigPath = _a[0],
+         output = _a[1],
+         target = _a[2],
+         packageDir = _a[3],
+         attrsStr = _a[4]
+-    // The Bazel ts_project attributes were json-encoded
+-    // (on Windows the quotes seem to be quoted wrong, so replace backslash with quotes :shrug:)
+-    var attrs = JSON.parse(attrsStr.replace(/\\/g, '"'))
++    var attrs = parseAttrs(attrsStr)
+     // The resolved config, in `tsc --showConfig` shape. The checks below read this
+     // JSON only, so they run identically whether it was resolved in-process or by
+     // the native compiler CLI.
