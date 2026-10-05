@@ -712,8 +712,8 @@ const SourceViewApp = {
         return `
             <div class="variant-code-view" data-variant="${this.escapeHTML(variantName)}">
                 <div class="variant-header">
-                    <div>${this.escapeHTML(variantName)}</div>
-                    <div class="flex items-baseline gap-2 mt-1">
+                    <div><span data-info-key="source.variantHeader" data-info-arg="${this.escapeHTML(variantName)}">${this.escapeHTML(variantName)}</span></div>
+                    <div class="flex items-baseline gap-2 mt-1" data-info-key="source.fileStats">
                         <span class="font-bold ${colorClass}">${percentDisplay}</span>
                         <span class="text-xs text-gray-500 font-normal">${covered}/${total} Lines</span>
                     </div>
