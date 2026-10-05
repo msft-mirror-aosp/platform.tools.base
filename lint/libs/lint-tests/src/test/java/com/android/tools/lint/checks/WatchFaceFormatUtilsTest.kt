@@ -90,4 +90,35 @@ class WatchFaceFormatUtilsTest {
 
     assertThat(hasDeclarativeWatchFaceFile(project)).isTrue()
   }
+
+  @Test
+  fun `test hasDeclarativeWatchFaceFile ignores non-xml and binary files`() {
+    val projectFolder = temporaryFolder.newFolder("non_xml_project")
+    val project = Project.create(TestLintClient(), projectFolder, projectFolder)
+
+    val rawFolder = File(projectFolder, "res/raw")
+    rawFolder.mkdirs()
+
+    val binaryFile = File(rawFolder, "sound.mp3")
+    binaryFile.writeBytes(byteArrayOf(0x00, 0x01, 0x02, 0xFF.toByte()))
+
+    val txtFile = File(rawFolder, "watchface.txt")
+    txtFile.writeText("<WatchFace></WatchFace>")
+
+    val subDir = File(rawFolder, "subfolder")
+    subDir.mkdirs()
+
+    assertThat(hasDeclarativeWatchFaceFile(project)).isFalse()
+
+    val validXml = File(rawFolder, "watch_face.xml")
+    validXml.writeText(
+      // language=XML
+      """
+        <WatchFace>
+        </WatchFace>
+      """
+    )
+
+    assertThat(hasDeclarativeWatchFaceFile(project)).isTrue()
+  }
 }
