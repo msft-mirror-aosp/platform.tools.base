@@ -28,6 +28,7 @@ import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
@@ -126,6 +127,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
     override fun configure(task: TestReportTask) {
       super.configure(task)
+      task.group = JavaBasePlugin.VERIFICATION_GROUP
       task.testResults.set(creationConfig.globalArtifacts.getAll(artifactType))
       task.testResults.disallowChanges()
       task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
