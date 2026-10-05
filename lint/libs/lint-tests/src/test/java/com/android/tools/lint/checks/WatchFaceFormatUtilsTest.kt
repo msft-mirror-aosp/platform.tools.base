@@ -87,6 +87,7 @@ class WatchFaceFormatUtilsTest {
         </WatchFace>
       """
     )
+    WatchFaceFormatUtils.clearCache(project)
 
     assertThat(hasDeclarativeWatchFaceFile(project)).isTrue()
     assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
@@ -119,6 +120,7 @@ class WatchFaceFormatUtilsTest {
         </WatchFace>
       """
     )
+    WatchFaceFormatUtils.clearCache(project)
 
     assertThat(hasDeclarativeWatchFaceFile(project)).isTrue()
     assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
@@ -141,6 +143,17 @@ class WatchFaceFormatUtilsTest {
       """
     )
     assertThat(hasWatchFaceFormatVersionProperty(project)).isTrue()
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
+  }
+
+  @Test
+  fun `test isWatchFaceFormatProject caching`() {
+    val projectFolder = temporaryFolder.newFolder("cached_project")
+    val project = Project.create(TestLintClient(), projectFolder, projectFolder)
+
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isFalse()
+    // Explicitly override cached value to verify caching
+    project.putClientProperty(WatchFaceFormatUtils.KEY_IS_WFF_PROJECT, true)
     assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
   }
 }
