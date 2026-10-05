@@ -1488,7 +1488,13 @@ public class IconDetector extends Detector implements XmlScanner, SourceCodeScan
             Map<File, Long> fileSizes,
             @Nullable Map<String, File> notificationIconsCompatibility) {
         String folderName = folder.getName();
-        if (folderName.equals(DRAWABLE_FOLDER)) {
+        // Watch Face Format (WFF) apps instruct developers to place watch face
+        // bitmap assets in the density-less res/drawable/ folder as scaling is
+        // handled at runtime by the system.
+        if (folderName.equals(DRAWABLE_FOLDER)
+                && context.isEnabled(ICON_LOCATION)
+                && !WatchFaceFormatUtils.INSTANCE.isWatchFaceFormatProject(
+                        context.getProject())) {
             for (File file : files) {
                 String name = file.getName();
                 //noinspection StatementWithEmptyBody
