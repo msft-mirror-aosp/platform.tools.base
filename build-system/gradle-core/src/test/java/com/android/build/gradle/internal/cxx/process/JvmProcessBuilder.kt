@@ -54,18 +54,27 @@ class JvmProcessBuilder(clazz: KClass<*>) {
 
   /** Return a[ProcessBuilder] that can be used to launch */
   fun toProcessBuilder(vararg processArgs: String): ProcessBuilder {
-    val args = ArrayList<String>()
-    args.add(javaExe().path)
+    val jvmArgs = ArrayList<String>()
+    jvmArgs.add("-classpath")
+    jvmArgs.add(classPath)
+    jvmArgs.add(entryPoint)
+    jvmArgs.addAll(processArgs)
 
-    args.add("-classpath")
-    args.add(classPath)
-    args.add(entryPoint)
-    args.addAll(processArgs)
-
-    return ProcessBuilder(args)
+    val argsFile = File.createTempFile("jvm-process-builder-args", ".txt")
+    argsFile.deleteOnExit()
+    argsFile.writeText(
+      jvmArgs.joinToString("\n") { formatArgForArgsFile(it) },
+      Charsets.UTF_8,
+    )
+    return ProcessBuilder(listOf(javaExe().path, "@${argsFile.absolutePath}"))
   }
 
   companion object {
+    internal fun formatArgForArgsFile(arg: String): String {
+      val escaped = arg.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")
+      return "\"$escaped\""
+    }
+
     private enum class Os(val executableExtension: String, val classPathSeparator: String) {
       WINDOWS(".exe", ";"),
       LINUX("", ":"),
