@@ -8,12 +8,6 @@ iml_module(
     iml_files = ["android.build-analyzer.common.iml"],
     jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:truth",
-    ],
-    test_srcs = ["src/test/kotlin"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -22,6 +16,24 @@ iml_module(
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.build-analyzer.common.tests",
+    iml_files = ["android.build-analyzer.common.tests.iml"],
+    jvm_target = "11",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/build-analyzer/common:studio.android.build-analyzer.common",
+        "@intellij//:intellij-sdk",
+        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
+    test_friends = ["//tools/base/build-analyzer/common:studio.android.build-analyzer.common"],
+    test_srcs = ["src/test/kotlin"],
+    visibility = ["//visibility:public"],
 )
 
 kotlin_library(

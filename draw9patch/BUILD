@@ -1,7 +1,7 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 
 # managed by go/iml_to_build
 iml_module(
@@ -11,14 +11,26 @@ iml_module(
     iml_files = ["android.sdktools.draw9patch.iml"],
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
-    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.draw9patch.tests",
+    iml_files = ["android.sdktools.draw9patch.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/draw9patch:studio.android.sdktools.draw9patch",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/draw9patch:studio.android.sdktools.draw9patch"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 maven_library(

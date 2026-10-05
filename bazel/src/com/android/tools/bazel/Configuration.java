@@ -28,8 +28,7 @@ public class Configuration {
      * to have both production and test source roots. All other modules must have either
      * production roots or test roots, but not both (b/565759009).
      */
-    private static final List<String> MIXED_SOURCE_ROOTS_ALLOWLIST =
-            List.of("tools/base", "tools/vendor/google");
+    private static final List<String> MIXED_SOURCE_ROOTS_ALLOWLIST = List.of("tools/vendor/google");
 
     public boolean dryRun;
     public String imlGraph;

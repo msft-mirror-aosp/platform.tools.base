@@ -7,8 +7,6 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.jdwpscache.iml"],
     jvm_target = "8",
-    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -17,6 +15,23 @@ iml_module(
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/jdwp-packet:studio.android.sdktools.jdwppacket",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.jdwpscache.tests",
+    iml_files = ["android.sdktools.jdwpscache.tests.iml"],
+    jvm_target = "8",
+    # do not sort: must match IML order
+    test_deps = [
+        "@intellij//:intellij-sdk",
+        "//tools/base/jdwp-scache:studio.android.sdktools.jdwpscache",
+        "//tools/base/jdwp-packet:studio.android.sdktools.jdwppacket",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/jdwp-scache:studio.android.sdktools.jdwpscache"],
+    test_srcs = ["test/src"],
+    visibility = ["//visibility:public"],
 )
 
 kotlin_library(

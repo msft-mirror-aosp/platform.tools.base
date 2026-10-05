@@ -10,20 +10,30 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.adblib.iml"],
     lint_baseline = "lint_baseline.xml",
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:kotlin-test",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
-        "//tools/base/common:studio.android.sdktools.common",
-    ],
-    test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
         "//tools/adt/idea/.idea/libraries:libadb-server-proto",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.adblib.tests",
+    iml_files = ["android.sdktools.adblib.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/adblib:studio.android.sdktools.adblib",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:kotlin-test",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+        "//tools/base/common:studio.android.sdktools.common",
+    ],
+    test_friends = ["//tools/base/adblib:studio.android.sdktools.adblib"],
+    test_srcs = ["test/src"],
+    visibility = ["//visibility:public"],
 )
 
 # Build adblib as a standalone library, with side effect of ensuring that adblib does not

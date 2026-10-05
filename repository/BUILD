@@ -21,19 +21,6 @@ iml_module(
     jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:jimfs",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-    ],
-    test_resources = ["src/test/resources"],
-    test_srcs = [
-        "src/test/java",
-        "src/testFixtures/java",
-    ],
     visibility = ["//visibility:public"],
     exports = ["//tools/base/repository:schema-generated"],
     # do not sort: must match IML order
@@ -45,6 +32,31 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
         "//tools/base/repository:schema-generated",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.repository.tests",
+    iml_files = ["android.sdktools.repository.tests.iml"],
+    jvm_target = "11",
+    # do not sort: must match IML order
+    test_deps = [
+        "@intellij//:intellij-sdk",
+        "//tools/base/repository:studio.android.sdktools.repository",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
+    test_friends = ["//tools/base/repository:studio.android.sdktools.repository"],
+    test_resources = ["src/test/resources"],
+    test_srcs = [
+        "src/test/java",
+        "src/testFixtures/java",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 fileset(

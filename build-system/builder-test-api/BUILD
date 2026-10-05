@@ -9,8 +9,6 @@ iml_module(
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.builder-test-api.iml"],
     lint_baseline = "lint_baseline.xml",
-    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     exports = ["//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio"],
     # do not sort: must match IML order
@@ -19,6 +17,21 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.builder-test-api.tests",
+    iml_files = ["android.sdktools.builder-test-api.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "@intellij//:intellij-sdk",
+        "//tools/base/build-system/builder-test-api:studio.android.sdktools.builder-test-api",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/build-system/builder-test-api:studio.android.sdktools.builder-test-api"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 maven_library(

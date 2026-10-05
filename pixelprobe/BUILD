@@ -1,7 +1,7 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
+load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
-load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 
 # managed by go/iml_to_build
 iml_module(
@@ -16,9 +16,6 @@ iml_module(
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
-    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_resources = ["src/test/resources"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -26,6 +23,22 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/chunkio:studio.android.sdktools.chunkio",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.pixelprobe.tests",
+    iml_files = ["android.sdktools.pixelprobe.tests.iml"],
+    jvm_target = "8",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/pixelprobe:studio.android.sdktools.pixelprobe",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/pixelprobe:studio.android.sdktools.pixelprobe"],
+    test_resources = ["src/test/resources"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 maven_library(

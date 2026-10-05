@@ -17,15 +17,24 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.threading-agent-callback.iml"],
     resources = ["resources"],
+    visibility = ["//visibility:public"],
+    # do not sort: must match IML order
+    deps = ["@intellij//:com.intellij.java"],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.threading-agent-callback.tests",
+    iml_files = ["android.sdktools.threading-agent-callback.tests.iml"],
     # do not sort: must match IML order
     test_deps = [
+        "//tools/base/threading-agent-callback:studio.android.sdktools.threading-agent-callback",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:mockito",
         "//tools/adt/idea/.idea/libraries:truth",
         "@intellij//:intellij-sdk",
     ],
+    test_friends = ["//tools/base/threading-agent-callback:studio.android.sdktools.threading-agent-callback"],
     test_srcs = ["testSrc"],
     visibility = ["//visibility:public"],
-    # do not sort: must match IML order
-    deps = ["@intellij//:com.intellij.java"],
 )

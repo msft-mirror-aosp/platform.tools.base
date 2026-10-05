@@ -8,14 +8,6 @@ iml_module(
     name = "studio.android.sdktools.backup",
     srcs = ["src/main"],
     iml_files = ["android.sdktools.backup.iml"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:jimfs",
-        "//tools/adt/idea/.idea/libraries:truth",
-    ],
-    test_srcs = ["src/test"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -25,6 +17,26 @@ iml_module(
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/base/environment-services:studio.intellij.android.environment-services",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.backup.tests",
+    iml_files = ["android.sdktools.backup.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/backup:studio.android.sdktools.backup",
+        "@intellij//:intellij-sdk",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/environment-services:studio.intellij.android.environment-services",
+        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
+    test_friends = ["//tools/base/backup:studio.android.sdktools.backup"],
+    test_srcs = ["src/test"],
+    visibility = ["//visibility:public"],
 )
 
 # managed by go/iml_to_build

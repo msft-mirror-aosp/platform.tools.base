@@ -22,21 +22,6 @@ iml_module(
     jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
-    test_data = ["//prebuilts/studio/sdk:platforms/latest"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:guava-testlib",
-        "//tools/adt/idea/.idea/libraries:jimfs",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-    ],
-    test_resources = ["src/test/resources"],
-    test_srcs = [
-        "src/integrationTest/java",
-        "src/test/java",
-    ],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = [
@@ -57,6 +42,34 @@ iml_module(
         "//tools/base/repository:studio.android.sdktools.repository",
         "//tools/base/sdklib:schema-generated",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.sdklib.tests",
+    iml_files = ["android.sdktools.sdklib.tests.iml"],
+    jvm_target = "11",
+    test_data = ["//prebuilts/studio/sdk:platforms/latest"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:agp-version",
+        "@intellij//:intellij-sdk",
+        "//tools/base/sdklib:studio.android.sdktools.sdklib",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:guava-testlib",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/base/repository:studio.android.sdktools.repository.tests",
+    ],
+    test_friends = ["//tools/base/sdklib:studio.android.sdktools.sdklib"],
+    test_resources = ["src/test/resources"],
+    test_srcs = [
+        "src/integrationTest/java",
+        "src/test/java",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 kotlin_library(

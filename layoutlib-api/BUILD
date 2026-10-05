@@ -10,8 +10,6 @@ iml_module(
     iml_files = ["android.sdktools.layoutlib-api.iml"],
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
-    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = [
@@ -25,6 +23,22 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:kxml2",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.layoutlib-api.tests",
+    iml_files = ["android.sdktools.layoutlib-api.tests.iml"],
+    jvm_target = "8",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 maven_library(

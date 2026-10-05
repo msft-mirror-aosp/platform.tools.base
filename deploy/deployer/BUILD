@@ -14,28 +14,6 @@ iml_module(
     iml_files = ["android.sdktools.deployer.iml"],
     lint_baseline = "lint_baseline.xml",
     tags = ["noci:studio-win"],
-    test_data = glob(["src/test/resource/**"]) + select({
-        "@platforms//os:windows": [],
-        "//conditions:default": [
-            "//tools/base/deploy/installer:test-installer",
-            "//tools/base/deploy/installer/tests:artifacts",
-        ],
-    }),
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
-        "//tools/base/perf-logger:studio.perf-logger",
-        "//tools/base/deploy/deployer:fake_device_proto",
-        "//tools/adt/idea/.idea/libraries:studio-grpc",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/adblib-ddmlibcompatibility:studio.android.sdktools.adblib.ddmlibcompatibility",
-    ],
-    test_resources = ["src/test/resource"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = ["//tools/base/deploy/deployer:deploy_java_proto"],
@@ -59,6 +37,50 @@ iml_module(
         "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.deployer.tests",
+    iml_files = ["android.sdktools.deployer.tests.iml"],
+    tags = ["noci:studio-win"],
+    test_data = glob(["src/test/resource/**"]) + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "//tools/base/deploy/installer:test-installer",
+            "//tools/base/deploy/installer/tests:artifacts",
+        ],
+    }),
+    # do not sort: must match IML order
+    test_deps = [
+        "@intellij//:intellij-sdk",
+        "//tools/base/deploy/deployer:studio.android.sdktools.deployer",
+        "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
+        "//tools/adt/idea/.idea/libraries:r8",
+        "//tools/base/deploy/deployer:libjava_version",
+        "//tools/base/tracer:studio.android.sdktools.tracer",
+        "//tools/adt/idea/.idea/libraries:studio-proto",
+        "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
+        "//tools/base/deploy/deployer:libjava_sites",
+        "//tools/base/manifest-parser:studio.android.sdktools.manifest-parser",
+        "//tools/base/adblib:studio.android.sdktools.adblib",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
+        "//tools/base/perf-logger:studio.perf-logger",
+        "//tools/base/deploy/deployer:fake_device_proto",
+        "//tools/adt/idea/.idea/libraries:studio-grpc",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/adblib-ddmlibcompatibility:studio.android.sdktools.adblib.ddmlibcompatibility",
+        "//tools/base/adblib-ddmlibcompatibility:studio.android.sdktools.adblib.ddmlibcompatibility.tests",
+        "//tools/base/adblib:studio.android.sdktools.adblib.tests",
+    ],
+    test_friends = ["//tools/base/deploy/deployer:studio.android.sdktools.deployer"],
+    test_resources = ["src/test/resource"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 java_library(

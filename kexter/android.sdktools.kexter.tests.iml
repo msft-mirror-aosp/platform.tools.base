@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/test/resources/container/src">
+      <sourceFolder url="file://$MODULE_DIR$/test/resources/container/src" isTestSource="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/test/resources/main/src">
+      <sourceFolder url="file://$MODULE_DIR$/test/resources/main/src" isTestSource="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/test/resources/other/src">
+      <sourceFolder url="file://$MODULE_DIR$/test/resources/other/src" isTestSource="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/test/src">
+      <sourceFolder url="file://$MODULE_DIR$/test/src" isTestSource="true" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="library" scope="TEST" name="studio-sdk" level="project" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="android.sdktools.kexter" scope="TEST" />
+    <orderEntry type="module" module-name="android.sdktools.zipflinger" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="junit4" level="project" />
+  </component>
+  <component name="TestModuleProperties" production-module="android.sdktools.kexter" />
+</module>

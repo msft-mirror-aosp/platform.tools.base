@@ -8,17 +8,6 @@ iml_module(
     iml_files = ["android.sdktools.ddmlib-studio.iml"],
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
-    test_data = ["//prebuilts/studio/sdk:platform-tools"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
-    ],
-    test_resources = ["src/test/resources"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = [
@@ -34,6 +23,29 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:libam-instrumentation-data-proto",
         "//tools/adt/idea/.idea/libraries:libadb-server-proto",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.ddmlib-studio.tests",
+    iml_files = ["android.sdktools.ddmlib-studio.tests.iml"],
+    jvm_target = "8",
+    test_data = ["//prebuilts/studio/sdk:platform-tools"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/.idea/libraries:libam-instrumentation-data-proto",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+    ],
+    test_friends = ["//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio"],
+    test_resources = ["src/test/resources"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 java_proto_library(
