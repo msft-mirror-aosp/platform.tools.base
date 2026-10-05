@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 
@@ -32,6 +33,7 @@ import org.junit.Test
  * 2. Manifest creation config: generates instrumented test manifest targeting tested app with proper attributes (handleProfiling,
  *    functionalTest, testLabel) without merging main app activities.
  * 3. Dependency isolation: does not package the main app's runtime dependencies into the test APK.
+ * 4. Native libraries packaging: the test APK manifest declares the android:extractNativeLibs value matching jniLibs.useLegacyPackaging.
  */
 class TestSuiteApkIntegrationTest {
 
@@ -141,9 +143,7 @@ class TestSuiteApkIntegrationTest {
     assertThat(result.didWorkTasks).contains(":app:processDebugCustomTestManifest")
     assertThat(result.didWorkTasks).contains(":app:packageDebugCustomTest")
 
-    val buildDir = rule.build.androidApplication(":app").buildDir.toFile()
-    val testApk = buildDir.walkTopDown().firstOrNull { it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true) }
-    assertThat(testApk).isNotNull()
+    val testApk = customTestApk()
 
     // 1. Verify Class and Dependency Assertions via TruthHelper:
     assertThatApk(testApk).apply {
@@ -159,7 +159,7 @@ class TestSuiteApkIntegrationTest {
     }
 
     // 2. Verify Manifest Creation Config via ApkSubject:
-    ApkSubject.assertThat(testApk!!) {
+    ApkSubject.assertThat(testApk) {
       // Test manifest targets the tested application, includes instrumented test attributes,
       // and does not merge main app activities.
       manifest().contains("android:targetPackage=\"com.example.test\"")
@@ -168,5 +168,36 @@ class TestSuiteApkIntegrationTest {
       manifest().contains("android:label=\"Tests for com.example.test\"")
       manifest().doesNotContain("MainActivity")
     }
+  }
+
+  @Test
+  fun testTestApkManifestMatchesDefaultJniLibsPackaging() {
+    // From minSdk 23, native libraries are stored uncompressed by default, which the packager
+    // only accepts when the test APK manifest sets android:extractNativeLibs="false".
+    rule.build.androidApplication(":app").reconfigure { android { defaultConfig { minSdk = 24 } } }
+
+    rule.build.executor.run(":app:packageDebugCustomTest")
+
+    ApkSubject.assertThat(customTestApk()) { manifest().contains("android:extractNativeLibs=false") }
+  }
+
+  @Test
+  fun testTestApkManifestMatchesLegacyJniLibsPackaging() {
+    rule.build.androidApplication(":app").reconfigure {
+      android {
+        defaultConfig { minSdk = 24 }
+        packaging { jniLibs { useLegacyPackaging = true } }
+      }
+    }
+
+    rule.build.executor.run(":app:packageDebugCustomTest")
+
+    ApkSubject.assertThat(customTestApk()) { manifest().contains("android:extractNativeLibs=true") }
+  }
+
+  private fun customTestApk(): File {
+    val buildDir = rule.build.androidApplication(":app").buildDir.toFile()
+    val testApk = buildDir.walkTopDown().firstOrNull { it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true) }
+    return checkNotNull(testApk) { "No customTest APK found under $buildDir" }
   }
 }
