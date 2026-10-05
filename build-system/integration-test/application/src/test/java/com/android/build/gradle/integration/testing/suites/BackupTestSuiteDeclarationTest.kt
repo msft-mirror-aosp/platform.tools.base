@@ -24,6 +24,7 @@ import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.TestSuite
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
@@ -100,6 +101,24 @@ class BackupTestSuiteDeclarationTest {
     Truth.assertThat(testRun.backupTestRun.passedTestCount).isEqualTo(1)
     Truth.assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(0)
     Truth.assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha02")
+  }
+
+  @Test
+  fun testBackupLibrariesAreOnlyAddedToSuiteClasspaths() {
+    // Applying a Kotlin compiler plugin makes AGP create compiler plugin classpaths for the suite's compilations.
+    val build = rule.build { androidApplication { applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN) } }
+
+    build.executor
+      .run(":app:dependencies", "--configuration", "debugMyBackupTestRuntimeClasspath")
+      .assertOutputContains("androidx.test.backup:backup-host:1.0.0-alpha02")
+    build.executor
+      .run(":app:dependencies", "--configuration", "debugMyBackupAndroidTestRuntimeClasspath")
+      .assertOutputContains("androidx.test.backup:backup:1.0.0-alpha02")
+    val compilerPluginClasspaths =
+      listOf("kotlinCompilerPluginClasspathDebugMyBackupTest", "kotlinCompilerPluginClasspathDebugMyBackupAndroidTest")
+    for (configuration in compilerPluginClasspaths) {
+      build.executor.run(":app:dependencies", "--configuration", configuration).assertOutputDoesNotContain("androidx.test.backup")
+    }
   }
 }
 

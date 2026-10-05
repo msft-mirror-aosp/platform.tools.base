@@ -84,21 +84,12 @@ class BackupTestSuiteImplTest {
   }
 
   @Test
-  fun testDynamicDependenciesMapping() {
+  fun testDependenciesUseConfiguredLibraryVersion() {
     val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
     val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
     // The DSL block sets backupTestLibraryVersion after the suite is created
     dslSuite.backupTestLibraryVersion = "1.0.0-alpha02"
-
-    // Simulate standard test configuration created by AGP for this suite
-    val hostConfig = dslServices.configurations.create("backupTestHostJarDebugCompileClasspath")
-    val hostDependencies = hostConfig.incoming.dependencies.map { it.toString() }
-    assertThat(hostDependencies).contains("androidx.test.backup:backup-host:1.0.0-alpha02")
-
-    val testApkConfig = dslServices.configurations.create("backupTestTestApkDebugCompileClasspath")
-    val testApkConfigDependencies = testApkConfig.incoming.dependencies.map { it.toString() }
-    assertThat(testApkConfigDependencies).contains("androidx.test.backup:backup:1.0.0-alpha02")
 
     // Verify custom hostJar and testApk blocks
     dslSuite.hostJar { dependencies { implementation.add("com.google.truth:truth:1.4.2") } }
@@ -117,18 +108,9 @@ class BackupTestSuiteImplTest {
   }
 
   @Test
-  fun testDynamicDependenciesMappingWhenUnconfigured() {
+  fun testDependenciesUseDefaultLibraryVersionWhenUnconfigured() {
     val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
     val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
-
-    // Do not set version (defaults to uninitialized/null) - should fallback to default 1.0.0-alpha01 out of the box
-    val hostConfig = dslServices.configurations.create("backupTestHostJarDebugCompileClasspath_unconfigured")
-    val hostDependencies = hostConfig.incoming.dependencies.map { it.toString() }
-    assertThat(hostDependencies).contains("androidx.test.backup:backup-host:1.0.0-alpha01")
-
-    val testApkConfig = dslServices.configurations.create("backupTestTestApkDebugCompileClasspath_unconfigured")
-    val testApkDependencies = testApkConfig.incoming.dependencies.map { it.toString() }
-    assertThat(testApkDependencies).contains("androidx.test.backup:backup:1.0.0-alpha01")
 
     val hostJar = suite.getSourceContainers().filterIsInstance<TestSuiteHostJarSpecImpl>().single()
     assertThat(hostJar.dependencies.implementation.notations())
@@ -154,6 +136,17 @@ class BackupTestSuiteImplTest {
     val testApk = suite.getSourceContainers().filterIsInstance<TestSuiteTestApkSpecImpl>().single()
     assertThat(testApk.dependencies.implementation.notations())
       .containsExactly("androidx.test.backup:backup:${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}")
+  }
+
+  @Test
+  fun testBackupLibrariesNotAddedToOtherConfigurations() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+
+    // Compiler plugin classpaths that KGP creates for the suite's host and device compilations
+    for (name in listOf("kotlinCompilerPluginClasspathDebugBackupTestTest", "kotlinCompilerPluginClasspathDebugBackupTestAndroidTest")) {
+      assertThat(dslServices.configurations.create(name).incoming.dependencies).isEmpty()
+    }
   }
 
   @Test

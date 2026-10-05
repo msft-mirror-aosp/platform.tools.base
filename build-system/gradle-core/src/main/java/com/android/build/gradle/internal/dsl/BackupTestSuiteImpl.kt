@@ -155,31 +155,10 @@ constructor(
     // This suite is created before the user's DSL block runs, so the version must be read lazily.
     val libraryVersion = providers.provider { backupSuite.backupTestLibraryVersion?.takeIf { it.isNotBlank() } ?: DEFAULT_BACKUP_VERSION }
 
-    // Lazy Configuration Listener: Automatically map and inject compile-time dependencies
-    // directly on the standard Gradle configurations generated for the custom test suite!
-    try {
-      dslServices.configurations.configureEach { config ->
-        if (config.name.contains(name, ignoreCase = true)) {
-          config.withDependencies { deps ->
-            val resolvedVersion = libraryVersion.get()
-
-            if (config.name.contains("AndroidTest", ignoreCase = true) || config.name.contains("TestApk", ignoreCase = true)) {
-              // Contains on-device test helper actions (e.g. PutStorageAction, VerifyStorageAction) and BackupRestoreTestRunner.
-              deps.add(dependencyHandler.create("androidx.test.backup:backup:$resolvedVersion"))
-            } else if (config.name.contains("Test", ignoreCase = true) || config.name.contains("HostJar", ignoreCase = true)) {
-              // Hosts the JUnit 5 test extension and BackupRestoreDevice orchestration control loops.
-              // Transitively pulls adblib, adblib-tools, and common published on GMaven via backup-host's POM.
-              deps.add(dependencyHandler.create("androidx.test.backup:backup-host:$resolvedVersion"))
-            }
-          }
-        }
-      }
-    } catch (_: UnsupportedOperationException) {
-      // In Declarative Gradle Schema or restricted evaluation contexts, configurations may not be accessible.
-    }
-
     hostJar {
       dependencies {
+        // Hosts the JUnit 5 test extension and BackupRestoreDevice orchestration control loops.
+        // Transitively pulls adblib, adblib-tools, and common published on GMaven via backup-host's POM.
         implementation.add(libraryVersion.map { dependencyHandler.create("androidx.test.backup:backup-host:$it") })
       }
       backupSuite.hostJarHandler = { action -> action(this) }
@@ -189,6 +168,7 @@ constructor(
 
     testApk {
       dependencies {
+        // Contains on-device test helper actions (e.g. PutStorageAction, VerifyStorageAction) and BackupRestoreTestRunner.
         implementation.add(libraryVersion.map { dependencyHandler.create("androidx.test.backup:backup:$it") })
       }
       backupSuite.testApkHandler = { action -> action(this) }
