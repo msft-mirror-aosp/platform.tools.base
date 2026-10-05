@@ -24,6 +24,7 @@ import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawVirtual
 import com.android.tools.lint.checks.fx.result.plus
+import com.android.tools.lint.client.api.AndroidPlatformAnnotations.Companion.toAndroidxAnnotation
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
@@ -37,7 +38,7 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
   override val unsatisfiableConstraintIssue = THREAD
 
   override fun parse(ann: UAnnotation) =
-    when (ann.qualifiedName) {
+    when (ann.qualifiedName?.let(::toAndroidxAnnotation)) {
       ANY_THREAD_ANNOTATION.newName(),
       ANY_THREAD_ANNOTATION.oldName() -> lattice.AnyThread
       UI_THREAD_ANNOTATION.oldName(),

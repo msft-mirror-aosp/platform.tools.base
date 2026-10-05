@@ -29,9 +29,6 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
   override fun lint(): TestLintTask {
     val task = super.lint()
-    // This detector isn't intended to be run on the platform
-    task.skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
-
     task.skipTestModes(TestMode.PARENTHESIZED, TestMode.FULLY_QUALIFIED, TestMode.REORDER_ARGUMENTS)
 
     task.skipTestModes(TestMode.JVM_OVERLOADS) // TODO
@@ -4132,6 +4129,88 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                 runOnUiThread(Runnable { worker() }) // ERROR: pinpointed like a bare lambda
                                          ~~~~~~~~
         1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testMixedPlatformAndAndroidxAnnotations() {
+    // Platform code uses the `android.annotation.*` thread annotations, and may call libraries annotated with
+    // `androidx.annotation.*`, and vice versa
+    lint()
+      .files(
+        java(
+            """
+            package android.annotation;
+            import static java.lang.annotation.ElementType.*;
+            import static java.lang.annotation.RetentionPolicy.SOURCE;
+            import java.lang.annotation.*;
+            @Retention(SOURCE)
+            @Target({METHOD, CONSTRUCTOR, TYPE, PARAMETER})
+            public @interface UiThread {}
+            """
+          )
+          .indented(),
+        java(
+            """
+            package android.annotation;
+            import static java.lang.annotation.ElementType.*;
+            import static java.lang.annotation.RetentionPolicy.SOURCE;
+            import java.lang.annotation.*;
+            @Retention(SOURCE)
+            @Target({METHOD, CONSTRUCTOR, TYPE, PARAMETER})
+            public @interface WorkerThread {}
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+
+            public class Mixed {
+                @androidx.annotation.UiThread static void androidxUi() { }
+
+                @androidx.annotation.MainThread static void androidxMain() { }
+
+                @android.annotation.UiThread static void platformUi() { }
+
+                @android.annotation.WorkerThread
+                static void platformWorkerCallsAndroidxUi() {
+                    androidxUi(); // ERROR
+                }
+
+                @androidx.annotation.WorkerThread
+                static void androidxWorkerCallsPlatformUi() {
+                    platformUi(); // ERROR
+                }
+
+                @android.annotation.UiThread
+                static void platformUiCallsAndroidxMain() {
+                    androidxMain(); // OK: `@UiThread` and `@MainThread` are equivalent
+                }
+
+                @androidx.annotation.MainThread
+                static void androidxMainCallsPlatformUi() {
+                    platformUi(); // OK: `@UiThread` and `@MainThread` are equivalent
+                }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      // The test mode would rewrite the AndroidX annotations into platform ones, defeating the purpose of mixing them
+      .skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
+      .run()
+      .expect(
+        """
+        src/test/pkg/Mixed.java:12: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                androidxUi(); // ERROR
+                ~~~~~~~~~~~~
+        src/test/pkg/Mixed.java:17: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                platformUi(); // ERROR
+                ~~~~~~~~~~~~
+        2 errors
         """
           .trimIndent()
       )
