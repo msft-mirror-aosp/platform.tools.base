@@ -29,6 +29,7 @@ import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
@@ -121,6 +122,7 @@ constructor(
   private val backupSuite: BackupTestSuiteImpl,
   dslServices: DslServices,
   private val dependencyHandler: DependencyHandler,
+  private val providers: ProviderFactory,
 ) : AgpTestSuiteImpl(backupSuite.name, dslServices, false) {
 
   override val targetVariants: MutableList<String>
@@ -150,13 +152,16 @@ constructor(
       enginesDependencies.add(dependencyHandler.create("org.junit.platform:junit-platform-launcher:1.10.0"))
     }
 
+    // This suite is created before the user's DSL block runs, so the version must be read lazily.
+    val libraryVersion = providers.provider { backupSuite.backupTestLibraryVersion?.takeIf { it.isNotBlank() } ?: DEFAULT_BACKUP_VERSION }
+
     // Lazy Configuration Listener: Automatically map and inject compile-time dependencies
     // directly on the standard Gradle configurations generated for the custom test suite!
     try {
       dslServices.configurations.configureEach { config ->
         if (config.name.contains(name, ignoreCase = true)) {
           config.withDependencies { deps ->
-            val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
+            val resolvedVersion = libraryVersion.get()
 
             if (config.name.contains("AndroidTest", ignoreCase = true) || config.name.contains("TestApk", ignoreCase = true)) {
               // Contains on-device test helper actions (e.g. PutStorageAction, VerifyStorageAction) and BackupRestoreTestRunner.
@@ -174,9 +179,8 @@ constructor(
     }
 
     hostJar {
-      val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
       dependencies {
-        implementation.add("androidx.test.backup:backup-host:$resolvedVersion")
+        implementation.add(libraryVersion.map { dependencyHandler.create("androidx.test.backup:backup-host:$it") })
       }
       backupSuite.hostJarHandler = { action -> action(this) }
       backupSuite.hostJarActions.forEach { it(this) }
@@ -184,16 +188,14 @@ constructor(
     }
 
     testApk {
-      val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
       dependencies {
-        implementation.add("androidx.test.backup:backup:$resolvedVersion")
+        implementation.add(libraryVersion.map { dependencyHandler.create("androidx.test.backup:backup:$it") })
       }
       backupSuite.testApkHandler = { action -> action(this) }
       backupSuite.testApkActions.forEach { it(this) }
       backupSuite.testApkActions.clear()
     }
 
-    val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
     val analyticsServiceProvider =
       try {
         getBuildService(dslServices.buildServiceRegistry, AnalyticsService::class.java)
@@ -207,7 +209,7 @@ constructor(
       task.addTestListener(
         BackupTestListener(
           analyticsServiceProvider = analyticsServiceProvider,
-          backupTestLibraryVersion = resolvedVersion,
+          backupTestLibraryVersion = libraryVersion.get(),
         )
       )
     }

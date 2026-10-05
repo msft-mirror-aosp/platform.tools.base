@@ -28,11 +28,15 @@ import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.TestRun
 import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.artifacts.dsl.DependencyCollector
+import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
 import org.junit.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -42,11 +46,12 @@ class BackupTestSuiteImplTest {
   private val dslServices = createDslServices()
   private val project = ProjectFactory.project
   private val dependencyHandler = project.dependencies
+  private val providers = project.providers
 
   @Test
   fun testInitializationDefaults() {
     val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
-    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
     // 1. Assert targets: default target is created
     assertThat(suite.targets.names).containsExactly("default")
@@ -81,19 +86,19 @@ class BackupTestSuiteImplTest {
   @Test
   fun testDynamicDependenciesMapping() {
     val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
-    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
-    // Set backupTestLibraryVersion
-    dslSuite.backupTestLibraryVersion = "1.0.0-alpha01"
+    // The DSL block sets backupTestLibraryVersion after the suite is created
+    dslSuite.backupTestLibraryVersion = "1.0.0-alpha02"
 
     // Simulate standard test configuration created by AGP for this suite
     val hostConfig = dslServices.configurations.create("backupTestHostJarDebugCompileClasspath")
     val hostDependencies = hostConfig.incoming.dependencies.map { it.toString() }
-    assertThat(hostDependencies).contains("androidx.test.backup:backup-host:1.0.0-alpha01")
+    assertThat(hostDependencies).contains("androidx.test.backup:backup-host:1.0.0-alpha02")
 
     val testApkConfig = dslServices.configurations.create("backupTestTestApkDebugCompileClasspath")
     val testApkConfigDependencies = testApkConfig.incoming.dependencies.map { it.toString() }
-    assertThat(testApkConfigDependencies).contains("androidx.test.backup:backup:1.0.0-alpha01")
+    assertThat(testApkConfigDependencies).contains("androidx.test.backup:backup:1.0.0-alpha02")
 
     // Verify custom hostJar and testApk blocks
     dslSuite.hostJar { dependencies { implementation.add("com.google.truth:truth:1.4.2") } }
@@ -101,20 +106,20 @@ class BackupTestSuiteImplTest {
     val hostJarSources = suite.getSourceContainers().filterIsInstance<TestSuiteHostJarSpecImpl>()
     assertThat(hostJarSources).hasSize(1)
     val hostJar = hostJarSources.single()
-    val hostJarDeps = hostJar.dependencies.implementation.dependencies.get().map { it.toString() }
-    assertThat(hostJarDeps).contains("com.google.truth:truth:1.4.2")
+    assertThat(hostJar.dependencies.implementation.notations())
+      .containsExactly("androidx.test.backup:backup-host:1.0.0-alpha02", "com.google.truth:truth:1.4.2")
 
     val testApkSources = suite.getSourceContainers().filterIsInstance<TestSuiteTestApkSpecImpl>()
     assertThat(testApkSources).hasSize(1)
     val testApk = testApkSources.single()
-    val testApkDeps = testApk.dependencies.implementation.dependencies.get().map { it.toString() }
-    assertThat(testApkDeps).contains("androidx.room:room-testing:2.6.1")
+    assertThat(testApk.dependencies.implementation.notations())
+      .containsExactly("androidx.test.backup:backup:1.0.0-alpha02", "androidx.room:room-testing:2.6.1")
   }
 
   @Test
   fun testDynamicDependenciesMappingWhenUnconfigured() {
     val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
-    dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
     // Do not set version (defaults to uninitialized/null) - should fallback to default 1.0.0-alpha01 out of the box
     val hostConfig = dslServices.configurations.create("backupTestHostJarDebugCompileClasspath_unconfigured")
@@ -125,8 +130,30 @@ class BackupTestSuiteImplTest {
     val testApkDependencies = testApkConfig.incoming.dependencies.map { it.toString() }
     assertThat(testApkDependencies).contains("androidx.test.backup:backup:1.0.0-alpha01")
 
+    val hostJar = suite.getSourceContainers().filterIsInstance<TestSuiteHostJarSpecImpl>().single()
+    assertThat(hostJar.dependencies.implementation.notations())
+      .containsExactly("androidx.test.backup:backup-host:${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}")
+    val testApk = suite.getSourceContainers().filterIsInstance<TestSuiteTestApkSpecImpl>().single()
+    assertThat(testApk.dependencies.implementation.notations())
+      .containsExactly("androidx.test.backup:backup:${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}")
+
     val reporter = dslServices.issueReporter as FakeSyncIssueReporter
     assertThat(reporter.errors).isEmpty()
+  }
+
+  @Test
+  fun testDependenciesUseDefaultLibraryVersionWhenBlank() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+
+    dslSuite.backupTestLibraryVersion = "  "
+
+    val hostJar = suite.getSourceContainers().filterIsInstance<TestSuiteHostJarSpecImpl>().single()
+    assertThat(hostJar.dependencies.implementation.notations())
+      .containsExactly("androidx.test.backup:backup-host:${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}")
+    val testApk = suite.getSourceContainers().filterIsInstance<TestSuiteTestApkSpecImpl>().single()
+    assertThat(testApk.dependencies.implementation.notations())
+      .containsExactly("androidx.test.backup:backup:${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}")
   }
 
   @Test
@@ -139,7 +166,13 @@ class BackupTestSuiteImplTest {
 
     val dslSuite = declarativeDslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", declarativeDslServices)
     val suite =
-      declarativeDslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, declarativeDslServices, dependencyHandler)
+      declarativeDslServices.newDecoratedInstance(
+        BackupAgpTestSuiteImpl::class.java,
+        dslSuite,
+        declarativeDslServices,
+        dependencyHandler,
+        providers,
+      )
 
     // Instantiation should succeed even if configurations is unsupported
     assertThat(suite.targets.names).containsExactly("default")
@@ -177,7 +210,7 @@ class BackupTestSuiteImplTest {
   @Test
   fun testBackupTestListenerConfiguration() {
     val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
-    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
     assertThat(suite.testTaskConfigActions).isNotEmpty()
 
@@ -188,6 +221,43 @@ class BackupTestSuiteImplTest {
     val listenerCaptor = argumentCaptor<TestListener>()
     verify(mockTestTask).addTestListener(listenerCaptor.capture())
     assertThat(listenerCaptor.firstValue).isInstanceOf(BackupAgpTestSuiteImpl.BackupTestListener::class.java)
+  }
+
+  @Test
+  fun testBackupTestListenerReportsConfiguredLibraryVersion() {
+    val analyticsService = mock<AnalyticsService>()
+    val registry = mock<BuildServiceRegistry>()
+    whenever(registry.registerIfAbsent(any(), eq(AnalyticsService::class.java), any())).thenReturn(project.provider { analyticsService })
+    val servicesWithAnalytics =
+      object : DslServices by dslServices {
+        override val buildServiceRegistry: BuildServiceRegistry
+          get() = registry
+      }
+    val dslSuite = servicesWithAnalytics.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", servicesWithAnalytics)
+    val suite =
+      servicesWithAnalytics.newDecoratedInstance(
+        BackupAgpTestSuiteImpl::class.java,
+        dslSuite,
+        servicesWithAnalytics,
+        dependencyHandler,
+        providers,
+      )
+
+    // The DSL block sets backupTestLibraryVersion after the suite is created
+    dslSuite.backupTestLibraryVersion = "1.0.0-alpha02"
+
+    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
+    suite.testTaskConfigActions.forEach { it(mockTestTask, mock<TestTaskContext>()) }
+    val listenerCaptor = argumentCaptor<TestListener>()
+    verify(mockTestTask).addTestListener(listenerCaptor.capture())
+
+    val rootSuiteDescriptor = mock<TestDescriptor>()
+    whenever(rootSuiteDescriptor.parent).thenReturn(null)
+    listenerCaptor.firstValue.afterSuite(rootSuiteDescriptor, mock<TestResult>())
+
+    val eventCaptor = argumentCaptor<AndroidStudioEvent.Builder>()
+    verify(analyticsService).recordEvent(eventCaptor.capture())
+    assertThat(eventCaptor.firstValue.build().testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha02")
   }
 
   @Test
@@ -227,4 +297,6 @@ class BackupTestSuiteImplTest {
     assertThat(event.testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha01")
     assertThat(event.testRun.backupTestRun.hasIsCi()).isFalse()
   }
+
+  private fun DependencyCollector.notations(): List<String> = dependencies.get().map { "${it.group}:${it.name}:${it.version}" }
 }
