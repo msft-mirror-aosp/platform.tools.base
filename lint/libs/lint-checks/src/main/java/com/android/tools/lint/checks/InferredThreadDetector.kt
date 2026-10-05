@@ -145,6 +145,7 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
             rawVirtual("postInvalidateDelayed", viewFqn, longId, intId, intId, intId, intId) assumedMonoAs {}
             rawVirtual("postInvalidateOnAnimation", viewFqn) assumedMonoAs {}
             rawVirtual("postInvalidateOnAnimation", viewFqn, intId, intId, intId, intId) assumedMonoAs {}
+            rawVirtual("removeCallbacks", viewFqn, runnableId) assumedMonoAs { range = Type.Boolean }
           }
 
           // The `Handler.post*` family is likewise safe to call from any thread. Unlike `View`'s, the posted runnables execute on the
@@ -176,6 +177,43 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
               forAll<Runnable> { runnable ->
                 given(activity(), runnable) { constraint += runnable[Runnable::run] to lattice.of(Thread.MainOrUi) }
               }
+          }
+
+          // Loading `Drawable`s is safe to call from any thread.
+          run {
+            val booleanId = ClassId.of("boolean")
+            val resourcesFqn = "android.content.res.Resources"
+            val resources = ClassId.of(resourcesFqn)
+            val themeFqn = "android.content.res.Resources.Theme"
+            val theme = ClassId.of(themeFqn)
+            val resourcesImplFqn = "android.content.res.ResourcesImpl"
+            val typedArrayFqn = "android.content.res.TypedArray"
+            val contextFqn = "android.content.Context"
+            val typedValue = ClassId.of("android.util.TypedValue")
+            val drawable = ClassId.of("android.graphics.drawable.Drawable")
+
+            rawVirtual("loadDrawable", resourcesImplFqn, resources, typedValue, intId, intId, theme) assumedMonoAs
+              {
+                range = drawable()
+              }
+            rawVirtual("loadDrawable", resourcesImplFqn, resources, typedValue, intId, intId, theme, booleanId) assumedMonoAs
+              {
+                range = drawable()
+              }
+
+            rawVirtual("getDrawable", resourcesFqn, intId) assumedMonoAs { range = drawable() }
+            rawVirtual("getDrawable", resourcesFqn, intId, theme) assumedMonoAs { range = drawable() }
+            rawVirtual("getDrawableForDensity", resourcesFqn, intId, intId) assumedMonoAs { range = drawable() }
+            rawVirtual("getDrawableForDensity", resourcesFqn, intId, intId, theme) assumedMonoAs { range = drawable() }
+            rawVirtual("getDrawableForDensityCapped", resourcesFqn, intId, intId, theme) assumedMonoAs { range = drawable() }
+            rawVirtual("loadDrawable", resourcesFqn, typedValue, intId, intId, theme) assumedMonoAs { range = drawable() }
+
+            rawVirtual("getDrawable", themeFqn, intId) assumedMonoAs { range = drawable() }
+
+            rawVirtual("getDrawable", typedArrayFqn, intId) assumedMonoAs { range = drawable() }
+            rawVirtual("getDrawableForDensity", typedArrayFqn, intId, intId) assumedMonoAs { range = drawable() }
+
+            rawVirtual("getDrawable", contextFqn, intId) assumedMonoAs { range = drawable() }
           }
         }
       }
