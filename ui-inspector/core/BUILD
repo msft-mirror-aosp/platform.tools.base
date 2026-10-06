@@ -1,32 +1,4 @@
-load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
-
-# managed by go/iml_to_build
-iml_module(
-    name = "studio.android.sdktools.ui-inspector.core",
-    srcs = ["src/main/java"],
-    iml_files = ["android.sdktools.ui-inspector.core.iml"],
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:truth",
-    ],
-    test_srcs = ["src/test/java"],
-    visibility = ["//visibility:public"],
-    deps = [
-        # Add Compose Inspector protobuf Java classes
-        "//prebuilts/tools/common/app-inspection/androidx/compose/ui:layout_inspector_compose_java_proto-nojarjar",
-        "//tools/base/adblib:studio.android.sdktools.adblib",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations",
-        "//tools/base/ui-inspector/common",
-        "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto-nojarjar",
-        "@maven//:com.google.code.gson.gson",
-        "@maven//:com.google.guava.guava",
-        "@maven//:com.google.protobuf.protobuf-java",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
-        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
-    ],
-)
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 
 kotlin_library(
     name = "core",
@@ -49,6 +21,31 @@ kotlin_library(
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto-nojarjar",
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.guava.guava",
+        "@maven//:com.google.protobuf.protobuf-java",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
+)
+
+kotlin_test(
+    name = "core_tests",
+    srcs = glob(["src/test/java/**/*.kt"]),
+    friends = [":core"],
+    jvm_flags = ["-Dtest.suite.jar=core_tests.jar"],
+    test_class = "com.android.testutils.JarTestSuite",
+    # The cli tests use the test fixtures in ModelFixtures.kt (via core_tests.testlib).
+    visibility = ["//tools/base/ui-inspector/cli:__pkg__"],
+    deps = [
+        ":core",
+        "//prebuilts/tools/common/app-inspection/androidx/compose/ui:layout_inspector_compose_java_proto-nojarjar",
+        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/adblib",
+        "//tools/base/testutils:tools.testutils",
+        "//tools/base/ui-inspector/common",
+        "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto-nojarjar",
+        "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",

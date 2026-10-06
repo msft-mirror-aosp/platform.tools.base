@@ -1,28 +1,5 @@
 load("@rules_java//java:defs.bzl", "java_binary")
-load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
-
-# managed by go/iml_to_build
-iml_module(
-    name = "studio.android.sdktools.ui-inspector.cli",
-    srcs = ["src/main/java"],
-    iml_files = ["android.sdktools.ui-inspector.cli.iml"],
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:truth",
-    ],
-    test_srcs = ["src/test/java"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//tools/base/adblib:studio.android.sdktools.adblib",
-        "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
-        "//tools/base/common:studio.android.sdktools.common",
-        "//tools/base/ui-inspector/core:studio.android.sdktools.ui-inspector.core",
-        "@maven//:info.picocli.picocli",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
-        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
-    ],
-)
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 
 kotlin_library(
     name = "cli",
@@ -32,6 +9,27 @@ kotlin_library(
         "//tools/base/adblib-tools:adblib.tools",
         "//tools/base/common:tools.common",
         "//tools/base/ui-inspector/core",
+        "@maven//:info.picocli.picocli",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
+)
+
+kotlin_test(
+    name = "cli_tests",
+    srcs = glob(["src/test/java/**/*.kt"]),
+    friends = [":cli"],
+    jvm_flags = ["-Dtest.suite.jar=cli_tests.jar"],
+    lint_baseline = "lint_baseline_tests.xml",
+    test_class = "com.android.testutils.JarTestSuite",
+    deps = [
+        ":cli",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/adblib",
+        "//tools/base/testutils:tools.testutils",
+        "//tools/base/ui-inspector/core",
+        "//tools/base/ui-inspector/core:core_tests.testlib",
         "@maven//:info.picocli.picocli",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",

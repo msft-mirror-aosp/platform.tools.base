@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.5.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="9.5.0-dev">
+
+    <issue
+        id="PathAsIterable"
+        message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
+        errorLine1="    assertThat(dumpCmd.output).isNull()"
+        errorLine2="               ~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/com/android/tools/ui/inspector/CliHostTest.kt"
+            line="74"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="PathAsIterable"
+        message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
+        errorLine1="    assertThat(dumpCmd.output).isEqualTo(Paths.get(&quot;out/dump.json&quot;))"
+        errorLine2="               ~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/com/android/tools/ui/inspector/CliHostTest.kt"
+            line="117"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="PathAsIterable"
+        message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
+        errorLine1="    assertThat(dumpCmd.output).isEqualTo(Paths.get(&quot;dump.json&quot;))"
+        errorLine2="               ~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/com/android/tools/ui/inspector/CliHostTest.kt"
+            line="123"
+            column="16"/>
+    </issue>
+
+</issues>
