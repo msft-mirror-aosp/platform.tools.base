@@ -20,6 +20,8 @@ import com.android.Version
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
+import com.android.builder.model.v2.ide.SyncIssue
+import com.android.builder.model.v2.models.SourceType
 import com.google.common.truth.Truth
 import java.io.File
 import java.util.Properties
@@ -62,8 +64,8 @@ class AssetsAndHostJarTestSuiteTest {
             }
           }
           files {
-            add("src/first/java/Dummy.java", "public class Dummy {}")
-            add("src/first/assets/some_asset.txt", "some asset content")
+            add("src/first/test/java/Dummy.java", "public class Dummy {}")
+            add("src/first/assetsTest/some_asset.txt", "some asset content")
           }
           dependencies { implementation("com.google.truth:truth:0.44") }
         }
@@ -75,7 +77,7 @@ class AssetsAndHostJarTestSuiteTest {
     val result = project.executor.run("testDebugFirstT1TestSuite")
 
     Truth.assertThat(result.didWorkTasks).contains(":app:testDebugFirstT1TestSuite")
-    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugFirstJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugFirstTestJavaWithJavac")
 
     val engineInputs =
       Properties().apply {
@@ -83,12 +85,61 @@ class AssetsAndHostJarTestSuiteTest {
           load(it)
         }
       }
-    Truth.assertThat(engineInputs.getProperty(TestEngineInputProperty.SOURCE_FOLDERS)).contains("src${File.separator}first")
+    Truth.assertThat(engineInputs.getProperty(TestEngineInputProperty.SOURCE_FOLDERS))
+      .contains("src${File.separator}first${File.separator}assetsTest")
     Truth.assertThat(engineInputs.getProperty(TestEngineInputProperty.BINARY_FOLDERS)).isNotEmpty()
   }
 
   @Test
   fun testSuiteWithBothSourceSetsConfigures() {
-    rule.build.executor.run(":app:tasks")
+    val project = rule.build {
+      androidApplication {
+        android {
+          testOptions.customSuites.create("second") {
+            it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
+            it.assets {}
+            it.testApk {}
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+      }
+    }
+    project.executor.run(":app:tasks")
+
+    val result = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
+    val models = result.container.getProject(":app")
+
+    val firstSuite = models.basicAndroidProject!!.testSuites.first { it.name == "first" }
+
+    val assetsSource = firstSuite.assets.single()
+    Truth.assertThat(assetsSource.name).isEqualTo("firstAssets")
+    Truth.assertThat(assetsSource.type).isEqualTo(SourceType.ASSETS)
+    Truth.assertThat(assetsSource.directories).containsExactly(project.subProject(":app").resolve("src/first/assetsTest").toFile())
+
+    val hostJarSource = firstSuite.hostJars.single()
+    Truth.assertThat(hostJarSource.name).isEqualTo("firstTest")
+    Truth.assertThat(hostJarSource.type).isEqualTo(SourceType.HOST_JAR)
+    Truth.assertThat(hostJarSource.java).containsExactly(project.subProject(":app").resolve("src/first/test/java").toFile())
+
+    val secondSuite = models.basicAndroidProject!!.testSuites.first { it.name == "second" }
+
+    val secondAssetsSource = secondSuite.assets.single()
+    Truth.assertThat(secondAssetsSource.name).isEqualTo("secondAssets")
+    Truth.assertThat(secondAssetsSource.type).isEqualTo(SourceType.ASSETS)
+    Truth.assertThat(secondAssetsSource.directories).containsExactly(project.subProject(":app").resolve("src/second/assetsTest").toFile())
+
+    val testApkSource = secondSuite.testApks.single()
+    Truth.assertThat(testApkSource.name).isEqualTo("secondAndroidTest")
+    Truth.assertThat(testApkSource.type).isEqualTo(SourceType.TEST_APK)
+    Truth.assertThat(testApkSource.sourceProvider.javaDirectories)
+      .containsExactly(project.subProject(":app").resolve("src/second/androidTest/java").toFile())
+
+    val depsResult = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchVariantDependencies("debug")
+    val debugDeps = depsResult.container.getProject(":app").variantDependencies!!
+    Truth.assertThat(debugDeps.testSuiteArtifacts["first"]!!.sourcesDependencies.map { it.name })
+      .containsExactly("debugFirstAssets", "debugFirstTest")
+    Truth.assertThat(debugDeps.testSuiteArtifacts["second"]!!.sourcesDependencies.map { it.name })
+      .containsExactly("debugSecondAssets", "debugSecondAndroidTest")
   }
 }

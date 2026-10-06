@@ -23,8 +23,6 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
-import com.android.build.api.dsl.TestSuiteHostJarSpec
-import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.extension.impl.DslLifecycleComponentsOperationsRegistrar
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
@@ -893,9 +891,7 @@ class VariantManager<
 
         testSuiteBuilder as TestSuiteBuilderImpl
         val sources = testSuiteBuilder.getSources()
-        val hasHostJar = sources.any { it is TestSuiteHostJarSpec }
-        val hasTestApk = sources.any { it is TestSuiteTestApkSpec }
-        val isMixed = hasHostJar && hasTestApk
+        val isMixed = sources.size > 1
 
         val testSuiteSources = sources.map { testSuiteSource: TestSuiteSourceCreationConfig ->
           // create the variant specific dependency that will be additive to the
