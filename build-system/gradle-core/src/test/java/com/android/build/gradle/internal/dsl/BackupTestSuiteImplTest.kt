@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.test.recordBackupTestRun
+import com.android.testutils.SystemPropertyOverrides
 import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.TestRun
@@ -34,6 +35,7 @@ import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
+import org.gradle.process.CommandLineArgumentProvider
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -150,6 +152,25 @@ class BackupTestSuiteImplTest {
     // Compiler plugin classpaths that KGP creates for the suite's host and device compilations
     for (name in listOf("kotlinCompilerPluginClasspathDebugBackupTestTest", "kotlinCompilerPluginClasspathDebugBackupTestAndroidTest")) {
       assertThat(dslServices.configurations.create(name).incoming.dependencies).isEmpty()
+    }
+  }
+
+  @Test
+  fun testDevicePropertiesAreForwardedToTestJvm() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+    val argumentProviders = mutableListOf<CommandLineArgumentProvider>()
+    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
+    whenever(mockTestTask.jvmArgumentProviders).thenReturn(argumentProviders)
+    suite.testTaskConfigActions.forEach { it(mockTestTask, mock<TestTaskContext>()) }
+
+    SystemPropertyOverrides().use { systemPropertyOverrides ->
+      // Set after the task is configured, because the properties are read when the test task runs.
+      systemPropertyOverrides.setProperty("androidx.test.backup.device.serial", "emulator-5554")
+      systemPropertyOverrides.setProperty("androidx.test.backup.device.api", "34")
+      systemPropertyOverrides.setProperty("androidx.test.backup.other", "value")
+      assertThat(argumentProviders.flatMap { it.asArguments() })
+        .containsExactly("-Dandroidx.test.backup.device.serial=emulator-5554", "-Dandroidx.test.backup.device.api=34")
     }
   }
 

@@ -22,6 +22,7 @@ import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.TestSuite
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -84,6 +85,29 @@ class BackupTestSuiteDeclarationTest {
   @Test
   fun testBackupTestSuiteConfiguration() {
     rule.build.executor.run(":app:tasks")
+  }
+
+  @Test
+  fun testDevicePropertiesReachTestJvm() {
+    val build = rule.build
+    val loggingFile =
+      build.subProject(":app").resolve("build/intermediates/debug/testDebugMyBackupDefaultTestSuite/junit_engines_logging.txt").toFile()
+    fun runWithSerial(serial: String) =
+      build.executor
+        .withConfigurationCaching(ConfigurationCaching.ON)
+        .withArgument("-Dandroidx.test.backup.device.serial=$serial")
+        .run(":app:testDebugMyBackupDefaultTestSuite")
+
+    runWithSerial("emulator-5554")
+    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = emulator-5554")
+
+    // Selecting another device reuses the configuration cache, and the new value still reaches the test JVM.
+    runWithSerial("emulator-5556").assertOutputContains("Reusing configuration cache.")
+    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = emulator-5556")
+
+    // Values reach the test JVM unchanged, including '=' and spaces.
+    runWithSerial("a=b c")
+    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = a=b c")
   }
 
   @Test

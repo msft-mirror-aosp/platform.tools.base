@@ -31,9 +31,11 @@ import org.gradle.api.Action
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
+import org.gradle.process.CommandLineArgumentProvider
 
 /**
  * Concrete implementation of [BackupTestSuite] representing Automated Backup and Restore test suites.
@@ -189,6 +191,8 @@ constructor(
         null
       }
 
+    val deviceProperties = providers.systemPropertiesPrefixedBy(DEVICE_PROPERTY_PREFIX)
+
     configureTestTasks { context: TestTaskContext ->
       val task = this
       analyticsServiceProvider?.let { task.usesService(it) }
@@ -198,7 +202,19 @@ constructor(
           backupTestLibraryVersion = libraryVersion.get(),
         )
       )
+      // Gradle doesn't pass the build's system properties to test JVMs, so forward the ones that select devices.
+      task.jvmArgumentProviders.add(DevicePropertiesArgumentProvider(deviceProperties))
     }
+  }
+
+  /**
+   * Passes the backup library's device selection system properties, such as `androidx.test.backup.device.serial`, to the test JVM.
+   *
+   * The properties are read when the test task runs, so selecting other devices doesn't invalidate the configuration cache.
+   */
+  internal class DevicePropertiesArgumentProvider(@get:Input val deviceProperties: Provider<Map<String, String>>) :
+    CommandLineArgumentProvider {
+    override fun asArguments(): Iterable<String> = deviceProperties.get().map { (name, value) -> "-D$name=$value" }
   }
 
   internal class BackupTestListener(
@@ -236,5 +252,8 @@ constructor(
 
     /** Default fallback version for the AndroidX backup testing framework artifacts. */
     const val DEFAULT_BACKUP_VERSION = "1.0.0-alpha02"
+
+    /** Prefix of the system properties that the backup library reads to select devices. */
+    private const val DEVICE_PROPERTY_PREFIX = "androidx.test.backup.device."
   }
 }
