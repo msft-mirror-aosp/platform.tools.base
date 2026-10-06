@@ -1,44 +1,8 @@
 load("@rules_java//java:defs.bzl", "java_library")
-load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "java_proto_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
-
-# managed by go/iml_to_build
-iml_module(
-    name = "studio.android.sdktools.ddmlib",
-    srcs = ["src/main/java"],
-    iml_files = ["android.sdktools.ddmlib.iml"],
-    jvm_target = "8",
-    lint_baseline = "lint_baseline.xml",
-    test_data = ["//prebuilts/studio/sdk:platform-tools"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
-    ],
-    test_resources = ["src/test/resources"],
-    test_srcs = ["src/test/java"],
-    visibility = ["//visibility:public"],
-    # do not sort: must match IML order
-    exports = [
-        "//tools/base/common:studio.android.sdktools.common",
-        "//tools/adt/idea/.idea/libraries:kxml2",
-    ],
-    # do not sort: must match IML order
-    deps = [
-        "@intellij//:intellij-sdk",
-        "@intellij//:com.intellij.java",
-        "//tools/base/common:studio.android.sdktools.common",
-        "//tools/adt/idea/.idea/libraries:kxml2",
-        "//tools/adt/idea/.idea/libraries:libam-instrumentation-data-proto",
-        "//tools/adt/idea/.idea/libraries:libadb-server-proto",
-    ],
-)
 
 # Compile ddmlib without any add-ons to ensure it builds on it's own. Once the AGP - ddmlib
 # dependency is reworked, we can move the code around to properly represent the separation.
@@ -221,29 +185,25 @@ java_proto_library(
     visibility = ["//visibility:public"],
 )
 
-# managed by go/iml_to_build
-iml_module(
-    name = "studio.android.sdktools.ddmlib.integration.tests",
-    iml_files = ["android.sdktools.ddmlib.integration.tests.iml"],
-    tags = [
-        "noci:studio-win",
-    ],
-    test_data = [
+kotlin_test(
+    name = "tools.integration.tests",
+    srcs = glob([
+        "src/integration/test/java/**/*.kt",
+        "src/integration/test/java/**/*.java",
+    ]),
+    data = [
         "//prebuilts/studio/sdk:platform-tools",
         "//tools/base/bazel/avd:default_avd",
     ],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/base/common:studio.android.sdktools.common",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/base/bazel/avd:studio.android.sdktools.base.bazel.avd",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/ddmlib:studio.android.sdktools.ddmlib",
-        "@intellij//:intellij-sdk",
+    jvm_flags = ["-Dtest.suite.jar=tools.integration.tests.jar"],
+    tags = ["noci:studio-win"],
+    test_class = "com.android.testutils.JarTestSuite",
+    deps = [
+        ":tools.ddmlib",
+        "//tools/base/bazel/avd:emulator_rule",
+        "//tools/base/common:tools.common",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
     ],
-    test_srcs = ["src/integration/test/java"],
-    visibility = ["//visibility:public"],
-    # do not sort: must match IML order
-    deps = ["@intellij//:com.intellij.java"],
 )

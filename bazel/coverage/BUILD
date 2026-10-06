@@ -1154,7 +1154,6 @@ coverage_report(
         "//tools/base/build-system/profile:tests.test",
         "//tools/base/common:studio.android.sdktools.common.tests_tests",
         "//tools/base/common:tools.tests.test",
-        "//tools/base/ddmlib:studio.android.sdktools.ddmlib_tests",
         "//tools/base/ddmlib:tools.tests.test",
         "//tools/base/deploy/deployer:deployer.tests",
         "//tools/base/deploy/deployer:studio.android.sdktools.deployer_tests",
