@@ -37,6 +37,7 @@
 #include "slicer/reader.h"
 #include "slicer/writer.h"
 #include "tools/base/android-test/coverage/agent/native/constructor_analyzer.h"
+#include "tools/base/android-test/coverage/agent/native/filter_interface.h"
 #include "tools/base/android-test/coverage/agent/native/metadata_collector.h"
 #include "tools/base/android-test/coverage/agent/native/parameter_shifter.h"
 #include "tools/base/android-test/coverage/agent/native/register_scanner.h"
@@ -195,20 +196,33 @@ bool Instrumenter::InstrumentClass(const std::shared_ptr<ir::DexFile>& dex_ir,
       builder.GetAsciiString("hit"), ir_proto,
       builder.GetType("Lcom/android/tools/coverage/CoverageTracker;"));
 
-  // Extract class-level metadata (SourceFile and SMAP)
+  // Extract class-level metadata (SourceFile and SMAP) and the context handed
+  // to the coverage filters.
   std::string source_file = "";
   std::string smap = "";
+  FilterContext filter_context;
+  filter_context.class_name = descriptor;
   if (!dex_ir->classes.empty()) {
     auto& ir_class = dex_ir->classes.front();
     if (ir_class->source_file != nullptr) {
       source_file = ir_class->source_file->c_str();
     }
+    filter_context.class_access_flags = ir_class->access_flags;
+    if (ir_class->super_class != nullptr &&
+        ir_class->super_class->descriptor != nullptr) {
+      filter_context.super_class_name =
+          ir_class->super_class->descriptor->c_str();
+    }
 
     if (ir_class->annotations != nullptr &&
         ir_class->annotations->class_annotation != nullptr) {
       for (auto* anno : ir_class->annotations->class_annotation->annotations) {
-        if (anno->type != nullptr && anno->type->descriptor != nullptr &&
-            strcmp(anno->type->descriptor->c_str(),
+        if (anno->type == nullptr || anno->type->descriptor == nullptr) {
+          continue;
+        }
+        const char* anno_descriptor = anno->type->descriptor->c_str();
+        filter_context.class_annotations.insert(anno_descriptor);
+        if (strcmp(anno_descriptor,
                    "Ldalvik/annotation/SourceDebugExtension;") == 0) {
           for (auto* elem : anno->elements) {
             if (elem->name != nullptr &&
@@ -222,6 +236,8 @@ bool Instrumenter::InstrumentClass(const std::shared_ptr<ir::DexFile>& dex_ir,
       }
     }
   }
+  filter_context.source_file = source_file;
+  filter_context.smap = smap;
 
   MetadataCollector& collector = MetadataCollector::Instance();
   auto* class_meta =
@@ -231,12 +247,14 @@ bool Instrumenter::InstrumentClass(const std::shared_ptr<ir::DexFile>& dex_ir,
   bool modified = false;
   for (auto& ir_class : dex_ir->classes) {
     for (auto& method : ir_class->virtual_methods) {
-      if (InstrumentMethod(method, hit_method_decl, dex_ir, class_meta)) {
+      if (InstrumentMethod(method, hit_method_decl, dex_ir, class_meta,
+                           filter_context)) {
         modified = true;
       }
     }
     for (auto& method : ir_class->direct_methods) {
-      if (InstrumentMethod(method, hit_method_decl, dex_ir, class_meta)) {
+      if (InstrumentMethod(method, hit_method_decl, dex_ir, class_meta,
+                           filter_context)) {
         modified = true;
       }
     }
@@ -287,7 +305,8 @@ void Instrumenter::AddUnloadedClasses(const unsigned char* dex, size_t size) {
 bool Instrumenter::InstrumentMethod(
     ir::EncodedMethod* ir_method, ir::MethodDecl* hit_method_decl,
     const std::shared_ptr<ir::DexFile>& dex_ir,
-    android::tools::coverage::proto::ClassMetadata* class_meta) const {
+    android::tools::coverage::proto::ClassMetadata* class_meta,
+    const FilterContext& filter_context) const {
   if (ir_method->code == nullptr) {
     return false;  // Abstract or native method
   }
@@ -473,6 +492,11 @@ bool Instrumenter::InstrumentMethod(
 
   lir::ControlFlowGraph cfg(&code_ir, /*prune_exception_edges=*/false);
 
+  // Run the coverage filters once over the whole method. Their decisions are
+  // consulted below for every block.
+  const FilterResult filter_result = SyntheticFilter::Apply(
+      filter_context, ir_method, code_ir, cfg.basic_blocks);
+
   // Use a local structure to hold block metadata until we are certain
   // instrumentation succeeded.
   struct PendingBlock {
@@ -481,11 +505,17 @@ bool Instrumenter::InstrumentMethod(
     uint32_t branch_count;
     std::vector<uint32_t> successor_block_ids;
     const lir::BasicBlock* original_block;
+    // Replacement branch targets requested by a filter, or nullptr.
+    const std::vector<lir::Instruction*>* replaced_branch_targets;
+    // False if all of the block's instructions are ignored by the filters.
+    // Filters do not affect probes: such a block is still probed so that
+    // branches into it can be observed, but it is not reported.
+    bool reported;
   };
   std::vector<PendingBlock> pending_blocks;
   std::unordered_map<lir::Instruction*, uint32_t> instr_to_block_id;
 
-  bool injected = false;
+  bool has_reported_block = false;
   for (const auto& block : cfg.basic_blocks) {
     lir::Instruction* trace_point = nullptr;
 
@@ -494,7 +524,9 @@ bool Instrumenter::InstrumentMethod(
     // Track metadata for this block: map line_number -> instruction_count
     std::map<int32_t, uint32_t> line_instruction_counts;
 
-    // 1. Gather line numbers for this block
+    // 1. Gather line numbers for this block, skipping instructions ignored by
+    // the filters.
+    bool has_reported_instruction = false;
     for (auto* instr = block.region.first; instr != nullptr;
          instr = (instr == block.region.last) ? nullptr : instr->next) {
       if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
@@ -504,6 +536,10 @@ bool Instrumenter::InstrumentMethod(
             op == dex::OP_CHECK_CAST) {
           continue;
         }
+        if (filter_result.IsIgnored(instr)) {
+          continue;
+        }
+        has_reported_instruction = true;
 
         auto it = instr_to_line.find(instr);
         int32_t line = (it != instr_to_line.end()) ? it->second : -1;
@@ -595,17 +631,27 @@ bool Instrumenter::InstrumentMethod(
     if (trace_point == nullptr) continue;
 
     // Determine the branch count for this block using the opcode flags of the
-    // last instruction in the block region.
+    // last instruction in the block region, unless a filter has overridden it.
     uint32_t branch_count = 1;  // Default for sequential flow.
+    const std::vector<lir::Instruction*>* replaced_branch_targets = nullptr;
     if (auto* last_bytecode =
             dynamic_cast<lir::Bytecode*>(block.region.last)) {
       auto flags = dex::GetFlagsFromOpcode(last_bytecode->opcode);
-      // TODO: Move this check into a separate filter for constructors for
-      // default arguments, like the lateinit and coroutine filters.
-      if (SyntheticFilter::IsSyntheticBranch(ir_method, block) ||
-          (is_default_arguments_constructor &&
-           (flags & (dex::kBranch | dex::kSwitch)))) {
-        branch_count = 1; // Demote to sequential block flow (removes synthetic branch)
+      replaced_branch_targets =
+          filter_result.GetReplacedBranches(last_bytecode);
+      if (replaced_branch_targets != nullptr) {
+        // A filter replaced the branches of this block with an explicit list
+        // of targets.
+        branch_count = static_cast<uint32_t>(replaced_branch_targets->size());
+      } else if ((flags & (dex::kBranch | dex::kSwitch)) &&
+                 (filter_result.IsIgnored(last_bytecode) ||
+                  filter_result.IsBranchSuppressed(last_bytecode) ||
+                  is_default_arguments_constructor)) {
+        // Compiler-generated branch: demote to sequential block flow.
+        // TODO: Move the is_default_arguments_constructor check into a
+        // separate filter for constructors for default arguments, like the
+        // lateinit and coroutine filters.
+        branch_count = 1;
       } else if (flags & dex::kBranch) {
         if (flags & dex::kContinue) {
           branch_count = 2;  // Conditional branch (e.g., IF_*)
@@ -659,7 +705,9 @@ bool Instrumenter::InstrumentMethod(
 
     code_ir.instructions.InsertBefore(trace_point, load_id);
     code_ir.instructions.InsertBefore(trace_point, call_mark);
-    injected = true;
+    if (has_reported_instruction) {
+      has_reported_block = true;
+    }
 
     // Record the mapping locally.
     PendingBlock pending;
@@ -669,6 +717,8 @@ bool Instrumenter::InstrumentMethod(
     }
     pending.branch_count = branch_count;
     pending.original_block = &block;
+    pending.replaced_branch_targets = replaced_branch_targets;
+    pending.reported = has_reported_instruction;
     pending_blocks.push_back(std::move(pending));
 
     // Map each instruction in this block to its assigned block_id for Pass 2 resolution
@@ -678,7 +728,8 @@ bool Instrumenter::InstrumentMethod(
     }
   }
 
-  if (!injected) {
+  // Nothing left to report: leave the method uninstrumented.
+  if (!has_reported_block) {
     return false;
   }
 
@@ -695,7 +746,17 @@ bool Instrumenter::InstrumentMethod(
       }
     };
 
-    if (auto* last_bytecode = dynamic_cast<lir::Bytecode*>(block.region.last)) {
+    if (pb.replaced_branch_targets != nullptr) {
+      // A filter replaced this block's branches: the successors are exactly
+      // the blocks containing the replacement targets.
+      for (auto* target : *pb.replaced_branch_targets) {
+        auto it = instr_to_block_id.find(target);
+        if (it != instr_to_block_id.end()) {
+          successor_ids.push_back(it->second);
+        }
+      }
+    } else if (auto* last_bytecode =
+                   dynamic_cast<lir::Bytecode*>(block.region.last)) {
       auto flags = dex::GetFlagsFromOpcode(last_bytecode->opcode);
       if (flags & dex::kBranch) {
         // Unconditional or conditional branches/jumps
@@ -761,6 +822,9 @@ bool Instrumenter::InstrumentMethod(
       ir_method->decl->prototype->Signature().c_str());
 
   for (const auto& pb : pending_blocks) {
+    if (!pb.reported) {
+      continue;
+    }
     MetadataCollector::Instance().AddBlock(method_meta, pb.id, pb.line_counts,
                                            pb.branch_count, pb.successor_block_ids);
   }

@@ -43,6 +43,8 @@ struct DexFile;
 
 namespace coverage {
 
+struct FilterContext;
+
 class Instrumenter {
  public:
   Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix);
@@ -83,11 +85,13 @@ class Instrumenter {
                        const std::string& descriptor, bool loaded) const;
 
   // Instruments a single method by allocating scratch registers and injecting
-  // coverage tracking calls. Returns true if the method was modified.
+  // coverage tracking calls. `filter_context` describes the enclosing class
+  // to the coverage filters. Returns true if the method was modified.
   bool InstrumentMethod(
       ir::EncodedMethod* ir_method, ir::MethodDecl* hit_method_decl,
       const std::shared_ptr<ir::DexFile>& dex_ir,
-      android::tools::coverage::proto::ClassMetadata* class_meta) const;
+      android::tools::coverage::proto::ClassMetadata* class_meta,
+      const FilterContext& filter_context) const;
 
   jvmtiEnv* jvmti_;
   std::string inclusion_prefix_;

@@ -1,4 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "android_cc_binary", "jni_library")
 
 # Converts the jar containing runtime dex to an array in a CC source file.
@@ -107,6 +108,7 @@ cc_test(
     size = "small",
     srcs = [
         "bytecode_helpers_test.cc",
+        "filter_result_test.cc",
         "hits_extractor_test.cc",
         "metadata_collector_test.cc",
     ],
@@ -115,5 +117,49 @@ cc_test(
         ":agent_lib",
         "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@googletest//:gtest_main",
+    ],
+)
+
+# The class that instrumenter_test instruments.
+java_library(
+    name = "instrumenter_test_target",
+    testonly = True,
+    srcs = ["testdata/com/example/InstrumenterTestTarget.java"],
+)
+
+# Compiles instrumenter_test_target to dex. d8 names its output classes.dex.
+genrule(
+    name = "instrumenter_test_target_dex",
+    testonly = True,
+    srcs = [":instrumenter_test_target"],
+    outs = ["classes.dex"],
+    cmd = "$(execpath //prebuilts/r8:d8) --output $(RULEDIR) $(SRCS)",
+    tools = ["//prebuilts/r8:d8"],
+)
+
+# Converts the dex file to an array in a CC source file.
+genrule(
+    name = "instrumenter_test_target_dex_cc",
+    testonly = True,
+    srcs = [":instrumenter_test_target_dex"],
+    outs = ["instrumenter_test_target_dex.cc"],
+    cmd = "$(execpath //tools/base/bazel:bin2c) -lang=cxx" +
+          " -variable=instrumenter_test_target_dex -output=$@ $(SRCS)",
+    tools = ["//tools/base/bazel:bin2c"],
+)
+
+cc_test(
+    name = "instrumenter_test",
+    size = "small",
+    srcs = [
+        "instrumenter_test.cc",
+        ":instrumenter_test_target_dex_cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":agent_lib",
+        "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
+        "@googletest//:gtest_main",
+        "@slicer",
     ],
 )
