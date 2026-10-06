@@ -111,6 +111,7 @@ class BooleanOptionTest {
         BooleanOption.LINT_BASELINE_OMIT_LINE_NUMBERS,
         BooleanOption.ENABLE_NEW_TEST_DSL,
         BooleanOption.ENABLE_SCREENSHOT_TEST,
+        BooleanOption.SCREENSHOT_TEST_USE_SOURCE_REFERENCE_DIRECTORIES,
         BooleanOption.ENABLE_BACKUP_TEST,
         BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT,
         BooleanOption.SUPPRESS_MANIFEST_PACKAGE_WARNING,
@@ -191,5 +192,13 @@ class BooleanOptionTest {
         },
       requirement = "FutureStage must be different from the current stage.",
     )
+  }
+
+  @Test
+  fun `check SCREENSHOT_TEST_USE_SOURCE_REFERENCE_DIRECTORIES configuration`() {
+    val option = BooleanOption.SCREENSHOT_TEST_USE_SOURCE_REFERENCE_DIRECTORIES
+    assertWithMessage("Property name").that(option.propertyName).isEqualTo("android.screenshotTest.useSourceReferenceDirectories")
+    assertWithMessage("Default value").that(option.defaultValue).isTrue()
+    assertWithMessage("Stage").that(option.stage).isEqualTo(FeatureStage.Experimental)
   }
 }

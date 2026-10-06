@@ -17,8 +17,11 @@
 package com.android.build.gradle.internal.testsuites
 
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.options.BooleanOption
 import java.io.File
+import org.gradle.api.GradleException
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
@@ -73,27 +76,35 @@ internal class ScreenshotTestSuiteTaskConfigurator(private val suiteName: String
       }
     }
 
-    val targetName = context.targetName
-    val capitalizedTargetName = targetName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.US) else it.toString() }
-
-    val variantName = context.targetedVariant
-    val capitalizedVariantName = variantName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.US) else it.toString() }
+    val capitalizedTargetName = context.targetName.capitalizeFirstChar()
+    val capitalizedVariantName = context.targetedVariant.capitalizeFirstChar()
+    val suiteTargetVariant = "${suiteName}${capitalizedTargetName}${capitalizedVariantName}"
 
     val projectDirectory = dslServices.projectInfo.projectDirectory
-    val srcDir = projectDirectory.asFile.resolve("src")
+    val useSourceReferenceDirectories = dslServices.projectOptions[BooleanOption.SCREENSHOT_TEST_USE_SOURCE_REFERENCE_DIRECTORIES]
 
-    // Resolve the reference directory: src/[suiteName][Target][Variant]/reference
-    // (e.g., src/screenshotTestDefaultDebug/reference)
-    val referenceImageDirProvider: Provider<File> = providers.provider {
-      srcDir.resolve("${suiteName}${capitalizedTargetName}${capitalizedVariantName}").resolve("reference")
-    }
+    val referenceImageDirProvider: Provider<File> =
+      if (useSourceReferenceDirectories) {
+        // Resolve the source reference directory: src/[suiteName][Target][Variant]/reference
+        // (e.g., src/screenshotTestDefaultDebug/reference)
+        val srcDir = projectDirectory.asFile.resolve("src")
+        providers.provider { srcDir.resolve(suiteTargetVariant).resolve("reference") }
+      } else {
+        // Resolve the local build output reference directory:
+        // build/outputs/screenshotTest-results/[suiteName][Target][Variant]/reference
+        dslServices.projectInfo.getOutputsDir().map { outputsDir ->
+          outputsDir.dir("screenshotTest-results/$suiteTargetVariant/reference").asFile
+        }
+      }
 
     // Pass the relative path to the system property to preserve build cache relocatability.
+    val projectDirFile = projectDirectory.asFile
     val relativeReferencePathProvider = referenceImageDirProvider.map { referenceDir ->
-      projectDirectory.asFile.toPath().relativize(referenceDir.toPath()).toString()
+      referenceDir.relativeToOrSelf(projectDirFile).path
     }
 
-    val rootDirProvider = providers.provider { task.project.rootDir.absolutePath }
+    val rootDirPath = dslServices.projectInfo.rootDir.absolutePath
+    val rootDirProvider = providers.provider { rootDirPath }
 
     task.jvmArgumentProviders.add(ScreenshotArgumentProvider(relativeReferencePathProvider, rootDirProvider, threshold))
 
@@ -106,6 +117,21 @@ internal class ScreenshotTestSuiteTaskConfigurator(private val suiteName: String
         .withPropertyName("referenceImageDir")
         .withPathSensitivity(PathSensitivity.RELATIVE)
         .optional()
+
+      if (!useSourceReferenceDirectories) {
+        val targetedVariant = context.targetedVariant
+        val propName = BooleanOption.SCREENSHOT_TEST_USE_SOURCE_REFERENCE_DIRECTORIES.propertyName
+        task.doFirst {
+          val refDir = referenceImageDirProvider.get()
+          if (!refDir.exists() || refDir.walkTopDown().none { it.isFile }) {
+            throw GradleException(
+              "Local reference screenshot directory '${refDir.absolutePath}' does not exist or is empty. " +
+                "When '$propName=false', run the screenshot update task for variant '$targetedVariant' first to generate local reference images, " +
+                "or set '$propName=true' to validate against source reference images."
+            )
+          }
+        }
+      }
     }
   }
 }

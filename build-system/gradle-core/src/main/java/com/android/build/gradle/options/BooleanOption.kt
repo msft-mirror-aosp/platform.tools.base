@@ -301,6 +301,21 @@ enum class BooleanOption(
   LINT_BASELINE_OMIT_LINE_NUMBERS("android.lint.baselineOmitLineNumbers", false, FeatureStage.Experimental),
   ENABLE_NEW_TEST_DSL("android.experimental.enableNewTestDsl", false, FeatureStage.Experimental),
   @Suppress("unused") ENABLE_SCREENSHOT_TEST("android.experimental.enableScreenshotTest", false, FeatureStage.Experimental),
+  /**
+   * Controls where reference images are stored and read from for Compose Screenshot test suites.
+   * - When `true` (default), both update and validate screenshot tasks use the source reference directory
+   *   `src/<suite><Target><Variant>/reference` (expected to be checked into version control).
+   * - When `false`, both update and validate screenshot tasks use the local build output directory
+   *   `build/outputs/screenshotTest-results/<suite><Target><Variant>/reference`.
+   *
+   * Set `android.screenshotTest.useSourceReferenceDirectories=false` in `~/.gradle/gradle.properties` or via
+   * `-Pandroid.screenshotTest.useSourceReferenceDirectories=false` when generating and validating screenshots locally.
+   */
+  SCREENSHOT_TEST_USE_SOURCE_REFERENCE_DIRECTORIES(
+    "android.screenshotTest.useSourceReferenceDirectories",
+    true,
+    FeatureStage.Experimental,
+  ),
   @Suppress("unused") ENABLE_BACKUP_TEST("android.experimental.enableBackupTest", false, FeatureStage.Experimental),
 
   /** Whether to enable kotlin compilation for test fixtures */

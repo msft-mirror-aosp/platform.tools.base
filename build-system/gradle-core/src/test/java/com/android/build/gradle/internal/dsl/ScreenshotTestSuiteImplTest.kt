@@ -163,4 +163,34 @@ class ScreenshotTestSuiteImplTest {
     assertThat(updateTask.testLogging.showStandardStreams).isTrue()
     assertThat(updateTask.testLogging.exceptionFormat).isEqualTo(TestExceptionFormat.SHORT)
   }
+
+  @Test
+  fun testReferenceDirectoryConfiguration() {
+    val dslSuite = dslServices.newDecoratedInstance(ScreenshotTestSuiteImpl::class.java, "screenshotTest", dslServices)
+    val suite =
+      dslServices.newDecoratedInstance(ScreenshotAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+
+    val updateTask =
+      project.tasks.register("updateDebugScreenshotTestDefaultTestSuite", org.gradle.api.tasks.testing.Test::class.java).get()
+    val validateTask =
+      project.tasks.register("testDebugScreenshotTestDefaultTestSuite", org.gradle.api.tasks.testing.Test::class.java).get()
+
+    fun context(isUpdate: Boolean) =
+      object : TestTaskContext {
+        override val targetName = "default"
+        override val isUpdateTask = isUpdate
+        override val suiteName = "screenshotTest"
+        override val targetedVariant = "debug"
+        override val targetedDevices = emptyList<String>()
+      }
+
+    suite.testTaskConfigActions.forEach { action -> updateTask.action(context(isUpdate = true)) }
+    suite.testTaskConfigActions.forEach { action -> validateTask.action(context(isUpdate = false)) }
+
+    val expectedRelativePath = listOf("src", "screenshotTestDefaultDebug", "reference").joinToString(java.io.File.separator)
+    val updateArgs = updateTask.jvmArgumentProviders.single().asArguments().toList()
+    assertThat(updateArgs).contains("-DPreviewScreenshotTestEngineInput.referenceImageDir=$expectedRelativePath")
+    val validateArgs = validateTask.jvmArgumentProviders.single().asArguments().toList()
+    assertThat(validateArgs).contains("-DPreviewScreenshotTestEngineInput.referenceImageDir=$expectedRelativePath")
+  }
 }

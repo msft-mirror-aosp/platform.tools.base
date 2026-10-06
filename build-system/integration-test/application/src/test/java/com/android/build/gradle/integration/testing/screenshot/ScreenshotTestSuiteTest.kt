@@ -151,6 +151,39 @@ class ScreenshotTestSuiteTest {
   }
 
   @Test
+  fun runPreviewScreenshotTestWithUseSourceReferenceDirectoriesFalse() {
+    val build = rule.build {
+      gradleProperties {
+        add(BooleanOption.SCREENSHOT_TEST_USE_SOURCE_REFERENCE_DIRECTORIES, false)
+      }
+    }
+    val appProject = build.androidApplication()
+
+    // 1. Running validate before update when useSourceReferenceDirectories=false should fail fast
+    val missingRefResult = build.validateScreenshotTestWithTestSuite(expectFailure = true)
+    missingRefResult.assertErrorContains("Local reference screenshot directory")
+    missingRefResult.assertErrorContains("does not exist or is empty")
+    missingRefResult.assertErrorContains("run the screenshot update task for variant 'debug' first")
+    missingRefResult.assertErrorContains("android.screenshotTest.useSourceReferenceDirectories=false")
+
+    // 2. Running update writes reference images to build/outputs/screenshotTest-results/.../reference and not src/.../reference
+    val updateResult = build.updateReferenceImageWithTestSuite()
+    updateResult.assertTask(getTestSuiteUpdateTaskName()).didWork()
+
+    val sourceRefDir = getTestSuiteReferenceDir(appProject, "pkg.name.ExampleTest")
+    assertThat(sourceRefDir).doesNotExist()
+
+    val localRefDir =
+      appProject.buildDir.resolve("outputs/screenshotTest-results/screenshotTestDefaultDebug/reference/pkg/name/ExampleTest")
+    assertThat(localRefDir.listDirectoryEntries().map { it.name }).containsExactlyElementsIn(EXPECTED_EXAMPLE_TEST_REFERENCE_IMAGES)
+
+    // 3. Subsequent validate hits configuration cache and passes against local reference images
+    val secondValidate = build.validateScreenshotTestWithTestSuite()
+    secondValidate.assertTask(getTestSuiteValidateTaskName()).didWork()
+    secondValidate.assertConfigurationCacheHit()
+  }
+
+  @Test
   fun runPreviewScreenshotTestInAllProjects() {
     val build = rule.build
 
