@@ -28,6 +28,7 @@ import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BuildToolsExecutableInput
+import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
@@ -601,6 +602,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         creationConfig.services.fileCollection().also { fileCollection ->
           if (hasHostJar) {
             fileCollection.from(classesDir)
+            fileCollection.from(getLinkedRClassJars())
             val testedVariant = creationConfig.testedVariant
             val spec =
               PublishingSpecs.getVariantPublishingSpec(testedVariant.componentType)
@@ -758,16 +760,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           AgpTestSuiteInputParameters.R_CLASS_JARS -> {
             val testRClassJars =
               task.project.objects.fileCollection().also { fc ->
-                if (!testedVariant.componentType.isAar) {
+                val linkedRClassJars = getLinkedRClassJars()
+                fc.from(linkedRClassJars)
+                if (linkedRClassJars.isEmpty() && !testedVariant.componentType.isAar) {
                   testedVariant.androidResourcesCreationConfig?.compiledRClassArtifact?.let { fc.from(it) }
-                } else if (creationConfig.androidResourcesIncluded) {
-                  // The R class of the tested variant of a library only holds placeholder ids. The one with the final ids is linked by the
-                  // test suite itself, see HostJarTestSuiteTaskManager.setupAndroidResourceTasks.
-                  creationConfig.sourceContainers.forEach { sc ->
-                    (sc.creationConfig as? HostTestCreationConfig)?.let {
-                      fc.from(it.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR))
-                    }
-                  }
                 }
                 // Only the compile classpath: R class jars of dependencies are published as api artifacts (see
                 // AndroidArtifacts.PublishedConfigSpec of R_CLASS_JAR), the runtime classpath never carries any.
@@ -952,6 +948,27 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
       )
     }
+
+    /**
+     * Returns the R class jars produced by the test suite's own resource linking tasks (see
+     * [com.android.build.gradle.internal.testsuites.impl.HostJarTestSuiteTaskManager.setupAndroidResourceTasks]): the R class of the tested
+     * variant only holds placeholder IDs for a library, and misses the resources of the dependencies that only the test suite has for an
+     * application.
+     */
+    private fun getLinkedRClassJars() =
+      if (
+        creationConfig.androidResourcesIncluded &&
+          creationConfig.testedVariant.buildFeatures.androidResources &&
+          (creationConfig.testedVariant.componentType.isAar || creationConfig.testedVariant is ApplicationCreationConfig)
+      ) {
+        creationConfig.sourceContainers
+          .filter { it.source is TestSuiteSourceSet.HostJar }
+          .mapNotNull { sc ->
+            (sc.creationConfig as? HostTestCreationConfig)?.artifacts?.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
+          }
+      } else {
+        emptyList()
+      }
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)

@@ -16,12 +16,18 @@
 
 package com.android.build.gradle.integration.testing.screenshot
 
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.CustomObjectInstance
 import com.android.build.gradle.integration.common.fixture.project.builder.StringHandler
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.nio.file.Paths
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import org.gradle.api.artifacts.dsl.DependencyCollector
@@ -106,36 +112,38 @@ class ScreenshotMultiModuleTestSuiteTest {
 
   @Test
   fun runPreviewScreenshotTestWithCrossModuleResources() {
-    val build = rule.build {
-      androidApplication {
-        // Like screenshotTestImplementation(project(":lib")) in the standalone test, :lib is a dependency of the screenshot test suite
-        // only, so its resources are not resources of the tested application.
-        android {
-          testOptions.screenshotTests.named("screenshotTest") { it.dependencies { implementation.add(ProjectDependencyNotation(":lib")) } }
-        }
-        files {
-          add(
-            "src/screenshotTest/java/com/CrossModuleTest.kt",
-            """
-            package pkg.name
-
-            import androidx.compose.ui.tooling.preview.Preview
-            import androidx.compose.runtime.Composable
-            import com.android.tools.screenshot.PreviewTest
-
-            class CrossModuleTest {
-                @PreviewTest
-                @Preview(showBackground = true)
-                @Composable
-                fun crossModuleComposableTest() {
-                    LibComposable()
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
+    val addCrossModuleTest: AndroidProjectDefinition<out CommonExtension>.() -> Unit = {
+      // Like screenshotTestImplementation(project(":lib")) in the standalone test, :lib is a dependency of the screenshot test suite
+      // only, so its resources are not resources of the tested application or library.
+      android {
+        testOptions.screenshotTests.named("screenshotTest") { it.dependencies { implementation.add(ProjectDependencyNotation(":lib")) } }
       }
+      files {
+        add(
+          "src/screenshotTest/java/com/CrossModuleTest.kt",
+          """
+          package pkg.name
+
+          import androidx.compose.ui.tooling.preview.Preview
+          import androidx.compose.runtime.Composable
+          import com.android.tools.screenshot.PreviewTest
+
+          class CrossModuleTest {
+              @PreviewTest
+              @Preview(showBackground = true)
+              @Composable
+              fun crossModuleComposableTest() {
+                  LibComposable()
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+    }
+    val build = rule.build {
+      androidApplication(action = addCrossModuleTest)
+      androidLibrary(":lib2_0", action = addCrossModuleTest)
       androidLibrary {
         files {
           add("src/main/res/values/strings.xml", "<resources><string name=\"lib_string\">Library String</string></resources>")
@@ -167,19 +175,30 @@ class ScreenshotMultiModuleTestSuiteTest {
       }
     }
 
-    val appProject = build.androidApplication()
+    val libRStringClass = "pkg/name/lib/R\$string.class"
+    for ((projectName, project) in listOf("app" to build.androidApplication(), "lib2_0" to build.androidLibrary(":lib2_0"))) {
+      val updateResult = build.updateReferenceImageWithTestSuite(projectName = projectName)
+      updateResult.assertOutputDoesNotContain("ScreenshotError")
+      updateResult.assertErrorDoesNotContain("ScreenshotError")
 
-    val updateResult = build.updateReferenceImageWithTestSuite()
-    updateResult.assertOutputDoesNotContain("ScreenshotError")
-    updateResult.assertErrorDoesNotContain("ScreenshotError")
+      val result = build.validateScreenshotTestWithTestSuite(projectName = projectName)
+      result.assertOutputDoesNotContain("ScreenshotError")
 
-    val result = build.validateScreenshotTestWithTestSuite()
-    result.assertOutputDoesNotContain("ScreenshotError")
+      // The R class of :lib comes from the R class linked for the test suite, which comes first. It is not in the R class of the tested
+      // application or library, which does not depend on :lib.
+      val rClassJars =
+        getTestSuiteEngineInputs(project).getProperty(AgpTestSuiteInputParameters.R_CLASS_JARS.propertyName).split(File.pathSeparator)
+      Zip(Paths.get(rClassJars.first())).use { assertThat(it.getEntry(libRStringClass)).isNotNull() }
 
-    val classHtmlReport = getTestSuiteHtmlReportClassFile(appProject, "pkg.name.CrossModuleTest")
-    assertThat(classHtmlReport).exists()
-    assertThat(getTestSuiteHtmlReportTestStatuses(appProject, "pkg.name.CrossModuleTest"))
-      .containsExactly("crossModuleComposableTest", TEST_SUITE_REPORT_PASSED)
+      val classHtmlReport = getTestSuiteHtmlReportClassFile(project, "pkg.name.CrossModuleTest")
+      assertThat(classHtmlReport).exists()
+      assertThat(getTestSuiteHtmlReportTestStatuses(project, "pkg.name.CrossModuleTest"))
+        .containsExactly("crossModuleComposableTest", TEST_SUITE_REPORT_PASSED)
+    }
+
+    val appRClassJar =
+      build.androidApplication().buildDir.resolve("intermediates/compile_and_runtime_r_class_jar/debug/processDebugResources/R.jar")
+    Zip(appRClassJar).use { assertThat(it.getEntry(libRStringClass)).isNull() }
   }
 
   /**

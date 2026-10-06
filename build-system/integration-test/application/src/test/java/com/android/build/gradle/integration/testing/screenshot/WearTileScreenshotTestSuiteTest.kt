@@ -16,12 +16,16 @@
 
 package com.android.build.gradle.integration.testing.screenshot
 
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
+import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.nio.file.Paths
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import org.junit.Rule
@@ -254,6 +258,60 @@ class WearTileScreenshotTestSuiteTest {
         "multiplePreviewsTest_large_f3ef1d95_0.png",
       )
     assertThat(topLevelTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly("simpleTilePreview3_0.png")
+  }
+
+  @Test
+  fun runPreviewScreenshotTestsWithTilesToolingAsTestDep() {
+    val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
+    val build = rule.build
+    val appProject = build.androidApplication()
+
+    // Record the reference images with tiles-tooling in the main implementation, where its resources and the ones of its dependencies
+    // are resources of the tested application.
+    build.updateReferenceImageWithTestSuite()
+    assertThat(getTestSuiteReferenceDir(appProject, "pkg.name.ExampleTest").listDirectoryEntries()).isNotEmpty()
+    assertThat(getTestSuiteReferenceDir(appProject, "pkg.name.TopLevelPreviewTestKt").listDirectoryEntries()).isNotEmpty()
+
+    // Move tiles-tooling to the screenshot test suite only. Its resources and the ones of its runtime only dependencies, like
+    // protolayout-renderer, now have to come from the resources of the test suite.
+    appProject.reconfigure {
+      dependencies { remove("implementation", tilesToolingDep) }
+      android { testOptions.screenshotTests.named("screenshotTest") { it.dependencies { implementation.add(tilesToolingDep) } } }
+    }
+
+    // Validate that the previews rendered with tiles-tooling as a test only dependency match the reference images
+    build.validateScreenshotTestWithTestSuite()
+
+    // The R class of protolayout-renderer, a runtime only dependency of tiles-tooling, comes from the R class linked for the test suite,
+    // which comes first. It does not leak into the R class of the tested application.
+    val rendererRStyleClass = "androidx/wear/protolayout/renderer/R\$style.class"
+    val rClassJars =
+      getTestSuiteEngineInputs(appProject).getProperty(AgpTestSuiteInputParameters.R_CLASS_JARS.propertyName).split(File.pathSeparator)
+    val testSuiteRClassJar = Paths.get(rClassJars.first())
+    assertThat(testSuiteRClassJar).exists()
+    Zip(testSuiteRClassJar).use { assertThat(it.getEntry(rendererRStyleClass)).isNotNull() }
+    val appRClassJar = appProject.buildDir.resolve("intermediates/compile_and_runtime_r_class_jar/debug/processDebugResources/R.jar")
+    assertThat(appRClassJar).exists()
+    Zip(appRClassJar).use { assertThat(it.getEntry(rendererRStyleClass)).isNull() }
+
+    // Verify that HTML reports are generated and all tests pass
+    val indexHtmlReport = getTestSuiteHtmlReportIndexFile(appProject)
+    val classHtmlReport = getTestSuiteHtmlReportClassFile(appProject, "pkg.name.ExampleTest")
+    val class2HtmlReport = getTestSuiteHtmlReportClassFile(appProject, "pkg.name.TopLevelPreviewTestKt")
+    assertThat(indexHtmlReport).exists()
+    assertThat(classHtmlReport).exists()
+    assertThat(class2HtmlReport).exists()
+    assertThat(getTestSuiteHtmlReportTestStatuses(appProject, "pkg.name.ExampleTest"))
+      .containsExactlyEntriesIn(EXAMPLE_TEST_NAMES.associateWith { TEST_SUITE_REPORT_PASSED })
+    assertThat(getTestSuiteHtmlReportTestStatuses(appProject, "pkg.name.TopLevelPreviewTestKt"))
+      .containsExactly("simpleTilePreview3", TEST_SUITE_REPORT_PASSED)
+    assertThat(getTestSuiteHtmlReportPackageNames(appProject)).contains("pkg.name")
+
+    // Assert that no diff images were generated because screenshot matched the reference image
+    val exampleTestDiffDir = getTestSuiteDiffDir(appProject, "pkg.name.ExampleTest")
+    val topLevelTestDiffDir = getTestSuiteDiffDir(appProject, "pkg.name.TopLevelPreviewTestKt")
+    assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
+    assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
   }
 
   @Test

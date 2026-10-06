@@ -27,6 +27,7 @@ import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.TestSuiteTaskManager
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
+import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
@@ -131,12 +132,19 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
   ) {
     val testedVariant = testSuite.testedVariant
     if (testedVariant.componentType.isApk) {
-      if (hostJarConfig.androidResourcesIncluded) {
+      if (testedVariant is ApplicationCreationConfig) {
+        // The resources and assets of the tested application miss the ones of the dependencies that only the test suite has, so the test
+        // suite merges and links its own.
+        testSuiteTaskManager.createHostJarTestSuiteResourcesTasks(hostJarConfig)
+        testSuite.artifacts.copy(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT, hostJarConfig.artifacts)
+        testSuite.artifacts.copy(SingleArtifact.ASSETS, hostJarConfig.artifacts)
+      } else {
+        // Linking the resources of a dynamic feature requires the ones of its base module.
         testSuiteTaskManager.createTestSuiteProcessTestManifestTask(hostJarConfig)
-        testSuite.artifacts.copy(InternalArtifactType.MERGED_MANIFESTS, hostJarConfig.artifacts)
+        testSuite.artifacts.copy(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT, testedVariant.artifacts)
+        testSuite.artifacts.copy(SingleArtifact.ASSETS, testedVariant.artifacts)
       }
-      testSuite.artifacts.copy(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT, testedVariant.artifacts)
-      testSuite.artifacts.copy(SingleArtifact.ASSETS, testedVariant.artifacts)
+      testSuite.artifacts.copy(InternalArtifactType.MERGED_MANIFESTS, hostJarConfig.artifacts)
 
       taskFactory.register(PackageForHostTest.TestSuiteCreationAction(testSuite))
     } else if (testedVariant.componentType.isAar) {

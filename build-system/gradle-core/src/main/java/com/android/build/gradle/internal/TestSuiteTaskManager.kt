@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask
 import com.android.build.gradle.internal.tasks.CompressAssetsTask
@@ -114,16 +115,69 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     // Add a task to process the manifest
     createProcessTestManifestTask(hostJarConfig)
 
-    // Add a task to create the res values
-    createGenerateResValuesTask(hostJarConfig)
-
     // Add a task to merge the assets folders
+    createMergeTestSuiteAssetsTask(hostJarConfig)
+
+    if (hostJarConfig.buildFeatures.androidResources) {
+      createMergeAndLinkResourcesTasks(hostJarConfig)
+    }
+  }
+
+  /**
+   * Merges the assets of the tested variant of [hostJarConfig] with the assets of the runtime classpath of the host jar sources of the test
+   * suite.
+   */
+  private fun createMergeTestSuiteAssetsTask(hostJarConfig: TestSuiteHostJarCreationConfig) {
+    val testedVariant = hostJarConfig.mainVariant
+    val testedArtifacts = testedVariant.artifacts
+    val artifacts = hostJarConfig.artifacts
+
+    artifacts.copy(InternalArtifactType.SHADER_ASSETS, testedArtifacts)
+    artifacts.copy(InternalArtifactType.MERGED_ML_MODELS, testedArtifacts)
+    hostJarConfig.taskContainer.assetGenTask.dependsOn(testedVariant.taskContainer.assetGenTask)
+
     createMergeAssetsTask(hostJarConfig, includeDependencies = true)
+  }
 
-    createMergeResourcesTask(hostJarConfig, true, emptySet())
+  /**
+   * Merges the resources of the tested variant of [hostJarConfig] with the resources of the runtime classpath of the host jar sources of
+   * the test suite, and links them.
+   */
+  private fun createMergeAndLinkResourcesTasks(hostJarConfig: TestSuiteHostJarCreationConfig) {
+    val testedVariant = hostJarConfig.mainVariant
+    val testedArtifacts = testedVariant.artifacts
+    val artifacts = hostJarConfig.artifacts
 
-    // Add a task to process the Android Resources and generate source files
-    createApkProcessResTask(hostJarConfig, InternalArtifactType.FEATURE_RESOURCE_PKG)
+    // Reuse the intermediates of the tested variant that do not depend on its dependencies.
+    artifacts.copy(InternalArtifactType.RENDERSCRIPT_GENERATED_RES, testedArtifacts)
+    artifacts.copy(InternalArtifactType.GENERATED_RES, testedArtifacts)
+    artifacts.copy(InternalArtifactType.GENERATED_LOCALE_CONFIG, testedArtifacts)
+    artifacts.copy(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP, testedArtifacts)
+    artifacts.copy(InternalArtifactType.LOCAL_ONLY_SYMBOL_LIST, testedArtifacts)
+    artifacts.copy(InternalArtifactType.COMPILED_NAVIGATION_RES, testedArtifacts)
+    hostJarConfig.taskContainer.resourceGenTask.dependsOn(testedVariant.taskContainer.resourceGenTask)
+
+    createCheckAarMetadataTask(hostJarConfig)
+
+    basicCreateMergeResourcesTask(
+      hostJarConfig,
+      MergeType.MERGE,
+      includeDependencies = true,
+      processResources = true,
+      alsoOutputNotCompiledResources = false,
+      flags = emptySet(),
+      taskProviderCallback = null,
+    )
+
+    taskFactory.register(
+      LinkApplicationAndroidResourcesTask.CreationAction(
+        creationConfig = hostJarConfig,
+        generateLegacyMultidexMainDexProguardRules = false,
+        sourceArtifactType = MergeType.MERGE,
+        baseName = hostJarConfig.services.projectInfo.getProjectBaseName(),
+        isLibrary = false,
+      )
+    )
   }
 
   fun createTestSuiteProcessTestManifestTask(config: TestComponentCreationConfig) {
