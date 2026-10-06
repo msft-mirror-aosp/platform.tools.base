@@ -19,16 +19,8 @@ import com.android.tools.bazel.ir.IrModule;
 import com.android.tools.bazel.model.BazelRule;
 
 import java.nio.file.Path;
-import java.util.List;
 
 public class Configuration {
-
-    /**
-     * Directories (relative to the workspace root) containing JPS modules that are still allowed
-     * to have both production and test source roots. All other modules must have either
-     * production roots or test roots, but not both (b/565759009).
-     */
-    private static final List<String> MIXED_SOURCE_ROOTS_ALLOWLIST = List.of("tools/vendor/google");
 
     public boolean dryRun;
     public String imlGraph;
@@ -50,10 +42,5 @@ public class Configuration {
     public boolean ignoreModule(Path workspace, IrModule module) {
         Path rel = workspace.relativize(module.getBaseDir());
         return rel.startsWith("tools/vendor/google3/blaze/");
-    }
-
-    public boolean allowMixedSourceRoots(Path workspace, IrModule module) {
-        Path rel = workspace.relativize(module.getBaseDir());
-        return MIXED_SOURCE_ROOTS_ALLOWLIST.stream().anyMatch(rel::startsWith);
     }
 }

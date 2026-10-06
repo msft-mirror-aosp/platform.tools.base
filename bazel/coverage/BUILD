@@ -132,8 +132,8 @@ coverage_report(
         "tools/vendor/google/firebase/src/com/google/services/firebase/insights",
     ],
     tests = [
-        "//tools/vendor/google/firebase:firebase_tests__FirebaseAppManagerTest",
-        "//tools/vendor/google/firebase:firebase_tests__other",
+        "//tools/vendor/google/firebase:firebase.tests_tests__FirebaseAppManagerTest",
+        "//tools/vendor/google/firebase:firebase.tests_tests__other",
     ],
 )
 
@@ -307,7 +307,7 @@ coverage_report(
     ],
     tests = [
         "//tools/studio/google/cloud/testing/directaccess:directaccess.tests_tests",
-        "//tools/vendor/google/directaccess-client:directaccess-client_tests",
+        "//tools/vendor/google/directaccess-client:directaccess-client.tests_tests",
     ],
 )
 
@@ -812,7 +812,7 @@ coverage_report(
         "tools/vendor/google/targetsdkversion-upgrade-assistant",
     ],
     tests = [
-        "//tools/vendor/google/targetsdkversion-upgrade-assistant:targetsdkversion-upgrade-assistant_tests",
+        "//tools/vendor/google/targetsdkversion-upgrade-assistant:targetsdkversion-upgrade-assistant.tests_tests",
     ],
 )
 
@@ -1192,9 +1192,9 @@ coverage_report(
         "//tools/vendor/google/login:google-login.tests_tests",
         "//tools/vendor/google/android-apk:android-apk.tests_tests",
         "//tools/vendor/google/android-ndk:android-ndk.tests_tests",
-        "//tools/vendor/google/directaccess-client:directaccess-client_tests",
-        "//tools/vendor/google/firebase:firebase_tests",
-        "//tools/vendor/google/targetsdkversion-upgrade-assistant:targetsdkversion-upgrade-assistant_tests",
+        "//tools/vendor/google/directaccess-client:directaccess-client.tests_tests",
+        "//tools/vendor/google/firebase:firebase.tests_tests",
+        "//tools/vendor/google/targetsdkversion-upgrade-assistant:targetsdkversion-upgrade-assistant.tests_tests",
         "//tools/vendor/google/url-assistant:url-assistant.tests_tests",
     ],
 )
