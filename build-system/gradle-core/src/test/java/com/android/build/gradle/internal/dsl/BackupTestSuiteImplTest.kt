@@ -41,6 +41,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
+/** Differs from [BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION], so the tests can tell a configured version from the default. */
+private const val CUSTOM_BACKUP_VERSION = "${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}-custom"
+
 class BackupTestSuiteImplTest {
 
   private val dslServices = createDslServices()
@@ -89,7 +92,7 @@ class BackupTestSuiteImplTest {
     val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
     // The DSL block sets backupTestLibraryVersion after the suite is created
-    dslSuite.backupTestLibraryVersion = "1.0.0-alpha02"
+    dslSuite.backupTestLibraryVersion = CUSTOM_BACKUP_VERSION
 
     // Verify custom hostJar and testApk blocks
     dslSuite.hostJar { dependencies { implementation.add("com.google.truth:truth:1.4.2") } }
@@ -98,13 +101,13 @@ class BackupTestSuiteImplTest {
     assertThat(hostJarSources).hasSize(1)
     val hostJar = hostJarSources.single()
     assertThat(hostJar.dependencies.implementation.notations())
-      .containsExactly("androidx.test.backup:backup-host:1.0.0-alpha02", "com.google.truth:truth:1.4.2")
+      .containsExactly("androidx.test.backup:backup-host:$CUSTOM_BACKUP_VERSION", "com.google.truth:truth:1.4.2")
 
     val testApkSources = suite.getSourceContainers().filterIsInstance<TestSuiteTestApkSpecImpl>()
     assertThat(testApkSources).hasSize(1)
     val testApk = testApkSources.single()
     assertThat(testApk.dependencies.implementation.notations())
-      .containsExactly("androidx.test.backup:backup:1.0.0-alpha02", "androidx.room:room-testing:2.6.1")
+      .containsExactly("androidx.test.backup:backup:$CUSTOM_BACKUP_VERSION", "androidx.room:room-testing:2.6.1")
   }
 
   @Test
@@ -181,7 +184,7 @@ class BackupTestSuiteImplTest {
       passedTestCount = 4,
       failedTestCount = 1,
       analyticsService = mockAnalyticsService,
-      backupTestLibraryVersion = "1.0.0-alpha01",
+      backupTestLibraryVersion = CUSTOM_BACKUP_VERSION,
       totalRunTimeMs = 3200L,
       infrastructureCrashed = false,
     )
@@ -195,7 +198,7 @@ class BackupTestSuiteImplTest {
     assertThat(event.testRun.numberOfTestsExecuted).isEqualTo(5)
     assertThat(event.testRun.backupTestRun.passedTestCount).isEqualTo(4)
     assertThat(event.testRun.backupTestRun.failedTestCount).isEqualTo(1)
-    assertThat(event.testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha01")
+    assertThat(event.testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
     assertThat(event.testRun.backupTestRun.hasIsCi()).isFalse()
     assertThat(event.testRun.backupTestRun.totalRunTimeMs).isEqualTo(3200L)
   }
@@ -237,7 +240,7 @@ class BackupTestSuiteImplTest {
       )
 
     // The DSL block sets backupTestLibraryVersion after the suite is created
-    dslSuite.backupTestLibraryVersion = "1.0.0-alpha02"
+    dslSuite.backupTestLibraryVersion = CUSTOM_BACKUP_VERSION
 
     val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
     suite.testTaskConfigActions.forEach { it(mockTestTask, mock<TestTaskContext>()) }
@@ -250,7 +253,7 @@ class BackupTestSuiteImplTest {
 
     val eventCaptor = argumentCaptor<AndroidStudioEvent.Builder>()
     verify(analyticsService).recordEvent(eventCaptor.capture())
-    assertThat(eventCaptor.firstValue.build().testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha02")
+    assertThat(eventCaptor.firstValue.build().testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
   }
 
   @Test
@@ -260,7 +263,7 @@ class BackupTestSuiteImplTest {
     val listener =
       BackupAgpTestSuiteImpl.BackupTestListener(
         analyticsServiceProvider = provider,
-        backupTestLibraryVersion = "1.0.0-alpha01",
+        backupTestLibraryVersion = CUSTOM_BACKUP_VERSION,
       )
 
     val rootSuiteDescriptor = mock<TestDescriptor>()
@@ -287,7 +290,7 @@ class BackupTestSuiteImplTest {
     assertThat(event.testRun.backupTestRun.passedTestCount).isEqualTo(2)
     assertThat(event.testRun.backupTestRun.failedTestCount).isEqualTo(1)
     assertThat(event.testRun.backupTestRun.totalRunTimeMs).isEqualTo(1500L)
-    assertThat(event.testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha01")
+    assertThat(event.testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
     assertThat(event.testRun.backupTestRun.hasIsCi()).isFalse()
   }
 

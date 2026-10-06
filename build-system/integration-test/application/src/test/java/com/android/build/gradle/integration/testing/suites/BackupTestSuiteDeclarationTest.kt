@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
@@ -33,6 +34,9 @@ import com.google.wireless.android.sdk.stats.TestRun
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
+
+/** Differs from [BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION], so the tests can tell a configured version from the default. */
+private const val CUSTOM_BACKUP_VERSION = "${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}-custom"
 
 /**
  * Integration test verifying the registration, DSL configuration, execution, and analytics tracking of the specialized [BackupTestSuite]
@@ -45,8 +49,8 @@ class BackupTestSuiteDeclarationTest {
       .withProfileOutput()
       .withMavenRepository {
         jar("com.google.truth:truth:0.44")
-        jar("androidx.test.backup:backup-host:1.0.0-alpha02")
-        jar("androidx.test.backup:backup:1.0.0-alpha02")
+        jar("androidx.test.backup:backup-host:$CUSTOM_BACKUP_VERSION")
+        jar("androidx.test.backup:backup:$CUSTOM_BACKUP_VERSION")
         jar("org.junit.platform:junit-platform-engine:1.13.3")
         jar("org.junit.platform:junit-platform-launcher:1.13.3")
         jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
@@ -64,7 +68,7 @@ class BackupTestSuiteDeclarationTest {
           pluginCallbacks += BackupSuiteCallback::class.java
           android {
             testOptions.backupTests.create("myBackup") {
-              it.backupTestLibraryVersion = "1.0.0-alpha02"
+              it.backupTestLibraryVersion = CUSTOM_BACKUP_VERSION
               it.targetVariants.add("debug")
             }
           }
@@ -100,7 +104,7 @@ class BackupTestSuiteDeclarationTest {
     Truth.assertThat(testRun.numberOfTestsExecuted).isEqualTo(1)
     Truth.assertThat(testRun.backupTestRun.passedTestCount).isEqualTo(1)
     Truth.assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(0)
-    Truth.assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha02")
+    Truth.assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
   }
 
   @Test
@@ -110,10 +114,10 @@ class BackupTestSuiteDeclarationTest {
 
     build.executor
       .run(":app:dependencies", "--configuration", "debugMyBackupTestRuntimeClasspath")
-      .assertOutputContains("androidx.test.backup:backup-host:1.0.0-alpha02")
+      .assertOutputContains("androidx.test.backup:backup-host:$CUSTOM_BACKUP_VERSION")
     build.executor
       .run(":app:dependencies", "--configuration", "debugMyBackupAndroidTestRuntimeClasspath")
-      .assertOutputContains("androidx.test.backup:backup:1.0.0-alpha02")
+      .assertOutputContains("androidx.test.backup:backup:$CUSTOM_BACKUP_VERSION")
     val compilerPluginClasspaths =
       listOf("kotlinCompilerPluginClasspathDebugMyBackupTest", "kotlinCompilerPluginClasspathDebugMyBackupAndroidTest")
     for (configuration in compilerPluginClasspaths) {
@@ -126,7 +130,7 @@ class BackupSuiteCallback : ApplicationComponentCallback {
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
     androidComponents.finalizeDsl { applicationExtension ->
       val backupSuite = applicationExtension.testOptions.backupTests.getByName("myBackup")
-      Truth.assertThat(backupSuite.backupTestLibraryVersion).isEqualTo("1.0.0-alpha02")
+      Truth.assertThat(backupSuite.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
       Truth.assertThat(backupSuite.targetVariants).containsExactly("debug")
     }
 
