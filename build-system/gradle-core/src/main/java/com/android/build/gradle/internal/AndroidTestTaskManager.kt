@@ -293,6 +293,9 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
       val jacocoAntConfiguration =
         JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getAndroidTestJacocoVersion(androidTestProperties))
       val reportTask = taskFactory.register(JacocoReportTask.CreationActionConnectedTest(androidTestProperties, jacocoAntConfiguration))
+      // Skip the report when the tests fail (with --continue), as for host and managed device tests: the coverage data of a failed run
+      // can be invalid, e.g. if the app crashed. A dependency on the coverage data alone would not skip it.
+      reportTask.dependsOn(connectedTask)
       testedVariant.taskContainer.coverageReportTask.dependsOn(reportTask)
       taskFactory.configure(CONNECTED_ANDROID_TEST) { connectedAndroidTest: Task -> connectedAndroidTest.dependsOn(reportTask) }
     }

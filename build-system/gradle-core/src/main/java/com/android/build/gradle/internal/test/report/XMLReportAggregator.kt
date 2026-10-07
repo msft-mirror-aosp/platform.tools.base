@@ -91,6 +91,12 @@ class XMLReportAggregator(
   /** Returns the total test count from the aggregated report. */
   fun getTestCount(): Int = lazyTestCount
 
+  /** Returns the number of failed tests in the aggregated report. */
+  fun getFailedTestCount(): Int =
+    rootReport.modules.sumOf { module ->
+      module.testSuiteSummaries.filter { it.name == AGGREGATED_TEST_SUITE_NAME }.flatMap { it.variantSummaries }.sumOf { it.failed }
+    }
+
   /** Generates the final [RootReport] by returning the cached report property. */
   @VisibleForTesting
   fun generateReport(outputDir: File = rootDir): RootReport {

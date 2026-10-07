@@ -76,6 +76,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.VerificationException
 import org.gradle.api.tasks.options.Option
 import org.gradle.internal.logging.ConsoleRenderer
 import org.gradle.work.DisableCachingByDefault
@@ -288,7 +289,7 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
         logger.warn(message)
         return
       } else {
-        throw GradleException(message)
+        throw VerificationException(message)
       }
     }
   }

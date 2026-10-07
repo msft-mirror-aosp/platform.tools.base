@@ -107,6 +107,7 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.VerificationException;
 import org.gradle.api.tasks.options.Option;
 import org.gradle.internal.logging.ConsoleRenderer;
 import org.gradle.process.ExecOperations;
@@ -459,7 +460,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             if (ignoreFailures) {
                 logger.warn(message);
             } else {
-                throw new GradleException(message);
+                throw new VerificationException(message);
             }
         }
     }

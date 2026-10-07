@@ -207,6 +207,8 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
             super.executeTests();
         } finally {
             if (this.getTestReportAggregationEnabled().get()) {
+                TestReportAggregationUtils.clearTestReportAggregationResults(
+                        getXmlResultsDirectory());
                 TestReportAggregationUtils.processTestReportAggregation(
                         getReports().getJunitXml().getOutputLocation().get().getAsFile(),
                         getXmlResultsDirectory(),

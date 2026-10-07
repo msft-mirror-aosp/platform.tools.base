@@ -231,6 +231,76 @@ class XMLReportAggregatorTest {
   }
 
   @Test
+  fun testGetFailedTestCount_countsFailuresAndErrors() {
+    val xmlContent1 =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="2" failures="1" errors="0" skipped="0" time="0.2">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testPass" classname="com.example.app.MyClassTest" time="0.1"/>
+          <testcase name="testFail" classname="com.example.app.MyClassTest" time="0.1">
+              <failure message="assertion failed">stacktrace here</failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report-1.xml", xmlContent1)
+
+    val xmlContent2 =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.lib.MyTestSuite" tests="2" failures="0" errors="1" skipped="1" time="0.2">
+          <properties>
+              <property name="testedVariantName" value="release"/>
+              <property name="modulePath" value=":lib"/>
+              <property name="testSuiteName" value="androidTest"/>
+          </properties>
+          <testcase name="testError" classname="com.example.lib.MyClassTest" time="0.1">
+              <error message="crashed">stacktrace here</error>
+          </testcase>
+          <testcase name="testSkipped" classname="com.example.lib.MyClassTest" time="0.1">
+              <skipped/>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir2, "test-report-2.xml", xmlContent2)
+
+    val aggregator = createAggregator(files = listOf(inputDir1, inputDir2), projectName = "MyProject")
+
+    assertThat(aggregator.getFailedTestCount()).isEqualTo(2)
+  }
+
+  @Test
+  fun testGetFailedTestCount_noFailures() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="2" failures="0" errors="0" skipped="1" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+          <testcase name="testSkipped" classname="com.example.app.MyClassTest" time="0.0">
+              <skipped/>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "MyProject")
+
+    assertThat(aggregator.getFailedTestCount()).isEqualTo(0)
+  }
+
+  @Test
   fun testProcessXmlStream_failureStackTrace() {
     val xmlContent =
       """

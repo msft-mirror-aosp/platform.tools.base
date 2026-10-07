@@ -16,10 +16,13 @@
 
 package com.android.build.gradle.integration.testing.unit
 
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 import kotlin.io.path.readText
 import org.junit.Rule
 import org.junit.Test
@@ -113,4 +116,35 @@ class UnitTestTaskTest {
 
     assertThat(result.failedTasks).contains(":app:testDebugUnitTest")
   }
+
+  @Test
+  fun testAllSuitesWithFailingAndDeletedTests() {
+    val build = rule.build
+    val app = build.androidApplication()
+
+    // With --continue, the failing unit test doesn't prevent the report from being generated, and testAllSuites then fails because the
+    // report contains a failing test.
+    var result = build.executor.withArgument("--continue").expectFailure().run(":app:testAllSuites")
+
+    assertThat(result.failedTasks).containsExactly(":app:testDebugUnitTest", ":app:testAllSuites")
+    assertThat(result.didWorkTasks).contains(":app:testResultsCollectionDebug")
+    assertThat(app.buildDir.resolve("reports/testAllSuites/test-report/index.html")).exists()
+    result.assertErrorContains("reports/testAllSuites/test-report/index.html")
+    assertThat(build.collectedTestClasses()).containsExactly("com.example.FailingTest", "com.example.PassingTest")
+
+    // Gradle keeps the outputs of the test task across runs, but the results of the deleted test class must not be reported anymore.
+    app.files.remove("src/test/java/com/example/FailingTest.java")
+    result = build.executor.withArgument("--continue").run(":app:testAllSuites")
+
+    assertThat(result.didWorkTasks).containsAtLeast(":app:testDebugUnitTest", ":app:testAllSuites")
+    assertThat(build.collectedTestClasses()).containsExactly("com.example.PassingTest")
+  }
+
+  /** Returns the test classes whose results are collected for the testAllSuites report. */
+  private fun GradleBuild.collectedTestClasses(): List<String> =
+    androidApplication()
+      .intermediatesDir
+      .resolve("project_level_test_results/global/testResultsCollectionDebug")
+      .listDirectoryEntries("TEST-*.xml")
+      .map { it.name.removePrefix("TEST-").substringBefore('_') }
 }
