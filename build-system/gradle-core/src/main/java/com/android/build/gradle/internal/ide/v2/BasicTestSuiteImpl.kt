@@ -29,5 +29,8 @@ class BasicTestSuiteImpl(
   override val assets: Collection<AssetsTestSuiteSource>,
   override val hostJars: Collection<HostJarTestSuiteSource>,
   override val testApks: Collection<TestApkTestSuiteSource>,
-  override val targetsByVariant: Collection<TestSuiteVariantTarget>,
-) : BasicTestSuite, AndroidModel, Serializable
+) : BasicTestSuite, AndroidModel, Serializable {
+  @Deprecated("Always empty; use BasicVariant.testSuiteVariantTargets")
+  override val targetsByVariant: Collection<TestSuiteVariantTarget>
+    get() = emptyList()
+}

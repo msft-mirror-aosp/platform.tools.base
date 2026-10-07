@@ -20,16 +20,16 @@ import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.v2.ide.BasicArtifact
 import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
 import com.android.builder.model.v2.ide.BasicVariant
-import com.android.builder.model.v2.ide.Variant
+import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 import java.io.Serializable
 
-/** Implementation of [Variant] for serialization via the Tooling API. */
+/** Implementation of [BasicVariant] for serialization via the Tooling API. */
 data class BasicVariantImpl(
   override val name: String,
   override val mainArtifact: BasicArtifact,
   override val deviceTestArtifacts: Map<String, BasicArtifact>,
   override val hostTestArtifacts: Map<String, BasicArtifact>,
-  override val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>,
+  override val testSuiteVariantTargets: Map<String, TestSuiteVariantTarget>,
   override val testFixturesArtifact: BasicArtifact?,
   override val buildType: String?,
   override val productFlavors: List<String>,
@@ -39,6 +39,10 @@ data class BasicVariantImpl(
 
   override val unitTestArtifact: BasicArtifact?
     get() = hostTestArtifacts[ComponentTypeImpl.UNIT_TEST.artifactName]
+
+  @Deprecated("Always empty; use testSuiteVariantTargets")
+  override val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>
+    get() = emptyMap()
 
   companion object {
     @JvmStatic private val serialVersionUID: Long = 1L

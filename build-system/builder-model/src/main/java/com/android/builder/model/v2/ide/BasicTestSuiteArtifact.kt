@@ -18,7 +18,13 @@ package com.android.builder.model.v2.ide
 
 import com.android.builder.model.v2.AndroidModel
 
-/** Basic information about a test suite that is applied to a variant. */
+// TODO(b/575647801): remove once MINIMUM_MODEL_CONSUMER excludes Studio versions that read this.
+/**
+ * Basic information about a test suite that is applied to a variant.
+ *
+ * Only returned by the deprecated [BasicVariant.testSuiteArtifacts], which is no longer populated.
+ */
+@Deprecated("Only returned by the deprecated BasicVariant.testSuiteArtifacts; use BasicVariant.testSuiteVariantTargets")
 interface BasicTestSuiteArtifact : AndroidModel {
 
   val testSuiteName: String

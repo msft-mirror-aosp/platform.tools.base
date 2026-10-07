@@ -20,5 +20,9 @@ import com.android.builder.model.v2.ide.TestSuiteTarget
 import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 import java.io.Serializable
 
-class TestSuiteVariantTargetImpl(override val targetedVariant: String, override val targets: Collection<TestSuiteTarget>) :
-  TestSuiteVariantTarget, Serializable
+data class TestSuiteVariantTargetImpl(override val testSuiteName: String, override val targets: Collection<TestSuiteTarget>) :
+  TestSuiteVariantTarget, Serializable {
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
+}

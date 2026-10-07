@@ -217,10 +217,10 @@
    < productFlavors
    > variants:
       > proDebug:
-         - name                 = "proDebug"
-         - displayName          = "proDebug"
-         - buildType            = "debug"
-         - productFlavors       = ["pro"]
+         - name                    = "proDebug"
+         - displayName             = "proDebug"
+         - buildType               = "debug"
+         - productFlavors          = ["pro"]
          > mainArtifact:
             > variantSourceProvider:
                - name                    = "proDebug"
@@ -295,8 +295,9 @@
             < variantSourceProvider
             - multiFlavorSourceProvider = (null)
          < unitTestArtifact
-         - testFixturesArtifact = (null)
-         - testSuiteArtifacts   = []
+         - testFixturesArtifact    = (null)
+         - testSuiteArtifacts      = []
+         - testSuiteVariantTargets = []
       < proDebug
    < variants
    - testSuites  = []

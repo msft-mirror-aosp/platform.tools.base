@@ -25,8 +25,9 @@ interface BaseTestSuiteSourceIdentity {
   val type: SourceType
 
   /**
-   * The name of this source dependency set. This is used to identify the dependencies associated with a specific source type within the
-   * test suite. For example, for [SourceType.ASSETS], this might be "assets".
+   * The unique source set identifier of this test suite source, qualified by the tested variant name (for example, "debugMixedTest" for the
+   * "mixedTest" source of a test suite targeting the "debug" variant). This is used to identify the dependencies associated with a specific
+   * source within the test suite, and is unique across all test suites of a variant.
    */
   val name: String
 }

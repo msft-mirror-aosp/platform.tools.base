@@ -42,8 +42,12 @@ interface BasicVariant : AndroidModel {
   /** The host test components for this variant, e.g., unitTest */
   val hostTestArtifacts: Map<String, BasicArtifact>
 
-  /** The test suite components for this variant */
-  val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>
+  // TODO(b/575647801): remove once MINIMUM_MODEL_CONSUMER excludes Studio versions that read this.
+  /** No longer populated; kept for older versions of Android Studio. */
+  @Deprecated("Always empty; use testSuiteVariantTargets") val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>
+
+  /** The test suite targets for this variant, keyed by test suite name. */
+  val testSuiteVariantTargets: Map<String, TestSuiteVariantTarget>
 
   /** The TestFixtures artifact for this variant, if applicable. */
   val testFixturesArtifact: BasicArtifact?

@@ -178,10 +178,10 @@
    - productFlavors = []
    > variants:
       > debug:
-         - name                 = "debug"
-         - displayName          = "debug"
-         - buildType            = "debug"
-         - productFlavors       = []
+         - name                    = "debug"
+         - displayName             = "debug"
+         - buildType               = "debug"
+         - productFlavors          = []
          - mainArtifact:
             - variantSourceProvider     = (null)
             - multiFlavorSourceProvider = (null)
@@ -191,21 +191,23 @@
          - unitTestArtifact:
             - variantSourceProvider     = (null)
             - multiFlavorSourceProvider = (null)
-         - testFixturesArtifact = (null)
-         - testSuiteArtifacts   = []
+         - testFixturesArtifact    = (null)
+         - testSuiteArtifacts      = []
+         - testSuiteVariantTargets = []
       < debug
       > release:
-         - name                 = "release"
-         - displayName          = "release"
-         - buildType            = "release"
-         - productFlavors       = []
+         - name                    = "release"
+         - displayName             = "release"
+         - buildType               = "release"
+         - productFlavors          = []
          - mainArtifact:
             - variantSourceProvider     = (null)
             - multiFlavorSourceProvider = (null)
-         - androidTestArtifact  = (null)
-         - unitTestArtifact     = (null)
-         - testFixturesArtifact = (null)
-         - testSuiteArtifacts   = []
+         - androidTestArtifact     = (null)
+         - unitTestArtifact        = (null)
+         - testFixturesArtifact    = (null)
+         - testSuiteArtifacts      = []
+         - testSuiteVariantTargets = []
       < release
    < variants
    - testSuites     = []

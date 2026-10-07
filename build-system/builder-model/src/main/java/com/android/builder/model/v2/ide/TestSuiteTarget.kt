@@ -15,7 +15,16 @@
  */
 package com.android.builder.model.v2.ide
 
-interface TestSuiteTarget {
+import com.android.builder.model.v2.AndroidModel
+
+/**
+ * A target of a test suite: a context in which the tests of the suite run, such as a set of Gradle Managed Devices. Each target has its own
+ * test task.
+ *
+ * Targets are declared in the DSL with `testOptions.suites.<suite>.targets.create("<name>")`.
+ */
+interface TestSuiteTarget : AndroidModel {
+  /** The name of the target, as declared in the DSL (e.g. `tabletRun`). */
   val name: String
 
   /**
@@ -25,6 +34,6 @@ interface TestSuiteTarget {
    */
   val testTaskName: String
 
-  /** List of targeted device. */
+  /** The names of the Gradle Managed Devices or device groups the target runs on. Empty if the target doesn't use managed devices. */
   val targetedDevices: Collection<String>
 }

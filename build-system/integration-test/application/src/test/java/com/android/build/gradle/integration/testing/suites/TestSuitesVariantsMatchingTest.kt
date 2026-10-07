@@ -18,8 +18,8 @@ package com.android.build.gradle.integration.testing.suites
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
 import com.android.builder.model.v2.ide.SyncIssue
+import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 import com.android.builder.model.v2.models.BasicTestSuite
 import com.android.builder.model.v2.models.SourceType
 import com.google.common.truth.Truth
@@ -81,81 +81,91 @@ class TestSuitesVariantsMatchingTest {
     val testSuites = models.basicAndroidProject?.testSuites
     Truth.assertThat(testSuites).hasSize(2)
     val firstTestSuite = findTestSuite(testSuites!!, "first")
-    firstTestSuite.targetsByVariant.map { variantTarget ->
-      Truth.assertThat(variantTarget.targets.map { it.name }).containsExactly("t1", "t2")
-      Truth.assertThat(variantTarget.targetedVariant).isAnyOf("redDebug", "blueDebug")
-    }
-    Truth.assertThat(firstTestSuite.targetsByVariant.map { variantTarget -> variantTarget.targets.map { it.testTaskName } }.flatten())
-      .containsExactly(
-        "testRedDebugFirstT1TestSuite",
-        "testBlueDebugFirstT1TestSuite",
-        "testRedDebugFirstT2TestSuite",
-        "testBlueDebugFirstT2TestSuite",
-      )
     val firstTestSuiteFolders = firstTestSuite.assets.single()
     Truth.assertThat(firstTestSuiteFolders.type).isEqualTo(SourceType.ASSETS)
     Truth.assertThat(firstTestSuiteFolders.directories).containsExactly(project.subProject(":app").resolve("src/first").toFile())
 
     val secondTestSuite = findTestSuite(testSuites, "second")
-    secondTestSuite.targetsByVariant.map { variantTarget ->
-      Truth.assertThat(variantTarget.targets.map { it.name }).containsExactly("c1", "c2", "c3")
-      Truth.assertThat(variantTarget.targetedVariant).isAnyOf("redDebug", "blueDebug", "redStaging")
-    }
-
     val secondTestSuiteFolders = secondTestSuite.hostJars.single()
     Truth.assertThat(secondTestSuiteFolders.type).isEqualTo(SourceType.HOST_JAR)
     Truth.assertThat(secondTestSuiteFolders.kotlin).containsExactly(project.subProject(":app").resolve("src/second/kotlin").toFile())
 
-    // A host suite ignores targetDevices, so c2 and c3 keep the plain task name.
-    Truth.assertThat(secondTestSuite.targetsByVariant.map { variantTarget -> variantTarget.targets.map { it.testTaskName } }.flatten())
-      .containsExactly(
-        "testBlueDebugSecondC1TestSuite",
-        "testRedDebugSecondC1TestSuite",
-        "testRedStagingSecondC1TestSuite",
-        "testBlueDebugSecondC2TestSuite",
-        "testRedDebugSecondC2TestSuite",
-        "testRedStagingSecondC2TestSuite",
-        "testBlueDebugSecondC3TestSuite",
-        "testRedDebugSecondC3TestSuite",
-        "testRedStagingSecondC3TestSuite",
-      )
-
     Truth.assertThat(models.basicAndroidProject?.variants).hasSize(6)
+
+    // The deprecated accessors are still read by older versions of Android Studio, so they must remain callable and empty.
+    @Suppress("DEPRECATION")
+    run {
+      testSuites.forEach { Truth.assertThat(it.targetsByVariant).isEmpty() }
+      models.basicAndroidProject?.variants?.forEach { Truth.assertThat(it.testSuiteArtifacts).isEmpty() }
+    }
 
     models.basicAndroidProject?.variants?.forEach { variant ->
       when (variant.name) {
         "redDebug" -> {
-          val testSuites = variant.testSuiteArtifacts
+          val testSuites = variant.testSuiteVariantTargets
           Truth.assertThat(testSuites).hasSize(2)
           Truth.assertThat(testSuites.map { it.value.testSuiteName }).containsExactly("first", "second")
           val firstTestSuite = findTestSuite(testSuites.values, "first")
           Truth.assertThat(firstTestSuite.testSuiteName).isEqualTo("first")
-
+          Truth.assertThat(firstTestSuite.targets.map { it.name }).containsExactly("t1", "t2")
+          Truth.assertThat(firstTestSuite.targets.map { it.testTaskName })
+            .containsExactly("testRedDebugFirstT1TestSuite", "testRedDebugFirstT2TestSuite")
           Truth.assertThat(testSuites["first"]).isEqualTo(firstTestSuite)
+
+          val secondTestSuite = findTestSuite(testSuites.values, "second")
+          Truth.assertThat(secondTestSuite.testSuiteName).isEqualTo("second")
+          Truth.assertThat(secondTestSuite.targets.map { it.name }).containsExactly("c1", "c2", "c3")
+          // A host suite ignores targetDevices, so c2 and c3 keep the plain task name.
+          Truth.assertThat(secondTestSuite.targets.map { it.testTaskName })
+            .containsExactly(
+              "testRedDebugSecondC1TestSuite",
+              "testRedDebugSecondC2TestSuite",
+              "testRedDebugSecondC3TestSuite",
+            )
+          Truth.assertThat(testSuites["second"]).isEqualTo(secondTestSuite)
         }
         "blueDebug" -> {
-          val testSuites = variant.testSuiteArtifacts
+          val testSuites = variant.testSuiteVariantTargets
           Truth.assertThat(testSuites).hasSize(2)
           Truth.assertThat(testSuites.map { it.value.testSuiteName }).containsExactly("first", "second")
 
           val firstTestSuite = findTestSuite(testSuites.values, "first")
           Truth.assertThat(firstTestSuite.testSuiteName).isEqualTo("first")
-
+          Truth.assertThat(firstTestSuite.targets.map { it.name }).containsExactly("t1", "t2")
+          Truth.assertThat(firstTestSuite.targets.map { it.testTaskName })
+            .containsExactly("testBlueDebugFirstT1TestSuite", "testBlueDebugFirstT2TestSuite")
           Truth.assertThat(testSuites["first"]).isEqualTo(firstTestSuite)
+
+          val secondTestSuite = findTestSuite(testSuites.values, "second")
+          Truth.assertThat(secondTestSuite.testSuiteName).isEqualTo("second")
+          Truth.assertThat(secondTestSuite.targets.map { it.name }).containsExactly("c1", "c2", "c3")
+          Truth.assertThat(secondTestSuite.targets.map { it.testTaskName })
+            .containsExactly(
+              "testBlueDebugSecondC1TestSuite",
+              "testBlueDebugSecondC2TestSuite",
+              "testBlueDebugSecondC3TestSuite",
+            )
+          Truth.assertThat(testSuites["second"]).isEqualTo(secondTestSuite)
         }
 
         "redStaging" -> {
-          val testSuites = variant.testSuiteArtifacts
+          val testSuites = variant.testSuiteVariantTargets
           Truth.assertThat(testSuites).hasSize(1)
           Truth.assertThat(testSuites.map { it.value.testSuiteName }).containsExactly("second")
 
           val secondTestSuite = findTestSuite(testSuites.values, "second")
           Truth.assertThat(secondTestSuite.testSuiteName).isEqualTo("second")
-
+          Truth.assertThat(secondTestSuite.targets.map { it.name }).containsExactly("c1", "c2", "c3")
+          Truth.assertThat(secondTestSuite.targets.map { it.testTaskName })
+            .containsExactly(
+              "testRedStagingSecondC1TestSuite",
+              "testRedStagingSecondC2TestSuite",
+              "testRedStagingSecondC3TestSuite",
+            )
           Truth.assertThat(testSuites["second"]).isEqualTo(secondTestSuite)
         }
         else -> {
-          Truth.assertThat(variant.testSuiteArtifacts).isEmpty()
+          Truth.assertThat(variant.testSuiteVariantTargets).isEmpty()
         }
       }
     }
@@ -163,5 +173,5 @@ class TestSuitesVariantsMatchingTest {
 
   private fun findTestSuite(testSuites: Collection<BasicTestSuite>, name: String) = testSuites.first { it.name == name }
 
-  private fun findTestSuite(testSuites: Collection<BasicTestSuiteArtifact>, name: String) = testSuites.first { it.testSuiteName == name }
+  private fun findTestSuite(testSuites: Collection<TestSuiteVariantTarget>, name: String) = testSuites.first { it.testSuiteName == name }
 }

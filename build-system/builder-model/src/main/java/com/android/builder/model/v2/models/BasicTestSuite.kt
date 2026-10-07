@@ -22,6 +22,7 @@ import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 /** Information about a test suite attached to the project. */
 interface BasicTestSuite : AndroidModel {
 
+  /** The name of the test suite, as declared in the DSL. */
   val name: String
 
   /** [SourceType.ASSETS] source folder(s) for this test suite. */
@@ -33,6 +34,7 @@ interface BasicTestSuite : AndroidModel {
   /** [SourceType.TEST_APK] sources folder for this test suite. */
   val testApks: Collection<TestApkTestSuiteSource>
 
-  /** Variant specific target(s) for this test suite. */
-  val targetsByVariant: Collection<TestSuiteVariantTarget>
+  // TODO(b/575647801): remove once MINIMUM_MODEL_CONSUMER excludes Studio versions that read this.
+  /** No longer populated; kept for older versions of Android Studio. */
+  @Deprecated("Always empty; use BasicVariant.testSuiteVariantTargets") val targetsByVariant: Collection<TestSuiteVariantTarget>
 }

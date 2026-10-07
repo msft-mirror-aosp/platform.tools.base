@@ -18,9 +18,11 @@ package com.android.builder.model.v2.ide
 
 import com.android.builder.model.v2.AndroidModel
 
-/** Defines a variant specific set of targets for a test suite. */
+/** The targets of a test suite for a variant. Returned by [BasicVariant.testSuiteVariantTargets]. */
 interface TestSuiteVariantTarget : AndroidModel {
-  val targetedVariant: String
+  /** The name of the test suite. It is also the key of this object in [BasicVariant.testSuiteVariantTargets]. */
+  val testSuiteName: String
 
+  /** The targets of the test suite for this variant. */
   val targets: Collection<TestSuiteTarget>
 }

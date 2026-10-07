@@ -141,11 +141,12 @@ internal fun ModelSnapshotter<BasicAndroidProject>.snapshotBasicAndroidProject()
   ) {
     item("name", BasicTestSuite::name)
     snapshotTestSuiteSources(assets = { assets }, hostJars = { hostJars }, testApks = { testApks })
+    @Suppress("DEPRECATION")
     objectList(
       name = "targetsByVariant",
       propertyAction = BasicTestSuite::targetsByVariant,
-      nameAction = { targetedVariant },
-      sortAction = { collection -> collection?.sortedBy { it.targetedVariant } },
+      nameAction = { testSuiteName },
+      sortAction = { collection -> collection?.sortedBy { it.testSuiteName } },
     ) {
       snapshotTestSuiteVariantTarget()
     }
@@ -429,6 +430,7 @@ private fun ModelSnapshotter<BasicVariant>.snapshotBasicVariant() {
   dataObject("androidTestArtifact", BasicVariant::androidTestArtifact) { snapshotBasicArtifact() }
   dataObject("unitTestArtifact", BasicVariant::unitTestArtifact) { snapshotBasicArtifact() }
   dataObject("testFixturesArtifact", BasicVariant::testFixturesArtifact) { snapshotBasicArtifact() }
+  @Suppress("DEPRECATION")
   convertedObjectList(
     name = "testSuiteArtifacts",
     propertyAction = { testSuiteArtifacts.entries },
@@ -437,6 +439,15 @@ private fun ModelSnapshotter<BasicVariant>.snapshotBasicVariant() {
     sortAction = { collection -> collection?.sortedBy { it.key } },
   ) {
     item("testSuiteName", BasicTestSuiteArtifact::testSuiteName)
+  }
+  convertedObjectList(
+    name = "testSuiteVariantTargets",
+    propertyAction = { testSuiteVariantTargets.entries },
+    nameAction = { key },
+    objectAction = { value },
+    sortAction = { collection -> collection?.sortedBy { it.key } },
+  ) {
+    snapshotTestSuiteVariantTarget()
   }
 }
 
@@ -527,7 +538,7 @@ private fun ModelSnapshotter<JUnitEngineInfo>.snapshotJUnitEngineInfo() {
 }
 
 private fun ModelSnapshotter<TestSuiteVariantTarget>.snapshotTestSuiteVariantTarget() {
-  item("targetedVariant", TestSuiteVariantTarget::targetedVariant)
+  item("testSuiteName", TestSuiteVariantTarget::testSuiteName)
   objectList(
     name = "targets",
     propertyAction = TestSuiteVariantTarget::targets,

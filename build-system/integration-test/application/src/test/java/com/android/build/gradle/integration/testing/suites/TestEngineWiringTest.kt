@@ -166,11 +166,14 @@ class TestEngineWiringTest(
     Truth.assertThat(firstTestSuiteSources.java).containsExactly(project.subProject(modulePath).resolve("src/first/java").toFile())
 
     // verify the variant specific model
-    val variantTestSuites = getVariant(models.basicAndroidProject, "debug").testSuiteArtifacts
+    val variantTestSuites = getVariant(models.basicAndroidProject, "debug").testSuiteVariantTargets
 
     Truth.assertThat(variantTestSuites).hasSize(1)
     val variantTestSuite = variantTestSuites.values.single()
     Truth.assertThat(variantTestSuite.testSuiteName).isEqualTo("first")
+    val target = variantTestSuite.targets.single()
+    Truth.assertThat(target.name).isEqualTo("t1")
+    Truth.assertThat(target.testTaskName).isEqualTo("testDebugFirstT1TestSuite")
   }
 
   @Test

@@ -1,22 +1,49 @@
 > BasicAndroidProject:
    > variants:
-      - debug:
-         - testSuiteArtifacts:
+      > debug:
+         > testSuiteVariantTargets:
             - hostJarSuite{ADDED}:
                - testSuiteName = "hostJarSuite"
-            - mixedSuite{ADDED}:
+               - targets:
+                  - jvm:
+                     - name            = "jvm"
+                     - testTaskName    = "testDebugHostJarSuiteJvmTestSuite"
+                     - targetedDevices = []
+            > mixedSuite{ADDED}:
                - testSuiteName = "mixedSuite"
+               - targets:
+                  - device:
+                     - name            = "device"
+                     - testTaskName    = "testDebugMixedSuiteDeviceTestSuite"
+                     - targetedDevices = []
+                  - jvm:
+                     - name            = "jvm"
+                     - testTaskName    = "testDebugMixedSuiteJvmTestSuite"
+                     - targetedDevices = []
+            < mixedSuite{ADDED}
             - testApkSuite{ADDED}:
                - testSuiteName = "testApkSuite"
+               - targets:
+                  - device:
+                     - name            = "device"
+                     - testTaskName    = "testDebugTestApkSuiteDeviceTestSuite"
+                     - targetedDevices = []
+         < testSuiteVariantTargets
+      < debug
       - release:
-         - testSuiteArtifacts:
+         - testSuiteVariantTargets:
             - hostJarSuite{ADDED}:
                - testSuiteName = "hostJarSuite"
+               - targets:
+                  - jvm:
+                     - name            = "jvm"
+                     - testTaskName    = "testReleaseHostJarSuiteJvmTestSuite"
+                     - targetedDevices = []
    < variants
    > testSuites:
       > hostJarSuite{ADDED}:
-         - name     = "hostJarSuite"
-         - assets   = []
+         - name             = "hostJarSuite"
+         - assets           = []
          > hostJars:
             > hostJarSuite:
                - name            = "hostJarSuite"
@@ -30,26 +57,11 @@
                - manifestFile    = {PROJECT}/app/src/hostJarSuite/AndroidManifest.xml{!}
             < hostJarSuite
          < hostJars
-         - testApks = []
-         > targetsByVariant:
-            - debug:
-               - targetedVariant = "debug"
-               - targets:
-                  - jvm:
-                     - name            = "jvm"
-                     - testTaskName    = "testDebugHostJarSuiteJvmTestSuite"
-                     - targetedDevices = []
-            - release:
-               - targetedVariant = "release"
-               - targets:
-                  - jvm:
-                     - name            = "jvm"
-                     - testTaskName    = "testReleaseHostJarSuiteJvmTestSuite"
-                     - targetedDevices = []
-         < targetsByVariant
+         - testApks         = []
+         - targetsByVariant = []
       < hostJarSuite{ADDED}
       > mixedSuite{ADDED}:
-         - name = "mixedSuite"
+         - name             = "mixedSuite"
          - assets:
             - mixedSuiteAssets:
                - name = "mixedSuiteAssets"
@@ -91,25 +103,12 @@
                < sourceProvider
             < mixedSuiteAndroidTest
          < testApks
-         > targetsByVariant:
-            > debug:
-               - targetedVariant = "debug"
-               - targets:
-                  - device:
-                     - name            = "device"
-                     - testTaskName    = "testDebugMixedSuiteDeviceTestSuite"
-                     - targetedDevices = []
-                  - jvm:
-                     - name            = "jvm"
-                     - testTaskName    = "testDebugMixedSuiteJvmTestSuite"
-                     - targetedDevices = []
-            < debug
-         < targetsByVariant
+         - targetsByVariant = []
       < mixedSuite{ADDED}
       > testApkSuite{ADDED}:
-         - name     = "testApkSuite"
-         - assets   = []
-         - hostJars = []
+         - name             = "testApkSuite"
+         - assets           = []
+         - hostJars         = []
          > testApks:
             > testApkSuite:
                - name = "testApkSuite"
@@ -133,14 +132,7 @@
                < sourceProvider
             < testApkSuite
          < testApks
-         - targetsByVariant:
-            - debug:
-               - targetedVariant = "debug"
-               - targets:
-                  - device:
-                     - name            = "device"
-                     - testTaskName    = "testDebugTestApkSuiteDeviceTestSuite"
-                     - targetedDevices = []
+         - targetsByVariant = []
       < testApkSuite{ADDED}
    < testSuites
 < BasicAndroidProject
