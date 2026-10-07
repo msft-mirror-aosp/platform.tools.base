@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 9.3.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="9.3.0-alpha08">
+<issues format="6" by="lint 9.5.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="9.5.0-dev">
 
     <issue
         id="DefaultLocale"
@@ -19,7 +19,7 @@
         errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/utils/XmlUtilsTest.java"
-            line="405"
+            line="410"
             column="34"/>
     </issue>
 
@@ -30,7 +30,7 @@
         errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="45"
+            line="46"
             column="51"/>
     </issue>
 
@@ -41,7 +41,7 @@
         errorLine2="                                                     ~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="51"
+            line="52"
             column="54"/>
     </issue>
 
@@ -52,7 +52,7 @@
         errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="64"
+            line="65"
             column="51"/>
     </issue>
 
@@ -63,7 +63,7 @@
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="77"
+            line="78"
             column="51"/>
     </issue>
 
@@ -74,18 +74,7 @@
         errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="95"
-            column="51"/>
-    </issue>
-
-    <issue
-        id="PathAsIterable"
-        message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(result).isEqualTo(expected)"
-        errorLine2="                                                  ~~~~~~">
-        <location
-            file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="115"
+            line="93"
             column="51"/>
     </issue>
 
@@ -96,7 +85,7 @@
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="159"
+            line="244"
             column="51"/>
     </issue>
 
@@ -107,7 +96,7 @@
         errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="329"
+            line="414"
             column="51"/>
     </issue>
 
@@ -118,7 +107,7 @@
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="343"
+            line="428"
             column="51"/>
     </issue>
 
@@ -129,7 +118,7 @@
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="356"
+            line="441"
             column="51"/>
     </issue>
 
@@ -140,7 +129,7 @@
         errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="367"
+            line="452"
             column="51"/>
     </issue>
 
@@ -151,7 +140,7 @@
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="376"
+            line="461"
             column="51"/>
     </issue>
 
@@ -162,7 +151,7 @@
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="385"
+            line="470"
             column="51"/>
     </issue>
 

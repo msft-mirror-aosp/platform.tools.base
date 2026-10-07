@@ -22,6 +22,7 @@ import com.android.utils.ILogger
 import com.google.common.truth.Truth
 import java.io.File
 import kotlin.io.path.createDirectories
+import kotlin.io.path.createFile
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
@@ -97,8 +98,9 @@ class AbstractAndroidLocationsTest {
   @Test
   fun `existing XDG_CONFIG_HOME usage`() {
     val testLocation = folder.newFolder()
-    // If it already exists use it
-    testLocation.toPath().resolve(".android").createDirectories()
+    // If it already exists and is not empty use it
+    val dotAndroid = testLocation.toPath().resolve(".android").createDirectories()
+    dotAndroid.resolve("repositories.cfg").createFile()
     val provider = FakeProvider(sysProp = mapOf(), envVar = mapOf("XDG_CONFIG_HOME" to testLocation.absolutePath, "HOME" to "do/not/use"))
     val logger = RecordingLogger()
 
@@ -106,7 +108,28 @@ class AbstractAndroidLocationsTest {
     val result = locationProvider.prefsLocation
 
     val expected = testLocation.toPath().resolve(".android")
-    Truth.assertWithMessage("Test Location").that(result).isEqualTo(expected)
+    PathSubject.assertThat(result).isEqualTo(expected)
+
+    Truth.assertWithMessage("Emitted Warnings").that(logger.warnings).isEmpty()
+  }
+
+  @Test
+  fun `empty XDG_CONFIG_HOME usage`() {
+    val xdgLocation = folder.newFolder()
+    xdgLocation.toPath().resolve(".android/avd").createDirectories()
+    val homeLocation = folder.newFolder()
+    val provider =
+      FakeProvider(
+        sysProp = mapOf(),
+        envVar = mapOf("XDG_CONFIG_HOME" to xdgLocation.absolutePath, "HOME" to homeLocation.absolutePath),
+      )
+    val logger = RecordingLogger()
+
+    val locationProvider: AndroidLocationsProvider = AndroidLocations(provider, logger)
+    val result = locationProvider.prefsLocation
+
+    val expected = homeLocation.toPath().resolve(".android")
+    PathSubject.assertThat(result).isEqualTo(expected)
 
     Truth.assertWithMessage("Emitted Warnings").that(logger.warnings).isEmpty()
   }
