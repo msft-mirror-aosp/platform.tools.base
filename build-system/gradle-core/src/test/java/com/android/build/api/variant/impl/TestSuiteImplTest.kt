@@ -18,6 +18,7 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.DefaultConfig
+import com.android.build.api.variant.Component
 import com.android.build.api.variant.InternalSources
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.VariantBuilder
@@ -30,6 +31,8 @@ import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.internal.manifest.ManifestData
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
+import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.services.createVariantPropertiesApiServices
@@ -37,11 +40,13 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteSources
 import com.android.build.gradle.internal.variant.VariantComponentInfo
 import com.android.builder.core.ComponentTypeImpl
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.gradle.api.file.Directory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -49,6 +54,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.withSettings
 import org.mockito.kotlin.any
 
 class TestSuiteImplTest {
@@ -237,6 +243,78 @@ class TestSuiteImplTest {
 
     val creationConfig = TestSuiteApkCreationConfig(testSuite, sourceContainer)
     assertThat(creationConfig.componentType).isEqualTo(ComponentTypeImpl.TEST_APK)
+  }
+
+  @Test
+  fun testTestSuiteApkCreationConfigBuiltInKotlinAndKapt() {
+    val testSuite = mock(TestSuiteCreationConfig::class.java)
+    val testedVariant = mock(ApplicationCreationConfig::class.java)
+    `when`(testSuite.testedVariant).thenReturn(testedVariant)
+
+    val sourceContainer = mock(TestSuiteSourceContainer::class.java)
+    val sourceContainerArtifacts = mock(ArtifactsImpl::class.java)
+    `when`(sourceContainer.artifacts).thenReturn(sourceContainerArtifacts)
+
+    @Suppress("UNCHECKED_CAST") val suiteKotlincDir = mock(Provider::class.java) as Provider<Directory>
+    @Suppress("UNCHECKED_CAST") val mainKotlincDir = mock(Provider::class.java) as Provider<Directory>
+    @Suppress("UNCHECKED_CAST") val mainKaptClassesDir = mock(Provider::class.java) as Provider<Directory>
+
+    `when`(sourceContainerArtifacts.get(InternalArtifactType.BUILT_IN_KOTLINC)).thenReturn(suiteKotlincDir)
+    `when`(testedVariant.getBuiltInKotlincOutput()).thenReturn(mainKotlincDir)
+    `when`(testedVariant.useBuiltInKotlinSupport).thenReturn(true)
+    `when`(testedVariant.builtInKaptSupportMode).thenReturn(BuiltInKaptSupportMode.Supported.BuiltInKaptPluginApplied)
+    `when`(testedVariant.useBuiltInKaptSupport).thenReturn(true)
+    `when`(testedVariant.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR)).thenReturn(mainKaptClassesDir)
+
+    val creationConfig = TestSuiteApkCreationConfig(testSuite, sourceContainer)
+
+    // Resolves BUILT_IN_KOTLINC from the test suite's own sourceContainer.artifacts rather than testedVariant
+    assertThat(creationConfig.getBuiltInKotlincOutput()).isSameInstanceAs(suiteKotlincDir)
+
+    // Built-in Kapt is disabled on test suites even if enabled on testedVariant
+    assertThat(creationConfig.builtInKaptSupportMode).isEqualTo(BuiltInKaptSupportMode.NotSupported)
+    assertThat(creationConfig.useBuiltInKaptSupport).isFalse()
+    assertThat(creationConfig.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR)).isNull()
+
+    // When built-in Kotlin support is false, getBuiltInKotlincOutput() returns null
+    `when`(testedVariant.useBuiltInKotlinSupport).thenReturn(false)
+    assertThat(creationConfig.getBuiltInKotlincOutput()).isNull()
+  }
+
+  @Test
+  fun testTestSuiteHostJarCreationConfigBuiltInKotlinAndKapt() {
+    val testSuite = mock(TestSuiteCreationConfig::class.java)
+    val testedVariant = mock(ApplicationCreationConfig::class.java, withSettings().extraInterfaces(Component::class.java))
+    `when`(testSuite.testedVariant).thenReturn(testedVariant)
+
+    val sourceContainer = mock(TestSuiteSourceContainer::class.java)
+    val sourceContainerArtifacts = mock(ArtifactsImpl::class.java)
+    `when`(sourceContainer.artifacts).thenReturn(sourceContainerArtifacts)
+
+    @Suppress("UNCHECKED_CAST") val suiteKotlincDir = mock(Provider::class.java) as Provider<Directory>
+    @Suppress("UNCHECKED_CAST") val mainKotlincDir = mock(Provider::class.java) as Provider<Directory>
+    @Suppress("UNCHECKED_CAST") val mainKaptClassesDir = mock(Provider::class.java) as Provider<Directory>
+
+    `when`(sourceContainerArtifacts.get(InternalArtifactType.BUILT_IN_KOTLINC)).thenReturn(suiteKotlincDir)
+    `when`(testedVariant.getBuiltInKotlincOutput()).thenReturn(mainKotlincDir)
+    `when`(testedVariant.useBuiltInKotlinSupport).thenReturn(true)
+    `when`(testedVariant.builtInKaptSupportMode).thenReturn(BuiltInKaptSupportMode.Supported.BuiltInKaptPluginApplied)
+    `when`(testedVariant.useBuiltInKaptSupport).thenReturn(true)
+    `when`(testedVariant.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR)).thenReturn(mainKaptClassesDir)
+
+    val creationConfig = TestSuiteHostJarCreationConfig(testSuite, sourceContainer)
+
+    // Resolves BUILT_IN_KOTLINC from the test suite's own sourceContainer.artifacts rather than testedVariant
+    assertThat(creationConfig.getBuiltInKotlincOutput()).isSameInstanceAs(suiteKotlincDir)
+
+    // Built-in Kapt is disabled on test suites even if enabled on testedVariant
+    assertThat(creationConfig.builtInKaptSupportMode).isEqualTo(BuiltInKaptSupportMode.NotSupported)
+    assertThat(creationConfig.useBuiltInKaptSupport).isFalse()
+    assertThat(creationConfig.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR)).isNull()
+
+    // When built-in Kotlin support is false, getBuiltInKotlincOutput() returns null
+    `when`(testedVariant.useBuiltInKotlinSupport).thenReturn(false)
+    assertThat(creationConfig.getBuiltInKotlincOutput()).isNull()
   }
 
   @Test

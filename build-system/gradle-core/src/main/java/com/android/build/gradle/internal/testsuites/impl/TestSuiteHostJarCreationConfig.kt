@@ -31,12 +31,15 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
+import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.getOption
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.utils.appendCapitalized
+import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
@@ -102,6 +105,17 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
 
   override val artifacts: ArtifactsImpl
     get() = sourceContainer.artifacts
+
+  override val builtInKaptSupportMode: BuiltInKaptSupportMode
+    get() = BuiltInKaptSupportMode.NotSupported
+
+  override val useBuiltInKaptSupport: Boolean
+    get() = false
+
+  override fun getBuiltInKotlincOutput(): Provider<Directory>? =
+    artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC).takeIf { useBuiltInKotlinSupport }
+
+  override fun getBuiltInKaptArtifact(internalArtifactType: InternalArtifactType<Directory>): Provider<Directory>? = null
 
   override val taskContainer: MutableTaskContainer by lazy { MutableTaskContainer() }
 
