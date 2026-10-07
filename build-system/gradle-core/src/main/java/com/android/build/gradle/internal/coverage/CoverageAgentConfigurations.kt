@@ -17,16 +17,22 @@
 package com.android.build.gradle.internal.coverage
 
 import com.android.Version
-import com.android.build.gradle.internal.services.BaseServices
 
-/** Configurations for the on-the-fly coverage agent. */
+/** Configurations for the on-device coverage agent. */
 object CoverageAgentConfigurations {
   private const val AGENT_DEPENDENCY_GROUP = "com.android.tools.test"
   private const val AGENT_DEPENDENCY_NAME = "coverage-agent"
-  private val AGENT_VERSION: String = Version.COVERAGE_AGENT_VERSION
 
+  /**
+   * Returns the Maven coordinate of the on-device coverage agent.
+   *
+   * The agent is built and released in lockstep with the Android Gradle plugin (same version, same gmaven release), so it always resolves
+   * to the exact AGP version: the coordinate is added to the androidTest runtime classpath and forced on both the compile and runtime
+   * classpaths of the test component (see `TaskManager.handleOnTheFlyCoverageDependencies`), so a different version declared by the build
+   * author cannot win conflict resolution. Fixes to the agent ship with the next AGP release.
+   */
   @JvmStatic
-  fun getAgentRuntimeDependency(services: BaseServices): String {
-    return "$AGENT_DEPENDENCY_GROUP:$AGENT_DEPENDENCY_NAME:$AGENT_VERSION"
+  fun getAgentRuntimeDependency(): String {
+    return "$AGENT_DEPENDENCY_GROUP:$AGENT_DEPENDENCY_NAME:${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
   }
 }

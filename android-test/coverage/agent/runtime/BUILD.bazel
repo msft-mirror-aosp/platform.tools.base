@@ -1,5 +1,6 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:android.bzl", "dex_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 
 # The actual hit recorder implementation.
 java_library(
@@ -17,7 +18,11 @@ java_library(
     deps = ["//tools/base/fakeandroid:android-mock"],
 )
 
-java_library(
+# Published to gmaven as part of com.android.tools.test:coverage-agent, so it is
+# built like every other released library: through kotlin_library, which
+# compiles for the shared AGP jvm_target instead of the repo-wide
+# --java_language_version.
+kotlin_library(
     name = "coverage_rt_java",
     srcs = ["src/main/java/com/android/tools/coverage/CoverageAgentAttacher.java"],
     visibility = ["//tools/base/android-test/coverage/agent/support:__pkg__"],

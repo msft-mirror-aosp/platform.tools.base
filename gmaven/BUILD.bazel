@@ -44,6 +44,7 @@ maven_repository(
         "//tools/base/adblib:adblib",
         "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility",
         "//tools/base/adblib-tools:adblib.tools",
+        "//tools/base/android-test/coverage/agent/support:coverage-agent",
         "//tools/base/backup:backup-restore",
         "//tools/base/deploy/deployer:deployer.runner.maven",
     ],

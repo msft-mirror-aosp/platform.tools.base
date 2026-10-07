@@ -828,6 +828,10 @@ com.android.tools.pixelprobe:pixelprobe
   dependencies:
     com.android.tools.chunkio:chunkio (runtime)
 
+com.android.tools.test:coverage-agent
+  pomName=com.android.tools.test.coverage-agent
+  description=On-device code coverage agent used by the Android Gradle plugin for instrumented tests.
+
 com.android.tools.utp:gradle-work-action
   pomName=com.android.tools.utp.gradle-work-action
   description=Provides Gradle WorkAction implementations for executing the Unified Test Platform (UTP) in isolation.

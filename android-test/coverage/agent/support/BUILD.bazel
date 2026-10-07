@@ -1,7 +1,7 @@
-load("//tools/base/android-test/coverage:version.bzl", "COVERAGE_AGENT_VERSION")
 load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
+load("//tools/base/common:version.bzl", "BUILD_VERSION")
 
 # Create a single "Support JAR" that contains both the Java bytecode
 # and the native JVMTI agent libraries.
@@ -21,15 +21,21 @@ jvm_import(
     jars = [":coverage_agent_support_jar"],
 )
 
+# The on-device coverage agent is versioned and released in lockstep with the
+# Android Gradle plugin: it uses the same BUILD_VERSION and ships in the same
+# gmaven release (see //tools/base/gmaven:gmaven_with_vendor). AGP resolves it
+# as com.android.tools.test:coverage-agent:<AGP version>.
 maven_library(
     name = "coverage-agent",
     srcs = [],
     bundled_deps = [":coverage_agent_support_java"],
     coordinates = "com.android.tools.test:coverage-agent",
-    version = COVERAGE_AGENT_VERSION,
+    description = "On-device code coverage agent used by the Android Gradle plugin for instrumented tests.",
+    notice = "LICENSE",
+    version = BUILD_VERSION,
     visibility = [
         "//tools/base:__pkg__",
-        "//tools/base/android-test/coverage:__pkg__",
         "//tools/base/build-system:__pkg__",
+        "//tools/base/gmaven:__pkg__",
     ],
 )

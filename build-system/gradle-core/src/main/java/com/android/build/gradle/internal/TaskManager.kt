@@ -1584,9 +1584,16 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   private fun handleOnTheFlyCoverageDependencies(creationConfig: ComponentCreationConfig) {
     val onTheFlyEnabled = globalConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
     if (onTheFlyEnabled && creationConfig.componentType.isForTesting && creationConfig.componentType.isApk) {
-      val coverageAgentDependency =
-        com.android.build.gradle.internal.coverage.CoverageAgentConfigurations.getAgentRuntimeDependency(globalConfig.services)
+      val coverageAgentDependency = com.android.build.gradle.internal.coverage.CoverageAgentConfigurations.getAgentRuntimeDependency()
       project.dependencies.add(creationConfig.variantDependencies.runtimeClasspath.name, coverageAgentDependency)
+
+      // The agent is released in lockstep with AGP, so force its version on the test component's
+      // classpaths: a different version declared by the build author (or pulled in transitively)
+      // must not win conflict resolution on the runtime classpath, nor leave the compile classpath
+      // on another version. Forcing is a no-op where the module is not present.
+      listOf(creationConfig.variantDependencies.compileClasspath, creationConfig.variantDependencies.runtimeClasspath).forEach {
+        it.resolutionStrategy { r: ResolutionStrategy -> r.force(coverageAgentDependency) }
+      }
     }
   }
 

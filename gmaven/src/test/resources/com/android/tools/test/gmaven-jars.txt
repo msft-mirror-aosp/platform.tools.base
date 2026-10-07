@@ -4239,6 +4239,24 @@ com/android/tools/sdklib
   xsd/sources/sdk-sites-list-6.xsd
   xsd/sources/sdk-sites-list-7.xsd
 
+com/android/tools/test/coverage-agent
+  LICENSE
+  META-INF/
+  META-INF/MANIFEST.MF
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/coverage/
+  lib/
+  lib/arm64-v8a/
+  lib/arm64-v8a/coverage_agent.so
+  lib/armeabi-v7a/
+  lib/armeabi-v7a/coverage_agent.so
+  lib/x86/
+  lib/x86/coverage_agent.so
+  lib/x86_64/
+  lib/x86_64/coverage_agent.so
+
 com/android/tools/testutils
   META-INF/
   META-INF/MANIFEST.MF

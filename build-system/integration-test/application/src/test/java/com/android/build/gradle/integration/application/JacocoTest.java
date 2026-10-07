@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
+import com.android.Version;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleProject;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
@@ -419,6 +420,109 @@ public void testLegacyFailsIfNoLegacyFilesFoundEvenWithPb() throws Exception {
                                     .getClasses()
                                     .get("Lcom/example/helloworld/HelloWorldTest;"))
                     .doesNotHaveMethod("$jacocoInit");
+        }
+    }
+
+    @Test
+    public void onTheFlyAgentIsResolvedAtTheAgpVersion() throws Exception {
+        String agentPrefix = "com.android.tools.test:coverage-agent:";
+        String expectedCoordinate = agentPrefix + Version.ANDROID_GRADLE_PLUGIN_VERSION;
+
+        // The agent is released in lockstep with AGP, so the androidTest runtime classpath must
+        // resolve it at exactly the running plugin version and at no other version.
+        GradleBuildResult result =
+                project.executor()
+                        .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                        .run(
+                                ":dependencies",
+                                "--configuration",
+                                "debugAndroidTestRuntimeClasspath");
+        boolean agentSeen = false;
+        try (Scanner scanner = result.getStdout()) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.contains(agentPrefix)) {
+                    agentSeen = true;
+                    assertThat(line).contains(expectedCoordinate);
+                    // A "-> x.y.z" suffix would mean Gradle substituted another agent version.
+                    assertThat(line).doesNotContain("->");
+                }
+            }
+        }
+        assertThat(agentSeen).named("coverage agent on debugAndroidTestRuntimeClasspath").isTrue();
+
+        // The agent's attacher and native libraries are packaged into the androidTest APK.
+        project.executor()
+                .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                .run("assembleDebugAndroidTest");
+        try (Apk androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)) {
+            assertThat(androidTestApk)
+                    .containsClass("Lcom/android/tools/coverage/CoverageAgentAttacher;");
+            assertThat(androidTestApk).contains("lib/x86_64/coverage_agent.so");
+            assertThat(androidTestApk).contains("lib/arm64-v8a/coverage_agent.so");
+        }
+    }
+
+    @Test
+    public void onTheFlyAgentVersionIsForcedToAgpVersion() throws Exception {
+        String agentPrefix = "com.android.tools.test:coverage-agent:";
+        String staleCoordinate = agentPrefix + "0.1.0-alpha01";
+
+        // A build author pinning the agent to a stale, independently versioned release must not
+        // win conflict resolution: AGP forces the agent to its own version.
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "\ndependencies {\n"
+                        + "    androidTestImplementation '"
+                        + staleCoordinate
+                        + "'\n"
+                        + "}\n");
+
+        // androidTestImplementation feeds both classpaths; the force must cover both.
+        for (String configuration :
+                Arrays.asList(
+                        "debugAndroidTestCompileClasspath", "debugAndroidTestRuntimeClasspath")) {
+            GradleBuildResult result =
+                    project.executor()
+                            .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                            .run(":dependencies", "--configuration", configuration);
+            boolean staleForced = false;
+            try (Scanner scanner = result.getStdout()) {
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    if (line.contains(agentPrefix)) {
+                        // Every occurrence ends up at the AGP version, whether requested directly
+                        // ("group:name:version") or forced ("group:name:requested -> resolved").
+                        String resolved =
+                                line.contains(" -> ")
+                                        ? line.substring(line.indexOf(" -> ") + 4)
+                                        : line.substring(
+                                                line.indexOf(agentPrefix) + agentPrefix.length());
+                        assertThat(resolved.trim().split(" ")[0])
+                                .named(configuration + ": " + line)
+                                .isEqualTo(Version.ANDROID_GRADLE_PLUGIN_VERSION);
+                        // ... and the stale request is reported as substituted.
+                        if (line.contains(
+                                staleCoordinate + " -> " + Version.ANDROID_GRADLE_PLUGIN_VERSION)) {
+                            staleForced = true;
+                        }
+                    }
+                }
+            }
+            assertThat(staleForced)
+                    .named("stale agent version forced to AGP version on " + configuration)
+                    .isTrue();
+        }
+
+        // The forced resolution must also work for real: the stale version does not exist in
+        // any repository, so the build only succeeds if AGP's version is what gets resolved.
+        project.executor()
+                .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                .run("assembleDebugAndroidTest");
+        try (Apk androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)) {
+            assertThat(androidTestApk)
+                    .containsClass("Lcom/android/tools/coverage/CoverageAgentAttacher;");
+            assertThat(androidTestApk).contains("lib/x86_64/coverage_agent.so");
         }
     }
 

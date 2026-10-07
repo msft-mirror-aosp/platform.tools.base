@@ -69,7 +69,7 @@ class AndroidTestEngineConnectedTest {
                 implementation.add("androidx.test:monitor:1.4.0-alpha06")
                 implementation.add("androidx.test:rules:1.4.0-alpha06")
                 implementation.add("androidx.test:runner:1.4.0-alpha06")
-                implementation.add("com.android.tools.test:coverage-agent:${Version.COVERAGE_AGENT_VERSION}")
+                implementation.add("com.android.tools.test:coverage-agent:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
               }
             }
             it.useJunitEngine.apply {
