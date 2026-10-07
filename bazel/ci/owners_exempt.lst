@@ -6237,10 +6237,8 @@ tools/base/sdk-common/src/test/java/com/android/ide/common/fonts/QueryResolverTe
 tools/base/sdk-common/src/test/java/com/android/ide/common/pagealign/PageAlignUtilsTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/rendering/HardwareConfigHelperTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/repository/AgpVersionTest.kt
-tools/base/sdk-common/src/test/java/com/android/ide/common/repository/FakeGoogleMavenRepositoryV2Host.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/repository/GoogleMavenArtifactIdTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/repository/GoogleMavenRepositoryTest.kt
-tools/base/sdk-common/src/test/java/com/android/ide/common/repository/GoogleMavenRepositoryV2Test.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/repository/KnownVersionStabilityTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/repository/MavenRepositoriesTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/repository/NetworkCacheTest.kt
