@@ -11630,6 +11630,155 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                 + "1 errors, 0 warnings");
     }
 
+    public void testObsoleteSdkIntWithOverlappingWhenRanges() {
+        lint().files(
+                        manifest().minSdk(21),
+                        kotlin(
+                                ""
+                                        + "package test.pkg\n"
+                                        + "\n"
+                                        + "import android.os.Build.VERSION.SDK_INT\n"
+                                        + "import android.os.Build.VERSION_CODES.O\n"
+                                        + "import android.os.Build.VERSION_CODES.P\n"
+                                        + "import android.os.Build.VERSION_CODES.S\n"
+                                        + "import android.os.Build.VERSION_CODES.TIRAMISU\n"
+                                        + "\n"
+                                        + "fun test() {\n"
+                                        + "    when (SDK_INT) {\n"
+                                        + "        in O..P, in S..TIRAMISU, in P..S -> {\n"
+                                        + "            if (SDK_INT >= O) {\n"
+                                        + "            }\n"
+                                        + "        }\n"
+                                        + "    }\n"
+                                        + "}\n"))
+                .run()
+                .expect(
+                        ""
+                                + "src/test/pkg/test.kt:12: Warning: Unnecessary; SDK_INT >= O is always true here (SDK_INT ≥ 26 and < 34) [ObsoleteSdkInt]\n"
+                                + "            if (SDK_INT >= O) {\n"
+                                + "                ~~~~~~~~~~~~\n"
+                                + "0 errors, 1 warnings");
+    }
+
+    public void testObsoleteSdkIntMessageDescribesCanonicalInterval() {
+        // However the same set of API levels is spelled out, the message should describe it as a
+        // single interval.
+        lint().files(
+                        manifest().minSdk(21),
+                        kotlin(
+                                ""
+                                        + "package test.pkg\n"
+                                        + "\n"
+                                        + "import android.os.Build.VERSION.SDK_INT\n"
+                                        + "import android.os.Build.VERSION_CODES.S\n"
+                                        + "import android.os.Build.VERSION_CODES.S_V2\n"
+                                        + "import android.os.Build.VERSION_CODES.TIRAMISU\n"
+                                        + "\n"
+                                        + "fun range() {\n"
+                                        + "    when (SDK_INT) {\n"
+                                        + "        in S..TIRAMISU -> if (SDK_INT >= S) {}\n"
+                                        + "    }\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "fun sorted() {\n"
+                                        + "    when (SDK_INT) {\n"
+                                        + "        S, S_V2, TIRAMISU -> if (SDK_INT >= S) {}\n"
+                                        + "    }\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "fun unsorted() {\n"
+                                        + "    when (SDK_INT) {\n"
+                                        + "        S, TIRAMISU, S_V2 -> if (SDK_INT >= S) {}\n"
+                                        + "    }\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "fun redundant() {\n"
+                                        + "    when (SDK_INT) {\n"
+                                        + "        S, TIRAMISU, in S..TIRAMISU -> if (SDK_INT >= S) {}\n"
+                                        + "    }\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "fun disjunction() {\n"
+                                        + "    if (SDK_INT == S || SDK_INT == TIRAMISU || SDK_INT == S_V2) {\n"
+                                        + "        if (SDK_INT >= S) {}\n"
+                                        + "    }\n"
+                                        + "}\n"))
+                .run()
+                .expect(
+                        ""
+                                + "src/test/pkg/test.kt:10: Warning: Unnecessary; SDK_INT >= S is always true here (SDK_INT ≥ 31 and < 34) [ObsoleteSdkInt]\n"
+                                + "        in S..TIRAMISU -> if (SDK_INT >= S) {}\n"
+                                + "                              ~~~~~~~~~~~~\n"
+                                + "src/test/pkg/test.kt:16: Warning: Unnecessary; SDK_INT >= S is always true here (SDK_INT ≥ 31 and < 34) [ObsoleteSdkInt]\n"
+                                + "        S, S_V2, TIRAMISU -> if (SDK_INT >= S) {}\n"
+                                + "                                 ~~~~~~~~~~~~\n"
+                                + "src/test/pkg/test.kt:22: Warning: Unnecessary; SDK_INT >= S is always true here (SDK_INT ≥ 31 and < 34) [ObsoleteSdkInt]\n"
+                                + "        S, TIRAMISU, S_V2 -> if (SDK_INT >= S) {}\n"
+                                + "                                 ~~~~~~~~~~~~\n"
+                                + "src/test/pkg/test.kt:28: Warning: Unnecessary; SDK_INT >= S is always true here (SDK_INT ≥ 31 and < 34) [ObsoleteSdkInt]\n"
+                                + "        S, TIRAMISU, in S..TIRAMISU -> if (SDK_INT >= S) {}\n"
+                                + "                                           ~~~~~~~~~~~~\n"
+                                + "src/test/pkg/test.kt:34: Warning: Unnecessary; SDK_INT >= S is always true here (SDK_INT ≥ 31 and < 34) [ObsoleteSdkInt]\n"
+                                + "        if (SDK_INT >= S) {}\n"
+                                + "            ~~~~~~~~~~~~\n"
+                                + "0 errors, 5 warnings");
+    }
+
+    public void testNewApiWithReversedWhenRange() {
+        lint().files(
+                        manifest().minSdk(21),
+                        kotlin(
+                                ""
+                                        + "package test.pkg\n"
+                                        + "\n"
+                                        + "import android.os.Build\n"
+                                        + "import androidx.annotation.RequiresApi\n"
+                                        + "\n"
+                                        + "fun test() {\n"
+                                        + "    when (Build.VERSION.SDK_INT) {\n"
+                                        + "        in 35..21, 40, 25 -> {\n"
+                                        + "            callApi32()\n"
+                                        + "        }\n"
+                                        + "    }\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "@RequiresApi(32)\n"
+                                        + "fun callApi32() {}\n"),
+                        SUPPORT_ANNOTATIONS_JAR)
+                .run()
+                .expect(
+                        ""
+                                + "src/test/pkg/test.kt:9: Error: Call requires API level 32 (current min is 25): callApi32 [NewApi]\n"
+                                + "            callApi32()\n"
+                                + "            ~~~~~~~~~\n"
+                                + "1 errors, 0 warnings");
+    }
+
+    public void testNewApiWithEmptyWhenRange() {
+        lint().files(
+                        manifest().minSdk(21),
+                        kotlin(
+                                ""
+                                        + "package test.pkg\n"
+                                        + "\n"
+                                        + "import android.os.Build\n"
+                                        + "import androidx.annotation.RequiresApi\n"
+                                        + "\n"
+                                        + "fun test() {\n"
+                                        + "    when (Build.VERSION.SDK_INT) {\n"
+                                        + "        35, in 25 until 25 -> {\n"
+                                        + "            callApi32()\n"
+                                        + "        }\n"
+                                        + "    }\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "@RequiresApi(32)\n"
+                                        + "fun callApi32() {}\n"),
+                        SUPPORT_ANNOTATIONS_JAR)
+                .run()
+                .expectClean();
+    }
+
     @Override
     protected TestLintClient createClient() {
         return super.createClient();

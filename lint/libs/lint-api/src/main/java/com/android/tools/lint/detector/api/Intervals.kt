@@ -89,7 +89,14 @@ sealed class Intervals {
   abstract fun serialize(): String
 
   /** Is this [Intervals] at least as high as the given [other] intervals ? */
-  abstract fun isAtLeast(other: Intervals): Boolean
+  fun isAtLeast(other: Intervals): Boolean = lowestBound() >= other.lowestBound()
+
+  /** The lower endpoint of the first interval; an empty set acts as starting at [ZERO]. */
+  private fun lowestBound(): MajorMinor =
+    when (this) {
+      is Span -> from
+      is Spans -> if (spans.isEmpty()) ZERO else spans.first().from
+    }
 
   /**
    * Will this API level or anything higher always match this constraint?
@@ -145,7 +152,7 @@ sealed class Intervals {
     }
   }
 
-  /** Represents a single half-open interval from `[fromInclusive.fromInclusiveMinor, toExclusive.toExclusiveMinor)` */
+  /** Represents a single non-empty half-open interval from `[fromInclusive.fromInclusiveMinor, toExclusive.toExclusiveMinor)`. */
   private class Span(
     /**
      * The start of the span, encoded as the major version, left shifted [MAJOR_SHIFT] bits and then the minor version added in. From is
@@ -154,17 +161,7 @@ sealed class Intervals {
     val from: MajorMinor,
     val to: MajorMinor,
   ) : Intervals() {
-    constructor(
-      fromInclusive: Int,
-      fromInclusiveMinor: Int,
-      toExclusive: Int,
-      toExclusiveMinor: Int,
-    ) : this(MajorMinor(fromInclusive, fromInclusiveMinor), MajorMinor(toExclusive, toExclusiveMinor))
-
-    override fun fromInclusive(): Int =
-      if (isEmpty()) {
-        -1
-      } else from.major
+    override fun fromInclusive(): Int = from.major
 
     override fun fromInclusiveMinor(): Int = from.minor
 
@@ -172,9 +169,7 @@ sealed class Intervals {
 
     override fun toExclusiveMinor(): Int = to.minor
 
-    override fun isEmpty(): Boolean {
-      return from == to
-    }
+    override fun isEmpty(): Boolean = false
 
     private fun Span.intersects(other: Span): Boolean {
       return (this.from <= other.to) && (other.from <= this.to)
@@ -184,17 +179,7 @@ sealed class Intervals {
       return MajorMinor(value, 0) in from..<to
     }
 
-    override fun isAtLeast(other: Intervals): Boolean {
-      return when (other) {
-        is Span -> from >= other.from
-        is Spans -> from >= other.spans.first().from
-      }
-    }
-
     override fun serialize(): String {
-      if (isEmpty()) {
-        return "0"
-      }
       val sb = StringBuilder()
       val fromInclusive = fromInclusive()
       val fromInclusiveMinor = fromInclusiveMinor()
@@ -220,7 +205,6 @@ sealed class Intervals {
     override fun not(): Intervals {
       return when {
         this == ALL -> NONE
-        this == NONE -> ALL
         from == ZERO -> Span(to, INFINITY)
         to == INFINITY -> Span(ZERO, from)
         else -> Spans(listOf(Span(ZERO, from), Span(to, INFINITY)))
@@ -305,9 +289,6 @@ sealed class Intervals {
 
       other as Span
 
-      // Treat all empty spans as equal
-      if (from >= to) return other.from >= other.to
-
       return this.from == other.from && this.to == other.to
     }
 
@@ -316,10 +297,11 @@ sealed class Intervals {
     }
   }
 
+  /** 0 or 2+ intervals: sorted, non-empty, non-overlapping and non-adjacent. */
   private class Spans(val spans: List<Span>) : Intervals() {
     override fun fromInclusive(): Int {
       if (spans.isEmpty()) {
-        return 1
+        return -1
       }
       return spans.first().fromInclusive()
     }
@@ -333,7 +315,7 @@ sealed class Intervals {
 
     override fun toExclusive(): Int {
       if (spans.isEmpty()) {
-        return Int.MAX_VALUE
+        return ZERO.major
       }
       return spans.last().toExclusive()
     }
@@ -346,14 +328,11 @@ sealed class Intervals {
     }
 
     override fun isEmpty(): Boolean {
-      // We should never end up in this state; when and-ing and ending up with an empty region
-      // we should have returned a concrete SimpleSpan
-      return false
+      return spans.isEmpty()
     }
 
     override fun isAll(): Boolean {
-      // We should never end up in this state; when and-ing and ending up with a full (1 to
-      // MAX_VALUE) region we should have returned a concrete SimpleSpan
+      // A single interval is always represented as a [Span], so a [Spans] can never cover everything
       return false
     }
 
@@ -361,14 +340,10 @@ sealed class Intervals {
       return spans.any { it.contains(value) }
     }
 
-    override fun isAtLeast(other: Intervals): Boolean {
-      return when (other) {
-        is Span -> spans.first().from >= other.from
-        is Spans -> spans.first().from >= other.spans.first().from
-      }
-    }
-
     override fun toString(variable: String, compact: Boolean): String {
+      if (spans.isEmpty()) {
+        return "No ${variable}s"
+      }
       // Special case: if these intervals cover `{(1, X), [X+1,∞)}`, meaning everything except X,
       // special case that to just show "x != X" instead of these intervals.
       if (spans.size == 2) {
@@ -382,10 +357,12 @@ sealed class Intervals {
     }
 
     override infix fun or(other: Intervals): Intervals {
-      return when (other) {
-        is Span -> Spans(joinIntervals(this.spans, listOf(other)))
-        is Spans -> Spans(joinIntervals(this.spans, other.spans))
-      }
+      val merged =
+        when (other) {
+          is Span -> joinIntervals(this.spans, listOf(other))
+          is Spans -> joinIntervals(this.spans, other.spans)
+        }
+      return create(merged)
     }
 
     override infix fun and(other: Intervals): Intervals {
@@ -413,6 +390,9 @@ sealed class Intervals {
     }
 
     override fun serialize(): String {
+      if (spans.isEmpty()) {
+        return "0"
+      }
       return spans.joinToString(",") { it.serialize() }
     }
 
@@ -426,7 +406,7 @@ sealed class Intervals {
     }
 
     override fun hashCode(): Int {
-      return fromInclusive()
+      return spans.hashCode()
     }
   }
 
@@ -446,30 +426,39 @@ sealed class Intervals {
     /** The mask covering the bits for the minor version. */
     private const val MINOR_MASK = (1 shl MAJOR_SHIFT) - 1
 
+    /**
+     * Creates a single interval, clamped to the domain `[ZERO, ∞)`, normalizing all empty ranges to [NONE] so that representations stay
+     * canonical.
+     */
+    private fun spanOrNone(from: MajorMinor, to: MajorMinor): Intervals {
+      val start = if (from < ZERO) ZERO else from
+      return if (start >= to) NONE else Span(start, to)
+    }
+
     /** This value, all the way up to the next value. */
-    fun exactly(major: Int): Intervals = Span(major, 0, major + 1, 0)
+    fun exactly(major: Int): Intervals = range(major, 0, major + 1, 0)
 
     /*
      * When you specify a minor version, it's picking just this minor version, not other minor versions
      * for the same API level.
      */
-    fun exactly(major: Int, minor: Int): Intervals = Span(major, minor, major, minor + 1)
+    fun exactly(major: Int, minor: Int): Intervals = range(major, minor, major, minor + 1)
 
-    fun atLeast(major: Int, minor: Int = 0): Intervals = Span(MajorMinor(major, minor), INFINITY)
+    fun atLeast(major: Int, minor: Int = 0): Intervals = spanOrNone(MajorMinor(major, minor), INFINITY)
 
-    fun atMost(toExclusive: Int): Intervals = Span(1, 0, toExclusive + 1, 0)
+    fun atMost(toExclusive: Int): Intervals = range(1, 0, toExclusive + 1, 0)
 
-    fun below(toExclusive: Int, minor: Int = 0): Intervals = Span(1, 0, toExclusive, minor)
+    fun below(toExclusive: Int, minor: Int = 0): Intervals = range(1, 0, toExclusive, minor)
 
-    fun range(fromInclusive: Int, toExclusive: Int): Intervals = Span(fromInclusive, 0, toExclusive, 0)
+    fun range(fromInclusive: Int, toExclusive: Int): Intervals = range(fromInclusive, 0, toExclusive, 0)
 
     fun range(fromInclusive: Int, fromInclusiveMinor: Int, toExclusive: Int, toExclusiveMinor: Int): Intervals =
-      Span(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor)
+      spanOrNone(MajorMinor(fromInclusive, fromInclusiveMinor), MajorMinor(toExclusive, toExclusiveMinor))
 
     fun deserialize(s: String): Intervals {
       if (s.contains(',')) {
-        val spans = s.split(',').map { deserialize(it) as Span }
-        return create(spans)
+        // Union the components one by one: serialized data from older versions may not be canonical (sorted, disjoint, non-adjacent)
+        return s.split(',').fold(NONE) { acc, component -> acc or deserialize(component) }
       }
       if (s == "0") {
         return NONE
@@ -484,7 +473,7 @@ sealed class Intervals {
           from = s.substring(0, s.length - 2).toInt()
           fromMinor = 0
         }
-        return Span(MajorMinor(from, fromMinor), INFINITY)
+        return spanOrNone(MajorMinor(from, fromMinor), INFINITY)
       }
       val separator = s.indexOf('-')
       val fromInclusive: Int
@@ -508,10 +497,10 @@ sealed class Intervals {
         toExclusive = s.substring(separator + 1).toInt()
         toExclusiveMinor = 0
       }
-      return Span(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor)
+      return range(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor)
     }
 
-    val NONE: Intervals = Span(ZERO, ZERO)
+    val NONE: Intervals = Spans(emptyList())
     val ALL: Intervals = Span(ZERO, INFINITY)
 
     private fun create(spans: List<Span>): Intervals {
@@ -522,48 +511,37 @@ sealed class Intervals {
       }
     }
 
-    /** Merge two lists of spans, using union semantics. */
+    /**
+     * Merge two canonical lists of spans, using union semantics. Spans are taken in order of their start, and each one either extends the
+     * previously emitted span when they overlap or touch, or starts a new one, so the result is canonical again.
+     */
     private fun joinIntervals(intervals1: List<Span>, intervals2: List<Span>): List<Span> {
       val mergedIntervals = mutableListOf<Span>()
       var i = 0
       var j = 0
 
       while (i < intervals1.size || j < intervals2.size) {
-        if (i == intervals1.size) {
-          mergedIntervals.add(intervals2[j++])
-          continue
-        }
-        if (j == intervals2.size) {
-          mergedIntervals.add(intervals1[i++])
-          continue
-        }
-
-        val current1 = intervals1[i]
-        val current2 = intervals2[j]
-
-        if (current1.to <= current2.from) {
-          mergedIntervals.add(current1)
-          i++
-        } else if (current2.to <= current1.from) {
-          mergedIntervals.add(current2)
-          j++
-        } else {
-          val newFrom = minOf(current1.from, current2.from)
-          val newTo = maxOf(current1.to, current2.to)
-          mergedIntervals.add(Span(newFrom, newTo))
-
-          if (current1.to < current2.to) {
-            i++
-          } else {
-            j++
+        val next =
+          when {
+            j == intervals2.size -> intervals1[i++]
+            i == intervals1.size -> intervals2[j++]
+            intervals1[i].from <= intervals2[j].from -> intervals1[i++]
+            else -> intervals2[j++]
           }
+        val last = mergedIntervals.lastOrNull()
+        if (last != null && next.from <= last.to) {
+          if (next.to > last.to) {
+            mergedIntervals[mergedIntervals.size - 1] = Span(last.from, next.to)
+          }
+        } else {
+          mergedIntervals.add(next)
         }
       }
 
       return mergedIntervals
     }
 
-    /** Merge two lists of spans, using intersection semantics. */
+    /** Merge two canonical lists of spans, using intersection semantics. */
     private fun intersectIntervals(intervals1: List<Span>, intervals2: List<Span>): List<Span> {
       val intersectedIntervals = mutableListOf<Span>()
       var i = 0
