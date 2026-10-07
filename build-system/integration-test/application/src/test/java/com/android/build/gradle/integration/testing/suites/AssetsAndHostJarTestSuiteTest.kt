@@ -142,4 +142,55 @@ class AssetsAndHostJarTestSuiteTest {
     Truth.assertThat(debugDeps.testSuiteArtifacts["second"]!!.sourcesDependencies.map { it.name })
       .containsExactly("debugSecondAssets", "debugSecondAndroidTest")
   }
+
+  @Test
+  fun testCollidingSuiteNameFailsWithException() {
+    val project = rule.build {
+      androidApplication {
+        android {
+          testOptions.customSuites.create("firstTest") {
+            it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+      }
+    }
+
+    val result = project.executor.expectFailure().run(":app:tasks")
+    result.assertErrorContains(
+      "Test suite 'firstTest' collides with source set 'firstTest' of mixed test suite 'first'. " +
+        "Please rename one of the test suites to avoid source set and task name collisions."
+    )
+  }
+
+  @Test
+  fun testMixedApkCollidingSuiteNameFailsWithException() {
+    val mixedApkCollisionProject = rule.build {
+      androidApplication {
+        android {
+          testOptions.customSuites.create("mixed") {
+            it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
+            it.hostJar {}
+            it.testApk {}
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+          testOptions.customSuites.create("mixedAndroidTest") {
+            it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
+            it.testApk {}
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+      }
+    }
+
+    val mixedApkResult = mixedApkCollisionProject.executor.expectFailure().run(":app:tasks")
+    mixedApkResult.assertErrorContains(
+      "Test suite 'mixedAndroidTest' collides with source set 'mixedAndroidTest' of mixed test suite 'mixed'. " +
+        "Please rename one of the test suites to avoid source set and task name collisions."
+    )
+  }
 }

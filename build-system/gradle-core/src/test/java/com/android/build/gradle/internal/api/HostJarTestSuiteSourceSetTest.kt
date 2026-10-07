@@ -16,13 +16,19 @@
 
 package com.android.build.gradle.internal.api
 
+import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceSet
+import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.services.VariantServicesImpl
+import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.services.createProjectServices
+import com.android.build.gradle.internal.testsuites.validateTestSuiteSourceSetNames
 import com.google.common.truth.Truth
+import kotlin.test.assertFailsWith
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.testfixtures.ProjectBuilder
@@ -176,6 +182,178 @@ class HostJarTestSuiteSourceSetTest {
       ) as TestSuiteSourceSet.HostJar
     Truth.assertThat(mixedSourceSet.name).isEqualTo("firstTest")
     Truth.assertThat(mixedSourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/first/test/java"))
+  }
+
+  @Test
+  fun testValidateTestSuiteSourceSetNamesThrowsOnCollisions() {
+    val dslServices = createDslServices(createProjectServices(project))
+    fun suitesContainer(configure: org.gradle.api.NamedDomainObjectContainer<AgpTestSuite>.() -> Unit) =
+      dslServices
+        .polymorphicDomainObjectContainer(AgpTestSuite::class.java)
+        .apply {
+          registerFactory(AgpTestSuite::class.java) { name ->
+            dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, false)
+          }
+        }
+        .apply(configure)
+
+    // Non-colliding suites (empty, single, multiple with mixed) should succeed without error
+    validateTestSuiteSourceSetNames(suitesContainer {})
+    validateTestSuiteSourceSetNames(
+      suitesContainer {
+        create("onlySuite") {
+          it.hostJar {}
+          it.assets {}
+        }
+      }
+    )
+    validateTestSuiteSourceSetNames(
+      suitesContainer {
+        create("first") { it.hostJar {} }
+        create("second") { it.testApk {} }
+        create("mixed") {
+          it.hostJar {}
+          it.testApk {}
+          it.assets {}
+        }
+      }
+    )
+
+    // Single-source hostJar colliding with mixed suite's hostJar source set (regardless of declaration order)
+    val expectedHostJarMsg =
+      "Test suite 'testSuiteTest' collides with source set 'testSuiteTest' of mixed test suite 'testSuite'. " +
+        "Please rename one of the test suites to avoid source set and task name collisions."
+    val hostJarCollision1 =
+      assertFailsWith<InvalidUserDataException> {
+        validateTestSuiteSourceSetNames(
+          suitesContainer {
+            create("testSuiteTest") { it.hostJar {} }
+            create("testSuite") {
+              it.hostJar {}
+              it.assets {}
+            }
+          }
+        )
+      }
+    val hostJarCollision2 =
+      assertFailsWith<InvalidUserDataException> {
+        validateTestSuiteSourceSetNames(
+          suitesContainer {
+            create("testSuite") {
+              it.hostJar {}
+              it.assets {}
+            }
+            create("testSuiteTest") { it.hostJar {} }
+          }
+        )
+      }
+    Truth.assertThat(hostJarCollision1.message).isEqualTo(expectedHostJarMsg)
+    Truth.assertThat(hostJarCollision2.message).isEqualTo(expectedHostJarMsg)
+
+    // Single-source testApk colliding with mixed suite's testApk source set
+    val testApkCollision =
+      assertFailsWith<InvalidUserDataException> {
+        validateTestSuiteSourceSetNames(
+          suitesContainer {
+            create("testSuiteAndroidTest") { it.testApk {} }
+            create("testSuite") {
+              it.hostJar {}
+              it.testApk {}
+            }
+          }
+        )
+      }
+    Truth.assertThat(testApkCollision.message)
+      .isEqualTo(
+        "Test suite 'testSuiteAndroidTest' collides with source set 'testSuiteAndroidTest' of mixed test suite 'testSuite'. " +
+          "Please rename one of the test suites to avoid source set and task name collisions."
+      )
+
+    // Single-source assets (including implicit default assets when no source block is specified) colliding with mixed suite's assets source
+    // set
+    val assetsCollision =
+      assertFailsWith<InvalidUserDataException> {
+        validateTestSuiteSourceSetNames(
+          suitesContainer {
+            create("testSuiteAssets")
+            create("testSuite") {
+              it.hostJar {}
+              it.assets {}
+            }
+          }
+        )
+      }
+    Truth.assertThat(assetsCollision.message)
+      .isEqualTo(
+        "Test suite 'testSuiteAssets' collides with source set 'testSuiteAssets' of mixed test suite 'testSuite'. " +
+          "Please rename one of the test suites to avoid source set and task name collisions."
+      )
+
+    // Cross-type collision (single-source testApk 'crossSuiteTest' colliding with mixed 'crossSuite' hostJar 'crossSuiteTest')
+    val crossTypeCollision =
+      assertFailsWith<InvalidUserDataException> {
+        validateTestSuiteSourceSetNames(
+          suitesContainer {
+            create("crossSuiteTest") { it.testApk {} }
+            create("crossSuite") {
+              it.hostJar {}
+              it.assets {}
+            }
+          }
+        )
+      }
+    Truth.assertThat(crossTypeCollision.message)
+      .isEqualTo(
+        "Test suite 'crossSuiteTest' collides with source set 'crossSuiteTest' of mixed test suite 'crossSuite'. " +
+          "Please rename one of the test suites to avoid source set and task name collisions."
+      )
+
+    // Mixed-to-mixed source set collision ('fooTest' testApk -> 'fooTestAndroidTest' collides with 'fooTestAndroid' hostJar ->
+    // 'fooTestAndroidTest')
+    val mixedToMixedCollision =
+      assertFailsWith<InvalidUserDataException> {
+        validateTestSuiteSourceSetNames(
+          suitesContainer {
+            create("fooTestAndroid") {
+              it.hostJar {}
+              it.assets {}
+            }
+            create("fooTest") {
+              it.testApk {}
+              it.assets {}
+            }
+          }
+        )
+      }
+    Truth.assertThat(mixedToMixedCollision.message)
+      .isEqualTo(
+        "Source set 'fooTestAndroidTest' of mixed test suite 'fooTestAndroid' collides with " +
+          "source set 'fooTestAndroidTest' of mixed test suite 'fooTest'. " +
+          "Please rename one of the test suites to avoid source set and task name collisions."
+      )
+
+    // Lazy NamedDomainObjectContainer (customSuites.register + create)
+    var lazyRealized = false
+    val lazyContainer = suitesContainer {
+      register("lazySuite") {
+        lazyRealized = true
+        it.hostJar {}
+        it.assets {}
+      }
+      create("lazySuiteTest") { it.hostJar {} }
+    }
+    Truth.assertThat(lazyRealized).isFalse()
+
+    val lazyCollision =
+      assertFailsWith<InvalidUserDataException> {
+        validateTestSuiteSourceSetNames(lazyContainer)
+      }
+    Truth.assertThat(lazyRealized).isTrue()
+    Truth.assertThat(lazyCollision.message)
+      .isEqualTo(
+        "Test suite 'lazySuiteTest' collides with source set 'lazySuiteTest' of mixed test suite 'lazySuite'. " +
+          "Please rename one of the test suites to avoid source set and task name collisions."
+      )
   }
 
   @Test
