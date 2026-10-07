@@ -23,6 +23,7 @@ import com.android.build.api.dsl.TestSuiteAssetsSpec
 import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.ComponentIdentity
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import java.util.concurrent.atomic.AtomicBoolean
@@ -78,6 +79,13 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
    * @param targetVariants The names of the variants to target.
    */
   fun targetVariants(vararg targetVariants: String) = this.targetVariants.addAll(targetVariants)
+
+  /**
+   * Returns whether this suite tests [variant].
+   *
+   * @param testBuildType the module's tested build type, or null if the module has none.
+   */
+  internal open fun targetsVariant(variant: ComponentIdentity, testBuildType: String?): Boolean = targetVariants.contains(variant.name)
 
   private val targets =
     dslServices.domainObjectContainer(AgpTestSuiteTarget::class.java) { name -> AgpTestSuiteTargetImpl(this@AgpTestSuiteImpl, name) }

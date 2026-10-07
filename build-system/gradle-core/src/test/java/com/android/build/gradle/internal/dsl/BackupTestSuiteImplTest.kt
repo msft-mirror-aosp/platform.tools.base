@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.component.impl.ComponentIdentityImpl
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
@@ -175,6 +176,46 @@ class BackupTestSuiteImplTest {
   }
 
   @Test
+  fun testTargetsVariantsOfTestedBuildTypeByDefault() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+
+    assertThat(suite.targetsVariant(variant("freeDebug", "debug"), testBuildType = "debug")).isTrue()
+    assertThat(suite.targetsVariant(variant("paidDebug", "debug"), testBuildType = "debug")).isTrue()
+    assertThat(suite.targetsVariant(variant("freeRelease", "release"), testBuildType = "debug")).isFalse()
+    assertThat(suite.targetsVariant(variant("freeStaging", "staging"), testBuildType = "staging")).isTrue()
+    assertThat(suite.targetsVariant(variant("freeDebug", "debug"), testBuildType = "staging")).isFalse()
+  }
+
+  @Test
+  fun testTargetsNoVariantByDefaultWithoutTestedBuildType() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+
+    assertThat(suite.targetsVariant(variant("debug", "debug"), testBuildType = null)).isFalse()
+    assertThat(suite.targetsVariant(ComponentIdentityImpl("main"), testBuildType = null)).isFalse()
+  }
+
+  @Test
+  fun testTargetVariantsReplaceDefault() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+
+    // The DSL block sets targetVariants after the suite is created
+    dslSuite.targetVariants.add("paidRelease")
+
+    assertThat(suite.targetsVariant(variant("paidRelease", "release"), testBuildType = "debug")).isTrue()
+    assertThat(suite.targetsVariant(variant("paidDebug", "debug"), testBuildType = "debug")).isFalse()
+  }
+
+  @Test
+  fun testCustomSuitesTargetNoVariantByDefault() {
+    val suite = dslServices.newInstance(AgpTestSuiteImpl::class.java, "customSuite", dslServices, false)
+
+    assertThat(suite.targetsVariant(variant("debug", "debug"), testBuildType = "debug")).isFalse()
+  }
+
+  @Test
   fun testRecordBackupTestRunAnalytics() {
     val mockAnalyticsService = mock<AnalyticsService>()
     val eventCaptor = argumentCaptor<AndroidStudioEvent.Builder>()
@@ -295,4 +336,6 @@ class BackupTestSuiteImplTest {
   }
 
   private fun DependencyCollector.notations(): List<String> = dependencies.get().map { "${it.group}:${it.name}:${it.version}" }
+
+  private fun variant(name: String, buildType: String) = ComponentIdentityImpl(name, buildType = buildType)
 }

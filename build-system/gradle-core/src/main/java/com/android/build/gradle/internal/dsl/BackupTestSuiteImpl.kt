@@ -21,6 +21,7 @@ import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.ComponentIdentity
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.getBuildService
@@ -127,6 +128,11 @@ constructor(
 
   override val targetVariants: MutableList<String>
     get() = backupSuite.targetVariants
+
+  /** Without [targetVariants], the suite tests the variants of the tested build type, like device tests do. */
+  override fun targetsVariant(variant: ComponentIdentity, testBuildType: String?): Boolean =
+    if (targetVariants.isEmpty()) testBuildType != null && variant.buildType == testBuildType
+    else super.targetsVariant(variant, testBuildType)
 
   init {
     // Automatically register a "default" target for test execution
