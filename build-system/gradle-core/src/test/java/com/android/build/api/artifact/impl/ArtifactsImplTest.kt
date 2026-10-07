@@ -88,6 +88,10 @@ class ArtifactsImplTest {
     object TEST_TRANSFORMABLE_MANY_DIRECTORY : TestSingleArtifactType<Directory>(DIRECTORY), Transformable, ContainsMany
   }
 
+  /** An OUTPUTS artifact: only its final producer writes to the shared `outputs/` location. */
+  @Suppress("ClassName")
+  object TEST_TRANSFORMABLE_OUTPUT_FILE : Artifact.Single<RegularFile>(FILE, Category.OUTPUTS), Artifact.Transformable
+
   private sealed class TestMultipleArtifactType<T : FileSystemLocation>(kind: ArtifactKind<T>, val qualifierKeys: List<String>? = null) :
     Artifact.Multiple<T>(kind, Category.INTERMEDIATES) {
 
@@ -726,6 +730,100 @@ class ArtifactsImplTest {
     Truth.assertThat(agpInitialized.get()).isTrue()
     Truth.assertThat(transformerOneInitialized.get()).isTrue()
     Truth.assertThat(transformerTwoInitialized.get()).isTrue()
+  }
+
+  abstract class EagerTransformTask : DefaultTask() {
+    @get:InputFile abstract val inputFile: RegularFileProperty
+    @get:OutputFile abstract val outputFile: RegularFileProperty
+  }
+
+  abstract class EagerProducerTask : DefaultTask() {
+    @get:OutputFile abstract val outputFile: RegularFileProperty
+  }
+
+  private fun registerEagerTransform(name: String): TaskProvider<EagerTransformTask> {
+    val provider = project.tasks.register(name, EagerTransformTask::class.java)
+    artifacts
+      .use(provider)
+      .wiredWithFiles(EagerTransformTask::inputFile, EagerTransformTask::outputFile)
+      .toTransform(TEST_TRANSFORMABLE_OUTPUT_FILE)
+    // Realize the task right away, like `tasks.all {}` or a plugin calling `TaskProvider.get()` does.
+    provider.get()
+    return provider
+  }
+
+  private fun File.relativeToBuildDir(): String = relativeTo(project.layout.buildDirectory.asFile.get()).invariantSeparatorsPath
+
+  /**
+   * b/532206373: transforms that are realized right after registration must not keep the final location. Before the fix, both transforms
+   * resolved to `outputs/...` and wrote the same file.
+   */
+  @Test
+  fun testEagerlyRealizedTransformsGetDistinctOutputs() {
+    val transformOne = registerEagerTransform("transformOne")
+    val transformTwo = registerEagerTransform("transformTwo")
+    val agpProducer = project.tasks.register("agpProducer", EagerProducerTask::class.java)
+    artifacts.setInitialProvider(agpProducer, EagerProducerTask::outputFile).on(TEST_TRANSFORMABLE_OUTPUT_FILE)
+    agpProducer.get()
+
+    val producerOut = agpProducer.get().outputFile.get().asFile
+    val oneIn = transformOne.get().inputFile.get().asFile
+    val oneOut = transformOne.get().outputFile.get().asFile
+    val twoIn = transformTwo.get().inputFile.get().asFile
+    val twoOut = transformTwo.get().outputFile.get().asFile
+
+    Truth.assertThat(setOf(producerOut, oneOut, twoOut)).hasSize(3)
+    Truth.assertThat(oneIn).isEqualTo(producerOut)
+    Truth.assertThat(twoIn).isEqualTo(oneOut)
+    Truth.assertThat(producerOut.relativeToBuildDir()).contains("/agpProducer/")
+    Truth.assertThat(oneOut.relativeToBuildDir()).contains("/transformOne/")
+    // Only the last transform writes to the final location.
+    Truth.assertThat(twoOut.relativeToBuildDir()).startsWith("outputs/")
+    Truth.assertThat(twoOut.relativeToBuildDir()).doesNotContain("transformTwo")
+    Truth.assertThat(artifacts.get(TEST_TRANSFORMABLE_OUTPUT_FILE).get().asFile).isEqualTo(twoOut)
+  }
+
+  /**
+   * b/532206373, AGP 9.2/9.3 shape: the initial producer (R8) is realized before a transform (L8) is added. The initial producer must move
+   * to an intermediate location so the transform's input and output differ.
+   */
+  @Test
+  fun testEagerlyRealizedInitialProducerMovesWhenTransformIsAdded() {
+    val agpProducer = project.tasks.register("agpProducer", EagerProducerTask::class.java)
+    artifacts.setInitialProvider(agpProducer, EagerProducerTask::outputFile).on(TEST_TRANSFORMABLE_OUTPUT_FILE)
+    agpProducer.get()
+    val transform = registerEagerTransform("transform")
+
+    val producerOut = agpProducer.get().outputFile.get().asFile
+    val transformIn = transform.get().inputFile.get().asFile
+    val transformOut = transform.get().outputFile.get().asFile
+
+    Truth.assertThat(transformIn).isEqualTo(producerOut)
+    Truth.assertThat(transformIn).isNotEqualTo(transformOut)
+    Truth.assertThat(producerOut.relativeToBuildDir()).contains("/agpProducer/")
+    Truth.assertThat(transformOut.relativeToBuildDir()).startsWith("outputs/")
+  }
+
+  /** A transform realized before the AGP producer sets the file name must still use that name for the final output. */
+  @Test
+  fun testEagerlyRealizedTransformUsesNameFromLaterInitialProducer() {
+    val transform = registerEagerTransform("transform")
+    val agpProducer = project.tasks.register("agpProducer", EagerProducerTask::class.java)
+    artifacts.setInitialProvider(agpProducer, EagerProducerTask::outputFile).withName("app.aab").on(TEST_TRANSFORMABLE_OUTPUT_FILE)
+
+    Truth.assertThat(transform.get().outputFile.get().asFile.name).isEqualTo("app.aab")
+  }
+
+  /** The lazy default location must not override a location the user sets explicitly. */
+  @Test
+  fun testUserOutputLocationWinsOverDefaultLocation() {
+    val transform = registerEagerTransform("transform")
+    val custom = File(tmpDir.root, "custom/out.txt")
+    transform.configure { it.outputFile.set(custom) }
+    val agpProducer = project.tasks.register("agpProducer", EagerProducerTask::class.java)
+    artifacts.setInitialProvider(agpProducer, EagerProducerTask::outputFile).on(TEST_TRANSFORMABLE_OUTPUT_FILE)
+
+    Truth.assertThat(transform.get().outputFile.get().asFile).isEqualTo(custom)
   }
 
   @Test
