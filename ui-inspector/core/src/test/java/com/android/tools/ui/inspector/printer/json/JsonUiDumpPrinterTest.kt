@@ -410,6 +410,86 @@ class JsonUiDumpPrinterTest {
   }
 
   @Test
+  fun testGroupValueAndTruncationSerialization() {
+    val element = UiNode.ComposeParameter.Single("[0]", UiNode.ComposeParameter.Value.StringVal("a"))
+    val truncated =
+      UiNode.ComposeParameter.Group(
+        "truncated",
+        listOf(element),
+        isCollection = true,
+        value = UiNode.ComposeParameter.Value.StringVal("List[7]"),
+        isTruncated = true,
+      )
+    val complete =
+      UiNode.ComposeParameter.Group(
+        "complete",
+        listOf(element),
+        isCollection = true,
+        value = UiNode.ComposeParameter.Value.StringVal("Iterable"),
+        isTruncated = false,
+      )
+    // e.g. Modifier.background(Color.Red), whose value is its color.
+    val coloredObj =
+      UiNode.ComposeParameter.Group(
+        "background",
+        listOf(element),
+        isCollection = false,
+        value = UiNode.ComposeParameter.Value.ColorVal(0xFFFF0000.toInt()),
+      )
+    val noValue = UiNode.ComposeParameter.Group("modifier", listOf(element), isCollection = false, value = null)
+    // An object whose properties were not sent.
+    val truncatedSingle = UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal("TextStyle"), isTruncated = true)
+    val composeNode =
+      UiNode.ComposeNode(
+        id = 20L,
+        className = "androidx.compose.foundation.layout.Box",
+        bounds = UiNode.Bounds(0, 0, 100, 100),
+        sourceLocation = null,
+        parameters = listOf(truncated, complete, coloredObj, noValue, truncatedSingle),
+        mergedSemantics = emptyList(),
+        unmergedSemantics = emptyList(),
+        isSystemCreated = false,
+        children = emptyList(),
+      )
+
+    val root =
+      UiNode.ViewNode(
+        id = 1L,
+        className = "androidx.compose.ui.platform.ComposeView",
+        bounds = UiNode.Bounds(0, 0, 100, 100),
+        idResource = null,
+        layoutResource = null,
+        attributes = emptyList(),
+        children = listOf(composeNode),
+      )
+
+    JsonUiDumpPrinter(out = printStream, prettyPrint = false).printDump(dump(root))
+
+    val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject
+    val rootObj = json.getAsJsonArray("windows")[0].asJsonObject.getAsJsonObject("root")
+    val params = rootObj.getAsJsonArray("children")[0].asJsonObject.getAsJsonArray("parameters")
+    val truncatedObj = params[0].asJsonObject
+    assertThat(truncatedObj.keySet()).containsExactly("name", "value", "isTruncated", "isCollection", "elements").inOrder()
+    assertThat(truncatedObj.get("value").asString).isEqualTo("List[7]")
+    assertThat(truncatedObj.get("isTruncated").asBoolean).isTrue()
+    // A complete parameter has no isTruncated key.
+    val completeObj = params[1].asJsonObject
+    assertThat(completeObj.keySet()).containsExactly("name", "value", "isCollection", "elements").inOrder()
+    assertThat(completeObj.get("value").asString).isEqualTo("Iterable")
+    // Group values are encoded like single values.
+    val coloredObjJson = params[2].asJsonObject
+    assertThat(coloredObjJson.keySet()).containsExactly("name", "value", "isCollection", "elements").inOrder()
+    assertThat(coloredObjJson.get("value").asString).isEqualTo("#FFFF0000")
+    // A missing value is omitted rather than written as null.
+    assertThat(params[3].asJsonObject.keySet()).containsExactly("name", "isCollection", "elements").inOrder()
+    // Single values are marked as truncated too.
+    val truncatedSingleObj = params[4].asJsonObject
+    assertThat(truncatedSingleObj.keySet()).containsExactly("name", "value", "isTruncated").inOrder()
+    assertThat(truncatedSingleObj.get("value").asString).isEqualTo("TextStyle")
+    assertThat(truncatedSingleObj.get("isTruncated").asBoolean).isTrue()
+  }
+
+  @Test
   fun testPrintDumpNormalizesNonFiniteNumbersToNull() {
     val viewNode =
       UiNode.ViewNode(

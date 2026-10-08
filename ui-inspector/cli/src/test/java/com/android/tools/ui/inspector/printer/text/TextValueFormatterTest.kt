@@ -49,6 +49,40 @@ class TextValueFormatterTest {
   }
 
   @Test
+  fun testFormatComposeParameterTruncatedCollectionGroup() {
+    val item = UiNode.ComposeParameter.Single("[0]", UiNode.ComposeParameter.Value.StringVal("item1"))
+    val truncated =
+      UiNode.ComposeParameter.Group(
+        "listParam",
+        listOf(item),
+        isCollection = true,
+        value = UiNode.ComposeParameter.Value.StringVal("List[7]"),
+        isTruncated = true,
+      )
+    val unexpanded =
+      UiNode.ComposeParameter.Group(
+        "listParam",
+        emptyList(),
+        isCollection = true,
+        value = UiNode.ComposeParameter.Value.StringVal("List[7]"),
+        isTruncated = true,
+      )
+
+    assertThat(formatComposeParameter(truncated)).isEqualTo("[item1, ...]")
+    assertThat(formatComposeParameter(unexpanded)).isEqualTo("[...]")
+  }
+
+  @Test
+  fun testFormatComposeParameterTruncatedSingleValue() {
+    // An object whose properties were not sent keeps its value and shows that it has more to it.
+    val unexpanded = UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal("TextStyle"), isTruncated = true)
+    val unexpandedWithoutValue = UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal(""), isTruncated = true)
+
+    assertThat(formatComposeParameter(unexpanded)).isEqualTo("TextStyle {...}")
+    assertThat(formatComposeParameter(unexpandedWithoutValue)).isEqualTo("{...}")
+  }
+
+  @Test
   fun testFormatComposeParameterObjectGroup() {
     val map =
       UiNode.ComposeParameter.Group(

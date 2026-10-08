@@ -194,6 +194,9 @@ class ProtoConvertersTest {
         UiNode.ComposeParameter.Single("[2]", UiNode.ComposeParameter.Value.StringVal("item2")),
       )
       .inOrder()
+    // The summary value counts the omitted null element, which does not make the list truncated.
+    assertThat(pList.value).isEqualTo(UiNode.ComposeParameter.Value.StringVal("List[3]"))
+    assertThat(pList.isTruncated).isFalse()
   }
 
   @Test
@@ -203,18 +206,73 @@ class ProtoConvertersTest {
     val strings = mapOf(1 to "emptyParam", 2 to "List[0]")
 
     assertThat(convertSingleParameter(empty, strings))
-      .isEqualTo(UiNode.ComposeParameter.Group("emptyParam", elements = emptyList(), isCollection = true))
+      .isEqualTo(
+        UiNode.ComposeParameter.Group(
+          "emptyParam",
+          elements = emptyList(),
+          isCollection = true,
+          value = UiNode.ComposeParameter.Value.StringVal("List[0]"),
+          isTruncated = false,
+        )
+      )
   }
 
   @Test
-  fun testConvertComposeNode_unexpandedIterableKeepsSummary() {
+  fun testConvertComposeNode_nullsOnlyIterableIsCompleteCollection() {
+    // A list holding only nulls arrives like an empty one, but its summary keeps the real size.
+    val nullsOnly = parameter(1, ITERABLE, value = 2)
+    val strings = mapOf(1 to "nullsParam", 2 to "List[3]")
+
+    assertThat(convertSingleParameter(nullsOnly, strings))
+      .isEqualTo(
+        UiNode.ComposeParameter.Group(
+          "nullsParam",
+          elements = emptyList(),
+          isCollection = true,
+          value = UiNode.ComposeParameter.Value.StringVal("List[3]"),
+          isTruncated = false,
+        )
+      )
+  }
+
+  @Test
+  fun testConvertComposeNode_partiallySentIterableIsTruncated() {
+    // Past its initial element limit the agent stops adding elements and sets a reference for fetching the rest later.
+    val truncated =
+      parameter(1, ITERABLE, value = 2) // "IntArray[8]"
+        .addElements(parameter(3, LayoutInspectorComposeProtocol.Parameter.Type.INT32).setInt32Value(10)) // [0]=10
+        .setReference(LayoutInspectorComposeProtocol.ParameterReference.newBuilder().setComposableId(100))
+    val strings = mapOf(1 to "arrayParam", 2 to "IntArray[8]", 3 to "[0]")
+
+    assertThat(convertSingleParameter(truncated, strings))
+      .isEqualTo(
+        UiNode.ComposeParameter.Group(
+          "arrayParam",
+          elements = listOf(UiNode.ComposeParameter.Single("[0]", UiNode.ComposeParameter.Value.NumberVal(10))),
+          isCollection = true,
+          value = UiNode.ComposeParameter.Value.StringVal("IntArray[8]"),
+          isTruncated = true,
+        )
+      )
+  }
+
+  @Test
+  fun testConvertComposeNode_unexpandedIterableIsTruncatedCollection() {
     // At the recursion limit the agent sends a non-empty iterable without elements, with a reference for fetching them later.
     val unexpanded =
       parameter(1, ITERABLE, value = 2).setReference(LayoutInspectorComposeProtocol.ParameterReference.newBuilder().setComposableId(100))
     val strings = mapOf(1 to "deepList", 2 to "List[7]")
 
     assertThat(convertSingleParameter(unexpanded, strings))
-      .isEqualTo(UiNode.ComposeParameter.Single("deepList", UiNode.ComposeParameter.Value.StringVal("List[7]")))
+      .isEqualTo(
+        UiNode.ComposeParameter.Group(
+          "deepList",
+          elements = emptyList(),
+          isCollection = true,
+          value = UiNode.ComposeParameter.Value.StringVal("List[7]"),
+          isTruncated = true,
+        )
+      )
   }
 
   @Test
@@ -230,6 +288,7 @@ class ProtoConvertersTest {
     val pMap = convertSingleParameter(map, strings) as UiNode.ComposeParameter.Group
 
     assertThat(pMap.isCollection).isTrue()
+    assertThat(pMap.value).isEqualTo(UiNode.ComposeParameter.Value.StringVal("Map[1]"))
     assertThat(pMap.elements)
       .containsExactly(
         UiNode.ComposeParameter.Group(
@@ -239,6 +298,7 @@ class ProtoConvertersTest {
             UiNode.ComposeParameter.Single("value", UiNode.ComposeParameter.Value.StringVal("v1")),
           ),
           isCollection = false,
+          value = UiNode.ComposeParameter.Value.StringVal("v1"),
         )
       )
   }
@@ -255,18 +315,57 @@ class ProtoConvertersTest {
     val pOffset = convertSingleParameter(offset, strings) as UiNode.ComposeParameter.Group
 
     assertThat(pOffset.isCollection).isFalse()
+    assertThat(pOffset.value).isEqualTo(UiNode.ComposeParameter.Value.StringVal("Offset"))
+    assertThat(pOffset.isTruncated).isFalse()
     assertThat(pOffset.elements.map { it.name }).containsExactly("x", "y").inOrder()
   }
 
   @Test
-  fun testConvertComposeNode_unexpandedObjectKeepsValue() {
-    // A non-iterable without elements stays a single value, with or without a reference.
+  fun testConvertComposeNode_groupKeepsTypedValue() {
+    // An InspectableValue such as Modifier.background(Color.Red) has both a typed value and elements.
+    val background =
+      parameter(1, LayoutInspectorComposeProtocol.Parameter.Type.COLOR)
+        .setInt32Value(0xFFFF0000.toInt())
+        .addElements(parameter(2, LayoutInspectorComposeProtocol.Parameter.Type.COLOR).setInt32Value(0xFFFF0000.toInt()))
+    val strings = mapOf(1 to "background", 2 to "color")
+
+    val pBackground = convertSingleParameter(background, strings) as UiNode.ComposeParameter.Group
+
+    assertThat(pBackground.value).isEqualTo(UiNode.ComposeParameter.Value.ColorVal(0xFFFF0000.toInt()))
+  }
+
+  @Test
+  fun testConvertComposeNode_groupWithEmptyValueHasNoValue() {
+    // A Modifier chain parameter has an empty string value: it is dropped rather than reported as "".
+    val modifier =
+      parameter(1, STRING, value = 2)
+        .addElements(parameter(3, LayoutInspectorComposeProtocol.Parameter.Type.DIMENSION_DP).setFloatValue(4f))
+    val strings = mapOf(1 to "modifier", 2 to "", 3 to "padding")
+
+    val pModifier = convertSingleParameter(modifier, strings) as UiNode.ComposeParameter.Group
+
+    assertThat(pModifier.value).isNull()
+  }
+
+  @Test
+  fun testConvertComposeNode_unexpandedObjectIsTruncatedSingleValue() {
+    // At the recursion limit the agent sends an object without its properties, with a reference for fetching them later.
     val unexpanded =
       parameter(1, STRING, value = 2).setReference(LayoutInspectorComposeProtocol.ParameterReference.newBuilder().setComposableId(100))
     val strings = mapOf(1 to "style", 2 to "TextStyle")
 
     assertThat(convertSingleParameter(unexpanded, strings))
-      .isEqualTo(UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal("TextStyle")))
+      .isEqualTo(UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal("TextStyle"), isTruncated = true))
+  }
+
+  @Test
+  fun testConvertComposeNode_objectWithoutElementsOrReferenceIsSingleValue() {
+    // An object whose properties are all null has neither elements nor a reference: there is nothing more to show.
+    val holder = parameter(1, STRING, value = 2)
+    val strings = mapOf(1 to "holder", 2 to "EmptyHolder")
+
+    assertThat(convertSingleParameter(holder, strings))
+      .isEqualTo(UiNode.ComposeParameter.Single("holder", UiNode.ComposeParameter.Value.StringVal("EmptyHolder")))
   }
 
   @Test

@@ -246,10 +246,16 @@ private fun doConvertComposeNode(
 /**
  * Helper to map Composable proto parameters to framework-agnostic domain ComposeParameters.
  *
+ * Every parameter has a value, and composite ones also have elements; a group keeps both. For example an Offset has the value "Offset" and
+ * the elements x and y, and a Map entry has its value as the value and the elements key and value.
+ *
  * The compose inspector marks every List, Set, Map, Array and other iterable as [LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE],
- * names its elements by index ("[0]", "[1]", …, or "[key]" for a Map entry) and omits null elements. An iterable without elements is either
- * empty, or was not expanded because the agent reached its recursion limit: only the latter carries a reference for fetching the elements
- * later, and it keeps its summary value (e.g. "List[7]") instead of being presented as an empty collection.
+ * names its elements by index ("[0]", "[1]", …, or "[key]" for a Map entry) and omits null elements. Its value is a summary such as
+ * "List[7]" (just "Iterable" or "Sequence" when the size is unknown).
+ *
+ * A parameter has a reference when the agent holds elements it did not send: for collections, the ones past its initial element limit; for
+ * collections and objects alike, all of them when it reached its recursion limit. Such a parameter is marked as truncated. A collection is
+ * always a group, even when none of its elements was sent, while an object is a group only when it has elements.
  */
 private fun convertParameterToComposeParameter(
   param: LayoutInspectorComposeProtocol.Parameter,
@@ -257,11 +263,19 @@ private fun convertParameterToComposeParameter(
 ): UiNode.ComposeParameter {
   val name = stringTable[param.name] ?: "unknown"
   val isCollection = param.type == LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE
-  return if (param.elementsCount > 0 || (isCollection && !param.hasReference())) {
+  val value = getParameterValue(param, stringTable)
+  val isTruncated = param.hasReference()
+  return if (isCollection || param.elementsCount > 0) {
     val elements = param.elementsList.map { convertParameterToComposeParameter(it, stringTable) }
-    UiNode.ComposeParameter.Group(name, elements, isCollection)
+    UiNode.ComposeParameter.Group(
+      name,
+      elements,
+      isCollection,
+      value = value.takeUnless { it == UiNode.ComposeParameter.Value.NullVal || it == UiNode.ComposeParameter.Value.StringVal("") },
+      isTruncated = isTruncated,
+    )
   } else {
-    UiNode.ComposeParameter.Single(name, getParameterValue(param, stringTable))
+    UiNode.ComposeParameter.Single(name, value, isTruncated)
   }
 }
 
