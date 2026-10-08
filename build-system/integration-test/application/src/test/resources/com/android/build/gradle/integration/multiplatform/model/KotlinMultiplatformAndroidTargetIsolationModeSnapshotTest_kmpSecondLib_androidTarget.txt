@@ -12,7 +12,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpSecondLib/src/androidMain/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }

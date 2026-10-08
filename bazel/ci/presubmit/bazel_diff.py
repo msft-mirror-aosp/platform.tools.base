@@ -35,11 +35,15 @@ def generate_hash_file(
       build_env.bazel_path,
       '--workspacePath',
       build_env.workspace_dir,
+  ]
+  if build_env.startup_options:
+    args.extend(['--bazelStartupOptions', ' '.join(build_env.startup_options)])
+  args.extend([
       '--bazelCommandOptions',
-      '--config=dl-ci',
+      '--config=ci',
       '--fineGrainedHashExternalRepos',
       ','.join(external_repos),
-  ]
+  ])
   if deps_output_path:
     args.extend(['--depEdgesFile', deps_output_path])
   if modified_files_path:

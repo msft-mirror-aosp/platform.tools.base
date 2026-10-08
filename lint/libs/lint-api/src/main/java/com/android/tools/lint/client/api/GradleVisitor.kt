@@ -18,7 +18,6 @@ package com.android.tools.lint.client.api
 
 import com.android.SdkConstants.DOT_GRADLE
 import com.android.SdkConstants.DOT_GRADLE_KTS
-import com.android.SdkConstants.DOT_KTS
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.GradleContext
 import com.android.tools.lint.detector.api.GradleScanner
@@ -81,13 +80,6 @@ open class GradleVisitor {
           // We'll encounter root files from all the including projects, but we
           // only want to report issues here once; pick a designated project
           // to report them from. This project is not it.
-          return
-        }
-        // TODO(b/463283604): Better not to have this exemption
-        val isK2 = System.getProperty("lint.use.fir.uast", "true").toBoolean()
-        if (relative.endsWith(DOT_KTS) && isK2 && !includedFile.path.startsWith(context.project.dir.path)) {
-          // We currently can't access kts files outside the project root from the
-          // CLI setup when using K2
           return
         }
         if (!includedFile.isFile) {

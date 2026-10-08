@@ -6,12 +6,6 @@ iml_module(
     srcs = ["src"],
     iml_files = ["intellij.android.wizardTemplate.plugin.iml"],
     lint_baseline = "lint_baseline.xml",
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:truth",
-    ],
-    test_srcs = ["testSrc"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -20,4 +14,20 @@ iml_module(
         "@intellij//:com.intellij.gradle",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.intellij.android.wizardTemplate.plugin.tests",
+    iml_files = ["intellij.android.wizardTemplate.plugin.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "@intellij//:intellij-sdk",
+        "//tools/base/wizard/template-plugin:studio.intellij.android.wizardTemplate.plugin",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
+    test_friends = ["//tools/base/wizard/template-plugin:studio.intellij.android.wizardTemplate.plugin"],
+    test_srcs = ["testSrc"],
+    visibility = ["//visibility:public"],
 )

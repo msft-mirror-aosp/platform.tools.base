@@ -44,11 +44,13 @@ import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.psi.PsiAnonymousClass
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiTypeParameterListOwner
 import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.util.JavaPsiConstructorUtil
 import kotlin.time.Duration
 import kotlin.time.measureTime
 import kotlinx.collections.immutable.PersistentMap
@@ -58,12 +60,15 @@ import kotlinx.collections.immutable.plus
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
+import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 import org.jetbrains.kotlin.psi.KtTypeParameterListOwner
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UParameter
@@ -574,6 +579,8 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
 
     fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod): FX?
 
+    fun parseClassImmediateAnnotations(evaluator: JavaEvaluator, klass: PsiClass): FX? = null
+
     /** When both the method's annotation and its supers' are present */
     fun resolveAnnotations(
       context: JavaContext,
@@ -587,22 +594,44 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
     companion object {
       fun <FX : Any> AnnotationParser<FX>.parseMethodAnnotations(context: JavaContext, method: UMethod): EffectAnnotation<FX> {
         val evaluator = context.evaluator
-        val bases = nearestBaseAnns(evaluator, method.javaPsi.findSuperMethods())
+        val bases =
+          nearestBaseAnns(evaluator, method.javaPsi.findSuperMethods()) { base ->
+            when (base) {
+              // A compiled base isn't in scope for inference, so overriding it takes its superclasses' default, as calling it does
+              is PsiCompiledElement -> nearestSuperclassAnns(evaluator, base)
+              else -> null
+            }
+          }
         return when (val targetAnn = parseMethodImmediateAnnotations(evaluator, method)) {
           null -> inheritAnnotations(evaluator, bases)
           else -> resolveAnnotations(context, EffectAnnotation.Explicit(targetAnn, method), bases)
         }
       }
 
+      /** The nearest annotations of each of [baseMethods], or [default] for a base without any annotation of its own or inherited */
       internal fun <FX : Any> AnnotationParser<FX>.nearestBaseAnns(
         evaluator: JavaEvaluator,
         baseMethods: Array<PsiMethod>,
+        default: (PsiMethod) -> FX? = { null },
       ): List<EffectAnnotation.Explicit<FX>> = baseMethods.flatMap { base ->
         val baseMethod = base.toUElement() as UMethod
         when (val baseAnn = parseMethodImmediateAnnotations(evaluator, baseMethod)) {
-          null -> nearestBaseAnns(evaluator, base.findSuperMethods())
+          null ->
+            nearestBaseAnns(evaluator, base.findSuperMethods(), default).ifEmpty {
+              listOfNotNull(default(base)?.let { EffectAnnotation.Explicit(it, baseMethod) })
+            }
           else -> listOf(EffectAnnotation.Explicit(baseAnn, baseMethod))
         }
+      }
+
+      /** The class-level default from the nearest annotated superclass of [method]'s class; statics and constructors take none */
+      internal fun <FX : Any> AnnotationParser<FX>.nearestSuperclassAnns(
+        evaluator: JavaEvaluator,
+        method: PsiMethod,
+        classAnn: (PsiClass) -> FX? = { parseClassImmediateAnnotations(evaluator, it) },
+      ): FX? {
+        if (method.isConstructor || evaluator.isStatic(method)) return null
+        return generateSequence(method.containingClass?.superClass, PsiClass::getSuperClass).firstNotNullOfOrNull(classAnn)
       }
     }
   }
@@ -628,6 +657,20 @@ internal fun UMethod.isKtProperty() =
   }
 
 internal data class LocalFun(val uast: ULambdaExpression, val sourcePsi: KtNamedFunction)
+
+/** The instance field initializers run directly by this constructor: none if it delegates to another */
+internal fun UMethod.fieldInitializers(): List<UExpression> {
+  if (!isConstructor) return emptyList()
+  val delegates =
+    canonicalOverload() != null ||
+      when (val ctor = sourcePsi) {
+        is KtSecondaryConstructor -> ctor.getDelegationCall().isCallToThis
+        is PsiMethod -> JavaPsiConstructorUtil.isChainedConstructorCall(JavaPsiConstructorUtil.findThisOrSuperCallInConstructor(ctor))
+        else -> false
+      }
+  if (delegates) return emptyList()
+  return getContainingUClass()?.fields.orEmpty().filter { !it.isStatic && it.sourcePsi !is KtParameter }.mapNotNull { it.uastInitializer }
+}
 
 /** The reference under which [addLocalFunction] indexed the local function [fnUast] */
 internal fun localFunctionRef(fnUast: ULambdaExpression): Type.MethodRef? {

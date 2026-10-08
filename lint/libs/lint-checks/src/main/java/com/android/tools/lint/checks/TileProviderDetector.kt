@@ -52,6 +52,7 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
     const val MIN_PREVIEW_SIZE = 384
 
     val IMPLEMENTATION = Implementation(TileProviderDetector::class.java, EnumSet.of(Scope.BINARY_RESOURCE_FILE, Scope.MANIFEST))
+    val MANIFEST_IMPLEMENTATION = Implementation(TileProviderDetector::class.java, Scope.MANIFEST_SCOPE)
 
     @JvmField
     val TILE_PROVIDER_PERMISSIONS =
@@ -66,28 +67,29 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
         category = Category.SECURITY,
         priority = 6,
         severity = Severity.WARNING,
-        implementation = Implementation(TileProviderDetector::class.java, Scope.MANIFEST_SCOPE),
+        implementation = MANIFEST_IMPLEMENTATION,
         androidSpecific = true,
       )
 
     @JvmField
-    val SQUARE_AND_ROUND_TILE_PREVIEWS =
+    val TILE_PREVIEWS =
       Issue.create(
-          id = "SquareAndRoundTilePreviews",
-          briefDescription = "TileProvider does not have round and square previews",
+          id = "TilePreviews",
+          briefDescription = "TileProvider does not have a preview",
           explanation =
             """
-                Tile projects should specify preview resources for different screen shapes. \
-                The preview resource is specified in the manifest under tile service. \
-                And you have to make sure they have resources for different screen shapes.
+                Tile projects should specify a preview resource in the manifest under the tile service.
             """,
           category = Category.ICONS,
           priority = 6,
           severity = Severity.WARNING,
-          implementation = IMPLEMENTATION,
+          implementation = MANIFEST_IMPLEMENTATION,
           androidSpecific = true,
         )
         .addMoreInfo("https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews")
+        .setAliases(listOf("SquareAndRoundTilePreviews"))
+
+    @JvmField @Deprecated("Use TILE_PREVIEWS instead", ReplaceWith("TILE_PREVIEWS")) val SQUARE_AND_ROUND_TILE_PREVIEWS = TILE_PREVIEWS
 
     @JvmField
     val TILE_PREVIEW_IMAGE_FORMAT =
@@ -109,6 +111,9 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
     const val BIND_TILE_PROVIDER_PERMISSION = "com.google.android.wearable.permission.BIND_TILE_PROVIDER"
     const val TILES_PREVIEW_ATTR_NAME = "androidx.wear.tiles.PREVIEW"
     const val BIND_TILE_PROVIDER_ACTION = "androidx.wear.tiles.action.BIND_TILE_PROVIDER"
+    const val BIND_WIDGET_PROVIDER_ACTION = "androidx.glance.wear.action.BIND_WIDGET_PROVIDER"
+    const val BIND_GLANCE_WIDGET_PROVIDER_ACTION = "androidx.glance.wear.action.BIND_GLANCE_WIDGET_PROVIDER"
+    const val WEAR_WIDGET_PROVIDER_METADATA_NAME = "androidx.glance.wear.widget.provider"
 
     class TagIterator(element: Element, val tag: String) : Iterator<Element> {
       private var subElement: Element? = getFirstSubTagByName(element, tag)
@@ -130,8 +135,6 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
   data class IconInfo(
     val issueScope: Node,
     val issueLocation: Location,
-    var foundRoundPreview: Boolean = false,
-    var foundSquarePreview: Boolean = false,
     var wrongAspectRatio: Boolean = false,
     var smallImageSize: Boolean = false,
   )
@@ -145,18 +148,6 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
 
   override fun afterCheckRootProject(context: Context) {
     for ((_, metadata) in this.foundIcons) {
-      // Only report if one of them is missing. If both are missing, this will already be flagged as
-      // a missing resource.
-      if (metadata.foundRoundPreview xor metadata.foundSquarePreview) {
-        context.report(
-          Incident(
-            SQUARE_AND_ROUND_TILE_PREVIEWS,
-            metadata.issueScope,
-            metadata.issueLocation,
-            "Tiles need a preview asset in both drawable-round and drawable",
-          )
-        )
-      }
       if (metadata.wrongAspectRatio) {
         context.report(
           Incident(TILE_PREVIEW_IMAGE_FORMAT, metadata.issueScope, metadata.issueLocation, "Tile previews should have 1:1 aspect ratio")
@@ -221,15 +212,23 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
     if (size.first < MIN_PREVIEW_SIZE || size.second < MIN_PREVIEW_SIZE) {
       metadata.smallImageSize = true
     }
+  }
 
-    val dirName = context.file.parentFile.name
-    if (dirName.startsWith("drawable")) {
-      if (dirName.contains("round")) {
-        metadata.foundRoundPreview = true
-      } else {
-        metadata.foundSquarePreview = true
+  private fun isWearWidgetService(service: Element): Boolean {
+    for (intentFilter in service.subElementsByTag(TAG_INTENT_FILTER)) {
+      for (action in intentFilter.subElementsByTag(TAG_ACTION)) {
+        val name = action.getAttributeNS(ANDROID_URI, ATTR_NAME)
+        if (name == BIND_WIDGET_PROVIDER_ACTION || name == BIND_GLANCE_WIDGET_PROVIDER_ACTION) {
+          return true
+        }
       }
     }
+    for (metaData in service.subElementsByTag(TAG_META_DATA)) {
+      if (metaData.getAttributeNS(ANDROID_URI, ATTR_NAME) == WEAR_WIDGET_PROVIDER_METADATA_NAME) {
+        return true
+      }
+    }
+    return false
   }
 
   private fun checkResourcesWithIcons(context: XmlContext, service: Element) {
@@ -244,8 +243,8 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
         this.foundIcons[iconName] = IconInfo(issueScope = foundMetaData, issueLocation = context.getValueLocation(iconAttr))
       }
     }
-    if (foundMetaData == null) {
-      context.report(Incident(SQUARE_AND_ROUND_TILE_PREVIEWS, service, context.getLocation(service), "Tiles need preview assets"))
+    if (foundMetaData == null && !isWearWidgetService(service)) {
+      context.report(Incident(TILE_PREVIEWS, service, context.getLocation(service), "Tiles need preview assets"))
     }
   }
 

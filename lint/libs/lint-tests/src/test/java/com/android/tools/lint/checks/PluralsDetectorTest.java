@@ -92,7 +92,15 @@ public class PluralsDetectorTest extends AbstractCheckTest {
                                         + "</resources>\n"))
                 .issues(PluralsDetector.MISSING, PluralsDetector.EXTRA)
                 .run()
-                .expect(expected);
+                .expect(expected)
+                .expectFixDiffs(
+                        ""
+                                + "Autofix for res/values-zh-rCN/plurals3.xml line 3: Remove unused quantity:\n"
+                                + "@@ -4 +4\n"
+                                + "-     <item quantity=\"one\">\"草稿\"</item>\n"
+                                + "Autofix for res/values-zh-rCN/plurals3.xml line 7: Remove unused quantity:\n"
+                                + "@@ -8 +8\n"
+                                + "-     <item quantity=\"one\">\"天\"</item>\n");
     }
 
     public void testEmptyPlural() {
@@ -142,7 +150,12 @@ public class PluralsDetectorTest extends AbstractCheckTest {
                                         + "</resources>\n"))
                 .issues(PluralsDetector.MISSING, PluralsDetector.EXTRA)
                 .run()
-                .expect(expected);
+                .expect(expected)
+                .expectFixDiffs(
+                        ""
+                                + "Autofix for res/values-pl/plurals5.xml line 3: Remove unused quantity:\n"
+                                + "@@ -4 +4\n"
+                                + "-         <item quantity=\"zero\">@string/hello</item>\n");
     }
 
     public void testRussian() {
@@ -394,7 +407,16 @@ public class PluralsDetectorTest extends AbstractCheckTest {
                                 + "res/values-en/strings.xml:3: Warning: For language \"en\" (English) the following quantities are not relevant: few, many, two, zero [UnusedQuantity]\n"
                                 + "    <plurals name=\"plural_test\">\n"
                                 + "    ^\n"
-                                + "0 errors, 1 warnings\n");
+                                + "0 errors, 1 warnings\n")
+                .expectFixDiffs(
+                        ""
+                                + "Autofix for res/values-en/strings.xml line 3: Remove unused quantities:\n"
+                                + "@@ -4 +4\n"
+                                + "-         <item quantity=\"zero\">zero %1$d</item>\n"
+                                + "@@ -6 +5\n"
+                                + "-         <item quantity=\"two\">two %1$d</item>\n"
+                                + "-         <item quantity=\"few\">few %1$d</item>\n"
+                                + "-         <item quantity=\"many\">many %1$d</item>\n");
     }
 
     public void testUnused2() {
@@ -420,7 +442,16 @@ public class PluralsDetectorTest extends AbstractCheckTest {
                                 + "res/values-en/strings.xml:3: Warning: For language \"en\" (English) the following quantities are not relevant: few, many, two, zero [UnusedQuantity]\n"
                                 + "    <plurals name=\"plural_test\">\n"
                                 + "    ^\n"
-                                + "0 errors, 1 warnings\n");
+                                + "0 errors, 1 warnings\n")
+                .expectFixDiffs(
+                        ""
+                                + "Autofix for res/values-en/strings.xml line 3: Remove unused quantities:\n"
+                                + "@@ -4 +4\n"
+                                + "-         <item quantity=\"zero\">zero %1$d</item>\n"
+                                + "@@ -6 +5\n"
+                                + "-         <item quantity=\"two\">two %1$d</item>\n"
+                                + "-         <item quantity=\"few\">few %1$d</item>\n"
+                                + "-         <item quantity=\"many\">many %1$d</item>\n");
     }
 
     public void test145767092() {
@@ -481,6 +512,35 @@ public class PluralsDetectorTest extends AbstractCheckTest {
                                         + "</plurals>"))
                 .run()
                 .expectClean();
+    }
+
+    public void test564522529() {
+        // Regression test for b/564522529
+        lint().files(
+                        xml(
+                                "res/values-de/strings.xml",
+                                ""
+                                        + "<resources>\n"
+                                        + "    <plurals name=\"plural_test\">\n"
+                                        + "        <item quantity=\"one\">one %1$d</item>\n"
+                                        + "        <item quantity=\"other\">other %1$d</item>\n"
+                                        + "        <item quantity=\"few\">few %1$d</item>\n"
+                                        + "        <item quantity=\"many\">many %1$d</item>\n"
+                                        + "    </plurals>\n"
+                                        + "</resources>\n"))
+                .run()
+                .expect(
+                        ""
+                                + "res/values-de/strings.xml:2: Warning: For language \"de\" (German) the following quantities are not relevant: few, many [UnusedQuantity]\n"
+                                + "    <plurals name=\"plural_test\">\n"
+                                + "    ^\n"
+                                + "0 errors, 1 warnings\n")
+                .expectFixDiffs(
+                        ""
+                                + "Autofix for res/values-de/strings.xml line 2: Remove unused quantities:\n"
+                                + "@@ -5 +5\n"
+                                + "-         <item quantity=\"few\">few %1$d</item>\n"
+                                + "-         <item quantity=\"many\">many %1$d</item>\n");
     }
 
     @SuppressWarnings("all") // Sample code

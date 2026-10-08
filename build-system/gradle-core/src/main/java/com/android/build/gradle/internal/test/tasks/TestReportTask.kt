@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.test.tasks
 
 import com.android.build.gradle.internal.coverage.renderer.CodeCoverageReportOrchestrator
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
@@ -29,6 +28,7 @@ import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
@@ -39,7 +39,6 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.internal.logging.ConsoleRenderer
 
 @CacheableTask
@@ -102,19 +101,10 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
     override val artifactType = InternalMultipleArtifactType.ALL_PROJECT_TEST_RESULTS
     override val coverageArtifactType = InternalMultipleArtifactType.AGGREGATED_CODE_COVERAGE_DATA
 
-    override fun handleProvider(taskProvider: TaskProvider<TestReportTask>) {
-      super.handleProvider(taskProvider)
-
-      creationConfig.globalArtifacts
-        .setInitialProvider(taskProvider, TestReportTask::coverageHtmlReportDir)
-        .on(InternalArtifactType.AGGREGATED_CODE_COVERAGE_HTML_REPORT)
-    }
-
     override fun configure(task: TestReportTask) {
       super.configure(task)
       task.description =
         "Generates an aggregated test results report for unit and instrumentation tests across the current module and its project dependencies."
-      task.testReport.set(task.project.layout.buildDirectory.dir("reports/tests/aggregated-test-report"))
     }
   }
 
@@ -123,18 +113,9 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
     override val artifactType = InternalMultipleArtifactType.PROJECT_LEVEL_TEST_RESULTS
     override val coverageArtifactType = InternalMultipleArtifactType.CODE_COVERAGE_DATA
 
-    override fun handleProvider(taskProvider: TaskProvider<TestReportTask>) {
-      super.handleProvider(taskProvider)
-
-      creationConfig.globalArtifacts
-        .setInitialProvider(taskProvider, TestReportTask::coverageHtmlReportDir)
-        .on(InternalArtifactType.CODE_COVERAGE_HTML_REPORT)
-    }
-
     override fun configure(task: TestReportTask) {
       super.configure(task)
       task.description = "Generates a test results report for unit and instrumentation tests within the current module."
-      task.testReport.set(task.project.layout.buildDirectory.dir("reports/tests/test-report"))
     }
   }
 
@@ -146,6 +127,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
     override fun configure(task: TestReportTask) {
       super.configure(task)
+      task.group = JavaBasePlugin.VERIFICATION_GROUP
       task.testResults.set(creationConfig.globalArtifacts.getAll(artifactType))
       task.testResults.disallowChanges()
       task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
@@ -153,6 +135,10 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
       task.coverageXmlReports.set(creationConfig.globalArtifacts.getAll(coverageArtifactType))
       task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
       task.rootProjectDir.disallowChanges()
+
+      val reportsDir = task.project.layout.buildDirectory.dir("reports/$name")
+      task.testReport.set(reportsDir.map { it.dir("test-report") })
+      task.coverageHtmlReportDir.set(reportsDir.map { it.dir("coverage-report") })
     }
   }
 }

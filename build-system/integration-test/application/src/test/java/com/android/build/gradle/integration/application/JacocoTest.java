@@ -425,7 +425,7 @@ public void testLegacyFailsIfNoLegacyFilesFoundEvenWithPb() throws Exception {
     @Test
     public void checkJacocoAntConfiguration() throws IOException, InterruptedException {
         // jacoco ant configuration exists by default due to the usage from
-        // CodeCoverageCollectionTask for the aggregated test reporting feature
+        // TestResultsCollectionTask for the aggregated test reporting feature
         GradleBuildResult result = project.executor().run(":dep");
         try (Scanner scanner = result.getStdout()) {
             ScannerSubject.assertThat(scanner)

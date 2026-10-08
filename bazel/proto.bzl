@@ -17,11 +17,11 @@ proto_languages = struct(
 # This version of protoc is the one currently used in the studio-sdk.jar
 # It will be used to pin the version of protoc used to generate protofiles for analytics.
 # Please do not remove or change it unless the version in the platform has changed
-INTELLIJ_PLATFORM_PROTO_VERSION = "3.24.4"
+INTELLIJ_PLATFORM_PROTO_VERSION = "3.25.5"
 INTELLIJ_PLATFORM_GRPC_VERSION = "1.66.0"
 INTELLIJ_PLATFORM_KOTLIN_GRPC_PLUGIN_VERSION = "1.4.1"
 
-PROTOC_VERSION = "3.22.3"
+PROTOC_VERSION = "3.25.5"
 PROTOC_GRPC_VERSION = "1.57.0"
 
 ProtoPackageInfo = provider(fields = ["proto_src", "proto_paths"])

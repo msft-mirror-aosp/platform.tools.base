@@ -28,7 +28,7 @@ import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.Option
 import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.build.gradle.options.StringOption
-import com.android.prefs.AndroidLocation.ANDROID_PREFS_ROOT
+import com.android.prefs.AbstractAndroidLocations.Companion.ANDROID_PREFS_ROOT
 import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets

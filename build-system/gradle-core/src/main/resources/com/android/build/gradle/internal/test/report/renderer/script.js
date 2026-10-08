@@ -45,6 +45,12 @@ const UIUtils = {
       .replace(/'/g, "&#39;");
   },
 
+  formatSuiteName(name) {
+    if (!name) return "";
+    const str = String(name);
+    return str.charAt(0).toLowerCase() + str.slice(1);
+  },
+
   /**
    * Builds a multi-select dropdown with "Select All" / "Clear" actions
    * and a scrollable list of options.
@@ -226,6 +232,95 @@ const BREADCRUMB_ACTIONS = {
   GO_TO_TEST_CASES: 'go-to-test-cases'
 };
 
+/**
+ * Header Info Tooltips — Content
+ * ------------------------------------------------------------------
+ * All explanatory copy for header/label tooltips lives here so it can be
+ * edited in one place. Each entry has a short `title` and a `body`.
+ * Elements opt in with `data-info-key="<key>"`. Entries may be functions
+ * when the copy depends on runtime context, in which case the value of
+ * `data-info-arg` is passed in.
+ */
+const HEADER_INFO = {
+  // --- Top header stats ---
+  'stat.modules': {
+    title: 'Modules',
+    body: 'Number of Gradle modules (e.g. :app, :core:data) whose test results are included in this report.',
+  },
+  'stat.packages': {
+    title: 'Packages',
+    body: 'Total packages containing test classes across all modules.',
+  },
+  'stat.classes': {
+    title: 'Classes',
+    body: 'Total test classes across all modules that reported at least one test result.',
+  },
+
+  // --- Header controls ---
+  'header.testSuite': {
+    title: 'Test Suite',
+    body: 'Choose whose results you are looking at. “all” combines every test suite; pick a single suite to see only the tests that suite ran.',
+  },
+  'header.groupBy': {
+    title: 'Group by',
+    body: 'Changes the granularity of the rows below — list results by Modules, by Packages, by Classes, or as a flat list of individual Test Cases.',
+  },
+
+  // --- Main table: name column (contextual) ---
+  'col.project': {
+    title: 'Project hierarchy',
+    body: 'Expandable tree of Modules → Packages → Classes → Test Cases, plus Targets when tests ran on more than one target. Counts on a parent row are the totals of everything underneath it.',
+  },
+  'col.modules': {
+    title: 'Module',
+    body: 'Gradle module name. Counts are the totals of all test classes in the module. Click a module to drill into its packages.',
+  },
+  'col.packages': {
+    title: 'Package',
+    body: 'Kotlin/Java package. Counts are the totals of all test classes in the package. Click a package to drill into its classes.',
+  },
+  'col.classes': {
+    title: 'Class',
+    body: 'Test class name. Counts are the totals of its test cases. Click a class to drill into its test cases.',
+  },
+  'col.testCases': {
+    title: 'Test Case',
+    body: 'An individual test method. Failed test cases are links: click one to open its stack trace.',
+  },
+  'col.path': {
+    title: 'Path',
+    body: 'Where this item lives: its Gradle module, package and, for test cases, class.',
+  },
+  'col.module': {
+    title: 'Module',
+    body: 'Gradle module that owns this package.',
+  },
+  'col.target': {
+    title: 'Target',
+    body: 'The test suite target the test case ran on — a named run context configured for the test suite, such as locally connected devices or a Gradle Managed Device.',
+  },
+
+  // --- Main table: per-variant metric columns ---
+  'col.pass': {
+    title: 'Pass',
+    body: 'Number of tests that completed successfully for this variant under the selected test suite. Click to sort.',
+  },
+  'col.fail': {
+    title: 'Fail',
+    body: 'Number of tests where an assertion failed or an unexpected exception was thrown. Click to sort.',
+  },
+  'col.skip': {
+    title: 'Skip',
+    body: 'Number of tests reported as skipped, e.g. ignored or disabled with annotations like @Ignore. Skipped tests are excluded from the pass rate. Click to sort.',
+  },
+  'col.passRate': {
+    title: 'Pass Rate',
+    body: 'passed / (passed + failed), with the raw counts shown underneath. Skipped tests are excluded. Green is 95 % or above, yellow 80 % to 94.9 %, red below 80 %. Click to sort.',
+  },
+};
+
+const TOOLTIP_SELECTOR = '[data-info-key], [data-tooltip], [title], [data-stored-title]';
+
 const Tooltip = {
   element: null,
   activeTarget: null,
@@ -236,24 +331,24 @@ const Tooltip = {
     if (!this.element) return;
 
     document.body.addEventListener('mouseover', (e) => {
-      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      const target = e.target.closest(TOOLTIP_SELECTOR);
       if (target && !target.contains(e.relatedTarget)) this.show(target);
     });
 
     document.body.addEventListener('mouseout', (e) => {
-      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      const target = e.target.closest(TOOLTIP_SELECTOR);
       if (target && !target.contains(e.relatedTarget)) {
         this.startHide();
       }
     });
 
     document.body.addEventListener('focusin', (e) => {
-      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      const target = this.resolveFocusTarget(e.target);
       if (target && !target.contains(e.relatedTarget)) this.show(target);
     });
 
     document.body.addEventListener('focusout', (e) => {
-      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      const target = this.resolveFocusTarget(e.target);
       if (target && !target.contains(e.relatedTarget)) {
         this.hide();
       }
@@ -262,9 +357,38 @@ const Tooltip = {
     // Dismiss tooltip on scroll (prevent detaching from element)
     window.addEventListener('scroll', () => this.hide(), true);
 
+    // Clicking a sortable header re-renders the table head, detaching the
+    // info tooltip's target; dismiss it up front.
+    document.addEventListener('mousedown', () => {
+      if (this.element.classList.contains('info')) this.hide();
+    }, true);
+
     // Keep tooltip open when hovering over it
     this.element.addEventListener('mouseenter', () => this.clearHide());
     this.element.addEventListener('mouseleave', () => this.startHide());
+  },
+
+  /**
+   * Focusable containers (e.g. sortable <th>, the Test Suite button) wrap a
+   * non-focusable label carrying `data-info-key`. When such a container gains
+   * focus, surface the info tooltip of its label.
+   */
+  resolveFocusTarget(el) {
+    const direct = el.closest(TOOLTIP_SELECTOR);
+    if (direct) return direct;
+    if (!el.matches || !el.matches('button, th')) return null;
+    // Skip labels inside hidden states (e.g. the Test Suite button swaps
+    // between an "all" and a "selected" layout).
+    return [...el.querySelectorAll('[data-info-key]')].find(n => n.getClientRects().length > 0) || null;
+  },
+
+  /** Returns {title?, body} for an info-key target, or null. */
+  resolveInfo(target) {
+    const key = target.dataset.infoKey;
+    if (!key) return null;
+    let entry = HEADER_INFO[key];
+    if (typeof entry === 'function') entry = entry(target.dataset.infoArg || '');
+    return entry || null;
   },
 
   show(target) {
@@ -272,6 +396,12 @@ const Tooltip = {
 
     if (this.activeTarget && this.activeTarget !== target) {
       this.hide();
+    }
+
+    const info = this.resolveInfo(target);
+    if (info) {
+      this.showInfo(target, info);
+      return;
     }
 
     let text = target.getAttribute('data-tooltip') || target.getAttribute('title') || target.dataset.storedTitle;
@@ -299,7 +429,40 @@ const Tooltip = {
     }
 
     this.activeTarget = target;
+    this.element.classList.remove('info');
     this.element.textContent = text;
+    this.position(target);
+  },
+
+  /**
+   * Renders a rich (title + body) header info tooltip. Unlike plain tooltips,
+   * the target keeps its visible label as its accessible name; the
+   * explanation is only exposed as a description via aria-describedby.
+   */
+  showInfo(target, info) {
+    if (!target.hasAttribute('aria-describedby')) {
+      target.setAttribute('aria-describedby', 'a11y-tooltip');
+      target.dataset.addedAriaDescribedby = 'true';
+    }
+
+    this.activeTarget = target;
+    this.element.classList.add('info');
+    this.element.textContent = '';
+    if (info.title) {
+      const titleEl = document.createElement('span');
+      titleEl.className = 'info-tooltip-title';
+      titleEl.textContent = info.title;
+      this.element.appendChild(titleEl);
+    }
+    const bodyEl = document.createElement('span');
+    bodyEl.className = 'info-tooltip-body';
+    bodyEl.textContent = info.body;
+    this.element.appendChild(bodyEl);
+
+    this.position(target);
+  },
+
+  position(target) {
     this.element.classList.remove('top', 'bottom');
     this.element.classList.add('visible');
 
@@ -318,7 +481,6 @@ const Tooltip = {
     }
 
     // Keep within viewport horizontal bounds
-    const originalLeft = left;
     left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
 
     // Position arrow to point at target center
@@ -676,8 +838,10 @@ const TestReportApp = {
       }
     } else {
       const testSuiteOptions = [
-        { name: 'All', value: 'all' },
-        ...actualSuites.map(ts => ({ name: ts, value: ts }))
+        { name: 'all', value: 'all' },
+        ...[...actualSuites]
+          .sort((a, b) => UIUtils.formatSuiteName(a).localeCompare(UIUtils.formatSuiteName(b)))
+          .map(ts => ({ name: UIUtils.formatSuiteName(ts), value: ts }))
       ];
       UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
         this.state.filters.testSuite = newVal;
@@ -1124,7 +1288,7 @@ const TestReportApp = {
       if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
       if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
       if (this.elements.testSuiteFilterText) {
-        this.elements.testSuiteFilterText.textContent = actualSuites[0];
+        this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(actualSuites[0]);
       }
       if (this.elements.testSuiteFilterBtn) {
         this.elements.testSuiteFilterBtn.disabled = true;
@@ -1153,7 +1317,7 @@ const TestReportApp = {
           this.elements.tsAllState.classList.add('hidden');
           this.elements.tsSelectedState.classList.remove('hidden');
           if (this.elements.testSuiteFilterText) {
-            this.elements.testSuiteFilterText.textContent = this.state.filters.testSuite;
+            this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(this.state.filters.testSuite);
           }
         }
       }
@@ -1690,17 +1854,21 @@ const TestReportApp = {
     const sortIndicator = (key) => this.isSortActive(key) ? (this.state.sort.order === 'asc' ? '▲' : '▼') : '';
     const getAriaSort = (key) => this.isSortActive(key) ? (this.state.sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
     let nameHeader = this.state.viewMode === 'tree' ? 'Name' : (this.state.currentFlatView === 'testCases' ? 'Test Case' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1));
+    // Contextual info tooltip for the name column
+    const nameInfoKey = this.state.viewMode === 'tree'
+      ? 'col.project'
+      : ({ modules: 'col.modules', packages: 'col.packages', classes: 'col.classes', testCases: 'col.testCases' }[this.state.currentFlatView] || 'col.project');
 
     let pathHeader = '';
     let pathSubHeader = '';
     if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
       if (this.state.currentFlatView === 'classes' || this.state.currentFlatView === 'testCases') {
         const pathWidth = Math.round(this.state.columnWidths['path'] || 300);
-        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path"><span data-info-key="col.path">Path</span><div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
         pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
       } else if (this.state.currentFlatView === 'packages') {
         const moduleWidth = Math.round(this.state.columnWidths['module'] || 200);
-        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module"><span data-info-key="col.module">Module</span><div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
         pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
       }
     }
@@ -1709,14 +1877,14 @@ const TestReportApp = {
     let targetSubHeader = '';
     if (this.state.viewMode === 'flat' && this.state.currentFlatView === 'testCases' && !this.hasOnlyDefaultTarget()) {
       const targetWidth = Math.round(this.state.columnWidths['target'] || 150);
-      targetHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-target">Target<div class="resizer" data-resizer-id="target" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${targetWidth}"></div></th>`;
+      targetHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-target"><span data-info-key="col.target">Target</span><div class="resizer" data-resizer-id="target" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${targetWidth}"></div></th>`;
       targetSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-target"></th>`;
     }
 
     const nameWidth = Math.round(this.state.columnWidths['name'] || 400);
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
-                <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>
+                <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}"><span data-info-key="${nameInfoKey}">${nameHeader}</span> ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>
                 ${targetHeader}
                 ${pathHeader}
                 ${variantsToShow.map(v => `<th scope="col" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
@@ -1731,10 +1899,10 @@ const TestReportApp = {
                   const skipKey = `${v}.skip`;
                   const rateKey = `${v}.rate`;
                   const escV = UIUtils.escapeHTML(v);
-                  return `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${passKey}" aria-sort="${getAriaSort(passKey)}" aria-label="Sort by Pass for ${escV}">Pass ${sortIndicator(passKey)}</th>` +
-                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${failKey}" aria-sort="${getAriaSort(failKey)}" aria-label="Sort by Fail for ${escV}">Fail ${sortIndicator(failKey)}</th>` +
-                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${skipKey}" aria-sort="${getAriaSort(skipKey)}" aria-label="Sort by Skip for ${escV}">Skip ${sortIndicator(skipKey)}</th>` +
-                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${rateKey}" aria-sort="${getAriaSort(rateKey)}" aria-label="Sort by Pass Rate for ${escV}">Pass Rate ${sortIndicator(rateKey)}</th>`;
+                  return `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${passKey}" aria-sort="${getAriaSort(passKey)}" aria-label="Sort by Pass for ${escV}"><span data-info-key="col.pass">Pass</span> ${sortIndicator(passKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${failKey}" aria-sort="${getAriaSort(failKey)}" aria-label="Sort by Fail for ${escV}"><span data-info-key="col.fail">Fail</span> ${sortIndicator(failKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${skipKey}" aria-sort="${getAriaSort(skipKey)}" aria-label="Sort by Skip for ${escV}"><span data-info-key="col.skip">Skip</span> ${sortIndicator(skipKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${rateKey}" aria-sort="${getAriaSort(rateKey)}" aria-label="Sort by Pass Rate for ${escV}"><span data-info-key="col.passRate">Pass Rate</span> ${sortIndicator(rateKey)}</th>`;
                 }).join('')}
             </tr>`;
   },
@@ -2037,7 +2205,7 @@ const TestReportApp = {
     }
 
     node._suiteBadges = suiteNames
-      .map(name => `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem;">${UIUtils.escapeHTML(name)}</span>`)
+      .map(name => `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem;">${UIUtils.escapeHTML(UIUtils.formatSuiteName(name))}</span>`)
       .join('');
     return node._suiteBadges;
   },
@@ -2231,7 +2399,7 @@ const TestReportApp = {
       for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
         const tag = document.createElement("span");
         tag.className = "occurrence-tag";
-        tag.textContent = `${suite} (${variants.join(", ")})`;
+        tag.textContent = `${UIUtils.formatSuiteName(suite)} (${variants.join(", ")})`;
         titleDiv.appendChild(tag);
       }
       header.appendChild(titleDiv);
@@ -2601,7 +2769,7 @@ const TestReportApp = {
           <span class="meta-pill"><span class="meta-pill-label">Method:</span> ${UIUtils.escapeHTML(item.methodName)}</span>
           <span class="meta-pill"><span class="meta-pill-label">Preview:</span> ${UIUtils.escapeHTML(item.previewName)}</span>
           <span class="meta-pill"><span class="meta-pill-label">Variant:</span> ${UIUtils.escapeHTML(item.variantName)}</span>
-          <span class="meta-pill"><span class="meta-pill-label">Suite:</span> ${UIUtils.escapeHTML(item.suiteName)}</span>
+          <span class="meta-pill"><span class="meta-pill-label">Suite:</span> ${UIUtils.escapeHTML(UIUtils.formatSuiteName(item.suiteName))}</span>
         </div>
       </div>
       <div>

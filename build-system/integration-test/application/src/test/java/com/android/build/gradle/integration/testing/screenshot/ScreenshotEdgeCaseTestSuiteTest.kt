@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.testing.screenshot
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
@@ -128,13 +129,37 @@ class ScreenshotEdgeCaseTestSuiteTest {
   @Test
   fun runPreviewScreenshotTestsWithMissingUiToolingDep() {
     val uiToolingDep = "androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}"
-    val build = rule.build
+    val build = rule.build {
+      androidApplication {
+        dependencies { remove("implementation", uiToolingDep) }
+        android {
+          testOptions.screenshotTests.named("screenshotTest") {
+            it.dependencies { implementation.add(uiToolingDep) }
+          }
+        }
+      }
+    }
 
     build.updateReferenceImageWithTestSuite()
 
     build.androidApplication().reconfigure {
-      dependencies {
-        remove("implementation", uiToolingDep)
+      resetAndroidDsl()
+      android {
+        namespace = "pkg.name.app"
+        compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
+        defaultConfig.apply {
+          minSdk = 24
+          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+        buildFeatures.apply { compose = true }
+        composeOptions.kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
+        testOptions.screenshotTests.create("screenshotTest") {
+          it.engineVersion = "+"
+          it.targetVariants.addAll(listOf("debug", "release"))
+          it.dependencies {
+            implementation.add("com.android.tools.screenshot:screenshot-validation-api:+")
+          }
+        }
       }
     }
 

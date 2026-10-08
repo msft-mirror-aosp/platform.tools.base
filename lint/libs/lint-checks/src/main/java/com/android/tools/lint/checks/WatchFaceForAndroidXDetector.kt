@@ -53,12 +53,16 @@ class WatchFaceForAndroidXDetector : Detector(), XmlScanner {
         severity = Severity.WARNING,
         implementation = Implementation(WatchFaceForAndroidXDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
+        enabledByDefault = false,
       )
   }
 
   override fun getApplicableElements() = listOf(TAG_META_DATA)
 
   private fun visitMetaData(context: XmlContext, metaData: Element) {
+    if (WatchFaceFormatUtils.isWatchFaceFormatProject(context)) {
+      return
+    }
     if (
       metaData.getAttributeNS(ANDROID_URI, ATTR_NAME) == WATCH_FACE_META_DATA_NAME &&
         metaData.getAttributeNS(ANDROID_URI, ATTR_VALUE) != WATCH_FACE_EDITOR_ACTION

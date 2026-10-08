@@ -104,14 +104,92 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
     get(INSTRUMENTATION_TARGET_PACKAGE_ID) ?: throw RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required")
   val testedApplicationId: String = get(TESTED_APPLICATION_ID, AgpTestSuiteInput.TESTED_APPLICATION_ID) ?: instrumentationTargetPackageId
 
-  val instrumentationArgs: Map<String, String> =
-    get(INSTRUMENTATION_ARGS)
-      ?.split(",")
-      ?.mapNotNull { arg ->
-        val parts = arg.split("=", limit = 2)
-        if (parts.size == 2) parts[0].trim() to parts[1].trim() else null
+  val instrumentationArgs: Map<String, String> = parseInstrumentationArgs(get(INSTRUMENTATION_ARGS))
+
+  /**
+   * Parses comma-separated `key=value` instrumentation arguments, unescaping `\\`, `\,`, and `\=`. Unescaped comma-separated segments
+   * without `=` (for unescaped input supplied directly, not by AGP) are appended to the preceding argument's value.
+   *
+   * Keep in sync with `formatInstrumentationArgs` in `com.android.build.gradle.internal.testing.InstrumentationArgs.kt`.
+   */
+  private fun parseInstrumentationArgs(rawArgs: String?): Map<String, String> {
+    if (rawArgs.isNullOrBlank()) return emptyMap()
+    val result = LinkedHashMap<String, String>()
+    var lastKey: String? = null
+    for (segment in splitUnescaped(rawArgs, ',')) {
+      val eqIndex = findFirstUnescaped(segment, '=')
+      if (eqIndex != -1) {
+        val key = unescapeInstrumentationArg(segment.substring(0, eqIndex).trim())
+        val value = unescapeInstrumentationArg(segment.substring(eqIndex + 1).trim())
+        if (key.isNotEmpty()) {
+          result[key] = value
+          lastKey = key
+        }
+      } else if (lastKey != null) {
+        val continuation = unescapeInstrumentationArg(segment.trim())
+        if (continuation.isNotEmpty()) {
+          result[lastKey] = "${result.getValue(lastKey)},$continuation"
+        }
       }
-      ?.toMap() ?: emptyMap()
+    }
+    return result
+  }
+
+  private fun splitUnescaped(input: String, delimiter: Char): List<String> {
+    val parts = mutableListOf<String>()
+    val current = StringBuilder()
+    var i = 0
+    while (i < input.length) {
+      val c = input[i]
+      if (c == '\\' && i + 1 < input.length) {
+        current.append(c).append(input[i + 1])
+        i += 2
+      } else if (c == delimiter) {
+        parts.add(current.toString())
+        current.setLength(0)
+        i++
+      } else {
+        current.append(c)
+        i++
+      }
+    }
+    parts.add(current.toString())
+    return parts
+  }
+
+  private fun findFirstUnescaped(input: String, target: Char): Int {
+    var i = 0
+    while (i < input.length) {
+      val c = input[i]
+      if (c == '\\' && i + 1 < input.length) {
+        i += 2
+      } else if (c == target) {
+        return i
+      } else {
+        i++
+      }
+    }
+    return -1
+  }
+
+  private fun unescapeInstrumentationArg(input: String): String {
+    val result = StringBuilder(input.length)
+    var i = 0
+    while (i < input.length) {
+      val c = input[i]
+      if (c == '\\' && i + 1 < input.length) {
+        val next = input[i + 1]
+        if (next == ',' || next == '=' || next == '\\') {
+          result.append(next)
+          i += 2
+          continue
+        }
+      }
+      result.append(c)
+      i++
+    }
+    return result.toString()
+  }
 
   // We use fallback = false to distinguish between an explicit device-specific directory
   // and falling back to the base directory. This allows the engine to append the device ID

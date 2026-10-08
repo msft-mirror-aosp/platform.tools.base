@@ -65,6 +65,7 @@ class NoOpIncrementalBuildMinifyTest {
             ":desugarDebugAndroidTestFileDependencies",
             ":dexBuilderDebugAndroidTest",
             ":expandReleaseArtProfileWildcards",
+            ":extractDebugUnitTestJavaRes",
             ":extractReleaseVersionControlInfo",
             ":extractDeepLinksDebug",
             ":extractDeepLinksRelease",

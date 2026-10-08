@@ -48,6 +48,7 @@ class WatchFaceEditorDetector : Detector(), XmlScanner {
         severity = Severity.WARNING,
         implementation = Implementation(WatchFaceEditorDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
+        enabledByDefault = false,
       )
 
     const val WATCH_FACE_EDITOR_ACTION = "androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR"
@@ -56,6 +57,9 @@ class WatchFaceEditorDetector : Detector(), XmlScanner {
   override fun getApplicableElements() = listOf(TAG_ACTION)
 
   override fun visitElement(context: XmlContext, action: Element) {
+    if (WatchFaceFormatUtils.isWatchFaceFormatProject(context)) {
+      return
+    }
     if (action.getAttributeNS(ANDROID_URI, ATTR_NAME) == WATCH_FACE_EDITOR_ACTION) {
       val activity = action.parentNode?.parentNode as? Element
       if (activity == null || activity.nodeName != TAG_ACTIVITY) return

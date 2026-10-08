@@ -7,12 +7,6 @@ iml_module(
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.manifest-parser.iml"],
     resources = ["src/test/resources"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//prebuilts/tools/common/m2:junit-4.12",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-    ],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -20,6 +14,22 @@ iml_module(
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/adt/idea/.idea/libraries:libbinary-resources",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.manifest-parser.tests",
+    iml_files = ["android.sdktools.manifest-parser.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/manifest-parser:studio.android.sdktools.manifest-parser",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//prebuilts/tools/common/m2:junit-4.12",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
+    test_friends = ["//tools/base/manifest-parser:studio.android.sdktools.manifest-parser"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 coverage_java_library(

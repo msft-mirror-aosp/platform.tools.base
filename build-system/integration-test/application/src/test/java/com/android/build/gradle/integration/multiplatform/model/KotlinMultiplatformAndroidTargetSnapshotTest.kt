@@ -18,9 +18,11 @@ package com.android.build.gradle.integration.multiplatform.model
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.model.BaseModelComparator
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.multiplatform.model.fixture.KmpModelComparator
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -33,6 +35,33 @@ class KotlinMultiplatformAndroidTargetSnapshotTest : BaseModelComparator {
       .withIncludedBuilds("build-logic")
       .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
       .create()
+
+  @Before
+  fun setUp() {
+    // Static res and assets directories added through the variant API must be part of the
+    // androidMain sourceSet model so that the IDE can register them (b/567129335).
+    val kmpFirstLib = project.getSubproject("kmpFirstLib")
+    FileUtils.join(kmpFirstLib.projectDir, "src", "androidMain", "staticRes", "values", "static_strings.xml").apply {
+      parentFile.mkdirs()
+      writeText("""<resources><string name="static_string">Static String</string></resources>""")
+    }
+    FileUtils.join(kmpFirstLib.projectDir, "src", "androidMain", "staticAssets", "static_asset.txt").apply {
+      parentFile.mkdirs()
+      writeText("static asset")
+    }
+    TestFileUtils.appendToFile(
+      kmpFirstLib.ktsBuildFile,
+      """
+      androidComponents {
+          onVariants { variant ->
+              variant.sources.res?.addStaticSourceDirectory("src/androidMain/staticRes")
+              variant.sources.assets?.addStaticSourceDirectory("src/androidMain/staticAssets")
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
   @Test
   fun testModels() {

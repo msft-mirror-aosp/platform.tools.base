@@ -7,15 +7,26 @@ iml_module(
     srcs = ["src/main/kotlin"],
     iml_files = ["android.sdktools.diff.iml"],
     jvm_target = "8",
+    visibility = ["//visibility:public"],
+    deps = ["@intellij//:intellij-sdk"],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.diff.tests",
+    iml_files = ["android.sdktools.diff.tests.iml"],
+    jvm_target = "8",
     # do not sort: must match IML order
     test_deps = [
+        "//tools/base/diff:studio.android.sdktools.diff",
+        "@intellij//:intellij-sdk",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:truth",
         "//tools/adt/idea/.idea/libraries:kotlin-test",
     ],
+    test_friends = ["//tools/base/diff:studio.android.sdktools.diff"],
     test_srcs = ["src/test/kotlin"],
     visibility = ["//visibility:public"],
-    deps = ["@intellij//:intellij-sdk"],
 )
 
 # A standard Kotlin library compilation target compiled under JVM 8 (1.8).

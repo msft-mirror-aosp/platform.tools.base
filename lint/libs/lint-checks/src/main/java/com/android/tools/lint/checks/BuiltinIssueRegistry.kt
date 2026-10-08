@@ -480,7 +480,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           ThreadDetector.THREAD,
           ThreadPriorityDetector.ISSUE,
           TileProviderDetector.TILE_PROVIDER_PERMISSIONS,
-          TileProviderDetector.SQUARE_AND_ROUND_TILE_PREVIEWS,
+          TileProviderDetector.TILE_PREVIEWS,
           TileServiceActivityDetector.START_ACTIVITY_AND_COLLAPSE_DEPRECATED,
           TileProviderDetector.TILE_PREVIEW_IMAGE_FORMAT,
           TitleDetector.ISSUE,

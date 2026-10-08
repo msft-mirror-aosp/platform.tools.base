@@ -22,9 +22,12 @@ import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.TestSuite
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
@@ -32,6 +35,9 @@ import com.google.wireless.android.sdk.stats.TestRun
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
+
+/** Differs from [BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION], so the tests can tell a configured version from the default. */
+private const val CUSTOM_BACKUP_VERSION = "${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}-custom"
 
 /**
  * Integration test verifying the registration, DSL configuration, execution, and analytics tracking of the specialized [BackupTestSuite]
@@ -44,8 +50,8 @@ class BackupTestSuiteDeclarationTest {
       .withProfileOutput()
       .withMavenRepository {
         jar("com.google.truth:truth:0.44")
-        jar("androidx.test.backup:backup-host:1.0.0-alpha01")
-        jar("androidx.test.backup:backup:1.0.0-alpha01")
+        jar("androidx.test.backup:backup-host:$CUSTOM_BACKUP_VERSION")
+        jar("androidx.test.backup:backup:$CUSTOM_BACKUP_VERSION")
         jar("org.junit.platform:junit-platform-engine:1.13.3")
         jar("org.junit.platform:junit-platform-launcher:1.13.3")
         jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
@@ -63,7 +69,7 @@ class BackupTestSuiteDeclarationTest {
           pluginCallbacks += BackupSuiteCallback::class.java
           android {
             testOptions.backupTests.create("myBackup") {
-              it.backupTestLibraryVersion = "1.0.0-alpha01"
+              it.backupTestLibraryVersion = CUSTOM_BACKUP_VERSION
               it.targetVariants.add("debug")
             }
           }
@@ -79,6 +85,29 @@ class BackupTestSuiteDeclarationTest {
   @Test
   fun testBackupTestSuiteConfiguration() {
     rule.build.executor.run(":app:tasks")
+  }
+
+  @Test
+  fun testDevicePropertiesReachTestJvm() {
+    val build = rule.build
+    val loggingFile =
+      build.subProject(":app").resolve("build/intermediates/debug/testDebugMyBackupDefaultTestSuite/junit_engines_logging.txt").toFile()
+    fun runWithSerial(serial: String) =
+      build.executor
+        .withConfigurationCaching(ConfigurationCaching.ON)
+        .withArgument("-Dandroidx.test.backup.device.serial=$serial")
+        .run(":app:testDebugMyBackupDefaultTestSuite")
+
+    runWithSerial("emulator-5554")
+    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = emulator-5554")
+
+    // Selecting another device reuses the configuration cache, and the new value still reaches the test JVM.
+    runWithSerial("emulator-5556").assertOutputContains("Reusing configuration cache.")
+    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = emulator-5556")
+
+    // Values reach the test JVM unchanged, including '=' and spaces.
+    runWithSerial("a=b c")
+    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = a=b c")
   }
 
   @Test
@@ -99,7 +128,25 @@ class BackupTestSuiteDeclarationTest {
     Truth.assertThat(testRun.numberOfTestsExecuted).isEqualTo(1)
     Truth.assertThat(testRun.backupTestRun.passedTestCount).isEqualTo(1)
     Truth.assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(0)
-    Truth.assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha01")
+    Truth.assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
+  }
+
+  @Test
+  fun testBackupLibrariesAreOnlyAddedToSuiteClasspaths() {
+    // Applying a Kotlin compiler plugin makes AGP create compiler plugin classpaths for the suite's compilations.
+    val build = rule.build { androidApplication { applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN) } }
+
+    build.executor
+      .run(":app:dependencies", "--configuration", "debugMyBackupTestRuntimeClasspath")
+      .assertOutputContains("androidx.test.backup:backup-host:$CUSTOM_BACKUP_VERSION")
+    build.executor
+      .run(":app:dependencies", "--configuration", "debugMyBackupAndroidTestRuntimeClasspath")
+      .assertOutputContains("androidx.test.backup:backup:$CUSTOM_BACKUP_VERSION")
+    val compilerPluginClasspaths =
+      listOf("kotlinCompilerPluginClasspathDebugMyBackupTest", "kotlinCompilerPluginClasspathDebugMyBackupAndroidTest")
+    for (configuration in compilerPluginClasspaths) {
+      build.executor.run(":app:dependencies", "--configuration", configuration).assertOutputDoesNotContain("androidx.test.backup")
+    }
   }
 }
 
@@ -107,7 +154,7 @@ class BackupSuiteCallback : ApplicationComponentCallback {
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
     androidComponents.finalizeDsl { applicationExtension ->
       val backupSuite = applicationExtension.testOptions.backupTests.getByName("myBackup")
-      Truth.assertThat(backupSuite.backupTestLibraryVersion).isEqualTo("1.0.0-alpha01")
+      Truth.assertThat(backupSuite.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
       Truth.assertThat(backupSuite.targetVariants).containsExactly("debug")
     }
 

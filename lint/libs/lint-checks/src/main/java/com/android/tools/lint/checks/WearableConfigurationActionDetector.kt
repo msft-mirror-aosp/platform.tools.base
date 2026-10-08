@@ -62,6 +62,7 @@ class WearableConfigurationActionDetector : Detector(), XmlScanner {
         severity = Severity.WARNING,
         implementation = Implementation(WearableConfigurationActionDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
+        enabledByDefault = false,
       )
 
     @JvmField
@@ -81,6 +82,7 @@ class WearableConfigurationActionDetector : Detector(), XmlScanner {
         severity = Severity.WARNING,
         implementation = Implementation(WearableConfigurationActionDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
+        enabledByDefault = false,
       )
   }
 
@@ -90,6 +92,9 @@ class WearableConfigurationActionDetector : Detector(), XmlScanner {
   private var foundMetaData: Element? = null
 
   override fun checkMergedProject(context: Context) {
+    if (WatchFaceFormatUtils.isWatchFaceFormatProject(context)) {
+      return
+    }
     context.project.buildVariant?.mainArtifact?.findCompileDependency("androidx.wear.watchface:watchface") ?: return
     beforeScanningManifest()
     val document = context.mainProject.mergedManifest?.documentElement ?: return

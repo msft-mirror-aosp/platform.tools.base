@@ -23,8 +23,6 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
-import com.android.build.api.dsl.TestSuiteHostJarSpec
-import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.extension.impl.DslLifecycleComponentsOperationsRegistrar
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
@@ -107,6 +105,7 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigI
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
+import com.android.build.gradle.internal.testsuites.validateTestSuiteSourceSetNames
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.DimensionCombination
 import com.android.build.gradle.internal.variant.DimensionCombinator
@@ -223,6 +222,7 @@ class VariantManager<
 
   /** Create all variants. */
   private fun computeVariants() {
+    validateTestSuiteSourceSetNames(dslExtension.testOptions.customSuites)
     val flavorDimensionList: List<String> = dslExtension.flavorDimensions
     val computer = DimensionCombinator(variantInputModel, projectServices.issueReporter, flavorDimensionList)
     val variants = computer.computeVariants()
@@ -893,9 +893,7 @@ class VariantManager<
 
         testSuiteBuilder as TestSuiteBuilderImpl
         val sources = testSuiteBuilder.getSources()
-        val hasHostJar = sources.any { it is TestSuiteHostJarSpec }
-        val hasTestApk = sources.any { it is TestSuiteTestApkSpec }
-        val isMixed = hasHostJar && hasTestApk
+        val isMixed = sources.size > 1
 
         val testSuiteSources = sources.map { testSuiteSource: TestSuiteSourceCreationConfig ->
           // create the variant specific dependency that will be additive to the

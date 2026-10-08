@@ -58,6 +58,11 @@ class ToyJunitEngineForTesting : TestEngine {
     p0?.let { executionRequest ->
       logger.info("Executing toy engine ! ${executionRequest.rootTestDescriptor}")
       inputParams.inputParameters.forEach { logger.info("Input : $it") }
+      System.getProperties()
+        .stringPropertyNames()
+        .filter { it.startsWith("androidx.test.") }
+        .sorted()
+        .forEach { logger.info("System property : $it = ${System.getProperty(it)}") }
       val listener: EngineExecutionListener = executionRequest.engineExecutionListener
 
       val engineDescriptor = executionRequest.rootTestDescriptor

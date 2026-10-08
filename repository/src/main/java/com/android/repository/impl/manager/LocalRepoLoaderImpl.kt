@@ -31,11 +31,17 @@ import com.google.common.hash.Hashing
 import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import java.nio.file.FileVisitOption
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardOpenOption
+import java.nio.file.attribute.BasicFileAttributes
+import java.util.EnumSet
 import java.util.TreeSet
 import javax.xml.bind.JAXBException
+import kotlin.streams.toList
 
 /** A utility class that finds [LocalPackage]s under a given path based on `package.xml` files. */
 class LocalRepoLoaderImpl
@@ -49,12 +55,17 @@ constructor(
    * next time.
    */
   private val fallback: FallbackLocalRepoLoader? = null,
+  /**
+   * Names of top-level directories under [root] where packages are normally installed. If non-empty, and no packages are found in any of
+   * these directories, other top-level directories will not be scanned. See [collectPackages].
+   */
+  private val knownTopLevelDirs: Set<String> = emptySet(),
 ) : LocalRepoLoader {
   private val schemaModules: Set<SchemaModule<*>> = schemaModules.toSet()
 
   override fun getPackages(progress: ProgressIndicator): Map<String, LocalPackage> {
     fallback?.refresh()
-    val possiblePackageDirs = collectPackages()
+    val possiblePackageDirs = collectPackages(progress)
     val packages = parsePackages(possiblePackageDirs, progress)
     if (packages.isNotEmpty()) {
       writeHashFile(getLocalPackagesHash(possiblePackageDirs))
@@ -119,50 +130,81 @@ constructor(
     return result
   }
 
-  /** Gets a sorted set of all paths that might contain packages. */
-  private fun collectPackages(): Set<Path> {
-    val dirs = TreeSet<Path>()
-    collectPackages(dirs, root, 0)
-    return dirs
+  /**
+   * Gets a sorted set of all paths that might contain packages.
+   *
+   * If [knownTopLevelDirs] is non-empty, those directories are scanned first. Other top-level directories are only scanned if at least one
+   * package was found in a known directory; otherwise, [root] probably isn't a real repository (e.g. it's been misconfigured to point at a
+   * home directory), and scanning it could take a very long time.
+   *
+   * @param progress used for logging, if available
+   */
+  private fun collectPackages(progress: ProgressIndicator? = null): Set<Path> {
+    val collector = TreeSet<Path>()
+    if (isPackageDir(root)) {
+      collector.add(root)
+      return collector
+    }
+
+    val topLevelEntries =
+      try {
+        CancellableFileIo.list(root).use { it.toList() }
+      } catch (_: IOException) {
+        return collector
+      }
+    val cachePaths = resourceCachePaths()
+    val (knownDirs, otherDirs) = topLevelEntries.filter { it !in cachePaths }.partition { it.fileName.toString() in knownTopLevelDirs }
+
+    knownDirs.forEach { collectPackages(collector, it) }
+    if (knownTopLevelDirs.isNotEmpty() && collector.isEmpty() && otherDirs.isNotEmpty()) {
+      progress?.logWarning(
+        "No packages found in any of the standard locations under $root; not scanning its other contents. " + "Is the SDK location correct?"
+      )
+      return collector
+    }
+    otherDirs.forEach { collectPackages(collector, it) }
+    return collector
   }
 
   /**
-   * Collect packages under the given root into `collector`.
+   * Collect packages under the given top-level directory into `collector`.
    *
    * @param collector The collector.
-   * @param root Directory we're looking in.
-   * @param depth The depth we've descended to so far. Once we reach [MAX_SCAN_DEPTH] we'll stop recursing.
+   * @param start A direct child of [root]. If it is not a directory, it is ignored.
    */
-  private fun collectPackages(collector: MutableCollection<Path>, root: Path, depth: Int) {
-    if (depth > MAX_SCAN_DEPTH) {
-      return
-    }
-    // Do not scan metadata folders and return right away. Allow the SDK root to start with the
-    // prefix though.
-    if (
-      root != this.root &&
-        CancellableFileIo.isDirectory(root) &&
-        root.fileName.toString().startsWith(AbstractPackageOperation.METADATA_FILENAME_PREFIX)
-    ) {
-      return
-    }
+  private fun collectPackages(collector: MutableCollection<Path>, start: Path) {
+    try {
+      CancellableFileIo.walkFileTree(
+        start,
+        EnumSet.of(FileVisitOption.FOLLOW_LINKS),
+        // start is one level below root, and directories at depth maxDepth relative to start are
+        // passed to visitFile rather than preVisitDirectory; so this checks directories up to
+        // MAX_SCAN_DEPTH levels below root.
+        MAX_SCAN_DEPTH,
+        object : SimpleFileVisitor<Path>() {
+          override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+            // Do not scan metadata folders.
+            if (dir.fileName.toString().startsWith(AbstractPackageOperation.METADATA_FILENAME_PREFIX)) {
+              return FileVisitResult.SKIP_SUBTREE
+            }
+            if (isPackageDir(dir)) {
+              collector.add(dir)
+              return FileVisitResult.SKIP_SUBTREE
+            }
+            return FileVisitResult.CONTINUE
+          }
 
-    val packageXml: Path = root.resolve(PACKAGE_XML_FN)
-    if (CancellableFileIo.exists(packageXml) || fallback?.shouldParse(root) == true) {
-      collector.add(root)
-    } else {
-      try {
-        val cachePaths = resourceCachePaths()
-        CancellableFileIo.list(root).use { contents ->
-          contents
-            .filter { file -> CancellableFileIo.isDirectory(file) && file !in cachePaths }
-            .forEach { file -> collectPackages(collector, file, depth + 1) }
-        }
-      } catch (_: IOException) {
-        // don't add anything
-      }
+          // Ignore unreadable directories, broken links, and symlink loops.
+          override fun visitFileFailed(file: Path, exc: IOException): FileVisitResult = FileVisitResult.CONTINUE
+        },
+      )
+    } catch (_: IOException) {
+      // don't add anything
     }
   }
+
+  /** Returns true if [dir] looks like it contains a package, either in the current format or in a format known to [fallback]. */
+  private fun isPackageDir(dir: Path): Boolean = CancellableFileIo.exists(dir.resolve(PACKAGE_XML_FN)) || fallback?.shouldParse(dir) == true
 
   private fun addPackage(p: LocalPackage, collector: MutableMap<String, LocalPackage>, progress: ProgressIndicator) {
     val filePath = p.path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar)

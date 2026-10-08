@@ -21,15 +21,14 @@ import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.api.variant.impl.getApiString
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
-import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
@@ -237,11 +236,10 @@ abstract class BaseProcessTestManifestCreationConfig(val creationConfig: Compone
         AndroidArtifacts.ArtifactType.NAVIGATION_JSON,
       )
 
+  // The packager validates the merged manifest against the APK's jniLibs packaging mode, so every
+  // component that produces an APK must pass that mode to the manifest merger.
   override val useLegacyPackaging: Provider<Boolean>
-    get() =
-      if (creationConfig is DeviceTestCreationConfig || creationConfig is TestVariantCreationConfig)
-        creationConfig.packaging.jniLibs.useLegacyPackaging
-      else creationConfig.services.provider { null }
+    get() = if (creationConfig is ApkCreationConfig) creationConfig.packaging.jniLibs.useLegacyPackaging else creationConfig.emptyProvider()
 
   override val placeholderValues: MapProperty<String, String>
     get() =

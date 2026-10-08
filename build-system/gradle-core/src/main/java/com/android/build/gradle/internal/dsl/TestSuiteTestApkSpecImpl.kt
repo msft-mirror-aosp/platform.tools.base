@@ -45,15 +45,16 @@ internal constructor(objects: ObjectFactory, name: String, projectDirectory: Dir
   }
 
   /** INTERNAL APIs */
+  override fun sourceSetName(isMixed: Boolean): String = if (isMixed) "${name}AndroidTest" else name
+
   override fun createTestSuiteSourceSet(
     variantServices: VariantServices,
     javaEnabled: Boolean,
     kotlinEnabled: Boolean,
     isMixed: Boolean,
   ): TestSuiteSourceSet {
-    val sourceSetName = if (isMixed) "${name}AndroidTest" else name
     return TestApkTestSuiteSourceSet(
-      sourceSetName = sourceSetName,
+      sourceSetName = sourceSetName(isMixed),
       testSuiteName = name,
       isMixed = isMixed,
       variantServices = variantServices,

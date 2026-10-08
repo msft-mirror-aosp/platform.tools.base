@@ -460,7 +460,8 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                     artifacts
                             .forScope(ScopedArtifacts.Scope.PROJECT)
                             .getFinalArtifacts$gradle_core(ScopedArtifact.CLASSES.INSTANCE));
-            collection.from(creationConfig.getProjectJavaRes());
+
+            collection.from(artifacts.get(InternalArtifactType.JAVA_RES.INSTANCE));
 
             // 3. the runtime dependencies for both CLASSES and JAVA_RES type
             if (creationConfig.getInstrumentationCreationConfig() != null) {

@@ -7,14 +7,6 @@ iml_module(
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.mlkit-common.iml"],
     lint_baseline = "lint_baseline.xml",
-    test_data = ["//prebuilts/tools/common/mlkit/testData"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:mockito",
-    ],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -24,6 +16,24 @@ iml_module(
         "//prebuilts/tools/common/m2:tensorflow-lite-metadata",
         "//tools/base/common:studio.android.sdktools.common",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.mlkit-common.tests",
+    iml_files = ["android.sdktools.mlkit-common.tests.iml"],
+    test_data = ["//prebuilts/tools/common/mlkit/testData"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/mlkit-common:studio.android.sdktools.mlkit-common",
+        "//prebuilts/tools/common/m2:tensorflow-lite-metadata",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:mockito",
+    ],
+    test_friends = ["//tools/base/mlkit-common:studio.android.sdktools.mlkit-common"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 coverage_java_library(

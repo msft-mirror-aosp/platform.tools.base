@@ -210,7 +210,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(result.failedTasks).contains(":lib2:testDebugUnitTest")
 
     val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
-    val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "test-report")
+    val outputDir = FileUtils.join(libBuildDir, "reports", "testAllSuites", "test-report")
     assertThat(outputDir).doesNotExist()
   }
 
@@ -218,7 +218,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   fun testTestAllSuitesIncludingAllVariants() {
     val result = rule.build.executor.run(":app:testAllSuites")
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
-    val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "test-report")
+    val outputDir = FileUtils.join(appBuildDir, "reports", "testAllSuites", "test-report")
 
     assertThat(result.tasks.contains(":app:testDebugUnitTest")).isTrue()
     assertThat(result.tasks.contains(":app:testReleaseUnitTest")).isTrue()
@@ -238,7 +238,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   fun testTestAllSuitesWithDependencies() {
     val result = rule.build.executor.run(":app:testAllSuitesWithDependencies")
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
-    val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "aggregated-test-report")
+    val outputDir = FileUtils.join(appBuildDir, "reports", "testAllSuitesWithDependencies", "test-report")
 
     assertThat(result.tasks.contains(":app:testDebugUnitTest")).isTrue()
     assertThat(result.tasks.contains(":app:connectedDebugAndroidTest")).isTrue()
@@ -264,7 +264,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
     val libBuildDir = rule.build.androidLibrary(":lib").buildDir.toFile()
     assertThat(result.tasks.contains(":lib:testDebugUnitTest")).isTrue()
     assertThat(result.tasks.contains(":lib:connectedDebugAndroidTest")).isTrue()
-    val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "test-report")
+    val outputDir = FileUtils.join(libBuildDir, "reports", "testAllSuites", "test-report")
 
     verifyHtmlReport(
       outputDir = outputDir,
@@ -281,7 +281,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   fun testTestAllSuitesWithDependenciesLib() {
     val result = rule.build.executor.run(":lib2:testAllSuitesWithDependencies")
     val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
-    val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "aggregated-test-report")
+    val outputDir = FileUtils.join(libBuildDir, "reports", "testAllSuitesWithDependencies", "test-report")
 
     verifyHtmlReport(
       outputDir = outputDir,
@@ -327,12 +327,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(File(outputDir, "styles.css")).exists()
     assertThat(File(outputDir, "data.js")).exists()
 
-    val coverageOutputDir =
-      if (outputDir.name == "aggregated-test-report") {
-        outputDir.parentFile.parentFile.resolve("coverage/aggregated-coverage-report")
-      } else {
-        outputDir.parentFile.parentFile.resolve("coverage/coverage-report")
-      }
+    val coverageOutputDir = outputDir.parentFile.resolve("coverage-report")
 
     if (coverageOutputDir.exists()) {
       assertThat(coverageOutputDir).isDirectory()

@@ -790,17 +790,25 @@ class ManifestDetector : Detector(), XmlScanner {
   }
 
   private fun checkIcon(application: Element, context: Context) {
-    if (!application.hasAttributeNS(ANDROID_URI, ATTR_ICON) && context.isEnabled(APPLICATION_ICON)) {
-      val fix = fix().set(ANDROID_URI, ATTR_ICON, "@mipmap/").caretEnd().build()
-      reportFromManifest(
-        context,
-        APPLICATION_ICON,
-        application,
-        "Should explicitly set `android:icon`, there is no default",
-        LocationType.NAME,
-        fix,
-      )
+    if (application.hasAttributeNS(ANDROID_URI, ATTR_ICON) || !context.isEnabled(APPLICATION_ICON)) {
+      return
     }
+    // Check the in-memory application element directly first for an immediate
+    // short-circuit before checking project-level manifest or raw watchface files.
+    if (
+      WatchFaceFormatUtils.hasWatchFaceFormatVersionProperty(application) || WatchFaceFormatUtils.isWatchFaceFormatProject(context.project)
+    ) {
+      return
+    }
+    val fix = fix().set(ANDROID_URI, ATTR_ICON, "@mipmap/").caretEnd().build()
+    reportFromManifest(
+      context,
+      APPLICATION_ICON,
+      application,
+      "Should explicitly set `android:icon`, there is no default",
+      LocationType.NAME,
+      fix,
+    )
   }
 
   private fun checkDocumentElement(context: XmlContext, element: Element) {

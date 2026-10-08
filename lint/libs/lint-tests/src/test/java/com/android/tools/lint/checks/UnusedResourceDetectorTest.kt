@@ -3537,6 +3537,97 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
         .trimIndent(),
     )
 
+  fun testWatchFaceFormatResources() {
+    lint()
+      .files(
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Metadata key="CLOCK_TICK_RATE_HZ" value="1" />
+              <UserConfigurations>
+                  <ColorConfiguration id="theme" displayName="@string/wf_label" />
+              </UserConfigurations>
+              <Scene>
+                  <Image resource="wf_background" />
+                  <MonochromaticImage icon="wf_icon" defaultImageResource="wf_default_icon" />
+                  <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                  <PartText>
+                      <Font family="wf_font" size="24" />
+                      <Font family="SYNC_TO_DEVICE" size="24" />
+                  </PartText>
+              </Scene>
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/values/strings.xml",
+            """
+          <resources>
+              <string name="wf_label">Watch Face Label</string>
+              <string name="unused_string">Unused</string>
+          </resources>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/wf_background.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="oval">
+              <solid android:color="#FF000000" />
+          </shape>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/wf_icon.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="oval">
+              <solid android:color="#FFFFFFFF" />
+          </shape>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/wf_default_icon.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="oval">
+              <solid android:color="#FF888888" />
+          </shape>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/unused_drawable.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="rectangle" />
+          """,
+          )
+          .indented(),
+        bytes("res/font/wf_font.ttf", byteArrayOf()),
+        bytes("res/font/unused_font.ttf", byteArrayOf()),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/values/strings.xml:3: Warning: The resource R.string.unused_string appears to be unused [UnusedResources]
+            <string name="unused_string">Unused</string>
+                    ~~~~~~~~~~~~~~~~~~~~
+        res/drawable/unused_drawable.xml:1: Warning: The resource R.drawable.unused_drawable appears to be unused [UnusedResources]
+        <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        0 errors, 3 warnings
+        """
+      )
+  }
+
   private val mLibraryStrings =
     xml(
       "res/values/strings.xml",

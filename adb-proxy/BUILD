@@ -13,15 +13,6 @@ iml_module(
     name = "studio.adb-proxy",
     srcs = ["src"],
     iml_files = ["adb-proxy.iml"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
-    ],
-    test_srcs = ["testSrc"],
     visibility = ["//visibility:public"],
     exports = ["//tools/base/adb-proxy:adb_proxy_proto"],
     # do not sort: must match IML order
@@ -31,6 +22,27 @@ iml_module(
         "//tools/base/adb-proxy:adb_proxy_proto",
         "//tools/base/adblib:studio.android.sdktools.adblib",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.adb-proxy.tests",
+    iml_files = ["adb-proxy.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/adb-proxy:studio.adb-proxy",
+        "@intellij//:intellij-sdk",
+        "//tools/base/adblib:studio.android.sdktools.adblib",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
+        "//tools/base/adblib:studio.android.sdktools.adblib.tests",
+    ],
+    test_friends = ["//tools/base/adb-proxy:studio.adb-proxy"],
+    test_srcs = ["testSrc"],
+    visibility = ["//visibility:public"],
 )
 
 # Build adb-proxy client as a standalone library, with side effect of ensuring that

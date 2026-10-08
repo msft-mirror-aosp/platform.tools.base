@@ -219,13 +219,6 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.zipflinger.iml"],
     lint_baseline = "lint_baseline.xml",
-    test_data = glob(["test/resource/**"]),
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-    ],
-    test_srcs = ["test/src/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -233,4 +226,20 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.zipflinger.tests",
+    iml_files = ["android.sdktools.zipflinger.tests.iml"],
+    test_data = glob(["test/resource/**"]),
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
+    test_friends = ["//tools/base/zipflinger:studio.android.sdktools.zipflinger"],
+    test_srcs = ["test/src/java"],
+    visibility = ["//visibility:public"],
 )

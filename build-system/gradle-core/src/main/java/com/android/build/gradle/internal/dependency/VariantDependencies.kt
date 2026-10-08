@@ -483,7 +483,6 @@ internal constructor(
           val annotationProcessorClasspath =
             project.configurations.maybeCreate("annotationProcessorClasspath").also {
               it.isCanBeConsumed = false
-              it.isVisible = false
             }
 
           project.configurations.findByName("kapt")?.let { annotationProcessorClasspath.extendsFrom(it) }

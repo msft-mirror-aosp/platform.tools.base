@@ -17,6 +17,8 @@
 package com.android.build.gradle.internal.api
 
 import com.android.build.api.dsl.AgpTestSuiteDependencies
+import com.android.build.api.variant.TestSuiteSourceSet
+import com.android.build.gradle.internal.dsl.TestSuiteTestApkSpecImpl
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.services.VariantServicesImpl
 import com.android.build.gradle.internal.services.createProjectServices
@@ -134,6 +136,37 @@ class TestApkTestSuiteSourceSetTest {
       .containsExactly(project.layout.projectDirectory.dir("src/backupTest/androidTest/resources"))
     Truth.assertThat(sourceSet.manifestFile)
       .isEqualTo(project.layout.projectDirectory.file("src/backupTest/androidTest/AndroidManifest.xml").asFile)
+  }
+
+  @Test
+  fun testSpecCreatesExpectedSourceSetForSingleAndMixedSuites() {
+    val spec =
+      TestSuiteTestApkSpecImpl(
+        objects = project.objects,
+        name = "second",
+        projectDirectory = project.layout.projectDirectory,
+        buildDirectory = project.layout.buildDirectory,
+      )
+
+    val singleSourceSet =
+      spec.createTestSuiteSourceSet(
+        variantServices = variantServices,
+        javaEnabled = true,
+        kotlinEnabled = true,
+        isMixed = false,
+      ) as TestSuiteSourceSet.TestApk
+    Truth.assertThat(singleSourceSet.name).isEqualTo("second")
+    Truth.assertThat(singleSourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/second/java"))
+
+    val mixedSourceSet =
+      spec.createTestSuiteSourceSet(
+        variantServices = variantServices,
+        javaEnabled = true,
+        kotlinEnabled = true,
+        isMixed = true,
+      ) as TestSuiteSourceSet.TestApk
+    Truth.assertThat(mixedSourceSet.name).isEqualTo("secondAndroidTest")
+    Truth.assertThat(mixedSourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/second/androidTest/java"))
   }
 
   @Test

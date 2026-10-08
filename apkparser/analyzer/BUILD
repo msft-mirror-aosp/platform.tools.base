@@ -9,15 +9,6 @@ iml_module(
     name = "studio.android.sdktools.analyzer",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.analyzer.iml"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/adt/idea/.idea/libraries:jimfs",
-    ],
-    test_resources = ["src/test/resources"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -33,6 +24,28 @@ iml_module(
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.analyzer.tests",
+    iml_files = ["android.sdktools.analyzer.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "@intellij//:intellij-sdk",
+        "//tools/base/apkparser/analyzer:studio.android.sdktools.analyzer",
+        "//tools/adt/idea/.idea/libraries:google-dexlib2",
+        "//tools/adt/idea/.idea/libraries:libbinary-resources",
+        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+    ],
+    test_friends = ["//tools/base/apkparser/analyzer:studio.android.sdktools.analyzer"],
+    test_resources = ["src/test/resources"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 kotlin_library(

@@ -33,15 +33,16 @@ constructor(objects: ObjectFactory, override val name: String, projectDirectory:
   TestSuiteAssetsSpec, TestSuiteSourceCreationConfig {
 
   /** INTERNAL APIs */
+  override fun sourceSetName(isMixed: Boolean): String = if (isMixed) "${name}Assets" else name
+
   override fun createTestSuiteSourceSet(
     variantServices: VariantServices,
     javaEnabled: Boolean,
     kotlinEnabled: Boolean,
     isMixed: Boolean,
   ): TestSuiteSourceSet {
-    val sourceSetName = if (isMixed) "${name}Assets" else name
     return AssetsTestSuiteSourceSet(
-      sourceSetName = sourceSetName,
+      sourceSetName = sourceSetName(isMixed),
       testSuiteName = name,
       isMixed = isMixed,
       variantServices = variantServices,

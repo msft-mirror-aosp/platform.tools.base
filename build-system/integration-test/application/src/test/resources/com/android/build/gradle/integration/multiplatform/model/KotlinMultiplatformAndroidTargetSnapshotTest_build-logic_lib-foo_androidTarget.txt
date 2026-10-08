@@ -12,7 +12,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/build-logic/lib-foo/src/androidDeviceTest/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }
@@ -68,7 +70,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/build-logic/lib-foo/src/androidHostTest/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }
@@ -114,7 +118,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/build-logic/lib-foo/src/androidMain/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }

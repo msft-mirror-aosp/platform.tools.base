@@ -29,6 +29,7 @@ import com.android.repository.api.SchemaModule
 import com.android.repository.api.SettingsController
 import com.android.repository.impl.meta.RepositoryPackages
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
 import org.w3c.dom.ls.LSResourceResolver
@@ -126,9 +127,15 @@ class FakeRepoManager(
     remoteListeners.forEach { it.loaded(packages) }
   }
 
-  override fun installBeginning(repoPackage: RepoPackage, installer: PackageOperation) {}
+  private val inProgressInstalls = ConcurrentHashMap<RepoPackage, PackageOperation>()
 
-  override fun installEnded(repoPackage: RepoPackage) {}
+  override fun installBeginning(repoPackage: RepoPackage, installer: PackageOperation) {
+    inProgressInstalls[repoPackage] = installer
+  }
 
-  override fun getInProgressInstallOperation(remotePackage: RepoPackage): PackageOperation? = null
+  override fun installEnded(repoPackage: RepoPackage) {
+    inProgressInstalls.remove(repoPackage)
+  }
+
+  override fun getInProgressInstallOperation(remotePackage: RepoPackage): PackageOperation? = inProgressInstalls[remotePackage]
 }

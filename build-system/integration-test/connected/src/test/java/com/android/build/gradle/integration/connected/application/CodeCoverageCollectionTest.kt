@@ -45,7 +45,7 @@ import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.rules.ExternalResource
 
-/** Integration test for [com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask]. */
+/** Integration test for code coverage collection in [com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask]. */
 class CodeCoverageCollectionTest {
 
   companion object {

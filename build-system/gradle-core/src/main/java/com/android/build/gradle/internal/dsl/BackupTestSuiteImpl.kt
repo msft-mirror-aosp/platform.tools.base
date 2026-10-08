@@ -21,6 +21,7 @@ import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.ComponentIdentity
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.getBuildService
@@ -29,9 +30,12 @@ import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
+import org.gradle.process.CommandLineArgumentProvider
 
 /**
  * Concrete implementation of [BackupTestSuite] representing Automated Backup and Restore test suites.
@@ -121,10 +125,16 @@ constructor(
   private val backupSuite: BackupTestSuiteImpl,
   dslServices: DslServices,
   private val dependencyHandler: DependencyHandler,
+  private val providers: ProviderFactory,
 ) : AgpTestSuiteImpl(backupSuite.name, dslServices, false) {
 
   override val targetVariants: MutableList<String>
     get() = backupSuite.targetVariants
+
+  /** Without [targetVariants], the suite tests the variants of the tested build type, like device tests do. */
+  override fun targetsVariant(variant: ComponentIdentity, testBuildType: String?): Boolean =
+    if (targetVariants.isEmpty()) testBuildType != null && variant.buildType == testBuildType
+    else super.targetsVariant(variant, testBuildType)
 
   init {
     // Automatically register a "default" target for test execution
@@ -150,33 +160,14 @@ constructor(
       enginesDependencies.add(dependencyHandler.create("org.junit.platform:junit-platform-launcher:1.10.0"))
     }
 
-    // Lazy Configuration Listener: Automatically map and inject compile-time dependencies
-    // directly on the standard Gradle configurations generated for the custom test suite!
-    try {
-      dslServices.configurations.configureEach { config ->
-        if (config.name.contains(name, ignoreCase = true)) {
-          config.withDependencies { deps ->
-            val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
-
-            if (config.name.contains("AndroidTest", ignoreCase = true) || config.name.contains("TestApk", ignoreCase = true)) {
-              // Contains on-device test helper actions (e.g. PutStorageAction, VerifyStorageAction) and BackupRestoreTestRunner.
-              deps.add(dependencyHandler.create("androidx.test.backup:backup:$resolvedVersion"))
-            } else if (config.name.contains("Test", ignoreCase = true) || config.name.contains("HostJar", ignoreCase = true)) {
-              // Hosts the JUnit 5 test extension and BackupRestoreDevice orchestration control loops.
-              // Transitively pulls adblib, adblib-tools, and common published on GMaven via backup-host's POM.
-              deps.add(dependencyHandler.create("androidx.test.backup:backup-host:$resolvedVersion"))
-            }
-          }
-        }
-      }
-    } catch (_: UnsupportedOperationException) {
-      // In Declarative Gradle Schema or restricted evaluation contexts, configurations may not be accessible.
-    }
+    // This suite is created before the user's DSL block runs, so the version must be read lazily.
+    val libraryVersion = providers.provider { backupSuite.backupTestLibraryVersion?.takeIf { it.isNotBlank() } ?: DEFAULT_BACKUP_VERSION }
 
     hostJar {
-      val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
       dependencies {
-        implementation.add("androidx.test.backup:backup-host:$resolvedVersion")
+        // Hosts the JUnit 5 test extension and BackupRestoreDevice orchestration control loops.
+        // Transitively pulls adblib, adblib-tools, and common published on GMaven via backup-host's POM.
+        implementation.add(libraryVersion.map { dependencyHandler.create("androidx.test.backup:backup-host:$it") })
       }
       backupSuite.hostJarHandler = { action -> action(this) }
       backupSuite.hostJarActions.forEach { it(this) }
@@ -184,16 +175,15 @@ constructor(
     }
 
     testApk {
-      val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
       dependencies {
-        implementation.add("androidx.test.backup:backup:$resolvedVersion")
+        // Contains on-device test helper actions (e.g. PutStorageAction, VerifyStorageAction) and BackupRestoreTestRunner.
+        implementation.add(libraryVersion.map { dependencyHandler.create("androidx.test.backup:backup:$it") })
       }
       backupSuite.testApkHandler = { action -> action(this) }
       backupSuite.testApkActions.forEach { it(this) }
       backupSuite.testApkActions.clear()
     }
 
-    val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
     val analyticsServiceProvider =
       try {
         getBuildService(dslServices.buildServiceRegistry, AnalyticsService::class.java)
@@ -201,16 +191,30 @@ constructor(
         null
       }
 
+    val deviceProperties = providers.systemPropertiesPrefixedBy(DEVICE_PROPERTY_PREFIX)
+
     configureTestTasks { context: TestTaskContext ->
       val task = this
       analyticsServiceProvider?.let { task.usesService(it) }
       task.addTestListener(
         BackupTestListener(
           analyticsServiceProvider = analyticsServiceProvider,
-          backupTestLibraryVersion = resolvedVersion,
+          backupTestLibraryVersion = libraryVersion.get(),
         )
       )
+      // Gradle doesn't pass the build's system properties to test JVMs, so forward the ones that select devices.
+      task.jvmArgumentProviders.add(DevicePropertiesArgumentProvider(deviceProperties))
     }
+  }
+
+  /**
+   * Passes the backup library's device selection system properties, such as `androidx.test.backup.device.serial`, to the test JVM.
+   *
+   * The properties are read when the test task runs, so selecting other devices doesn't invalidate the configuration cache.
+   */
+  internal class DevicePropertiesArgumentProvider(@get:Input val deviceProperties: Provider<Map<String, String>>) :
+    CommandLineArgumentProvider {
+    override fun asArguments(): Iterable<String> = deviceProperties.get().map { (name, value) -> "-D$name=$value" }
   }
 
   internal class BackupTestListener(
@@ -247,6 +251,9 @@ constructor(
     const val BACKUP_TEST_ENGINE_ID = "junit-jupiter"
 
     /** Default fallback version for the AndroidX backup testing framework artifacts. */
-    const val DEFAULT_BACKUP_VERSION = "1.0.0-alpha01"
+    const val DEFAULT_BACKUP_VERSION = "1.0.0-alpha02"
+
+    /** Prefix of the system properties that the backup library reads to select devices. */
+    private const val DEVICE_PROPERTY_PREFIX = "androidx.test.backup.device."
   }
 }

@@ -114,7 +114,6 @@ internal open class BaseJavaPreCompileTaskCreationConfig(
       .create("_agp_internal_${name}_${kaptOrKsp}Classpath")
       .setExtendsFrom(configurations)
       .apply {
-        isVisible = false
         isCanBeResolved = true
         isCanBeConsumed = false
       }

@@ -92,8 +92,8 @@ fun configureAndroidTestEngine(
   task.engineInputProperties.put("android-test.test-package-id", testData.applicationId)
   task.engineInputProperties.put("android-test.instrumentation-target-package-id", testData.instrumentationTargetPackageId)
   task.engineInputProperties.put(
-    "android-test.instrumentation-args",
-    testData.instrumentationRunnerArguments.map { it.entries.joinToString(",") { (k, v) -> "$k=$v" } },
+    INSTRUMENTATION_ARGS_KEY,
+    testData.instrumentationRunnerArguments.map(::formatInstrumentationArgs),
   )
   task.engineInputProperties.put(
     "android-test.uninstall-after-tests",

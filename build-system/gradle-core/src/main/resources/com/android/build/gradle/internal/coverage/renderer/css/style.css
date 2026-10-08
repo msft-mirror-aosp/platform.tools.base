@@ -524,6 +524,40 @@ header {
     top: -10px; left: var(--arrow-x, 50%); margin-left: -5px;
     border-color: transparent transparent #1f2937 transparent;
 }
+/* Rich header info tooltip (title + body) */
+#a11y-tooltip.info {
+    max-width: 280px;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+}
+#a11y-tooltip .info-tooltip-title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    color: #ffffff;
+}
+#a11y-tooltip .info-tooltip-body {
+    display: block;
+    color: #d1d5db;
+}
+/* Labels that explain themselves on hover/focus */
+[data-info-key] {
+    cursor: help;
+    text-decoration: underline dotted transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.15s ease;
+}
+[data-info-key]:hover,
+[data-info-key]:focus-visible {
+    text-decoration-color: currentColor;
+}
+/* Inside sortable headers and buttons the label is still a click target */
+th[data-sort-by] [data-info-key],
+button [data-info-key] {
+    cursor: pointer;
+}
 /* --- Utilities --- */
 .list-disc { list-style-type: disc; }
 .pl-5 { padding-left: 1.25rem; }

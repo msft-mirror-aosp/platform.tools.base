@@ -27,7 +27,14 @@ import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.AsyncExecutionService
+import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.ReadAndWriteScope
+import com.intellij.openapi.application.ReadConstraint
+import com.intellij.openapi.application.ReadResult
+import com.intellij.openapi.application.ReadWriteActionSupport
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.ThrowableComputable
 import com.intellij.util.concurrency.AppExecutorUtil
 
 /** [IJFramework] implementation for the standalone rendering. */
@@ -44,15 +51,44 @@ object IJFramework : Disposable {
         )
         .createPluginSetWithEnabledModulesMap()
     )
-    application.registerService(com.intellij.openapi.application.AsyncExecutionService::class.java, StubAsyncExecutionService(), this)
+    application.registerService(AsyncExecutionService::class.java, StubAsyncExecutionService(), this)
+    application.registerService(
+      ReadWriteActionSupport::class.java,
+      object : ReadWriteActionSupport {
+        override fun committedDocumentsConstraint(project: Project): ReadConstraint = ReadConstraint.withDocumentsCommitted(project)
+
+        override fun <X, E : Throwable> computeCancellable(action: ThrowableComputable<X, E>): X = ReadAction.compute(action)
+
+        override suspend fun <X> executeReadAction(
+          constraints: List<ReadConstraint>,
+          undispatched: Boolean,
+          blocking: Boolean,
+          action: () -> X,
+        ): X {
+          throw UnsupportedOperationException()
+        }
+
+        override suspend fun <X> executeReadAndWriteAction(
+          constraints: Array<out ReadConstraint>,
+          runWriteActionOnEdt: Boolean,
+          undispatched: Boolean,
+          action: ReadAndWriteScope.() -> ReadResult<X>,
+        ): X {
+          throw UnsupportedOperationException()
+        }
+
+        override fun smartModeConstraint(project: Project): ReadConstraint = ReadConstraint.inSmartMode(project)
+
+        override suspend fun <T> runWriteAction(action: () -> T): T {
+          throw UnsupportedOperationException()
+        }
+      },
+      this,
+    )
   }
 
   fun createProject(): Project {
     return MockProject(null, application)
-  }
-
-  fun <T : Any> registerService(serviceInterface: Class<T>, serviceImplementation: T, disposable: Disposable) {
-    application.registerService(serviceInterface, serviceImplementation, disposable)
   }
 
   override fun dispose() {

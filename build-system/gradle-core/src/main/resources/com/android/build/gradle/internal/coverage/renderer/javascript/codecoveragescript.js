@@ -16,6 +16,97 @@
 
 const AGGREGATED_SUITE_NAME = 'Aggregated';
 
+/**
+ * Header Info Tooltips — Content
+ * ------------------------------------------------------------------
+ * All explanatory copy for header/label tooltips lives here so it can be
+ * edited in one place. Each entry has a short `title` and a `body`.
+ * Elements opt in with `data-info-key="<key>"`. Entries may be functions
+ * when the copy depends on runtime context (e.g. the variant name), in which
+ * case the value of `data-info-arg` is passed in.
+ */
+const HEADER_INFO = {
+    // --- Top header stats ---
+    'stat.modules': {
+        title: 'Modules',
+        body: 'Number of Gradle modules (e.g. :app, :core:data) included in this report. Each module is instrumented separately and rolled up into the project totals.',
+    },
+    'stat.packages': {
+        title: 'Packages',
+        body: 'Total Kotlin/Java packages across all modules that contain classes analysed for coverage.',
+    },
+    'stat.classes': {
+        title: 'Classes',
+        body: 'Total Kotlin/Java classes across all modules that contain executable code and were analysed for coverage. Interfaces and classes with no bytecode are not counted.',
+    },
+
+    // --- Header controls ---
+    'header.testSuite': {
+        title: 'Test Suite',
+        body: 'Choose whose coverage you are looking at. “All” merges every suite; pick a single suite to see only the code that suite exercised.',
+    },
+    'header.groupBy': {
+        title: 'Group by',
+        body: 'Changes the granularity of the rows below — list the project by Modules, by Packages, or as a flat list of Classes.',
+    },
+
+    // --- Main table: name column (contextual) ---
+    'col.project': {
+        title: 'Project hierarchy',
+        body: 'Expandable tree of Modules → Packages → Classes. Coverage shown on a parent row is the aggregate of everything underneath it.',
+    },
+    'col.modules': {
+        title: 'Module',
+        body: 'Gradle module name. Coverage is the aggregate of all packages and classes in the module. Click a module to drill into its packages.',
+    },
+    'col.packages': {
+        title: 'Package',
+        body: 'Kotlin/Java package. Coverage is the aggregate of all classes in the package. Click a package to drill into its classes.',
+    },
+    'col.classes': {
+        title: 'Class',
+        body: 'Class name. Click a class to open the annotated source view with line‑by‑line coverage.',
+    },
+    'col.path': {
+        title: 'Path',
+        body: 'Where this class lives: its Gradle module and package.',
+    },
+    'col.module': {
+        title: 'Module',
+        body: 'Gradle module that owns this package.',
+    },
+
+    // --- Main table: variant + metric columns ---
+    'col.variant': (v) => ({
+        title: `Build variant · ${v}`,
+        body: 'A build variant is a product flavor combined with a build type (e.g. demo + debug). Coverage is measured per variant because each compiles a different set of sources and generated code. The percentage below the name is this variant\'s instruction coverage for the level you are viewing — the whole project, or the module or package you have navigated into.',
+    }),
+    'col.instruction': {
+        title: 'Instruction coverage',
+        body: 'Percentage of JVM bytecode instructions executed by the selected test suite. This is the most fine‑grained metric and is not affected by code formatting or line length. Click to sort.',
+    },
+    'col.branch': {
+        title: 'Branch coverage',
+        body: 'Percentage of decision branches (if / when / && / || / ?:) that tests actually took. 100 % means every condition was exercised in both its true and false outcome. Click to sort.',
+    },
+
+    // --- Source view ---
+    'source.methods': {
+        title: 'Methods',
+        body: 'Methods declared in this class. Click one to jump to its first line in the source view.',
+    },
+    'source.variantHeader': (v) => ({
+        title: `Build variant · ${v}`,
+        body: 'Source and coverage for this file as compiled in this variant. When several variants are shown side by side, each column reflects that variant\'s own test run.',
+    }),
+    'source.fileStats': {
+        title: 'File coverage',
+        body: 'Instruction coverage for this file under the selected test suite, shown as a percentage and as covered / total.',
+    },
+};
+
+const TOOLTIP_SELECTOR = '[data-info-key], [data-tooltip], [title], [data-stored-title]';
+
 const Tooltip = {
     element: null,
     activeTarget: null,
@@ -26,24 +117,24 @@ const Tooltip = {
         if (!this.element) return;
 
         document.body.addEventListener('mouseover', (e) => {
-            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            const target = e.target.closest(TOOLTIP_SELECTOR);
             if (target && !target.contains(e.relatedTarget)) this.show(target);
         });
 
         document.body.addEventListener('mouseout', (e) => {
-            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            const target = e.target.closest(TOOLTIP_SELECTOR);
             if (target && !target.contains(e.relatedTarget)) {
                 this.startHide();
             }
         });
 
         document.body.addEventListener('focusin', (e) => {
-            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            const target = this.resolveFocusTarget(e.target);
             if (target && !target.contains(e.relatedTarget)) this.show(target);
         });
 
         document.body.addEventListener('focusout', (e) => {
-            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            const target = this.resolveFocusTarget(e.target);
             if (target && !target.contains(e.relatedTarget)) {
                 this.hide();
             }
@@ -52,9 +143,38 @@ const Tooltip = {
         // Dismiss tooltip on scroll (prevent detaching from element)
         window.addEventListener('scroll', () => this.hide(), true);
 
+        // Clicking a sortable header re-renders the table head, detaching the
+        // info tooltip's target; dismiss it up front.
+        document.addEventListener('mousedown', () => {
+            if (this.element.classList.contains('info')) this.hide();
+        }, true);
+
         // Keep tooltip open when hovering over it
         this.element.addEventListener('mouseenter', () => this.clearHide());
         this.element.addEventListener('mouseleave', () => this.startHide());
+    },
+
+    /**
+     * Focusable containers (e.g. sortable <th>, the Test Suite button) wrap a
+     * non-focusable label carrying `data-info-key`. When such a container gains
+     * focus, surface the info tooltip of its label.
+     */
+    resolveFocusTarget(el) {
+        const direct = el.closest(TOOLTIP_SELECTOR);
+        if (direct) return direct;
+        if (!el.matches || !el.matches('button, th')) return null;
+        // Skip labels inside hidden states (e.g. the Test Suite button swaps
+        // between an "All" and a "selected" layout).
+        return [...el.querySelectorAll('[data-info-key]')].find(n => n.getClientRects().length > 0) || null;
+    },
+
+    /** Returns {title?, body} for an info-key target, or null. */
+    resolveInfo(target) {
+        const key = target.dataset.infoKey;
+        if (!key) return null;
+        let entry = HEADER_INFO[key];
+        if (typeof entry === 'function') entry = entry(target.dataset.infoArg || '');
+        return entry || null;
     },
 
     show(target) {
@@ -62,6 +182,12 @@ const Tooltip = {
 
         if (this.activeTarget && this.activeTarget !== target) {
             this.hide();
+        }
+
+        const info = this.resolveInfo(target);
+        if (info) {
+            this.showInfo(target, info);
+            return;
         }
 
         let text = target.getAttribute('data-tooltip') || target.getAttribute('title') || target.dataset.storedTitle;
@@ -89,7 +215,40 @@ const Tooltip = {
         }
 
         this.activeTarget = target;
+        this.element.classList.remove('info');
         this.element.textContent = text;
+        this.position(target);
+    },
+
+    /**
+     * Renders a rich (title + body) header info tooltip. Unlike plain tooltips,
+     * the target keeps its visible label as its accessible name; the
+     * explanation is only exposed as a description via aria-describedby.
+     */
+    showInfo(target, info) {
+        if (!target.hasAttribute('aria-describedby')) {
+            target.setAttribute('aria-describedby', 'a11y-tooltip');
+            target.dataset.addedAriaDescribedby = 'true';
+        }
+
+        this.activeTarget = target;
+        this.element.classList.add('info');
+        this.element.textContent = '';
+        if (info.title) {
+            const titleEl = document.createElement('span');
+            titleEl.className = 'info-tooltip-title';
+            titleEl.textContent = info.title;
+            this.element.appendChild(titleEl);
+        }
+        const bodyEl = document.createElement('span');
+        bodyEl.className = 'info-tooltip-body';
+        bodyEl.textContent = info.body;
+        this.element.appendChild(bodyEl);
+
+        this.position(target);
+    },
+
+    position(target) {
         this.element.classList.remove('top', 'bottom');
         this.element.classList.add('visible');
 
@@ -108,7 +267,6 @@ const Tooltip = {
         }
 
         // Keep within viewport horizontal bounds
-        const originalLeft = left;
         left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
 
         // Position arrow to point at target center
@@ -364,6 +522,12 @@ const Navigation = {
  * Collection of helper functions for DOM manipulation and common UI patterns.
  */
 const UIUtils = {
+    formatSuiteName(name) {
+        if (!name) return "";
+        const str = String(name);
+        return str.charAt(0).toLowerCase() + str.slice(1);
+    },
+
     /**
      * Builds a multi-select dropdown with "Select All" / "Clear" actions
      * and a scrollable list of options.
@@ -1277,7 +1441,7 @@ const CoverageReportApp = {
             if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
             if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
             if (this.elements.testSuiteFilterText) {
-                this.elements.testSuiteFilterText.textContent = actualSuites[0];
+                this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(actualSuites[0]);
             }
             if (this.elements.testSuiteFilterBtn) {
                 this.elements.testSuiteFilterBtn.disabled = true;
@@ -1305,7 +1469,7 @@ const CoverageReportApp = {
                 if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
                 if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
                 if (this.elements.testSuiteFilterText) {
-                    this.elements.testSuiteFilterText.textContent = filters.testSuite;
+                    this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(filters.testSuite);
                 }
             }
         }
@@ -1498,8 +1662,8 @@ const CoverageReportApp = {
             }
         } else {
             const testSuiteOptions = [...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name)))]
-                    .sort()
-                    .map(name => ({ name: name === AGGREGATED_SUITE_NAME ? 'All' : name, value: name }));
+                    .sort((a, b) => UIUtils.formatSuiteName(a).localeCompare(UIUtils.formatSuiteName(b)))
+                    .map(name => ({ name: name === AGGREGATED_SUITE_NAME ? 'all' : UIUtils.formatSuiteName(name), value: name }));
             const aggIndex = testSuiteOptions.findIndex(o => o.value === AGGREGATED_SUITE_NAME);
             if (aggIndex > -1) {
                 testSuiteOptions.unshift(testSuiteOptions.splice(aggIndex, 1)[0]);
@@ -1815,6 +1979,36 @@ const CoverageReportApp = {
         };
     },
 
+    /**
+     * Returns the node whose coverage the variant headers should summarise:
+     * the package or module the user has drilled into (flat view), otherwise
+     * the whole project. Coverage is resolved for the selected test suite.
+     *
+     * Search and chip filters are intentionally not applied, so the header
+     * always shows the real total for the navigated scope (consistent with the
+     * project-level header).
+     */
+    getHeaderScopeRoot() {
+        const { viewMode, selectedModule, selectedPackage, filters } = this.state;
+        if (viewMode !== 'flat' || !selectedModule) return this.getEffectiveRoot();
+
+        const module = (this.fullReport.modules || []).find(m => m.name === selectedModule);
+        if (!module) return this.getEffectiveRoot();
+
+        let node = module;
+        if (selectedPackage) {
+            const pkg = (module.packages || []).find(p => p.name === selectedPackage);
+            if (pkg) node = pkg;
+        }
+
+        const suiteName = filters.testSuite || this.getDefaultTestSuite();
+        const suite = (node.testSuiteCoverages || []).find(ts => ts.name === suiteName);
+        return {
+            ...node,
+            variantCoverages: suite ? suite.variantCoverages : []
+        };
+    },
+
     getEffectiveHierarchicalData() {
         if (this.cachedEffectiveData && this.cachedTestSuite === this.state.filters.testSuite) {
             return this.cachedEffectiveData;
@@ -1997,29 +2191,34 @@ const CoverageReportApp = {
         const getAriaSort = (key) => sort.by === key ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
 
         const nameWidth = Math.round(this.state.columnWidths['name'] || 400);
-        topHeader.innerHTML = `<th scope="col" class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>`;
+        // Contextual info tooltip for the name column
+        const nameInfoKey = viewMode === 'tree'
+            ? 'col.project'
+            : ({ modules: 'col.modules', packages: 'col.packages', classes: 'col.classes' }[currentView] || 'col.project');
+        topHeader.innerHTML = `<th scope="col" class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}"><span data-info-key="${nameInfoKey}">${mainHeaderTitle}</span> ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>`;
         subHeader.innerHTML = `<th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30" data-col-id="name"></th>`;
 
         if (viewMode === 'flat' && !this.state.selectedModule) {
             if (currentView === 'classes') {
                 const pathWidth = Math.round(this.state.columnWidths['path'] || 300);
-                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
+                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path"><span data-info-key="col.path">Path</span><div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
                 subHeader.innerHTML += `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path" data-col-id="path"></th>`;
             } else if (currentView === 'packages') {
                 const moduleWidth = Math.round(this.state.columnWidths['module'] || 200);
-                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
+                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module"><span data-info-key="col.module">Module</span><div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
                 subHeader.innerHTML += `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module" data-col-id="module"></th>`;
             }
         }
 
         const variants = [...filters.variants].sort();
-        const root = this.getEffectiveRoot();
+        const root = this.getHeaderScopeRoot();
 
         variants.forEach(v => {
             const vals = this.getCoverageValues(root, v);
+            const safeV = this.escapeHTML(v);
 
             topHeader.innerHTML += `<th scope="col" colspan="2" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200">
-                <div class="flex flex-col"><span>${this.escapeHTML(v)}</span><span class="text-sm font-bold ${vals.instrColor} mt-1">${vals.instrPercent}</span></div>
+                <div class="flex flex-col"><span data-info-key="col.variant" data-info-arg="${safeV}">${safeV}</span><span class="text-sm font-bold ${vals.instrColor} mt-1">${vals.instrPercent}</span></div>
             </th>`;
 
 
@@ -2028,8 +2227,8 @@ const CoverageReportApp = {
             const instrStyle = this.getColumnStyle(instrKey);
             const branchStyle = this.getColumnStyle(branchKey);
 
-            subHeader.innerHTML += `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" aria-label="Sort by Instruction Coverage for ${this.escapeHTML(v)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}</th>
-                                    <th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" aria-label="Sort by Branch Coverage for ${this.escapeHTML(v)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}</th>`;
+            subHeader.innerHTML += `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" aria-label="Sort by Instruction Coverage for ${safeV}" ${instrStyle}><span data-info-key="col.instruction">Instruction</span> ${sortIndicator(instrKey)}</th>
+                                    <th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" aria-label="Sort by Branch Coverage for ${safeV}" ${branchStyle}><span data-info-key="col.branch">Branch</span> ${sortIndicator(branchKey)}</th>`;
         });
 
         this.elements.tableHeaders.innerHTML = '';

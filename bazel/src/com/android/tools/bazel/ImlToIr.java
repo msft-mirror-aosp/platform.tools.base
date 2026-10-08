@@ -140,7 +140,7 @@ public class ImlToIr {
                     hasProdRoots = true;
                 }
             }
-            if (hasProdRoots && hasTestRoots && !config.allowMixedSourceRoots(workspace, module)) {
+            if (hasProdRoots && hasTestRoots) {
                 logger.error(
                         "Module %s has both production and test source roots. Please move the test"
                                 + " roots to a separate test module. (b/565759009)",

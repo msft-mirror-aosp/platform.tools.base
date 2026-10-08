@@ -19,6 +19,7 @@ import com.android.SdkConstants.WATCH_FACE_FORMAT_VERSION_PROPERTY
 import com.android.tools.lint.checks.WatchFaceFormatUtils.hasDeclarativeWatchFaceFile
 import com.android.tools.lint.checks.WatchFaceFormatUtils.hasWatchFaceFormatVersionProperty
 import com.android.tools.lint.checks.infrastructure.TestLintClient
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Project
 import com.android.utils.XmlUtils
 import com.google.common.truth.Truth.assertThat
@@ -26,6 +27,8 @@ import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class WatchFaceFormatUtilsTest {
 
@@ -87,7 +90,102 @@ class WatchFaceFormatUtilsTest {
         </WatchFace>
       """
     )
+    WatchFaceFormatUtils.clearCache(project)
 
     assertThat(hasDeclarativeWatchFaceFile(project)).isTrue()
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
+  }
+
+  @Test
+  fun `test hasDeclarativeWatchFaceFile ignores non-xml and binary files`() {
+    val projectFolder = temporaryFolder.newFolder("non_xml_project")
+    val project = Project.create(TestLintClient(), projectFolder, projectFolder)
+
+    val rawFolder = File(projectFolder, "res/raw")
+    rawFolder.mkdirs()
+
+    val binaryFile = File(rawFolder, "sound.mp3")
+    binaryFile.writeBytes(byteArrayOf(0x00, 0x01, 0x02, 0xFF.toByte()))
+
+    val txtFile = File(rawFolder, "watchface.txt")
+    txtFile.writeText("<WatchFace></WatchFace>")
+
+    val subDir = File(rawFolder, "subfolder")
+    subDir.mkdirs()
+
+    assertThat(hasDeclarativeWatchFaceFile(project)).isFalse()
+
+    val validXml = File(rawFolder, "watch_face.xml")
+    validXml.writeText(
+      // language=XML
+      """
+        <WatchFace>
+        </WatchFace>
+      """
+    )
+    WatchFaceFormatUtils.clearCache(project)
+
+    assertThat(hasDeclarativeWatchFaceFile(project)).isTrue()
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
+  }
+
+  @Test
+  fun `test hasWatchFaceFormatVersionProperty with Project`() {
+    val projectFolder = temporaryFolder.newFolder("manifest_project")
+    val project = Project.create(TestLintClient(), projectFolder, projectFolder)
+
+    val manifestFile = File(projectFolder, "AndroidManifest.xml")
+    manifestFile.writeText(
+      // language=XML
+      """
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
+        <application>
+          <property android:name='$WATCH_FACE_FORMAT_VERSION_PROPERTY' android:value='1' />
+        </application>
+      </manifest>
+      """
+    )
+    assertThat(hasWatchFaceFormatVersionProperty(project)).isTrue()
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
+  }
+
+  @Test
+  fun `test isWatchFaceFormatProject caching`() {
+    val projectFolder = temporaryFolder.newFolder("cached_project")
+    val project = Project.create(TestLintClient(), projectFolder, projectFolder)
+
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isFalse()
+    // Explicitly override cached value to verify caching
+    project.putClientProperty(WatchFaceFormatUtils.KEY_IS_WFF_PROJECT, true)
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(project)).isTrue()
+  }
+
+  @Test
+  fun `test isWatchFaceFormatProject with Context`() {
+    val projectFolder = temporaryFolder.newFolder("context_project")
+    val project = Project.create(TestLintClient(), projectFolder, projectFolder)
+    val mainFolder = temporaryFolder.newFolder("context_main_project")
+    val mainProject = Project.create(TestLintClient(), mainFolder, mainFolder)
+
+    val context = mock<Context>()
+    whenever(context.project).thenReturn(project)
+    whenever(context.mainProject).thenReturn(mainProject)
+
+    // Neither is WFF
+    whenever(context.isGlobalAnalysis()).thenReturn(false)
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(context)).isFalse()
+
+    // project is WFF
+    project.putClientProperty(WatchFaceFormatUtils.KEY_IS_WFF_PROJECT, true)
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(context)).isTrue()
+
+    // project is not WFF, mainProject is WFF, but not global analysis
+    project.putClientProperty(WatchFaceFormatUtils.KEY_IS_WFF_PROJECT, false)
+    mainProject.putClientProperty(WatchFaceFormatUtils.KEY_IS_WFF_PROJECT, true)
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(context)).isFalse()
+
+    // project is not WFF, mainProject is WFF, and global analysis is true
+    whenever(context.isGlobalAnalysis()).thenReturn(true)
+    assertThat(WatchFaceFormatUtils.isWatchFaceFormatProject(context)).isTrue()
   }
 }

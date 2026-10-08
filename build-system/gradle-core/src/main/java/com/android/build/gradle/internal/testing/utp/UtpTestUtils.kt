@@ -19,6 +19,8 @@ package com.android.build.gradle.internal.testing.utp
 import com.android.Version.ANDROID_TOOLS_BASE_VERSION
 import com.android.build.api.instrumentation.StaticTestData
 import com.android.build.gradle.internal.SdkComponentsBuildService
+import com.android.build.gradle.internal.testing.INSTRUMENTATION_ARGS_KEY
+import com.android.build.gradle.internal.testing.formatInstrumentationArgs
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -94,7 +96,7 @@ fun runUtpTestSuiteAndWait(
       firstConfig.testData.get().testedApplicationId?.let { fork.systemProperty("com.android.junit.engine.tested.application.id", it) }
       val instArgs = firstConfig.testData.get().instrumentationRunnerArguments
       if (instArgs.isNotEmpty()) {
-        fork.systemProperty("android-test.instrumentation-args", instArgs.map { "${it.key}=${it.value}" }.joinToString(","))
+        fork.systemProperty(INSTRUMENTATION_ARGS_KEY, formatInstrumentationArgs(instArgs))
       }
       val useTestStorageService = instArgs["useTestStorageService"]?.toBoolean() ?: false
       fork.systemProperty("android-test.use-test-storage-service", useTestStorageService.toString())
@@ -262,7 +264,6 @@ fun maybeCreateUtpConfigurations(configurations: ConfigurationContainer, depende
   UtpDependency.entries.forEach { utpDependency ->
     if (!configurations.names.contains(utpDependency.configurationName)) {
       configurations.register(utpDependency.configurationName) {
-        it.isVisible = false
         it.isTransitive = true
         it.isCanBeConsumed = false
         it.description = "A configuration to resolve the Unified Test Platform dependencies."

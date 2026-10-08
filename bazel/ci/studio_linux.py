@@ -134,10 +134,13 @@ _ARTIFACTS = [
     ('tools/base/apkparser/analyzer/libtools.analyzer.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
     ('tools/vendor/google/android-cli/android-cli.zip', 'artifacts'),
+    ('tools/vendor/google/android-cli/android-cli-linux-arm64.zip', 'artifacts'),
     ('tools/vendor/google/android-cli/android-cli-docs.zip', 'artifacts'),
     ('tools/vendor/google/android-cli/create/dist/templates-sdk-package.zip', 'artifacts'),
     ('tools/vendor/google/android-cli/dist/deb/android-cli.deb.zip', 'artifacts'),
+    ('tools/vendor/google/android-cli/dist/deb/android-cli-linux-arm64.deb.zip', 'artifacts'),
     ('tools/vendor/google/android-cli/dist/deb/android-cli.deb', 'artifacts'),
+    ('tools/vendor/google/android-cli/dist/deb/android-cli-linux-arm64.deb', 'artifacts'),
     ('tools/vendor/google/lume/dist/lightbuild.zip', 'artifacts'),
     ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', 'artifacts'),
 

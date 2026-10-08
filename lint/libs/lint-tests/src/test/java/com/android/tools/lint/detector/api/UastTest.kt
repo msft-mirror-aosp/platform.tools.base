@@ -2745,6 +2745,30 @@ class UastTest : TestCase() {
     }
   }
 
+  fun testAbstractMapAsSuper() {
+    val source =
+      kotlin(
+          """
+          abstract class Awd : AbstractMap<String, String>()
+          """
+        )
+        .indented()
+    var i = 0
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitClass(node: UClass): Boolean {
+            assertEquals(1, node.javaPsi.supers.size)
+            assertEquals("kotlin.collections.AbstractMap", node.javaPsi.supers[0].qualifiedName)
+            ++i
+            return super.visitClass(node)
+          }
+        }
+      )
+    }
+    assertTrue(i > 0)
+  }
+
   fun testCommentOnDataClass() {
     val source =
       kotlin(

@@ -34,6 +34,11 @@ class NewDslApiCompatibilityTest {
   val rule = GradleRule.from {
     buildFileType = BuildFileType.KTS
 
+    // buildSrc and its kotlin-stdlib are compiled with KOTLIN_VERSION_FOR_TESTS, whose metadata can
+    // be too new for the Kotlin version embedded in Gradle; skip the check so build scripts can use
+    // them.
+    gradleProperties { add("org.gradle.kotlin.dsl.skipMetadataVersionCheck", "true") }
+
     rootProject {
       files {
         val localRepos = GradleTestProject.localRepositories

@@ -119,6 +119,47 @@ class WearableConfigurationActionDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testWatchFaceFormatAppClean() {
+    lint()
+      .files(
+        GRADLE_WATCHFACE_DEPENDENCY,
+        manifest(
+            """
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="androidx.wear.watchface.samples.minimal.complications">
+                  <intent-filter>
+                    <action android:name="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
+                    <!-- NO CATEGORY -->
+                    <category android:name="android.intent.category.DEFAULT" />
+                  </intent-filter>
+
+                    <service
+                        android:name=".WatchFaceService"
+                        android:directBootAware="true"
+                        android:exported="true"
+                        android:label="@string/app_name"
+                        android:permission="android.permission.BIND_WALLPAPER">
+
+                      <intent-filter>
+                        <action android:name="android.service.wallpaper.WallpaperService" />
+                        <category android:name="com.google.android.wearable.watchface.category.WATCH_FACE" />
+                      </intent-filter>
+
+                      <meta-data
+                          android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
+                          android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
+
+                    </service>
+                </manifest>
+                """
+          )
+          .indented(),
+        xml("src/main/res/raw/watchface.xml", "<WatchFace width=\"450\" height=\"450\" />"),
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testMetaDataMissing() {
     lint()
       .files(

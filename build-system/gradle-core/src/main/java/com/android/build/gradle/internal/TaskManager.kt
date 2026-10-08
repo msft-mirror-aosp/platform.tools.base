@@ -95,6 +95,7 @@ import com.android.build.gradle.internal.tasks.DexFileDependenciesTask
 import com.android.build.gradle.internal.tasks.DexMergingAction
 import com.android.build.gradle.internal.tasks.DexMergingTask
 import com.android.build.gradle.internal.tasks.ExpandArtProfileWildcardsTask
+import com.android.build.gradle.internal.tasks.ExtractJavaResTask
 import com.android.build.gradle.internal.tasks.ExtractProguardFiles
 import com.android.build.gradle.internal.tasks.FeatureDexMergeTask
 import com.android.build.gradle.internal.tasks.FeatureGlobalSyntheticsMergeTask
@@ -774,6 +775,10 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
     if (creationConfig.services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
       taskFactory.register(CompressJavaResTask.CreationAction(taskConfig))
+      // Restrict registering ExtractJavaResTask to HostTests to encourage use of the compressed artifact.
+      if (creationConfig is HostTestCreationConfig) {
+        taskFactory.register(ExtractJavaResTask.CreationAction(creationConfig))
+      }
     } else {
       taskFactory.register(ProcessJavaResTask.CreationAction(taskConfig))
     }
@@ -2094,7 +2099,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     private fun createCoreLibraryDesugaringConfig(project: Project) {
       if (!project.configurations.names.contains(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING)) {
         project.configurations.register(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING) {
-          it.isVisible = false
           it.isCanBeConsumed = false
           it.description = "Configuration to desugar libraries"
         }

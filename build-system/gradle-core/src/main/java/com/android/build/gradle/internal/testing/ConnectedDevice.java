@@ -28,7 +28,7 @@ import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
-import com.android.ide.common.util.DeviceUtils;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.ILogger;
 
@@ -40,7 +40,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,6 +48,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Local device connected to with ddmlib. This is a wrapper around {@link IDevice}.
@@ -327,7 +327,28 @@ public class ConnectedDevice extends DeviceConnector {
             return null;
         }
 
-        return DeviceUtils.getLanguages(iDevice, Duration.ofMillis(mTimeUnit.toMillis(mTimeout)));
+        List<String> output = new ArrayList<>();
+        MultiLineReceiver receiver =
+                new MultiLineReceiver() {
+                    @Override
+                    public void processNewLines(@NonNull String[] lines) {
+                        output.addAll(Arrays.asList(lines));
+                    }
+
+                    @Override
+                    public boolean isCancelled() {
+                        return false;
+                    }
+                };
+        executeShellCommand("am get-config", receiver, mTimeout, mTimeUnit);
+        return output.stream()
+                .filter(line -> line.trim().startsWith("config:"))
+                .flatMap(
+                        line ->
+                                FolderConfiguration.getLanguageConfigFromQualifiers(
+                                        line.substring("config:".length()).trim())
+                                        .stream())
+                .collect(Collectors.toSet());
     }
 
     @Override
