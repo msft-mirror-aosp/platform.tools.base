@@ -962,6 +962,8 @@ com/android/tools/emulator/proto
   com/
   com/android/
   com/android/emulation/
+  com/android/emulation/control/
+  com/android/emulation/control/incubating/
   com/android/emulation/remote/
   com/android/emulation/stats/
   com/android/emulator/
@@ -977,6 +979,7 @@ com/android/tools/emulator/proto
   emulator_stats.proto
   grpc_endpoint_description.proto
   ice_config.proto
+  modem_service.proto
   rtc_service_v2.proto
   snapshot.proto
   snapshot_service.proto
