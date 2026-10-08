@@ -28,6 +28,8 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.coverage.JacocoConfigurations;
 import com.android.build.gradle.options.BooleanOption;
+import com.android.build.gradle.options.StringOption;
+import com.android.testutils.MavenRepoGenerator;
 import com.android.testutils.TestInputsGenerator;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
@@ -70,6 +72,7 @@ public class JacocoTest {
         this.project = GradleTestProject.builder()
                 .fromTestApp(TEST_APP)
                 .addGradleProperty(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .withAdditionalMavenRepo(fakeAgentRepo())
                 .create();
     }
 
@@ -83,6 +86,35 @@ public class JacocoTest {
 
     private static final GradleProject TEST_APP =
             HelloWorldApp.forPlugin("com.android.application");
+
+    private static final String AGENT_COORDINATE_PREFIX = "com.android.tools.test:coverage-agent:";
+    private static final String AGENT_ATTACHER_CLASS =
+            "Lcom/android/tools/coverage/CoverageAgentAttacher;";
+
+    // A fake release of the on-device coverage agent, newer than any real AGP version, that exists
+    // only in the test project's additional Maven repository. It contains a marker class instead
+    // of the real attacher, so the content of an androidTest APK built against it tells which
+    // release was used.
+    private static final String NEWER_FAKE_AGENT_VERSION = "99.0.0";
+    private static final String FAKE_AGENT_MARKER_CLASS_NAME =
+            "com/android/tools/coverage/FakeCoverageAgentMarker";
+    private static final String FAKE_AGENT_MARKER_CLASS_TYPE =
+            "L" + FAKE_AGENT_MARKER_CLASS_NAME + ";";
+
+    private static MavenRepoGenerator fakeAgentRepo() {
+        try {
+            byte[] fakeAgentJar =
+                    TestInputsGenerator.jarWithEmptyClasses(
+                            Collections.singleton(FAKE_AGENT_MARKER_CLASS_NAME));
+            return new MavenRepoGenerator(
+                    Collections.singletonList(
+                            new MavenRepoGenerator.Library(
+                                    AGENT_COORDINATE_PREFIX + NEWER_FAKE_AGENT_VERSION,
+                                    fakeAgentJar)));
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not generate the fake coverage agent jar", e);
+        }
+    }
 
     private File getCoverageDir() {
         return runWithBuiltInPlatform
@@ -523,6 +555,87 @@ public void testLegacyFailsIfNoLegacyFilesFoundEvenWithPb() throws Exception {
             assertThat(androidTestApk)
                     .containsClass("Lcom/android/tools/coverage/CoverageAgentAttacher;");
             assertThat(androidTestApk).contains("lib/x86_64/coverage_agent.so");
+        }
+    }
+
+    @Test
+    public void onTheFlyAgentVersionCanBeOverriddenWithAGradleProperty() throws Exception {
+        String staleCoordinate = AGENT_COORDINATE_PREFIX + "0.1.0-alpha01";
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "\ndependencies {\n"
+                        + "    androidTestImplementation '"
+                        + staleCoordinate
+                        + "'\n"
+                        + "}\n");
+
+        // A project can pin the agent to another release than the one bundled with its AGP
+        // version, e.g. to pick up an agent fix without upgrading the plugin. The override, not
+        // the AGP version, is then what both androidTest classpaths resolve, and the force follows
+        // it: the stale version declared by the build author is substituted with the override...
+        for (String configuration :
+                Arrays.asList(
+                        "debugAndroidTestCompileClasspath", "debugAndroidTestRuntimeClasspath")) {
+            String agentReport = agentDependencyReport(configuration, NEWER_FAKE_AGENT_VERSION);
+            assertThat(agentReport)
+                    .named(configuration)
+                    .contains(staleCoordinate + " -> " + NEWER_FAKE_AGENT_VERSION);
+            assertAgentResolvedTo(agentReport, configuration, NEWER_FAKE_AGENT_VERSION);
+        }
+
+        // ... and what gets packaged into the androidTest APK: the fake release only has the
+        // marker class, the real one only has the attacher.
+        project.executor()
+                .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                .with(StringOption.COVERAGE_AGENT_VERSION_OVERRIDE, NEWER_FAKE_AGENT_VERSION)
+                .run("assembleDebugAndroidTest");
+        try (Apk androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)) {
+            assertThat(androidTestApk).containsClass(FAKE_AGENT_MARKER_CLASS_TYPE);
+            assertThat(androidTestApk).doesNotContainClass(AGENT_ATTACHER_CLASS);
+        }
+    }
+
+    /**
+     * Runs the dependency report of the given configuration with on-the-fly coverage enabled and
+     * the agent version overridden, and returns the lines of the report that mention the agent.
+     */
+    private String agentDependencyReport(String configuration, String agentVersionOverride)
+            throws Exception {
+        GradleBuildResult result =
+                project.executor()
+                        .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                        .with(StringOption.COVERAGE_AGENT_VERSION_OVERRIDE, agentVersionOverride)
+                        .run(":dependencies", "--configuration", configuration);
+        StringBuilder agentLines = new StringBuilder();
+        try (Scanner scanner = result.getStdout()) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.contains(AGENT_COORDINATE_PREFIX)) {
+                    agentLines.append(line).append('\n');
+                }
+            }
+        }
+        assertThat(agentLines.toString()).named("coverage agent on " + configuration).isNotEmpty();
+        return agentLines.toString();
+    }
+
+    /**
+     * Asserts that every agent line of a dependency report resolves to the given version, whether
+     * the agent is requested directly ("group:name:version") or substituted ("group:name:requested
+     * -> resolved").
+     */
+    private static void assertAgentResolvedTo(
+            String agentReport, String configuration, String version) {
+        for (String line : agentReport.split("\n")) {
+            String resolved =
+                    line.contains(" -> ")
+                            ? line.substring(line.indexOf(" -> ") + 4)
+                            : line.substring(
+                                    line.indexOf(AGENT_COORDINATE_PREFIX)
+                                            + AGENT_COORDINATE_PREFIX.length());
+            assertThat(resolved.trim().split(" ")[0])
+                    .named(configuration + ": " + line)
+                    .isEqualTo(version);
         }
     }
 

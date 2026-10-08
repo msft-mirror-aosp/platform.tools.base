@@ -49,6 +49,7 @@ import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.coverage.CoverageAgentConfigurations
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoPropertiesTask
 import com.android.build.gradle.internal.coverage.JacocoReportTask
@@ -1581,16 +1582,28 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     }
   }
 
+  /**
+   * Maven coordinate of the on-device coverage agent for this project, computed (and its version validated) once: the agent version is the
+   * AGP version unless pinned with [StringOption.COVERAGE_AGENT_VERSION_OVERRIDE].
+   */
+  private val onTheFlyCoverageAgentDependency: String by lazy {
+    CoverageAgentConfigurations.getAgentRuntimeDependency(
+      globalConfig.services.projectOptions.get(StringOption.COVERAGE_AGENT_VERSION_OVERRIDE),
+      globalConfig.services.issueReporter,
+    )
+  }
+
   private fun handleOnTheFlyCoverageDependencies(creationConfig: ComponentCreationConfig) {
     val onTheFlyEnabled = globalConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
     if (onTheFlyEnabled && creationConfig.componentType.isForTesting && creationConfig.componentType.isApk) {
-      val coverageAgentDependency = com.android.build.gradle.internal.coverage.CoverageAgentConfigurations.getAgentRuntimeDependency()
+      val coverageAgentDependency = onTheFlyCoverageAgentDependency
       project.dependencies.add(creationConfig.variantDependencies.runtimeClasspath.name, coverageAgentDependency)
 
-      // The agent is released in lockstep with AGP, so force its version on the test component's
-      // classpaths: a different version declared by the build author (or pulled in transitively)
-      // must not win conflict resolution on the runtime classpath, nor leave the compile classpath
-      // on another version. Forcing is a no-op where the module is not present.
+      // The agent version is the AGP version (or the release pinned via the
+      // StringOption.COVERAGE_AGENT_VERSION_OVERRIDE gradle property), so force it on the test
+      // component's classpaths: a different version declared by the build author (or pulled in
+      // transitively) must not win conflict resolution on the runtime classpath, nor leave the
+      // compile classpath on another version. Forcing is a no-op where the module is not present.
       listOf(creationConfig.variantDependencies.compileClasspath, creationConfig.variantDependencies.runtimeClasspath).forEach {
         it.resolutionStrategy { r: ResolutionStrategy -> r.force(coverageAgentDependency) }
       }
