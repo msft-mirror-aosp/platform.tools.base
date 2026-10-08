@@ -8,7 +8,7 @@ import re
 import sys
 
 def _read_file(path):
-  with open(path, "r") as f:
+  with open(path, "r", encoding="utf-8") as f:
     return f.read()
 
 
@@ -41,7 +41,7 @@ def _expand_template(template, out, replace):
       ret += content[i:]
       i = n
 
-  with open(out, "w") as f:
+  with open(out, "w", encoding="utf-8") as f:
     f.write(ret)
 
 
