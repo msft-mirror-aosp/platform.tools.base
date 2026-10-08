@@ -1097,12 +1097,23 @@ class AdblibIDeviceWrapperTest {
     // Assert
     assertFalse(adblibIDeviceWrapper.isRoot)
 
-    // Act
-    adblibIDeviceWrapper.root()
+    // Act: Calling root on an unrooted device restarts adbd as root, which disconnects the
+    // existing device instance and reconnects a new ONLINE device instance running as root.
+    val isRootAfterRootCall = adblibIDeviceWrapper.root()
     val connectedDeviceAfterRestart = waitForConnectedDevice(hostServices.session, "device1", DeviceState.DeviceStatus.ONLINE)
     val adblibIDeviceWrapperAfterRestart = createAdblibIDeviceWrapper(connectedDeviceAfterRestart, bridge)
 
     // Assert
+    assertTrue(isRootAfterRootCall)
+    assertEquals(IDevice.DeviceState.DISCONNECTED, adblibIDeviceWrapper.state)
+    assertTrue(adblibIDeviceWrapperAfterRestart.isRoot)
+
+    // Act: Calling root on an already rooted device does not disconnect it
+    val isRootAfterSecondRootCall = adblibIDeviceWrapperAfterRestart.root()
+
+    // Assert
+    assertTrue(isRootAfterSecondRootCall)
+    assertEquals(IDevice.DeviceState.ONLINE, adblibIDeviceWrapperAfterRestart.state)
     assertTrue(adblibIDeviceWrapperAfterRestart.isRoot)
   }
 
