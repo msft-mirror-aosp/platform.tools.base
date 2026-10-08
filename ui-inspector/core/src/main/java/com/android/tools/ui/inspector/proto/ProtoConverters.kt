@@ -243,16 +243,23 @@ private fun doConvertComposeNode(
   )
 }
 
-/** Helper to map Composable proto parameters to framework-agnostic domain ComposeParameters. */
+/**
+ * Helper to map Composable proto parameters to framework-agnostic domain ComposeParameters.
+ *
+ * The compose inspector marks every List, Set, Map, Array and other iterable as [LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE],
+ * names its elements by index ("[0]", "[1]", …, or "[key]" for a Map entry) and omits null elements. An iterable without elements is either
+ * empty, or was not expanded because the agent reached its recursion limit: only the latter carries a reference for fetching the elements
+ * later, and it keeps its summary value (e.g. "List[7]") instead of being presented as an empty collection.
+ */
 private fun convertParameterToComposeParameter(
   param: LayoutInspectorComposeProtocol.Parameter,
   stringTable: Map<Int, String>,
 ): UiNode.ComposeParameter {
   val name = stringTable[param.name] ?: "unknown"
-  return if (param.elementsCount > 0) {
-    val allAnonymous = param.elementsList.all { it.name == 0 }
+  val isCollection = param.type == LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE
+  return if (param.elementsCount > 0 || (isCollection && !param.hasReference())) {
     val elements = param.elementsList.map { convertParameterToComposeParameter(it, stringTable) }
-    UiNode.ComposeParameter.Group(name, elements, allAnonymous)
+    UiNode.ComposeParameter.Group(name, elements, isCollection)
   } else {
     UiNode.ComposeParameter.Single(name, getParameterValue(param, stringTable))
   }

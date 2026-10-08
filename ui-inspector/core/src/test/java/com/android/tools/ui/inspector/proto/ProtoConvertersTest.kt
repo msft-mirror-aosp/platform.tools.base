@@ -38,6 +38,8 @@ import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.Type.STRING
 import org.junit.Test
 
 class ProtoConvertersTest {
@@ -174,86 +176,97 @@ class ProtoConvertersTest {
   }
 
   @Test
-  fun testConvertComposeNode_CollectionsAndGroups() {
-    val stringTable = mapOf(1 to "MyComponent", 2 to "listParam", 3 to "item1", 4 to "item2", 5 to "mapParam", 6 to "key1", 7 to "val1")
+  fun testConvertComposeNode_iterableIsCollection() {
+    // The compose inspector types every iterable as ITERABLE and names its elements by index; null elements are omitted.
+    val list =
+      parameter(1, ITERABLE, value = 2) // "List[3]"
+        .addElements(parameter(3, STRING, value = 4)) // [0]=item0
+        .addElements(parameter(5, STRING, value = 6).setIndex(2)) // [2]=item2
+    val strings = mapOf(1 to "listParam", 2 to "List[3]", 3 to "[0]", 4 to "item0", 5 to "[2]", 6 to "item2")
 
-    val composableNode =
-      LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
-        .setId(100)
-        .setName(1) // MyComponent
-        .build()
+    val pList = convertSingleParameter(list, strings) as UiNode.ComposeParameter.Group
 
-    val allParams =
-      LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
-        .addParameterGroups(
-          LayoutInspectorComposeProtocol.ParameterGroup.newBuilder()
-            .setComposableId(100)
-            .addParameter(
-              LayoutInspectorComposeProtocol.Parameter.newBuilder()
-                .setName(2) // listParam
-                .addElements(
-                  LayoutInspectorComposeProtocol.Parameter.newBuilder()
-                    .setName(0) // anonymous
-                    .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
-                    .setInt32Value(3) // "item1"
-                )
-                .addElements(
-                  LayoutInspectorComposeProtocol.Parameter.newBuilder()
-                    .setName(0) // anonymous
-                    .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
-                    .setInt32Value(4) // "item2"
-                )
-            )
-            .addParameter(
-              LayoutInspectorComposeProtocol.Parameter.newBuilder()
-                .setName(5) // mapParam
-                .addElements(
-                  LayoutInspectorComposeProtocol.Parameter.newBuilder()
-                    .setName(6) // key1
-                    .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
-                    .setInt32Value(7) // "val1"
-                )
-            )
-        )
-        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(2).setStr("listParam"))
-        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(3).setStr("item1"))
-        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(4).setStr("item2"))
-        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(5).setStr("mapParam"))
-        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(6).setStr("key1"))
-        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(7).setStr("val1"))
-        .build()
-
-    val composeNode =
-      convertComposeNode(
-        node = composableNode,
-        stringTable = stringTable,
-        hostedViews = emptyMap(),
-        renderOffsetX = 0,
-        renderOffsetY = 0,
-        parameters = allParams,
-        includeParameters = true,
-        includeSemantics = true,
-      )
-
-    assertThat(composeNode.parameters).hasSize(2)
-
-    // 1. Collection List
-    val pList = composeNode.parameters[0] as UiNode.ComposeParameter.Group
     assertThat(pList.name).isEqualTo("listParam")
     assertThat(pList.isCollection).isTrue()
-    // Anonymous elements carry name ID 0, which the string table does not resolve.
     assertThat(pList.elements)
       .containsExactly(
-        UiNode.ComposeParameter.Single("unknown", UiNode.ComposeParameter.Value.StringVal("item1")),
-        UiNode.ComposeParameter.Single("unknown", UiNode.ComposeParameter.Value.StringVal("item2")),
+        UiNode.ComposeParameter.Single("[0]", UiNode.ComposeParameter.Value.StringVal("item0")),
+        UiNode.ComposeParameter.Single("[2]", UiNode.ComposeParameter.Value.StringVal("item2")),
       )
       .inOrder()
+  }
 
-    // 2. Map object
-    val pMap = composeNode.parameters[1] as UiNode.ComposeParameter.Group
-    assertThat(pMap.name).isEqualTo("mapParam")
-    assertThat(pMap.isCollection).isFalse()
-    assertThat(pMap.elements).containsExactly(UiNode.ComposeParameter.Single("key1", UiNode.ComposeParameter.Value.StringVal("val1")))
+  @Test
+  fun testConvertComposeNode_emptyIterableIsEmptyCollection() {
+    // An empty iterable has no elements and no reference: there is nothing more to fetch.
+    val empty = parameter(1, ITERABLE, value = 2)
+    val strings = mapOf(1 to "emptyParam", 2 to "List[0]")
+
+    assertThat(convertSingleParameter(empty, strings))
+      .isEqualTo(UiNode.ComposeParameter.Group("emptyParam", elements = emptyList(), isCollection = true))
+  }
+
+  @Test
+  fun testConvertComposeNode_unexpandedIterableKeepsSummary() {
+    // At the recursion limit the agent sends a non-empty iterable without elements, with a reference for fetching them later.
+    val unexpanded =
+      parameter(1, ITERABLE, value = 2).setReference(LayoutInspectorComposeProtocol.ParameterReference.newBuilder().setComposableId(100))
+    val strings = mapOf(1 to "deepList", 2 to "List[7]")
+
+    assertThat(convertSingleParameter(unexpanded, strings))
+      .isEqualTo(UiNode.ComposeParameter.Single("deepList", UiNode.ComposeParameter.Value.StringVal("List[7]")))
+  }
+
+  @Test
+  fun testConvertComposeNode_mapIsCollectionOfEntries() {
+    // A Map is an ITERABLE whose elements are its entries, each named "[key]" and holding a key and a value.
+    val entry =
+      parameter(3, STRING, value = 4) // [k1]=v1
+        .addElements(parameter(5, STRING, value = 6)) // key=k1
+        .addElements(parameter(7, STRING, value = 4).setIndex(1)) // value=v1
+    val map = parameter(1, ITERABLE, value = 2).addElements(entry)
+    val strings = mapOf(1 to "mapParam", 2 to "Map[1]", 3 to "[k1]", 4 to "v1", 5 to "key", 6 to "k1", 7 to "value")
+
+    val pMap = convertSingleParameter(map, strings) as UiNode.ComposeParameter.Group
+
+    assertThat(pMap.isCollection).isTrue()
+    assertThat(pMap.elements)
+      .containsExactly(
+        UiNode.ComposeParameter.Group(
+          "[k1]",
+          listOf(
+            UiNode.ComposeParameter.Single("key", UiNode.ComposeParameter.Value.StringVal("k1")),
+            UiNode.ComposeParameter.Single("value", UiNode.ComposeParameter.Value.StringVal("v1")),
+          ),
+          isCollection = false,
+        )
+      )
+  }
+
+  @Test
+  fun testConvertComposeNode_objectIsNotCollection() {
+    // Objects (e.g. TextStyle, Offset) are typed by their own value and name their elements after their properties.
+    val offset =
+      parameter(1, STRING, value = 2)
+        .addElements(parameter(3, LayoutInspectorComposeProtocol.Parameter.Type.DIMENSION_DP).setFloatValue(1f))
+        .addElements(parameter(4, LayoutInspectorComposeProtocol.Parameter.Type.DIMENSION_DP).setFloatValue(2f).setIndex(1))
+    val strings = mapOf(1 to "offset", 2 to "Offset", 3 to "x", 4 to "y")
+
+    val pOffset = convertSingleParameter(offset, strings) as UiNode.ComposeParameter.Group
+
+    assertThat(pOffset.isCollection).isFalse()
+    assertThat(pOffset.elements.map { it.name }).containsExactly("x", "y").inOrder()
+  }
+
+  @Test
+  fun testConvertComposeNode_unexpandedObjectKeepsValue() {
+    // A non-iterable without elements stays a single value, with or without a reference.
+    val unexpanded =
+      parameter(1, STRING, value = 2).setReference(LayoutInspectorComposeProtocol.ParameterReference.newBuilder().setComposableId(100))
+    val strings = mapOf(1 to "style", 2 to "TextStyle")
+
+    assertThat(convertSingleParameter(unexpanded, strings))
+      .isEqualTo(UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal("TextStyle")))
   }
 
   @Test
@@ -628,6 +641,33 @@ class ProtoConvertersTest {
     assertThat(withoutProvenance.attributes.single().styleChain).isEmpty()
     // The attribute value itself is unaffected: provenance is the resolution-stack facet, the value is the attributes facet.
     assertThat(withoutProvenance.attributes.single().value).isEqualTo(UiNode.AttributeValue.StringVal("Hello"))
+  }
+
+  private fun parameter(name: Int, type: LayoutInspectorComposeProtocol.Parameter.Type, value: Int? = null) =
+    LayoutInspectorComposeProtocol.Parameter.newBuilder().setName(name).setType(type).apply { value?.let { setInt32Value(it) } }
+
+  /** Converts [parameter] as the only parameter of a composable, resolving names and values through [strings]. */
+  private fun convertSingleParameter(
+    parameter: LayoutInspectorComposeProtocol.Parameter.Builder,
+    strings: Map<Int, String>,
+  ): UiNode.ComposeParameter {
+    val response =
+      LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
+        .addParameterGroups(LayoutInspectorComposeProtocol.ParameterGroup.newBuilder().setComposableId(100).addParameter(parameter))
+        .addAllStrings(strings.map { (id, str) -> LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(id).setStr(str).build() })
+        .build()
+    return convertComposeNode(
+        node = LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(100).build(),
+        stringTable = emptyMap(),
+        hostedViews = emptyMap(),
+        renderOffsetX = 0,
+        renderOffsetY = 0,
+        parameters = response,
+        includeParameters = true,
+        includeSemantics = false,
+      )
+      .parameters
+      .single()
   }
 
   private fun convertBounds(bounds: LayoutInspectorComposeProtocol.Bounds?, renderOffsetX: Int = 0, renderOffsetY: Int = 0): UiNode.Bounds {
