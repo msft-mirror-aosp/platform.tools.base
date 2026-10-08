@@ -494,12 +494,13 @@ def kotlin_proto_library(
         name = java_proto_name,
         srcs = srcs,
         proto_deps = proto_deps,
-        java_deps = deps + grpc_java_deps if grpc_support else [],
+        java_deps = list(deps) + (grpc_java_deps if grpc_support else []),
         visibility = visibility,
         grpc_support = grpc_support,
         protoc_version = protoc_version,
         protoc_grpc_version = protoc_java_grpc_version,
         proto_java_runtime_library = proto_java_runtime_library,
+        strip_prefix = strip_prefix,
     )
 
     kt_srcs_name = name + "_srcs"
