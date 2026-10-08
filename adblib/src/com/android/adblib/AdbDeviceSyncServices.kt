@@ -70,8 +70,9 @@ interface AdbDeviceSyncServices : AutoShutdown {
    * Sends the contents of an [AdbInputChannel] to the [remoteFilePath] file on the remote device using the `SND2` command of the "sync v2"
    * protocol, which supports compressing the file contents on the fly (see [SendV2Options.compression]).
    *
-   * Note: Requires the [AdbFeatures.SENDRECV_V2] feature from [AdbHostServices.availableFeatures] (API 31+), or the implementation falls
-   * back to [send] if [SendV2Options.fallbackToSendV1] is `true` (the default).
+   * Note: Requires the [AdbFeatures.SENDRECV_V2] feature from [AdbHostServices.availableFeatures] (API 30+), or the implementation falls
+   * back to [send] if [SendV2Options.fallbackToSendV1] is `true` (the default). LZ4 compression requires the [AdbFeatures.SENDRECV_V2_LZ4]
+   * feature (API 31+).
    *
    * Note: The contents of symbolic links (see [RemoteFileMode.isSymbolicLink]) are never compressed, as the ADB daemon does not support it.
    *
@@ -191,7 +192,13 @@ interface AdbDeviceSyncServices : AutoShutdown {
   data class SendV2Options(
     /** The compression algorithm used to transfer the file contents to the device */
     val compression: SendV2Compression = SendV2Compression.AUTO,
-    /** Fallback to executing [AdbDeviceSyncServices.send] when [AdbDeviceSyncServices.sendV2] is not supported (older devices). */
+    /**
+     * Fallback to executing [AdbDeviceSyncServices.send] when [AdbDeviceSyncServices.sendV2] is not supported (older devices).
+     *
+     * Note: If this is `false` and the device does not support `SND2` (see [AdbFeatures.SENDRECV_V2]), the ADB daemon rejects the request
+     * and closes the sync socket without reading the file contents, so [sendV2] fails with an [AdbFailResponseException] or an
+     * [IOException] (for larger files) and the [AdbDeviceSyncServices] session is closed.
+     */
     val fallbackToSendV1: Boolean = true,
   )
 
@@ -209,8 +216,10 @@ interface AdbDeviceSyncServices : AutoShutdown {
     /**
      * Compress file contents using the [LZ4 frame format](https://github.com/lz4/lz4/blob/dev/doc/lz4_Frame_format.md).
      *
-     * Note: This value is used even if [AdbFeatures.SENDRECV_V2_LZ4] is not available (see [AdbHostServices.availableFeatures]), in which
-     * case the file transfer fails if the device does not support LZ4 compression. Use [AUTO] to select LZ4 only when it is supported.
+     * Note: This value is used even if [AdbFeatures.SENDRECV_V2_LZ4] is not available (see [AdbHostServices.availableFeatures]). If the
+     * device does not support LZ4 compression, the ADB daemon rejects the request and closes the sync socket without reading the file
+     * contents, so [sendV2] fails with an [AdbFailResponseException] or an [IOException] (for larger files) and the [AdbDeviceSyncServices]
+     * session is closed. Use [AUTO] to select LZ4 only when it is supported.
      */
     LZ4,
   }

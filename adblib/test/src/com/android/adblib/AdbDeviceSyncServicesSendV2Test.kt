@@ -219,9 +219,31 @@ class AdbDeviceSyncServicesSendV2Test {
   }
 
   @Test
+  fun testSendV2FailsWithExplicitLz4IfDeviceDoesNotSupportLz4(): Unit = runBlockingWithTimeout {
+    // Prepare: API 30 supports "sendrecv_v2", but not "sendrecv_v2_lz4"
+    val fakeDevice = addFakeDevice(fakeAdb, sdk = 30)
+    val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+    val filePath = "/sdcard/foo/bar.txt"
+    val fileBytes = createCompressibleBytes(1_000)
+
+    // Act
+    val exception = runCatching {
+      withSyncServices(deviceSelector) {
+        it.sendV2(inputChannelOf(fileBytes), filePath, fileMode, fileDate, null, options = SendV2Options(SendV2Compression.LZ4))
+      }
+    }
+      .exceptionOrNull()
+
+    // Assert
+    Assert.assertTrue("Unexpected exception: $exception", exception is AdbFailResponseException)
+    Assert.assertEquals("unknown flags: $FLAG_LZ4", (exception as AdbFailResponseException).failMessage)
+    Assert.assertNull(fakeDevice.getFile(filePath))
+  }
+
+  @Test
   fun testSendV2FallsBackToSendOnOlderDevices(): Unit = runBlockingWithTimeout {
     // Prepare
-    val fakeDevice = addFakeDevice(fakeAdb, sdk = 30)
+    val fakeDevice = addFakeDevice(fakeAdb, sdk = 29)
     val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
     val filePath = "/sdcard/foo/bar.txt"
     val fileBytes = createCompressibleBytes(200_000)
@@ -241,7 +263,7 @@ class AdbDeviceSyncServicesSendV2Test {
   @Test
   fun testSendV2FailsOnOlderDevicesIfFallbackIsDisabled(): Unit = runBlockingWithTimeout {
     // Prepare
-    val fakeDevice = addFakeDevice(fakeAdb, sdk = 30)
+    val fakeDevice = addFakeDevice(fakeAdb, sdk = 29)
     val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
     val filePath = "/sdcard/foo/bar.txt"
     val fileBytes = createCompressibleBytes(1_000)
@@ -313,6 +335,27 @@ class AdbDeviceSyncServicesSendV2Test {
   fun testSendV2RejectsInvalidBufferSize(): Unit = runBlockingWithTimeout {
     // Prepare
     val fakeDevice = addFakeDevice(fakeAdb, sdk = 31)
+    val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+    val filePath = "/sdcard/foo/bar.txt"
+    val fileBytes = createCompressibleBytes(1_000)
+
+    // Act
+    val exception = runCatching {
+      withSyncServices(deviceSelector) {
+        it.sendV2(inputChannelOf(fileBytes), filePath, fileMode, fileDate, null, bufferSize = DATA_HEADER_SIZE)
+      }
+    }
+      .exceptionOrNull()
+
+    // Assert
+    Assert.assertTrue("Unexpected exception: $exception", exception is IllegalArgumentException)
+    Assert.assertTrue(fakeDevice.syncSendRequests.isEmpty())
+  }
+
+  @Test
+  fun testSendV2RejectsInvalidBufferSizeOnOlderDevices(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeDevice(fakeAdb, sdk = 29)
     val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
     val filePath = "/sdcard/foo/bar.txt"
     val fileBytes = createCompressibleBytes(1_000)

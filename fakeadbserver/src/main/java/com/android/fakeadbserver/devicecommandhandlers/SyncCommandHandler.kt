@@ -148,9 +148,9 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
   private fun handleSendV2Protocol(device: DeviceState, socket: Socket, input: InputStream, output: OutputStream): Boolean {
     val header = readSendV2Header(input, output)
     val useLz4 =
-      when (header.flags) {
-        SEND_V2_FLAG_NONE -> false
-        SEND_V2_FLAG_LZ4 -> true
+      when {
+        header.flags == SEND_V2_FLAG_NONE -> false
+        header.flags == SEND_V2_FLAG_LZ4 && device.features.contains("sendrecv_v2_lz4") -> true
         else -> {
           // Note: The ADB daemon also supports Brotli, Zstd and "dry run", but we don't implement them.
           sendSyncFail(output, "unknown flags: ${header.flags}")

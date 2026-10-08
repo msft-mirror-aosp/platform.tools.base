@@ -594,11 +594,11 @@ internal constructor(
         features.add("abb")
         features.add("abb_exec")
         features.add("ls_v2")
+        features.add("sendrecv_v2")
       }
       if (api >= 31) {
         features.add("track_app")
-        // Note: We only list the "sync v2" features implemented by `SyncCommandHandler`
-        features.add("sendrecv_v2")
+        // Note: We only list the "sync v2" compression features implemented by `SyncCommandHandler`
         features.add("sendrecv_v2_lz4")
       }
       if (api >= 34) {

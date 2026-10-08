@@ -101,14 +101,14 @@ object AdbFeatures {
    * If the result of [AdbHostServices.features] contains this value, the [AdbDeviceSyncServices.sendV2] invocation is supported by the
    * specified device, i.e. the device supports the `SND2` and `RCV2` "sync v2" requests.
    *
-   * Note: This feature was initially implemented for API=31
+   * Note: This feature was initially implemented for API=30
    */
   const val SENDRECV_V2 = "sendrecv_v2"
 
   /**
    * If the result of [AdbHostServices.features] contains this value, the "sync v2" requests support the Brotli compression algorithm.
    *
-   * Note: This feature was initially implemented for API=31
+   * Note: This feature was initially implemented for API=30
    */
   const val SENDRECV_V2_BROTLI = "sendrecv_v2_brotli"
 
