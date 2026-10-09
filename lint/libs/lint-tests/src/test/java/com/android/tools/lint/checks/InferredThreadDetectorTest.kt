@@ -6127,6 +6127,67 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test Java method references against known interface`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            class MethodRef {
+              interface Callback {
+                @UiThread void run();
+              }
+
+              @WorkerThread static void work() { }
+
+              static Callback field;
+
+              static Callback asReturn() {
+                return MethodRef::work; // ERROR
+              }
+
+              static Callback asConditional(boolean b) {
+                return b ? MethodRef::work : null; // ERROR
+              }
+
+              static void asAssignment() {
+                field = MethodRef::work; // ERROR
+              }
+
+              static Callback asCast() {
+                return (Callback) MethodRef::work; // ERROR
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/MethodRef.java:16: Error: Call must be from @WorkerThread, but super method Callback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            return MethodRef::work; // ERROR
+                   ~~~~~~~~~~~~~~~
+        src/test/pkg/MethodRef.java:20: Error: Call must be from @WorkerThread, but super method Callback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            return b ? MethodRef::work : null; // ERROR
+                       ~~~~~~~~~~~~~~~
+        src/test/pkg/MethodRef.java:24: Error: Call must be from @WorkerThread, but super method Callback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            field = MethodRef::work; // ERROR
+                    ~~~~~~~~~~~~~~~
+        src/test/pkg/MethodRef.java:28: Error: Call must be from @WorkerThread, but super method Callback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            return (Callback) MethodRef::work; // ERROR
+                              ~~~~~~~~~~~~~~~
+        4 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testFunctionalInterfacesKotlin_indirect() {
     lint()
       .files(

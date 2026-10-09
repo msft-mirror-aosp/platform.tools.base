@@ -78,6 +78,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiEllipsisType
 import com.intellij.psi.PsiField
+import com.intellij.psi.PsiFunctionalExpression
 import com.intellij.psi.PsiIntersectionType
 import com.intellij.psi.PsiLambdaParameterType
 import com.intellij.psi.PsiLocalVariable
@@ -1436,6 +1437,8 @@ internal open class Analysis<FX : Any>(
             is ULocalVariable -> if (e.isDelegateOf(parent)) null else typeOf((parent.javaPsi as PsiVariable).type)
             else -> null
           }
+            // A Java method reference knows its target type wherever it is (e.g. returned, assigned, cast, or a conditional's branch)
+            ?: typeOf((e.sourcePsi as? PsiFunctionalExpression)?.functionalInterfaceType)
       }
 
     if (site == null) return default()
