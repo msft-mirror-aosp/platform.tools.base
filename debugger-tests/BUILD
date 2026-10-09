@@ -13,8 +13,10 @@ kotlin_library(
     srcs = glob(["src/**/*.kt"]),
     tags = tags,
     deps = [
+        "@intellij//:com.intellij.java",
         "@intellij//:intellij.java.debugger",
         "@intellij//:intellij.java.debugger.impl",
+        "@intellij//:intellij.kotlin.jvm.debugger.core",
         "@intellij//:intellij-sdk",
         "@intellij//:org.jetbrains.kotlin",
         "@maven//:org.jetbrains.kotlinx.kotlinx-cli-jvm",
@@ -87,6 +89,14 @@ kotlin_test(
     ],
     tags = tags,
     test_class = "com.android.testutils.JarTestSuite",
+    runtime_deps = [
+        # Needed by intellij.kotlin.jvm.debugger.core at runtime.
+        "@intellij//:intellij.java.debugger.impl.shared",
+        "@intellij//:intellij.kotlin.jvm.debugger.base.util",
+        "@intellij//:intellij.platform.debugger",
+        "@intellij//:intellij.platform.debugger.impl",
+        "@intellij//:intellij.platform.debugger.impl.shared",
+    ],
     deps = [
         ":debugger",
         "//tools/adt/idea/as-driver:as-driver.utils_testlib",
