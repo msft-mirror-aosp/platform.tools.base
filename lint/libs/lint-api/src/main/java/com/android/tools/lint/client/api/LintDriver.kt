@@ -2269,6 +2269,33 @@ class LintDriver(
     return XmlContext(this, project, main, file, type, contents, document)
   }
 
+  /** Resolves [file] relative to [project]'s root directory and returns its canonical file. */
+  private fun toCanonical(project: Project, file: File?): File? {
+    if (file == null) return null
+    val resolved = if (file.isAbsolute) file else File(project.dir, file.path)
+    return try {
+      resolved.canonicalFile
+    } catch (ioe: IOException) {
+      resolved.absoluteFile
+    }
+  }
+
+  /**
+   * Returns true if [canonical] points to a known resource folder in [resourceFolders], or falls back to checking if it is an existing
+   * directory named "res" when no resource folders are configured.
+   */
+  private fun isCanonicalResourceFolder(resourceFolders: Set<File>, canonical: File?): Boolean {
+    canonical ?: return false
+    return canonical in resourceFolders || (resourceFolders.isEmpty() && canonical.name == RES_FOLDER && canonical.exists())
+  }
+
+  /** Canonicalizes [dir] against [project] and checks whether it is a valid resource folder via [isCanonicalResourceFolder]. */
+  private fun isResourceFolder(project: Project, resourceFolders: Set<File>, dir: File?): Boolean {
+    if (dir == null) return false
+    val canonical = toCanonical(project, dir) ?: return false
+    return isCanonicalResourceFolder(resourceFolders, canonical)
+  }
+
   /** Checks individual resources. */
   private fun checkIndividualResources(
     project: Project,
@@ -2279,22 +2306,27 @@ class LintDriver(
     files: List<File>,
     manifestFiles: List<File>,
   ) {
+    val resourceFolders by
+      lazy(LazyThreadSafetyMode.NONE) {
+        (project.resourceFolders + project.generatedResourceFolders).mapNotNull { toCanonical(project, it) }.toSet()
+      }
+
     for (file in files) {
       if (file.isDirectory) {
         // Is it a resource folder?
         val type = ResourceFolderType.getFolderType(file.name)
-        if (type != null && File(file.parentFile, RES_FOLDER).exists()) {
+        if (type != null && isResourceFolder(project, resourceFolders, file.parentFile)) {
           // Yes.
           checkResourceFolder(project, main, file, type, xmlDetectors, dirChecks, binaryChecks)
-        } else if (file.name == RES_FOLDER) { // Is it the res folder?
+        } else if (isResourceFolder(project, resourceFolders, file)) { // Is it the res folder?
           // Yes
           checkResFolder(project, main, file, xmlDetectors, dirChecks, binaryChecks)
         }
       } else if (file.isFile && isXmlFile(file) && file.name != ANDROID_MANIFEST_XML && !manifestFiles.contains(file)) {
-        // Yes, find out its resource type
-        val folderName = file.parentFile.name
-        val type = ResourceFolderType.getFolderType(folderName)
-        if (type != null) {
+        val parent = file.parentFile ?: continue
+        val type = ResourceFolderType.getFolderType(parent.name) ?: continue
+        val canonicalTypeFolder = toCanonical(project, parent) ?: continue
+        if (isCanonicalResourceFolder(resourceFolders, canonicalTypeFolder.parentFile)) {
           val visitor = getVisitor(type, xmlDetectors, binaryChecks)
           if (visitor != null) {
             client.runReadAction(
@@ -2309,10 +2341,13 @@ class LintDriver(
           }
         }
       } else if (binaryChecks != null && file.isFile) {
-        // Yes, find out its resource type
-        val folderName = file.parentFile.name
-        val type = ResourceFolderType.getFolderType(folderName)
-        if (type != null && (isBitmapFile(file) || type == ResourceFolderType.RAW || type == ResourceFolderType.FONT)) {
+        val parent = file.parentFile ?: continue
+        val type = ResourceFolderType.getFolderType(parent.name) ?: continue
+        val canonicalTypeFolder = toCanonical(project, parent) ?: continue
+        if (
+          isCanonicalResourceFolder(resourceFolders, canonicalTypeFolder.parentFile) &&
+            (isBitmapFile(file) || type == ResourceFolderType.RAW || type == ResourceFolderType.FONT)
+        ) {
           val visitor = getVisitor(type, xmlDetectors, binaryChecks)
           if (visitor != null) {
             val context = ResourceContext(this, project, main, file, type, "")

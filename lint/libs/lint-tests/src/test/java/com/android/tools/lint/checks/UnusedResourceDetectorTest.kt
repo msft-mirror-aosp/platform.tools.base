@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.rClass
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.client.api.LintClient
+import java.io.File
 import org.intellij.lang.annotations.Language
 
 @Suppress("LintImplTrimIndent")
@@ -3623,6 +3624,131 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
         <shape xmlns:android="http://schemas.android.com/apk/res/android"
         ^
         res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        0 errors, 3 warnings
+        """
+      )
+  }
+
+  // Regression test for b/571587969
+  fun testSourceDirectoriesNotTreatedAsResourceFolders() {
+    lint()
+      .files(
+        java(
+            "src/org/chromium/chrome/browser/font/FontPreloader.java",
+            """
+          package org.chromium.chrome.browser.font;
+
+          public class FontPreloader {
+          }
+          """,
+          )
+          .indented(),
+        // A Java package named "res" next to the "font" package. Previously, the mere
+        // existence of a sibling directory named "res" made lint treat the "font"
+        // directory as a resource folder, and this directory itself as a res root.
+        java(
+            "src/org/chromium/chrome/browser/res/ResHelper.java",
+            """
+          package org.chromium.chrome.browser.res;
+
+          public class ResHelper {
+          }
+          """,
+          )
+          .indented(),
+        bytes("res/font/unused_font.ttf", byteArrayOf()),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .configureDriver { driver ->
+        for (project in driver.projectRoots) {
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/font"))
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/res"))
+          project.addFile(File(project.dir, "res/font"))
+        }
+      }
+      .run()
+      .expect(
+        """
+        res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        0 errors, 1 warnings
+        """
+      )
+  }
+
+  // Regression test for b/571587969
+  fun testSourceFilesNotTreatedAsResourcesWithSubset() {
+    lint()
+      .files(
+        java(
+            "src/org/chromium/chrome/browser/font/FontPreloader.java",
+            """
+          package org.chromium.chrome.browser.font;
+
+          public class FontPreloader {
+          }
+          """,
+          )
+          .indented(),
+        kotlin(
+            "src/org/chromium/chrome/browser/font/FontHelper.kt",
+            """
+          package org.chromium.chrome.browser.font
+
+          class FontHelper
+          """,
+          )
+          .indented(),
+        java(
+            "src/org/chromium/chrome/browser/raw/RawParser.java",
+            """
+          package org.chromium.chrome.browser.raw;
+
+          public class RawParser {
+          }
+          """,
+          )
+          .indented(),
+        xml(
+            "src/org/chromium/chrome/browser/layout/config.xml",
+            """
+          <config>
+              <entry name="foo" value="bar" />
+          </config>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/layout/unused_layout.xml",
+            """
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent" />
+          """,
+          )
+          .indented(),
+        bytes("res/font/unused_font.ttf", byteArrayOf()),
+        bytes("res/raw/unused_raw.bin", byteArrayOf()),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .configureDriver { driver ->
+        for (project in driver.projectRoots) {
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/font/FontPreloader.java"))
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/font/FontHelper.kt"))
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/raw/RawParser.java"))
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/layout/config.xml"))
+          project.addFile(File(project.dir, "res/font/unused_font.ttf"))
+          project.addFile(File(project.dir, "res/layout/unused_layout.xml"))
+          project.addFile(File(project.dir, "res/raw/unused_raw.bin"))
+        }
+      }
+      .run()
+      .expect(
+        """
+        res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        res/layout/unused_layout.xml:1: Warning: The resource R.layout.unused_layout appears to be unused [UnusedResources]
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        res/raw/unused_raw.bin: Warning: The resource R.raw.unused_raw appears to be unused [UnusedResources]
         0 errors, 3 warnings
         """
       )
