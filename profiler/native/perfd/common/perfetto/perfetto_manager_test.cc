@@ -19,6 +19,8 @@
 #include <gtest/gtest.h>
 
 #include "fake_perfetto.h"
+#include "utils/device_info.h"
+#include "utils/device_info_helper.h"
 #include "utils/fake_clock.h"
 
 using profiler::proto::TraceStartStatus;
@@ -214,5 +216,72 @@ TEST(PerfettoManagerTest, ValidateHeapprofdConfig) {
             dump_interval);
   EXPECT_TRUE(heap_config.all_heaps());
   EXPECT_TRUE(heap_config.block_client());
+}
+
+namespace {
+perfetto::protos::TraceConfig BuildConfigWithDataSource(const char* name) {
+  perfetto::protos::TraceConfig config;
+  config.add_data_sources()->mutable_config()->set_name(name);
+  return config;
+}
+
+// Records |data_source| on a device at |feature_level|, and returns whether
+// the stop waited for the trace file.
+bool StopWaitsForTraceFile(int feature_level, const char* data_source) {
+  DeviceInfoHelper::SetDeviceInfo(feature_level);
+  std::shared_ptr<FakePerfetto> perfetto(new FakePerfetto());
+  PerfettoManager manager{perfetto};
+  string trace_path;
+  int64_t error_code = 0;
+  EXPECT_TRUE(manager.StartProfiling("App Name", "armv8",
+                                     BuildConfigWithDataSource(data_source),
+                                     trace_path, &error_code));
+  EXPECT_EQ(manager.StopProfiling(&error_code), TraceStopStatus::SUCCESS);
+  return perfetto->WaitedForTraceFile();
+}
+}  // namespace
+
+TEST(PerfettoManagerTest, WaitsForHeapGraphBeforeStoppingOnAndroid11) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::R);
+  std::shared_ptr<FakePerfetto> perfetto(new FakePerfetto());
+  PerfettoManager manager{perfetto};
+  string trace_path;
+  int64_t error_code = 0;
+  EXPECT_TRUE(manager.StartProfiling(
+      "App Name", "armv8", BuildConfigWithDataSource("android.java_hprof"),
+      trace_path, &error_code));
+  EXPECT_EQ(manager.StopProfiling(&error_code), TraceStopStatus::SUCCESS);
+  // Stopping ends the session, so the wait has to happen before it.
+  EXPECT_TRUE(perfetto->WaitedForTraceFile());
+  EXPECT_TRUE(perfetto->PerfettoRunningWhenWaited());
+}
+
+TEST(PerfettoManagerTest, DoesNotWaitForHeapGraphFromAndroid12) {
+  // From Android 12, traced itself waits for the heap graph.
+  EXPECT_FALSE(StopWaitsForTraceFile(DeviceInfo::R + 1, "android.java_hprof"));
+}
+
+TEST(PerfettoManagerTest, DoesNotWaitForHeapGraphOnAndroid10) {
+  EXPECT_FALSE(StopWaitsForTraceFile(DeviceInfo::Q, "android.java_hprof"));
+}
+
+TEST(PerfettoManagerTest, DoesNotWaitForOtherRecordingsOnAndroid11) {
+  // Such as Native Allocations.
+  EXPECT_FALSE(StopWaitsForTraceFile(DeviceInfo::R, "android.heapprofd"));
+}
+
+TEST(PerfettoManagerTest, DoesNotWaitForHeapGraphAfterFailedStart) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::R);
+  std::shared_ptr<FakePerfetto> perfetto(new FakePerfetto());
+  // Fail to launch perfetto.
+  perfetto->SetRunStateTo(false, true);
+  PerfettoManager manager{perfetto};
+  string trace_path;
+  int64_t error_code = 0;
+  EXPECT_FALSE(manager.StartProfiling(
+      "App Name", "armv8", BuildConfigWithDataSource("android.java_hprof"),
+      trace_path, &error_code));
+  manager.StopProfiling(&error_code);
+  EXPECT_FALSE(perfetto->WaitedForTraceFile());
 }
 }  // namespace profiler

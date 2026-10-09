@@ -18,6 +18,7 @@
 
 #include "perfetto.h"
 #include "proto/profiler.grpc.pb.h"
+#include "utils/device_info.h"
 #include "utils/trace.h"
 
 using profiler::proto::Device;
@@ -26,6 +27,21 @@ using profiler::proto::TraceStopStatus;
 using std::string;
 
 namespace profiler {
+
+namespace {
+// Data source that records a heap graph. Matched by name, like Studio's
+// MemoryProfiler.isJavaHeapGraphTrace.
+const char* const kJavaHeapGraphDataSource = "android.java_hprof";
+
+bool IsJavaHeapGraphConfig(const perfetto::protos::TraceConfig& config) {
+  for (const auto& source : config.data_sources()) {
+    if (source.config().name() == kJavaHeapGraphDataSource) {
+      return true;
+    }
+  }
+  return false;
+}
+}  // namespace
 
 PerfettoManager::PerfettoManager(std::shared_ptr<Perfetto> perfetto)
     : perfetto_(std::move(perfetto)) {}
@@ -58,11 +74,24 @@ bool PerfettoManager::StartProfiling(
   if ((status & Perfetto::FAILED_LAUNCH_TRACED_PROBES) != 0) {
     *error_code |= TraceStartStatus::FAILED_TO_LAUNCH_TRACED_PROBES;
   }
-  return status == Perfetto::LAUNCH_STATUS_SUCCESS;
+  bool started = status == Perfetto::LAUNCH_STATUS_SUCCESS;
+  // From Android 12, traced keeps the session open until ART has written the
+  // whole heap graph. On Android 11 the graph is cut off when the session
+  // ends, so the stop has to wait for it instead. The wait watches the trace
+  // file grow, so it relies on the config having traced write into the file
+  // periodically, as Studio's heap graph config does.
+  wait_for_heap_graph_ = started &&
+                         DeviceInfo::feature_level() == DeviceInfo::R &&
+                         IsJavaHeapGraphConfig(config);
+  return started;
 }
 
 TraceStopStatus::Status PerfettoManager::StopProfiling(int64_t* error_code) {
   Trace trace("CPU:StopProfiling perfetto");
+  if (wait_for_heap_graph_) {
+    perfetto_->WaitForTraceFileToStopGrowing();
+    wait_for_heap_graph_ = false;
+  }
   perfetto_->Stop();
   bool stop_succeeded = true;
   if (perfetto_->IsTracerRunning()) {

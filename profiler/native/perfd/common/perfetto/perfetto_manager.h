@@ -69,6 +69,8 @@ class PerfettoManager {
                               int64_t *error_code);
 
   // Stops profiling returns true if perfetto is no longer running.
+  // For a heap graph on Android 11, it first waits for the trace file to stop
+  // growing, so it can block for up to about 70 seconds.
   profiler::proto::TraceStopStatus::Status StopProfiling(int64_t *error_code);
 
   bool IsProfiling() {
@@ -80,6 +82,10 @@ class PerfettoManager {
 
  private:
   std::shared_ptr<Perfetto> perfetto_;
+
+  // True when the running trace is a heap graph on Android 11, which the
+  // stop has to wait for. See StopProfiling.
+  bool wait_for_heap_graph_ = false;
 
   // Helper function to setup common variables between various perfetto configs.
   static perfetto::protos::TraceConfig BuildCommonTraceConfig();

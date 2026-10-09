@@ -79,6 +79,13 @@ class Perfetto {
   // and traced_probes processes. Shutdown gets called when perfd dies.
   virtual void Shutdown();
 
+  // Blocks until the trace file has not grown for 1 second, giving up after
+  // 70 seconds. Polls the file size like the pre-Q heap dump wait in
+  // HeapDumpManager, because the file stays open until perfetto exits, so
+  // there is no close event to wait for. Unlike an HPROF, the trace has no end
+  // tag to confirm that it is complete.
+  virtual void WaitForTraceFileToStopGrowing();
+
  private:
   std::unique_ptr<NonBlockingCommandRunner> command_;
   std::unique_ptr<NonBlockingCommandRunner> traced_;

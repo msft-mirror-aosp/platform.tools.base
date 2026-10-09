@@ -40,6 +40,15 @@ const char *kTracedProbesExecutable = "traced_probes";
 const char *kFixedPerfettoTracePath = "/data/misc/perfetto-traces/";
 const int kRetryCount = 20;
 const int kSleepMsPerRetry = 100;
+// Stop after 1 second without growth. Studio's heap graph config
+// (PerfettoTraceConfigBuilders.getJavaHeapGraphTraceConfig) has traced write
+// into the file every 250 ms, so this allows for a few late writes.
+const int kFileGrowthRetryCount = 4;
+const int kFileGrowthSleepMsPerRetry = 250;
+// Give up after 70 seconds even if the file is still growing. The same config
+// ends the session by itself after 60 seconds on Android 11, so this is only a
+// safety net.
+const int kFileGrowthMaxRetryCount = 280;
 Perfetto::Perfetto() {}
 
 std::unique_ptr<NonBlockingCommandRunner>
@@ -202,6 +211,44 @@ void Perfetto::WaitForTracerStatus(bool expected_tracer_running) {
   for (int i = 0;
        i < kRetryCount && expected_tracer_running != IsTracerRunning(); i++) {
     usleep(Clock::ms_to_us(kSleepMsPerRetry));
+  }
+}
+
+void Perfetto::WaitForTraceFileToStopGrowing() {
+  DiskFileSystem disk;
+  int32_t start_size = disk.GetFileSize(perfetto_trace_path_);
+  int32_t last_size = start_size;
+  int unchanged_count = 0;
+  int poll_count = 0;
+  while (poll_count < kFileGrowthMaxRetryCount &&
+         unchanged_count < kFileGrowthRetryCount) {
+    usleep(Clock::ms_to_us(kFileGrowthSleepMsPerRetry));
+    poll_count++;
+    int32_t size = disk.GetFileSize(perfetto_trace_path_);
+    if (size == last_size) {
+      unchanged_count++;
+    } else {
+      // Still growing, so start counting again.
+      last_size = size;
+      unchanged_count = 0;
+    }
+  }
+  int waited_ms = poll_count * kFileGrowthSleepMsPerRetry;
+  // GetFileSize returns 0 when it can't read the file, so check it exists.
+  if (!disk.HasFile(perfetto_trace_path_)) {
+    Log::W(Log::Tag::PROFILER, "Trace file missing after waiting %d ms",
+           waited_ms);
+  } else if (last_size == 0) {
+    Log::W(Log::Tag::PROFILER, "Trace file empty after waiting %d ms",
+           waited_ms);
+  } else if (unchanged_count < kFileGrowthRetryCount) {
+    Log::W(Log::Tag::PROFILER,
+           "Trace file still growing after waiting %d ms, %d to %d bytes",
+           waited_ms, start_size, last_size);
+  } else {
+    Log::I(Log::Tag::PROFILER,
+           "Trace file stopped growing after waiting %d ms, %d to %d bytes",
+           waited_ms, start_size, last_size);
   }
 }
 

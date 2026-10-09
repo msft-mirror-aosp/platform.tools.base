@@ -66,11 +66,17 @@ class FakePerfetto : public Perfetto {
     enable_profiling_called_ = true;
     return true;
   }
+  void WaitForTraceFileToStopGrowing() override {
+    waited_for_trace_file_ = true;
+    perfetto_running_when_waited_ = perfetto_state_;
+  }
 
   const std::string& OutputFilePath() { return output_file_path_; }
   const std::string& AbiArch() { return abi_arch_; }
   const perfetto::protos::TraceConfig& Config() { return config_; }
   bool IsProfilingEnabled() { return enable_profiling_called_; }
+  bool WaitedForTraceFile() { return waited_for_trace_file_; }
+  bool PerfettoRunningWhenWaited() { return perfetto_running_when_waited_; }
   void SetTracerState(bool state) { tracer_state_ = state; }
   void SetPerfettoState(bool state) { perfetto_state_ = state; }
   void SetRunStateTo(bool perfetto, bool tracer) {
@@ -101,6 +107,10 @@ class FakePerfetto : public Perfetto {
   bool shutdown_;
   // Holds the state if EnableProfiling was called.
   bool enable_profiling_called_;
+  // Whether WaitForTraceFileToStopGrowing was called, and whether perfetto was
+  // still running at that point.
+  bool waited_for_trace_file_ = false;
+  bool perfetto_running_when_waited_ = false;
   perfetto::protos::TraceConfig config_;
   std::string output_file_path_;
   std::string abi_arch_;

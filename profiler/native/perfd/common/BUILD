@@ -213,6 +213,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":perfetto",
+        "//tools/base/transport/native/utils",
         "@googletest//:gtest_main",
     ],
 )
