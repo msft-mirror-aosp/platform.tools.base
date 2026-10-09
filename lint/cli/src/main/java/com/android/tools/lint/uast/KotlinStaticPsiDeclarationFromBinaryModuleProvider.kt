@@ -40,6 +40,7 @@ import org.jetbrains.kotlin.light.classes.symbol.annotations.getJvmNameFromAnnot
 import org.jetbrains.kotlin.load.kotlin.PackagePartProvider
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.JvmStandardClassIds
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtPackageDirective
@@ -69,6 +70,33 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
 
   private val javaFileManager by lazyPub { project.getService(JavaFileManager::class.java) }
 
+  private val packagePartsCache = ConcurrentHashMap<FqName, List<String>>()
+
+  private fun getPackageParts(packageName: FqName): List<String> {
+    return packagePartsCache.getOrPut(packageName) { packagePartProvider.findPackageParts(packageName.asString()) }
+  }
+
+  /**
+   * Classes that may declare a top-level callable of [packageName]: only those of its JVM facade [containingJvmClassName] if known and
+   * found, as resolving every class in a package with thousands of facades is prohibitively expensive.
+   */
+  private fun getTopLevelClasses(packageName: FqName, containingJvmClassName: String?): Collection<PsiClass> {
+    return containingJvmClassName?.let { getClassesByFacadeName(packageName, it).takeIf(Collection<*>::isNotEmpty) }
+      ?: getClassesInPackage(packageName)
+  }
+
+  private val classesByFacadeNameCache = ConcurrentHashMap<Pair<FqName, String>, Collection<PsiClass>>()
+
+  /** Resolves the package parts of facade [facadeName]: the facade itself, or its `Facade__Part`s for a `@JvmMultifileClass`. */
+  private fun getClassesByFacadeName(packageName: FqName, facadeName: String): Collection<PsiClass> {
+    return classesByFacadeNameCache.getOrPut(packageName to facadeName) {
+      val facade = facadeName.replace('.', '/')
+      val multifilePartPrefix = facade + JvmStandardClassIds.MULTIFILE_PART_NAME_DELIMITER
+      val parts = getPackageParts(packageName).filter { it == facade || it.startsWith(multifilePartPrefix) }.map { it.replace('/', '.') }
+      parts.ifEmpty { listOf(facadeName) }.flatMap { fqName -> javaFileManager.findClasses(fqName, scope).asIterable() }.distinct()
+    }
+  }
+
   private val classesInPackageCache = ConcurrentHashMap<FqName, Collection<PsiClass>>()
 
   private fun getClassesInPackage(fqName: FqName): Collection<PsiClass> {
@@ -78,7 +106,7 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
       // which will fail since such stubs are fake, i.e., no mirror to render decompiled text.
       // Instead, we will find/use potential class names in the package, while considering package
       // parts.
-      val packageParts = packagePartProvider.findPackageParts(fqName.asString()).map { it.replace("/", ".") }
+      val packageParts = getPackageParts(fqName).map { it.replace("/", ".") }
       val fqNames =
         packageParts.ifEmpty {
           @Suppress("UnstableApiUsage") // Scheduled for removal; K1 only? CoreJavaFileManager?
@@ -198,7 +226,10 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
     }
   }
 
-  override fun getProperties(variableLikeSymbol: KaVariableSymbol): Collection<PsiMember> {
+  override fun getProperties(
+    variableLikeSymbol: KaVariableSymbol,
+    containingJvmClassName: String?,
+  ): Collection<PsiMember> {
     val callableId = variableLikeSymbol.callableId ?: return emptyList()
     val classes =
       callableId.classId?.let { classId ->
@@ -206,7 +237,7 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
         // property in companion object is actually materialized at the containing class.
         val classFromOuterClassID = classId.outerClassId?.let { getClassesByClassId(it) } ?: emptyList()
         classFromCurrentClassId + classFromOuterClassID
-      } ?: getClassesInPackage(callableId.packageName)
+      } ?: getTopLevelClasses(callableId.packageName, containingJvmClassName)
     if (classes.isEmpty()) {
       return getTopLevelPropertiesInKlib(callableId.packageName, variableLikeSymbol.name.identifier)
     }
@@ -247,9 +278,14 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
         else -> null
       }
 
-  override fun getFunctions(functionLikeSymbol: KaFunctionSymbol): Collection<PsiMethod> {
+  override fun getFunctions(
+    functionLikeSymbol: KaFunctionSymbol,
+    containingJvmClassName: String?,
+  ): Collection<PsiMethod> {
     val callableId = functionLikeSymbol.callableId ?: return emptyList()
-    val classes = callableId.classId?.let { classId -> getClassesByClassId(classId) } ?: getClassesInPackage(callableId.packageName)
+    val classes =
+      callableId.classId?.let { classId -> getClassesByClassId(classId) }
+        ?: getTopLevelClasses(callableId.packageName, containingJvmClassName)
     if (classes.isEmpty()) {
       return getTopLevelMethodsInKlib(callableId.packageName, callableId.callableName.identifier)
     }

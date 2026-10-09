@@ -33,9 +33,17 @@ internal abstract class KotlinPsiDeclarationProvider {
    */
   abstract fun getClassesByClassId(classId: ClassId): Collection<PsiClass>
 
-  abstract fun getProperties(variableLikeSymbol: KaVariableSymbol): Collection<PsiMember>
+  /** [containingJvmClassName]: `KaCallableSymbol.containingJvmClassName`, used to narrow the lookup of top-level callables. */
+  abstract fun getProperties(
+    variableLikeSymbol: KaVariableSymbol,
+    containingJvmClassName: String? = null,
+  ): Collection<PsiMember>
 
-  abstract fun getFunctions(functionLikeSymbol: KaFunctionSymbol): Collection<PsiMethod>
+  /** See [getProperties]. */
+  abstract fun getFunctions(
+    functionLikeSymbol: KaFunctionSymbol,
+    containingJvmClassName: String? = null,
+  ): Collection<PsiMethod>
 }
 
 internal abstract class KotlinPsiDeclarationProviderFactory {

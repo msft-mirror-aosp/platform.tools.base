@@ -21,6 +21,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.GlobalSearchScope
+import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.psi.KtElement
@@ -52,14 +53,22 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
     }
   }
 
+  @OptIn(KaExperimentalApi::class)
   private fun KaSession.providePsiForFunction(functionLikeSymbol: KaFunctionSymbol, project: Project): PsiElement? {
-    val candidates = project.createPsiDeclarationProvider(functionLikeSymbol.scope(project))?.getFunctions(functionLikeSymbol)
+    val candidates =
+      project
+        .createPsiDeclarationProvider(functionLikeSymbol.scope(project))
+        ?.getFunctions(functionLikeSymbol, functionLikeSymbol.containingJvmClassName)
     return if (candidates?.size == 1) candidates.single()
     else candidates?.find { psiMethod -> representsTheSameDeclaration(psiMethod, functionLikeSymbol) }
   }
 
+  @OptIn(KaExperimentalApi::class)
   private fun KaSession.providePsiForProperty(variableLikeSymbol: KaVariableSymbol, context: KtElement?, project: Project): PsiElement? {
-    val candidates = project.createPsiDeclarationProvider(variableLikeSymbol.scope(project))?.getProperties(variableLikeSymbol)
+    val candidates =
+      project
+        .createPsiDeclarationProvider(variableLikeSymbol.scope(project))
+        ?.getProperties(variableLikeSymbol, variableLikeSymbol.containingJvmClassName)
     if (candidates?.size == 1) return candidates.single()
     else {
       // Weigh [PsiField]
