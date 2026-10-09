@@ -94,15 +94,14 @@ class RelativeClassAttributeDetector : ResourceXmlDetector() {
         briefDescription = "Relative class names resolve to applicationId, not namespace",
         explanation =
           """
-          When using relative class names (starting with a dot) in attributes like
-          `app:layout_behavior` or `app:layoutManager`, the Android framework resolves
+          When using relative class names (starting with a dot) in attributes like \
+          `app:layout_behavior` or `app:layoutManager`, the Android framework resolves \
           them using the `applicationId` at runtime, not the codebase `namespace`.
 
-          In library modules, or in app modules where `applicationId` and `namespace` differ,
-          this will cause a `ClassNotFoundException` and crash the app. Even if they currently match,
+          In library modules, or in app modules where `applicationId` and `namespace` differ, \
+          this will cause a `ClassNotFoundException` and crash the app. Even if they currently match, \
           using a relative name is a refactoring risk. Use a fully qualified class name instead.
-          """
-            .trimIndent(),
+          """,
         category = Category.CORRECTNESS,
         priority = 8,
         severity = Severity.FATAL,
