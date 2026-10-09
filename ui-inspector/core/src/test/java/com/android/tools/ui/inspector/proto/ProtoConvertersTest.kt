@@ -28,6 +28,7 @@ import com.android.tools.ui.inspector.model.LayoutDirection
 import com.android.tools.ui.inspector.model.Navigation
 import com.android.tools.ui.inspector.model.NavigationHidden
 import com.android.tools.ui.inspector.model.Orientation
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.ScreenLayoutLong
 import com.android.tools.ui.inspector.model.ScreenLayoutRound
 import com.android.tools.ui.inspector.model.ScreenLayoutSize
@@ -41,6 +42,8 @@ import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.Type.STRING
 import org.junit.Test
+
+private const val ROOT_VIEW_ID = 7L
 
 class ProtoConvertersTest {
 
@@ -212,7 +215,6 @@ class ProtoConvertersTest {
           elements = emptyList(),
           isCollection = true,
           value = UiNode.ComposeParameter.Value.StringVal("List[0]"),
-          isTruncated = false,
         )
       )
   }
@@ -230,7 +232,6 @@ class ProtoConvertersTest {
           elements = emptyList(),
           isCollection = true,
           value = UiNode.ComposeParameter.Value.StringVal("List[3]"),
-          isTruncated = false,
         )
       )
   }
@@ -251,7 +252,7 @@ class ProtoConvertersTest {
           elements = listOf(UiNode.ComposeParameter.Single("[0]", UiNode.ComposeParameter.Value.NumberVal(10))),
           isCollection = true,
           value = UiNode.ComposeParameter.Value.StringVal("IntArray[8]"),
-          isTruncated = true,
+          reference = ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), startIndex = 1),
         )
       )
   }
@@ -270,7 +271,7 @@ class ProtoConvertersTest {
           elements = emptyList(),
           isCollection = true,
           value = UiNode.ComposeParameter.Value.StringVal("List[7]"),
-          isTruncated = true,
+          reference = ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), startIndex = 0),
         )
       )
   }
@@ -355,7 +356,35 @@ class ProtoConvertersTest {
     val strings = mapOf(1 to "style", 2 to "TextStyle")
 
     assertThat(convertSingleParameter(unexpanded, strings))
-      .isEqualTo(UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal("TextStyle"), isTruncated = true))
+      .isEqualTo(
+        UiNode.ComposeParameter.Single(
+          "style",
+          UiNode.ComposeParameter.Value.StringVal("TextStyle"),
+          ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), startIndex = 0),
+        )
+      )
+  }
+
+  @Test
+  fun testConvertComposeNode_nestedReferenceKeepsPathAndSkipsOmittedNulls() {
+    // A nested collection's reference locates it from its parameter. Its next element starts after the last one sent, past omitted nulls.
+    val nested =
+      parameter(3, ITERABLE, value = 4) // [1]="List[9]"
+        .setIndex(1)
+        .addElements(parameter(5, STRING, value = 6)) // [0]=a
+        .addElements(parameter(7, STRING, value = 6).setIndex(1)) // [1]=a
+        .addElements(parameter(8, STRING, value = 6).setIndex(3)) // [3]=a, after a null [2]
+        .setReference(
+          LayoutInspectorComposeProtocol.ParameterReference.newBuilder().setComposableId(100).setParameterIndex(2).addCompositeIndex(1)
+        )
+    val outer = parameter(1, ITERABLE, value = 2).addElements(nested) // "List[2]"
+    val strings = mapOf(1 to "grid", 2 to "List[2]", 3 to "[1]", 4 to "List[9]", 5 to "[0]", 6 to "a", 7 to "[1]", 8 to "[3]")
+
+    val pOuter = convertSingleParameter(outer, strings) as UiNode.ComposeParameter.Group
+
+    assertThat(pOuter.reference).isNull()
+    assertThat(pOuter.elements.single().reference)
+      .isEqualTo(ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 2, listOf(1), startIndex = 4))
   }
 
   @Test
@@ -536,6 +565,59 @@ class ProtoConvertersTest {
     assertThat(both.parameters).hasSize(1)
     assertThat(both.mergedSemantics).hasSize(1)
     assertThat(both.unmergedSemantics).hasSize(1)
+  }
+
+  @Test
+  fun testConvertComposeNode_referenceRecordsListHoldingParameter() {
+    // The agent resolves a reference within one of the three lists of a Composable, which the reference must therefore record, also for
+    // values nested in a parameter.
+    fun withTruncatedProperty(parameterIndex: Int) =
+      parameter(1, STRING, value = 2) // holder="Holder"
+        .addElements(
+          parameter(3, STRING, value = 4) // style="TextStyle"
+            .setReference(
+              LayoutInspectorComposeProtocol.ParameterReference.newBuilder()
+                .setComposableId(100)
+                .setParameterIndex(parameterIndex)
+                .addCompositeIndex(0)
+            )
+        )
+    val allParams =
+      LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
+        .setRootViewId(ROOT_VIEW_ID)
+        .addParameterGroups(
+          LayoutInspectorComposeProtocol.ParameterGroup.newBuilder()
+            .setComposableId(100)
+            .addParameter(withTruncatedProperty(parameterIndex = 0))
+            .addMergedSemantics(withTruncatedProperty(parameterIndex = 1))
+            .addUnmergedSemantics(withTruncatedProperty(parameterIndex = 2))
+        )
+        .addAllStrings(
+          mapOf(1 to "holder", 2 to "Holder", 3 to "style", 4 to "TextStyle").map { (id, str) ->
+            LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(id).setStr(str).build()
+          }
+        )
+        .build()
+
+    val node =
+      convertComposeNode(
+        node = LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(100).build(),
+        stringTable = emptyMap(),
+        hostedViews = emptyMap(),
+        renderOffsetX = 0,
+        renderOffsetY = 0,
+        parameters = allParams,
+        includeParameters = true,
+        includeSemantics = true,
+      )
+
+    fun List<UiNode.ComposeParameter>.propertyReference() = (single() as UiNode.ComposeParameter.Group).elements.single().reference
+    assertThat(node.parameters.propertyReference())
+      .isEqualTo(ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 0, listOf(0), startIndex = 0))
+    assertThat(node.mergedSemantics.propertyReference())
+      .isEqualTo(ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.MERGED_SEMANTICS, 1, listOf(0), startIndex = 0))
+    assertThat(node.unmergedSemantics.propertyReference())
+      .isEqualTo(ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.UNMERGED_SEMANTICS, 2, listOf(0), startIndex = 0))
   }
 
   @Test
@@ -752,6 +834,7 @@ class ProtoConvertersTest {
   ): UiNode.ComposeParameter {
     val response =
       LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
+        .setRootViewId(ROOT_VIEW_ID)
         .addParameterGroups(LayoutInspectorComposeProtocol.ParameterGroup.newBuilder().setComposableId(100).addParameter(parameter))
         .addAllStrings(strings.map { (id, str) -> LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(id).setStr(str).build() })
         .build()

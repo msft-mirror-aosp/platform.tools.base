@@ -107,6 +107,7 @@ private object JsonKeys {
   const val STYLE_CHAIN = "styleChain"
   const val IS_COLLECTION = "isCollection"
   const val IS_TRUNCATED = "isTruncated"
+  const val CONTINUATION_TOKEN = "continuationToken"
   const val ELEMENTS = "elements"
   const val UNIT = "unit"
   const val NAMESPACE = "namespace"
@@ -327,9 +328,10 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
     val obj = JsonObject()
     obj.addProperty(JsonKeys.NAME, param.name)
     param.value?.let { obj.add(JsonKeys.VALUE, serializeComposeParameterValue(it)) }
-    // Only truncated parameters are marked, so that the dump stays small: a parameter without the key is complete.
-    if (param.isTruncated) {
+    // Only truncated parameters are marked, so that the dump stays small: a parameter without the keys is complete.
+    param.reference?.let {
       obj.addProperty(JsonKeys.IS_TRUNCATED, true)
+      obj.addProperty(JsonKeys.CONTINUATION_TOKEN, it.encode())
     }
     if (param is UiNode.ComposeParameter.Group) {
       obj.addProperty(JsonKeys.IS_COLLECTION, param.isCollection)

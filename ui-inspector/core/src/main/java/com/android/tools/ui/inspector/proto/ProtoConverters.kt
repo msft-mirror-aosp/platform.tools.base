@@ -30,6 +30,7 @@ import com.android.tools.ui.inspector.model.LayoutDirection
 import com.android.tools.ui.inspector.model.Navigation
 import com.android.tools.ui.inspector.model.NavigationHidden
 import com.android.tools.ui.inspector.model.Orientation
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.ScreenLayoutLong
 import com.android.tools.ui.inspector.model.ScreenLayoutRound
 import com.android.tools.ui.inspector.model.ScreenLayoutSize
@@ -67,6 +68,9 @@ private class ComposeParameters(
 
   /** String table for resolving parameter names and string values. */
   val parameterStringTable: Map<Int, String> = response.stringsList.associate { it.id to it.str }
+
+  /** The root view of the window the parameters belong to. */
+  val rootViewId: Long = response.rootViewId
 }
 
 /**
@@ -214,10 +218,14 @@ private fun doConvertComposeNode(
   val nodeMergedSemantics = parameters?.mergedSemanticsMap?.get(node.id) ?: emptyList()
   val nodeUnmergedSemantics = parameters?.unmergedSemanticsMap?.get(node.id) ?: emptyList()
   val paramStringTable = parameters?.parameterStringTable ?: emptyMap()
+  val rootViewId = parameters?.rootViewId ?: 0L
 
-  val mappedParameters = nodeParams.map { convertParameterToComposeParameter(it, paramStringTable) }
-  val mappedMergedSemantics = nodeMergedSemantics.map { convertParameterToComposeParameter(it, paramStringTable) }
-  val mappedUnmergedSemantics = nodeUnmergedSemantics.map { convertParameterToComposeParameter(it, paramStringTable) }
+  fun convertList(params: List<LayoutInspectorComposeProtocol.Parameter>, kind: ParameterReference.Kind) = params.map {
+    convertParameterToComposeParameter(it, paramStringTable, rootViewId, kind)
+  }
+  val mappedParameters = convertList(nodeParams, ParameterReference.Kind.PARAMETERS)
+  val mappedMergedSemantics = convertList(nodeMergedSemantics, ParameterReference.Kind.MERGED_SEMANTICS)
+  val mappedUnmergedSemantics = convertList(nodeUnmergedSemantics, ParameterReference.Kind.UNMERGED_SEMANTICS)
 
   val composeChildren =
     node.childrenList.map { doConvertComposeNode(it, stringTable, hostedViews, renderOffsetX, renderOffsetY, parameters) }
@@ -256,26 +264,45 @@ private fun doConvertComposeNode(
  * A parameter has a reference when the agent holds elements it did not send: for collections, the ones past its initial element limit; for
  * collections and objects alike, all of them when it reached its recursion limit. Such a parameter is marked as truncated. A collection is
  * always a group, even when none of its elements was sent, while an object is a group only when it has elements.
+ *
+ * @param rootViewId The root view of the window holding the parameter, recorded in its references.
+ * @param kind The list of the Composable holding the parameter, recorded in its references.
  */
 private fun convertParameterToComposeParameter(
   param: LayoutInspectorComposeProtocol.Parameter,
   stringTable: Map<Int, String>,
+  rootViewId: Long,
+  kind: ParameterReference.Kind,
 ): UiNode.ComposeParameter {
   val name = stringTable[param.name] ?: "unknown"
   val isCollection = param.type == LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE
   val value = getParameterValue(param, stringTable)
-  val isTruncated = param.hasReference()
+  val reference =
+    if (param.hasReference()) {
+      ParameterReference(
+        rootViewId = rootViewId,
+        composableId = param.reference.composableId,
+        kind = kind,
+        parameterIndex = param.reference.parameterIndex,
+        compositeIndex = param.reference.compositeIndexList.toList(),
+        // Only a collection has both elements and a reference. Its elements carry their index among all elements, omitted ones included,
+        // so the next ones start after the last one sent.
+        startIndex = param.elementsList.lastOrNull()?.let { it.index + 1 } ?: 0,
+      )
+    } else {
+      null
+    }
   return if (isCollection || param.elementsCount > 0) {
-    val elements = param.elementsList.map { convertParameterToComposeParameter(it, stringTable) }
+    val elements = param.elementsList.map { convertParameterToComposeParameter(it, stringTable, rootViewId, kind) }
     UiNode.ComposeParameter.Group(
       name,
       elements,
       isCollection,
       value = value.takeUnless { it == UiNode.ComposeParameter.Value.NullVal || it == UiNode.ComposeParameter.Value.StringVal("") },
-      isTruncated = isTruncated,
+      reference = reference,
     )
   } else {
-    UiNode.ComposeParameter.Single(name, value, isTruncated)
+    UiNode.ComposeParameter.Single(name, value, reference)
   }
 }
 

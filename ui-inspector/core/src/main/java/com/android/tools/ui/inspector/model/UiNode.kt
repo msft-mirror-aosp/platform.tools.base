@@ -71,13 +71,18 @@ sealed class UiNode {
     abstract val value: Value?
 
     /**
-     * True when the inspector holds data for this parameter that it did not send: it only sends the first few elements of each collection,
-     * and none of the elements of collections and objects nested too deeply. Omitted null elements alone don't make a parameter truncated.
+     * A reference used to request data the inspector holds for this parameter but did not send, or null when the inspector sent everything.
+     * See [ParameterReference] for more info.
      */
-    abstract val isTruncated: Boolean
+    abstract val reference: ParameterReference?
+
+    /** True when the inspector left out content of this parameter, see [reference]. */
+    val isTruncated: Boolean
+      get() = reference != null
 
     /** A leaf parameter representing a strongly-typed value. */
-    data class Single(override val name: String, override val value: Value, override val isTruncated: Boolean = false) : ComposeParameter()
+    data class Single(override val name: String, override val value: Value, override val reference: ParameterReference? = null) :
+      ComposeParameter()
 
     /**
      * A nested group of parameters representing collections or objects.
@@ -95,7 +100,7 @@ sealed class UiNode {
       val elements: List<ComposeParameter>,
       val isCollection: Boolean,
       override val value: Value? = null,
-      override val isTruncated: Boolean = false,
+      override val reference: ParameterReference? = null,
     ) : ComposeParameter()
 
     /** Domain values that preserve original data and type information. */

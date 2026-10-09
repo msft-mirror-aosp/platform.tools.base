@@ -50,6 +50,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -936,6 +937,12 @@ class ComposeInspectorTest {
     val p = textNode.parameters[0] as UiNode.ComposeParameter.Single
     assertThat(p.name).isEqualTo("text")
     assertThat((p.value as UiNode.ComposeParameter.Value.StringVal).value).isEqualTo("Hello")
+
+    // The parameter limits are sent rather than left to the agent defaults.
+    val allParamsCmd =
+      LayoutInspectorComposeProtocol.Command.parseFrom(allParamsCmdReceived.await().inspectorMessage.payload).getAllParametersCommand
+    assertThat(allParamsCmd.maxRecursions).isEqualTo(2)
+    assertThat(allParamsCmd.maxInitialIterableSize).isEqualTo(5)
 
     // Cleanup
     testScope.cancel()

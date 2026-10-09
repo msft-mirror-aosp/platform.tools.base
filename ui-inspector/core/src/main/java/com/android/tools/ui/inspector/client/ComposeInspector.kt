@@ -33,6 +33,13 @@ import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 private const val COMPOSE_UI_GROUP_ID = "androidx.compose.ui"
 
 /**
+ * How deep the Compose inspector expands parameter values, and how many elements of each collection it sends. These are the agent defaults,
+ * also used by Android Studio, pinned so that a dump does not depend on the agent version. Content past them is sent as a reference.
+ */
+private const val MAX_PARAMETER_DEPTH = 2
+private const val MAX_COLLECTION_ELEMENTS = 5
+
+/**
  * Creates the Compose Inspector on the agent if Jetpack Compose is detected in the target application process. Returns false when the app
  * does not use Compose. When it does, the inspector is created or the dump fails: a Compose app dumped without its Compose tree would be
  * silently incomplete, so a jar that cannot be resolved or an agent that refuses to load it fails the dump.
@@ -105,9 +112,8 @@ internal suspend fun queryComposeParameters(
           .setSkipSystemComposables(false)
           // Use the same generation from the get composables command so that we get the cached parameters
           .setGeneration(0)
-          // Allow traversal up to 2 levels deep (Layout Inspector standard) to fully capture properties
-          // while preventing slot table index out of bounds crashes in Compose reflection.
-          .setMaxRecursions(2)
+          .setMaxRecursions(MAX_PARAMETER_DEPTH)
+          .setMaxInitialIterableSize(MAX_COLLECTION_ELEMENTS)
           .build()
       )
       .build()

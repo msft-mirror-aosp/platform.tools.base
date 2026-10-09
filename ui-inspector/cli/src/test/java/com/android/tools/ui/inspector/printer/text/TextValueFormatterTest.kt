@@ -16,9 +16,12 @@
 
 package com.android.tools.ui.inspector.printer.text
 
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.UiNode
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+
+private val REFERENCE = ParameterReference(1, 2, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 0)
 
 class TextValueFormatterTest {
 
@@ -57,7 +60,7 @@ class TextValueFormatterTest {
         listOf(item),
         isCollection = true,
         value = UiNode.ComposeParameter.Value.StringVal("List[7]"),
-        isTruncated = true,
+        reference = REFERENCE,
       )
     val unexpanded =
       UiNode.ComposeParameter.Group(
@@ -65,7 +68,7 @@ class TextValueFormatterTest {
         emptyList(),
         isCollection = true,
         value = UiNode.ComposeParameter.Value.StringVal("List[7]"),
-        isTruncated = true,
+        reference = REFERENCE,
       )
 
     assertThat(formatComposeParameter(truncated)).isEqualTo("[item1, ...]")
@@ -75,8 +78,8 @@ class TextValueFormatterTest {
   @Test
   fun testFormatComposeParameterTruncatedSingleValue() {
     // An object whose properties were not sent keeps its value and shows that it has more to it.
-    val unexpanded = UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal("TextStyle"), isTruncated = true)
-    val unexpandedWithoutValue = UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal(""), isTruncated = true)
+    val unexpanded = UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal("TextStyle"), reference = REFERENCE)
+    val unexpandedWithoutValue = UiNode.ComposeParameter.Single("style", UiNode.ComposeParameter.Value.StringVal(""), reference = REFERENCE)
 
     assertThat(formatComposeParameter(unexpanded)).isEqualTo("TextStyle {...}")
     assertThat(formatComposeParameter(unexpandedWithoutValue)).isEqualTo("{...}")
