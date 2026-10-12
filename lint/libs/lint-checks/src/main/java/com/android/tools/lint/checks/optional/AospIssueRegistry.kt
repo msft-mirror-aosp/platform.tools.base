@@ -28,7 +28,13 @@ import com.android.tools.lint.detector.api.Issue
  * ASfP IDE) without having to have separate jar artifacts.
  */
 class AospIssueRegistry : IssueRegistry() {
-  override val issues: List<Issue> = listOf(FlaggedApiDetector.ISSUE, FlaggedApiDetector.FLAG_AS_RAW_STRING, BlockingDetector.ISSUE)
+  override val issues: List<Issue> =
+    listOf(
+      FlaggedApiDetector.ISSUE,
+      FlaggedApiDetector.FLAG_AS_RAW_STRING,
+      BlockingDetector.ISSUE,
+      BlockingDetector.INITIALIZER_ISSUE,
+    )
 
   override val vendor: Vendor = AOSP_VENDOR
 

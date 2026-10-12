@@ -41,6 +41,10 @@ sealed interface Error<out FX> {
     override fun toString() = "(${site.renderAbbrev()}: $callerAnnotation ⋤ $calleeLowerBound)"
   }
 
+  data class NontrivialStaticInitializer<out FX>(val calleeLowerBound: FX, val site: ErrorSite) : Error<FX> {
+    override fun toString() = "(initializer ${site.renderAbbrev()}: ⊥ ⋤ $calleeLowerBound)"
+  }
+
   data class FailingConstraint<out FX>(val constraints: UnboundedSet<ConstraintFailure<FX>>, val site: UExpression) : Error<FX> {
     override fun toString(): String {
       val c =
@@ -71,6 +75,9 @@ sealed interface Error<out FX> {
   interface Explanation<FX> {
     /** Describes the call at [ExceedingAnnotation.site], e.g. "must be from X, but context is allowing Y" */
     fun explain(error: ExceedingAnnotation<FX>): String
+
+    /** Describes the call at [NontrivialStaticInitializer.site], e.g. "that must be from X" */
+    fun explain(error: NontrivialStaticInitializer<FX>): String
 
     /** Message for [error] when its [FailingConstraint.constraints] are unknown */
     fun explain(error: FailingConstraint<FX>): String

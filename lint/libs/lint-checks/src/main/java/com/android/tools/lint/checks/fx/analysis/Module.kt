@@ -115,7 +115,8 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
         when (val s = header.status) {
           is MethodBody.Status.Abstract -> true
           is MethodBody.Status.ForChecking -> s.body == null
-          is MethodBody.Status.ForInference -> false
+          is MethodBody.Status.ForInference,
+          is MethodBody.Status.StaticInitializer -> false
         }
       }
     return when (val n = abstractMethods.size) {
@@ -291,9 +292,14 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       var methods = persistentMapOf<MethodId, MethodBody<FX>>()
       run { // A Java class declaring no constructor has an implicit one running its initializers, which PSI doesn't list
         if (klass.sourcePsi is KtElement || klass.methods.any { it.isConstructor }) return@run
-        val inits = klass.instanceInitializers()
+        val inits = klass.initializerExpressions(isStatic = false)
         val body = initBody(inits, { MethodBody.Status.ForInference(it, EffectAnnotation.None) }, klassAsType) ?: return@run
         methods = methods.putting(MethodId.implicitConstructor(klass.javaPsi), body)
+      }
+      run { // Adds a synthetic method running the static initializers of [klass], if it has any
+        val inits = klass.initializerExpressions(isStatic = true)
+        val body = initBody(inits, MethodBody.Status<FX>::StaticInitializer, Type.None) ?: return@run
+        methods = methods.putting(MethodId.StaticInitializer, body)
       }
 
       return ClassBody<FX>(
@@ -339,7 +345,8 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           canonicalOverload != null -> OverloadBody(method, canonicalOverload, methodEnv)
           // A constructor runs the initializers too, even without a body of its own
           method.isConstructor -> {
-            val inits = if (method.delegatesToThis()) listOf() else method.getContainingUClass()?.instanceInitializers().orEmpty()
+            val inits =
+              if (method.delegatesToThis()) listOf() else method.getContainingUClass()?.initializerExpressions(isStatic = false).orEmpty()
             InitializerBody(method, inits, method.uastBody, range)
           }
           else -> method.uastBody
@@ -413,7 +420,8 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
             is MethodBody.Status.ForInference -> s.copy(body = init)
             is MethodBody.Status.ForChecking -> s.copy(body = init)
             // Kotlin forbids default values on overrides, so there are no inherited annotations to honor
-            is MethodBody.Status.Abstract -> MethodBody.Status.ForInference(init, EffectAnnotation.None)
+            is MethodBody.Status.Abstract,
+            is MethodBody.Status.StaticInitializer -> MethodBody.Status.ForInference(init, EffectAnnotation.None)
           }
         val returnType = PsiTypeAdapter.translate(body.initEnvironment.boundParamNames, paramPsi.type)
         acc =
@@ -689,11 +697,11 @@ private fun UMethod.delegatesToThis(): Boolean =
     else -> false
   }
 
-/** The instance initializers that [this] class runs on construction, in order. */
-private fun UClass.instanceInitializers(): List<UExpression> {
-  val fieldInits = fields.filter { !it.isStatic && it.sourcePsi !is KtParameter }.mapNotNull { it.uastInitializer }
+/** The initializers that [this] class runs, in order: on construction if not [isStatic], or on static initialization otherwise */
+private fun UClass.initializerExpressions(isStatic: Boolean): List<UExpression> {
+  val fieldInits = fields.filter { it.isStatic == isStatic && it.sourcePsi !is KtParameter }.mapNotNull { it.uastInitializer }
   if (sourcePsi is KtElement) return fieldInits // UAST already puts Kotlin's `init` blocks in the primary (or first) constructor's body
-  val blocks = initializers.filter { !it.isStatic }.map { it.uastBody }
+  val blocks = initializers.filter { it.isStatic == isStatic }.map { it.uastBody }
   if (blocks.isEmpty()) return fieldInits
   return (fieldInits + blocks).sortedBy { it.sourcePsi?.textRange?.startOffset ?: 0 }
 }

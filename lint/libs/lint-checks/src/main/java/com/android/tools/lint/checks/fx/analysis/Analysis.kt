@@ -257,6 +257,9 @@ internal open class Analysis<FX : Any>(
   private fun checkingMode(ann: EffectAnnotation.Explicit<FX>) =
     Mode.Checking(ann.annotated, concreteEffect, fxCheckingLattice, constraintLattice)
 
+  private val staticInitializerMode = // reused common value
+    Mode.Checking(concreteEffect.bottom, concreteEffect, fxCheckingLattice, constraintLattice, Error<FX>::NontrivialStaticInitializer)
+
   // Make sure this is in sync with `invoke` below
   override fun latticeAt(point: Point<FX>): Lattice<Ans<FX>> {
     return when (point) {
@@ -264,6 +267,7 @@ internal open class Analysis<FX : Any>(
         val method = module[point] ?: return checkingLattice as Lattice<Ans<FX>>
         return when (method.status) {
           is MethodBody.Status.Abstract -> inapplicableLattice as Lattice<Ans<FX>>
+          is MethodBody.Status.StaticInitializer,
           is MethodBody.Status.ForChecking -> checkingLattice as Lattice<Ans<FX>>
           is MethodBody.Status.ForInference -> inferenceLattice as Lattice<Ans<FX>>
         }
@@ -291,6 +295,7 @@ internal open class Analysis<FX : Any>(
 
         when (val status = method.status) {
           is MethodBody.Status.Abstract -> Result(method.returnTypeAnnotation, Inapplicable)
+          is MethodBody.Status.StaticInitializer -> with(staticInitializerMode) { checkingLattice.catchError { eval(status.body) } }
           is MethodBody.Status.ForChecking ->
             with(checkingMode(status.upperBound)) {
               checkingLattice.catchError {
@@ -788,6 +793,7 @@ internal open class Analysis<FX : Any>(
               null,
               is MethodBody.Status.ForInference,
               is MethodBody.Status.Abstract -> emptyList()
+              is MethodBody.Status.StaticInitializer -> throw IllegalStateException()
             }
           // The SAM interface's own annotation is an obligation on the lambda itself, which no callee summary shadows, so the assumed
           // callee's bounds add to it rather than replace it.
@@ -1559,6 +1565,7 @@ internal open class Analysis<FX : Any>(
     val intfs = module[intfId] ?: return persistentSetOf()
     val impls = module[implId] ?: return persistentSetOf()
     return intfs.entries.flatMapToPersistentSet { (methodIntf, methodIntfHeader) ->
+      if (!methodIntf.isVirtual) return@flatMapToPersistentSet persistentSetOf() // only applicable to virtual methods
       val methodImplHeader = impls[methodIntf] ?: return@flatMapToPersistentSet persistentSetOf()
       guardImplAgainstStatus(rec, arg, methodIntfHeader.status, Type.MethodRef(implId, methodIntf), methodImplHeader)
     }
@@ -1604,6 +1611,7 @@ internal open class Analysis<FX : Any>(
       }
       is MethodBody.Status.ForInference,
       is MethodBody.Status.Abstract -> {}
+      is MethodBody.Status.StaticInitializer -> throw IllegalStateException()
     }
 
     return result
@@ -1684,12 +1692,15 @@ internal open class Analysis<FX : Any>(
       concreteEffects: Lattice<FX>,
       effects: Lattice<EffectResult.Checking<FX>>,
       constraintLattice: Lattice<Constraint<FX>>,
+      private val exceedingError: (calleeLowerBound: FX, site: UExpression) -> Error<FX> = { ee, site ->
+        Error.ExceedingAnnotation(annotation, ee, site)
+      },
     ) : Mode<FX, EffectResult.Checking<FX>>(concreteEffects, effects, constraintLattice) {
       override fun onInvocationEffect(source: UExpression, fxInst: Instantiation<FX>) =
         with(concreteEffects) {
           val (fx, failures, subst) = fxInst
           var errors = persistentSetOf<Error<FX>>()
-          if (!(fx.concrete precedes annotation)) errors += Error.ExceedingAnnotation(annotation, fx.concrete, source)
+          if (!(fx.concrete precedes annotation)) errors += exceedingError(fx.concrete, source)
           errors += failures.at(source)
           val generatedConstraints = Constraint.concrete(annotation, fx.invocations)
           Checking(constraintLattice.joinOf(fx.constraint, Constraint(generatedConstraints, persistentMapOf())), errors, subst)

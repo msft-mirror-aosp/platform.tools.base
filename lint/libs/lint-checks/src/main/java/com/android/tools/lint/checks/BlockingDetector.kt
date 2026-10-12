@@ -35,12 +35,15 @@ import org.jetbrains.uast.UMethod
 
 class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLattice, assumptions) {
   override val mainIssue = ISSUE
+  override val staticInitializerIssue = INITIALIZER_ISSUE
 
   override val effectEncoder = Encoder.enum<Status>()
 
   override val errorExplanation: Error.Explanation<Status> =
     object : Error.Explanation<Status> {
       override fun explain(error: Error.ExceedingAnnotation<Status>) = "blocks in a context not allowed to block"
+
+      override fun explain(error: Error.NontrivialStaticInitializer<Status>) = "that blocks"
 
       override fun explain(error: Error.FailingConstraint<Status>) = "Call fails non-blocking requirements on arguments"
 
@@ -137,6 +140,24 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
         category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.ERROR,
+        enabledByDefault = false,
+        implementation = Impl,
+      )
+
+    @JvmField
+    val INITIALIZER_ISSUE =
+      Issue.create(
+        id = "BlockingStaticInitializer",
+        briefDescription = "Static initializer that blocks",
+        explanation =
+          """
+          A static initializer runs on whichever thread first triggers it, so a blocking call there may block \
+          a thread that must not block. Consider initializing such state lazily (or triggering the initialization \
+          eagerly and suppressing this report) where blocking is allowed.
+          """,
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.WARNING,
         enabledByDefault = false,
         implementation = Impl,
       )

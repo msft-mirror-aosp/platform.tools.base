@@ -46,6 +46,9 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
   companion object {
     private val paramListPool = InterningPool<List<ClassId?>>()
 
+    /** Synthetic method running a class's static initializers */
+    val StaticInitializer: MethodId = MethodId(false, "<clinit>", listOf())
+
     /** Synthetic constructor that runs [klass]'s initializers when no explicit one is in the PSI */
     fun implicitConstructor(klass: PsiClass): MethodId = MethodId(false, klass.name ?: "<init>", listOf())
 
@@ -142,6 +145,7 @@ internal data class MethodBody<out FX>(
     val fx =
       when (status) {
         is Status.Abstract -> "\uD83D\uDD35"
+        is Status.StaticInitializer -> "@ ⊥ (static initializer)"
         is Status.ForChecking -> "@ ${status.upperBound}"
         is Status.ForInference -> "@ ???"
       }
@@ -157,6 +161,9 @@ internal data class MethodBody<out FX>(
     data class ForChecking<out FX>(val upperBound: EffectAnnotation.Explicit<FX>, val body: UExpression?) : Status<FX>
 
     data class ForInference<out FX>(val body: UExpression, val base: EffectAnnotation.Implicit<FX>) : Status<FX>
+
+    // like `ForChecking(⊥, body)`, but tracked specially to report differently
+    data class StaticInitializer(val body: UExpression) : Status<Nothing>
   }
 }
 

@@ -95,6 +95,12 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
           else -> "must be from ${error.calleeLowerBound}, but context is allowing ${error.callerAnnotation}"
         }
 
+      override fun explain(error: Error.NontrivialStaticInitializer<ThreadConstraint<T>>) =
+        when {
+          error.calleeLowerBound == lattice.NoThread -> "with an unsatisfiable thread requirement"
+          else -> "that must be from ${error.calleeLowerBound}"
+        }
+
       override fun explain(error: Error.IntroducingTop<ThreadConstraint<T>>): String {
         val site = error.site
         val t1 = error.first

@@ -770,6 +770,128 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test static initializers`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            class Statics {
+              interface Callback {
+                @UiThread void run();
+              }
+
+              @WorkerThread static int work() { return 0; }
+              static int viaWork() { return work(); }
+              static int pure() { return 0; }
+
+              static final int FIELD = work(); // WARNING
+              static final int INDIRECT = viaWork(); // WARNING
+              static final int PURE = pure(); // OK
+              static {
+                work(); // WARNING
+              }
+              static final Runnable LAMBDA = () -> work(); // OK: the lambda doesn't run during initialization
+              static final Callback CALLBACK = () -> work(); // ERROR: the lambda is still checked against Callback.run()
+              final int instance = work(); // OK: runs in constructors, in their callers' context
+
+              interface Constants {
+                int CONSTANT = work(); // WARNING
+              }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            val topLevel = Statics.work() // WARNING
+
+            object Obj {
+              val prop = Statics.work() // WARNING
+            }
+
+            class WithCompanion {
+              companion object {
+                val prop = Statics.work() // WARNING
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Statics.java:22: Error: Call must be from @WorkerThread, but super method Callback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+          static final Callback CALLBACK = () -> work(); // ERROR: the lambda is still checked against Callback.run()
+                                                 ~~~~~~
+        src/test/pkg/Obj.kt:3: Warning: Top-level initialization has a call that must be from @WorkerThread [StaticInitializerThreadConstraint]
+        val topLevel = Statics.work() // WARNING
+                               ~~~~~~
+        src/test/pkg/Obj.kt:6: Warning: object initialization has a call that must be from @WorkerThread [StaticInitializerThreadConstraint]
+          val prop = Statics.work() // WARNING
+                             ~~~~~~
+        src/test/pkg/Obj.kt:11: Warning: companion object initialization has a call that must be from @WorkerThread [StaticInitializerThreadConstraint]
+            val prop = Statics.work() // WARNING
+                               ~~~~~~
+        src/test/pkg/Statics.java:15: Warning: Class initialization has a call that must be from @WorkerThread [StaticInitializerThreadConstraint]
+          static final int FIELD = work(); // WARNING
+                                   ~~~~~~
+        src/test/pkg/Statics.java:16: Warning: Class initialization has a call that must be from @WorkerThread [StaticInitializerThreadConstraint]
+          static final int INDIRECT = viaWork(); // WARNING
+                                      ~~~~~~~~~
+        src/test/pkg/Statics.java:19: Warning: Class initialization has a call that must be from @WorkerThread [StaticInitializerThreadConstraint]
+            work(); // WARNING
+            ~~~~~~
+        src/test/pkg/Statics.java:26: Warning: Class initialization has a call that must be from @WorkerThread [StaticInitializerThreadConstraint]
+            int CONSTANT = work(); // WARNING
+                           ~~~~~~
+        1 error, 7 warnings
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test static initializers of interface and implementation`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+
+            class Test {
+              interface Callback {
+                int ID = compute(); // the interface has a static initializer
+                @UiThread void run();
+              }
+
+              static int compute() { return 0; }
+
+              void f() {
+                Callback callback = new Callback() {
+                  static int counter = compute(); // so does the implementation (static members in inner classes since Java 16)
+                  public void run() { }
+                };
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testBaseAssumption_forEach() {
     lint()
       .files(

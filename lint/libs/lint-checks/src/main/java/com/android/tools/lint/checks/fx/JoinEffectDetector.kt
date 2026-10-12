@@ -71,7 +71,11 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.intellij.openapi.application.runReadAction
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassInitializer
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiTypeParameter
 import java.io.Closeable
@@ -92,8 +96,14 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
 import org.jetbrains.annotations.VisibleForTesting
+import org.jetbrains.kotlin.psi.KtAnonymousInitializer
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
@@ -123,6 +133,8 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   private lateinit var summariesCache: Map<Type.MethodRef, Result<Type<FX>, EffectResult.Eval<FX>>>
 
   protected abstract val mainIssue: Issue
+
+  protected abstract val staticInitializerIssue: Issue
 
   protected open val unsatisfiableConstraintIssue: Issue
     get() = mainIssue
@@ -245,6 +257,10 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           val site = error.site
           context.reportAt(mainIssue, site, "${callLabel(site).replaceFirstChar(Char::titlecase)} ${explain(error)}")
         }
+        is Error.NontrivialStaticInitializer -> {
+          val site = error.site
+          context.reportAt(staticInitializerIssue, site, "${staticInitializationLabel(site)} has a ${callLabel(site)} ${explain(error)}")
+        }
         is Error.IntroducingTop -> {
           val msg = explain(error) ?: return@with
           context.reportAt(unsatisfiableConstraintIssue, error.site, msg)
@@ -356,6 +372,24 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
 
   private fun callLabel(site: UElement) =
     if ((site.tryResolveUDeclaration() as? UMethod)?.isKtProperty() == true) "property call" else "call"
+
+  private fun staticInitializationLabel(site: UElement): String {
+    for (psi in generateSequence(site.sourcePsi) { it.parent }.takeWhile { it !is PsiFile && it !is PsiClass && it !is KtClassOrObject }) {
+      when (psi) {
+        is PsiField,
+        is PsiClassInitializer -> if (psi.hasModifierProperty(PsiModifier.STATIC)) return "Class initialization"
+        is KtProperty,
+        is KtAnonymousInitializer -> {
+          if (psi is KtProperty && psi.isTopLevel) return "Top-level initialization"
+          val container = (psi as KtDeclaration).containingClassOrObject
+          if (container is KtObjectDeclaration && !container.isObjectLiteral()) {
+            return if (container.isCompanion()) "`companion object` initialization" else "`object` initialization"
+          }
+        }
+      }
+    }
+    return "Static initialization" // fallback, e.g. when the site has no source PSI
+  }
 
   /** Best-effort lookup of the explicit effect annotation on a method not in the current scope or the assumption table */
   private fun externalAnnotationFinder(evaluator: JavaEvaluator, findPsiMethod: (Type.MethodRef) -> PsiMethod?): (Type.MethodRef) -> FX? {
@@ -477,6 +511,12 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
         { (er, ee, site) -> (site to er) to ee },
         { (site, er), ee -> Error.ExceedingAnnotation(er, ee, site) },
       )
+    val nontrivialStaticInitializer =
+      DedupingAccumulator<Error.NontrivialStaticInitializer<FX>, _, _>(
+        effects::joinOf,
+        { (ee, site) -> site to ee },
+        { site, ee -> Error.NontrivialStaticInitializer(ee, site) },
+      )
     val failingConstraint =
       DedupingAccumulator<Error.FailingConstraint<FX>, _, _>(
         UnboundedSet<ConstraintFailure<FX>>::unionedWith,
@@ -494,6 +534,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       when (error) {
         is Error.IntroducingTop -> introducingTop.accum(error)
         is Error.ExceedingAnnotation -> exceedingAnnotation.accum(error)
+        is Error.NontrivialStaticInitializer -> nontrivialStaticInitializer.accum(error)
         is Error.FailingConstraint -> failingConstraint.accum(error)
         is Error.ConflictingInference -> conflictingInference.accum(error)
         is Error.CallingTop,
@@ -503,6 +544,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
 
     yieldAll(introducingTop.extract())
     yieldAll(exceedingAnnotation.extract())
+    yieldAll(nontrivialStaticInitializer.extract())
     yieldAll(failingConstraint.extract())
     yieldAll(conflictingInference.extract())
   }
@@ -1410,6 +1452,7 @@ private fun <FX : Any> debugEntry(program: Module<FX>, k: Point<FX>, v: Ans<FX>)
         is MethodBody.Status.ForChecking,
         is MethodBody.Status.ForInference -> println("  - $k : (…) -> $v")
         null,
+        is MethodBody.Status.StaticInitializer,
         is MethodBody.Status.Abstract -> {}
       }
     is Point.Instantiation -> println("  - $k : $v")
@@ -1428,7 +1471,8 @@ private fun <FX : Any> resultList(module: Module<FX>, results: Map<Type.MethodRe
                 when (val status = methodBody.status) {
                   is MethodBody.Status.ForChecking -> Effect(status.upperBound.annotated, persistentSetOf(), effectResult.result)
                   is MethodBody.Status.ForInference -> throw IllegalStateException()
-                  is MethodBody.Status.Abstract -> return@fold m
+                  is MethodBody.Status.Abstract,
+                  is MethodBody.Status.StaticInitializer -> return@fold m
                 }
               is EffectResult.Inference -> effectResult.result
               is EffectResult.Inapplicable -> return@fold m
