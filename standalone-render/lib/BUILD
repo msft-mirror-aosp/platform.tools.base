@@ -46,6 +46,7 @@ kotlin_test(
         "//prebuilts/studio/layoutlib/data:framework_res.jar",
         "//tools/base/standalone-render/lib/testData",
     ],
+    friends = [":tools.standalone-render.lib"],
     jvm_flags = ["-Dtest.suite.jar=tools.standalone-render.lib.tests.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
@@ -58,6 +59,7 @@ kotlin_test(
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
     ],
 )

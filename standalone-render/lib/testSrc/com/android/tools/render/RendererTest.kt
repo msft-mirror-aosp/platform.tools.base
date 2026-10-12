@@ -506,4 +506,66 @@ class RendererTest {
       assertEquals("medium_phone", config.device?.id)
     }
   }
+
+  @Test
+  fun testSaveViewInfosWritesCompanionBoundsJsonAndSerializesResult() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val childInfo =
+      com.android.tools.rendering.compose.ComposeViewInfo(
+        sourceLocation = com.android.tools.rendering.compose.SourceLocationImpl("HomeScreen.kt", 42, 999),
+        bounds = com.android.tools.rendering.compose.PxBounds(10, 20, 110, 70),
+        children = emptyList(),
+        name = "Button",
+      )
+    val rootInfo =
+      com.android.tools.rendering.compose.ComposeViewInfo(
+        sourceLocation = com.android.tools.rendering.compose.SourceLocationImpl("HomeScreen.kt", 30, 999),
+        bounds = com.android.tools.rendering.compose.PxBounds(0, 0, 300, 600),
+        children = listOf(childInfo),
+        name = "Column",
+      )
+    val outputDir = tmpFolder.newFolder("output_bounds_test")
+    val relativeImagePath = "pkg/Preview_0.png"
+
+    bootstrapper.bootstrap().use { renderer ->
+      renderer.saveViewInfos(listOf(rootInfo), outputDir.absolutePath, relativeImagePath)
+    }
+
+    val expectedBoundsFile =
+      com.android.tools.rendering.compose.boundsJsonPath(java.nio.file.Paths.get(outputDir.absolutePath, relativeImagePath))
+    com.google.common.truth.Truth.assertThat(java.nio.file.Files.exists(expectedBoundsFile)).isTrue()
+    val parsedFromDisk = com.android.tools.rendering.compose.parseComposeViewInfosJson(java.nio.file.Files.readString(expectedBoundsFile))
+    com.google.common.truth.Truth.assertThat(parsedFromDisk).containsExactly(rootInfo)
+
+    val screenshotResult =
+      com.android.tools.render.common.PreviewScreenshotResult(
+        "preview_id",
+        "pkg.Preview",
+        relativeImagePath,
+        null,
+        "Preview",
+        listOf(rootInfo),
+      )
+    val serializedBytes =
+      java.io.ByteArrayOutputStream().use { baos ->
+        java.io.ObjectOutputStream(baos).use { it.writeObject(screenshotResult) }
+        baos.toByteArray()
+      }
+    val deserializedResult =
+      java.io.ByteArrayInputStream(serializedBytes).use { bais ->
+        java.io.ObjectInputStream(bais).use {
+          it.readObject() as com.android.tools.render.common.PreviewScreenshotResult
+        }
+      }
+    com.google.common.truth.Truth.assertThat(deserializedResult.viewInfos).containsExactly(rootInfo)
+  }
 }
