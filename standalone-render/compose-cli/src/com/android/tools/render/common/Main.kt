@@ -31,7 +31,13 @@ class StandaloneComposeRenderer(
   private val layoutlibPath: String,
 ) {
 
-  fun render(screenshots: List<PreviewScreenshot>, outputFolder: String): PreviewRenderingResult {
+  @JvmOverloads
+  fun render(
+    screenshots: List<PreviewScreenshot>,
+    outputFolder: String,
+    includeComponentTree: Boolean = false,
+    renderImage: Boolean = true,
+  ): PreviewRenderingResult {
     return try {
       val bootstrapper =
         RenderEnvironmentBootstrapper(
@@ -43,7 +49,17 @@ class StandaloneComposeRenderer(
           layoutlibPath = layoutlibPath,
         )
       bootstrapper.bootstrap().use { renderer ->
-        val results = screenshots.flatMap { renderer.render(it, outputFolder) }.sortedBy { it.imagePath }
+        val results =
+          screenshots
+            .flatMap { renderer.render(it, outputFolder, includeComponentTree, renderImage) }
+            .sortedWith(
+              compareBy(
+                { it.imagePath.ifEmpty { null } ?: it.componentTreePath.orEmpty() },
+                { it.methodFQN },
+                { it.previewId },
+                { it.displayName.orEmpty() },
+              )
+            )
         PreviewRenderingResult(globalError = null, results)
       }
     } catch (t: Throwable) {

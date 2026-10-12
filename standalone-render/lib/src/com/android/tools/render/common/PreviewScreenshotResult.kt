@@ -20,12 +20,15 @@ import com.android.tools.rendering.compose.ComposeViewInfo
 import java.io.Serializable
 
 /**
- * Result of a screenshot creation. It will contain [previewId] is a string that is designed to uniquely identify the preview, currently an
- * image name without the suffix for method params is used. [methodFQN] fully qualified name of the test method that this result is
- * generated from, [imagePath] relative path of the screenshot image in the output directory - if successful, image will be created in the
- * output folder with this path, else it is used to identify the exact screenshot that failed. This file separators in this path are OS
- * dependent. and [error] contains info about issues encountered during rendering. It is possible that we managed to render an image, but we
- * found a number of problems during its rendering that might have affected the fidelity of the result; so image and error would both exist
+ * Result of a screenshot creation.
+ *
+ * [previewId] is a string designed to uniquely identify the preview (currently an image name without the suffix for method params).
+ * [methodFQN] is the fully qualified name of the test method that this result is generated from. [imagePath] is the relative path of the
+ * screenshot image in the output directory (using OS-dependent file separators), or an empty string (`""`) when image rendering is disabled
+ * (`renderImage = false`). When image rendering is enabled and succeeds, the image is created in the output folder at this path; otherwise,
+ * it identifies the screenshot that failed. [error] contains info about issues encountered during rendering. Both an image and an error may
+ * be present if rendering succeeded with fidelity warnings or problems. [componentTreePath] is the relative path of the serialized
+ * component tree JSON file in the output directory if requested and extracted.
  */
 data class PreviewScreenshotResult(
   val previewId: String,
@@ -34,4 +37,5 @@ data class PreviewScreenshotResult(
   val error: ScreenshotError?,
   val displayName: String? = null,
   val viewInfos: List<ComposeViewInfo> = emptyList(),
+  val componentTreePath: String? = null,
 ) : Serializable

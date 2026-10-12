@@ -46,8 +46,8 @@ data class BrokenClass(val className: String, val stackTrace: String) : Serializ
  * Inspects exceptions and logger messages for known Compose preview failure modes via [ComposeRenderErrors] to enrich the error message
  * with summaries, remediation hints, and unwrapped root causes.
  */
-fun RenderResult.toScreenshotError(imageRendered: BufferedImage?): ScreenshotError? {
-  if (renderResult.status == Result.Status.SUCCESS && !logger.hasErrors() && imageRendered != null) {
+fun RenderResult.toScreenshotError(imageRendered: BufferedImage?, expectImage: Boolean = true): ScreenshotError? {
+  if (renderResult.status == Result.Status.SUCCESS && !logger.hasErrors() && (!expectImage || imageRendered != null)) {
     return null
   }
 
@@ -57,7 +57,8 @@ fun RenderResult.toScreenshotError(imageRendered: BufferedImage?): ScreenshotErr
 
   val errorMessage =
     when {
-      imageRendered == null && renderResult.status == Result.Status.SUCCESS -> "Nothing to render in Preview. Cannot generate image"
+      expectImage && imageRendered == null && renderResult.status == Result.Status.SUCCESS ->
+        "Nothing to render in Preview. Cannot generate image"
       diagnosedComposeError != null -> {
         val hintSuffix = diagnosedComposeError.hint?.let { "\nHint: ${it.trimIndent()}" } ?: ""
         "${diagnosedComposeError.summary}$hintSuffix"

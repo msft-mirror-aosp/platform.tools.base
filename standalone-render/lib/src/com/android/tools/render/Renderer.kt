@@ -21,9 +21,12 @@ import com.android.resources.ResourceFolderType
 import com.android.sdklib.devices.screenShape
 import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
+import com.android.tools.render.common.ComponentTreeExtractor
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
+import com.android.tools.render.common.ResolvedScreenshotLayout
 import com.android.tools.render.common.toScreenshotError
+import com.android.tools.render.common.writeComponentTreeToJson
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.discovery.PreviewDiscoveryEngine
 import com.android.tools.render.validation.PreviewValidator
@@ -31,18 +34,18 @@ import com.android.tools.rendering.RenderLogger
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.RenderService
 import com.android.tools.rendering.compose.ComposeViewInfo
-import com.android.tools.rendering.compose.boundsJsonPath
 import com.android.tools.rendering.compose.parseViewInfo
-import com.android.tools.rendering.compose.toJsonArray
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import java.awt.AlphaComposite
 import java.awt.Dimension
+import java.awt.Shape
 import java.awt.image.BufferedImage
 import java.io.Closeable
 import java.io.File
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
@@ -64,6 +67,7 @@ class Renderer(
 
   companion object {
     private val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>| ]+""".toRegex()
+    private val invalidPathCharsRegex = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()
   }
 
   /**
@@ -74,23 +78,32 @@ class Renderer(
    *
    * @param screenshot The metadata of the Jetpack Compose `@Preview` to render.
    * @param outputFolderPath The root directory where the resulting PNG images will be saved.
+   * @param includeComponentTree Whether to extract and write the component tree JSON.
+   * @param renderImage Whether to render and save the bitmap image.
    * @return A list of [PreviewScreenshotResult]s, each detailing the outcome of a single render operation, including the output path and
    *   any potential errors.
    */
-  fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
+  @JvmOverloads
+  fun render(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    includeComponentTree: Boolean = false,
+    renderImage: Boolean = true,
+  ): List<PreviewScreenshotResult> {
     // If the screenshot is non-Compose or its preview and method parameters have already been resolved/specified,
     // bypass bytecode preview discovery and render it directly.
     if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {
-      return renderResolvedScreenshot(screenshot, outputFolderPath)
+      return renderResolvedScreenshot(screenshot, outputFolderPath, includeComponentTree, renderImage)
     }
 
-    val packagePath = screenshot.methodFQN.substringBeforeLast(".").replace(".", File.separator)
-    val baseResultId = screenshot.previewId.substringAfterLast(".")
+    val packagePath = sanitizePackagePath(screenshot.methodFQN)
+    val baseResultId = sanitizeBaseResultId(screenshot.previewId)
     var imageCounter = 0
 
     return discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).flatMap { method ->
       if (method.methodValidationResult.hasErrors) {
-        val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_${imageCounter++}.png"
+        val index = imageCounter++
+        val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
         listOf(
           PreviewScreenshotResult(
             screenshot.previewId,
@@ -103,7 +116,8 @@ class Renderer(
         method.previews.flatMap { currentScreenshot ->
           val validationResult = previewValidator.validate(currentScreenshot)
           if (validationResult.hasErrors) {
-            val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_${imageCounter++}.png"
+            val index = imageCounter++
+            val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
             listOf(
               PreviewScreenshotResult(
                 currentScreenshot.previewId,
@@ -117,7 +131,16 @@ class Renderer(
               val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
               logger.log(Level.WARNING, "Preview parameter validation warning for ${currentScreenshot.methodFQN}: $warningMessages")
             }
-            renderScreenshotElement(currentScreenshot, outputFolderPath, packagePath, baseResultId) { imageCounter++ }
+            renderScreenshotElement(
+              currentScreenshot,
+              outputFolderPath,
+              packagePath,
+              baseResultId,
+              includeComponentTree,
+              renderImage,
+            ) {
+              imageCounter++
+            }
           }
         }
       }
@@ -129,12 +152,17 @@ class Renderer(
    *
    * Validates the screenshot configuration and outputs the rendered PNG file(s) or records validation errors if parameters are invalid.
    */
-  private fun renderResolvedScreenshot(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
-    val packagePath = screenshot.methodFQN.substringBeforeLast(".").replace(".", File.separator)
-    val baseResultId = screenshot.previewId.substringAfterLast(".")
+  private fun renderResolvedScreenshot(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    includeComponentTree: Boolean,
+    renderImage: Boolean,
+  ): List<PreviewScreenshotResult> {
+    val packagePath = sanitizePackagePath(screenshot.methodFQN)
+    val baseResultId = sanitizeBaseResultId(screenshot.previewId)
     val validationResult = previewValidator.validate(screenshot)
     return if (validationResult.hasErrors) {
-      val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_0.png"
+      val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_0.png" else ""
       listOf(
         PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, defaultRelativeImagePath, validationResult.toScreenshotError())
       )
@@ -144,7 +172,7 @@ class Renderer(
         logger.log(Level.WARNING, "Preview parameter validation warning for ${screenshot.methodFQN}: $warningMessages")
       }
       var imageCounter = 0
-      renderScreenshotElement(screenshot, outputFolderPath, packagePath, baseResultId) { imageCounter++ }
+      renderScreenshotElement(screenshot, outputFolderPath, packagePath, baseResultId, includeComponentTree, renderImage) { imageCounter++ }
     }
   }
 
@@ -153,6 +181,8 @@ class Renderer(
     outputFolderPath: String,
     packagePath: String,
     baseResultId: String,
+    includeComponentTree: Boolean,
+    renderImage: Boolean,
     nextImageIndex: () -> Int,
   ): List<PreviewScreenshotResult> {
     val previewElement = screenshot.toPreviewElement(module)
@@ -173,7 +203,7 @@ class Renderer(
       )
 
     val usedSuffixes = mutableSetOf<String>()
-    return renderResolvedLayouts(renderRequest)
+    return renderResolvedLayouts(renderRequest, renderImage)
       .map { (config, renderResult, layout) ->
         val index = nextImageIndex()
         // If a custom display name is provided (e.g. from PreviewParameterProvider.getDisplayName),
@@ -196,16 +226,42 @@ class Renderer(
           }
         val resultId = "${baseResultId}_$suffix"
         val imageName = "$resultId.png"
-        val relativeImagePath = packagePath + File.separator + imageName
+        val relativeImagePath = if (renderImage) packagePath + File.separator + imageName else ""
+        val relativeComponentTreePath = packagePath + File.separator + "$resultId.json"
         try {
-          val imageRendered = postProcessRenderedImage(config, renderResult)
           val viewInfos = renderResult.rootViews.flatMap { parseViewInfo(it) }
-          if (imageRendered != null) {
-            saveImage(imageRendered, outputFolderPath, relativeImagePath)
-            saveViewInfos(viewInfos, outputFolderPath, relativeImagePath)
-          }
+          val imageRendered =
+            if (renderImage) {
+              val image = postProcessRenderedImage(config, renderResult)
+              if (image != null) {
+                saveImage(image, outputFolderPath, relativeImagePath)
+              }
+              image
+            } else {
+              null
+            }
 
-          val screenshotError = renderResult.toScreenshotError(imageRendered)
+          val savedComponentTreePath =
+            if (
+              includeComponentTree &&
+                renderResult.renderResult.status == Result.Status.SUCCESS &&
+                saveComponentTree(
+                  previewId = screenshot.previewId,
+                  methodFQN = screenshot.methodFQN,
+                  displayName = layout.displayName,
+                  outputFolderPath = outputFolderPath,
+                  relativeComponentTreePath = relativeComponentTreePath,
+                  config = config,
+                  renderResult = renderResult,
+                  viewInfos = viewInfos,
+                )
+            ) {
+              relativeComponentTreePath
+            } else {
+              null
+            }
+
+          val screenshotError = renderResult.toScreenshotError(imageRendered, expectImage = renderImage)
           // Pass the raw unsanitized display name so downstream test descriptors can display it in reports.
           PreviewScreenshotResult(
             screenshot.previewId,
@@ -214,9 +270,18 @@ class Renderer(
             screenshotError,
             layout.displayName,
             viewInfos,
+            savedComponentTreePath,
           )
         } catch (t: Throwable) {
-          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, t.toScreenshotError(), layout.displayName)
+          PreviewScreenshotResult(
+            screenshot.previewId,
+            screenshot.methodFQN,
+            relativeImagePath,
+            t.toScreenshotError(),
+            layout.displayName,
+            viewInfos = emptyList(),
+            componentTreePath = null,
+          )
         } finally {
           Disposer.dispose(renderResult)
         }
@@ -224,33 +289,78 @@ class Renderer(
       .toList()
   }
 
+  internal fun saveComponentTree(
+    previewId: String,
+    methodFQN: String,
+    displayName: String?,
+    outputFolderPath: String,
+    relativeComponentTreePath: String,
+    config: Configuration = baseConfiguration,
+    renderResult: RenderResult? = null,
+    viewInfos: List<ComposeViewInfo> = emptyList(),
+  ): Boolean {
+    return try {
+      val rootDir = Paths.get(outputFolderPath).toAbsolutePath().normalize()
+      val treePath = rootDir.resolve(relativeComponentTreePath).normalize()
+      if (!treePath.startsWith(rootDir)) {
+        logger.log(Level.SEVERE, "Refusing to write component tree outside output folder: $treePath")
+        return false
+      }
+      val tree =
+        ComponentTreeExtractor.extract(
+          previewId = previewId,
+          methodFQN = methodFQN,
+          displayName = displayName,
+          config = config,
+          renderResult = renderResult,
+          viewInfos = viewInfos,
+        )
+      treePath.parent?.let { Files.createDirectories(it) }
+      Files.newBufferedWriter(treePath, StandardCharsets.UTF_8).use { writer ->
+        writeComponentTreeToJson(writer, tree)
+      }
+      true
+    } catch (e: Exception) {
+      logger.log(Level.SEVERE, "Failed to write component tree to $relativeComponentTreePath", e)
+      false
+    }
+  }
+
   private fun saveImage(image: BufferedImage, outputFolderPath: String, relativeImagePath: String) {
-    val imagePath = Paths.get(outputFolderPath, relativeImagePath)
     try {
+      val rootDir = Paths.get(outputFolderPath).toAbsolutePath().normalize()
+      val imagePath = rootDir.resolve(relativeImagePath).normalize()
+      if (!imagePath.startsWith(rootDir)) {
+        logger.log(Level.SEVERE, "Refusing to write image outside output folder: $imagePath")
+        return
+      }
       Files.createDirectories(imagePath.parent)
       val imgFile = imagePath.toFile()
       imgFile.createNewFile()
       ImageIO.write(image, "png", imgFile)
     } catch (e: IOException) {
-      logger.log(Level.SEVERE, "Failed to write image to $imagePath", e)
+      logger.log(Level.SEVERE, "Failed to write image to $relativeImagePath", e)
     }
   }
 
-  internal fun saveViewInfos(viewInfos: List<ComposeViewInfo>, outputFolderPath: String, relativeImagePath: String) {
-    val boundsPath = boundsJsonPath(Paths.get(outputFolderPath, relativeImagePath))
-    try {
-      boundsPath.parent?.let { Files.createDirectories(it) }
-      Files.writeString(boundsPath, viewInfos.toJsonArray().toString())
-    } catch (e: IOException) {
-      logger.log(Level.SEVERE, "Failed to write view info bounds to $boundsPath", e)
-    }
+  private fun sanitizePackagePath(methodFqn: String): String =
+    methodFqn
+      .substringBeforeLast(".")
+      .split('.')
+      .map { it.replace(invalidPathCharsRegex, "_") }
+      .filter { it.isNotEmpty() && it != "." && it != ".." }
+      .joinToString(File.separator)
+
+  private fun sanitizeBaseResultId(previewId: String): String {
+    val sanitized = previewId.substringAfterLast(".").replace(invalidPathCharsRegex, "_")
+    return if (sanitized.isEmpty() || sanitized == "." || sanitized == "..") "preview" else sanitized
   }
 
-  fun render(request: RenderRequest): Sequence<Pair<Configuration, RenderResult>> {
+  fun render(request: RenderRequest, renderImage: Boolean = true): Sequence<Pair<Configuration, RenderResult>> {
     return request.xmlLayoutsProvider().map {
       val configuration = baseConfiguration.clone()
       request.configurationModifier(configuration)
-      configuration to render(configuration, it)
+      configuration to render(configuration, it, renderImage)
     }
   }
 
@@ -262,21 +372,22 @@ class Renderer(
    * in a [ResolvedScreenshotLayout] with null display name.
    */
   fun renderResolvedLayouts(
-    request: RenderRequest
-  ): Sequence<Triple<Configuration, RenderResult, com.android.tools.render.common.ResolvedScreenshotLayout>> {
+    request: RenderRequest,
+    renderImage: Boolean = true,
+  ): Sequence<Triple<Configuration, RenderResult, ResolvedScreenshotLayout>> {
     val layoutsProvider =
       request.resolvedLayoutsProvider
         ?: {
-          request.xmlLayoutsProvider().map { com.android.tools.render.common.ResolvedScreenshotLayout(it) }
+          request.xmlLayoutsProvider().map { ResolvedScreenshotLayout(it) }
         }
     return layoutsProvider().map {
       val configuration = baseConfiguration.clone()
       request.configurationModifier(configuration)
-      Triple(configuration, render(configuration, it.xmlLayout), it)
+      Triple(configuration, render(configuration, it.xmlLayout, renderImage), it)
     }
   }
 
-  private fun render(configuration: Configuration, xmlLayout: String): RenderResult {
+  private fun render(configuration: Configuration, xmlLayout: String, renderImage: Boolean): RenderResult {
     val disposable = Disposer.newCheckedDisposable()
     val logger = RenderLogger()
     return try {
@@ -284,12 +395,7 @@ class Renderer(
         renderService.taskBuilder(module, configuration, logger).build(disposable).get()
           ?: run {
             Disposer.dispose(disposable)
-            return RenderResult.createRenderTaskErrorResult(
-              module,
-              { throw NotImplementedError("PsiFile supplier is not supported") },
-              null,
-              logger,
-            )
+            return createRenderTaskErrorResult(logger)
           }
 
       // b/469819154: Release render after use to avoid accumulating heap memory usage.
@@ -299,25 +405,38 @@ class Renderer(
 
       renderTask.setXmlFile(xmlFile)
 
-      val result = renderTask.render().get(100, TimeUnit.SECONDS)
+      val result =
+        if (renderImage) {
+          renderTask.render().get(100, TimeUnit.SECONDS)
+        } else {
+          renderTask.inflate().get(100, TimeUnit.SECONDS) ?: createRenderTaskErrorResult(logger)
+        }
       Disposer.register(result, disposable)
       result
     } catch (t: Throwable) {
       Disposer.dispose(disposable)
-      RenderResult.createRenderTaskErrorResult(module, { throw NotImplementedError("PsiFile supplier is not supported") }, t, logger)
+      createRenderTaskErrorResult(logger, t)
     }
   }
 
+  private fun createRenderTaskErrorResult(logger: RenderLogger, throwable: Throwable? = null): RenderResult =
+    RenderResult.createRenderTaskErrorResult(
+      module,
+      { throw NotImplementedError("PsiFile supplier is not supported") },
+      throwable,
+      logger,
+    )
+
   private fun postProcessRenderedImage(config: Configuration, renderResult: RenderResult): BufferedImage? {
     val imageCopy = renderResult.renderedImage.copy
-    if (imageCopy == null && renderResult.renderResult.status != com.android.ide.common.rendering.api.Result.Status.SUCCESS) return null
+    if (imageCopy == null && renderResult.renderResult.status != Result.Status.SUCCESS) return null
 
     val image = imageCopy ?: BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
     val screenShape = config.device?.screenShape(0.0, 0.0, Dimension(image.width, image.height)) ?: return image
     return resizeImage(image, screenShape)
   }
 
-  private fun resizeImage(image: BufferedImage, shape: java.awt.Shape): BufferedImage {
+  private fun resizeImage(image: BufferedImage, shape: Shape): BufferedImage {
     val newImage = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_ARGB)
     val g = newImage.createGraphics()
     try {

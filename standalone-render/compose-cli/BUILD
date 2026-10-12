@@ -165,6 +165,7 @@ kotlin_test(
     ],
     test_class = "com.android.tools.render.compose.PerfMainTest",
     deps = [
+        ":compose-preview-renderer-cli-lib",
         ":tools.compose-preview-renderer",
         "//tools/base/perf-logger:studio.perf-logger_testlib",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
@@ -196,6 +197,7 @@ kotlin_test(
     ],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
+        ":compose-preview-renderer-cli-lib",
         ":tools.compose-preview-renderer",
         "//tools/base/perf-logger:studio.perf-logger_testlib",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",

@@ -487,4 +487,37 @@ class JsonSerializationTest {
 
     assertEquals(previewRenderingResult, restoredPreviewRenderingResult)
   }
+
+  @Test
+  fun testPreviewRenderingResultWithComponentTreePathToJsonAndBack() {
+    val previewRenderingResult =
+      PreviewRenderingResult(
+        null,
+        listOf(
+          PreviewScreenshotResult(
+            previewId = "previewId1",
+            methodFQN = "methodFQN1",
+            imagePath = "pkg/class/image.png",
+            error = null,
+            displayName = "customDisplayName",
+            componentTreePath = "pkg/class/image.json",
+          ),
+          PreviewScreenshotResult(
+            previewId = "previewId2",
+            methodFQN = "methodFQN2",
+            imagePath = "",
+            error = null,
+            displayName = null,
+            componentTreePath = "pkg/class/image2.json",
+          ),
+        ),
+      )
+
+    val stringWriter = StringWriter()
+    writePreviewRenderingResult(stringWriter, previewRenderingResult)
+
+    val restoredPreviewRenderingResult = readPreviewRenderingResultJson(stringWriter.toString().reader())
+
+    assertEquals(previewRenderingResult, restoredPreviewRenderingResult)
+  }
 }
