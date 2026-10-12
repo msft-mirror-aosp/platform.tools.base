@@ -300,4 +300,76 @@ class AndroidDeviceDescriptorTest {
     verify(mockReporter, never()).testFailed(any(), any())
     verify(mockReporter).testEnded(eq(ddmlibTestId), any())
   }
+
+  /**
+   * Regression test for a flaky failure in AndroidManagedDeviceTest.additionalTestOutputWithBenchmarkV3Files where a test that passed on
+   * the device (and was reported as passed in the XML/HTML report) was reported to JUnit as failed with "Instrumentation ended
+   * unexpectedly".
+   *
+   * This mirrors the threading model of [AmInstrumentationRunner.runAmInstrumentCommand]: the instrumentation output is parsed on a
+   * dedicated thread, and [AmInstrumentationParser.done] is called on the runner thread once the parsing thread terminates. If
+   * post-processing in [AndroidDeviceDescriptor.Listener.testEnded] (e.g. pulling benchmark files via adb) throws, the parsing thread dies
+   * before the test result is completed, and the subsequent `instrumentationEnded` callback marks the passed test as failed.
+   */
+  @Test
+  fun `test result is not lost when benchmark output collection throws`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val context = AndroidTestExecutionContext(executionRequest)
+    val mockReporter = mock<AndroidDeviceDescriptor.SimpleXmlResultReporter>()
+
+    whenever(additionalTestOutputCollector.addBenchmarkOutput(any())).thenThrow(RuntimeException("simulated adb failure"))
+
+    val listener = descriptor.Listener(reporter = mockReporter, additionalTestOutputCollector = additionalTestOutputCollector)
+    val parser = AmInstrumentationParser(listeners = setOf(listener))
+
+    val instrumentationOutput =
+      """
+      INSTRUMENTATION_STATUS: class=com.example.helloworld.AdditionalTestOutputExampleTest
+      INSTRUMENTATION_STATUS: current=1
+      INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+      INSTRUMENTATION_STATUS: numtests=1
+      INSTRUMENTATION_STATUS: stream=
+      INSTRUMENTATION_STATUS: test=createSampleFileAndReportIt
+      INSTRUMENTATION_STATUS_CODE: 1
+      INSTRUMENTATION_STATUS: android.studio.v3display.benchmark=benchmark: [trace](uri://trace.perfetto-trace)
+      INSTRUMENTATION_STATUS: android.studio.v3display.benchmark.outputDirPath=/sdcard/Android/media/com.example.helloworld/additional_test_output
+      INSTRUMENTATION_STATUS: class=com.example.helloworld.AdditionalTestOutputExampleTest
+      INSTRUMENTATION_STATUS: current=1
+      INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+      INSTRUMENTATION_STATUS: numtests=1
+      INSTRUMENTATION_STATUS: stream=.
+      INSTRUMENTATION_STATUS: test=createSampleFileAndReportIt
+      INSTRUMENTATION_STATUS_CODE: 0
+      INSTRUMENTATION_RESULT: stream=
+      Time: 1.0
+
+      OK (1 test)
+
+      INSTRUMENTATION_CODE: -1
+      """
+        .trimIndent()
+
+    // Same as AmInstrumentationRunner: parse on a dedicated thread, then call done() after it terminates.
+    val outThread = Thread({ instrumentationOutput.lines().forEach { parser.parse(it) } }, "AmInstrumentationRunner-out")
+    outThread.setUncaughtExceptionHandler { _, _ -> /* Swallow to keep test output clean; default handler only prints. */ }
+    outThread.start()
+    outThread.join()
+    parser.done()
+    listener.finish()
+
+    val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
+    descriptor.execute(context, dynamicTestExecutor)
+
+    val captor = argumentCaptor<AndroidDynamicTestDescriptor>()
+    verify(dynamicTestExecutor).execute(captor.capture())
+
+    // The XML reporter already considers the test passed...
+    val ddmlibTestId = DdmlibTestIdentifier("com.example.helloworld.AdditionalTestOutputExampleTest", "createSampleFileAndReportIt")
+    verify(mockReporter).testEnded(eq(ddmlibTestId), any())
+    verify(mockReporter, never()).testFailed(any(), any())
+
+    // ...so the JUnit result must agree. Previously this threw RuntimeException("Instrumentation ended unexpectedly").
+    captor.firstValue.execute(context, dynamicTestExecutor)
+  }
 }

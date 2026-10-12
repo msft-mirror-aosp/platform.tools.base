@@ -460,11 +460,28 @@ class AndroidDeviceDescriptor(
       }
       reporter?.testEnded(ddmlibTestId, emptyMap())
 
+      val testDescriptor = testDescriptors[testIdentifier]
+      try {
+        // Collecting additional outputs is best-effort: it involves adb and file I/O that may fail
+        // intermittently. A failure here must neither change the test result nor propagate to the
+        // instrumentation parser thread, which would otherwise leave the result uncompleted and
+        // cause the test to be reported as "Instrumentation ended unexpectedly".
+        collectTestArtifacts(testResult, testDescriptor)
+      } catch (e: Exception) {
+        logger.log(Level.WARNING, "Failed to collect additional outputs for $ddmlibTestId on $deviceSerial", e)
+      } finally {
+        testDescriptor?.resultDeferred?.complete(testResult)
+      }
+    }
+
+    private fun collectTestArtifacts(testResult: TestResult, testDescriptor: AndroidDynamicTestDescriptor?) {
+      val testIdentifier = testResult.testIdentifier
+      val packageName = testIdentifier.testPackage
+
       val benchmarkOutput = additionalTestOutputCollector?.addBenchmarkOutput(testResult)
       val traceFiles = benchmarkOutput?.traceFiles ?: emptyList()
       val messageFile = benchmarkOutput?.messageFile
 
-      val testDescriptor = testDescriptors[testIdentifier]
       if (testDescriptor != null) {
         if (traceFiles.isNotEmpty()) {
           val paths = traceFiles.joinToString(",") { it.absolutePath }
@@ -481,7 +498,6 @@ class AndroidDeviceDescriptor(
           val reportEntry = ReportEntry.from(AndroidTestReportKeys.LOGCAT_PATH, logcatPath)
           testDescriptor.reportEntries.add(reportEntry)
         }
-        testDescriptor.resultDeferred.complete(testResult)
       }
     }
 
