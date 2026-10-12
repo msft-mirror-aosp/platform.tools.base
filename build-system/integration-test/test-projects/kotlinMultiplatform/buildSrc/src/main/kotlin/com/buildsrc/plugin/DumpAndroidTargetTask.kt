@@ -27,13 +27,14 @@ import java.lang.reflect.Type
 @OptIn(ExternalKotlinTargetApi::class)
 abstract class DumpAndroidTargetTask: DefaultTask() {
     private val outputDirectory = project.layout.buildDirectory.dir("ide/targets")
-    private val kotlinExtension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
-    private val kotlinIdeMultiplatformImport = IdeMultiplatformImport.instance(project)
 
     @TaskAction
     fun dump() {
         val outputDirectory = outputDirectory.get().asFile
         outputDirectory.deleteRecursively()
+
+        val kotlinExtension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+        val kotlinIdeMultiplatformImport = IdeMultiplatformImport.instance(project)
 
         val gson = GsonBuilder().setLenient().setPrettyPrinting()
             .registerTypeHierarchyAdapter(Extras::class.java, ExtrasAdapter)

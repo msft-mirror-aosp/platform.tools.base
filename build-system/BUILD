@@ -29,9 +29,9 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.6.0"
+GRADLE_VERSION = "9.7.1"
 
-GRADLE_BASE_VERSION = "9.6.0"
+GRADLE_BASE_VERSION = "9.7.1"
 
 filegroup(
     name = "gradle-distrib",
@@ -56,9 +56,15 @@ maven_repository(
     name = "gradle-runtime-maven",
     # keep sorted
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.21",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.21",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.4.0",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.7.1",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.7.1"],
     visibility = ["//visibility:public"],
 )
 
@@ -710,6 +716,8 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.3.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",
         "@maven//:org.jetbrains.markdown",

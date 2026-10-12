@@ -131,6 +131,136 @@
   {
     "binaryType": "KOTLIN_COMPILE",
     "classpath": [
+      "{LOCAL_REPO}/com/google/guava/guava/19.0/guava-19.0.jar"
+    ],
+    "coordinates": {
+      "group": "com.google.guava",
+      "module": "guava",
+      "version": "19.0",
+      "capabilities": [
+        {
+          "group": "com.google.guava",
+          "name": "guava",
+          "version": "19.0"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "guava-19.0.jar -\u003e guava-19.0.jar (com.google.guava:guava:19.0)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06-api.jar"
+    ],
+    "coordinates": {
+      "group": "androidx.test",
+      "module": "runner",
+      "version": "1.4.0-alpha06",
+      "capabilities": [
+        {
+          "group": "androidx.test",
+          "name": "runner",
+          "version": "1.4.0-alpha06"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "runner-1.4.0-alpha06.aar -\u003e runner-1.4.0-alpha06-api.jar (androidx.test:runner:1.4.0-alpha06)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
+      "com.android.kotlin.multiplatform.models.DependencyInfo;android-dependency-model": {
+        "library": {
+          "type": "ANDROID_LIBRARY",
+          "libraryInfo": {
+            "componentInfo": {
+              "productFlavors": {},
+              "attributes": {
+                "org.gradle.category": "library",
+                "org.gradle.libraryelements": "jar",
+                "org.gradle.status": "release",
+                "org.gradle.usage": "java-api"
+              },
+              "capabilities": [
+                "androidx.test:runner:1.4.0-alpha06"
+              ],
+              "isTestFixtures": false
+            },
+            "group": "androidx.test",
+            "name": "runner",
+            "version": "1.4.0-alpha06"
+          },
+          "artifact": {
+            "absolutePath": "{LOCAL_REPO}/androidx/test/runner/1.4.0-alpha06/runner-1.4.0-alpha06.aar"
+          },
+          "androidLibraryData": {
+            "manifest": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/AndroidManifest.xml"
+            },
+            "compileJarFiles": [
+              {
+                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jars/classes.jar"
+              }
+            ],
+            "runtimeJarFiles": [
+              {
+                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jars/classes.jar"
+              }
+            ],
+            "resFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/res"
+            },
+            "resStaticLibrary": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/res.apk"
+            },
+            "assetsFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/assets"
+            },
+            "jniFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jni"
+            },
+            "aidlFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/aidl"
+            },
+            "renderscriptFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/rs"
+            },
+            "proguardRules": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/proguard.txt"
+            },
+            "externalAnnotations": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/annotations.zip"
+            },
+            "publicResources": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/public.txt"
+            },
+            "symbolFile": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/R.txt"
+            }
+          },
+          "srcJars": []
+        }
+      }
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
       "{GRADLE_CACHE}/{CHECKSUM}/transformed/junit-1.1.5-api.jar"
     ],
     "coordinates": {
@@ -358,165 +488,6 @@
     },
     "extras": {
       "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar -\u003e kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar (org.jetbrains.kotlin:kotlin-stdlib:{KOTLIN_VERSION_FOR_TESTS})",
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
-    }
-  },
-  {
-    "binaryType": "KOTLIN_COMPILE",
-    "classpath": [
-      "{LOCAL_REPO}/com/google/guava/guava/19.0/guava-19.0.jar"
-    ],
-    "coordinates": {
-      "group": "com.google.guava",
-      "module": "guava",
-      "version": "19.0",
-      "capabilities": [
-        {
-          "group": "com.google.guava",
-          "name": "guava",
-          "version": "19.0"
-        }
-      ],
-      "attributes": {
-        "artifactType": "android-classes-jar",
-        "org.gradle.category": "library",
-        "org.gradle.libraryelements": "jar",
-        "org.gradle.status": "release",
-        "org.gradle.usage": "java-api"
-      }
-    },
-    "extras": {
-      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "guava-19.0.jar -\u003e guava-19.0.jar (com.google.guava:guava:19.0)",
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
-    }
-  },
-  {
-    "binaryType": "KOTLIN_COMPILE",
-    "classpath": [
-      "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06-api.jar"
-    ],
-    "coordinates": {
-      "group": "androidx.test",
-      "module": "runner",
-      "version": "1.4.0-alpha06",
-      "capabilities": [
-        {
-          "group": "androidx.test",
-          "name": "runner",
-          "version": "1.4.0-alpha06"
-        }
-      ],
-      "attributes": {
-        "artifactType": "android-classes-jar",
-        "org.gradle.category": "library",
-        "org.gradle.libraryelements": "jar",
-        "org.gradle.status": "release",
-        "org.gradle.usage": "java-api"
-      }
-    },
-    "extras": {
-      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "runner-1.4.0-alpha06.aar -\u003e runner-1.4.0-alpha06-api.jar (androidx.test:runner:1.4.0-alpha06)",
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
-      "com.android.kotlin.multiplatform.models.DependencyInfo;android-dependency-model": {
-        "library": {
-          "type": "ANDROID_LIBRARY",
-          "libraryInfo": {
-            "componentInfo": {
-              "productFlavors": {},
-              "attributes": {
-                "org.gradle.category": "library",
-                "org.gradle.libraryelements": "jar",
-                "org.gradle.status": "release",
-                "org.gradle.usage": "java-api"
-              },
-              "capabilities": [
-                "androidx.test:runner:1.4.0-alpha06"
-              ],
-              "isTestFixtures": false
-            },
-            "group": "androidx.test",
-            "name": "runner",
-            "version": "1.4.0-alpha06"
-          },
-          "artifact": {
-            "absolutePath": "{LOCAL_REPO}/androidx/test/runner/1.4.0-alpha06/runner-1.4.0-alpha06.aar"
-          },
-          "androidLibraryData": {
-            "manifest": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/AndroidManifest.xml"
-            },
-            "compileJarFiles": [
-              {
-                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jars/classes.jar"
-              }
-            ],
-            "runtimeJarFiles": [
-              {
-                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jars/classes.jar"
-              }
-            ],
-            "resFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/res"
-            },
-            "resStaticLibrary": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/res.apk"
-            },
-            "assetsFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/assets"
-            },
-            "jniFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jni"
-            },
-            "aidlFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/aidl"
-            },
-            "renderscriptFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/rs"
-            },
-            "proguardRules": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/proguard.txt"
-            },
-            "externalAnnotations": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/annotations.zip"
-            },
-            "publicResources": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/public.txt"
-            },
-            "symbolFile": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/R.txt"
-            }
-          },
-          "srcJars": []
-        }
-      }
-    }
-  },
-  {
-    "binaryType": "KOTLIN_COMPILE",
-    "classpath": [
-      "{LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
-    ],
-    "coordinates": {
-      "group": "org.jetbrains",
-      "module": "annotations",
-      "version": "13.0",
-      "capabilities": [
-        {
-          "group": "org.jetbrains",
-          "name": "annotations",
-          "version": "13.0"
-        }
-      ],
-      "attributes": {
-        "artifactType": "android-classes-jar",
-        "org.gradle.category": "library",
-        "org.gradle.libraryelements": "jar",
-        "org.gradle.status": "release",
-        "org.gradle.usage": "java-api"
-      }
-    },
-    "extras": {
-      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "annotations-13.0.jar -\u003e annotations-13.0.jar (org.jetbrains:annotations:13.0)",
       "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
     }
   },
@@ -942,6 +913,35 @@
     },
     "extras": {
       "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "junit-4.13.2.jar -\u003e junit-4.13.2.jar (junit:junit:4.13.2)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+    ],
+    "coordinates": {
+      "group": "org.jetbrains",
+      "module": "annotations",
+      "version": "13.0",
+      "capabilities": [
+        {
+          "group": "org.jetbrains",
+          "name": "annotations",
+          "version": "13.0"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "annotations-13.0.jar -\u003e annotations-13.0.jar (org.jetbrains:annotations:13.0)",
       "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
     }
   },

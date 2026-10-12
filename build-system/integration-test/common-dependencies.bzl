@@ -81,6 +81,27 @@ KGP_2_3_21 = [
     "@maven//:org.jetbrains.kotlin.kotlin-test-junit_2.3.21",
 ]
 
+KGP_2_4_0 = [
+    "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.4.0",
+    "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.4.0",
+    "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-compiler_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.4.0",
+    "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-test_2.4.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-test-junit_2.4.0",
+]
+
 # Previous versions of KGP. This is used for Gradle recipe testing
 KGP_2_2_21 = [
     "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.21",

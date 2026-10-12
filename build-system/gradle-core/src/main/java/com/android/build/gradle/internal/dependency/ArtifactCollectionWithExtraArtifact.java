@@ -19,8 +19,21 @@ package com.android.build.gradle.internal.dependency;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.TestedComponentIdentifier;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import org.gradle.api.artifacts.ArtifactCollection;
+import org.gradle.api.artifacts.component.ComponentArtifactIdentifier;
+import org.gradle.api.artifacts.component.ComponentIdentifier;
+import org.gradle.api.artifacts.result.ResolvedArtifactResult;
+import org.gradle.api.artifacts.result.ResolvedVariantResult;
+import org.gradle.api.attributes.AttributeContainer;
+import org.gradle.api.capabilities.Capability;
+import org.gradle.api.component.Artifact;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.provider.Provider;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.Iterator;
@@ -29,14 +42,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
-import org.gradle.api.artifacts.ArtifactCollection;
-import org.gradle.api.artifacts.component.ComponentArtifactIdentifier;
-import org.gradle.api.artifacts.component.ComponentIdentifier;
-import org.gradle.api.artifacts.result.ResolvedArtifactResult;
-import org.gradle.api.artifacts.result.ResolvedVariantResult;
-import org.gradle.api.component.Artifact;
-import org.gradle.api.file.FileCollection;
-import org.gradle.api.provider.Provider;
 
 /**
  * Implementation of a {@link ArtifactCollection} on top of another ArtifactCollection and a {@link
@@ -216,6 +221,18 @@ public class ArtifactCollectionWithExtraArtifact implements ArtifactCollection {
         public Class<? extends Artifact> getType() {
             throw new UnsupportedOperationException(
                     "Call to ExtraResolvedArtifactResult.getType is not allowed");
+        }
+
+        @Override
+        public AttributeContainer getAttributes() {
+            throw new UnsupportedOperationException(
+                    "Call to ExtraResolveArtifactResult.getAttributes is not allowed");
+        }
+
+        @Override
+        public Collection<? extends Capability> getCapabilities() {
+            throw new UnsupportedOperationException(
+                    "Call to ExtraResolveArtifactResult.getCapabilities is not allowed");
         }
     }
 

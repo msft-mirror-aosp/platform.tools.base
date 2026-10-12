@@ -21,6 +21,8 @@ import org.gradle.api.artifacts.component.ComponentArtifactIdentifier
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.artifacts.result.ResolvedVariantResult
+import org.gradle.api.attributes.AttributeContainer
+import org.gradle.api.capabilities.Capability
 import org.gradle.api.component.Artifact
 
 class FakeResolvedArtifactResult(private val file: File, private val identifier: ComponentIdentifier) : ResolvedArtifactResult {
@@ -38,6 +40,14 @@ class FakeResolvedArtifactResult(private val file: File, private val identifier:
   }
 
   override fun getVariant(): ResolvedVariantResult {
+    TODO("not implemented")
+  }
+
+  override fun getAttributes(): AttributeContainer {
+    TODO("not implemented")
+  }
+
+  override fun getCapabilities(): Collection<out Capability> {
     TODO("not implemented")
   }
 }

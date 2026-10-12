@@ -34,7 +34,7 @@ class R8ClassloaderBuildServiceTest {
 
   private class TestR8ClassloaderBuildService : R8ClassloaderBuildService() {
     override fun getParameters(): BuildServiceParameters.None {
-      return BuildServiceParameters.None.INSTANCE
+      throw UnsupportedOperationException()
     }
   }
 
