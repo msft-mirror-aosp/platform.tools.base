@@ -185,8 +185,18 @@ class Renderer(
     renderImage: Boolean,
     nextImageIndex: () -> Int,
   ): List<PreviewScreenshotResult> {
-    val previewElement = screenshot.toPreviewElement(module)
-    val resolvedLayouts = previewElement.resolveLayouts().toList()
+    // Creating the preview element can fail for reasons specific to a single screenshot (e.g. a class that cannot be loaded). Report
+    // those as an error for this screenshot rather than letting the exception abort the whole render call.
+    val (previewElement, resolvedLayouts) =
+      try {
+        val element = screenshot.toPreviewElement(module)
+        element to element.resolveLayouts().toList()
+      } catch (t: Throwable) {
+        // Catch Throwable rather than Exception: class loading failures surface as Errors (e.g. NoClassDefFoundError, LinkageError).
+        val index = nextImageIndex()
+        val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
+        return listOf(PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, defaultRelativeImagePath, t.toScreenshotError()))
+      }
     val seenNames = mutableSetOf<String>()
     val duplicateNames = mutableSetOf<String>()
     for (layout in resolvedLayouts) {

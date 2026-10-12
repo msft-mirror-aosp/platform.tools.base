@@ -859,4 +859,63 @@ class RendererTest {
         )
     )
   }
+
+  @Test
+  fun testRenderReturnsErrorWhenPreviewElementCreationFails() {
+    val result =
+      renderFailingScreenshot(
+        FailingPreviewScreenshot(methodFQN = "com.example.BrokenKt.BrokenPreview", previewId = "com.example.BrokenKt.BrokenPreview") {
+          IllegalStateException("Cannot create preview element")
+        }
+      )
+
+    assertEquals("com.example.BrokenKt.BrokenPreview", result.previewId)
+    assertEquals("com${File.separator}example${File.separator}BrokenKt${File.separator}BrokenPreview_0.png", result.imagePath)
+    assertNotNull(result.error)
+    assertTrue(result.error?.message?.contains("Cannot create preview element") == true)
+  }
+
+  @Test
+  fun testRenderReturnsErrorWhenPreviewElementCreationThrowsError() {
+    val result =
+      renderFailingScreenshot(
+        FailingPreviewScreenshot(methodFQN = "com.example.BrokenKt.BrokenPreview", previewId = "com.example.BrokenKt.BrokenPreview") {
+          NoClassDefFoundError("com/example/MissingClass")
+        }
+      )
+
+    assertEquals("com.example.BrokenKt.BrokenPreview", result.previewId)
+    assertNotNull(result.error)
+    assertTrue(result.error?.message?.contains("com/example/MissingClass") == true)
+  }
+
+  private fun renderFailingScreenshot(screenshot: FailingPreviewScreenshot): PreviewScreenshotResult {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder().absolutePath
+
+    val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
+
+    assertEquals(1, results.size)
+    return results[0]
+  }
+}
+
+/** A [PreviewScreenshot] whose preview element cannot be created: [toPreviewElement] throws the result of [failure]. */
+private data class FailingPreviewScreenshot(
+  override val methodFQN: String,
+  override val previewId: String,
+  override val previewParams: Map<String, String> = emptyMap(),
+  override val previewWrapperFqn: String? = null,
+  private val failure: () -> Throwable,
+) : PreviewScreenshot {
+  override fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement = throw failure()
 }
