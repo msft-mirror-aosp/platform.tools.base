@@ -146,6 +146,7 @@ iml_module(
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
     ],
     test_srcs = ["src/test/java"],
+    test_tags = ["noci:studio-win"],  # b/571708271
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = ["//tools/base/annotations:studio.android.sdktools.android-annotations"],
