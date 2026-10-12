@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.model.UiDump
+import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.PrintStream
@@ -42,5 +43,9 @@ internal class TextUiDumpPrinter(
         out.println()
       }
     }
+  }
+
+  override fun printParameter(parameter: UiNode.ComposeParameter) {
+    out.println("${parameter.name}=${formatComposeParameter(parameter)}")
   }
 }

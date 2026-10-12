@@ -412,8 +412,8 @@ class JsonUiDumpPrinterTest {
 
   @Test
   fun testGroupValueAndTruncationSerialization() {
-    val listReference = ParameterReference(1L, 20L, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 1)
-    val styleReference = ParameterReference(1L, 20L, ParameterReference.Kind.PARAMETERS, 4, emptyList(), 0)
+    val listReference = ParameterReference(1L, 20L, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 1, "truncated".hashCode())
+    val styleReference = ParameterReference(1L, 20L, ParameterReference.Kind.PARAMETERS, 4, emptyList(), 0, "style".hashCode())
     val element = UiNode.ComposeParameter.Single("[0]", UiNode.ComposeParameter.Value.StringVal("a"))
     val truncated =
       UiNode.ComposeParameter.Group(
@@ -493,6 +493,27 @@ class JsonUiDumpPrinterTest {
     assertThat(truncatedSingleObj.get("value").asString).isEqualTo("TextStyle")
     assertThat(truncatedSingleObj.get("isTruncated").asBoolean).isTrue()
     assertThat(truncatedSingleObj.get("continuationToken").asString).isEqualTo(styleReference.encode())
+  }
+
+  @Test
+  fun testPrintParameterWritesParameterAsInDump() {
+    val reference = ParameterReference(1L, 20L, ParameterReference.Kind.PARAMETERS, 0, listOf(2), 10, "feed".hashCode())
+    val feed =
+      UiNode.ComposeParameter.Group(
+        "feed",
+        listOf(UiNode.ComposeParameter.Single("[5]", UiNode.ComposeParameter.Value.NumberVal(Float.NaN))),
+        isCollection = true,
+        value = UiNode.ComposeParameter.Value.StringVal("List[131]"),
+        reference = reference,
+      )
+
+    JsonUiDumpPrinter(out = printStream, prettyPrint = false).printParameter(feed)
+
+    val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject
+    assertThat(json.keySet()).containsExactly("name", "value", "isTruncated", "continuationToken", "isCollection", "elements").inOrder()
+    assertThat(json.get("continuationToken").asString).isEqualTo(reference.encode())
+    // Non-finite numbers become null, as in a dump.
+    assertThat(json.getAsJsonArray("elements")[0].asJsonObject.get("value").isJsonNull).isTrue()
   }
 
   @Test

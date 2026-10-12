@@ -34,7 +34,9 @@ import com.android.tools.ui.inspector.deploy.InjectionMode
 import com.android.tools.ui.inspector.deploy.buildInstallCommand
 import com.android.tools.ui.inspector.deploy.computeContentDigest
 import com.android.tools.ui.inspector.deploy.fileNameWithHash
+import com.android.tools.ui.inspector.fetchParameter
 import com.android.tools.ui.inspector.fetchUiDump
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.statProbeCommand
@@ -42,6 +44,7 @@ import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
 import java.io.IOException
 import java.net.ServerSocket
+import java.util.Collections
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -1525,6 +1528,374 @@ class ComposeInspectorTest {
       }
 
     assertThat(exception).hasMessageThat().contains("expected GET_ALL_PARAMETERS_RESPONSE, got GET_COMPOSABLES_RESPONSE")
+  }
+
+  @Test
+  fun testFetchParameter_recapturesWindowThenRequestsValue(): Unit = runBlocking {
+    val reference =
+      ParameterReference(
+        2000,
+        -100,
+        ParameterReference.Kind.MERGED_SEMANTICS,
+        2,
+        listOf(1, 3),
+        0,
+        ParameterReference.hashOf("style", UiNode.ComposeParameter.Value.StringVal("TextStyle")),
+      )
+    // An object whose property at the depth limit is left out in turn.
+    val details =
+      detailsResponse(
+        LayoutInspectorComposeProtocol.Parameter.newBuilder()
+          .setName(1)
+          .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+          .setInt32Value(2)
+          .addElements(
+            LayoutInspectorComposeProtocol.Parameter.newBuilder()
+              .setName(3)
+              .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+              .setInt32Value(4)
+              .setReference(
+                LayoutInspectorComposeProtocol.ParameterReference.newBuilder()
+                  .setComposableId(-100)
+                  .setKind(LayoutInspectorComposeProtocol.ParameterReference.Kind.MERGED_SEMANTICS)
+                  .setParameterIndex(2)
+                  .addAllCompositeIndex(listOf(1, 3, 0))
+              )
+          ),
+        mapOf(1 to "style", 2 to "TextStyle", 3 to "shadow", 4 to "Shadow"),
+      )
+
+    val (parameter, commands) = fetchParameterFromFakeAgent(reference) { details }
+
+    assertThat(commands.map { it.specializedCase })
+      .containsExactly(
+        LayoutInspectorComposeProtocol.Command.SpecializedCase.GET_COMPOSABLES_COMMAND,
+        LayoutInspectorComposeProtocol.Command.SpecializedCase.GET_PARAMETER_DETAILS_COMMAND,
+      )
+      .inOrder()
+    val capture = commands[0].getComposablesCommand
+    assertThat(capture.rootViewId).isEqualTo(2000)
+    assertThat(capture.generation).isEqualTo(0)
+    assertThat(capture.extractAllParameters).isTrue()
+    val request = commands[1].getParameterDetailsCommand
+    assertThat(request.rootViewId).isEqualTo(2000)
+    assertThat(request.reference.composableId).isEqualTo(-100)
+    assertThat(request.reference.kind).isEqualTo(LayoutInspectorComposeProtocol.ParameterReference.Kind.MERGED_SEMANTICS)
+    assertThat(request.reference.parameterIndex).isEqualTo(2)
+    assertThat(request.reference.compositeIndexList).containsExactly(1, 3).inOrder()
+    assertThat(request.startIndex).isEqualTo(0)
+    assertThat(request.maxElements).isEqualTo(5)
+    assertThat(request.maxRecursions).isEqualTo(2)
+    assertThat(request.maxInitialIterableSize).isEqualTo(5)
+    assertThat(request.skipSystemComposables).isFalse()
+    assertThat(request.generation).isEqualTo(0)
+    assertThat(parameter)
+      .isEqualTo(
+        UiNode.ComposeParameter.Group(
+          "style",
+          listOf(
+            UiNode.ComposeParameter.Single(
+              "shadow",
+              UiNode.ComposeParameter.Value.StringVal("Shadow"),
+              ParameterReference(
+                2000,
+                -100,
+                ParameterReference.Kind.MERGED_SEMANTICS,
+                2,
+                listOf(1, 3, 0),
+                0,
+                ParameterReference.hashOf("shadow", UiNode.ComposeParameter.Value.StringVal("Shadow")),
+              ),
+            )
+          ),
+          isCollection = false,
+          value = UiNode.ComposeParameter.Value.StringVal("TextStyle"),
+        )
+      )
+  }
+
+  @Test
+  fun testFetchParameter_returnsWholeCollection(): Unit = runBlocking {
+    // The dump sent the first 5 of 131 elements. Each page asks for as many elements as received so far in this call, at least 5.
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 5, listHash(size = 131))
+
+    val (parameter, commands) = fetchParameterFromFakeAgent(reference, details = listPages(size = 131))
+
+    val requests = commands.drop(1).map { it.getParameterDetailsCommand }
+    assertThat(requests.map { it.startIndex to it.maxElements })
+      .containsExactly(5 to 5, 10 to 5, 15 to 10, 25 to 20, 45 to 40, 85 to 80)
+      .inOrder()
+    val collection = parameter as UiNode.ComposeParameter.Group
+    assertThat(collection.value).isEqualTo(UiNode.ComposeParameter.Value.StringVal("List[131]"))
+    assertThat(collection.elements.map { (it.value as UiNode.ComposeParameter.Value.NumberVal).value }).isEqualTo((5 until 131).toList())
+    assertThat(collection.reference).isNull()
+  }
+
+  @Test
+  fun testFetchParameter_collectionCutAtDepthLimitStartsFromFirstElement(): Unit = runBlocking {
+    // The dump sent none of the elements: the inspector sends the first ones as in a dump, whatever the requested number.
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 0, listHash(size = 7))
+
+    val (parameter, commands) = fetchParameterFromFakeAgent(reference, details = listPages(size = 7))
+
+    assertThat(commands.drop(1).map { it.getParameterDetailsCommand.startIndex }).containsExactly(0, 5).inOrder()
+    assertThat((parameter as UiNode.ComposeParameter.Group).elements).hasSize(7)
+    assertThat(parameter.reference).isNull()
+  }
+
+  @Test
+  fun testFetchParameter_endlessCollectionStopsAtByteBudgetWithToken(): Unit = runBlocking {
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 5, listHash(size = Int.MAX_VALUE))
+
+    // A budget the first page already reaches.
+    val (parameter, commands) = fetchParameterFromFakeAgent(reference, byteBudget = 1, details = listPages(size = Int.MAX_VALUE))
+
+    assertThat(commands.drop(1)).hasSize(1)
+    val collection = parameter as UiNode.ComposeParameter.Group
+    assertThat(collection.elements).hasSize(5)
+    assertThat(collection.reference)
+      .isEqualTo(ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 10, listHash(size = Int.MAX_VALUE)))
+  }
+
+  @Test
+  fun testFetchParameter_continuingAfterByteBudgetStartsWithSmallPages(): Unit = runBlocking {
+    // The pages of a call double from the elements received in that call, so that continuing after a stop does not request a bigger page.
+    val reference =
+      ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 100_000, listHash(size = Int.MAX_VALUE))
+
+    val (_, commands) = fetchParameterFromFakeAgent(reference, byteBudget = 1, details = listPages(size = Int.MAX_VALUE))
+
+    assertThat(commands.drop(1).single().getParameterDetailsCommand.maxElements).isEqualTo(5)
+  }
+
+  @Test
+  fun testFetchParameter_laterPageWithOtherName_fails() {
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 5, listHash(size = 131))
+    val feedPages = listPages(size = 131)
+    val otherPages = listPages(size = 131, name = "items")
+
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          fetchParameterFromFakeAgent(reference) { command -> if (command.startIndex == 5) feedPages(command) else otherPages(command) }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().contains("no longer available")
+  }
+
+  @Test
+  fun testFetchParameter_collectionWithOtherSize_fails() {
+    // The same list, which now has another size: its content changed since the dump.
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 5, listHash(size = 131))
+
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking { fetchParameterFromFakeAgent(reference, details = listPages(size = 140)) }
+      }
+
+    assertThat(exception).hasMessageThat().contains("no longer available")
+  }
+
+  @Test
+  fun testFetchParameter_pageNotMovingReferenceStopsWithToken(): Unit = runBlocking {
+    // A page without elements that still has a reference would otherwise be requested again forever. It is dropped, and the token returned
+    // leads to it, after the elements received.
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 5, listHash(size = 131))
+    val feedPages = listPages(size = 131)
+    val stuck =
+      detailsResponse(
+        LayoutInspectorComposeProtocol.Parameter.newBuilder()
+          .setName(1)
+          .setType(LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE)
+          .setInt32Value(2)
+          .setReference(LayoutInspectorComposeProtocol.ParameterReference.newBuilder().setComposableId(-100).addCompositeIndex(4)),
+        mapOf(1 to "feed", 2 to "List[131]"),
+      )
+
+    val (parameter, commands) =
+      fetchParameterFromFakeAgent(reference) { command -> if (command.startIndex == 5) feedPages(command) else stuck }
+
+    assertThat(commands.drop(1)).hasSize(2)
+    assertThat((parameter as UiNode.ComposeParameter.Group).elements).hasSize(5)
+    assertThat(parameter.reference)
+      .isEqualTo(ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(4), 10, listHash(size = 131)))
+  }
+
+  @Test
+  fun testFetchParameter_valueNotFound_fails() {
+    // The inspector answers with an empty response when the window or the value is gone.
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 0, "style".hashCode())
+
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          fetchParameterFromFakeAgent(reference) { LayoutInspectorComposeProtocol.GetParameterDetailsResponse.getDefaultInstance() }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().contains("no longer available")
+  }
+
+  @Test
+  fun testFetchParameter_valueWithOtherName_fails() {
+    // e.g. a modifier was added before the one the reference points to, which now leads to another modifier.
+    val reference =
+      ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, listOf(1), 0, ParameterReference.hashOf("padding", null))
+    val details =
+      detailsResponse(
+        LayoutInspectorComposeProtocol.Parameter.newBuilder().setName(1).setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING),
+        mapOf(1 to "background"),
+      )
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { fetchParameterFromFakeAgent(reference) { details } } }
+
+    assertThat(exception).hasMessageThat().contains("no longer available")
+  }
+
+  @Test
+  fun testFetchParameter_continuedValueNoLongerCollection_fails() {
+    // The inspector answers a request past the first elements of a value that is no longer a collection with the value as it is now, e.g.
+    // an object, or an empty string when it cannot decompose it. Here it even has the same name and value as the collection had.
+    val reference =
+      ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 5, listHash(size = 7, name = "items"))
+    val details =
+      detailsResponse(
+        LayoutInspectorComposeProtocol.Parameter.newBuilder()
+          .setName(1)
+          .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+          .setInt32Value(2),
+        mapOf(1 to "items", 2 to "List[7]"),
+      )
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { fetchParameterFromFakeAgent(reference) { details } } }
+
+    assertThat(exception).hasMessageThat().contains("no longer available")
+  }
+
+  @Test
+  fun testFetchParameter_withoutCompose_failsWithoutQuerying() {
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 0, "style".hashCode())
+
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          respondingWith({ error("Unexpected command: $it") }) { commandSender ->
+            fetchParameter(commandSender, composeInspectorConnected = false, reference)
+          }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().isEqualTo("The app does not use Compose.")
+  }
+
+  @Test
+  fun testQueryParameterDetails_unexpectedResponse_fails() {
+    // A parameters response where a details response was asked for.
+    val wrongResponse =
+      LayoutInspectorComposeProtocol.Response.newBuilder()
+        .setGetAllParametersResponse(LayoutInspectorComposeProtocol.GetAllParametersResponse.getDefaultInstance())
+        .build()
+    val reference = ParameterReference(2000, -100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 0, "style".hashCode())
+
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        runBlocking {
+          respondingWithComposePayload(wrongResponse.toByteArray()) { queryParameterDetails(it, reference, elementsReceived = 0) }
+        }
+      }
+
+    assertThat(exception).hasMessageThat().contains("expected GET_PARAMETER_DETAILS_RESPONSE, got GET_ALL_PARAMETERS_RESPONSE")
+  }
+
+  /** A details response holding [parameter], whose names and string values [strings] resolves, for the window 2000. */
+  private fun detailsResponse(
+    parameter: LayoutInspectorComposeProtocol.Parameter.Builder,
+    strings: Map<Int, String>,
+  ): LayoutInspectorComposeProtocol.GetParameterDetailsResponse =
+    LayoutInspectorComposeProtocol.GetParameterDetailsResponse.newBuilder()
+      .setRootViewId(2000)
+      .setParameter(parameter)
+      .addAllStrings(strings.map { (id, str) -> LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(id).setStr(str).build() })
+      .build()
+
+  /** The value hash of the list [listPages] answers with. */
+  private fun listHash(size: Int, name: String = "feed"): Int =
+    ParameterReference.hashOf(name, UiNode.ComposeParameter.Value.StringVal("List[$size]"))
+
+  /**
+   * Answers the details commands for a list of [size] integers named [name], each equal to its index, as the inspector does: the first 5
+   * elements from the start, otherwise as many as requested, and a reference while elements remain.
+   */
+  private fun listPages(
+    size: Int,
+    name: String = "feed",
+  ): (LayoutInspectorComposeProtocol.GetParameterDetailsCommand) -> LayoutInspectorComposeProtocol.GetParameterDetailsResponse =
+    { command ->
+      val count = if (command.startIndex == 0) 5 else command.maxElements
+      val end = minOf(size.toLong(), command.startIndex.toLong() + count).toInt()
+      val list =
+        LayoutInspectorComposeProtocol.Parameter.newBuilder()
+          .setName(1)
+          .setType(LayoutInspectorComposeProtocol.Parameter.Type.ITERABLE)
+          .setInt32Value(2)
+          .addAllElements(
+            (command.startIndex until end).map { index ->
+              LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(3)
+                .setType(LayoutInspectorComposeProtocol.Parameter.Type.INT32)
+                .setInt32Value(index)
+                .setIndex(index)
+                .build()
+            }
+          )
+      if (end < size) {
+        list.setReference(
+          LayoutInspectorComposeProtocol.ParameterReference.newBuilder()
+            .setComposableId(-100)
+            .addAllCompositeIndex(command.reference.compositeIndexList)
+        )
+      }
+      detailsResponse(list, mapOf(1 to name, 2 to "List[$size]", 3 to "[i]"))
+    }
+
+  /**
+   * Runs [fetchParameter] for [reference], with [byteBudget] if set, against a fake agent whose Compose inspector answers with an empty
+   * tree and with [details], and returns its result with the Compose commands the agent received.
+   */
+  private suspend fun fetchParameterFromFakeAgent(
+    reference: ParameterReference,
+    byteBudget: Int? = null,
+    details: (LayoutInspectorComposeProtocol.GetParameterDetailsCommand) -> LayoutInspectorComposeProtocol.GetParameterDetailsResponse,
+  ): Pair<UiNode.ComposeParameter, List<LayoutInspectorComposeProtocol.Command>> {
+    val commands = Collections.synchronizedList(mutableListOf<LayoutInspectorComposeProtocol.Command>())
+    val parameter =
+      respondingWith({ command ->
+        val composeCommand = LayoutInspectorComposeProtocol.Command.parseFrom(command.inspectorMessage.payload)
+        commands.add(composeCommand)
+        val composeResponse =
+          when (composeCommand.specializedCase) {
+            LayoutInspectorComposeProtocol.Command.SpecializedCase.GET_COMPOSABLES_COMMAND ->
+              LayoutInspectorComposeProtocol.Response.newBuilder()
+                .setGetComposablesResponse(LayoutInspectorComposeProtocol.GetComposablesResponse.getDefaultInstance())
+            else ->
+              LayoutInspectorComposeProtocol.Response.newBuilder()
+                .setGetParameterDetailsResponse(details(composeCommand.getParameterDetailsCommand))
+          }
+        UiInspectorProtocol.Response.newBuilder()
+          .setCommandId(command.commandId)
+          .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+          .setInspectorMessage(
+            UiInspectorProtocol.InspectorMessageResponse.newBuilder()
+              .setInspectorId(ProtocolConstants.COMPOSE_INSPECTOR_ID)
+              .setPayload(composeResponse.build().toByteString())
+          )
+          .build()
+      }) { commandSender ->
+        if (byteBudget == null) fetchParameter(commandSender, composeInspectorConnected = true, reference)
+        else fetchParameter(commandSender, composeInspectorConnected = true, reference, byteBudget)
+      }
+    return parameter to commands.toList()
   }
 
   /** A successful version answer to [command] reporting Compose [version]. */

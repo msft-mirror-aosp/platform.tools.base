@@ -173,6 +173,8 @@ class CliHostTest {
     assertThat(exitCode).isEqualTo(0)
     assertThat(output).contains("Usage: ui-inspector dump-ui")
     assertThat(output).contains("--include")
+    // The help points to get-parameter for the values the dump leaves out.
+    assertThat(output.collapseWhitespace()).contains("\"continuationToken\" that get-parameter takes")
   }
 
   @Test
@@ -199,5 +201,109 @@ class CliHostTest {
 
     assertThat(exitCode).isEqualTo(1)
     assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
+  }
+
+  @Test
+  fun testGetParameterParsesOptions() {
+    val getParameterCmd =
+      parseGetParameter(
+        "--device",
+        "123",
+        "--package",
+        "com.example",
+        "--continuation-token",
+        "7:-100:p:2:1.3:5:z",
+        "-p",
+        "-o",
+        "parameter.json",
+        "--compose-inspector",
+        "inspector.jar",
+      )
+
+    assertThat(getParameterCmd.device).isEqualTo("123")
+    assertThat(getParameterCmd.packageName).isEqualTo("com.example")
+    assertThat(getParameterCmd.continuationToken).isEqualTo("7:-100:p:2:1.3:5:z")
+    assertThat(getParameterCmd.prettyPrint).isTrue()
+    assertThat(getParameterCmd.output?.toString()).isEqualTo("parameter.json")
+    assertThat(getParameterCmd.composeInspectorJarPath).isEqualTo("inspector.jar")
+  }
+
+  @Test
+  fun testGetParameterDefaults() {
+    val getParameterCmd = parseGetParameter("--continuation-token", "7:-100:p:2:1.3:5:z")
+
+    assertThat(getParameterCmd.device).isNull()
+    assertThat(getParameterCmd.packageName).isNull()
+    assertThat(getParameterCmd.prettyPrint).isFalse()
+    assertThat(getParameterCmd.output?.toString()).isNull()
+    assertThat(getParameterCmd.composeInspectorJarPath).isNull()
+  }
+
+  @Test
+  fun testGetParameterAcceptsTokenStartingWithDash() {
+    // A token starts with the id of a window, which is not an option even when negative.
+    assertThat(parseGetParameter("--continuation-token", "-7:-100:p:2::0:z").continuationToken).isEqualTo("-7:-100:p:2::0:z")
+  }
+
+  @Test
+  fun testGetParameterRequiresToken() {
+    val capturedErr = StringWriter()
+    val cmd = createCommandLine { FakeAdbSession() }.apply { setErr(PrintWriter(capturedErr)) }
+
+    val exitCode = cmd.execute("get-parameter", "--package", "com.example")
+
+    // A usage error, like any other picocli rejects.
+    assertThat(exitCode).isEqualTo(2)
+    assertThat(capturedErr.toString()).contains("Missing required option: '--continuation-token=<continuationToken>'")
+  }
+
+  @Test
+  fun testGetParameterMalformedTokenFailsBeforeConnecting() {
+    val capturedErr = StringWriter()
+    val cmd = createCommandLine { error("No adb session expected") }.apply { setErr(PrintWriter(capturedErr)) }
+
+    val exitCode = cmd.execute("get-parameter", "--continuation-token", "List[131]")
+
+    assertThat(exitCode).isEqualTo(1)
+    assertThat(capturedErr.toString()).contains("Error: Invalid continuation token 'List[131]'")
+  }
+
+  @Test
+  fun testGetParameterDeviceResolutionFailureReportsOption() {
+    val noDevicesSession = FakeAdbSession().apply { hostServices.devices = DeviceList(emptyList(), emptyList()) }
+    val capturedErr = StringWriter()
+    val cmd = createCommandLine { noDevicesSession }.apply { setErr(PrintWriter(capturedErr)) }
+
+    val exitCode = cmd.execute("get-parameter", "--package", "com.example", "--continuation-token", "7:-100:p:2:1.3:5:z")
+
+    assertThat(exitCode).isEqualTo(1)
+    assertThat(capturedErr.toString()).contains("--device")
+  }
+
+  @Test
+  fun testGetParameterHelpPrintsUsageAndExitsZero() {
+    val capturedOut = ByteArrayOutputStream()
+    val commandLine = createCommandLine { FakeAdbSession() }
+    commandLine.setOut(PrintWriter(capturedOut, true, Charsets.UTF_8))
+
+    val exitCode = commandLine.execute("get-parameter", "--help")
+
+    val output = capturedOut.toString(Charsets.UTF_8)
+    assertThat(exitCode).isEqualTo(0)
+    assertThat(output).contains("Usage: ui-inspector get-parameter")
+    // The help explains the tokens a dump has and what one call returns.
+    assertThat(output).contains("--continuation-token")
+    val help = output.collapseWhitespace()
+    assertThat(help).contains("\"isTruncated\": true has a \"continuationToken\"")
+    assertThat(help).contains("all its elements")
+    assertThat(help).contains("Values nested inside the result are not followed")
+  }
+
+  /** Joins the lines picocli wraps the help text into. */
+  private fun String.collapseWhitespace(): String = replace(Regex("\\s+"), " ")
+
+  private fun parseGetParameter(vararg args: String): GetParameterCommand {
+    val parseResult = createCommandLine { FakeAdbSession() }.parseArgs("get-parameter", *args)
+    return parseResult.subcommand().commandSpec().userObject() as GetParameterCommand
   }
 }

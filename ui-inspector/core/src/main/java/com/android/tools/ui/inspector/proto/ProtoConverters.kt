@@ -252,6 +252,16 @@ private fun doConvertComposeNode(
 }
 
 /**
+ * Converts the value a [LayoutInspectorComposeProtocol.GetParameterDetailsCommand] requested, held in the list [kind] of its Composable.
+ * Its references are complete, so that the content it still leaves out can be requested in turn.
+ */
+internal fun convertParameterDetails(
+  response: LayoutInspectorComposeProtocol.GetParameterDetailsResponse,
+  kind: ParameterReference.Kind,
+): UiNode.ComposeParameter =
+  convertParameterToComposeParameter(response.parameter, response.stringsList.associate { it.id to it.str }, response.rootViewId, kind)
+
+/**
  * Helper to map Composable proto parameters to framework-agnostic domain ComposeParameters.
  *
  * Every parameter has a value, and composite ones also have elements; a group keeps both. For example an Offset has the value "Offset" and
@@ -288,6 +298,7 @@ private fun convertParameterToComposeParameter(
         // Only a collection has both elements and a reference. Its elements carry their index among all elements, omitted ones included,
         // so the next ones start after the last one sent.
         startIndex = param.elementsList.lastOrNull()?.let { it.index + 1 } ?: 0,
+        valueHash = ParameterReference.hashOf(name, value),
       )
     } else {
       null

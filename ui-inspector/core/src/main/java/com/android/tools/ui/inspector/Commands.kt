@@ -25,12 +25,15 @@ import com.android.tools.ui.inspector.client.dumpViews
 import com.android.tools.ui.inspector.client.mavenComposeInspectorResolver
 import com.android.tools.ui.inspector.client.queryComposeParameters
 import com.android.tools.ui.inspector.client.queryComposeTree
+import com.android.tools.ui.inspector.client.queryParameterDetails
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InjectionMode
 import com.android.tools.ui.inspector.deploy.InjectionResult
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.UiDump
 import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.model.UiWindow
+import com.android.tools.ui.inspector.proto.convertParameterDetails
 import com.android.tools.ui.inspector.tree.attachComposeTree
 import com.android.tools.ui.inspector.tree.stripSystemComposables
 import java.io.File
@@ -218,6 +221,75 @@ private suspend fun fetchAndMergeComposeTrees(
       logger = logger,
     )
   window.copy(root = mergedRoot)
+}
+
+/**
+ * The most bytes of responses [fetchParameter] reads for one value. When the responses reach it, it stops requesting pages, and returns the
+ * collection with a continuation token for the rest.
+ *
+ * It is meant for endless collections, e.g. a `Sequence` built with `generateSequence`, but a large enough finite one reaches it too. The
+ * largest real collection measured, 100,000 strings, took 4.6 MB.
+ *
+ * A call can read up to about twice this, because the last page can be as large as all the previous ones together.
+ */
+private const val PARAMETER_RESPONSE_BYTE_BUDGET = 10_000_000
+
+/**
+ * Fetches the value identified by [reference], from a fresh capture of its window.
+ *
+ * For a collection, the result has all its elements from [ParameterReference.startIndex] to the end. They are requested in pages, all from
+ * the same capture. If the responses reach [byteBudget] bytes, the remaining elements are left out, and the result has a reference to
+ * continue from there.
+ *
+ * Values inside the result are expanded as in a dump. Those cut at the depth limit, or past the first elements of a nested collection, have
+ * their own references, and are not fetched.
+ *
+ * The inspector reads the captured values again for each page. If the app changes a collection while its pages are requested, elements can
+ * be missing or repeated.
+ *
+ * @throws IllegalStateException when the app does not use Compose, or when the value is no longer there: its window closed, or the UI
+ *   changed and the reference now leads to nothing, to a value with another name or summary, or, when continuing a collection, to a value
+ *   that is no longer a collection.
+ */
+internal suspend fun fetchParameter(
+  commandSender: CommandSender,
+  composeInspectorConnected: Boolean,
+  reference: ParameterReference,
+  byteBudget: Int = PARAMETER_RESPONSE_BYTE_BUDGET,
+): UiNode.ComposeParameter {
+  check(composeInspectorConnected) { "The app does not use Compose." }
+  // The inspector resolves references against its last capture, which can be of another window, or older than the UI on screen. The
+  // window is captured with its parameters, like in the dump.
+  queryComposeTree(commandSender, reference.rootViewId, extractAllParameters = true)
+
+  var responseBytes = 0L
+  suspend fun fetchPage(pageReference: ParameterReference, elementsReceived: Int, mustBeCollection: Boolean): UiNode.ComposeParameter {
+    val response = queryParameterDetails(commandSender, pageReference, elementsReceived)
+    responseBytes += response.serializedSize
+    val page = if (response.hasParameter()) convertParameterDetails(response, pageReference.kind) else null
+    // After a UI change, the positions in the reference can lead to another value, or to the same one with other content, which has
+    // another name or value, or is no longer a collection.
+    val isStillCollection = page is UiNode.ComposeParameter.Group && page.isCollection
+    if (page == null || !pageReference.matches(page) || (mustBeCollection && !isStillCollection)) {
+      error("The parameter is no longer available: the UI changed since the dump, or its window closed. Run dump-ui again.")
+    }
+    return page
+  }
+
+  val first = fetchPage(reference, elementsReceived = 0, mustBeCollection = reference.startIndex > 0)
+  if (first !is UiNode.ComposeParameter.Group || !first.isCollection) return first
+  val elements = first.elements.toMutableList()
+  var next = first.reference
+  while (next != null && responseBytes < byteBudget) {
+    val page = fetchPage(next, elements.size, mustBeCollection = true) as UiNode.ComposeParameter.Group
+    // The inspector moves the reference past the elements it sent. A page whose reference did not move would be requested again forever,
+    // so it is dropped, and the reference that leads to it is returned instead.
+    val following = page.reference
+    if (following != null && following.startIndex <= next.startIndex) break
+    elements += page.elements
+    next = following
+  }
+  return first.copy(elements = elements, reference = next)
 }
 
 /**

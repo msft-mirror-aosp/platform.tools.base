@@ -98,6 +98,12 @@ To confirm the local jar is the one being loaded, add a temporary log to
 for example `Log.i(LOG_TAG, "local build")`, then check
 `adb logcat -s ComposeInspector` after the dump.
 
+`get-parameter` takes `--compose-inspector` too. Pass it the jar of the dump
+whose tokens it resolves: the jar is part of the agent's socket digest (see
+[Iterating](#iterating)), so without it `get-parameter` starts another inspector
+server, and the tokens are resolved by the Compose inspector from Maven
+instead of the local build.
+
 ## Iterating
 
 After changing the Compose inspector code, repeat step 3 and re-run step 5.

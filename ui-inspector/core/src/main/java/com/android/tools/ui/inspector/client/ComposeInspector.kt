@@ -22,6 +22,7 @@ import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InspectorMetadata
 import com.android.tools.ui.inspector.deploy.MavenArtifactResolver
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.proto.parseTreeResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.google.common.annotations.VisibleForTesting
@@ -125,6 +126,63 @@ internal suspend fun queryComposeParameters(
     .requireVariant(LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_ALL_PARAMETERS_RESPONSE)
     .getAllParametersResponse
 }
+
+/**
+ * Asks the Compose inspector for the parameter details of the value identified by [reference]: a parameter, or a value nested inside one,
+ * like the elements of a collection. The inspector answers from its last capture of the window.
+ *
+ * When the inspector can't find the value, e.g. because the window closed or the Composable is gone, it returns an empty response instead
+ * of an error: one without a parameter, see [LayoutInspectorComposeProtocol.GetParameterDetailsResponse.hasParameter].
+ *
+ * The value is expanded with the same limits as in the dump, counted from the value itself:
+ * - An object comes with its content.
+ * - A collection comes with the elements from [ParameterReference.startIndex] on: as many as [elementsReceived], and at least
+ *   [MAX_COLLECTION_ELEMENTS]. [elementsReceived] is the number of elements of the collection already received in this call, so each page
+ *   is as large as all the previous ones together.
+ */
+internal suspend fun queryParameterDetails(
+  commandSender: CommandSender,
+  reference: ParameterReference,
+  elementsReceived: Int,
+): LayoutInspectorComposeProtocol.GetParameterDetailsResponse {
+  val getParameterDetailsCmd =
+    LayoutInspectorComposeProtocol.Command.newBuilder()
+      .setGetParameterDetailsCommand(
+        LayoutInspectorComposeProtocol.GetParameterDetailsCommand.newBuilder()
+          .setRootViewId(reference.rootViewId)
+          .setReference(
+            LayoutInspectorComposeProtocol.ParameterReference.newBuilder()
+              .setComposableId(reference.composableId)
+              .setKind(reference.kind.toProto())
+              .setParameterIndex(reference.parameterIndex)
+              .addAllCompositeIndex(reference.compositeIndex)
+          )
+          .setStartIndex(reference.startIndex)
+          // Unlike the other limits, the inspector has no default for this one. It ignores it when starting from the first element.
+          .setMaxElements(maxOf(MAX_COLLECTION_ELEMENTS, elementsReceived))
+          .setMaxRecursions(MAX_PARAMETER_DEPTH)
+          .setMaxInitialIterableSize(MAX_COLLECTION_ELEMENTS)
+          // Same as the parameters command, so that the inspector finds the values it captured for the tree command.
+          .setSkipSystemComposables(false)
+          .setGeneration(0)
+          .build()
+      )
+      .build()
+
+  val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.COMPOSE_INSPECTOR_ID, getParameterDetailsCmd.toByteArray())
+  val composeResponse = LayoutInspectorComposeProtocol.Response.parser().parseTreeResponse(responsePayload)
+
+  return composeResponse
+    .requireVariant(LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_PARAMETER_DETAILS_RESPONSE)
+    .getParameterDetailsResponse
+}
+
+private fun ParameterReference.Kind.toProto(): LayoutInspectorComposeProtocol.ParameterReference.Kind =
+  when (this) {
+    ParameterReference.Kind.PARAMETERS -> LayoutInspectorComposeProtocol.ParameterReference.Kind.NORMAL
+    ParameterReference.Kind.MERGED_SEMANTICS -> LayoutInspectorComposeProtocol.ParameterReference.Kind.MERGED_SEMANTICS
+    ParameterReference.Kind.UNMERGED_SEMANTICS -> LayoutInspectorComposeProtocol.ParameterReference.Kind.UNMERGED_SEMANTICS
+  }
 
 /**
  * Returns this response when it carries [expected]. A response of another type is a failure: protobuf serves a default message for an unset

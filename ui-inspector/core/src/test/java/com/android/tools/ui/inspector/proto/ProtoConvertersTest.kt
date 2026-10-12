@@ -252,7 +252,16 @@ class ProtoConvertersTest {
           elements = listOf(UiNode.ComposeParameter.Single("[0]", UiNode.ComposeParameter.Value.NumberVal(10))),
           isCollection = true,
           value = UiNode.ComposeParameter.Value.StringVal("IntArray[8]"),
-          reference = ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), startIndex = 1),
+          reference =
+            ParameterReference(
+              ROOT_VIEW_ID,
+              100,
+              ParameterReference.Kind.PARAMETERS,
+              0,
+              emptyList(),
+              1,
+              ParameterReference.hashOf("arrayParam", UiNode.ComposeParameter.Value.StringVal("IntArray[8]")),
+            ),
         )
       )
   }
@@ -271,7 +280,16 @@ class ProtoConvertersTest {
           elements = emptyList(),
           isCollection = true,
           value = UiNode.ComposeParameter.Value.StringVal("List[7]"),
-          reference = ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), startIndex = 0),
+          reference =
+            ParameterReference(
+              ROOT_VIEW_ID,
+              100,
+              ParameterReference.Kind.PARAMETERS,
+              0,
+              emptyList(),
+              0,
+              ParameterReference.hashOf("deepList", UiNode.ComposeParameter.Value.StringVal("List[7]")),
+            ),
         )
       )
   }
@@ -360,7 +378,15 @@ class ProtoConvertersTest {
         UiNode.ComposeParameter.Single(
           "style",
           UiNode.ComposeParameter.Value.StringVal("TextStyle"),
-          ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 0, emptyList(), startIndex = 0),
+          ParameterReference(
+            ROOT_VIEW_ID,
+            100,
+            ParameterReference.Kind.PARAMETERS,
+            0,
+            emptyList(),
+            0,
+            ParameterReference.hashOf("style", UiNode.ComposeParameter.Value.StringVal("TextStyle")),
+          ),
         )
       )
   }
@@ -384,7 +410,17 @@ class ProtoConvertersTest {
 
     assertThat(pOuter.reference).isNull()
     assertThat(pOuter.elements.single().reference)
-      .isEqualTo(ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 2, listOf(1), startIndex = 4))
+      .isEqualTo(
+        ParameterReference(
+          ROOT_VIEW_ID,
+          100,
+          ParameterReference.Kind.PARAMETERS,
+          2,
+          listOf(1),
+          4,
+          ParameterReference.hashOf("[1]", UiNode.ComposeParameter.Value.StringVal("List[9]")),
+        )
+      )
   }
 
   @Test
@@ -613,11 +649,41 @@ class ProtoConvertersTest {
 
     fun List<UiNode.ComposeParameter>.propertyReference() = (single() as UiNode.ComposeParameter.Group).elements.single().reference
     assertThat(node.parameters.propertyReference())
-      .isEqualTo(ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.PARAMETERS, 0, listOf(0), startIndex = 0))
+      .isEqualTo(
+        ParameterReference(
+          ROOT_VIEW_ID,
+          100,
+          ParameterReference.Kind.PARAMETERS,
+          0,
+          listOf(0),
+          0,
+          ParameterReference.hashOf("style", UiNode.ComposeParameter.Value.StringVal("TextStyle")),
+        )
+      )
     assertThat(node.mergedSemantics.propertyReference())
-      .isEqualTo(ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.MERGED_SEMANTICS, 1, listOf(0), startIndex = 0))
+      .isEqualTo(
+        ParameterReference(
+          ROOT_VIEW_ID,
+          100,
+          ParameterReference.Kind.MERGED_SEMANTICS,
+          1,
+          listOf(0),
+          0,
+          ParameterReference.hashOf("style", UiNode.ComposeParameter.Value.StringVal("TextStyle")),
+        )
+      )
     assertThat(node.unmergedSemantics.propertyReference())
-      .isEqualTo(ParameterReference(ROOT_VIEW_ID, 100, ParameterReference.Kind.UNMERGED_SEMANTICS, 2, listOf(0), startIndex = 0))
+      .isEqualTo(
+        ParameterReference(
+          ROOT_VIEW_ID,
+          100,
+          ParameterReference.Kind.UNMERGED_SEMANTICS,
+          2,
+          listOf(0),
+          0,
+          ParameterReference.hashOf("style", UiNode.ComposeParameter.Value.StringVal("TextStyle")),
+        )
+      )
   }
 
   @Test

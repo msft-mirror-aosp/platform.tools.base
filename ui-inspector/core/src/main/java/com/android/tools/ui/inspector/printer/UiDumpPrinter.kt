@@ -17,9 +17,13 @@
 package com.android.tools.ui.inspector.printer
 
 import com.android.tools.ui.inspector.model.UiDump
+import com.android.tools.ui.inspector.model.UiNode
 
 /** Interface for formatting and outputting UI inspection dumps. */
 interface UiDumpPrinter {
   /** Prints a single [UiDump]. */
   fun printDump(uiDump: UiDump)
+
+  /** Prints a single Compose parameter, formatted as in [printDump]. */
+  fun printParameter(parameter: UiNode.ComposeParameter)
 }

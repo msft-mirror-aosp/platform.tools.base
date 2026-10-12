@@ -21,7 +21,7 @@ import com.android.tools.ui.inspector.model.UiNode
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-private val REFERENCE = ParameterReference(1, 2, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 0)
+private val REFERENCE = ParameterReference(1, 2, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 0, valueHash = 0)
 
 class TextValueFormatterTest {
 

@@ -160,6 +160,10 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
     writeJson(serializeUiDump(uiDump))
   }
 
+  override fun printParameter(parameter: UiNode.ComposeParameter) {
+    writeJson(serializeComposeParameter(parameter))
+  }
+
   /** Serializes [jsonObject] to the output stream. */
   private fun writeJson(jsonObject: JsonObject) {
     normalizeNonFiniteNumbers(jsonObject)
