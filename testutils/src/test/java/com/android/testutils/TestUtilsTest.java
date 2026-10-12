@@ -17,10 +17,14 @@
 package com.android.testutils;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
+
+import java.util.Arrays;
 
 @SuppressWarnings("javadoc")
 public class TestUtilsTest {
@@ -306,5 +310,32 @@ public class TestUtilsTest {
         assertThat(TestUtils.runningWithJdk11Plus("10.0.0")).isFalse();
         assertThat(TestUtils.runningWithJdk11Plus("9.0.0")).isFalse();
         assertThat(TestUtils.runningWithJdk11Plus("1.8.0_242-release")).isFalse();
+    }
+
+    @Test
+    public void launchProcess_passesClasspathAndArguments() {
+        // ExpectArgsMain is only on the test classpath, and exits with a non-zero value (making
+        // launchProcess throw) if it does not receive the expected arguments.
+        TestUtils.launchProcess(ExpectArgsMain.class, "a b", "c");
+    }
+
+    @Test
+    public void launchProcess_nonZeroExitValue_throws() {
+        RuntimeException exception =
+                assertThrows(
+                        RuntimeException.class, () -> TestUtils.launchProcess(ExitMain.class, "3"));
+        assertThat(exception).hasMessageThat().contains("non-zero exit value: 3");
+    }
+
+    public static final class ExpectArgsMain {
+        public static void main(String[] args) {
+            System.exit(Arrays.asList(args).equals(Arrays.asList("a b", "c")) ? 0 : 1);
+        }
+    }
+
+    public static final class ExitMain {
+        public static void main(String[] args) {
+            System.exit(Integer.parseInt(args[0]));
+        }
     }
 }

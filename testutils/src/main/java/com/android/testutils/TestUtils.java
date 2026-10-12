@@ -35,6 +35,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -804,33 +805,65 @@ public class TestUtils {
      *     an exit value other than 0
      */
     public static void launchProcess(@NonNull Class toRun, String... args) {
-        List<String> commandAndArgs = new LinkedList<>();
-        commandAndArgs.add(FileUtils.join(System.getProperty("java.home"), "bin", "java"));
-        commandAndArgs.add("-cp");
-        commandAndArgs.add(System.getProperty("java.class.path"));
-        commandAndArgs.add(toRun.getName());
-        commandAndArgs.addAll(Arrays.asList(args));
-
-        ProcessBuilder processBuilder = new ProcessBuilder(commandAndArgs);
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        Process process;
+        // Pass the classpath via a Java argument file rather than directly on the command line, as
+        // it may exceed the Windows command-line length limit (32,767 characters). This happens,
+        // for example, when Bazel's Windows Java launcher passes a long classpath to the test JVM
+        // via a flagfile, so that java.class.path contains the full classpath.
+        Path argFile;
         try {
-            process = processBuilder.start();
+            argFile = Files.createTempFile("launch-process-args", ".txt");
+            Files.write(
+                    argFile,
+                    Arrays.asList(
+                            "-cp", quoteForJavaArgFile(System.getProperty("java.class.path"))),
+                    StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         try {
-            process.waitFor();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+            List<String> commandAndArgs = new LinkedList<>();
+            commandAndArgs.add(FileUtils.join(System.getProperty("java.home"), "bin", "java"));
+            commandAndArgs.add("@" + argFile);
+            commandAndArgs.add(toRun.getName());
+            commandAndArgs.addAll(Arrays.asList(args));
 
-        if (process.exitValue() != 0) {
-            throw new RuntimeException(
-                    "Process returned non-zero exit value: " + process.exitValue());
+            ProcessBuilder processBuilder = new ProcessBuilder(commandAndArgs);
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            Process process;
+            try {
+                process = processBuilder.start();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            try {
+                process.waitFor();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (process.exitValue() != 0) {
+                throw new RuntimeException(
+                        "Process returned non-zero exit value: " + process.exitValue());
+            }
+        } finally {
+            try {
+                Files.deleteIfExists(argFile);
+            } catch (IOException ignored) {
+                // Best effort
+            }
         }
+    }
+
+    /**
+     * Quotes an argument for use in a Java argument file ({@code java @argfile}), escaping
+     * backslashes and double quotes, which are interpreted as escape characters within quotes.
+     */
+    @NonNull
+    private static String quoteForJavaArgFile(@NonNull String argument) {
+        return "\"" + argument.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
     // disable tests when running on Windows in Bazel.
