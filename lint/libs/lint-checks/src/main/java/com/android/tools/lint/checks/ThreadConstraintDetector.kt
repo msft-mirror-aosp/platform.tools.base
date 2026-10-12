@@ -54,6 +54,7 @@ import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UClassInitializer
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpressionList
 import org.jetbrains.uast.UIfExpression
@@ -127,7 +128,8 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
                 parentSite.expression -> "Condition must run from $t1, while branches must run from $t2"
                 else -> "Branch must run from $t2, incompatible with the another that must run from $t1"
               }
-            is UVariable -> "Initializer must run from $t2, incompatible with an earlier initializer that must run from $t1"
+            is UVariable,
+            is UClassInitializer -> "Initializer must run from $t2, incompatible with an earlier initializer that must run from $t1"
             is UMethod -> "Constructor body must run from $t2, incompatible with initializers that must run from $t1"
             else -> "Expression results in an unsatisfiable thread requirement ($t2, after inferred $t1)"
           }

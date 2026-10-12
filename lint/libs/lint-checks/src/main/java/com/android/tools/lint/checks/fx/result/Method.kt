@@ -46,6 +46,9 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
   companion object {
     private val paramListPool = InterningPool<List<ClassId?>>()
 
+    /** Synthetic constructor that runs [klass]'s initializers when no explicit one is in the PSI */
+    fun implicitConstructor(klass: PsiClass): MethodId = MethodId(false, klass.name ?: "<init>", listOf())
+
     operator fun invoke(method: PsiMethod): MethodId =
       when {
         method.name == "invoke" && method.containingClass?.qualifiedName?.startsWith("kotlin.jvm.functions.Function") == true ->

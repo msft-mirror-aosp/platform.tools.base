@@ -554,6 +554,222 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test lambdas in Java instance initializers`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            class Init {
+              interface Callback {
+                @UiThread void run();
+              }
+
+              @WorkerThread static void work() { }
+
+              // The declared constructor runs the initializer block
+              static class WithConstructor {
+                Callback fromBlock;
+                { fromBlock = () -> work(); } // ERROR
+                WithConstructor() { }
+              }
+
+              // The implicit constructor runs the field initializer and the initializer block
+              static class WithoutConstructor {
+                Callback field = () -> work(); // ERROR
+                Callback fromBlock;
+                { fromBlock = () -> work(); } // ERROR
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Init.java:16: Error: Call must be from @WorkerThread, but super method Callback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            { fromBlock = () -> work(); } // ERROR
+                                ~~~~~~
+        src/test/pkg/Init.java:22: Error: Call must be from @WorkerThread, but super method Callback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            Callback field = () -> work(); // ERROR
+                                   ~~~~~~
+        src/test/pkg/Init.java:24: Error: Call must be from @WorkerThread, but super method Callback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            { fromBlock = () -> work(); } // ERROR
+                                ~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test Java instance initializers run by constructors`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            class Worker {
+              @WorkerThread static int work() { return 0; }
+            }
+
+            // The implicit constructor runs the field initializer
+            class Implicit {
+              final int id = Worker.work();
+            }
+
+            // The implicit constructor runs the initializer block
+            class ImplicitWithBlock {
+              int id;
+              { id = Worker.work(); }
+            }
+
+            // The explicit constructor runs the initializer block
+            class ExplicitWithBlock {
+              int id;
+              { id = Worker.work(); }
+              ExplicitWithBlock() { }
+            }
+
+            class Caller {
+              @UiThread void show() {
+                new Implicit(); // ERROR
+                new ImplicitWithBlock(); // ERROR
+                new ExplicitWithBlock(); // ERROR
+              }
+
+              @WorkerThread void load() {
+                new Implicit(); // OK
+                new ImplicitWithBlock(); // OK
+                new ExplicitWithBlock(); // OK
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Worker.java:30: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            new Implicit(); // ERROR
+            ~~~~~~~~~~~~~~
+        src/test/pkg/Worker.java:31: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            new ImplicitWithBlock(); // ERROR
+            ~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Worker.java:32: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            new ExplicitWithBlock(); // ERROR
+            ~~~~~~~~~~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test conflicting Java initializer block`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            class Mixed {
+              @WorkerThread static int work() { return 0; }
+              @UiThread static int ui() { return 0; }
+
+              int id = work();
+              int view;
+              { view = ui(); } // ERROR
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Mixed.java:12: Error: Initializer must run from @{Main,Ui}Thread, incompatible with an earlier initializer that must run from @WorkerThread [ThreadConstraint]
+          { view = ui(); } // ERROR
+          ~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test implicit constructor from different module`() {
+    val project1 =
+      project()
+        .files(
+          java(
+              """
+              package module1;
+
+              import androidx.annotation.WorkerThread;
+
+              public class Implicit {
+                final int id = work();
+
+                @WorkerThread static int work() { return 0; }
+              }
+              """
+            )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+
+    val project2 =
+      project()
+        .files(
+          java(
+              """
+              package module2;
+
+              import androidx.annotation.UiThread;
+              import module1.Implicit;
+
+              class Caller {
+                @UiThread void show() {
+                  new Implicit(); // ERROR
+                }
+              }
+              """
+            )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+        .dependsOn(project1)
+
+    lint()
+      // Windows CI runs only the default mode; force the partial one, which is checked separately
+      .testModes(TestMode.DEFAULT, TestMode.PARTIAL)
+      .projects(project1, project2)
+      .run()
+      .expect(
+        """
+        src/module2/Caller.java:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            new Implicit(); // ERROR
+            ~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
   fun testBaseAssumption_forEach() {
     lint()
       .files(
