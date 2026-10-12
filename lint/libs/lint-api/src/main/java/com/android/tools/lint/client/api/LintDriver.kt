@@ -2311,7 +2311,8 @@ class LintDriver(
         (project.resourceFolders + project.generatedResourceFolders).mapNotNull { toCanonical(project, it) }.toSet()
       }
 
-    for (file in files) {
+    for (rawFile in files) {
+      val file = toCanonical(project, rawFile) ?: continue
       if (file.isDirectory) {
         // Is it a resource folder?
         val type = ResourceFolderType.getFolderType(file.name)

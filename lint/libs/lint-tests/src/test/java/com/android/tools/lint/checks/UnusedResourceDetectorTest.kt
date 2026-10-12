@@ -3754,6 +3754,44 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       )
   }
 
+  // Regression test ensuring subset analysis properly resolves relative File paths against
+  // project.dir rather than the process working directory when checking isFile/isDirectory.
+  fun testRelativePathsInSubset() {
+    lint()
+      .files(
+        bytes("res/font/unused_font.ttf", byteArrayOf()),
+        xml(
+            "res/layout/unused_layout.xml",
+            """
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent" />
+          """,
+          )
+          .indented(),
+        bytes("res/raw/unused_raw.bin", byteArrayOf()),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .configureDriver { driver ->
+        for (project in driver.projectRoots) {
+          project.addFile(File("res/font/unused_font.ttf"))
+          project.addFile(File("res/layout/unused_layout.xml"))
+          project.addFile(File("res/raw/unused_raw.bin"))
+        }
+      }
+      .run()
+      .expect(
+        """
+        res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        res/layout/unused_layout.xml:1: Warning: The resource R.layout.unused_layout appears to be unused [UnusedResources]
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        res/raw/unused_raw.bin: Warning: The resource R.raw.unused_raw appears to be unused [UnusedResources]
+        0 errors, 3 warnings
+        """
+      )
+  }
+
   private val mLibraryStrings =
     xml(
       "res/values/strings.xml",
