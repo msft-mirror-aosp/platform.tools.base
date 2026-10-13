@@ -514,6 +514,31 @@ class LocalEmulatorProvisionerPluginTest {
   }
 
   @Test
+  fun secondInstanceOfSameAvdDoesNotStealHandle() = runBlockingWithTimeout {
+    avdManager.createAvd()
+
+    yieldUntil { provisioner.devices.value.size == 1 }
+
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+    avdManager.startAvd(handle.avdInfo, QuickBoot)
+    handle.awaitReady()
+
+    val firstConnectedDevice = checkNotNull(handle.state.connectedDevice)
+    val updateCount = AtomicInteger(0)
+    val job = handle.scope.launch { handle.stateFlow.collect { updateCount.incrementAndGet() } }
+
+    // Start a second emulator instance backed by the same AVD path
+    avdManager.startAvd(handle.avdInfo, QuickBoot)
+    yieldUntil { provisioner.unclaimedDevices.value.size == 1 }
+
+    delay(1.seconds)
+
+    assertThat(handle.state.connectedDevice).isEqualTo(firstConnectedDevice)
+    assertThat(updateCount.get()).isEqualTo(1)
+    job.cancel()
+  }
+
+  @Test
   fun extension() {
     checkNotNull(plugin.extension<TestExtension>())
     runBlockingWithTimeout {

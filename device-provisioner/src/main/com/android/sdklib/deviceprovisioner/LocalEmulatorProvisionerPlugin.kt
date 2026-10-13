@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -214,6 +215,12 @@ internal constructor(
       // Apparently this emulator is not on disk, or it is not in the directory that we scan for
       // AVDs. (Perhaps GMD or Crow failed to pick it up.)
       logger.debug { "Unexpected device at $path" }
+      emulatorConsole.close()
+      return null
+    }
+    val existingDevice = handle.state.connectedDevice
+    if (existingDevice != null && existingDevice != device && existingDevice.scope.isActive) {
+      logger.debug { "AVD at $path is already connected to ${existingDevice.serialNumber}; not claiming ${device.serialNumber}" }
       emulatorConsole.close()
       return null
     }
