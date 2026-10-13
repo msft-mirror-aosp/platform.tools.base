@@ -16,6 +16,7 @@
 package com.android.ide.common.resources.configuration;
 
 import static com.android.ide.common.resources.configuration.FolderConfigurationSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
@@ -30,14 +31,17 @@ import com.android.resources.ScreenOrientation;
 import com.android.resources.ScreenRound;
 import com.android.resources.UiMode;
 import com.android.resources.WideGamutColor;
+
 import com.google.common.base.Joiner;
+
+import org.junit.Test;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.Test;
 
 public class FolderConfigurationTest {
 
@@ -225,7 +229,8 @@ public class FolderConfigurationTest {
         doTestNormalizeByAddingImpliedVersionQualifier(18, "sw42dp", "v18");
 
         // finally test that in some cases it won't add a -v# value.
-        doTestNormalizeByAddingImpliedVersionQualifier(VersionQualifier.DEFAULT.getVersion(), "port");
+        doTestNormalizeByAddingImpliedVersionQualifier(
+                VersionQualifier.DEFAULT.getVersion(), "port");
     }
 
     @Test
@@ -581,6 +586,65 @@ public class FolderConfigurationTest {
                         configBcpEn.findMatchingConfigurables(
                                 Arrays.asList(itemBlank, itemBcpEn, itemEn, itemDe)))
                 .containsExactly(itemBcpEn, itemEn);
+    }
+
+    @Test
+    public void findMatchingConfigurablesPseudolocale() {
+        ResourceMergerItem itemBlank =
+                new ResourceMergerItem("foo", null, ResourceType.STRING, null, null, null) {
+                    @Override
+                    public String toString() {
+                        return "itemBlank";
+                    }
+                };
+        ResourceFile sourceBlank =
+                ResourceFile.createSingle(new File("sourceBlank"), itemBlank, "");
+        itemBlank.setSourceFile(sourceBlank);
+
+        ResourceMergerItem itemEnXa =
+                new ResourceMergerItem("foo", null, ResourceType.STRING, null, null, null) {
+                    @Override
+                    public String toString() {
+                        return "itemEnXa";
+                    }
+                };
+        ResourceFile sourceEnXa =
+                ResourceFile.createSingle(new File("sourceEnXa"), itemEnXa, "en-rXA");
+        itemEnXa.setSourceFile(sourceEnXa);
+        FolderConfiguration configEnXa = itemEnXa.getConfiguration();
+
+        ResourceMergerItem itemArXb =
+                new ResourceMergerItem("foo", null, ResourceType.STRING, null, null, null) {
+                    @Override
+                    public String toString() {
+                        return "itemArXb";
+                    }
+                };
+        ResourceFile sourceArXb =
+                ResourceFile.createSingle(new File("sourceArXb"), itemArXb, "ar-rXB");
+        itemArXb.setSourceFile(sourceArXb);
+        FolderConfiguration configArXb = itemArXb.getConfiguration();
+
+        FolderConfiguration configEn = FolderConfiguration.getConfigForQualifierString("en");
+        FolderConfiguration configEnUs = FolderConfiguration.getConfigForQualifierString("en-rUS");
+
+        // Pseudolocale configurations should not match standard "en" or "en-rUS"
+        assertThat(configEnXa.isMatchFor(configEn)).isFalse();
+        assertThat(configEnXa.isMatchFor(configEnUs)).isFalse();
+        assertThat(configArXb.isMatchFor(FolderConfiguration.getConfigForQualifierString("ar")))
+                .isFalse();
+
+        List<ResourceMergerItem> items = Arrays.asList(itemBlank, itemEnXa, itemArXb);
+
+        // When device configuration is "en", pseudolocale candidate "en-rXA" must not be matched,
+        // so default unqualified "itemBlank" is returned.
+        assertThat(configEn.findMatchingConfigurables(items)).containsExactly(itemBlank);
+
+        // When device configuration is explicitly "en-rXA", "itemEnXa" is matched and preferred.
+        assertThat(configEnXa.findMatchingConfigurables(items)).containsExactly(itemEnXa);
+
+        // When device configuration is explicitly "ar-rXB", "itemArXb" is matched and preferred.
+        assertThat(configArXb.findMatchingConfigurables(items)).containsExactly(itemArXb);
     }
 
     @Test
