@@ -22,7 +22,8 @@ import com.intellij.openapi.util.Disposer
 import java.io.File
 import kotlin.system.exitProcess
 
-class StandaloneComposeRenderer(
+/** Renders [PreviewScreenshot]s (e.g. Compose previews or Wear Tiles previews) outside of Android Studio. */
+class StandalonePreviewRenderer(
   private val fontsPath: String?,
   private val resourceApkPath: String,
   private val namespace: String,
@@ -86,7 +87,7 @@ fun main(args: Array<String>) {
     System.err.println("Error: ${t.message}")
     exitCode = 1
   } finally {
-    StandaloneComposeRenderer.disposeFramework()
+    StandalonePreviewRenderer.disposeFramework()
   }
   exitProcess(exitCode)
 }
@@ -141,7 +142,7 @@ private fun printUsage() {
 private fun renderPreview(previewRenderingJson: File) {
   val previewRendering = readPreviewRenderingJson(previewRenderingJson.reader())
   val renderer =
-    StandaloneComposeRenderer(
+    StandalonePreviewRenderer(
       fontsPath = previewRendering.fontsPath,
       resourceApkPath = previewRendering.resourceApkPath,
       namespace = previewRendering.namespace,

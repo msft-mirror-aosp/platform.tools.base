@@ -19,7 +19,7 @@ package com.android.tools.render.compose
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
 import com.android.tools.render.common.ComponentTreeNode
-import com.android.tools.render.common.StandaloneComposeRenderer
+import com.android.tools.render.common.StandalonePreviewRenderer
 import com.android.tools.render.common.readComponentTreeFromJson
 import com.android.tools.render.common.readPreviewRenderingJson
 import com.android.tools.render.common.readPreviewRenderingResultJson
@@ -122,7 +122,7 @@ class ScreenshotRenderTest {
     val treeOutputFolder = tmpFolder.newFolder()
     val previewRendering = readPreviewRenderingJson(jsonSettings.bufferedReader())
     val standaloneRenderer =
-      StandaloneComposeRenderer(
+      StandalonePreviewRenderer(
         fontsPath = previewRendering.fontsPath,
         resourceApkPath = previewRendering.resourceApkPath,
         namespace = previewRendering.namespace,
@@ -166,7 +166,7 @@ class ScreenshotRenderTest {
         textNode.parameters?.get("text") ?: textNode.semantics?.get("text"),
       )
     }
-    assertNotNull(StandaloneComposeRenderer::class.java.getMethod("render", List::class.java, String::class.java))
+    assertNotNull(StandalonePreviewRenderer::class.java.getMethod("render", List::class.java, String::class.java))
 
     // Stop the daemon otherwise it could keep the lock on the temporary folder
     gradleProject.executeGradleTask("--stop")
