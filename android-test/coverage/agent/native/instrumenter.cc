@@ -389,6 +389,9 @@ bool Instrumenter::InstrumentMethod(
   // parameter-shifting.
   dex::u4 scratch_reg = 0;
   bool found_unused = false;
+  // Restored on exits that give up after the slow path below grew the frame:
+  // the instructions only match the larger frame after code_ir.Assemble().
+  const dex::u2 original_registers = ir_method->code->registers;
 
   if (is_default_arguments_constructor) {
     // Its probes all go right before its final return-void, where no register
@@ -429,6 +432,7 @@ bool Instrumenter::InstrumentMethod(
     // our modular ParameterShifter class to keep code clean, readable, and
     // highly maintainable.
     if (!ParameterShifter::ShiftParameters(ir_method, code_ir, super_calls)) {
+      ir_method->code->registers = original_registers;
       return false;
     }
 
@@ -730,6 +734,7 @@ bool Instrumenter::InstrumentMethod(
 
   // Nothing left to report: leave the method uninstrumented.
   if (!has_reported_block) {
+    ir_method->code->registers = original_registers;
     return false;
   }
 
