@@ -150,7 +150,9 @@ kotlin_test(
     # keep sorted
     data = [
         ":compose-preview-renderer",
+        ":compose-preview-renderer-cli_deploy.jar",
         ":compose_project_deps",
+        "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",
         "//prebuilts/studio/layoutlib:runtime",
         "//prebuilts/studio/layoutlib/data:framework_res.jar",
         "//prebuilts/studio/sdk:build-tools/36.0.0",

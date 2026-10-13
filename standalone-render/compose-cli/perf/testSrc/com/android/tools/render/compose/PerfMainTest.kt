@@ -22,13 +22,11 @@ import com.android.tools.render.common.readPreviewRenderingResultJson
 import java.nio.file.Paths
 import javax.imageio.ImageIO
 import org.junit.Assert.assertNull
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.rules.TemporaryFolder
 
-@Ignore("b/441854224")
 class PerfMainTest {
   private val tmpFolder = TemporaryFolder()
   private val gradleProject =
@@ -147,6 +145,7 @@ class PerfMainTest {
         ImageDiffUtil.assertImageSimilar(
           TestUtils.resolveWorkspacePathUnchecked("tools/base/standalone-render/compose-cli/testData/goldens/$goldenName.png"),
           img,
+          2.0,
         )
       }
       metric

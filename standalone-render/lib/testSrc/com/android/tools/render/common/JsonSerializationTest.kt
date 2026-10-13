@@ -218,6 +218,16 @@ class JsonSerializationTest {
     val restoredPreviewRendering = readPreviewRenderingJson(stringWriter.toString().reader())
 
     assertEquals(previewRendering, restoredPreviewRendering)
+
+    val previewRenderingWithRClasses =
+      previewRendering.copy(
+        resourceDirs = listOf("/path/to/res1", "/path/to/res2"),
+        rClassJars = listOf("/path/to/R.jar"),
+      )
+    val stringWriterWithRClasses = StringWriter()
+    writePreviewRenderingToJson(stringWriterWithRClasses, previewRenderingWithRClasses)
+    val restoredWithRClasses = readPreviewRenderingJson(stringWriterWithRClasses.toString().reader())
+    assertEquals(previewRenderingWithRClasses, restoredWithRClasses)
   }
 
   @Test

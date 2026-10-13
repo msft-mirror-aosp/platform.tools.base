@@ -36,6 +36,8 @@ private const val METHOD_FQN = "methodFQN"
 private const val METHOD_PARAMS = "methodParams"
 private const val PREVIEW_PARAMS = "previewParams"
 private const val RESULTS_FILE_PATH = "resultsFilePath"
+private const val RESOURCE_DIRS = "resourceDirs"
+private const val R_CLASS_JARS = "rClassJars"
 private const val PREVIEW_TYPE = "previewType"
 
 private const val PREVIEW_ID = "previewId"
@@ -67,6 +69,8 @@ fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
   var metaDataFolder: String? = null
   val classPath = mutableListOf<String>()
   val projectClassPath = mutableListOf<String>()
+  val resourceDirs = mutableListOf<String>()
+  val rClassJars = mutableListOf<String>()
   var namespace: String? = null
   var resourceApkPath: String? = null
   var screenshots: List<PreviewScreenshot>? = null
@@ -98,6 +102,20 @@ fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
           reader.beginArray()
           while (reader.hasNext()) {
             projectClassPath.add(reader.nextString())
+          }
+          reader.endArray()
+        }
+        RESOURCE_DIRS -> {
+          reader.beginArray()
+          while (reader.hasNext()) {
+            resourceDirs.add(reader.nextString())
+          }
+          reader.endArray()
+        }
+        R_CLASS_JARS -> {
+          reader.beginArray()
+          while (reader.hasNext()) {
+            rClassJars.add(reader.nextString())
           }
           reader.endArray()
         }
@@ -134,6 +152,8 @@ fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
     resourceApkPath ?: throw IllegalArgumentException("Resource APK path is missing"),
     screenshots ?: emptyList(),
     resultsFilePath ?: throw IllegalArgumentException("Results file path is missing"),
+    resourceDirs,
+    rClassJars,
   )
 }
 
@@ -248,6 +268,18 @@ fun writePreviewRenderingToJson(jsonWriter: Writer, previewRendering: PreviewRen
     writer.name(SCREENSHOTS)
     writePreviewScreenshots(writer, previewRendering.screenshots)
     writer.name(RESULTS_FILE_PATH).value(previewRendering.resultsFilePath)
+    if (previewRendering.resourceDirs.isNotEmpty()) {
+      writer.name(RESOURCE_DIRS)
+      writer.beginArray()
+      previewRendering.resourceDirs.forEach { writer.value(it) }
+      writer.endArray()
+    }
+    if (previewRendering.rClassJars.isNotEmpty()) {
+      writer.name(R_CLASS_JARS)
+      writer.beginArray()
+      previewRendering.rClassJars.forEach { writer.value(it) }
+      writer.endArray()
+    }
     writer.endObject()
   }
 }

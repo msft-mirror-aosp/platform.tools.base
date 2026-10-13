@@ -30,6 +30,8 @@ class StandalonePreviewRenderer(
   private val classPath: List<String>,
   private val projectClassPath: List<String>,
   private val layoutlibPath: String,
+  private val resourceDirs: List<String> = emptyList(),
+  private val rClassJars: List<String> = emptyList(),
 ) {
 
   @JvmOverloads
@@ -40,6 +42,9 @@ class StandalonePreviewRenderer(
     renderImage: Boolean = true,
   ): PreviewRenderingResult {
     return try {
+      val resolvedRClassJars = rClassJars.ifEmpty {
+        classPath.filter { it.endsWith("/R.jar") || it.endsWith("\\R.jar") || it.endsWith("-R.jar") }
+      }
       val bootstrapper =
         RenderEnvironmentBootstrapper(
           fontsPath = fontsPath,
@@ -48,6 +53,8 @@ class StandalonePreviewRenderer(
           classPath = classPath,
           projectClassPath = projectClassPath,
           layoutlibPath = layoutlibPath,
+          resourceDirs = resourceDirs,
+          rClassJars = resolvedRClassJars,
         )
       bootstrapper.bootstrap().use { renderer ->
         val results =
@@ -149,6 +156,8 @@ private fun renderPreview(previewRenderingJson: File) {
       classPath = previewRendering.classPath,
       projectClassPath = previewRendering.projectClassPath,
       layoutlibPath = previewRendering.layoutlibPath,
+      resourceDirs = previewRendering.resourceDirs,
+      rClassJars = previewRendering.rClassJars,
     )
   val previewRenderingResult = renderer.render(previewRendering.screenshots, previewRendering.outputFolder)
 

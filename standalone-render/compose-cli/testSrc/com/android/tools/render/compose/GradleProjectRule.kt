@@ -106,6 +106,7 @@ class GradleProjectRule(
 
     val apk = projectRoot.resolve("app/build/outputs/apk/debug/app-debug.apk")
     val classPath = projectRoot.resolve("deps.txt").readLines()
+    val rClassJars = classPath.filter { it.endsWith("/R.jar") || it.endsWith("\\R.jar") || it.endsWith("-R.jar") }
 
     val previewRendering =
       PreviewRendering(
@@ -119,6 +120,7 @@ class GradleProjectRule(
         apk.absolutePathString(),
         screenshots,
         resultsFile.absolutePath,
+        rClassJars = rClassJars,
       )
 
     val jsonSettings = tmpFolder.newFile()
