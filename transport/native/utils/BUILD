@@ -1,25 +1,67 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("//tools/base/bazel:android.bzl", "select_android")
 
 package(default_visibility = ["//visibility:public"])
 
+# Common low-level utilities (logging, filesystem, device info) that do not
+# depend on gRPC or transport-specific protos. Use this for lightweight
+# components like JVMTI agents.
+cc_library(
+    name = "base",
+    srcs = [
+        "bash_command.cc",
+        "fs/dir.cc",
+        "fs/disk_file_system.cc",
+        "fs/file.cc",
+        "fs/file_system.cc",
+        "fs/path.cc",
+        "trace.cc",
+    ] + select_android(
+        [
+            "bash_command.android.cc",
+            "device_info.android.cc",
+            "log.android.cc",
+        ],
+        [
+            "bash_command.host.cc",
+            "device_info.host.cc",
+            "log.cc",
+        ],
+    ),
+    hdrs = [
+        "bash_command.h",
+        "device_info.h",
+        "device_info_helper.h",
+        "fs/dir.h",
+        "fs/disk_file_system.h",
+        "fs/file.h",
+        "fs/file_system.h",
+        "fs/path.h",
+        "log.h",
+        "trace.h",
+    ],
+    include_prefix = "utils",
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+# General transport utilities that include dependencies on transport protos
+# and gRPC. This should be the default choice for most transport-related
+# components.
 cc_library(
     name = "utils",
     srcs = glob(["**/*.h"]) + [
         "activity_manager.cc",
         "agent_task.cc",
         "background_queue.cc",
-        "bash_command.cc",
         "current_process.cc",
         "daemon_config.cc",
         "fd_utils.cc",
         "file_cache.cc",
         "file_reader.cc",
-        "fs/dir.cc",
-        "fs/disk_file_system.cc",
-        "fs/file.cc",
-        "fs/file_system.cc",
         "fs/memory_file_system.cc",
-        "fs/path.cc",
         "memory_map.cc",
         "native_backtrace.cc",
         "nonblocking_command_runner.cc",
@@ -30,7 +72,6 @@ cc_library(
         "stopwatch.cc",
         "termination_service.cc",
         "tokenizer.cc",
-        "trace.cc",
         "uid_fetcher.cc",
     ] + select({
         "@platforms//os:macos": [
@@ -49,16 +90,10 @@ cc_library(
         ],
     }) + select_android(
         [
-            "bash_command.android.cc",
-            "device_info.android.cc",
-            "log.android.cc",
             "nonblocking_command_runner.android.cc",
             "process_manager.android.cc",
         ],
         [
-            "bash_command.host.cc",
-            "device_info.host.cc",
-            "log.cc",
             "nonblocking_command_runner.host.cc",
             "process_manager.host.cc",
         ],
@@ -113,6 +148,7 @@ cc_library(
         "//conditions:default": [],
     }),
     deps = [
+        ":base",
         "//tools/base/transport/proto:cc_proto",
     ],
 )

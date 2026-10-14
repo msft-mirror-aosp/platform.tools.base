@@ -343,7 +343,7 @@ def cc_grpc_proto_library(
     cc_library(
         name = name,
         srcs = outs + hdrs,
-        deps = deps + ["@grpc//:grpc++", "@com_google_protobuf//:protobuf"],
+        deps = deps + (["@grpc//:grpc++"] if grpc_support else []) + ["@com_google_protobuf//:protobuf"],
         includes = includes,
         visibility = visibility,
         tags = tags,

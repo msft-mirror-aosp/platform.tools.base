@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//tools/base/bazel:android.bzl", "ANDROID_COPTS")
 
 # Common helpers used by perfa_lib, JVMTI agent and App Inspection.
@@ -24,6 +25,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
-        "//tools/base/transport/native/utils",
+        "//tools/base/transport/native/utils:base",
     ],
 )

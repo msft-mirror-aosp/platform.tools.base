@@ -15,7 +15,6 @@ java_proto_library(
 cc_grpc_proto_library(
     name = "cc_proto",
     srcs = ["protos/perfetto/config/perfetto_config.proto"],
-    grpc_support = 1,
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],

@@ -35,7 +35,7 @@ cc_binary(
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/transport/native/agent:jni_wrappers",
         "//tools/base/transport/native/jvmti",
-        "//tools/base/transport/native/utils",
+        "//tools/base/transport/native/utils:base",
         "@slicer",
     ],
 )
