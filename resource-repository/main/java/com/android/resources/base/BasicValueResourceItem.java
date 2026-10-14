@@ -80,7 +80,7 @@ public class BasicValueResourceItem extends BasicValueResourceItemBase {
     String rawXmlValue = getRawXmlValue();
     stream.writeString(Objects.equals(rawXmlValue, myValue) ? null : rawXmlValue);
     String renderingValue = getRenderingValue();
-    stream.writeString(Objects.equals(renderingValue, myValue) ? null : renderingValue);
+    stream.writeString(Objects.equals(renderingValue, rawXmlValue) ? null : renderingValue);
   }
 
   /**

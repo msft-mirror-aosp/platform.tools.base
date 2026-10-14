@@ -259,6 +259,8 @@ public class ResourceAsserts {
       }
       else {
         assertWithMessage("value mismatch").that(actualValue).isEqualTo(expectedValue);
+        assertWithMessage("raw XML value mismatch").that(actual().getRawXmlValue()).isEqualTo(expected.getRawXmlValue());
+        assertWithMessage("rendering value mismatch").that(actual().getRenderingValue()).isEqualTo(expected.getRenderingValue());
       }
     }
   }

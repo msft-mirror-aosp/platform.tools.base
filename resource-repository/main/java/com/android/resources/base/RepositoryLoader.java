@@ -1274,6 +1274,7 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
     @NonNull private final StringBuilder renderingValue = new StringBuilder();
     @NonNull private final Deque<Boolean> textInclusionState = new ArrayDeque<>();
     private boolean nontrivialRawXml;
+    private boolean hasXliffOrCdata;
 
     @NonNull
     String extractText(@NonNull XmlPullParser parser, boolean withRawXml) throws IOException, XmlPullParserException {
@@ -1282,6 +1283,7 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
       renderingValue.setLength(0);
       textInclusionState.clear();
       nontrivialRawXml = false;
+      hasXliffOrCdata = false;
 
       int elementDepth = parser.getDepth();
       int event;
@@ -1291,7 +1293,8 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
         switch (event) {
           case XmlPullParser.START_TAG: {
             String tagName = parser.getName();
-            if (XLIFF_G_TAG.equals(tagName) && isXliffNamespace(parser.getNamespace())) {
+            boolean isXliff = XLIFF_G_TAG.equals(tagName) && isXliffNamespace(parser.getNamespace());
+            if (isXliff) {
               boolean includeNestedText = getTextInclusionState();
               String example = parser.getAttributeValue(null, ATTR_EXAMPLE);
               if (example != null) {
@@ -1309,6 +1312,7 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
             }
             if (withRawXml) {
               nontrivialRawXml = true;
+              int rawXmlStart = rawXml.length();
               rawXml.append('<');
               String prefix = parser.getPrefix();
               if (prefix != null) {
@@ -1327,6 +1331,12 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
                 rawXml.append('"');
               }
               rawXml.append('>');
+              if (isXliff) {
+                hasXliffOrCdata = true;
+              }
+              else {
+                renderingValue.append(rawXml, rawXmlStart, rawXml.length());
+              }
             }
             break;
           }
@@ -1336,15 +1346,20 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
               break loop;
             }
             String tagName = parser.getName();
+            boolean isXliff = XLIFF_G_TAG.equals(tagName) && isXliffNamespace(parser.getNamespace());
             if (withRawXml) {
+              int rawXmlStart = rawXml.length();
               rawXml.append('<').append('/');
               String prefix = parser.getPrefix();
               if (prefix != null) {
                 rawXml.append(prefix).append(':');
               }
               rawXml.append(tagName).append('>');
+              if (!isXliff) {
+                renderingValue.append(rawXml, rawXmlStart, rawXml.length());
+              }
             }
-            if (XLIFF_G_TAG.equals(tagName) && isXliffNamespace(parser.getNamespace())) {
+            if (isXliff) {
               textInclusionState.removeLast();
             }
             break;
@@ -1353,25 +1368,26 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
           case XmlPullParser.ENTITY_REF:
           case XmlPullParser.TEXT: {
             String textPiece = parser.getText();
-            renderingValue.append(textPiece);
             if (getTextInclusionState()) {
               text.append(textPiece);
             }
             if (withRawXml) {
               rawXml.append(textPiece);
+              renderingValue.append(textPiece);
             }
             break;
           }
 
           case XmlPullParser.CDSECT: {
             String textPiece = parser.getText();
-            renderingValue.append(textPiece);
             if (getTextInclusionState()) {
               text.append(textPiece);
             }
             if (withRawXml) {
               nontrivialRawXml = true;
+              hasXliffOrCdata = true;
               rawXml.append("<![CDATA[").append(textPiece).append("]]>");
+              renderingValue.append(textPiece);
             }
             break;
           }
@@ -1392,7 +1408,7 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
 
     @Nullable
     String getRenderingValue() {
-      return ValueXmlHelper.unescapeResourceString(renderingValue.toString(), false, true);
+      return hasXliffOrCdata ? renderingValue.toString() : null;
     }
 
     private static boolean isXliffNamespace(@Nullable String namespaceUri) {
