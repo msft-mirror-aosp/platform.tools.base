@@ -17,8 +17,12 @@
 #include "tools/base/android-test/coverage/agent/native/hits_extractor.h"
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 #include "tools/base/android-test/coverage/agent/native/tagging_manager.h"
+#include "tools/base/build-system/gradle-core/src/main/proto/coverage_metadata.pb.h"
 
 #include <gtest/gtest.h>
+
+#include <fstream>
+#include <string>
 
 namespace coverage {
 
@@ -71,6 +75,47 @@ TEST(HitsExtractorTest, PackHitsEmpty) {
   std::string bitmask = HitsExtractor::PackHits(hits, 10, &last_hit_index);
 
   EXPECT_TRUE(bitmask.empty());
+}
+
+// Reads back a hits file written by HitsExtractor::WriteHitsFile.
+static bool ReadHitsFile(const std::string& path,
+                         android::tools::coverage::proto::CoverageHits* hits) {
+  std::ifstream in(path, std::ios::binary);
+  return in.good() && hits->ParseFromIstream(&in);
+}
+
+TEST(HitsExtractorTest, WriteHitsFileWithHits) {
+  const std::string path = ::testing::TempDir() + "coverage_hits_some.pb";
+  const std::string bitmask("\x05\x80", 2);
+
+  ASSERT_TRUE(HitsExtractor::WriteHitsFile(path, bitmask));
+
+  android::tools::coverage::proto::CoverageHits hits;
+  ASSERT_TRUE(ReadHitsFile(path, &hits));
+  EXPECT_EQ(hits.version(), 1u);
+  EXPECT_EQ(hits.hit_mask(), bitmask);
+  // The temporary file is renamed, not left behind.
+  EXPECT_FALSE(std::ifstream(path + ".tmp").good());
+}
+
+TEST(HitsExtractorTest, WriteHitsFileWithoutHits) {
+  // A run that executes no instrumented code still gets a hits file, so the
+  // host reports 0% coverage instead of failing to find the file.
+  const std::string path = ::testing::TempDir() + "coverage_hits_none.pb";
+
+  ASSERT_TRUE(HitsExtractor::WriteHitsFile(path, ""));
+
+  android::tools::coverage::proto::CoverageHits hits;
+  ASSERT_TRUE(ReadHitsFile(path, &hits));
+  EXPECT_EQ(hits.version(), 1u);
+  EXPECT_TRUE(hits.hit_mask().empty());
+}
+
+TEST(HitsExtractorTest, WriteHitsFileFailsForMissingDirectory) {
+  const std::string path =
+      ::testing::TempDir() + "does_not_exist/coverage_hits.pb";
+
+  EXPECT_FALSE(HitsExtractor::WriteHitsFile(path, ""));
 }
 
 TEST(InstrumenterTest, IsSyntheticOrCompilerGenerated) {

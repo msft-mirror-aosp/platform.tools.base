@@ -50,6 +50,13 @@ class HitsExtractor {
   static std::string PackHits(const jboolean* hits, jsize len,
                               uint32_t* last_hit_index);
 
+  // Serializes a packed bitmask as a CoverageHits message to `path`, through a
+  // temporary file so that a reader never sees a partial file. An empty
+  // bitmask still produces a valid file, which the host reads as "no block
+  // was hit".
+  static bool WriteHitsFile(const std::string& path,
+                            const std::string& bitmask);
+
  private:
   // Disallow copy and assignment.
   HitsExtractor(const HitsExtractor&) = delete;
