@@ -108,7 +108,8 @@ import com.android.builder.model.v2.ide.SourceProvider
 import com.android.builder.model.v2.ide.SourceSetContainer
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.builder.model.v2.ide.TestInfo
-import com.android.builder.model.v2.ide.TestSuiteArtifact
+import com.android.builder.model.v2.ide.TestSuiteDeviceArtifact
+import com.android.builder.model.v2.ide.TestSuiteHostArtifact
 import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 import com.android.builder.model.v2.ide.TestedTargetVariant
 import com.android.builder.model.v2.models.AndroidDsl
@@ -270,7 +271,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
      * change, such as removing an older model method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must be
      * increased to exclude all older versions of Studio that called that method.
      */
-    val modelProducer = VersionImpl(24, 0, humanReadable = "Android Gradle Plugin 9.1")
+    val modelProducer = VersionImpl(25, 0, humanReadable = "Android Gradle Plugin 9.1")
     /**
      * The minimum required model consumer version, to allow AGP to control support for older versions of Android Studio.
      *
@@ -987,9 +988,22 @@ class ModelBuilder<ExtensionT : CommonExtension>(
     (variant as? HasHostTestsCreationConfig)?.hostTests?.values?.forEach { hostTest ->
       hostTestArtifacts[hostTest.componentType.artifactName] = createJavaArtifact(hostTest)
     }
-    val testSuiteArtifacts = mutableMapOf<String, TestSuiteArtifact>()
+    val testSuiteHostArtifacts = mutableMapOf<String, TestSuiteHostArtifact>()
+    val testSuiteDeviceArtifacts = mutableMapOf<String, TestSuiteDeviceArtifact>()
     (variant as? HasTestSuitesCreationConfig)?.suites?.values?.forEach { testSuite ->
-      testSuiteArtifacts[testSuite.name] = createTestSuiteArtifact(testSuite)
+      for (sourceContainer in testSuite.sourceContainers) {
+        // ASSETS sources do not have a creationConfig (see TestSuiteSourceContainer.initializeCreationConfig) and have nothing to
+        // compile, so they produce no artifact.
+        val component = sourceContainer.creationConfig ?: continue
+        when (sourceContainer.source.type) {
+          TestSuiteSourceType.HOST_JAR ->
+            testSuiteHostArtifacts[sourceContainer.identifier] = createTestSuiteHostArtifact(testSuite.name, sourceContainer, component)
+          TestSuiteSourceType.TEST_APK ->
+            testSuiteDeviceArtifacts[sourceContainer.identifier] = createTestSuiteDeviceArtifact(testSuite.name, sourceContainer, component)
+          // Assets are not compiled on their own, so they have no artifact.
+          TestSuiteSourceType.ASSETS -> {}
+        }
+      }
     }
     return VariantImpl(
       name = variant.name,
@@ -997,7 +1011,8 @@ class ModelBuilder<ExtensionT : CommonExtension>(
       mainArtifact = createAndroidArtifact(variant),
       deviceTestArtifacts = deviceTestArtifacts,
       hostTestArtifacts = hostTestArtifacts,
-      testSuiteArtifacts = testSuiteArtifacts,
+      testSuiteHostArtifacts = testSuiteHostArtifacts,
+      testSuiteDeviceArtifacts = testSuiteDeviceArtifacts,
       testFixturesArtifact = (variant as? HasTestFixtures)?.testFixtures?.let { createAndroidArtifact(it) },
       testedTargetVariant = getTestTargetVariant(variant),
       runTestInSeparateProcess = ModulePropertyKey.BooleanWithDefault.SELF_INSTRUMENTING.getValue(variant.experimentalProperties.get()),
@@ -1013,25 +1028,105 @@ class ModelBuilder<ExtensionT : CommonExtension>(
     )
   }
 
-  private fun createTestSuiteArtifact(testSuite: TestSuiteCreationConfig): TestSuiteArtifactImpl {
-    val targets =
-      testSuite.targets.mapValues { mapEntry ->
-        val testSuiteTarget = mapEntry.value
-        TestSuiteTargetImpl(testSuiteTarget.name, testSuiteTarget.testTaskName, testSuiteTarget.targetDevices)
-      }
-    return TestSuiteArtifactImpl(
-      testInfo =
-        TestSuiteTestInfoImpl(
-          junitInfo = JUnitEngineInfoImpl(includedEngines = testSuite.junitEngineSpec.includeEngines),
-          targets = targets,
-        ),
-      compileTaskName = null,
-      assembleTaskName = null,
-      ideSetupTaskNames = emptySet(),
-      generatedSourceFolders = emptySet(),
-      classesFolders = emptySet(),
-      generatedClassPaths = emptyMap(),
-      bytecodeTransformations = emptyList(),
+  /**
+   * Returns the classes folders and generated class paths of a test suite source [component].
+   *
+   * The classes folders contain the Java compiler output ([InternalArtifactType.JAVAC]), the built-in Kotlin compiler output, the compiled
+   * R class jar of the tested variant when Android resources are enabled (the test suite source set is compiled against it), and the
+   * generated class paths returned by [addGeneratedClassPaths].
+   *
+   * Bytecode registered through the old variant API is excluded. Test suites have no old variant API object of their own:
+   * [ComponentCreationConfig.oldVariantApiLegacySupport] returns the tested variant's object, and that bytecode is not part of the test
+   * suite's compilation.
+   */
+  private fun getTestSuiteClassesFolders(component: ComponentCreationConfig): Pair<Set<File>, Map<String, File>> {
+    val classesFolders = mutableSetOf<File>()
+    component.artifacts.get(InternalArtifactType.JAVAC).orNull?.asFile?.let { classesFolders.add(it) }
+    component.getBuiltInKotlincOutput()?.orNull?.asFile?.let { classesFolders.add(it) }
+    component.androidResourcesCreationConfig?.compiledRClassArtifact?.orNull?.asFile?.let { classesFolders.add(it) }
+    val generatedClassPaths = addGeneratedClassPaths(component, classesFolders)
+    return classesFolders to generatedClassPaths
+  }
+
+  /**
+   * Returns the generated source folders of a test suite source [component].
+   *
+   * Included are the folders produced by the tasks registered for the test suite source set itself:
+   * - the generated Java and Kotlin source folders of the test suite source set,
+   * - the annotation processor output folder ([InternalArtifactType.AP_GENERATED_SOURCES]).
+   *
+   * Built-in KAPT generated sources are not queried: test suite creation configs do not support built-in KAPT and return null from
+   * [ComponentCreationConfig.getBuiltInKaptArtifact].
+   *
+   * BuildConfig, AIDL, RenderScript, and data binding sources, and sources registered through the legacy variant API, are excluded. Test
+   * suite creation configs delegate [ComponentCreationConfig.buildFeatures], [ComponentCreationConfig.buildConfigCreationConfig], and
+   * [ComponentCreationConfig.oldVariantApiLegacySupport] to the tested variant, but no suite-scoped tasks generate these sources, so the
+   * folders reachable through them belong to the tested variant and are not part of the test suite source set.
+   */
+  private fun getTestSuiteGeneratedSourceFolders(component: ComponentCreationConfig): Collection<File> {
+    val generatedSourceFolders = mutableListOf<File>()
+    generatedSourceFolders.addAll(variantSourcesForModel(component.sources.java, isGenerated = true))
+    generatedSourceFolders.addAll(variantSourcesForModel(component.sources.kotlin, isGenerated = true))
+    component.artifacts.get(InternalArtifactType.AP_GENERATED_SOURCES).orNull?.asFile?.let { generatedSourceFolders.add(it) }
+    return generatedSourceFolders
+  }
+
+  /**
+   * Creates the [TestSuiteHostArtifact] for a host jar [sourceContainer] of test suite [testSuiteName].
+   *
+   * [component] is the non-null [TestSuiteSourceContainer.creationConfig] of [sourceContainer]. The IDE setup task is the source generation
+   * task of the test suite source set.
+   */
+  private fun createTestSuiteHostArtifact(
+    testSuiteName: String,
+    sourceContainer: TestSuiteSourceContainer,
+    component: ComponentCreationConfig,
+  ): TestSuiteHostArtifact {
+    val taskContainer = component.taskContainer
+    val (classesFolders, generatedClassPaths) = getTestSuiteClassesFolders(component)
+    return TestSuiteHostArtifactImpl(
+      testSuiteName = testSuiteName,
+      sourceSetName = sourceContainer.source.name,
+      compileTaskName = taskContainer.compileTask.name,
+      assembleTaskName = taskContainer.assembleTask.name,
+      ideSetupTaskNames = setOf(taskContainer.sourceGenTask.name),
+      generatedSourceFolders = getTestSuiteGeneratedSourceFolders(component),
+      classesFolders = classesFolders,
+      generatedClassPaths = generatedClassPaths,
+      bytecodeTransformations = getBytecodeTransformations(component),
+    )
+  }
+
+  /**
+   * Creates the [TestSuiteDeviceArtifact] for a test APK [sourceContainer] of test suite [testSuiteName].
+   *
+   * [component] is the non-null [TestSuiteSourceContainer.creationConfig] of [sourceContainer]. The IDE setup task is the source generation
+   * task of the test suite source set. Signing information is only available when [component] is an [ApkCreationConfig].
+   */
+  private fun createTestSuiteDeviceArtifact(
+    testSuiteName: String,
+    sourceContainer: TestSuiteSourceContainer,
+    component: ComponentCreationConfig,
+  ): TestSuiteDeviceArtifact {
+    val taskContainer = component.taskContainer
+    val (classesFolders, generatedClassPaths) = getTestSuiteClassesFolders(component)
+    val signingConfig = (component as? ApkCreationConfig)?.signingConfig
+    return TestSuiteDeviceArtifactImpl(
+      testSuiteName = testSuiteName,
+      sourceSetName = sourceContainer.source.name,
+      compileTaskName = taskContainer.compileTask.name,
+      assembleTaskName = taskContainer.assembleTask.name,
+      ideSetupTaskNames = setOf(taskContainer.sourceGenTask.name),
+      generatedSourceFolders = getTestSuiteGeneratedSourceFolders(component),
+      classesFolders = classesFolders,
+      generatedClassPaths = generatedClassPaths,
+      bytecodeTransformations = getBytecodeTransformations(component),
+      applicationId = getApplicationId(component),
+      minSdkVersion = ApiVersionImpl(component.minSdk.apiLevel, component.minSdk.codename),
+      isSigned = signingConfig?.hasConfig() ?: false,
+      signingConfigName = signingConfig?.name,
+      assembleTaskOutputListingFile =
+        if (component.componentType.isApk) component.artifacts.get(InternalArtifactType.APK_IDE_REDIRECT_FILE).orNull?.asFile else null,
     )
   }
 

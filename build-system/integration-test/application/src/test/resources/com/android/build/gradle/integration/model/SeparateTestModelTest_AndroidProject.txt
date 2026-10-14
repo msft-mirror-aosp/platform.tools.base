@@ -6,9 +6,9 @@
    - dynamicFeatures       = (null)
    > variants:
       > debug:
-         - name                   = "debug"
-         - displayName            = "debug"
-         - isInstantAppCompatible = false
+         - name                     = "debug"
+         - displayName              = "debug"
+         - isInstantAppCompatible   = false
          > mainArtifact:
             - compileTaskName               = "compileDebugSources"
             - assembleTaskName              = "assembleDebug"
@@ -41,14 +41,16 @@
             - bundleInfo                    = (null)
             - codeShrinker                  = (null)
          < mainArtifact
-         - androidTestArtifact    = (null)
-         - unitTestArtifact       = (null)
-         - testFixturesArtifact   = (null)
-         - testSuiteArtifacts     = []
+         - androidTestArtifact      = (null)
+         - unitTestArtifact         = (null)
+         - testFixturesArtifact     = (null)
+         - testSuiteArtifacts       = []
+         - testSuiteHostArtifacts   = []
+         - testSuiteDeviceArtifacts = []
          - testedTargetVariant:
             - targetProjectPath = ":app"
             - targetVariant     = "debug"
-         - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}]
+         - desugaredMethods         = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}]
       < debug
    < variants
    - testSuites            = []

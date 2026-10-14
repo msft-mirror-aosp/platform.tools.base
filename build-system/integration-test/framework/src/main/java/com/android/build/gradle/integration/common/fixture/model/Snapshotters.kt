@@ -53,6 +53,8 @@ import com.android.builder.model.v2.ide.SourceSetContainer
 import com.android.builder.model.v2.ide.TestInfo
 import com.android.builder.model.v2.ide.TestSuite
 import com.android.builder.model.v2.ide.TestSuiteArtifact
+import com.android.builder.model.v2.ide.TestSuiteDeviceArtifact
+import com.android.builder.model.v2.ide.TestSuiteHostArtifact
 import com.android.builder.model.v2.ide.TestSuiteTarget
 import com.android.builder.model.v2.ide.TestSuiteTestInfo
 import com.android.builder.model.v2.ide.TestSuiteVariantTarget
@@ -459,6 +461,7 @@ private fun ModelSnapshotter<Variant>.snapshotVariant() {
   dataObject("androidTestArtifact", Variant::androidTestArtifact) { snapshotAndroidArtifact() }
   dataObject("unitTestArtifact", Variant::unitTestArtifact) { snapshotJavaArtifact() }
   dataObject("testFixturesArtifact", Variant::testFixturesArtifact) { snapshotAndroidArtifact() }
+  @Suppress("DEPRECATION")
   convertedObjectList(
     name = "testSuiteArtifacts",
     propertyAction = { testSuiteArtifacts.entries },
@@ -479,6 +482,36 @@ private fun ModelSnapshotter<Variant>.snapshotVariant() {
         snapshotTestSuiteTarget()
       }
     }
+  }
+  convertedObjectList(
+    name = "testSuiteHostArtifacts",
+    propertyAction = { testSuiteHostArtifacts.entries },
+    nameAction = { key },
+    objectAction = { value },
+    sortAction = { collection -> collection?.sortedBy { it.key } },
+  ) {
+    item("testSuiteName", TestSuiteHostArtifact::testSuiteName)
+    item("sourceSetName", TestSuiteHostArtifact::sourceSetName)
+    snapshotTestSuiteBaseArtifact()
+  }
+  convertedObjectList(
+    name = "testSuiteDeviceArtifacts",
+    propertyAction = { testSuiteDeviceArtifacts.entries },
+    nameAction = { key },
+    objectAction = { value },
+    sortAction = { collection -> collection?.sortedBy { it.key } },
+  ) {
+    item("testSuiteName", TestSuiteDeviceArtifact::testSuiteName)
+    item("sourceSetName", TestSuiteDeviceArtifact::sourceSetName)
+    snapshotTestSuiteBaseArtifact()
+    item("applicationId", TestSuiteDeviceArtifact::applicationId)
+    dataObject("minSdkVersion", TestSuiteDeviceArtifact::minSdkVersion) {
+      item("apiLevel", ApiVersion::apiLevel)
+      item("codename", ApiVersion::codename)
+    }
+    item("isSigned", TestSuiteDeviceArtifact::isSigned)
+    item("signingConfigName", TestSuiteDeviceArtifact::signingConfigName)
+    item("assembleTaskOutputListingFile", TestSuiteDeviceArtifact::assembleTaskOutputListingFile)
   }
   dataObject("testedTargetVariant", Variant::testedTargetVariant) {
     item("targetProjectPath", TestedTargetVariant::targetProjectPath)
@@ -603,6 +636,20 @@ private fun ModelSnapshotter<out AbstractArtifact>.snapshotBaseArtifact() {
   valueList("classesFolders", AbstractArtifact::classesFolders) { it?.sorted() }
   list("ideSetupTaskNames", AbstractArtifact::ideSetupTaskNames)
   valueList("generatedSourceFolders", AbstractArtifact::generatedSourceFolders) { it?.sorted() }
+}
+
+private fun <ArtifactT : AbstractArtifact> ModelSnapshotter<ArtifactT>.snapshotTestSuiteBaseArtifact() {
+  snapshotBaseArtifact()
+  convertedObjectList(
+    name = "generatedClassPaths",
+    propertyAction = { generatedClassPaths.entries },
+    nameAction = { key },
+    objectAction = { value },
+    sortAction = { collection -> collection?.sortedBy { it.key } },
+  ) {
+    item("path", { this })
+  }
+  list("bytecodeTransformations", AbstractArtifact::bytecodeTransformations)
 }
 
 private fun ModelSnapshotter<LintOptions>.snapshotLintOptions() {

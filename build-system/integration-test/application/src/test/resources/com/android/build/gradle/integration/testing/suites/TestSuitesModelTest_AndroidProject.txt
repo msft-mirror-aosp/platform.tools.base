@@ -1,81 +1,103 @@
 > AndroidProject:
    > variants:
       > debug:
-         > testSuiteArtifacts:
-            > hostJarSuite{ADDED}:
-               - compileTaskName        = (null)
-               - assembleTaskName       = (null)
-               - classesFolders         = []
-               - ideSetupTaskNames      = []
-               - generatedSourceFolders = []
-               - testInfo:
-                  - junitInfo:
-                     - includedEngines:
-                        * "junit-jupiter"
-                  - targets:
-                     - jvm:
-                        - name            = "jvm"
-                        - testTaskName    = "testDebugHostJarSuiteJvmTestSuite"
-                        - targetedDevices = []
-            < hostJarSuite{ADDED}
-            > mixedSuite{ADDED}:
-               - compileTaskName        = (null)
-               - assembleTaskName       = (null)
-               - classesFolders         = []
-               - ideSetupTaskNames      = []
-               - generatedSourceFolders = []
-               > testInfo:
-                  - junitInfo:
-                     - includedEngines:
-                        * "junit-jupiter"
-                  - targets:
-                     - device:
-                        - name            = "device"
-                        - testTaskName    = "testDebugMixedSuiteDeviceTestSuite"
-                        - targetedDevices = []
-                     - jvm:
-                        - name            = "jvm"
-                        - testTaskName    = "testDebugMixedSuiteJvmTestSuite"
-                        - targetedDevices = []
-               < testInfo
-            < mixedSuite{ADDED}
-            > testApkSuite{ADDED}:
-               - compileTaskName        = (null)
-               - assembleTaskName       = (null)
-               - classesFolders         = []
-               - ideSetupTaskNames      = []
-               - generatedSourceFolders = []
-               - testInfo:
-                  - junitInfo:
-                     - includedEngines:
-                        * "junit-jupiter"
-                  - targets:
-                     - device:
-                        - name            = "device"
-                        - testTaskName    = "testDebugTestApkSuiteDeviceTestSuite"
-                        - targetedDevices = []
-            < testApkSuite{ADDED}
-         < testSuiteArtifacts
+         > testSuiteHostArtifacts:
+            > debugHostJarSuite{ADDED}:
+               - testSuiteName           = "hostJarSuite"
+               - sourceSetName           = "hostJarSuite"
+               - compileTaskName         = "compileDebugHostJarSuiteSources"
+               - assembleTaskName        = "assembleDebugHostJarSuite"
+               - classesFolders:
+                  * {PROJECT}/app/build/intermediates/built_in_kotlinc/debugHostJarSuite/compileDebugHostJarSuiteKotlin/classes{!}
+                  * {PROJECT}/app/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}
+                  * {PROJECT}/app/build/intermediates/javac/debugHostJarSuite/compileDebugHostJarSuiteJavaWithJavac/classes{!}
+               - ideSetupTaskNames       = ["generateDebugHostJarSuiteSources"]
+               - generatedSourceFolders:
+                  * {PROJECT}/app/build/generated/ap_generated_sources/debugHostJarSuite/out{!}
+               - generatedClassPaths     = []
+               - bytecodeTransformations = []
+            < debugHostJarSuite{ADDED}
+            > debugMixedSuiteTest{ADDED}:
+               - testSuiteName           = "mixedSuite"
+               - sourceSetName           = "mixedSuiteTest"
+               - compileTaskName         = "compileDebugMixedSuiteTestSources"
+               - assembleTaskName        = "assembleDebugMixedSuiteTest"
+               - classesFolders:
+                  * {PROJECT}/app/build/intermediates/built_in_kotlinc/debugMixedSuiteTest/compileDebugMixedSuiteTestKotlin/classes{!}
+                  * {PROJECT}/app/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}
+                  * {PROJECT}/app/build/intermediates/javac/debugMixedSuiteTest/compileDebugMixedSuiteTestJavaWithJavac/classes{!}
+               - ideSetupTaskNames       = ["generateDebugMixedSuiteTestSources"]
+               - generatedSourceFolders:
+                  * {PROJECT}/app/build/generated/ap_generated_sources/debugMixedSuiteTest/out{!}
+               - generatedClassPaths     = []
+               - bytecodeTransformations = []
+            < debugMixedSuiteTest{ADDED}
+         < testSuiteHostArtifacts
+         > testSuiteDeviceArtifacts:
+            > debugMixedSuiteAndroidTest{ADDED}:
+               - testSuiteName                 = "mixedSuite"
+               - sourceSetName                 = "mixedSuiteAndroidTest"
+               - compileTaskName               = "compileDebugMixedSuiteAndroidTestSources"
+               - assembleTaskName              = "assembleDebugMixedSuiteAndroidTest"
+               - classesFolders:
+                  * {PROJECT}/app/build/intermediates/built_in_kotlinc/debugMixedSuiteAndroidTest/compileDebugMixedSuiteAndroidTestKotlin/classes{!}
+                  * {PROJECT}/app/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}
+                  * {PROJECT}/app/build/intermediates/javac/debugMixedSuiteAndroidTest/compileDebugMixedSuiteAndroidTestJavaWithJavac/classes{!}
+               - ideSetupTaskNames             = ["generateDebugMixedSuiteAndroidTestSources"]
+               - generatedSourceFolders:
+                  * {PROJECT}/app/build/generated/ap_generated_sources/debugMixedSuiteAndroidTest/out{!}
+               - generatedClassPaths           = []
+               - bytecodeTransformations       = []
+               - applicationId                 = "com.example.app"
+               - minSdkVersion:
+                  - apiLevel = 1
+                  - codename = (null)
+               - isSigned                      = true
+               - signingConfigName             = "debug"
+               - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/debugMixedSuiteAndroidTest/createDebugMixedSuiteAndroidTestApkListingFileRedirect/redirect.txt{!}
+            < debugMixedSuiteAndroidTest{ADDED}
+            > debugTestApkSuite{ADDED}:
+               - testSuiteName                 = "testApkSuite"
+               - sourceSetName                 = "testApkSuite"
+               - compileTaskName               = "compileDebugTestApkSuiteSources"
+               - assembleTaskName              = "assembleDebugTestApkSuite"
+               - classesFolders:
+                  * {PROJECT}/app/build/intermediates/built_in_kotlinc/debugTestApkSuite/compileDebugTestApkSuiteKotlin/classes{!}
+                  * {PROJECT}/app/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}
+                  * {PROJECT}/app/build/intermediates/javac/debugTestApkSuite/compileDebugTestApkSuiteJavaWithJavac/classes{!}
+               - ideSetupTaskNames             = ["generateDebugTestApkSuiteSources"]
+               - generatedSourceFolders:
+                  * {PROJECT}/app/build/generated/ap_generated_sources/debugTestApkSuite/out{!}
+               - generatedClassPaths           = []
+               - bytecodeTransformations       = []
+               - applicationId                 = "com.example.app"
+               - minSdkVersion:
+                  - apiLevel = 1
+                  - codename = (null)
+               - isSigned                      = true
+               - signingConfigName             = "debug"
+               - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/debugTestApkSuite/createDebugTestApkSuiteApkListingFileRedirect/redirect.txt{!}
+            < debugTestApkSuite{ADDED}
+         < testSuiteDeviceArtifacts
       < debug
       > release:
-         > testSuiteArtifacts:
-            > hostJarSuite{ADDED}:
-               - compileTaskName        = (null)
-               - assembleTaskName       = (null)
-               - classesFolders         = []
-               - ideSetupTaskNames      = []
-               - generatedSourceFolders = []
-               - testInfo:
-                  - junitInfo:
-                     - includedEngines:
-                        * "junit-jupiter"
-                  - targets:
-                     - jvm:
-                        - name            = "jvm"
-                        - testTaskName    = "testReleaseHostJarSuiteJvmTestSuite"
-                        - targetedDevices = []
-            < hostJarSuite{ADDED}
-         < testSuiteArtifacts
+         > testSuiteHostArtifacts:
+            > releaseHostJarSuite{ADDED}:
+               - testSuiteName           = "hostJarSuite"
+               - sourceSetName           = "hostJarSuite"
+               - compileTaskName         = "compileReleaseHostJarSuiteSources"
+               - assembleTaskName        = "assembleReleaseHostJarSuite"
+               - classesFolders:
+                  * {PROJECT}/app/build/intermediates/built_in_kotlinc/releaseHostJarSuite/compileReleaseHostJarSuiteKotlin/classes{!}
+                  * {PROJECT}/app/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}
+                  * {PROJECT}/app/build/intermediates/javac/releaseHostJarSuite/compileReleaseHostJarSuiteJavaWithJavac/classes{!}
+               - ideSetupTaskNames       = ["generateReleaseHostJarSuiteSources"]
+               - generatedSourceFolders:
+                  * {PROJECT}/app/build/generated/ap_generated_sources/releaseHostJarSuite/out{!}
+               - generatedClassPaths     = []
+               - bytecodeTransformations = []
+            < releaseHostJarSuite{ADDED}
+         < testSuiteHostArtifacts
       < release
    < variants
    > testSuites:

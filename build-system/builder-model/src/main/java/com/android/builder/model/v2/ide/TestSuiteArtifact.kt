@@ -18,7 +18,14 @@ package com.android.builder.model.v2.ide
 
 import com.android.builder.model.v2.AndroidModel
 
-/** Artifact for a test suite in a variant. */
+// TODO(b/575647801): remove once MINIMUM_MODEL_CONSUMER excludes Studio versions that read this.
+/**
+ * Artifact for a test suite in a variant.
+ *
+ * Only returned by the deprecated [Variant.testSuiteArtifacts], which is always empty since model producer version 25.0. Use
+ * [Variant.testSuiteHostArtifacts] and [Variant.testSuiteDeviceArtifacts] instead.
+ */
+@Deprecated("Unused since model producer version 25.0; use Variant.testSuiteHostArtifacts and Variant.testSuiteDeviceArtifacts")
 interface TestSuiteArtifact : AbstractArtifact, AndroidModel {
 
   /** The test info for this test suite. */

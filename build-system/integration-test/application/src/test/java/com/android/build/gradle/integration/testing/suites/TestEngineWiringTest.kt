@@ -23,7 +23,6 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
-import com.android.build.gradle.integration.common.utils.getDebugVariant
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.BasicVariant
 import com.android.builder.model.v2.ide.Library
@@ -180,15 +179,30 @@ class TestEngineWiringTest(
   fun testModel() {
     val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
     Truth.assertThat(result).isNotNull()
-    val testSuites = result.container.getProject(modulePath).androidProject?.getDebugVariant()?.testSuiteArtifacts
-    Truth.assertThat(testSuites).isNotNull()
-    val firstTestSuite = testSuites?.get("first")
-    Truth.assertThat(firstTestSuite).isNotNull()
-    val targets = firstTestSuite!!.testInfo.targets
-    Truth.assertThat(targets.size).isEqualTo(1)
-    Truth.assertThat(targets.values.single().name).isEqualTo("t1")
-    Truth.assertThat(targets.values.single().testTaskName).isEqualTo("testDebugFirstT1TestSuite")
-    Truth.assertThat(firstTestSuite.testInfo.junitInfo.includedEngines.single()).isEqualTo("[engine:toy-junit-engine-for-tests]")
+    val androidProject =
+      result.container.getProject(modulePath).androidProject ?: throw AssertionFailedError("no AndroidProject for $modulePath")
+
+    // verify the project level test suite model
+    val projectTestSuite = androidProject.testSuites.single()
+    Truth.assertThat(projectTestSuite.name).isEqualTo("first")
+    Truth.assertThat(projectTestSuite.junitEngineInfo.includedEngines.single()).isEqualTo("[engine:toy-junit-engine-for-tests]")
+
+    // verify the variant specific artifacts, keyed by the variant-qualified source set identifier.
+    val debugVariant = androidProject.variants.first { it.name == "debug" }
+    Truth.assertThat(debugVariant.testSuiteDeviceArtifacts).isEmpty()
+    Truth.assertThat(debugVariant.testSuiteHostArtifacts.keys).containsExactly("debugFirst")
+    val hostArtifact = debugVariant.testSuiteHostArtifacts.getValue("debugFirst")
+    Truth.assertThat(hostArtifact.testSuiteName).isEqualTo("first")
+    Truth.assertThat(hostArtifact.sourceSetName).isEqualTo("first")
+    Truth.assertThat(hostArtifact.compileTaskName).isEqualTo("compileDebugFirstSources")
+    Truth.assertThat(hostArtifact.assembleTaskName).isEqualTo("assembleDebugFirst")
+    Truth.assertThat(hostArtifact.ideSetupTaskNames).containsExactly("generateDebugFirstSources")
+    Truth.assertThat(hostArtifact.classesFolders.first())
+      .isEqualTo(
+        rule.build.subProject(modulePath).resolve("build/intermediates/javac/debugFirst/compileDebugFirstJavaWithJavac/classes").toFile()
+      )
+    Truth.assertThat(hostArtifact.generatedSourceFolders)
+      .containsExactly(rule.build.subProject(modulePath).resolve("build/generated/ap_generated_sources/debugFirst/out").toFile())
   }
 
   @Test

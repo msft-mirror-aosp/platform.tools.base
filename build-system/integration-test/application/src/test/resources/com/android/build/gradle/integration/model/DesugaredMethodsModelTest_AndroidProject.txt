@@ -6,9 +6,9 @@
    - dynamicFeatures       = []
    > variants:
       > debug:
-         - name                   = "debug"
-         - displayName            = "debug"
-         - isInstantAppCompatible = false
+         - name                     = "debug"
+         - displayName              = "debug"
+         - isInstantAppCompatible   = false
          > mainArtifact:
             - compileTaskName               = "compileDebugSources"
             - assembleTaskName              = "assembleDebug"
@@ -84,15 +84,17 @@
             - mockablePlatformJar   = {GRADLE_CACHE}/{CHECKSUM}/transformed/android.jar{F}
             - runtimeResourceFolder = (null)
          < unitTestArtifact
-         - testFixturesArtifact   = (null)
-         - testSuiteArtifacts     = []
-         - testedTargetVariant    = (null)
-         - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}, {GRADLE_CACHE}/{CHECKSUM}/transformed/desugar_jdk_libs_configuration-1.1.5-desugar-lint.txt{F}]
+         - testFixturesArtifact     = (null)
+         - testSuiteArtifacts       = []
+         - testSuiteHostArtifacts   = []
+         - testSuiteDeviceArtifacts = []
+         - testedTargetVariant      = (null)
+         - desugaredMethods         = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}, {GRADLE_CACHE}/{CHECKSUM}/transformed/desugar_jdk_libs_configuration-1.1.5-desugar-lint.txt{F}]
       < debug
       > release:
-         - name                   = "release"
-         - displayName            = "release"
-         - isInstantAppCompatible = false
+         - name                     = "release"
+         - displayName              = "release"
+         - isInstantAppCompatible   = false
          > mainArtifact:
             - compileTaskName               = "compileReleaseSources"
             - assembleTaskName              = "assembleRelease"
@@ -124,12 +126,14 @@
                - apkFromBundleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_from_bundle_ide_redirect_file/release/createReleaseApksFromBundleListingFileRedirect/redirect.txt{!}
             - codeShrinker                  = (null)
          < mainArtifact
-         - androidTestArtifact    = (null)
-         - unitTestArtifact       = (null)
-         - testFixturesArtifact   = (null)
-         - testSuiteArtifacts     = []
-         - testedTargetVariant    = (null)
-         - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}, {GRADLE_CACHE}/{CHECKSUM}/transformed/desugar_jdk_libs_configuration-1.1.5-desugar-lint.txt{F}]
+         - androidTestArtifact      = (null)
+         - unitTestArtifact         = (null)
+         - testFixturesArtifact     = (null)
+         - testSuiteArtifacts       = []
+         - testSuiteHostArtifacts   = []
+         - testSuiteDeviceArtifacts = []
+         - testedTargetVariant      = (null)
+         - desugaredMethods         = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}, {GRADLE_CACHE}/{CHECKSUM}/transformed/desugar_jdk_libs_configuration-1.1.5-desugar-lint.txt{F}]
       < release
    < variants
    - testSuites            = []

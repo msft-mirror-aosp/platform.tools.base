@@ -20,6 +20,8 @@ import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.v2.ide.AndroidArtifact
 import com.android.builder.model.v2.ide.JavaArtifact
 import com.android.builder.model.v2.ide.TestSuiteArtifact
+import com.android.builder.model.v2.ide.TestSuiteDeviceArtifact
+import com.android.builder.model.v2.ide.TestSuiteHostArtifact
 import com.android.builder.model.v2.ide.TestedTargetVariant
 import com.android.builder.model.v2.ide.Variant
 import java.io.File
@@ -33,7 +35,8 @@ data class VariantImpl(
   override val deviceTestArtifacts: Map<String, AndroidArtifact>,
   override val hostTestArtifacts: Map<String, JavaArtifact>,
   override val testFixturesArtifact: AndroidArtifact?,
-  override val testSuiteArtifacts: Map<String, TestSuiteArtifact>,
+  override val testSuiteHostArtifacts: Map<String, TestSuiteHostArtifact>,
+  override val testSuiteDeviceArtifacts: Map<String, TestSuiteDeviceArtifact>,
   override val testedTargetVariant: TestedTargetVariant?,
   override val runTestInSeparateProcess: Boolean,
   override val isInstantAppCompatible: Boolean,
@@ -45,6 +48,10 @@ data class VariantImpl(
 
   override val unitTestArtifact: JavaArtifact?
     get() = hostTestArtifacts[ComponentTypeImpl.UNIT_TEST.artifactName]
+
+  @Deprecated("Always empty; use testSuiteHostArtifacts and testSuiteDeviceArtifacts")
+  override val testSuiteArtifacts: Map<String, TestSuiteArtifact>
+    get() = emptyMap()
 
   companion object {
     @JvmStatic private val serialVersionUID: Long = 2L

@@ -6,9 +6,9 @@
    - dynamicFeatures       = []
    > variants:
       > proPlayDebug:
-         - name                   = "proPlayDebug"
-         - displayName            = "proPlayDebug"
-         - isInstantAppCompatible = false
+         - name                     = "proPlayDebug"
+         - displayName              = "proPlayDebug"
+         - isInstantAppCompatible   = false
          > mainArtifact:
             - compileTaskName               = "compileProPlayDebugSources"
             - assembleTaskName              = "assembleProPlayDebug"
@@ -84,10 +84,12 @@
             - mockablePlatformJar   = {GRADLE_CACHE}/{CHECKSUM}/transformed/android.jar{F}
             - runtimeResourceFolder = (null)
          < unitTestArtifact
-         - testFixturesArtifact   = (null)
-         - testSuiteArtifacts     = []
-         - testedTargetVariant    = (null)
-         - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}]
+         - testFixturesArtifact     = (null)
+         - testSuiteArtifacts       = []
+         - testSuiteHostArtifacts   = []
+         - testSuiteDeviceArtifacts = []
+         - testedTargetVariant      = (null)
+         - desugaredMethods         = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}]
       < proPlayDebug
    < variants
    - testSuites            = []

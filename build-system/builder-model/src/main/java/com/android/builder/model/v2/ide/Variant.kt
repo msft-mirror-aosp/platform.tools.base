@@ -16,6 +16,8 @@
 package com.android.builder.model.v2.ide
 
 import com.android.builder.model.v2.AndroidModel
+import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
+import com.android.builder.model.v2.models.VariantDependencies
 import java.io.File
 
 /** A build Variant. */
@@ -41,11 +43,33 @@ interface Variant : AndroidModel {
   /** The host test components for this variant, e.g., unitTest */
   val hostTestArtifacts: Map<String, JavaArtifact>
 
+  // TODO(b/575647801): remove once MINIMUM_MODEL_CONSUMER excludes Studio versions that read this.
   /**
-   * The test suites components for this variant. Test suites must have been declared in the DSL using the CommonExtension.testSuites
-   * facilities.
+   * The test suite artifacts for this variant, keyed by test suite name.
+   *
+   * Always empty since model producer version 25.0; use [testSuiteHostArtifacts] and [testSuiteDeviceArtifacts] instead. Kept for
+   * compatibility with older versions of Android Studio.
    */
+  @Deprecated("Always empty; use testSuiteHostArtifacts and testSuiteDeviceArtifacts")
   val testSuiteArtifacts: Map<String, TestSuiteArtifact>
+
+  /**
+   * The host jar artifacts of the test suites applied to this variant, keyed by the source set identifier (for example
+   * `debugMixedSuiteTest` for the `mixedSuiteTest` source set on variant `debug`).
+   *
+   * Uses the same identifier as [BaseTestSuiteSourceIdentity.name] in [VariantDependencies.testSuiteArtifacts] so dependencies can be
+   * looked up directly without string construction.
+   */
+  val testSuiteHostArtifacts: Map<String, TestSuiteHostArtifact>
+
+  /**
+   * The test APK artifacts of the test suites applied to this variant, keyed by the source set identifier (for example
+   * `debugMixedSuiteAndroidTest` for the `mixedSuiteAndroidTest` source set on variant `debug`).
+   *
+   * Uses the same identifier as [BaseTestSuiteSourceIdentity.name] in [VariantDependencies.testSuiteArtifacts] so dependencies can be
+   * looked up directly without string construction.
+   */
+  val testSuiteDeviceArtifacts: Map<String, TestSuiteDeviceArtifact>
 
   /** The TestFixtures artifact for this variant, if applicable. */
   val testFixturesArtifact: AndroidArtifact?

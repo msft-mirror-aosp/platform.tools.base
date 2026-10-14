@@ -23,12 +23,15 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getIntermediateOutputDir
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.builder.model.v2.models.SourceType
 import com.google.common.truth.Truth
+import java.io.File
 import junit.framework.AssertionFailedError
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -178,6 +181,25 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
     Truth.assertThat(firstTestSuiteResources)
       .containsExactly(project.subProject(":app").resolve("build/generated/first/firstTestSuiteGeneratorTask").toFile())
 
+    // and verify the test suite artifacts of the debug variant (tasks, classes folders, generated folders, and APK metadata).
+    val debugVariant =
+      models.androidProject?.variants?.first { it.name == "debug" } ?: throw AssertionFailedError("no debug variant in the AndroidProject")
+    val firstHostArtifact =
+      debugVariant.testSuiteHostArtifacts["debugFirst"] ?: throw AssertionFailedError("no host artifact for test suite 'first'")
+    Truth.assertThat(firstHostArtifact.testSuiteName).isEqualTo("first")
+    Truth.assertThat(firstHostArtifact.sourceSetName).isEqualTo("first")
+    Truth.assertThat(firstHostArtifact.compileTaskName).isEqualTo("compileDebugFirstSources")
+    Truth.assertThat(firstHostArtifact.assembleTaskName).isEqualTo("assembleDebugFirst")
+    Truth.assertThat(firstHostArtifact.ideSetupTaskNames).containsExactly("generateDebugFirstSources")
+    Truth.assertThat(firstHostArtifact.classesFolders.first())
+      .isEqualTo(project.subProject(":app").resolve("build/intermediates/javac/debugFirst/compileDebugFirstJavaWithJavac/classes").toFile())
+
+    Truth.assertThat(firstHostArtifact.generatedSourceFolders)
+      .containsExactly(
+        project.subProject(":app").resolve("build/generated/first/firstTestSuiteJavaGeneratorTask").toFile(),
+        project.subProject(":app").resolve("build/generated/ap_generated_sources/debugFirst/out").toFile(),
+      )
+
     // repeat both static and generated checks for the testApk test suite.
     val basicSecondTestSuite = basicTestSuites.first { it.name == "second" }
     val basicSecondSources = basicSecondTestSuite.testApks.single()
@@ -197,6 +219,111 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
 
     Truth.assertThat(secondTestSuiteResources)
       .containsExactly(project.subProject(":app").resolve("build/generated/second/secondTestSuiteGeneratorTask").toFile())
+
+    val secondDeviceArtifact =
+      debugVariant.testSuiteDeviceArtifacts["debugSecond"] ?: throw AssertionFailedError("no device artifact for test suite 'second'")
+    Truth.assertThat(secondDeviceArtifact.testSuiteName).isEqualTo("second")
+    Truth.assertThat(secondDeviceArtifact.sourceSetName).isEqualTo("second")
+    Truth.assertThat(secondDeviceArtifact.compileTaskName).isEqualTo("compileDebugSecondSources")
+    Truth.assertThat(secondDeviceArtifact.assembleTaskName).isEqualTo("assembleDebugSecond")
+    Truth.assertThat(secondDeviceArtifact.ideSetupTaskNames).containsExactly("generateDebugSecondSources")
+    Truth.assertThat(secondDeviceArtifact.classesFolders.first())
+      .isEqualTo(
+        project.subProject(":app").resolve("build/intermediates/javac/debugSecond/compileDebugSecondJavaWithJavac/classes").toFile()
+      )
+
+    Truth.assertThat(secondDeviceArtifact.generatedSourceFolders)
+      .containsExactly(
+        project.subProject(":app").resolve("build/generated/second/secondTestSuiteJavaGeneratorTask").toFile(),
+        project.subProject(":app").resolve("build/generated/ap_generated_sources/debugSecond/out").toFile(),
+      )
+    Truth.assertThat(secondDeviceArtifact.applicationId).isEqualTo("com.example.test")
+    Truth.assertThat(secondDeviceArtifact.minSdkVersion.apiLevel).isEqualTo(1)
+    Truth.assertThat(secondDeviceArtifact.isSigned).isTrue()
+    Truth.assertThat(secondDeviceArtifact.signingConfigName).isEqualTo("debug")
+    Truth.assertThat(secondDeviceArtifact.assembleTaskOutputListingFile)
+      .isEqualTo(
+        project
+          .subProject(":app")
+          .resolve("build/intermediates/apk_ide_redirect_file/debugSecond/createDebugSecondApkListingFileRedirect/redirect.txt")
+          .toFile()
+      )
+  }
+
+  /**
+   * Verifies that test suite artifacts only report outputs of the suite's own tasks.
+   *
+   * The tested variant has build features (`viewBinding`, `aidl`, `buildConfig`) enabled and sources/bytecode registered through the legacy
+   * variant API (`applicationVariants`, which requires `USE_NEW_DSL = false`). None of these may appear in the `debugFirst` and
+   * `debugSecond` test suite artifacts (configured in [rule]), while the main artifact still reports them. The additional `withRes` suite
+   * checks that the compiled R class jar is included when Android resources are enabled.
+   */
+  @Test
+  fun testModelWithBuildFeaturesAndLegacyVariantApi() {
+    val project = rule.build {
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      androidApplication(":app") {
+        android {
+          buildFeatures {
+            viewBinding = true
+            aidl = true
+            buildConfig = true
+          }
+          testOptions.unitTests.isIncludeAndroidResources = true
+          testOptions.customSuites.create("withRes") {
+            it.useJunitEngine.apply {
+              includeEngines.add("[engine:toy-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.13.3")
+              enginesDependencies.add("com.test:toy-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+        pluginCallbacks += AddLegacyGeneratedSourceToMainVariantCallback::class.java
+      }
+    }
+
+    val result = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
+    val debugVariant =
+      result.container.getProject(":app").androidProject?.variants?.first { it.name == "debug" }
+        ?: throw AssertionFailedError("no debug variant in the AndroidProject")
+
+    val legacyMainJavaDir = project.subProject(":app").resolve("build/generated/legacy_main_java/debug").toFile()
+    val legacyMainBytecodeDir = project.subProject(":app").resolve("build/generated/legacy_main_bytecode/debug").toFile()
+    Truth.assertThat(debugVariant.mainArtifact.generatedSourceFolders).contains(legacyMainJavaDir)
+    Truth.assertThat(debugVariant.mainArtifact.classesFolders).contains(legacyMainBytecodeDir)
+
+    val firstHostArtifact =
+      debugVariant.testSuiteHostArtifacts["debugFirst"] ?: throw AssertionFailedError("no host artifact for test suite 'first'")
+    Truth.assertThat(firstHostArtifact.generatedSourceFolders)
+      .containsExactly(
+        project.subProject(":app").resolve("build/generated/first/firstTestSuiteJavaGeneratorTask").toFile(),
+        project.subProject(":app").resolve("build/generated/ap_generated_sources/debugFirst/out").toFile(),
+      )
+    Truth.assertThat(firstHostArtifact.classesFolders).doesNotContain(legacyMainBytecodeDir)
+
+    val withResHostArtifact =
+      debugVariant.testSuiteHostArtifacts["debugWithRes"] ?: throw AssertionFailedError("no host artifact for test suite 'withRes'")
+    Truth.assertThat(withResHostArtifact.classesFolders)
+      .containsExactly(
+        project.subProject(":app").resolve("build/intermediates/javac/debugWithRes/compileDebugWithResJavaWithJavac/classes").toFile(),
+        project.subProject(":app").resolve("build/intermediates/built_in_kotlinc/debugWithRes/compileDebugWithResKotlin/classes").toFile(),
+        project.subProject(":app").resolve("build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar").toFile(),
+      )
+      .inOrder()
+
+    val secondDeviceArtifact =
+      debugVariant.testSuiteDeviceArtifacts["debugSecond"] ?: throw AssertionFailedError("no device artifact for test suite 'second'")
+    Truth.assertThat(secondDeviceArtifact.generatedSourceFolders)
+      .containsExactly(
+        project.subProject(":app").resolve("build/generated/second/secondTestSuiteJavaGeneratorTask").toFile(),
+        project.subProject(":app").resolve("build/generated/ap_generated_sources/debugSecond/out").toFile(),
+      )
+    Truth.assertThat(secondDeviceArtifact.classesFolders).doesNotContain(legacyMainBytecodeDir)
   }
 
   private fun getJavaRes(project: GradleBuild, capitalizedVariantName: String = "Debug") =
@@ -219,6 +346,21 @@ abstract class AddGeneratedSourceSetTaskProducer : DefaultTask() {
   }
 }
 
+/** Task that generates a single dummy Java source file in [outputDir]. */
+abstract class AddGeneratedJavaSourceSetTaskProducer : DefaultTask() {
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+  @TaskAction
+  fun taskAction() {
+    val dir = outputDir.get().asFile
+    dir.mkdirs()
+    dir.resolve("GeneratedDummy.java").writeText("public class GeneratedDummy {}")
+  }
+}
+
+/**
+ * Adds generated resources and Java sources to the host jar source of test suite `first` and the test APK source of test suite `second`.
+ */
 open class AddGeneratedSourceSetToTestSuiteCallback : ApplicationComponentCallback {
 
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
@@ -238,17 +380,63 @@ open class AddGeneratedSourceSetToTestSuiteCallback : ApplicationComponentCallba
         task.configuration.set(project.layout.projectDirectory.file("src/configuration"))
       }
 
+    val firstJavaTaskProducer =
+      project.tasks.register(
+        "firstTestSuiteJavaGeneratorTask",
+        AddGeneratedJavaSourceSetTaskProducer::class.java,
+      )
+
+    val secondJavaTaskProducer =
+      project.tasks.register(
+        "secondTestSuiteJavaGeneratorTask",
+        AddGeneratedJavaSourceSetTaskProducer::class.java,
+      )
+
     androidComponents.onVariants { variant ->
       variant.suites.forEach { (suiteName, suite) ->
         suite.sources.forEach { sourceSet ->
-          if (sourceSet is TestSuiteSourceSet.HostJar) {
+          if (suiteName == "first" && sourceSet is TestSuiteSourceSet.HostJar) {
             sourceSet.resources.addGeneratedSourceDirectory(firstTaskProducer, AddGeneratedSourceSetTaskProducer::outputDir)
+            sourceSet.java?.addGeneratedSourceDirectory(firstJavaTaskProducer, AddGeneratedJavaSourceSetTaskProducer::outputDir)
           }
-          if (sourceSet is TestSuiteSourceSet.TestApk) {
+          if (suiteName == "second" && sourceSet is TestSuiteSourceSet.TestApk) {
             sourceSet.resources.addGeneratedSourceDirectory(secondTaskProducer, AddGeneratedSourceSetTaskProducer::outputDir)
+            sourceSet.java?.addGeneratedSourceDirectory(secondJavaTaskProducer, AddGeneratedJavaSourceSetTaskProducer::outputDir)
           }
         }
       }
+    }
+  }
+}
+
+/**
+ * Registers a generated Java source folder and a pre-javac bytecode folder on each application variant through the legacy variant API, to
+ * check that they are not reported for test suites. Only the bytecode folder's location matters, not its contents.
+ */
+open class AddLegacyGeneratedSourceToMainVariantCallback : LegacyApplicationCallback {
+  override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+    extension.applicationVariants.all { variant ->
+      val capitalizedName = variant.name.replaceFirstChar { it.uppercase() }
+      val outDir = File(project.layout.buildDirectory.asFile.get(), "generated/legacy_main_java/${variant.name}")
+      val task =
+        project.tasks.register(
+          "generateLegacyMainJavaFor$capitalizedName",
+          AddGeneratedJavaSourceSetTaskProducer::class.java,
+        ) {
+          it.outputDir.set(outDir)
+        }
+      variant.registerJavaGeneratingTask(task, outDir)
+
+      val bytecodeDir = File(project.layout.buildDirectory.asFile.get(), "generated/legacy_main_bytecode/${variant.name}")
+      // Reuse AddGeneratedJavaSourceSetTaskProducer as a dummy producer task; the model test only checks that bytecodeDir is not reported.
+      val bytecodeTask =
+        project.tasks.register(
+          "generateLegacyMainBytecodeFor$capitalizedName",
+          AddGeneratedJavaSourceSetTaskProducer::class.java,
+        ) {
+          it.outputDir.set(bytecodeDir)
+        }
+      variant.registerPreJavacGeneratedBytecode(project.files(bytecodeDir).builtBy(bytecodeTask))
     }
   }
 }

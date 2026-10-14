@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-0f420a2ea5544d880723344bff094ac60f71ec2d72250611f7b32ede5586b264
+d205a2d33845b6e90033d54ff3614022a43e349832632764db6f5c24a10e6be7
 -------------------------------------------------------------------------
 com.android.builder.model.AdbOptions
 com.android.builder.model.AdbOptions.getInstallOptions: java.util.Collection<java.lang.String> ()
@@ -542,6 +542,17 @@ com.android.builder.model.v2.ide.TestSuite.getJunitEngineInfo: com.android.build
 com.android.builder.model.v2.ide.TestSuite.getName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuiteArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestSuiteArtifact.getTestInfo: com.android.builder.model.v2.ide.TestSuiteTestInfo ()
+com.android.builder.model.v2.ide.TestSuiteDeviceArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.TestSuiteDeviceArtifact.getApplicationId: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteDeviceArtifact.getAssembleTaskOutputListingFile: java.io.File ()
+com.android.builder.model.v2.ide.TestSuiteDeviceArtifact.getMinSdkVersion: com.android.builder.model.v2.ide.ApiVersion ()
+com.android.builder.model.v2.ide.TestSuiteDeviceArtifact.getSigningConfigName: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteDeviceArtifact.getSourceSetName: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteDeviceArtifact.getTestSuiteName: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteDeviceArtifact.isSigned: boolean ()
+com.android.builder.model.v2.ide.TestSuiteHostArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.TestSuiteHostArtifact.getSourceSetName: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteHostArtifact.getTestSuiteName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuiteTarget implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestSuiteTarget.getName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuiteTarget.getTargetedDevices: java.util.Collection<java.lang.String> ()
@@ -571,6 +582,8 @@ com.android.builder.model.v2.ide.Variant.getName: java.lang.String ()
 com.android.builder.model.v2.ide.Variant.getRunTestInSeparateProcess: boolean ()
 com.android.builder.model.v2.ide.Variant.getTestFixturesArtifact: com.android.builder.model.v2.ide.AndroidArtifact ()
 com.android.builder.model.v2.ide.Variant.getTestSuiteArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.TestSuiteArtifact> ()
+com.android.builder.model.v2.ide.Variant.getTestSuiteDeviceArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.TestSuiteDeviceArtifact> ()
+com.android.builder.model.v2.ide.Variant.getTestSuiteHostArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.TestSuiteHostArtifact> ()
 com.android.builder.model.v2.ide.Variant.getTestedTargetVariant: com.android.builder.model.v2.ide.TestedTargetVariant ()
 com.android.builder.model.v2.ide.Variant.getUnitTestArtifact: com.android.builder.model.v2.ide.JavaArtifact ()
 com.android.builder.model.v2.ide.Variant.isInstantAppCompatible: boolean ()

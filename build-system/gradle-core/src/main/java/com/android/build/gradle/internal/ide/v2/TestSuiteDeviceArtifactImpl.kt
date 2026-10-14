@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@
 
 package com.android.build.gradle.internal.ide.v2
 
+import com.android.builder.model.v2.ide.ApiVersion
 import com.android.builder.model.v2.ide.BytecodeTransformation
-import com.android.builder.model.v2.ide.TestSuiteArtifact
-import com.android.builder.model.v2.ide.TestSuiteTestInfo
+import com.android.builder.model.v2.ide.TestSuiteDeviceArtifact
 import java.io.File
 import java.io.Serializable
 
-data class TestSuiteArtifactImpl(
-  override val testInfo: TestSuiteTestInfo,
+/** Implementation of [TestSuiteDeviceArtifact] for serialization via the Tooling API. */
+data class TestSuiteDeviceArtifactImpl(
+  override val testSuiteName: String,
+  override val sourceSetName: String,
   override val compileTaskName: String?,
   override val assembleTaskName: String?,
   override val ideSetupTaskNames: Set<String>,
@@ -31,8 +33,13 @@ data class TestSuiteArtifactImpl(
   override val classesFolders: Set<File>,
   override val generatedClassPaths: Map<String, File>,
   override val bytecodeTransformations: Collection<BytecodeTransformation>,
-) : TestSuiteArtifact, Serializable {
+  override val applicationId: String?,
+  override val minSdkVersion: ApiVersion,
+  override val isSigned: Boolean,
+  override val signingConfigName: String?,
+  override val assembleTaskOutputListingFile: File?,
+) : TestSuiteDeviceArtifact, Serializable {
   companion object {
-    @JvmStatic private val serialVersionUID: Long = 2L
+    @JvmStatic private val serialVersionUID: Long = 1L
   }
 }

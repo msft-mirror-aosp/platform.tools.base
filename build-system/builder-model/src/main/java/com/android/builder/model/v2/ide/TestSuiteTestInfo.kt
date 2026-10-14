@@ -16,14 +16,17 @@
 
 package com.android.builder.model.v2.ide
 
+// TODO(b/575647801): remove once MINIMUM_MODEL_CONSUMER excludes Studio versions that read this.
 /**
- * Information for a test suite in a variant.
+ * Information for a test suite in a variant, such as the JUnit engines configuration and the test targets.
  *
- * This includes JUnit engines configuration, etc.
+ * Only reachable through [TestSuiteArtifact.testInfo]. Since model producer version 25.0, [Variant.testSuiteArtifacts] is always empty, so
+ * this is never returned. The JUnit engine information is available from [TestSuite.junitEngineInfo], and the test targets from
+ * [BasicVariant.testSuiteVariantTargets].
  *
  * @since 8.12
  */
-// TODO : maybe consider subclassing TestInfo
+@Deprecated("Unused since model producer version 25.0; use TestSuite.junitEngineInfo and BasicVariant.testSuiteVariantTargets")
 interface TestSuiteTestInfo {
   /** Information for the junit engines configured for running the test suite. */
   val junitInfo: JUnitEngineInfo
