@@ -338,8 +338,9 @@ To prevent resource leaks if a device is unplugged, the agent implements a
 5-minute inactivity timeout. If no message is received within the timeout,
 the agent is terminated and resources are cleaned up. The agent side also
 handles repeated `attach-agent` calls gracefully: the server socket runs in
-a persistent loop, caches active inspector instances, and duplicate server
-threads exit cleanly after detecting the socket collision via
+a persistent loop, caches active inspector instances (replacing an inspector
+after an exception escapes it), and duplicate server threads exit cleanly
+after detecting the socket collision via
 `"Address already in use"` checks.
 
 ## Retrieving view attributes and composables parameters

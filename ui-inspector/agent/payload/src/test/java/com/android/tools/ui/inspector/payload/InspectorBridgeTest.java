@@ -192,6 +192,38 @@ public final class InspectorBridgeTest {
     }
 
     @Test
+    public void testSendCommand_throwFromOnReceiveCommand_disposesBridge() throws Exception {
+        IllegalStateException failure = new IllegalStateException("Thrown by onReceiveCommand");
+        CountDownLatch disposed = new CountDownLatch(1);
+        InspectorBridge bridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        new Inspector(mockConnection) {
+                            @Override
+                            public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                                throw failure;
+                            }
+
+                            @Override
+                            public void onDispose() {
+                                disposed.countDown();
+                            }
+                        },
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor,
+                        hookOwnerId -> {});
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try {
+            assertThat(sendCommandForThrowable(caller, bridge)).isSameAs(failure);
+            assertThat(bridge.isDisposed()).isTrue();
+            assertThat(disposed.await(5, TimeUnit.SECONDS)).isTrue();
+        } finally {
+            caller.shutdownNow();
+            bridge.dispose();
+        }
+    }
+
+    @Test
     public void testSendCommand_crashOnPrimaryExecutorBeforeReplying_failsCommand()
             throws Exception {
         assertCrashBeforeReplyingFailsCommand(environment -> environment.executors().primary());
@@ -256,6 +288,73 @@ public final class InspectorBridgeTest {
             caller.shutdownNow();
             bridge.dispose();
         }
+    }
+
+    @Test
+    public void testCrash_disposesBridge() throws Exception {
+        IllegalStateException crash = new IllegalStateException("Crash");
+        CountDownLatch disposed = new CountDownLatch(1);
+        List<String> clearedOwnerIds = new CopyOnWriteArrayList<>();
+        CountDownLatch hooksCleared = new CountDownLatch(1);
+        InspectorBridge bridge =
+                InspectorBridge.create(
+                        "test_inspector",
+                        environment ->
+                                new Inspector(mockConnection) {
+                                    @Override
+                                    public void onReceiveCommand(
+                                            byte[] data, CommandCallback callback) {
+                                        environment
+                                                .executors()
+                                                .primary()
+                                                .execute(
+                                                        () -> {
+                                                            throw crash;
+                                                        });
+                                    }
+
+                                    @Override
+                                    public void onDispose() {
+                                        disposed.countDown();
+                                    }
+                                },
+                        new AppInspectionUtils.DelegatingConnection(),
+                        t -> {},
+                        hookOwnerId -> {
+                            clearedOwnerIds.add(hookOwnerId);
+                            hooksCleared.countDown();
+                        });
+        assertThat(bridge.isDisposed()).isFalse();
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try {
+            assertThat(sendCommandForThrowable(caller, bridge)).isSameAs(crash);
+            assertThat(bridge.isDisposed()).isTrue();
+            assertThat(disposed.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(hooksCleared.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(clearedOwnerIds).hasSize(1);
+            assertThat(sendCommandForThrowable(caller, bridge))
+                    .isInstanceOf(RejectedExecutionException.class);
+        } finally {
+            caller.shutdownNow();
+            bridge.dispose();
+        }
+        // Disposing again does nothing.
+        assertThat(clearedOwnerIds).hasSize(1);
+    }
+
+    /** Sends a command to {@code bridge} from {@code caller}, and returns what it throws. */
+    private static Throwable sendCommandForThrowable(ExecutorService caller, InspectorBridge bridge)
+            throws Exception {
+        return caller.submit(
+                        () -> {
+                            try {
+                                bridge.sendCommand(new byte[] {1});
+                                return null;
+                            } catch (Throwable t) {
+                                return t;
+                            }
+                        })
+                .get(5, TimeUnit.SECONDS);
     }
 
     @Test

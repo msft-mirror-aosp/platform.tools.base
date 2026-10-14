@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -56,6 +58,13 @@ public final class InspectorBridge {
      * the inspector crashes.
      */
     private final Set<CompletableFuture<byte[]>> pendingCommands;
+
+    /**
+     * Whether the bridge was disposed. A bridge disposes itself when its inspector throws from
+     * {@code onReceiveCommand}. A bridge made by {@code create} also disposes itself when a task
+     * that the inspector runs on the bridge's executors throws.
+     */
+    private final AtomicBoolean disposed = new AtomicBoolean();
 
     private InspectorBridge(
             String hookOwnerId,
@@ -82,8 +91,8 @@ public final class InspectorBridge {
     }
 
     /**
-     * Sends a command to the inspector and waits for the response. Throws the inspector's crash if
-     * the inspector crashes before replying.
+     * Sends a command to the inspector and waits for the response. If the inspector throws or
+     * crashes before replying, disposes the bridge and throws the inspector's exception.
      */
     public byte[] sendCommand(byte[] command) throws Exception {
         CompletableFuture<byte[]> future = new CompletableFuture<>();
@@ -119,6 +128,9 @@ public final class InspectorBridge {
                                     }
                                 });
                     } catch (Throwable t) {
+                        // The exception escaped the inspector, which may be left in an
+                        // inconsistent state: dispose it, as on a crash.
+                        dispose();
                         future.completeExceptionally(t);
                     }
                 });
@@ -149,8 +161,12 @@ public final class InspectorBridge {
         }
     }
 
-    /** Disposes the bridge and the underlying inspector. */
+    /** Disposes the bridge and the underlying inspector. Does nothing if already disposed. */
     public void dispose() {
+        // A bridge can be disposed concurrently, when its inspector fails and at server shutdown.
+        if (!disposed.compareAndSet(false, true)) {
+            return;
+        }
         try {
             primaryExecutor.execute(
                     () -> {
@@ -165,9 +181,14 @@ public final class InspectorBridge {
                         }
                     });
         } catch (RejectedExecutionException e) {
-            // The bridge is already disposed.
+            // The executor has already quit.
         }
         primaryExecutor.quitSafely();
+    }
+
+    /** Whether the bridge was disposed, and can no longer run its inspector's commands. */
+    public boolean isDisposed() {
+        return disposed.get();
     }
 
     /**
@@ -199,8 +220,8 @@ public final class InspectorBridge {
      * @param loader loads the inspector, given the environment the bridge provides to it
      * @param connection the connection that {@link #updateConnection} points to the active session,
      *     and that the inspector should send its events through
-     * @param crashListener notified when a task of the inspector crashes, before the commands
-     *     waiting for a reply fail
+     * @param crashListener notified when a task of the inspector crashes, before the bridge is
+     *     disposed and the commands waiting for a reply fail
      * @param clearHooks removes the hooks of the given owner ID when the bridge is disposed
      */
     @VisibleForTesting
@@ -212,6 +233,7 @@ public final class InspectorBridge {
             Consumer<String> clearHooks)
             throws Exception {
         Set<CompletableFuture<byte[]>> pendingCommands = ConcurrentHashMap.newKeySet();
+        AtomicReference<InspectorBridge> bridgeReference = new AtomicReference<>();
         // A crash can happen after onReceiveCommand returned, in a task that would have replied,
         // so the commands waiting for a reply fail with it instead of waiting forever. The crash
         // is reported first, so that the host receives it with its stack trace before
@@ -221,6 +243,14 @@ public final class InspectorBridge {
                     try {
                         crashListener.onCrash(t);
                     } finally {
+                        // A crashed inspector can be left in an inconsistent state, so the bridge
+                        // is disposed and the next session creates a new one. It is disposed
+                        // before the commands fail, so that it is already disposed when they
+                        // return. A crash before the bridge is constructed does not dispose it.
+                        InspectorBridge bridge = bridgeReference.get();
+                        if (bridge != null) {
+                            bridge.dispose();
+                        }
                         for (CompletableFuture<byte[]> pendingCommand : pendingCommands) {
                             pendingCommand.completeExceptionally(t);
                         }
@@ -274,15 +304,24 @@ public final class InspectorBridge {
             throw new RuntimeException(cause);
         }
 
-        return new InspectorBridge(
-                hookOwnerId, inspector, connection, primaryExecutor, clearHooks, pendingCommands);
+        InspectorBridge bridge =
+                new InspectorBridge(
+                        hookOwnerId,
+                        inspector,
+                        connection,
+                        primaryExecutor,
+                        clearHooks,
+                        pendingCommands);
+        bridgeReference.set(bridge);
+        return bridge;
     }
 
     /**
      * Creates a new [InspectorBridge] for testing with a mocked or stubbed [Inspector] instance.
      *
-     * <p>{@code primaryExecutor} is not wired to the bridge, so a crash on it does not fail the
-     * commands waiting for a reply. Use {@link #create(String, InspectorLoader,
+     * <p>{@code primaryExecutor} is not wired to the bridge, so a crash on it neither fails the
+     * commands waiting for a reply nor disposes the bridge; an exception thrown by {@code
+     * onReceiveCommand} still disposes it. Use {@link #create(String, InspectorLoader,
      * AppInspectionUtils.DelegatingConnection, HandlerThreadExecutor.CrashListener, Consumer)} to
      * test crashes.
      *

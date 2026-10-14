@@ -149,6 +149,10 @@ public final class SessionHandler {
         if (inspectorBridge == null) {
             throw new IllegalStateException("Unknown inspector ID: " + message.getInspectorId());
         }
+        if (inspectorBridge.isDisposed()) {
+            throw new IllegalStateException(
+                    "Inspector " + message.getInspectorId() + " crashed and was disposed");
+        }
         byte[] responseBytes = inspectorBridge.sendCommand(message.getPayload().toByteArray());
 
         UiInspectorProtocol.Response.Builder responseBuilder =
@@ -167,6 +171,11 @@ public final class SessionHandler {
         String dexPath = command.getDexPath();
 
         InspectorBridge bridge = inspectorBridges.get(inspectorId);
+        if (bridge != null && bridge.isDisposed()) {
+            // The inspector crashed: replace it with a new one.
+            inspectorBridges.remove(inspectorId, bridge);
+            bridge = null;
+        }
         if (bridge != null) {
             // Update the bridge with the new session's connection to resume event sending.
             Connection newRealConnection =

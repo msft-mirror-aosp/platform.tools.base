@@ -226,6 +226,135 @@ public final class SessionHandlerTest {
     }
 
     @Test
+    public void testHandle_createInspector_replacesDisposedBridge() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setCreateInspector(
+                                UiInspectorProtocol.CreateInspectorCommand.newBuilder()
+                                        .setInspectorId("test_inspector")
+                                        .setDexPath("/path/to/test.dex")
+                                        .build())
+                        .build();
+
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+        HandlerThreadExecutor primaryExecutor =
+                new HandlerThreadExecutor("test_thread_disposed", t -> {});
+        InspectorBridge disposedBridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        new Inspector(mockConnection) {
+                            @Override
+                            public void onReceiveCommand(byte[] data, CommandCallback callback) {}
+
+                            @Override
+                            public void onDispose() {}
+                        },
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor,
+                        hookOwnerId -> {});
+        disposedBridge.dispose();
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        bridges.put("test_inspector", disposedBridge);
+
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        new CountDownLatch(1),
+                        bridges);
+
+        sessionHandler.processCommands();
+        primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+
+        UiInspectorProtocol.Response response =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(
+                                        new ByteArrayInputStream(outputStream.toByteArray())))
+                        .getResponse();
+        // Loading the inspector from the invalid dex path was attempted, instead of rebinding
+        // the disposed bridge.
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response.getErrorMessage())
+                .contains("Failed to prepare native libraries of /path/to/test.dex");
+        assertThat(bridges).doesNotContainKey("test_inspector");
+    }
+
+    @Test
+    public void testHandle_inspectorMessageToDisposedBridge_fails() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setInspectorMessage(
+                                UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                        .setInspectorId("test_inspector")
+                                        .setPayload(
+                                                com.android.tools.idea.protobuf.ByteString.copyFrom(
+                                                        new byte[] {1}))
+                                        .build())
+                        .build();
+
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+        HandlerThreadExecutor primaryExecutor =
+                new HandlerThreadExecutor("test_thread_disposed_message", t -> {});
+        InspectorBridge disposedBridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        new Inspector(mockConnection) {
+                            @Override
+                            public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                                callback.reply(data);
+                            }
+
+                            @Override
+                            public void onDispose() {}
+                        },
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor,
+                        hookOwnerId -> {});
+        disposedBridge.dispose();
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        bridges.put("test_inspector", disposedBridge);
+
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        new CountDownLatch(1),
+                        bridges);
+
+        sessionHandler.processCommands();
+        primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+
+        UiInspectorProtocol.Response response =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(
+                                        new ByteArrayInputStream(outputStream.toByteArray())))
+                        .getResponse();
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response.getErrorMessage())
+                .contains("Inspector test_inspector crashed and was disposed");
+    }
+
+    @Test
     public void testHandle_unknownInspector_fails() throws Exception {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -369,7 +498,8 @@ public final class SessionHandlerTest {
     }
 
     @Test
-    public void testHandle_inspectorThrowsError_repliesErrorAndKeepsSession() throws Exception {
+    public void testHandle_inspectorThrowsError_repliesErrorAndDisposesInspector()
+            throws Exception {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         UiInspectorProtocol.Command command1 =
@@ -462,8 +592,11 @@ public final class SessionHandlerTest {
                 UiInspectorProtocol.AgentMessage.parseFrom(
                                 FramingProtocol.readMessage(responseInputStream))
                         .getResponse();
+        // The session goes on, but the inspector that threw was disposed.
         assertThat(response2.getCommandId()).isEqualTo(2);
-        assertThat(response2.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
+        assertThat(response2.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response2.getErrorMessage())
+                .contains("Inspector " + ProtocolConstants.VIEW_INSPECTOR_ID + " crashed");
     }
 
     @Test
