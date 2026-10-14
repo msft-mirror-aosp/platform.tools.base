@@ -157,6 +157,13 @@ abstract class JacocoReportTask : NonIncrementalTask() {
     override val type: Class<JacocoReportTask>
       get() = JacocoReportTask::class.java
 
+    /**
+     * Whether the tests behind this report run on a device. Only those use the on-device coverage agent when
+     * [BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE] is set; host tests keep running with the JaCoCo agent on the JVM.
+     */
+    protected open val testsRunOnDevice: Boolean
+      get() = true
+
     override fun handleProvider(taskProvider: TaskProvider<JacocoReportTask>) {
       super.handleProvider(taskProvider)
       creationConfig.taskContainer.coverageReportTask = taskProvider
@@ -174,7 +181,9 @@ abstract class JacocoReportTask : NonIncrementalTask() {
       task.reportName.setDisallowChanges(creationConfig.mainVariant.name)
       task.tabWidth.setDisallowChanges(4)
       task.reportAggregation.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.REPORT_AGGREGATION_SUPPORT])
-      task.onTheFlyCoverageEnabled.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE])
+      task.onTheFlyCoverageEnabled.setDisallowChanges(
+        testsRunOnDevice && creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]
+      )
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
       task.testedVariantName.setDisallowChanges(creationConfig.mainVariant.name)
       task.rootProjectName.setDisallowChanges(creationConfig.services.projectInfo.rootProjectName)
@@ -197,6 +206,10 @@ abstract class JacocoReportTask : NonIncrementalTask() {
     private val testTaskName: String,
     private val internalArtifactType: InternalArtifactType<RegularFile>,
   ) : BaseCreationAction(testComponentProperties, jacocoAntConfiguration) {
+
+    // Unit and screenshot tests run on the JVM, so their coverage always comes from the JaCoCo agent.
+    override val testsRunOnDevice: Boolean
+      get() = false
 
     override fun configure(task: JacocoReportTask) {
       super.configure(task)
