@@ -17,14 +17,19 @@
 package com.android.tools.ui.inspector.inspectors.view
 
 import android.app.Activity
+import android.content.Context
 import android.content.res.Configuration
 import android.hardware.display.DisplayManager
 import android.view.ContextThemeWrapper
+import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.TextView
 import com.android.tools.ui.inspector.inspectors.view.property.PropertyCache
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import java.io.IOException
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -308,11 +313,79 @@ class ViewNodesTest {
     assertThat(strings[density420Window.theme]).isEqualTo("@android:style/Theme.Holo")
   }
 
-  private fun toViewNode(view: View, stringTable: StringTable = StringTable()): ViewInspectorProtocol.ViewNode =
+  @Test
+  fun testThrowingViewGetterSkipsRestOfItsCompanion() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    // Kotlin getters can throw an Error (TODO() throws NotImplementedError), an undeclared checked exception, or overflow the stack by
+    // calling themselves, and a getter calling an API missing on the device throws a LinkageError.
+    val brokenViews =
+      listOf(
+        "IllegalStateException" to BrokenBaselineTextView(activity, IllegalStateException("Broken")),
+        "NotImplementedError" to BrokenBaselineTextView(activity, NotImplementedError()),
+        "IOException" to BrokenBaselineTextView(activity, IOException("Broken")),
+        "NoSuchMethodError" to BrokenBaselineTextView(activity, NoSuchMethodError("Broken")),
+        "StackOverflowError" to RecursiveBaselineTextView(activity),
+      )
+    for ((failure, brokenView) in brokenViews) {
+      val root = FrameLayout(activity)
+      root.addView(brokenView.apply { gravity = Gravity.END })
+      val stringTable = StringTable()
+
+      val node = toViewNode(root, stringTable, includeAttributes = true).childrenList.single()
+
+      val names = attributeNames(node, stringTable)
+      // The View companion reads its properties in alphabetical order: it keeps alpha, read before the throwing getBaseline(), and loses
+      // the properties after it, like visibility. The TextView and layout params companions still run.
+      assertWithMessage(failure).that(names).containsAllOf("alpha", "gravity", "layout_width")
+      assertWithMessage(failure).that(names).containsNoneOf("baseline", "visibility")
+    }
+  }
+
+  @Test
+  fun testThrowingViewGetterKeepsChildrenAndSiblings() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val root = FrameLayout(activity)
+    val broken = BrokenBaselineFrameLayout(activity)
+    broken.addView(TextView(activity))
+    root.addView(broken)
+    root.addView(TextView(activity))
+    val stringTable = StringTable()
+
+    val node = toViewNode(root, stringTable, includeAttributes = true)
+
+    val child = node.getChildren(0).childrenList.single()
+    val sibling = node.getChildren(1)
+    assertThat(attributeNames(child, stringTable)).containsAllOf("baseline", "gravity", "layout_width")
+    assertThat(attributeNames(sibling, stringTable)).containsAllOf("baseline", "gravity", "layout_width")
+  }
+
+  private class BrokenBaselineTextView(context: Context, private val failure: Throwable) : TextView(context) {
+    override fun getBaseline(): Int = throw failure
+  }
+
+  /** Reproduces a common Kotlin mistake: the getter reads its own property, so it calls itself until the stack overflows. */
+  private class RecursiveBaselineTextView(context: Context) : TextView(context) {
+    override fun getBaseline(): Int = baseline
+  }
+
+  private class BrokenBaselineFrameLayout(context: Context) : FrameLayout(context) {
+    override fun getBaseline(): Int = throw IllegalStateException("Broken getBaseline()")
+  }
+
+  private fun attributeNames(node: ViewInspectorProtocol.ViewNode, stringTable: StringTable): List<String?> {
+    val strings = stringTable.toStringEntries().associate { it.id to it.value }
+    return node.attributesList.map { strings[it.name] }
+  }
+
+  private fun toViewNode(
+    view: View,
+    stringTable: StringTable = StringTable(),
+    includeAttributes: Boolean = false,
+  ): ViewInspectorProtocol.ViewNode =
     ViewNodes.toViewNode(
       view,
       stringTable,
-      false,
+      includeAttributes,
       false,
       PropertyCache.createViewPropertyCache(),
       PropertyCache.createLayoutParamsPropertyCache(),

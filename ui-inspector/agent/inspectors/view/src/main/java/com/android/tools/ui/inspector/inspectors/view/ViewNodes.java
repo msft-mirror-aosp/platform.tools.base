@@ -19,11 +19,13 @@ package com.android.tools.ui.inspector.inspectors.view;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.hardware.display.DisplayManager;
+import android.util.Log;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inspector.InspectionCompanion;
 
+import com.android.tools.ui.inspector.common.ProtocolConstants;
 import com.android.tools.ui.inspector.inspectors.view.property.PropertyCache;
 import com.android.tools.ui.inspector.inspectors.view.property.ProtoAttributeReader;
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Display;
@@ -38,6 +40,8 @@ import java.util.List;
 
 /** Converts a view hierarchy and its display context into their proto representations. */
 final class ViewNodes {
+    private static final String LOG_TAG = ProtocolConstants.LOG_TAG_PREFIX + ".ViewNodes";
+
     private ViewNodes() {}
 
     /** Models the configuration for attribute extraction; null wherever extraction is disabled. */
@@ -242,9 +246,7 @@ final class ViewNodes {
                         stringTable,
                         attributeExtraction.includeResolutionStack,
                         viewNodeBuilder::addAttributes);
-        for (InspectionCompanion<View> companion : viewPropertyData.getCompanions()) {
-            companion.readProperties(view, viewReader);
-        }
+        readProperties(view, viewPropertyData.getCompanions(), view, viewReader);
 
         ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
         if (layoutParams != null) {
@@ -257,9 +259,38 @@ final class ViewNodes {
                             stringTable,
                             attributeExtraction.includeResolutionStack,
                             viewNodeBuilder::addAttributes);
-            for (InspectionCompanion<ViewGroup.LayoutParams> companion :
-                    layoutParamsPropertyData.getCompanions()) {
-                companion.readProperties(layoutParams, layoutParamsReader);
+            readProperties(
+                    view,
+                    layoutParamsPropertyData.getCompanions(),
+                    layoutParams,
+                    layoutParamsReader);
+        }
+    }
+
+    /**
+     * Reads the properties of {@code inspectable} with each of its {@code companions}.
+     *
+     * <p>Companions call the inspectable's getters, which are app code and can throw anything. A
+     * companion that throws loses the properties it had not read yet, while the properties it
+     * already read, the other companions and the rest of the hierarchy are still dumped. Failures
+     * converting the values read are handled the same way.
+     */
+    private static <T> void readProperties(
+            View view,
+            List<InspectionCompanion<T>> companions,
+            T inspectable,
+            ProtoAttributeReader reader) {
+        for (InspectionCompanion<T> companion : companions) {
+            try {
+                companion.readProperties(inspectable, reader);
+            } catch (Throwable t) {
+                Log.w(
+                        LOG_TAG,
+                        "Skipping remaining properties of "
+                                + view.getClass().getName()
+                                + " read by "
+                                + companion.getClass().getName(),
+                        t);
             }
         }
     }
