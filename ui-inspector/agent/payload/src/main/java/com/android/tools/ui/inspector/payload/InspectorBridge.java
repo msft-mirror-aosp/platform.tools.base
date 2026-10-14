@@ -27,8 +27,10 @@ import com.android.tools.arttooling.ArtTooling;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -49,17 +51,25 @@ public final class InspectorBridge {
     private final HandlerThreadExecutor primaryExecutor;
     private final Consumer<String> clearHooks;
 
+    /**
+     * The commands waiting for the inspector's reply. Bridges made by {@code create} fail them if
+     * the inspector crashes.
+     */
+    private final Set<CompletableFuture<byte[]>> pendingCommands;
+
     private InspectorBridge(
             String hookOwnerId,
             Inspector inspector,
             AppInspectionUtils.DelegatingConnection connection,
             HandlerThreadExecutor primaryExecutor,
-            Consumer<String> clearHooks) {
+            Consumer<String> clearHooks,
+            Set<CompletableFuture<byte[]>> pendingCommands) {
         this.hookOwnerId = hookOwnerId;
         this.inspector = inspector;
         this.connection = connection;
         this.primaryExecutor = primaryExecutor;
         this.clearHooks = clearHooks;
+        this.pendingCommands = pendingCommands;
     }
 
     /**
@@ -71,9 +81,21 @@ public final class InspectorBridge {
         connection.activeConnection = newConnection;
     }
 
-    /** Sends a command to the inspector and waits for the response. */
+    /**
+     * Sends a command to the inspector and waits for the response. Throws the inspector's crash if
+     * the inspector crashes before replying.
+     */
     public byte[] sendCommand(byte[] command) throws Exception {
         CompletableFuture<byte[]> future = new CompletableFuture<>();
+        pendingCommands.add(future);
+        try {
+            return sendCommand(command, future);
+        } finally {
+            pendingCommands.remove(future);
+        }
+    }
+
+    private byte[] sendCommand(byte[] command, CompletableFuture<byte[]> future) throws Exception {
         primaryExecutor.execute(
                 () -> {
                     try {
@@ -158,12 +180,58 @@ public final class InspectorBridge {
             AppInspectionUtils.DelegatingConnection connection,
             HandlerThreadExecutor.CrashListener crashListener)
             throws Exception {
+        return create(
+                inspectorId,
+                environment ->
+                        AppInspectionUtils.loadInspectorDynamically(
+                                inspectorId, dexPath, connection, environment),
+                connection,
+                crashListener,
+                ArtTooling::clear);
+    }
+
+    /**
+     * Creates and initializes a new [InspectorBridge] containing the [Inspector] returned by {@code
+     * loader}.
+     *
+     * @param inspectorId the ID of the inspector, used in the name of the bridge's primary thread
+     *     and in its hook owner ID
+     * @param loader loads the inspector, given the environment the bridge provides to it
+     * @param connection the connection that {@link #updateConnection} points to the active session,
+     *     and that the inspector should send its events through
+     * @param crashListener notified when a task of the inspector crashes, before the commands
+     *     waiting for a reply fail
+     * @param clearHooks removes the hooks of the given owner ID when the bridge is disposed
+     */
+    @VisibleForTesting
+    static InspectorBridge create(
+            String inspectorId,
+            InspectorLoader loader,
+            AppInspectionUtils.DelegatingConnection connection,
+            HandlerThreadExecutor.CrashListener crashListener,
+            Consumer<String> clearHooks)
+            throws Exception {
+        Set<CompletableFuture<byte[]>> pendingCommands = ConcurrentHashMap.newKeySet();
+        // A crash can happen after onReceiveCommand returned, in a task that would have replied,
+        // so the commands waiting for a reply fail with it instead of waiting forever. The crash
+        // is reported first, so that the host receives it with its stack trace before
+        // SessionHandler replies to the command with an error.
+        HandlerThreadExecutor.CrashListener bridgeCrashListener =
+                t -> {
+                    try {
+                        crashListener.onCrash(t);
+                    } finally {
+                        for (CompletableFuture<byte[]> pendingCommand : pendingCommands) {
+                            pendingCommand.completeExceptionally(t);
+                        }
+                    }
+                };
         HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor(THREAD_NAME_PREFIX + inspectorId, crashListener);
+                new HandlerThreadExecutor(THREAD_NAME_PREFIX + inspectorId, bridgeCrashListener);
         String hookOwnerId = createHookOwnerId(inspectorId);
         InspectorEnvironment inspectorEnvironment =
                 AppInspectionUtils.createInspectorEnvironment(
-                        hookOwnerId, primaryExecutor, crashListener);
+                        hookOwnerId, primaryExecutor, bridgeCrashListener);
 
         CompletableFuture<Inspector> future = new CompletableFuture<>();
         primaryExecutor.execute(
@@ -173,9 +241,7 @@ public final class InspectorBridge {
                         // internally captured Thread.currentThread() matches the thread used for
                         // executing subsequent commands.
                         // This respects the convention from AppInspection.
-                        Inspector inspector =
-                                AppInspectionUtils.loadInspectorDynamically(
-                                        inspectorId, dexPath, connection, inspectorEnvironment);
+                        Inspector inspector = loader.load(inspectorEnvironment);
                         future.complete(inspector);
                     } catch (Throwable t) {
                         future.completeExceptionally(t);
@@ -209,11 +275,16 @@ public final class InspectorBridge {
         }
 
         return new InspectorBridge(
-                hookOwnerId, inspector, connection, primaryExecutor, ArtTooling::clear);
+                hookOwnerId, inspector, connection, primaryExecutor, clearHooks, pendingCommands);
     }
 
     /**
      * Creates a new [InspectorBridge] for testing with a mocked or stubbed [Inspector] instance.
+     *
+     * <p>{@code primaryExecutor} is not wired to the bridge, so a crash on it does not fail the
+     * commands waiting for a reply. Use {@link #create(String, InspectorLoader,
+     * AppInspectionUtils.DelegatingConnection, HandlerThreadExecutor.CrashListener, Consumer)} to
+     * test crashes.
      *
      * @param clearHooks removes the hooks of the given owner ID when the bridge is disposed
      */
@@ -225,7 +296,12 @@ public final class InspectorBridge {
             HandlerThreadExecutor primaryExecutor,
             Consumer<String> clearHooks) {
         return new InspectorBridge(
-                createHookOwnerId(inspectorId), inspector, connection, primaryExecutor, clearHooks);
+                createHookOwnerId(inspectorId),
+                inspector,
+                connection,
+                primaryExecutor,
+                clearHooks,
+                ConcurrentHashMap.newKeySet());
     }
 
     /**
@@ -235,5 +311,11 @@ public final class InspectorBridge {
      */
     private static String createHookOwnerId(String inspectorId) {
         return inspectorId + "/" + UUID.randomUUID();
+    }
+
+    /** Loads the inspector of a bridge, given the environment the bridge provides to it. */
+    @VisibleForTesting
+    interface InspectorLoader {
+        Inspector load(InspectorEnvironment environment) throws Exception;
     }
 }

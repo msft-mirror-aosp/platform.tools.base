@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
+import androidx.inspection.InspectorEnvironment;
 
 import com.android.tools.arttooling.ArtTooling;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
@@ -34,10 +35,15 @@ import org.robolectric.RobolectricTestRunner;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 @RunWith(RobolectricTestRunner.class)
 public final class InspectorBridgeTest {
@@ -183,6 +189,73 @@ public final class InspectorBridgeTest {
             assertThat(e.getMessage()).contains("Test exception");
         }
         assertThat(exceptionThrown).isTrue();
+    }
+
+    @Test
+    public void testSendCommand_crashOnPrimaryExecutorBeforeReplying_failsCommand()
+            throws Exception {
+        assertCrashBeforeReplyingFailsCommand(environment -> environment.executors().primary());
+    }
+
+    @Test
+    public void testSendCommand_crashOnIoExecutorBeforeReplying_failsCommand() throws Exception {
+        assertCrashBeforeReplyingFailsCommand(environment -> environment.executors().io());
+    }
+
+    /**
+     * Asserts that a command fails with the crash of the task that would have replied to it, when
+     * that task runs on the executor returned by {@code executorOf}.
+     */
+    private void assertCrashBeforeReplyingFailsCommand(
+            Function<InspectorEnvironment, Executor> executorOf) throws Exception {
+        List<Throwable> crashes = new CopyOnWriteArrayList<>();
+        IllegalStateException failure = new IllegalStateException("Failure before replying");
+        InspectorBridge bridge =
+                InspectorBridge.create(
+                        "test_inspector",
+                        environment ->
+                                new Inspector(mockConnection) {
+                                    @Override
+                                    public void onReceiveCommand(
+                                            byte[] data, CommandCallback callback) {
+                                        // Replies from a later task, which fails before replying.
+                                        executorOf
+                                                .apply(environment)
+                                                .execute(
+                                                        () -> {
+                                                            throw failure;
+                                                        });
+                                    }
+
+                                    @Override
+                                    public void onDispose() {}
+                                },
+                        new AppInspectionUtils.DelegatingConnection(),
+                        crashes::add,
+                        hookOwnerId -> {});
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try {
+            Future<Throwable> thrown =
+                    caller.submit(
+                            () -> {
+                                try {
+                                    bridge.sendCommand(new byte[] {1});
+                                    return null;
+                                } catch (Throwable t) {
+                                    return t;
+                                }
+                            });
+
+            assertThat(thrown.get(5, TimeUnit.SECONDS)).isSameAs(failure);
+            // No need to wait for the crash report: the bridge reports a crash before failing the
+            // commands.
+            assertThat(crashes).containsExactly(failure);
+        } finally {
+            // Interrupts the command if it is still waiting, so that a failure does not leak a
+            // blocked thread.
+            caller.shutdownNow();
+            bridge.dispose();
+        }
     }
 
     @Test
