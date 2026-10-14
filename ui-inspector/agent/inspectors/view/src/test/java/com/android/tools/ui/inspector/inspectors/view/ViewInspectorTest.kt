@@ -36,6 +36,7 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
 import com.google.common.truth.Truth.assertThat
+import java.io.IOException
 import java.util.ArrayDeque
 import java.util.Locale
 import java.util.concurrent.Executor
@@ -51,22 +52,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [29])
 class ViewInspectorTest {
 
-  private val mockEnvironment =
-    object : InspectorEnvironment {
-      override fun executors(): InspectorExecutors {
-        return object : InspectorExecutors {
-          override fun primary() = Executor { it.run() }
-
-          override fun io() = Executor { it.run() }
-
-          override fun handler() = Handler(Looper.getMainLooper())
-        }
-      }
-
-      override fun artTooling(): ArtTooling {
-        throw UnsupportedOperationException("Not implemented")
-      }
-    }
+  private val mockEnvironment = inlineEnvironment()
 
   @Test
   fun testOnReceiveCommand_unknown() {
@@ -356,45 +342,113 @@ class ViewInspectorTest {
   }
 
   @Test
-  fun testDumpViews_replyFailureReachesPrimaryUncaughtHandler() {
+  fun testDumpViews_replyFailureIsThrownOnPrimaryExecutor() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     activity.setContentView(setupViews(activity))
-
+    val crashes = mutableListOf<Throwable>()
     val inspector =
       ViewInspector(
         object : Connection() {
           override fun sendEvent(data: ByteArray) {}
         },
-        mockEnvironment,
+        environmentCatchingPrimaryFailures(crashes),
+      )
+    val sentinel = RuntimeException("reply failed")
+
+    sendDumpCommand(inspector) { throw sentinel }
+
+    assertThat(crashes).containsExactly(sentinel)
+  }
+
+  @Test
+  fun testDumpViews_dumpFailureIsThrownOnPrimaryExecutor() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val sentinel = IllegalStateException("dump failed")
+    activity.setContentView(BrokenLayoutResView(activity, sentinel))
+    val crashes = mutableListOf<Throwable>()
+    val inspector =
+      ViewInspector(
+        object : Connection() {
+          override fun sendEvent(data: ByteArray) {}
+        },
+        environmentCatchingPrimaryFailures(crashes),
       )
 
-    val sentinel = RuntimeException("reply failed")
+    sendDumpCommand(inspector)
+
+    assertThat(crashes).containsExactly(sentinel)
+  }
+
+  @Test
+  fun testDumpViews_checkedDumpFailureIsThrownWrappedOnPrimaryExecutor() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    // Kotlin code can throw a checked exception without declaring it.
+    val sentinel = IOException("dump failed")
+    activity.setContentView(BrokenLayoutResView(activity, sentinel))
+    val crashes = mutableListOf<Throwable>()
+    val inspector =
+      ViewInspector(
+        object : Connection() {
+          override fun sendEvent(data: ByteArray) {}
+        },
+        environmentCatchingPrimaryFailures(crashes),
+      )
+
+    sendDumpCommand(inspector)
+
+    assertThat(crashes).hasSize(1)
+    assertThat(crashes.single()).isInstanceOf(RuntimeException::class.java)
+    assertThat(crashes.single().cause).isSameAs(sentinel)
+  }
+
+  /** Returns an environment whose executors run tasks inline, on the thread that posts them. */
+  private fun inlineEnvironment(primary: Executor = Executor { it.run() }) =
+    object : InspectorEnvironment {
+      override fun executors(): InspectorExecutors {
+        return object : InspectorExecutors {
+          override fun primary() = primary
+
+          override fun io() = Executor { it.run() }
+
+          override fun handler() = Handler(Looper.getMainLooper())
+        }
+      }
+
+      override fun artTooling(): ArtTooling {
+        throw UnsupportedOperationException("Not implemented")
+      }
+    }
+
+  /** Returns an inline environment whose primary executor collects the failures of its tasks, like the agent's executor does. */
+  private fun environmentCatchingPrimaryFailures(crashes: MutableList<Throwable>) =
+    inlineEnvironment(
+      primary =
+        Executor {
+          try {
+            it.run()
+          } catch (t: Throwable) {
+            crashes.add(t)
+          }
+        }
+    )
+
+  /** Sends a dump command that passes its reply to [onReply], and runs the tasks it posts to the main thread. */
+  private fun sendDumpCommand(inspector: ViewInspector, onReply: (ByteArray) -> Unit = {}) {
     val callback =
       object : Inspector.CommandCallback {
-        override fun reply(response: ByteArray) = throw sentinel
+        override fun reply(response: ByteArray) = onReply(response)
 
         override fun addCancellationListener(executor: Executor, runnable: Runnable) {}
       }
     val command =
       Command.newBuilder().setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.newBuilder().setIncludeAttributes(false)).build()
+    inspector.onReceiveCommand(command.toByteArray(), callback)
+    shadowOf(Looper.getMainLooper()).idle()
+  }
 
-    // The mock environment's primary executor runs inline, so the primary thread is the test thread.
-    var caught: Throwable? = null
-    var crashThread: Thread? = null
-    val previousHandler = Thread.currentThread().uncaughtExceptionHandler
-    Thread.currentThread().uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { thread, throwable ->
-      crashThread = thread
-      caught = throwable
-    }
-    try {
-      inspector.onReceiveCommand(command.toByteArray(), callback)
-      shadowOf(Looper.getMainLooper()).idle()
-    } finally {
-      Thread.currentThread().uncaughtExceptionHandler = previousHandler
-    }
-
-    assertThat(caught).isSameAs(sentinel)
-    assertThat(crashThread).isSameAs(Thread.currentThread())
+  /** A view whose layout resource, read for every view of a dump, cannot be read. */
+  private class BrokenLayoutResView(context: Context, private val failure: Throwable) : View(context) {
+    override fun getSourceLayoutResId(): Int = throw failure
   }
 
   private fun setupViews(activity: Activity): View {

@@ -87,9 +87,11 @@ public final class ViewInspector extends Inspector {
                     StringTable stringTable = new StringTable();
                     mainThreadExecutor.execute(
                             () -> {
+                                List<WindowInfo> windows;
+                                List<Display> displays;
                                 try {
                                     List<View> roots = RootsDetector.getRootViews(xrHelper);
-                                    List<WindowInfo> windows = new ArrayList<>(roots.size());
+                                    windows = new ArrayList<>(roots.size());
                                     for (View root : roots) {
                                         windows.add(
                                                 ViewNodes.toWindowInfo(
@@ -100,22 +102,17 @@ public final class ViewInspector extends Inspector {
                                                         viewPropertyCache,
                                                         layoutParamsPropertyCache));
                                     }
-                                    List<Display> displays =
+                                    displays =
                                             roots.isEmpty()
                                                     ? Collections.emptyList()
                                                     : ViewNodes.buildDisplayInfo(
                                                             roots.get(0).getContext());
-                                    primaryExecutor.execute(
-                                            () -> {
-                                                try {
-                                                    reply(callback, stringTable, windows, displays);
-                                                } catch (Throwable t) {
-                                                    reportUncaught(t);
-                                                }
-                                            });
                                 } catch (Throwable t) {
-                                    primaryExecutor.execute(() -> reportUncaught(t));
+                                    primaryExecutor.execute(() -> rethrow(t));
+                                    return;
                                 }
+                                primaryExecutor.execute(
+                                        () -> reply(callback, stringTable, windows, displays));
                             });
                 });
     }
@@ -135,13 +132,19 @@ public final class ViewInspector extends Inspector {
     }
 
     /**
-     * Reports a dump failure through the primary thread's uncaught exception handler. Invoking the
-     * handler directly (instead of letting the throwable escape the runnable) bypasses the primary
-     * executor's catch-all crash reporting, keeping inspector failures fatal to the app process.
+     * Rethrows a dump failure caught on the main thread. Called on the primary executor to report
+     * the failure to the host instead of crashing the app.
      */
-    private static void reportUncaught(Throwable t) {
-        Thread thread = Thread.currentThread();
-        thread.getUncaughtExceptionHandler().uncaughtException(thread, t);
+    private static void rethrow(Throwable t) {
+        if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
+        }
+        if (t instanceof Error) {
+            throw (Error) t;
+        }
+        // Checked exceptions are wrapped: a Runnable cannot throw them, and the agent treats an
+        // IOException from an inspector as a lost connection to the host.
+        throw new RuntimeException(t);
     }
 
     @Override
