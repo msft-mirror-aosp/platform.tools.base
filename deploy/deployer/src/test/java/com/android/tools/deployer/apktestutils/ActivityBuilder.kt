@@ -20,6 +20,8 @@ class ActivityBuilder(private val pkgName: String, rawName: String) {
   val qualifiedName: String = if (rawName.startsWith(".")) pkgName + rawName else rawName
   private var aliasTarget: String? = null
   var enabled: Boolean = true
+  /** When set, `android:enabled` refers to this resource (e.g. `@bool/foo`) instead of using [enabled]. */
+  var enabledResource: Int? = null
   var exported: Boolean? = null
   private val intentFilters = mutableListOf<IntentFilterBuilder>()
 
@@ -46,7 +48,7 @@ class ActivityBuilder(private val pkgName: String, rawName: String) {
     if (aliasTarget != null) {
       elem.addAttribute(ResourceTypes.ANDROID_URI, "targetActivity", aliasTarget)
     }
-    elem.addAttribute(ResourceTypes.ANDROID_URI, "enabled", enabled)
+    elem.addAttribute(ResourceTypes.ANDROID_URI, "enabled", enabledResource?.let { ResourceReference(it) } ?: enabled)
     val isExported = exported ?: intentFilters.isNotEmpty()
     elem.addAttribute(ResourceTypes.ANDROID_URI, "exported", isExported)
 

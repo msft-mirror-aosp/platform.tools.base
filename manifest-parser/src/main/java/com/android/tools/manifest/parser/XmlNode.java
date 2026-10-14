@@ -16,6 +16,7 @@
 package com.android.tools.manifest.parser;
 
 import com.android.annotations.NonNull;
+
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlAttribute;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlStartElementChunk;
@@ -37,6 +38,8 @@ public class XmlNode {
 
     private final Map<String, String> attributes = new HashMap<>();
 
+    private final Map<String, Integer> references = new HashMap<>();
+
     public XmlNode() {
         name = "";
     }
@@ -53,6 +56,10 @@ public class XmlNode {
             } else if (typeValue.type() == ResourceValue.Type.INT_DEC) {
                 value = String.valueOf(typeValue.data());
             } else {
+                if (typeValue.type() == ResourceValue.Type.REFERENCE
+                        || typeValue.type() == ResourceValue.Type.DYNAMIC_REFERENCE) {
+                    references.put(name, typeValue.data());
+                }
                 value = attribute.rawValue();
             }
             attributes.put(name, value);
@@ -72,5 +79,15 @@ public class XmlNode {
     @NonNull
     public Map<String, String> attributes() {
         return attributes;
+    }
+
+    /**
+     * Resource IDs of the attributes whose value is a resource reference (e.g. {@code
+     * android:enabled="@bool/foo"}), keyed by attribute name. Such an attribute's entry in {@link
+     * #attributes()} is its raw value, which compiled manifests leave empty.
+     */
+    @NonNull
+    public Map<String, Integer> references() {
+        return references;
     }
 }

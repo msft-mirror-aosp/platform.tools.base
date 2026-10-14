@@ -57,6 +57,7 @@ object ResourceTypes {
   /** Value Data Types (`Res_value.dataType`) */
   object DataType {
     const val TYPE_NULL: Byte = 0x00
+    const val TYPE_REFERENCE: Byte = 0x01
     const val TYPE_STRING: Byte = 0x03
     const val TYPE_INT_DEC: Byte = 0x10
     const val TYPE_INT_BOOLEAN: Byte = 0x12

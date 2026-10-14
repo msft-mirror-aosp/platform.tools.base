@@ -15,14 +15,108 @@
  */
 package com.android.tools.deployer.model
 
+import com.android.tools.deployer.apktestutils.Apk as testApk
+import com.android.tools.deployer.apktestutils.boolResourceTable
 import com.android.tools.deployer.apktestutils.manifest
+import com.android.tools.deployer.apktestutils.writeTo
 import com.android.tools.deployer.model.component.ComponentType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class AppTest {
+
+  @get:Rule val tmp = TemporaryFolder()
+
+  @Test
+  fun testResolveDefaultComponentRequiresMainAndLauncherInOneFilter() {
+    val app =
+      manifest("com.example.app") {
+        activity(".SplitFilters") {
+          intentFilter {
+            action("android.intent.action.MAIN")
+            category("android.intent.category.DEFAULT")
+          }
+          intentFilter {
+            action("android.intent.action.VIEW")
+            category("android.intent.category.LAUNCHER")
+          }
+        }
+        activity(".MainActivity") { launcher() }
+      }
+
+    val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
+    assertTrue(res is ComponentResolution.Resolved)
+    val resolved = res as ComponentResolution.Resolved
+    assertEquals("com.example.app.MainActivity", resolved.component.qualifiedName)
+    assertEquals("single launcher activity", resolved.reason)
+  }
+
+  @Test
+  fun testEnabledResourceReferenceIsResolvedFromTheApkOnlyWhenPickingTheDefault() {
+    val launcherIcon = 0x7f050000
+    val apk = writeApk(boolResourceTable(mapOf(launcherIcon to false)), launcherIcon)
+    val app = App.fromPaths(listOf(apk))
+
+    // Parsing does not read resources.arsc: every deploy parses its APKs, and nothing else needs isEnabled.
+    assertTrue(leakLauncherAlias(app).isEnabled)
+
+    val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
+    assertTrue(res is ComponentResolution.Resolved)
+    val resolved = res as ComponentResolution.Resolved
+    assertEquals("com.example.app.MainActivity", resolved.component.qualifiedName)
+    assertEquals("single launcher activity", resolved.reason)
+    assertFalse(leakLauncherAlias(app).isEnabled)
+  }
+
+  @Test
+  fun testEnabledResourceReferenceResolvedToTrueKeepsBothLaunchers() {
+    val launcherIcon = 0x7f050003
+    val app = App.fromPaths(listOf(writeApk(boolResourceTable(mapOf(launcherIcon to true)), launcherIcon)))
+
+    val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
+    assertEquals("first launcher activity in manifest order", (res as ComponentResolution.Resolved).reason)
+    assertEquals("com.example.app.MainActivity", res.component.qualifiedName)
+    assertTrue(leakLauncherAlias(app).isEnabled)
+  }
+
+  @Test
+  fun testEnabledResourceReferenceStaysEnabledWithoutAUsableResourceTable() {
+    for (table in listOf(null, byteArrayOf(1, 2, 3))) {
+      val app = App.fromPaths(listOf(writeApk(table, 0x7f050000)))
+
+      val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
+      assertEquals("com.example.app.MainActivity", (res as ComponentResolution.Resolved).component.qualifiedName)
+      assertTrue(leakLauncherAlias(app).isEnabled)
+    }
+  }
+
+  /** An APK with the app's launcher followed by LeakCanary's launcher alias, enabled by [enabledResource]. */
+  private fun writeApk(resourcesArsc: ByteArray?, enabledResource: Int): java.nio.file.Path {
+    val file = tmp.newFile()
+    testApk {
+        Manifest("com.example.app") {
+          activity(".MainActivity") { launcher() }
+          activity("leakcanary.internal.activity.LeakActivity")
+          activity("leakcanary.internal.activity.LeakLauncherActivity") {
+            aliasOf("leakcanary.internal.activity.LeakActivity")
+            this.enabledResource = enabledResource
+            launcher()
+          }
+        }
+        if (resourcesArsc != null) {
+          BinaryFile("resources.arsc", resourcesArsc)
+        }
+      }
+      .writeTo(file)
+    return file.toPath()
+  }
+
+  private fun leakLauncherAlias(app: App) =
+    app.getMatchingComponents(ComponentType.ACTIVITY).single { it.qualifiedName == "leakcanary.internal.activity.LeakLauncherActivity" }
 
   @Test
   fun testResolveDefaultComponentSingleLauncher() {
@@ -51,7 +145,7 @@ class AppTest {
   }
 
   @Test
-  fun testResolveDefaultComponentMultipleLaunchersIsAmbiguous() {
+  fun testResolveDefaultComponentMultipleLaunchersPicksFirstInManifestOrder() {
     val app =
       manifest("com.example.app") {
         activity(".FirstLauncherActivity") { launcher() }
@@ -59,8 +153,115 @@ class AppTest {
       }
 
     val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
-    assertTrue(res is ComponentResolution.Ambiguous)
-    assertEquals(2, (res as ComponentResolution.Ambiguous).candidates.size)
+    assertTrue(res is ComponentResolution.Resolved)
+    val resolved = res as ComponentResolution.Resolved
+    assertEquals("com.example.app.FirstLauncherActivity", resolved.component.qualifiedName)
+    assertEquals("first launcher activity in manifest order", resolved.reason)
+  }
+
+  @Test
+  fun testResolveDefaultComponentPrefersLauncherWithCategoryDefault() {
+    // The shape of aGMM: LeakCanary's launcher alias, then MapsActivity, whose launcher filter also has CATEGORY_DEFAULT.
+    val app =
+      manifest("com.google.android.apps.gmm.dev") {
+        activity("leakcanary.internal.activity.LeakActivity")
+        activity("leakcanary.internal.activity.LeakLauncherActivity") {
+          aliasOf("leakcanary.internal.activity.LeakActivity")
+          launcher()
+        }
+        activity("com.google.android.maps.MapsActivity") {
+          intentFilter {
+            action("android.intent.action.MAIN")
+            category("android.intent.category.LAUNCHER")
+            category("android.intent.category.DEFAULT")
+          }
+        }
+      }
+
+    val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
+    assertTrue(res is ComponentResolution.Resolved)
+    val resolved = res as ComponentResolution.Resolved
+    assertEquals("com.google.android.maps.MapsActivity", resolved.component.qualifiedName)
+    assertEquals("launcher activity with CATEGORY_DEFAULT", resolved.reason)
+  }
+
+  @Test
+  fun testResolveDefaultComponentIgnoresCategoryDefaultOnOtherFilters() {
+    // A deep link filter's CATEGORY_DEFAULT says nothing about how the app is launched.
+    val app =
+      manifest("com.example.app") {
+        activity(".MainActivity") { launcher() }
+        activity("com.library.LibraryActivity") {
+          launcher()
+          intentFilter {
+            action("android.intent.action.VIEW")
+            category("android.intent.category.DEFAULT")
+          }
+        }
+      }
+
+    val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
+    assertTrue(res is ComponentResolution.Resolved)
+    val resolved = res as ComponentResolution.Resolved
+    assertEquals("com.example.app.MainActivity", resolved.component.qualifiedName)
+    assertEquals("first launcher activity in manifest order", resolved.reason)
+  }
+
+  @Test
+  fun testResolveDefaultComponentTreatsAliasesLikeActivities() {
+    // Apps that switch launcher icons launch through an alias; a library's launcher activity, merged after it, must not win.
+    val app =
+      manifest("com.example.app") {
+        activity(".MainActivity")
+        activity(".MainAlias") {
+          aliasOf(".MainActivity")
+          launcher()
+        }
+        activity("com.library.LibraryLauncherActivity") { launcher() }
+      }
+
+    val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
+    assertTrue(res is ComponentResolution.Resolved)
+    assertEquals("com.example.app.MainAlias", (res as ComponentResolution.Resolved).component.qualifiedName)
+  }
+
+  @Test
+  fun testResolveDefaultComponentResolvesEnabledResourceReference() {
+    val disabledLauncherIcon = 0x7f050021
+    val app =
+      manifest("com.example.app") {
+        bool(disabledLauncherIcon, false)
+        activity("leakcanary.internal.activity.LeakActivity")
+        activity("leakcanary.internal.activity.LeakLauncherActivity") {
+          aliasOf("leakcanary.internal.activity.LeakActivity")
+          enabledResource = disabledLauncherIcon
+          launcher()
+        }
+        activity("com.library.OtherLauncherActivity") { launcher() }
+      }
+
+    val alias = app.getMatchingComponents(ComponentType.ACTIVITY).single { it.qualifiedName.endsWith("LeakLauncherActivity") }
+    assertFalse(alias.isEnabled)
+
+    val res = app.resolveDefaultComponent(ComponentType.ACTIVITY)
+    assertTrue(res is ComponentResolution.Resolved)
+    val resolved = res as ComponentResolution.Resolved
+    assertEquals("com.library.OtherLauncherActivity", resolved.component.qualifiedName)
+    assertEquals("single launcher activity", resolved.reason)
+  }
+
+  @Test
+  fun testUnresolvableEnabledResourceReferenceStaysEnabled() {
+    val app =
+      manifest("com.example.app") {
+        activity(".MainActivity") {
+          enabledResource = 0x7f050099
+          launcher()
+        }
+      }
+
+    val main = app.getMatchingComponents(ComponentType.ACTIVITY).single()
+    assertTrue(main.isEnabled)
   }
 
   @Test

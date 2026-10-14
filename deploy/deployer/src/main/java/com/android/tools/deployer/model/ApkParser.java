@@ -18,6 +18,8 @@ package com.android.tools.deployer.model;
 import com.android.SdkConstants;
 import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.tools.manifest.parser.ManifestInfo;
+import com.android.tools.manifest.parser.ResourceTableResolver;
+import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.tools.tracer.Trace;
 import com.android.utils.FileUtils;
 
@@ -93,6 +95,37 @@ public class ApkParser {
             manifestInfo = ManifestInfo.parseBinaryFromStream(stream);
         }
         return manifestInfo;
+    }
+
+    /**
+     * Resolves resource-valued attributes, e.g. {@code android:enabled="@bool/foo"}, on {@code
+     * components} of the APK at {@code apkPath} against its {@code resources.arsc}, so that they
+     * report the value the device will use.
+     */
+    public static void resolveResourceReferences(
+            String apkPath, List<? extends ManifestAppComponentInfo> components) {
+        try (ZipFile zipFile = new ZipFile(apkPath)) {
+            ZipEntry resourcesEntry = zipFile.getEntry("resources.arsc");
+            ResourceTableResolver resolver = null;
+            if (resourcesEntry != null) {
+                try (InputStream resources = zipFile.getInputStream(resourcesEntry)) {
+                    resolver =
+                            ResourceTableResolver.fromStream(resources, resourcesEntry.getSize());
+                }
+            }
+            if (resolver != null) {
+                for (ManifestAppComponentInfo component : components) {
+                    component.resolveReferences(resolver);
+                }
+                return;
+            }
+        } catch (IOException | RuntimeException e) {
+            // Fall through: an unreadable resource table leaves the manifest defaults in place.
+        }
+        // Consume the references anyway, so a missing or broken table is not re-read every time.
+        for (ManifestAppComponentInfo component : components) {
+            component.resolveReferences(resourceId -> null);
+        }
     }
 
     /**

@@ -40,6 +40,12 @@ fun manifest(packageName: String, block: ManifestBuilder.() -> Unit): App {
 /** DSL builder for defining application packages and manifest components for testing. */
 class ManifestBuilder(val packageName: String) {
   private val activityBuilders = mutableListOf<ActivityBuilder>()
+  private val boolResources = mutableMapOf<Int, Boolean>()
+
+  /** Defines a boolean resource that manifest attributes can refer to, as if it were in `resources.arsc`. */
+  fun bool(resourceId: Int, value: Boolean) {
+    boolResources[resourceId] = value
+  }
 
   /**
    * Adds an activity to the manifest.
@@ -73,6 +79,7 @@ class ManifestBuilder(val packageName: String) {
   fun build(): App {
     val manifestBytes = buildBinaryXml()
     val manifestInfo = ManifestInfo.parseBinaryFromStream(ByteArrayInputStream(manifestBytes))
+    manifestInfo.activities().forEach { it.resolveReferences(boolResources::get) }
     val apk = Apk.builder().setPackageName(packageName).setActivities(manifestInfo.activities()).build()
     return App.fromApk(packageName, apk)
   }

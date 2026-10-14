@@ -16,6 +16,8 @@
 package com.android.tools.manifest.parser.components;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.manifest.parser.ResourceResolver;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.xml.AndroidManifest;
 
@@ -39,6 +41,9 @@ public abstract class ManifestAppComponentInfo {
     protected boolean isAlias = false;
 
     protected String targetActivity = null;
+
+    /** Resource {@code android:enabled} refers to, or null if it is a literal or absent. */
+    protected Integer enabledResourceId = null;
 
     /**
      * Parse an activity xml element (see https://developer.android.com/guide/topics/manifest/activity-element).
@@ -64,7 +69,14 @@ public abstract class ManifestAppComponentInfo {
                     targetActivity = value;
                 }
             } else if (AndroidManifest.ATTRIBUTE_ENABLED.equals(attribute)) {
-                enabled = value.isEmpty() || "true".equals(value);
+                Integer resourceId = node.references().get(attribute);
+                if (resourceId != null) {
+                    // e.g. "@bool/foo": only the resource table knows, so it stays enabled (the
+                    // platform default) until resolveReferences is given one.
+                    enabledResourceId = resourceId;
+                } else {
+                    enabled = value.isEmpty() || "true".equals(value);
+                }
             } else if (AndroidManifest.ATTRIBUTE_EXPORTED.equals(attribute)) {
                 explicitExported = value.isEmpty() || "true".equals(value);
             } else if (AndroidManifest.ATTRIBUTE_PERMISSION.equals(attribute)) {
@@ -84,6 +96,30 @@ public abstract class ManifestAppComponentInfo {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    /**
+     * Returns the resource {@code android:enabled} refers to (e.g. {@code @bool/foo}) while it is
+     * still unresolved, or null if it is a literal, absent, or {@link #resolveReferences} has run.
+     */
+    @Nullable
+    public Integer getEnabledResourceId() {
+        return enabledResourceId;
+    }
+
+    /**
+     * Resolves attributes whose value is a resource reference. One that cannot be resolved keeps
+     * its default (for {@code android:enabled}, enabled). Either way the reference is consumed, so
+     * a resource table is never consulted twice for the same component.
+     */
+    public void resolveReferences(@NonNull ResourceResolver resolver) {
+        if (enabledResourceId != null) {
+            Boolean resolved = resolver.resolveBoolean(enabledResourceId);
+            if (resolved != null) {
+                enabled = resolved;
+            }
+            enabledResourceId = null;
+        }
     }
 
     public boolean getExported() {

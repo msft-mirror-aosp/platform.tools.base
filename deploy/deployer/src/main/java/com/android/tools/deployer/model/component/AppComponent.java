@@ -19,6 +19,7 @@ package com.android.tools.deployer.model.component;
 import com.android.annotations.NonNull;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommands;
+import com.android.tools.manifest.parser.components.IntentFilter;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
 
@@ -87,6 +88,27 @@ public abstract class AppComponent {
 
     public boolean hasCategory(@NonNull String category) {
         return info.hasCategory(category);
+    }
+
+    /**
+     * Whether a single intent filter declares {@code action} together with all of {@code
+     * categories}, as opposed to {@link #hasAction} and {@link #hasCategory}, which may each be
+     * satisfied by a different filter.
+     */
+    public boolean hasIntentFilter(@NonNull String action, @NonNull String... categories) {
+        for (IntentFilter filter : info.getIntentFilters()) {
+            if (!filter.hasAction(action)) {
+                continue;
+            }
+            boolean hasAll = true;
+            for (String category : categories) {
+                hasAll &= filter.hasCategory(category);
+            }
+            if (hasAll) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @NonNull

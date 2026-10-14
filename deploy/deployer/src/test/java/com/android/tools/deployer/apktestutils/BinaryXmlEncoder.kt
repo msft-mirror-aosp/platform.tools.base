@@ -27,6 +27,9 @@ import java.nio.charset.StandardCharsets
 /** Representation of an XML attribute for binary serialization. */
 data class XmlAttribute(val namespace: String? = null, val name: String, val value: Any?)
 
+/** An attribute value that refers to a resource, such as `@bool/foo`, encoded as a `TYPE_REFERENCE`. */
+data class ResourceReference(val id: Int)
+
 /** Representation of an XML element for binary serialization. */
 data class XmlElement(
   val name: String,
@@ -94,6 +97,13 @@ data class XmlElement(
           startBuf.put(0.toByte())
           startBuf.put(DataType.TYPE_INT_DEC)
           startBuf.putInt(v)
+        }
+        is ResourceReference -> {
+          startBuf.putInt(-1) // compiled references have no raw value
+          startBuf.putShort(StructSize.RES_VALUE.toShort())
+          startBuf.put(0.toByte())
+          startBuf.put(DataType.TYPE_REFERENCE)
+          startBuf.putInt(v.id)
         }
         else -> {
           val valStr = v?.toString() ?: ""

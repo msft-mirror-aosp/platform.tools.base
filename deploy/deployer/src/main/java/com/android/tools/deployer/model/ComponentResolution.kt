@@ -29,6 +29,9 @@ sealed interface ComponentResolution {
 }
 
 fun App.resolveDefaultComponent(type: ComponentType = ComponentType.ACTIVITY): ComponentResolution {
+  if (type == ComponentType.ACTIVITY) {
+    resolveLauncherEnabledReferences()
+  }
   val allComponents = getMatchingComponents(type)
   if (allComponents.isEmpty()) {
     return ComponentResolution.NotFound
@@ -39,18 +42,65 @@ fun App.resolveDefaultComponent(type: ComponentType = ComponentType.ACTIVITY): C
     return ComponentResolution.NoValidCandidates(allComponents)
   }
 
-  val launcherActivities = allComponents.filter {
-    it.isEnabled && it.isExported && it.hasAction("android.intent.action.MAIN") && it.hasCategory("android.intent.category.LAUNCHER")
-  }
+  // MAIN and LAUNCHER have to be in the same intent filter, as for the platform; one of each in different filters launches nothing.
+  val launcherActivities = validCandidates.filter { it.hasIntentFilter(ACTION_MAIN, CATEGORY_LAUNCHER) }
 
   if (launcherActivities.size == 1) {
     return ComponentResolution.Resolved(launcherActivities[0], "single launcher activity")
   }
-  if (launcherActivities.isEmpty() && validCandidates.size == 1) {
+  if (launcherActivities.size > 1) {
+    return preferredLauncherActivity(launcherActivities)
+  }
+  if (validCandidates.size == 1) {
     return ComponentResolution.Resolved(validCandidates[0], "single exported activity fallback")
   }
 
   return ComponentResolution.Ambiguous(allComponents)
+}
+
+/**
+ * Picks one of several enabled, exported MAIN/LAUNCHER activities the way the platform orders them when the app is opened from its icon
+ * (`PackageManager.getLaunchIntentForPackage`): one whose launcher filter also has CATEGORY_DEFAULT, then manifest order. Activities and
+ * aliases are treated alike, and with AGP's manifest merger (which puts the app's own components before its libraries'), manifest order
+ * already favors the app over e.g. LeakCanary's launcher alias. Android Studio's DefaultActivityLocator makes the same choice.
+ *
+ * Intent filter `android:priority`, which the platform sorts on first, is not parsed; launcher filters practically never set it.
+ */
+private fun preferredLauncherActivity(launchers: List<AppComponent>): ComponentResolution.Resolved {
+  val withDefault = launchers.firstOrNull { it.hasIntentFilter(ACTION_MAIN, CATEGORY_LAUNCHER, CATEGORY_DEFAULT) }
+  if (withDefault != null) {
+    return ComponentResolution.Resolved(withDefault, "launcher activity with CATEGORY_DEFAULT")
+  }
+  return ComponentResolution.Resolved(launchers[0], "first launcher activity in manifest order")
+}
+
+private const val ACTION_MAIN = "android.intent.action.MAIN"
+private const val CATEGORY_LAUNCHER = "android.intent.category.LAUNCHER"
+private const val CATEGORY_DEFAULT = "android.intent.category.DEFAULT"
+
+/**
+ * Resolves resource-valued `android:enabled` (e.g. LeakCanary's `@bool/leak_canary_add_launcher_icon`) on the activities that could be
+ * picked as the default, reading `resources.arsc` only for the APKs that have one.
+ *
+ * This is the only place `isEnabled` of such a component matters, so it is done here rather than in [ApkParser]: [App.fromPaths] runs on
+ * every deploy, and would otherwise read the resource table for any app using LeakCanary. Feature splits usually refer to the base APK's
+ * resources, which their own table does not have; those stay enabled, as before.
+ *
+ * TODO: Refactor to an immutable OO design (e.g. a `ResourceResolvedApk` wrapper or `Apk.withResolvedResources()` that produces new
+ *   `ManifestActivityInfo` instances) so that `ManifestAppComponentInfo` and `Apk` are not mutated in place.
+ */
+private fun App.resolveLauncherEnabledReferences() {
+  for (apk in getApks()) {
+    val pending =
+      apk.activities.filter { info ->
+        info.enabledResourceId != null &&
+          info.isExported &&
+          info.intentFilters.any { it.hasAction(ACTION_MAIN) && it.hasCategory(CATEGORY_LAUNCHER) }
+      }
+    if (pending.isNotEmpty() && !apk.path.isNullOrEmpty()) {
+      ApkParser.resolveResourceReferences(apk.path, pending)
+    }
+  }
 }
 
 fun App.resolveSpecificComponent(type: ComponentType = ComponentType.ACTIVITY, activityName: String): ComponentResolution {
