@@ -34,7 +34,9 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -791,5 +793,186 @@ public final class SessionHandlerTest {
         assertThat(response.getCommandId()).isEqualTo(1);
         assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
         assertThat(response.getErrorMessage()).contains("Unsupported library ID: invalid:lib");
+    }
+
+    @Test
+    public void testHandle_inspectorThrowsIOException_repliesErrorAndKeepsSession()
+            throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        for (int commandId = 1; commandId <= 2; commandId++) {
+            UiInspectorProtocol.Command command =
+                    UiInspectorProtocol.Command.newBuilder()
+                            .setCommandId(commandId)
+                            .setInspectorMessage(
+                                    UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                            .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                                            .setPayload(
+                                                    com.android.tools.idea.protobuf.ByteString
+                                                            .copyFrom(new byte[] {1}))
+                                            .build())
+                            .build();
+            FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        }
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+        Inspector throwingInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        // Kotlin code can throw a checked exception without declaring it.
+                        throwUnchecked(new IOException("Inspector I/O failure"));
+                    }
+
+                    @Override
+                    public void onDispose() {}
+                };
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        HandlerThreadExecutor primaryExecutor =
+                new HandlerThreadExecutor("test_thread_io_exception", t -> {});
+        bridges.put(
+                ProtocolConstants.VIEW_INSPECTOR_ID,
+                InspectorBridge.createForTesting(
+                        ProtocolConstants.VIEW_INSPECTOR_ID,
+                        throwingInspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor,
+                        hookOwnerId -> {}));
+
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        new CountDownLatch(1),
+                        bridges);
+
+        sessionHandler.processCommands();
+        primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+
+        ByteArrayInputStream responseInputStream =
+                new ByteArrayInputStream(outputStream.toByteArray());
+        UiInspectorProtocol.Response response1 =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(responseInputStream))
+                        .getResponse();
+        // The inspector's IOException is replied as an error, not mistaken for a lost connection.
+        assertThat(response1.getCommandId()).isEqualTo(1);
+        assertThat(response1.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response1.getErrorMessage())
+                .contains("java.io.IOException: Inspector I/O failure");
+        // The session goes on and handles the next command, which fails because the inspector
+        // that threw was disposed.
+        UiInspectorProtocol.Response response2 =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(responseInputStream))
+                        .getResponse();
+        assertThat(response2.getCommandId()).isEqualTo(2);
+        assertThat(response2.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response2.getErrorMessage())
+                .contains("Inspector " + ProtocolConstants.VIEW_INSPECTOR_ID + " crashed");
+    }
+
+    /** Throws {@code t} even if it is a checked exception, as Kotlin code can. */
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void throwUnchecked(Throwable t) throws T {
+        throw (T) t;
+    }
+
+    @Test
+    public void testHandle_failureToWriteResponse_endsSession() throws Exception {
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        for (int commandId = 1; commandId <= 2; commandId++) {
+            UiInspectorProtocol.Command command =
+                    UiInspectorProtocol.Command.newBuilder()
+                            .setCommandId(commandId)
+                            .setInspectorMessage(
+                                    UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                            .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                                            .setPayload(
+                                                    com.android.tools.idea.protobuf.ByteString
+                                                            .copyFrom(new byte[] {1}))
+                                            .build())
+                            .build();
+            FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        }
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+        OutputStream brokenOutputStream = createBrokenOutputStream();
+
+        List<byte[]> receivedCommands = new ArrayList<>();
+        Inspector inspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        receivedCommands.add(data);
+                        callback.reply(data);
+                    }
+
+                    @Override
+                    public void onDispose() {}
+                };
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        HandlerThreadExecutor primaryExecutor =
+                new HandlerThreadExecutor("test_thread_broken_output", t -> {});
+        bridges.put(
+                ProtocolConstants.VIEW_INSPECTOR_ID,
+                InspectorBridge.createForTesting(
+                        ProtocolConstants.VIEW_INSPECTOR_ID,
+                        inspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor,
+                        hookOwnerId -> {}));
+        List<Throwable> crashes = new ArrayList<>();
+
+        new SessionHandler(
+                        inputStream,
+                        brokenOutputStream,
+                        crashes::add,
+                        new CountDownLatch(1),
+                        bridges)
+                .processCommands();
+        primaryExecutor.quitSafely();
+
+        // The connection is lost: the session ends without running the next command, and it is
+        // not reported as a crash. The inspector is kept for the next session.
+        assertThat(receivedCommands).hasSize(1);
+        assertThat(crashes).isEmpty();
+        assertThat(bridges.get(ProtocolConstants.VIEW_INSPECTOR_ID).isDisposed()).isFalse();
+    }
+
+    @Test
+    public void testHandle_shutdownWithFailureToWriteResponse_doesNotShutDown() throws Exception {
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setShutdown(UiInspectorProtocol.ShutdownCommand.getDefaultInstance())
+                        .build();
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        List<Throwable> crashes = new ArrayList<>();
+
+        new SessionHandler(
+                        new ByteArrayInputStream(inputStreamData.toByteArray()),
+                        createBrokenOutputStream(),
+                        crashes::add,
+                        shutdownLatch,
+                        new HashMap<>())
+                .processCommands();
+
+        assertThat(shutdownLatch.getCount()).isEqualTo(1);
+        assertThat(crashes).isEmpty();
+    }
+
+    /** Returns an output stream that fails every write, like the socket of a lost connection. */
+    private static OutputStream createBrokenOutputStream() {
+        return new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                throw new IOException("Broken pipe");
+            }
+        };
     }
 }

@@ -142,8 +142,7 @@ public final class ViewInspector extends Inspector {
         if (t instanceof Error) {
             throw (Error) t;
         }
-        // Checked exceptions are wrapped: a Runnable cannot throw them, and the agent treats an
-        // IOException from an inspector as a lost connection to the host.
+        // Checked exceptions are wrapped, as a Runnable cannot throw them.
         throw new RuntimeException(t);
     }
 

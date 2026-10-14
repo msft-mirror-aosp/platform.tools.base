@@ -113,38 +113,49 @@ public final class SessionHandler {
     /**
      * Handles a single command and returns whether to terminate the session. Every command must
      * receive a response.
+     *
+     * <p>Running the command, including serializing its response, is kept apart from writing the
+     * response, so that only a failure to write it, which means the connection to the host is lost,
+     * ends the session. A failure of the command, whatever its type, is replied as an error.
      */
     private boolean handleCommand(UiInspectorProtocol.Command command, int commandId)
             throws IOException {
+        byte[] message;
         try {
+            UiInspectorProtocol.Response.Builder response;
             switch (command.getSpecializedCase()) {
                 case INSPECTOR_MESSAGE:
-                    handleInspectorMessage(command.getInspectorMessage(), commandId);
-                    return false;
+                    response = handleInspectorMessage(command.getInspectorMessage());
+                    break;
                 case CREATE_INSPECTOR:
-                    handleCreateInspector(command.getCreateInspector(), commandId);
-                    return false;
+                    response = handleCreateInspector(command.getCreateInspector());
+                    break;
                 case SHUTDOWN:
-                    handleShutdown(commandId);
-                    return true;
+                    response = handleShutdown();
+                    break;
                 case GET_VERSION:
-                    handleGetVersion(command.getGetVersion(), commandId);
-                    return false;
+                    response = handleGetVersion(command.getGetVersion());
+                    break;
                 default:
                     throw new IllegalStateException(
                             "Unhandled top-level command: " + command.getSpecializedCase());
             }
-        } catch (IOException e) {
-            throw e;
+            response.setStatus(UiInspectorProtocol.Response.Status.SUCCESS);
+            message = toAgentMessage(commandId, response);
         } catch (Throwable t) {
             Log.e(TAG, "Error handling command", t);
-            replyError(commandId, "Error handling command: " + t);
-            return false;
+            message = toAgentMessage(commandId, errorResponse("Error handling command: " + t));
         }
+        FramingProtocol.writeMessage(outputStream, message);
+        if (command.getSpecializedCase() == UiInspectorProtocol.Command.SpecializedCase.SHUTDOWN) {
+            shutdownLatch.countDown();
+            return true;
+        }
+        return false;
     }
 
-    private void handleInspectorMessage(
-            UiInspectorProtocol.InspectorMessageCommand message, int commandId) throws Exception {
+    private UiInspectorProtocol.Response.Builder handleInspectorMessage(
+            UiInspectorProtocol.InspectorMessageCommand message) throws Exception {
         InspectorBridge inspectorBridge = inspectorBridges.get(message.getInspectorId());
         if (inspectorBridge == null) {
             throw new IllegalStateException("Unknown inspector ID: " + message.getInspectorId());
@@ -155,18 +166,16 @@ public final class SessionHandler {
         }
         byte[] responseBytes = inspectorBridge.sendCommand(message.getPayload().toByteArray());
 
-        UiInspectorProtocol.Response.Builder responseBuilder =
-                UiInspectorProtocol.Response.newBuilder();
-        responseBuilder.setInspectorMessage(
-                UiInspectorProtocol.InspectorMessageResponse.newBuilder()
-                        .setInspectorId(message.getInspectorId())
-                        .setPayload(ByteString.copyFrom(responseBytes))
-                        .build());
-        reply(commandId, responseBuilder);
+        return UiInspectorProtocol.Response.newBuilder()
+                .setInspectorMessage(
+                        UiInspectorProtocol.InspectorMessageResponse.newBuilder()
+                                .setInspectorId(message.getInspectorId())
+                                .setPayload(ByteString.copyFrom(responseBytes))
+                                .build());
     }
 
-    private void handleCreateInspector(
-            UiInspectorProtocol.CreateInspectorCommand command, int commandId) throws Exception {
+    private UiInspectorProtocol.Response.Builder handleCreateInspector(
+            UiInspectorProtocol.CreateInspectorCommand command) throws Exception {
         String inspectorId = command.getInspectorId();
         String dexPath = command.getDexPath();
 
@@ -196,23 +205,22 @@ public final class SessionHandler {
             inspectorBridges.put(inspectorId, newBridge);
         }
 
-        UiInspectorProtocol.Response.Builder responseBuilder =
-                UiInspectorProtocol.Response.newBuilder();
-        responseBuilder.setCreateInspector(
-                UiInspectorProtocol.CreateInspectorResponse.newBuilder().build());
-        reply(commandId, responseBuilder);
+        return UiInspectorProtocol.Response.newBuilder()
+                .setCreateInspector(
+                        UiInspectorProtocol.CreateInspectorResponse.newBuilder().build());
     }
 
-    private void handleShutdown(int commandId) throws IOException {
-        UiInspectorProtocol.Response.Builder responseBuilder =
-                UiInspectorProtocol.Response.newBuilder();
-        responseBuilder.setShutdown(UiInspectorProtocol.ShutdownResponse.newBuilder().build());
-        reply(commandId, responseBuilder);
-        shutdownLatch.countDown();
+    /**
+     * Returns the response to a shutdown command. The server shuts down once the response is
+     * written, in {@link #handleCommand}.
+     */
+    private UiInspectorProtocol.Response.Builder handleShutdown() {
+        return UiInspectorProtocol.Response.newBuilder()
+                .setShutdown(UiInspectorProtocol.ShutdownResponse.newBuilder().build());
     }
 
-    private void handleGetVersion(UiInspectorProtocol.GetVersionCommand command, int commandId)
-            throws IOException {
+    private UiInspectorProtocol.Response.Builder handleGetVersion(
+            UiInspectorProtocol.GetVersionCommand command) {
         Map<String, String> versions = new HashMap<>();
         for (String libraryId : command.getLibraryIdsList()) {
             String version = performVersionDetection(libraryId);
@@ -221,13 +229,11 @@ public final class SessionHandler {
             }
         }
 
-        UiInspectorProtocol.Response.Builder responseBuilder =
-                UiInspectorProtocol.Response.newBuilder();
-        responseBuilder.setGetVersion(
-                UiInspectorProtocol.GetVersionResponse.newBuilder()
-                        .putAllVersions(versions)
-                        .build());
-        reply(commandId, responseBuilder);
+        return UiInspectorProtocol.Response.newBuilder()
+                .setGetVersion(
+                        UiInspectorProtocol.GetVersionResponse.newBuilder()
+                                .putAllVersions(versions)
+                                .build());
     }
 
     private String performVersionDetection(String libraryId) {
@@ -238,34 +244,19 @@ public final class SessionHandler {
         }
     }
 
-    private void reply(int commandId, UiInspectorProtocol.Response.Builder responseBuilder)
-            throws IOException {
-        writeResponse(
-                commandId, UiInspectorProtocol.Response.Status.SUCCESS, null, responseBuilder);
+    /** Returns an error response with the given message. */
+    private static UiInspectorProtocol.Response.Builder errorResponse(String errorMessage) {
+        return UiInspectorProtocol.Response.newBuilder()
+                .setStatus(UiInspectorProtocol.Response.Status.ERROR)
+                .setErrorMessage(errorMessage);
     }
 
-    private void replyError(int commandId, String errorMessage) throws IOException {
-        writeResponse(
-                commandId,
-                UiInspectorProtocol.Response.Status.ERROR,
-                errorMessage,
-                UiInspectorProtocol.Response.newBuilder());
-    }
-
-    private void writeResponse(
-            int commandId,
-            UiInspectorProtocol.Response.Status status,
-            String errorMessage,
-            UiInspectorProtocol.Response.Builder responseBuilder)
-            throws IOException {
-        responseBuilder.setCommandId(commandId).setStatus(status);
-        if (errorMessage != null) {
-            responseBuilder.setErrorMessage(errorMessage);
-        }
-        UiInspectorProtocol.AgentMessage agentMessage =
-                UiInspectorProtocol.AgentMessage.newBuilder()
-                        .setResponse(responseBuilder.build())
-                        .build();
-        FramingProtocol.writeMessage(outputStream, agentMessage.toByteArray());
+    /** Serializes the response to a command into the message sent to the host. */
+    private static byte[] toAgentMessage(
+            int commandId, UiInspectorProtocol.Response.Builder response) {
+        return UiInspectorProtocol.AgentMessage.newBuilder()
+                .setResponse(response.setCommandId(commandId).build())
+                .build()
+                .toByteArray();
     }
 }
