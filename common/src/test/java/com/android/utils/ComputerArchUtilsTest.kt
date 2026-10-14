@@ -158,6 +158,8 @@ class ComputerArchUtilsTest {
           object : Environment() {
             // In this case, PROCESSOR_ARCHITEW6432 will not be set.
             override fun getVariable(name: EnvironmentVariable): String? = null
+
+            override val isWindowsArm64: Boolean = false
           }
         assertEquals(CpuArchitecture.X86_64, osArchitecture)
 
@@ -169,6 +171,27 @@ class ComputerArchUtilsTest {
             override fun getVariable(name: EnvironmentVariable): String? = if (name.key == "PROCESSOR_ARCHITEW6432") "AMD64" else null
           }
         assertEquals(CpuArchitecture.X86_64, osArchitecture)
+
+        // Case 4: arm jvm on arm Windows
+        systemPropertyOverrides.setProperty("os.arch", "aarch64")
+        Environment.instance =
+          object : Environment() {
+            override fun getVariable(name: EnvironmentVariable): String? = null
+
+            override val isWindowsArm64: Boolean
+              get() = error("isWindowsArm64 should not be called in ARM jvm environment.")
+          }
+        assertEquals(CpuArchitecture.ARM, osArchitecture)
+
+        // Case 5: x86_64 jvm emulated on arm Windows
+        systemPropertyOverrides.setProperty("os.arch", "x86_64")
+        Environment.instance =
+          object : Environment() {
+            override fun getVariable(name: EnvironmentVariable): String? = null
+
+            override val isWindowsArm64: Boolean = true
+          }
+        assertEquals(CpuArchitecture.X86_ON_ARM, osArchitecture)
       }
     } finally {
       Environment.instance = Environment.SYSTEM

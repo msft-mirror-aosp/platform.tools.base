@@ -18,14 +18,22 @@ package com.android.utils
 
 import com.sun.jna.Library
 import com.sun.jna.Memory
+import com.sun.jna.Native
 import com.sun.jna.Pointer
+import com.sun.jna.platform.win32.Kernel32
+import com.sun.jna.platform.win32.WinDef
+import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.ptr.IntByReference
+import com.sun.jna.win32.StdCallLibrary
+import com.sun.jna.win32.W32APIOptions
 import java.util.Locale
 
 private const val OS_MAC_PREFIX = "mac"
 private const val OS_WIN_PREFIX = "win"
 private const val OS_LINUX_PREFIX = "linux"
 private const val TRANSLATED = 1
+// https://learn.microsoft.com/en-us/windows/win32/sysinfo/image-file-machine-constants
+private const val IMAGE_FILE_MACHINE_ARM64 = 0xAA64
 
 enum class CpuArchitecture {
   X86,
@@ -55,13 +63,14 @@ abstract class Environment {
   open val isRosetta: Boolean
     get() = computeIsRosetta()
 
+  /** Whether or not x86_64 is being emulated on Windows ARM64. See [computeIsWindowsArm64] */
+  open val isWindowsArm64: Boolean
+    get() = computeIsWindowsArm64()
+
   companion object {
     val SYSTEM: Environment =
       object : Environment() {
         override fun getVariable(name: EnvironmentVariable) = System.getenv(name.key)
-
-        override val isRosetta
-          get() = computeIsRosetta()
       }
 
     var instance = SYSTEM
@@ -118,11 +127,17 @@ val osArchitecture: CpuArchitecture
       }
     }
 
-    // An x86_64 jvm running on an M1 chip will be tranlated to ARM using Rosetta. In order
-    // to determine if running Rosetta we need to use jna (see [computeIsRosetta]).
+    // An x86_64 jvm running on an ARM chip will be translated to ARM using Rosetta on Mac or
+    // WOW64 on Windows. In order to determine if running translated we need to use jna
+    // (see [computeIsRosetta] and [computeIsWindowsArm64]).
     // Note: we check architecture first, as jna fails in an arm jvm.
-    if (jvmArchitecture == CpuArchitecture.X86_64 && os.startsWith(OS_MAC_PREFIX) && Environment.instance.isRosetta) {
-      return CpuArchitecture.X86_ON_ARM
+    if (jvmArchitecture == CpuArchitecture.X86_64) {
+      if (
+        (os.startsWith(OS_MAC_PREFIX) && Environment.instance.isRosetta) ||
+          (os.startsWith(OS_WIN_PREFIX) && Environment.instance.isWindowsArm64)
+      ) {
+        return CpuArchitecture.X86_ON_ARM
+      }
     }
 
     return jvmArchitecture
@@ -187,6 +202,24 @@ private fun computeIsRosetta(): Boolean {
     }
 
   return errorCode == 0 && memory.getInt(0) == TRANSLATED
+}
+
+private fun computeIsWindowsArm64(): Boolean {
+  try {
+    // https://learn.microsoft.com/en-us/windows/arm/apps-on-arm-x86-emulation#detecting-emulation
+    val pidHandle = Kernel32.INSTANCE.GetCurrentProcess()
+    val lib = Native.load("kernel32", NativeIsWow64::class.java, W32APIOptions.DEFAULT_OPTIONS)
+    val processMachine = WinDef.USHORTByReference()
+    val nativeMachine = WinDef.USHORTByReference()
+    val result = lib.IsWow64Process2(pidHandle, processMachine, nativeMachine)
+    return result && (nativeMachine.value.toInt() == IMAGE_FILE_MACHINE_ARM64)
+  } catch (_: Throwable) {
+    return false
+  }
+}
+
+private interface NativeIsWow64 : StdCallLibrary {
+  fun IsWow64Process2(hProcess: WinNT.HANDLE, processMachine: WinDef.USHORTByReference, nativeMachine: WinDef.USHORTByReference): Boolean
 }
 
 /** Extracts the CpuArchitecture based on the provided architecture string. */
