@@ -23,37 +23,9 @@ importers:
 
   ../../vendor/google/android-sidecars/compose-preview/web:
     dependencies:
-      react:
-        specifier: 19.2.7
-        version: 19.2.7
-      react-dom:
-        specifier: 19.2.7
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^18.16.0
-        version: 18.19.130
-      '@types/react':
-        specifier: 19.2.17
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: 19.2.3
-        version: 19.2.3(@types/react@19.2.17)
-      esbuild:
-        specifier: 0.28.1
-        version: 0.28.1
-      happy-dom:
-        specifier: 18.0.1
-        version: 18.0.1
-      typescript:
-        specifier: 5.0.4
-        version: 5.0.4
-      vitest:
-        specifier: 3.2.4
-        version: 3.2.4(@types/node@18.19.130)(happy-dom@18.0.1)(jiti@2.7.0)(lightningcss@1.32.0)
-
-  ../../vendor/google/android-sidecars/device-hub/web:
-    dependencies:
+      '@android-sidecars/ui':
+        specifier: workspace:*
+        version: link:../../ui
       react:
         specifier: 19.2.7
         version: 19.2.7
@@ -85,6 +57,92 @@ importers:
       tailwindcss:
         specifier: 4.2.4
         version: 4.2.4
+      typescript:
+        specifier: 5.0.4
+        version: 5.0.4
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@18.19.130)(happy-dom@18.0.1)(jiti@2.7.0)(lightningcss@1.32.0)
+
+  ../../vendor/google/android-sidecars/device-hub/web:
+    dependencies:
+      '@android-sidecars/ui':
+        specifier: workspace:*
+        version: link:../../ui
+      react:
+        specifier: 19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: 19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@tailwindcss/cli':
+        specifier: 4.2.4
+        version: 4.2.4
+      '@testing-library/react':
+        specifier: 16.3.0
+        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/node':
+        specifier: ^18.16.0
+        version: 18.19.130
+      '@types/react':
+        specifier: 19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      esbuild:
+        specifier: 0.28.1
+        version: 0.28.1
+      happy-dom:
+        specifier: 18.0.1
+        version: 18.0.1
+      tailwindcss:
+        specifier: 4.2.4
+        version: 4.2.4
+      typescript:
+        specifier: 5.0.4
+        version: 5.0.4
+      vitest:
+        specifier: 3.2.4
+        version: 3.2.4(@types/node@18.19.130)(happy-dom@18.0.1)(jiti@2.7.0)(lightningcss@1.32.0)
+
+  ../../vendor/google/android-sidecars/ui:
+    dependencies:
+      '@base-ui/react':
+        specifier: 1.8.0
+        version: 1.8.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/react':
+        specifier: 19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      react:
+        specifier: 19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: 19.2.7
+        version: 19.2.7(react@19.2.7)
+      tailwindcss:
+        specifier: 4.2.4
+        version: 4.2.4
+    devDependencies:
+      '@tailwindcss/cli':
+        specifier: 4.2.4
+        version: 4.2.4
+      '@testing-library/react':
+        specifier: 16.3.0
+        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/node':
+        specifier: ^18.16.0
+        version: 18.19.130
+      esbuild:
+        specifier: 0.28.1
+        version: 0.28.1
+      happy-dom:
+        specifier: 18.0.1
+        version: 18.0.1
       typescript:
         specifier: 5.0.4
         version: 5.0.4
