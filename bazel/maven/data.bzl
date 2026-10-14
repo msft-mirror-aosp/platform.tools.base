@@ -33,6 +33,7 @@ _CLASS_JARS = [
     "androidx.activity:activity-compose:1.9.3",
     "androidx.activity:activity-ktx:1.10.1",
     "androidx.activity:activity-ktx:1.13.0",
+    "androidx.activity:activity-ktx:1.4.0",
     "androidx.activity:activity-ktx:1.6.0",  # Still needed from navigation-fragment-ktx:2.5.3
     "androidx.activity:activity-ktx:1.7.0",
     "androidx.activity:activity-ktx:1.8.0",
@@ -92,9 +93,11 @@ _CLASS_JARS = [
     "androidx.compose.compiler:compiler:1.5.11",
     "androidx.compose:compose-bom:pom:2022.10.00",
     "androidx.compose:compose-bom:pom:2023.01.00",  # Dependency of architecture-samples
+    "androidx.compose:compose-bom:pom:2023.03.00",
     "androidx.compose:compose-bom:pom:2023.06.00",
     "androidx.compose:compose-bom:pom:2023.08.00",
     "androidx.compose:compose-bom:pom:2024.09.00",
+    "androidx.compose:compose-bom:pom:2025.02.00",
     "androidx.compose:compose-bom:pom:2025.12.00",
     "androidx.compose:compose-bom:pom:2026.02.01",
     "androidx.compose:compose-bom:pom:2026.03.01",
@@ -128,6 +131,8 @@ _CLASS_JARS = [
     "androidx.compose.material:material:1.5.0-alpha04",
     "androidx.compose.material:material:1.6.0",
     "androidx.compose.material:material:1.7.0",
+    "androidx.compose.material:material:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.material:material:1.7.8",  # Compose BOM 2024.09.00
     "androidx.compose.material:material:1.8.0-alpha06",
     "androidx.compose.material:material-desktop:1.6.0",
     "androidx.compose.material:material-desktop:1.7.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
@@ -152,6 +157,7 @@ _CLASS_JARS = [
     "androidx.compose.material3.adaptive:adaptive-layout:1.2.0",
     "androidx.compose.material3.adaptive:adaptive-navigation:1.2.0",
     "androidx.compose.material3:material3:1.0.0",
+    "androidx.compose.material3:material3:1.1.1",
     "androidx.compose.material3:material3:1.3.0",  # Compose BOM 2024.09.00
     "androidx.compose.material3:material3:1.4.0",  # Compose BOM 2025.12.00
     "androidx.compose.material3:material3:jar:1.4.0",
@@ -242,6 +248,7 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui-text:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.ui:ui-text:jar:1.9.5",
     "androidx.compose.ui:ui-text-google-fonts:1.12.0-alpha03",
+    "androidx.compose.ui:ui-text-google-fonts:1.7.0",
     "androidx.compose.ui:ui-tooling:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling:1.10.4",
     "androidx.compose.ui:ui-tooling:1.10.6",
@@ -299,8 +306,10 @@ _CLASS_JARS = [
     "androidx.core:core-ktx:1.0.2",
     "androidx.core:core-ktx:1.10.0",
     "androidx.core:core-ktx:1.10.1",
+    "androidx.core:core-ktx:1.11.0-alpha04",
     "androidx.core:core-ktx:1.11.0-beta01",  # Necessary for Compose for TV.
     "androidx.core:core-ktx:1.12.0",
+    "androidx.core:core-ktx:1.12.0-alpha05",
     "androidx.core:core-ktx:1.13.0",
     "androidx.core:core-ktx:1.13.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.core:core-ktx:1.15.0",
@@ -313,12 +322,20 @@ _CLASS_JARS = [
     "androidx.core:core-ktx:1.6.0",
     "androidx.core:core-ktx:1.8.0",
     "androidx.core:core-ktx:1.9.0",
+    "androidx.core:core-splashscreen:1.0.1",
     "androidx.core:core-splashscreen:1.2.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.customview:customview-poolingcontainer:1.0.0-beta01",
+    "androidx.databinding:databinding-adapters:8.5.0",
     "androidx.databinding:databinding-adapters:9.0.0",
     "androidx.databinding:databinding-adapters:9.1.0",
     "androidx.databinding:databinding-common:8.5.0",
+    "androidx.databinding:databinding-compiler:8.5.0",
     "androidx.databinding:databinding-compiler:8.7.0",
+    "androidx.databinding:databinding-ktx:8.5.0",
+    "androidx.databinding:databinding-runtime:8.5.0",
+    "androidx.databinding:viewbinding:7.2.0",
     "androidx.databinding:viewbinding:7.4.1",
+    "androidx.databinding:viewbinding:8.0.0-beta04",
     "androidx.databinding:viewbinding:9.0.0",
     "androidx.databinding:viewbinding:9.1.0",
     "androidx.datastore:datastore-core-android:1.1.0-alpha04",
@@ -332,6 +349,7 @@ _CLASS_JARS = [
     "androidx.documentfile:documentfile:1.0.1",
     "androidx.emoji2:emoji2-views-helper:1.3.0",
     "androidx.emoji2:emoji2-views-helper:1.4.0",
+    "androidx.emoji2:emoji2-views-helper:1.4.0-beta03",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.emoji2:emoji2-views-helper:1.4.0-beta04",  # Necessary for Compose for TV.
     "androidx.fragment:fragment:1.3.0",
     "androidx.fragment:fragment:1.3.0-rc01",
@@ -368,6 +386,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-livedata-core-ktx:2.6.2",
     "androidx.lifecycle:lifecycle-livedata-ktx:2.2.0",
     "androidx.lifecycle:lifecycle-livedata-ktx:2.3.1",
+    "androidx.lifecycle:lifecycle-livedata-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-livedata-ktx:2.4.1",
     "androidx.lifecycle:lifecycle-livedata-ktx:2.6.1",
     "androidx.lifecycle:lifecycle-livedata-ktx:2.6.2",
@@ -405,11 +424,13 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.7",  # Needed for Privacy Sandbox connected test
     "androidx.lifecycle:lifecycle-runtime-ktx:2.10.0",
+    "androidx.lifecycle:lifecycle-runtime-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1",
     "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2",
     "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7",
     "androidx.lifecycle:lifecycle-runtime-ktx:jar:2.10.0",
     "androidx.lifecycle:lifecycle-runtime-testing:2.6.0-alpha03",  # Dependency of architecture-samples
+    "androidx.lifecycle:lifecycle-service:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-service:2.6.1",
     "androidx.lifecycle:lifecycle-service:2.6.2",
     "androidx.lifecycle:lifecycle-service:2.8.7",
@@ -429,6 +450,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-viewmodel-desktop:2.8.7",  # Needed for Privacy Sandbox connected tests
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0",
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1",  # Needed for AndroidTestRunConfigurationTest#testCanRunLibTestsInDebugBuildWithNoAndroidManifest
+    "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1",
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2",
@@ -446,6 +468,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:jar:2.10.0",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate-android:2.10.0",
+    "androidx.media:media:1.5.0",
     "androidx.media:media:1.6.0",
     "androidx.multidex:multidex:2.0.0",
     "androidx.multidex:multidex:2.0.1",
@@ -457,16 +480,21 @@ _CLASS_JARS = [
     "androidx.navigation:navigation-fragment:2.6.0",
     "androidx.navigation:navigation-fragment-ktx:2.3.5",
     "androidx.navigation:navigation-fragment-ktx:2.4.1",
+    "androidx.navigation:navigation-fragment-ktx:2.5.2",
     "androidx.navigation:navigation-fragment-ktx:2.5.3",
     "androidx.navigation:navigation-fragment-ktx:2.6.0",
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.3.1",
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.5.2",
+    "androidx.navigation:navigation-safe-args-gradle-plugin:2.5.3",
+    "androidx.navigation:navigation-safe-args-gradle-plugin:2.6.0",
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.9.8",
     "androidx.navigation:navigation-testing:2.5.3",  # Dependency of architecture-samples
+    "androidx.navigation:navigation-ui:2.5.2",
     "androidx.navigation:navigation-ui:2.5.3",
     "androidx.navigation:navigation-ui:2.6.0",
     "androidx.navigation:navigation-ui-ktx:2.3.5",
     "androidx.navigation:navigation-ui-ktx:2.4.1",
+    "androidx.navigation:navigation-ui-ktx:2.5.2",
     "androidx.navigation:navigation-ui-ktx:2.5.3",
     "androidx.navigation:navigation-ui-ktx:2.6.0",
     "androidx.navigation3:navigation3-runtime:1.0.1",
@@ -488,8 +516,11 @@ _CLASS_JARS = [
     "androidx.privacysandbox.activity:activity-client:1.0.0-alpha02",
     "androidx.privacysandbox.activity:activity-core:1.0.0-alpha02",
     "androidx.privacysandbox.activity:activity-provider:1.0.0-alpha02",
+    "androidx.privacysandbox.library:androidx.privacysandbox.library.gradle.plugin:pom:1.0.0-alpha02",
+    "androidx.privacysandbox.plugins:plugins-privacysandbox-library:1.0.0-alpha02",
     "androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha17",
     "androidx.privacysandbox.sdkruntime:sdkruntime-core:1.0.0-alpha17",
+    "androidx.privacysandbox.sdkruntime:sdkruntime-provider:1.0.0-alpha17",
     "androidx.privacysandbox.tools:tools:1.0.0-alpha06",
     "androidx.privacysandbox.tools:tools:1.0.0-alpha13",
     "androidx.privacysandbox.tools:tools-apicompiler:1.0.0-alpha13",
@@ -501,6 +532,7 @@ _CLASS_JARS = [
     "androidx.privacysandbox.tools:tools-core:1.0.0-alpha13",
     "androidx.privacysandbox.ui:ui-client:1.0.0-alpha16",
     "androidx.privacysandbox.ui:ui-core:1.0.0-alpha16",
+    "androidx.privacysandbox.ui:ui-provider:1.0.0-alpha16",
     "androidx.profileinstaller:profileinstaller:1.3.1",
     "androidx.recyclerview:recyclerview:1.2.1",
     "androidx.recyclerview:recyclerview:1.3.0",
@@ -590,6 +622,7 @@ _CLASS_JARS = [
     "com.adobe.marketing.mobile:core:1.5.1",  # Used by SdkIndexIssuesSyncListenerTest
     "com.agentclientprotocol:acp-jvm:0.30.1",
     "com.android.application:com.android.application.gradle.plugin:pom:7.2.0",
+    "com.android.application:com.android.application.gradle.plugin:pom:7.4.0",  # Dependency of architecture-samples
     "com.android.application:com.android.application.gradle.plugin:pom:7.4.1",
     "com.android.application:com.android.application.gradle.plugin:pom:7.4.2",
     "com.android.application:com.android.application.gradle.plugin:pom:8.0.2",
@@ -672,6 +705,7 @@ _CLASS_JARS = [
     "com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin:pom:9.2.0",
     "com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin:pom:9.4.0",
     "com.android.library:com.android.library.gradle.plugin:pom:7.2.0",
+    "com.android.library:com.android.library.gradle.plugin:pom:7.4.0",  # Dependency of architecture-samples
     "com.android.library:com.android.library.gradle.plugin:pom:7.4.1",
     "com.android.library:com.android.library.gradle.plugin:pom:7.4.2",
     "com.android.library:com.android.library.gradle.plugin:pom:8.0.2",
@@ -858,6 +892,7 @@ _CLASS_JARS = [
     "com.android.tools.lint:lint-gradle:30.2.0",
     "com.android.tools.lint:lint-gradle:30.3.0",
     "com.android.tools.lint:lint-gradle:30.4.1",
+    "com.android.tools.lint:lint-gradle:30.4.2",
     "com.android.tools.lint:lint-gradle:31.0.2",
     "com.android.tools.lint:lint-gradle:31.1.0",
     "com.android.tools.lint:lint-gradle:31.10.1",
@@ -920,6 +955,7 @@ _CLASS_JARS = [
     "com.google.ai.client.generativeai:generativeai:0.9.0",
     "com.google.ai.edge.litertlm:litertlm-jvm:0.10.0",
     "com.google.android:android:4.1.1.4",
+    "com.google.android.gms:play-services-ads:20.6.0",
     "com.google.android.gms:play-services-ads:21.5.0",
     "com.google.android.gms:play-services-ads:9.8.0",
     "com.google.android.gms:play-services-base:15.0.1",
@@ -1107,6 +1143,7 @@ _CLASS_JARS = [
     "io.get-coursier:coursier-util_2.13:2.1.8",
     "io.get-coursier:coursier_2.13:2.1.8",
     "io.get-coursier:interface:1.0.19",
+    "io.github.alexarchambault.windows-ansi:windows-ansi:0.0.5",
     "io.grpc:grpc-inprocess:1.66.0",
     "io.grpc:grpc-kotlin-stub:1.4.1",
     "io.grpc:protoc-gen-grpc-java:exe:linux-x86_64:1.66.0",
@@ -1120,6 +1157,9 @@ _CLASS_JARS = [
     "io.ktor:ktor-client-mock-jvm:3.3.2",
     "io.ktor:ktor-client-okhttp-jvm:2.3.2",
     "io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.2",
+    "io.ktor:ktor-server-content-negotiation-jvm:3.3.2",  # MCP SDK
+    "io.ktor:ktor-server-sse-jvm:3.3.2",  # MCP SDK
+    "io.ktor:ktor-server-websockets-jvm:3.3.2",  # MCP SDK
     "io.opentracing:opentracing-impl:0.13.0",
     "it.krzeminski:snakeyaml-engine-kmp-jvm:3.0.1",
     "jakarta.inject:jakarta.inject-api:2.0.1",
@@ -1146,6 +1186,7 @@ _CLASS_JARS = [
     "org.apache.maven.resolver:maven-resolver-api:1.9.18",
     "org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18",
     "org.apache.maven.resolver:maven-resolver-impl:1.9.18",
+    "org.apache.maven.resolver:maven-resolver-spi:1.9.18",
     "org.apache.maven.resolver:maven-resolver-transport-file:1.9.18",
     "org.apache.maven.resolver:maven-resolver-transport-http:1.9.18",
     "org.apache.maven.resolver:maven-resolver-util:1.9.18",
@@ -1160,6 +1201,7 @@ _CLASS_JARS = [
     "org.codehaus.plexus:plexus-interpolation:1.26",
     "org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:1.0.0",
+    "org.fusesource.jansi:jansi:1.18",
     "org.gradle.experimental.plugin-ecosystem:org.gradle.experimental.plugin-ecosystem.gradle.plugin:pom:0.1.62",  # for declarative testing
     "org.gradle:gradle-core:4.2.1",
     "org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:pom:6.6.4",  # used for Signal, not in its repo.zip as it comes as a requirement of using Gradle 9.6.0
@@ -1205,6 +1247,7 @@ _CLASS_JARS = [
     "org.jetbrains.dokka:dokka-base:2.2.0",
     "org.jetbrains.dokka:javadoc-plugin:2.2.0",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.6.21",
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.10",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.20",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.8.10",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.8.21",
@@ -1225,8 +1268,10 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.20",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.5.0-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.21",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.7.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.8.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.22",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.0",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.10",
