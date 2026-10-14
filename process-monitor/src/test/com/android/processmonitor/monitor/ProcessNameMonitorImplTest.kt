@@ -119,6 +119,7 @@ class ProcessNameMonitorImplTest {
       advanceUntilIdle()
 
       assertThat(perDeviceMonitor?.scope?.isActive).isFalse()
+      assertThat(fakeProcessTrackerFactory.activeTrackers).isEmpty()
     }
   }
 
@@ -150,6 +151,21 @@ class ProcessNameMonitorImplTest {
       job2.cancel()
 
       assertThat(emitted).containsExactly(ProcessRemoved(0), ProcessRemoved(1)).inOrder()
+    }
+  }
+
+  @Test
+  fun close_stopsProcessTrackers(): Unit = runTest {
+    FakeDeviceTracker().use { deviceTracker ->
+      val monitor = processNameMonitor(deviceTracker)
+      deviceTracker.sendDeviceEvents(DeviceOnline("device1"), DeviceOnline("device2"))
+      advanceUntilIdle()
+      assertThat(fakeProcessTrackerFactory.activeTrackers).containsExactly("device1", "device2")
+
+      monitor.close()
+      advanceUntilIdle()
+
+      assertThat(fakeProcessTrackerFactory.activeTrackers).isEmpty()
     }
   }
 

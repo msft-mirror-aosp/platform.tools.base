@@ -16,6 +16,7 @@
 package com.android.processmonitor.monitor
 
 import com.android.adblib.AdbLogger
+import com.android.adblib.utils.createChildScope
 import com.android.adblib.utils.logIOCompletionErrors
 import com.android.processmonitor.common.ProcessEvent.ProcessAdded
 import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
@@ -24,7 +25,6 @@ import com.android.processmonitor.utils.RetainingMap
 import com.google.common.annotations.VisibleForTesting
 import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -37,10 +37,13 @@ internal class PerDeviceMonitor(
   parentScope: CoroutineScope,
   private val logger: AdbLogger,
   maxProcessRetention: Int,
-  val processTracker: ProcessTracker,
+  processTracker: ProcessTracker,
 ) : Closeable {
 
-  @VisibleForTesting val scope: CoroutineScope = CoroutineScope(parentScope.coroutineContext + SupervisorJob())
+  @VisibleForTesting val scope: CoroutineScope = parentScope.createChildScope(isSupervisor = true)
+
+  // Shared so that additional consumers don't start additional trackers. Bound to [scope] so that [close] stops it.
+  val processTracker: ProcessTracker = SharedProcessTracker(scope, processTracker, logger)
 
   private val processes = RetainingMap<Int, ProcessNames>(maxProcessRetention)
 

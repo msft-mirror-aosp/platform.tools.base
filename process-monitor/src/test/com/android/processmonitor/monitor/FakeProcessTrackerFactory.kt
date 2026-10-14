@@ -23,6 +23,10 @@ internal abstract class FakeProcessTrackerFactory<T> : ProcessTrackerFactory<T> 
 
   private val devices = mutableMapOf<String, FakeProcessTracker>()
 
+  /** Serial numbers of the devices whose tracker is currently being collected. */
+  val activeTrackers: Set<String>
+    get() = devices.filterValues { it.isTracking }.keys
+
   override suspend fun createProcessTracker(device: T): ProcessTracker {
     val tracker = FakeProcessTracker()
     devices[getSerialNumber(device)] = tracker
