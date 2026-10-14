@@ -48,6 +48,8 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Provider
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
@@ -105,12 +107,22 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
       val apkForLocalTestClass = classLoader.loadClass("${INTERNAL_ARTIFACT_TYPE}\$APK_FOR_LOCAL_TEST")
       val artifactsImplGet = artifactsImplClass.getDeclaredMethod("get", Artifact.Single::class.java)
       val apkForLocalTestInstance = apkForLocalTestClass.getField("INSTANCE").get(null)
+      val analyticsServiceClass = classLoader.loadClass(ANALYTICS_SERVICE)
+      val buildServicesKtClass = classLoader.loadClass(BUILD_SERVICES_KT)
+      val getBuildServiceMethod =
+        buildServicesKtClass.getMethod(
+          "getBuildService",
+          BuildServiceRegistry::class.java,
+          Class::class.java,
+        )
       ReflectionCache(
         artifactsImplClass,
         analyticsEnabledArtifactsClass,
         analyticsEnabledArtifactsGetDelegateMethod,
         artifactsImplGet,
         apkForLocalTestInstance,
+        analyticsServiceClass,
+        getBuildServiceMethod,
       )
     }
 
@@ -120,6 +132,8 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
       val analyticsEnabledArtifactsGetDelegateMethod: java.lang.reflect.Method,
       val artifactsImplGet: java.lang.reflect.Method,
       val apkForLocalTestInstance: Any,
+      val analyticsServiceClass: Class<*>,
+      val getBuildServiceMethod: java.lang.reflect.Method,
     )
   }
 
@@ -164,12 +178,21 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
           validationEngineOverrideString
         } else SCREENSHOT_TEST_PLUGIN_VERSION
 
+      val sharedServices = project.gradle.sharedServices
       val analyticsServiceProvider =
-        project.gradle.sharedServices.registerIfAbsent(
+        sharedServices.registerIfAbsent(
           getBuildServiceName(AnalyticsService::class.java),
           AnalyticsService::class.java,
         ) { spec ->
           spec.parameters.androidGradlePluginVersion.set(agpVersion.toVersionString())
+          @Suppress("UNCHECKED_CAST")
+          val agpAnalyticsServiceProvider =
+            reflectionCache.getBuildServiceMethod.invoke(
+              null,
+              sharedServices,
+              reflectionCache.analyticsServiceClass,
+            ) as Provider<BuildService<*>>
+          spec.parameters.analyticsService.set(agpAnalyticsServiceProvider)
         }
 
       val sdkDirectory = componentsExtension.sdkComponents.sdkDirectory
@@ -693,6 +716,8 @@ private const val layoutlibResourcesConfigurationName = "_internal-screenshot-te
 private const val ARTIFACT_IMPL = "com.android.build.api.artifact.impl.ArtifactsImpl"
 private const val ANALYTICS_ENABLED_ARTIFACTS = "com.android.build.api.component.analytics.AnalyticsEnabledArtifacts"
 private const val INTERNAL_ARTIFACT_TYPE = "com.android.build.gradle.internal.scope.InternalArtifactType"
+private const val ANALYTICS_SERVICE = "com.android.build.gradle.internal.profile.AnalyticsService"
+private const val BUILD_SERVICES_KT = "com.android.build.gradle.internal.services.BuildServicesKt"
 
 private const val PREVIEW_OUTPUT = "outputs/screenshotTest-results/preview"
 private const val PREVIEW_REPORTS = "reports/screenshotTest/preview"

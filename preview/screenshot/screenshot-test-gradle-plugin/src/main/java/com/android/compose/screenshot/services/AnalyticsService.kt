@@ -25,11 +25,9 @@ import com.google.wireless.android.sdk.stats.TestRun
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import javax.inject.Inject
 import org.gradle.api.provider.Property
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
-import org.gradle.api.services.BuildServiceRegistry
 
 /**
  * A build service to record analytics data for preview screenshot tests.
@@ -42,9 +40,8 @@ abstract class AnalyticsService : BuildService<Params> {
 
   interface Params : BuildServiceParameters {
     val androidGradlePluginVersion: Property<String>
+    val analyticsService: Property<BuildService<*>>
   }
-
-  @get:Inject abstract val buildServiceRegistry: BuildServiceRegistry
 
   companion object {
     private const val ANALYTICS_CLASS_NAME = "com.android.build.gradle.internal.profile.AnalyticsService"
@@ -56,25 +53,23 @@ abstract class AnalyticsService : BuildService<Params> {
   }
 
   private val recordEventFunc: (AndroidStudioEvent.Builder) -> Unit by lazy {
-    for (registration in buildServiceRegistry.registrations) {
-      if (registration.name.startsWith(ANALYTICS_CLASS_NAME)) {
-        val service = registration.service.get()
-        val analyticsServiceClass = service.javaClass.classLoader.loadClass(ANALYTICS_CLASS_NAME)
-        if (analyticsServiceClass.isInstance(service)) {
-          // AndroidStudioEvent needs to be created via reflection because
-          // the protobuf message version loaded in this class loader can be different
-          // between screenshot plugin and other applied Android plugins.
-          val eventClass = service.javaClass.classLoader.loadClass(ANDROID_STUDIO_EVENT_CLASS_NAME)
-          val parseFromMethod = eventClass.getMethod("parseFrom", ByteArray::class.java)
-          val toBuilderMethod = eventClass.getMethod("toBuilder")
-          val eventBuilderClass = service.javaClass.classLoader.loadClass(ANDROID_STUDIO_EVENT_BUILDER_CLASS_NAME)
-          val recordEventMethod = analyticsServiceClass.getMethod("recordEvent", eventBuilderClass)
-          return@lazy { event ->
-            recordEventMethod(
-              service,
-              toBuilderMethod(parseFromMethod(null, event.build().toByteArray())),
-            )
-          }
+    val service = parameters.analyticsService.orNull
+    if (service != null) {
+      val analyticsServiceClass = service.javaClass.classLoader.loadClass(ANALYTICS_CLASS_NAME)
+      if (analyticsServiceClass.isInstance(service)) {
+        // AndroidStudioEvent needs to be created via reflection because
+        // the protobuf message version loaded in this class loader can be different
+        // between screenshot plugin and other applied Android plugins.
+        val eventClass = service.javaClass.classLoader.loadClass(ANDROID_STUDIO_EVENT_CLASS_NAME)
+        val parseFromMethod = eventClass.getMethod("parseFrom", ByteArray::class.java)
+        val toBuilderMethod = eventClass.getMethod("toBuilder")
+        val eventBuilderClass = service.javaClass.classLoader.loadClass(ANDROID_STUDIO_EVENT_BUILDER_CLASS_NAME)
+        val recordEventMethod = analyticsServiceClass.getMethod("recordEvent", eventBuilderClass)
+        return@lazy { event ->
+          recordEventMethod(
+            service,
+            toBuilderMethod(parseFromMethod(null, event.build().toByteArray())),
+          )
         }
       }
     }
@@ -82,31 +77,29 @@ abstract class AnalyticsService : BuildService<Params> {
   }
 
   private val registerSpanFunc: (String, GradleBuildProfileSpan.Builder) -> Unit by lazy {
-    for (registration in buildServiceRegistry.registrations) {
-      if (registration.name.startsWith(ANALYTICS_CLASS_NAME)) {
-        val service = registration.service.get()
-        val analyticsServiceClass = service.javaClass.classLoader.loadClass(ANALYTICS_CLASS_NAME)
-        if (analyticsServiceClass.isInstance(service)) {
-          // GradleBuildProfileSpan needs to be created via reflection because
-          // the protobuf message version loaded in this class loader can be different
-          // between screenshot plugin and other applied Android plugins.
-          val profileSpanClass = service.javaClass.classLoader.loadClass(GRADLE_BUILD_PROFILE_SPAN_CLASS_NAME)
-          val parseFromMethod = profileSpanClass.getMethod("parseFrom", ByteArray::class.java)
-          val toBuilderMethod = profileSpanClass.getMethod("toBuilder")
-          val profileSpanBuilderClass = service.javaClass.classLoader.loadClass(GRADLE_BUILD_PROFILE_SPAN_BUILDER_CLASS_NAME)
-          val registerSpanMethod =
-            analyticsServiceClass.getMethod(
-              "registerSpan",
-              String::class.java,
-              profileSpanBuilderClass,
-            )
-          return@lazy { taskPath, span ->
-            registerSpanMethod(
-              service,
-              taskPath,
-              toBuilderMethod(parseFromMethod(null, span.build().toByteArray())),
-            )
-          }
+    val service = parameters.analyticsService.orNull
+    if (service != null) {
+      val analyticsServiceClass = service.javaClass.classLoader.loadClass(ANALYTICS_CLASS_NAME)
+      if (analyticsServiceClass.isInstance(service)) {
+        // GradleBuildProfileSpan needs to be created via reflection because
+        // the protobuf message version loaded in this class loader can be different
+        // between screenshot plugin and other applied Android plugins.
+        val profileSpanClass = service.javaClass.classLoader.loadClass(GRADLE_BUILD_PROFILE_SPAN_CLASS_NAME)
+        val parseFromMethod = profileSpanClass.getMethod("parseFrom", ByteArray::class.java)
+        val toBuilderMethod = profileSpanClass.getMethod("toBuilder")
+        val profileSpanBuilderClass = service.javaClass.classLoader.loadClass(GRADLE_BUILD_PROFILE_SPAN_BUILDER_CLASS_NAME)
+        val registerSpanMethod =
+          analyticsServiceClass.getMethod(
+            "registerSpan",
+            String::class.java,
+            profileSpanBuilderClass,
+          )
+        return@lazy { taskPath, span ->
+          registerSpanMethod(
+            service,
+            taskPath,
+            toBuilderMethod(parseFromMethod(null, span.build().toByteArray())),
+          )
         }
       }
     }
