@@ -3973,6 +3973,60 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testWatchFaceFormatBareStringResources() {
+    lint()
+      .files(
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Metadata key="CLOCK_TICK_RATE_HZ" value="1" />
+              <UserConfigurations>
+                  <ColorConfiguration id="color_Style_Config" displayName="color_label" defaultValue="0">
+                      <ColorOption id="0" displayName="color_theme_0" colors="#ffffffff #ffecae36 #ffd29727" />
+                      <ColorOption id="1" displayName="Dark (Default)" colors="#ff000000" />
+                  </ColorConfiguration>
+                  <ListConfiguration id="list_config" displayName="list_label" defaultValue="0">
+                      <ListOption id="0" displayName="list_opt_0" screenReaderText="list_opt_0_desc" />
+                      <ListOption id="1" displayName="battery complication" screenReaderText="battery level (full)" />
+                  </ListConfiguration>
+              </UserConfigurations>
+              <Scene>
+                  <PartText>
+                      <Font family="SYNC_TO_DEVICE" size="24" />
+                  </PartText>
+              </Scene>
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/values/strings.xml",
+            """
+          <resources>
+              <string name="color_label">Color Label</string>
+              <string name="color_theme_0">Color Theme 0</string>
+              <string name="list_label">List Label</string>
+              <string name="list_opt_0">List Option 0</string>
+              <string name="list_opt_0_desc">List Option 0 Description</string>
+              <string name="unused_string">Unused</string>
+          </resources>
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/values/strings.xml:7: Warning: The resource R.string.unused_string appears to be unused [UnusedResources]
+            <string name="unused_string">Unused</string>
+                    ~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
   private val mLibraryStrings =
     xml(
       "res/values/strings.xml",

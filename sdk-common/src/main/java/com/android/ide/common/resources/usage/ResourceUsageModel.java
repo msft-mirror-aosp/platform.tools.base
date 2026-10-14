@@ -859,6 +859,16 @@ public class ResourceUsageModel {
                                                         resourceNameToFieldName(trimmedValue),
                                                         null);
                                         from.addReference(res);
+                                    } else if ("displayName".equals(attrName)
+                                            || "screenReaderText".equals(attrName)) {
+                                        String fieldName = resourceNameToFieldName(trimmedValue);
+                                        if (ResourceUrl.isValidName(
+                                                fieldName, ResourceType.STRING)) {
+                                            Resource res =
+                                                    addResource(
+                                                            ResourceType.STRING, fieldName, null);
+                                            from.addReference(res);
+                                        }
                                     }
                                 }
                             }
