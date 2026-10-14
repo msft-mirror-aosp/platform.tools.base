@@ -24,6 +24,12 @@ INTELLIJ_PLATFORM_KOTLIN_GRPC_PLUGIN_VERSION = "1.4.1"
 PROTOC_VERSION = "3.25.5"
 PROTOC_GRPC_VERSION = "1.57.0"
 
+PROTO_DISABLE_CHECKS_JAVACOPTS = [
+    "-XepDisableAllChecks",
+    "-Xlint:none",
+    "-nowarn",
+]
+
 ProtoPackageInfo = provider(fields = ["proto_src", "proto_paths"])
 
 def _gen_proto_impl(ctx):
@@ -230,7 +236,7 @@ def java_proto_library(
         name = name,
         srcs = outs,
         deps = java_deps,
-        javacopts = kwargs.pop("javacopts", []) + ["--release", "8"],
+        javacopts = kwargs.pop("javacopts", []) + ["--release", "8"] + PROTO_DISABLE_CHECKS_JAVACOPTS,
         visibility = visibility,
         **kwargs
     )
@@ -390,6 +396,7 @@ def maven_proto_library(
             deps = java_deps,
             exports = java_exports,
             coordinates = coordinates,
+            javacopts = kwargs.pop("javacopts", []) + PROTO_DISABLE_CHECKS_JAVACOPTS,
             visibility = visibility,
             **kwargs
         )
@@ -399,7 +406,7 @@ def maven_proto_library(
             srcs = outs,
             deps = java_deps,
             exports = java_exports,
-            javacopts = kwargs.pop("javacopts", []) + ["--release", "8"],
+            javacopts = kwargs.pop("javacopts", []) + ["--release", "8"] + PROTO_DISABLE_CHECKS_JAVACOPTS,
             visibility = visibility,
             **kwargs
         )
