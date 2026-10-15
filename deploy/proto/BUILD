@@ -19,13 +19,6 @@ android_java_proto_library(
     visibility = ["//visibility:public"],
 )
 
-cc_binary(
-    name = "proto_tool",
-    srcs = ["proto_tool.cc"],
-    copts = ["-I$(GENDIR)/tools/base/deploy/proto"],
-    deps = [":cc_proto"],
-)
-
 filegroup(
     name = "protobuffer_src",
     srcs = [
