@@ -16,13 +16,13 @@
 
 package com.android.tools.coverage;
 
-import android.os.Bundle;
 import android.os.Debug;
 import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.runner.Description;
+import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 
 /**
@@ -35,7 +35,33 @@ public class CoverageAgentAttacher extends RunListener {
 
     private static final String TAG = "studio.coverage";
     private static final String CONFIG_KEY = "coverage-agent-config";
+
+    /** The Android calls the attacher makes, replaced in tests. */
+    interface Environment {
+        /** Returns the instrumentation argument {@code key}, or null if it isn't set. */
+        String argument(String key);
+
+        void attachJvmtiAgent(String library, String options) throws Exception;
+
+        void dumpCoverageData();
+
+        void info(String message);
+
+        void warn(String message);
+
+        void error(String message);
+    }
+
+    private final Environment environment;
     private boolean attached = false;
+
+    public CoverageAgentAttacher() {
+        this(new AndroidEnvironment());
+    }
+
+    CoverageAgentAttacher(Environment environment) {
+        this.environment = environment;
+    }
 
     @Override
     public void testRunStarted(Description description) throws Exception {
@@ -44,10 +70,10 @@ public class CoverageAgentAttacher extends RunListener {
     }
 
     @Override
-    public void testRunFinished(org.junit.runner.Result result) throws Exception {
+    public void testRunFinished(Result result) throws Exception {
         if (attached) {
-            Log.i(TAG, "Test run finished. Triggering explicit coverage dump.");
-            CoverageTracker.dumpCoverageData();
+            environment.info("Test run finished. Triggering explicit coverage dump.");
+            environment.dumpCoverageData();
         }
         super.testRunFinished(result);
     }
@@ -55,13 +81,12 @@ public class CoverageAgentAttacher extends RunListener {
     private boolean attachAgent() {
         try {
             // 1. Get Instrumentation Arguments
-            Bundle bundle = InstrumentationRegistry.getArguments();
-
             // 2. Extract Config (Format: "/path/to/agent.so=options")
-            String config = bundle.getString(CONFIG_KEY);
+            String config = environment.argument(CONFIG_KEY);
 
             if (config == null || config.isEmpty()) {
-                Log.w(TAG, "No attachment config found in arguments. Skipping Java API path.");
+                environment.warn(
+                        "No attachment config found in arguments. Skipping Java API path.");
                 return false;
             }
 
@@ -70,16 +95,49 @@ public class CoverageAgentAttacher extends RunListener {
             String options = config.contains("=") ? config.substring(config.indexOf("=") + 1) : "";
 
             // 3. Call Debug.attachJvmtiAgent(library, options, classLoader)
-            Log.i(TAG, "Attempting attachment via Java API: " + agentPath);
-            Debug.attachJvmtiAgent(agentPath, options, null);
+            environment.info("Attempting attachment via Java API: " + agentPath);
+            environment.attachJvmtiAgent(agentPath, options);
 
             // 4. Output the Success Signal for host-side verification.
-            Log.i(TAG, "Successfully attached via Java API.");
+            environment.info("Successfully attached via Java API.");
             return true;
 
         } catch (Exception e) {
-            Log.e(TAG, "Java API attachment failed: " + e.getMessage());
+            environment.error("Java API attachment failed: " + e.getMessage());
             return false;
+        }
+    }
+
+    /** The real Android calls. */
+    private static final class AndroidEnvironment implements Environment {
+        @Override
+        public String argument(String key) {
+            return InstrumentationRegistry.getArguments().getString(key);
+        }
+
+        @Override
+        public void attachJvmtiAgent(String library, String options) throws Exception {
+            Debug.attachJvmtiAgent(library, options, null);
+        }
+
+        @Override
+        public void dumpCoverageData() {
+            CoverageTracker.dumpCoverageData();
+        }
+
+        @Override
+        public void info(String message) {
+            Log.i(TAG, message);
+        }
+
+        @Override
+        public void warn(String message) {
+            Log.w(TAG, message);
+        }
+
+        @Override
+        public void error(String message) {
+            Log.e(TAG, message);
         }
     }
 }

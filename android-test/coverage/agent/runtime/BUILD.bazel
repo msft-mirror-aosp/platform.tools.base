@@ -50,3 +50,13 @@ java_test(
         "@maven//:junit.junit",
     ],
 )
+
+java_test(
+    name = "coverage_agent_attacher_test",
+    srcs = ["src/test/java/com/android/tools/coverage/CoverageAgentAttacherTest.java"],
+    test_class = "com.android.tools.coverage.CoverageAgentAttacherTest",
+    deps = [
+        ":coverage_rt_java",
+        "@maven//:junit.junit",
+    ],
+)
