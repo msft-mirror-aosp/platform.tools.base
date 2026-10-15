@@ -27,7 +27,9 @@ import com.android.utils.Base128InputStream;
 import com.android.utils.Base128InputStream.StreamFormatException;
 import com.android.utils.Base128OutputStream;
 import com.android.utils.HashCodes;
+
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -89,20 +91,13 @@ public class BasicFileResourceItem extends BasicResourceItemBase {
   /**
    * {@inheritDoc}
    *
-   * <p>The returned PathString points either to a file on disk, or to a ZIP entry inside a res.apk file.
-   * In the latter case the filesystem URI part points to res.apk itself, e.g. {@code "zip:///foo/bar/res.apk"}.
-   * The path part is the path of the ZIP entry containing the resource.
+   * <p>The returned PathString points either to a file on disk, or to a ZIP entry inside a jar or
+   * AAR file.
    */
   @Override
   @NonNull
   public final PathString getSource() {
     return getRepository().getSourceFile(myRelativePath, true);
-  }
-
-  @Override
-  @Nullable
-  public final PathString getOriginalSource() {
-    return getRepository().getOriginalSourceFile(myRelativePath, true);
   }
 
   @Override

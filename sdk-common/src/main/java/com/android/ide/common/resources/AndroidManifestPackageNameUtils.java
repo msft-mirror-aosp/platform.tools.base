@@ -15,8 +15,6 @@
  */
 package com.android.ide.common.resources;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.util.PathString;
@@ -25,8 +23,6 @@ import com.android.utils.XmlUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import org.kxml2.io.KXmlParser;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -47,27 +43,6 @@ public class AndroidManifestPackageNameUtils {
             return getPackageName(stream);
         } catch (XmlPullParserException e) {
             throw new IOException("File " + manifestFile + " has invalid format");
-        }
-    }
-
-    /**
-     * Reads package name from the AndroidManifest.xml stored inside the given res.apk file.
-     *
-     * @param resApk the res.apk file
-     * @return the package name from the manifest
-     */
-    @Nullable
-    public static String getPackageNameFromResApk(@NonNull ZipFile resApk) throws IOException {
-        ZipEntry zipEntry = resApk.getEntry(ANDROID_MANIFEST_XML);
-        if (zipEntry == null) {
-            throw new IOException(
-                    "\"" + ANDROID_MANIFEST_XML + "\" not found in " + resApk.getName());
-        }
-
-        try (InputStream stream = new BufferedInputStream(resApk.getInputStream(zipEntry))) {
-            return getPackageName(stream);
-        } catch (XmlPullParserException e) {
-            throw new IOException("Invalid " + ANDROID_MANIFEST_XML + " in " + resApk.getName());
         }
     }
 

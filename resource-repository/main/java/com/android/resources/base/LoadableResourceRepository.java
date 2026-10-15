@@ -22,6 +22,7 @@ import com.android.ide.common.util.PathString;
 import com.android.resources.ResourceType;
 import com.android.resources.ResourceVisibility;
 import com.android.utils.Base128InputStream;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -54,7 +55,7 @@ public interface LoadableResourceRepository extends SingleNamespaceResourceRepos
    * The string represents an URL in one of the following formats:
    * <ul>
    *  <li>file URL, e.g. "file:///foo/bar/res/layout/my_layout.xml"</li>
-   *  <li>URL of a zipped element inside the res.apk file, e.g. "apk:///foo/bar/res.apk!/res/layout/my_layout.xml"</li>
+   *  <li>URL of a zipped element inside a jar or AAR file, e.g. "jar:///foo/bar/my_aar.aar!/res/layout/my_layout.xml"</li>
    * </ul>
    *
    * @param relativeResourcePath the relative path of a file resource
@@ -72,18 +73,6 @@ public interface LoadableResourceRepository extends SingleNamespaceResourceRepos
    */
   @NonNull
   PathString getSourceFile(@NonNull String relativeResourcePath, boolean forFileResource);
-
-  /**
-   * Produces a {@link PathString} to be returned by the {@link BasicResourceItem#getOriginalSource()} method.
-   *
-   * @param relativeResourcePath the relative path of the file the resource was created from
-   * @param forFileResource true is the resource is a file resource, false if it is a value resource
-   * @return the PathString to be returned by the {@link BasicResourceItem#getOriginalSource()} method
-   */
-  @Nullable
-  default PathString getOriginalSourceFile(@NonNull String relativeResourcePath, boolean forFileResource) {
-    return getSourceFile(relativeResourcePath, forFileResource);
-  }
 
   /**
    * Creates a {@link ResourceSourceFile} by reading its contents from the given stream.

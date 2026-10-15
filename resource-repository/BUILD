@@ -20,7 +20,6 @@ iml_module(
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "//tools/base/sdklib:studio.android.sdktools.sdklib",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-        "//tools/adt/idea/.idea/libraries:aapt-proto",
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/base/environment-services:studio.intellij.android.environment-services",
@@ -41,7 +40,6 @@ iml_module(
     # do not sort: must match IML order
     test_deps = [
         "//tools/base/resource-repository:studio.android.sdktools.resource-repository",
-        "//tools/adt/idea/.idea/libraries:aapt-proto",
         "@intellij//:intellij-sdk",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/base/testutils:studio.android.sdktools.testutils",
@@ -87,13 +85,11 @@ kotlin_library(
     ]),
     visibility = ["//visibility:public"],
     deps = [
-        "//tools/base/build-system/aapt2-proto",
         "//tools/base/common:tools.common",
         "//tools/base/environment-services:tools.environment-services",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/sdk-common:tools.sdk-common",
         "@maven//:com.google.guava.guava",
-        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:it.unimi.dsi.fastutil",
         "@maven//:net.sf.kxml.kxml2",
     ],

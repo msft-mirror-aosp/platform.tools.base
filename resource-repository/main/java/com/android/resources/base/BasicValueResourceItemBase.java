@@ -24,7 +24,9 @@ import com.android.resources.ResourceVisibility;
 import com.android.utils.Base128InputStream;
 import com.android.utils.Base128OutputStream;
 import com.android.utils.HashCodes;
+
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -80,14 +82,8 @@ public abstract class BasicValueResourceItemBase extends BasicResourceItemBase {
   @Override
   @Nullable
   public final PathString getSource() {
-    return getOriginalSource();
-  }
-
-  @Override
-  @Nullable
-  public final PathString getOriginalSource() {
     String sourcePath = mySourceFile.getRelativePath();
-    return sourcePath == null ? null : getRepository().getOriginalSourceFile(sourcePath, false);
+    return sourcePath == null ? null : getRepository().getSourceFile(sourcePath, false);
   }
 
   @NonNull
