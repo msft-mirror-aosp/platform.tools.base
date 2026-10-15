@@ -20,6 +20,7 @@ import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationK
 import com.android.tools.utp.gradle.api.EmulatorControlConfig
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters.UtpRunConfig
+import com.android.tools.utp.gradle.api.ShardConfig
 import com.android.tools.utp.gradle.api.TargetApkConfigBundle
 import com.android.tools.utp.gradle.api.TestData
 import com.google.common.truth.Truth.assertThat
@@ -428,6 +429,79 @@ class AndroidTestEngineRunnerTest {
     assertThat(capturedRequest).isNotNull()
     assertThat(capturedRequest!!.configurationParameters.get(AndroidTestConfigurationKeys.PARALLEL_TEST_RESULT_REPORTING).orElse(null))
       .isEqualTo("true")
+  }
+
+  @Test
+  fun execute_withSharding_passesShardParametersAndPreservesPerShardXmlReports() {
+    val parameters = mock<RunUtpWorkParameters>()
+    val config0 = mock<UtpRunConfig>()
+    val config1 = mock<UtpRunConfig>()
+    val xmlReportDir = temporaryFolder.newFolder("xml-report")
+    val outputDir0 = File(xmlReportDir, "shard_0").also { it.mkdirs() }
+    val outputDir1 = File(xmlReportDir, "shard_1").also { it.mkdirs() }
+
+    val utpResultFile0 = File(File(xmlReportDir, "runId_0").also { it.mkdirs() }, "test-result.pb")
+    val utpResultFile1 = File(File(xmlReportDir, "runId_1").also { it.mkdirs() }, "test-result.pb")
+    val dummyResult = TestSuiteResult.newBuilder().build()
+    utpResultFile0.outputStream().use { dummyResult.writeTo(it) }
+    utpResultFile1.outputStream().use { dummyResult.writeTo(it) }
+
+    val shard0EngineXml = File(outputDir0, "TEST-runId_0.xml")
+    val shard1EngineXml = File(outputDir1, "TEST-runId_1.xml")
+    shard0EngineXml.writeText("<testsuite name=\"shard0\"/>")
+    shard1EngineXml.writeText("<testsuite name=\"shard1\"/>")
+
+    val targetResultFile0 = File(outputDir0, "test-result.pb")
+    val targetResultFile1 = File(outputDir1, "test-result.pb")
+
+    val deviceNameProp = mockProperty("device1")
+    val deviceShardName0Prop = mockProperty("device1_0")
+    val shardConfig0Prop = mockProperty(ShardConfig(totalCount = 2, index = 0))
+    val deviceShardName1Prop = mockProperty("device1_1")
+    val shardConfig1Prop = mockProperty(ShardConfig(totalCount = 2, index = 1))
+
+    configureMockConfig(config0, "runId_0", "serial0", outputDir0, targetResultFile0)
+    whenever(config0.deviceName).thenReturn(deviceNameProp)
+    whenever(config0.deviceShardName).thenReturn(deviceShardName0Prop)
+    whenever(config0.shardConfig).thenReturn(shardConfig0Prop)
+
+    configureMockConfig(config1, "runId_1", "serial1", outputDir1, targetResultFile1)
+    whenever(config1.deviceName).thenReturn(deviceNameProp)
+    whenever(config1.deviceShardName).thenReturn(deviceShardName1Prop)
+    whenever(config1.shardConfig).thenReturn(shardConfig1Prop)
+
+    val xmlReportDirProp = mockDirectoryProperty(xmlReportDir)
+    val adbProp = mockRegularFileProperty(File("adb"))
+    val aaptProp = mockRegularFileProperty(File("aapt2"))
+    val runConfigsProp = mockListProperty(listOf(config0, config1))
+
+    whenever(parameters.adbExecutable).thenReturn(adbProp)
+    whenever(parameters.aaptExecutable).thenReturn(aaptProp)
+    whenever(parameters.utpRunConfigs).thenReturn(runConfigsProp)
+    whenever(parameters.xmlTestReportOutputDirectory).thenReturn(xmlReportDirProp)
+
+    var capturedRequest: LauncherDiscoveryRequest? = null
+    val runner = AndroidTestEngineRunner { request, _ ->
+      capturedRequest = request
+      mapOf("serial0" to true, "serial1" to true)
+    }
+
+    runner.execute(parameters, emptyList(), mergedResultFile, exitCodeFile)
+
+    assertThat(exitCodeFile.readText()).isEqualTo("0")
+    assertThat(capturedRequest).isNotNull()
+    val configParams = capturedRequest!!.configurationParameters
+    assertThat(configParams.get("${AndroidTestConfigurationKeys.NUM_SHARDS}[serial0]").orElse(null)).isEqualTo("2")
+    assertThat(configParams.get("${AndroidTestConfigurationKeys.SHARD_INDEX}[serial0]").orElse(null)).isEqualTo("0")
+    assertThat(configParams.get("${AndroidTestConfigurationKeys.NUM_SHARDS}[serial1]").orElse(null)).isEqualTo("2")
+    assertThat(configParams.get("${AndroidTestConfigurationKeys.SHARD_INDEX}[serial1]").orElse(null)).isEqualTo("1")
+
+    val copiedShard0Xml = File(xmlReportDir, "TEST-device1_0.xml")
+    val copiedShard1Xml = File(xmlReportDir, "TEST-device1_1.xml")
+    assertThat(copiedShard0Xml.exists()).isTrue()
+    assertThat(copiedShard1Xml.exists()).isTrue()
+    assertThat(copiedShard0Xml.readText()).isEqualTo("<testsuite name=\"shard0\"/>")
+    assertThat(copiedShard1Xml.readText()).isEqualTo("<testsuite name=\"shard1\"/>")
   }
 
   @Test

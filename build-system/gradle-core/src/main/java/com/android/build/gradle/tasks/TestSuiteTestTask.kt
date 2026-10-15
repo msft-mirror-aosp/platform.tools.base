@@ -329,8 +329,24 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     val desiredDeviceCount = if (shardCount.isPresent) shardCount.get() else 1
     avdService.get().runWithAvds(avdName, desiredDeviceCount) { onlineDeviceSerials ->
       if (desiredDeviceCount > 1) {
+        val devicesAcquired = onlineDeviceSerials.size
+        if (devicesAcquired != desiredDeviceCount) {
+          logger.warn(
+            "Unable to retrieve $desiredDeviceCount devices, only " +
+              "$devicesAcquired available. Proceeding to run tests on " +
+              "$devicesAcquired shards."
+          )
+        }
         onlineDeviceSerials.forEachIndexed { index, serial ->
-          onlineDevices.add(DeviceTestTarget(serial, DslDeviceConfigProvider(device), "${device.name}_$index"))
+          onlineDevices.add(
+            DeviceTestTarget(
+              serial,
+              DslDeviceConfigProvider(device),
+              "${device.name}_$index",
+              numShards = devicesAcquired,
+              shardIndex = index,
+            )
+          )
         }
       } else {
         onlineDevices.add(DeviceTestTarget(onlineDeviceSerials.first(), DslDeviceConfigProvider(device), device.name))
@@ -414,6 +430,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           target.deviceName?.let { deviceName ->
             standardInputs.add(TestEngineInputProperty("android-test.device-id[$serial]", deviceName))
           }
+        }
+
+        if (target.numShards != null && target.shardIndex != null) {
+          standardInputs.add(TestEngineInputProperty("android-test.num-shards[$serial]", target.numShards.toString()))
+          standardInputs.add(TestEngineInputProperty("android-test.shard-index[$serial]", target.shardIndex.toString()))
         }
 
         if (!apkBundle.isEmpty) {
@@ -683,6 +704,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val localDevices = creationConfig.global.androidTestOptions.managedDevices.localDevices
       testSuiteTarget.targetDevices.forEach { task.managedDevices.add(localDevices.getByName(it) as ManagedVirtualDevice) }
       task.managedDevices.disallowChanges()
+
+      val shardPoolSize = creationConfig.services.projectOptions.get(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE)
+      task.shardCount.setDisallowChanges(shardPoolSize ?: 1)
 
       val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
       val resolvedInputs = junitEngineSpec.inputs
@@ -1281,7 +1305,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) val fileCollection: FileCollection,
   )
 
-  class DeviceTestTarget(val serialNumber: String, val deviceConfigProvider: DeviceConfigProvider, val deviceName: String? = null)
+  class DeviceTestTarget(
+    val serialNumber: String,
+    val deviceConfigProvider: DeviceConfigProvider,
+    val deviceName: String? = null,
+    val numShards: Int? = null,
+    val shardIndex: Int? = null,
+  )
 
   /**
    * Implementation of [DeviceConfigProvider] that resolves device characteristics directly from the [ManagedVirtualDevice] DSL. This

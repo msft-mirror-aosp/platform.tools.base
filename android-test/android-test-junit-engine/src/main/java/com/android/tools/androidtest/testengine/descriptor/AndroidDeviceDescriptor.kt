@@ -261,6 +261,12 @@ class AndroidDeviceDescriptor(
     val listener = Listener(reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
 
     val instrumentationArgs = config.instrumentationArgs.toMutableMap()
+    val numShards = config.getNumShards(deviceSerial)
+    val shardIndex = config.getShardIndex(deviceSerial)
+    if (numShards != null && shardIndex != null) {
+      instrumentationArgs["numShards"] = numShards.toString()
+      instrumentationArgs["shardIndex"] = shardIndex.toString()
+    }
     if (config.isEmulatorControlEnabled(deviceSerial)) {
       val grpcInfo = findGrpcInfoProvider(deviceSerial)
       instrumentationArgs["grpc.port"] = grpcInfo.port.toString()

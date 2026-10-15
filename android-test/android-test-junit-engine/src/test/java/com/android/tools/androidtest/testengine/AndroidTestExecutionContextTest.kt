@@ -309,4 +309,31 @@ class AndroidTestExecutionContextTest {
     val context = AndroidTestExecutionContext(request)
     assertThat(context.configuration.parallelTestResultReporting).isTrue()
   }
+
+  @Test
+  fun `AndroidTestConfiguration resolves device-specific numShards and shardIndex`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1,serial2,serial3"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
+
+    whenever(configParams.get("${AndroidTestConfigurationKeys.NUM_SHARDS}[serial1]")).thenReturn(Optional.of("2"))
+    whenever(configParams.get("${AndroidTestConfigurationKeys.SHARD_INDEX}[serial1]")).thenReturn(Optional.of("0"))
+    whenever(configParams.get("${AndroidTestConfigurationKeys.NUM_SHARDS}[serial2]")).thenReturn(Optional.of("2"))
+    whenever(configParams.get("${AndroidTestConfigurationKeys.SHARD_INDEX}[serial2]")).thenReturn(Optional.of("1"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.getNumShards("serial1")).isEqualTo(2)
+    assertThat(context.configuration.getShardIndex("serial1")).isEqualTo(0)
+    assertThat(context.configuration.getNumShards("serial2")).isEqualTo(2)
+    assertThat(context.configuration.getShardIndex("serial2")).isEqualTo(1)
+    assertThat(context.configuration.getNumShards("serial3")).isNull()
+    assertThat(context.configuration.getShardIndex("serial3")).isNull()
+  }
 }

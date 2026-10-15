@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.INSTRUMENTATION_ARGS_KEY
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
+import com.android.tools.utp.gradle.api.ShardConfig
 import com.android.tools.utp.gradle.api.UtpDependencies
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -208,7 +209,10 @@ class UtpTestUtilsTest {
     assertThat(results).isFalse()
   }
 
-  private fun captureWorkerSystemProperties(instrumentationArgs: Map<String, String>): Map<String, Any?> {
+  private fun captureWorkerSystemProperties(
+    instrumentationArgs: Map<String, String>,
+    shardConfig: ShardConfig? = null,
+  ): Map<String, Any?> {
     val utpResultDir = temporaryFolderRule.newFolder()
 
     val mockProvider: Provider<String> = mock()
@@ -228,6 +232,12 @@ class UtpTestUtilsTest {
     whenever(config.coverageOutputDir).thenReturn(coverageOutputDirProp)
     whenever(config.additionalTestOutputOnDeviceDir.isPresent).thenReturn(false)
     whenever(config.additionalTestOutputDir.isPresent).thenReturn(false)
+    if (shardConfig != null) {
+      val shardConfigProp = mockProperty(shardConfig)
+      whenever(config.shardConfig).thenReturn(shardConfigProp)
+    } else {
+      whenever(config.shardConfig.orNull).thenReturn(null)
+    }
 
     val systemProperties = mutableMapOf<String, Any?>()
     whenever(mockWorkerExecutor.processIsolation(any())).then { invocation ->
@@ -264,5 +274,13 @@ class UtpTestUtilsTest {
     val systemProperties = captureWorkerSystemProperties(mapOf("class" to "com.example.ATest,com.example.BTest", "trailing" to "foo\\"))
 
     assertThat(systemProperties[INSTRUMENTATION_ARGS_KEY]).isEqualTo("class=com.example.ATest\\,com.example.BTest,trailing=foo\\\\")
+  }
+
+  @Test
+  fun passesShardConfigToWorkerSystemProperties() {
+    val systemProperties = captureWorkerSystemProperties(emptyMap(), ShardConfig(totalCount = 10, index = 4))
+
+    assertThat(systemProperties["android-test.num-shards[serial1]"]).isEqualTo("10")
+    assertThat(systemProperties["android-test.shard-index[serial1]"]).isEqualTo("4")
   }
 }

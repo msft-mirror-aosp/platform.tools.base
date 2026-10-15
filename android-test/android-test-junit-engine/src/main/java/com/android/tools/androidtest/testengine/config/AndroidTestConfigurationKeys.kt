@@ -107,4 +107,10 @@ object AndroidTestConfigurationKeys {
 
   /** Whether parallel test result reporting is enabled. */
   const val PARALLEL_TEST_RESULT_REPORTING = "android-test.parallel-test-result-reporting"
+
+  /** The total number of shards for test execution. */
+  const val NUM_SHARDS = "android-test.num-shards"
+
+  /** The zero-based index of the shard to execute on the device. */
+  const val SHARD_INDEX = "android-test.shard-index"
 }

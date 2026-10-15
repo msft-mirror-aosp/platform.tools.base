@@ -202,6 +202,12 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
 
   fun getDeviceId(deviceSerial: String? = null): String? = get(AndroidTestConfigurationKeys.DEVICE_ID, deviceSerial = deviceSerial)
 
+  fun getNumShards(deviceSerial: String? = null): Int? =
+    get(AndroidTestConfigurationKeys.NUM_SHARDS, deviceSerial = deviceSerial)?.toIntOrNull()
+
+  fun getShardIndex(deviceSerial: String? = null): Int? =
+    get(AndroidTestConfigurationKeys.SHARD_INDEX, deviceSerial = deviceSerial)?.toIntOrNull()
+
   val additionalTestOutputDirOnDevice: String? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_DEVICE)
   val useTestStorageService: Boolean = get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)?.toBoolean() ?: false
 

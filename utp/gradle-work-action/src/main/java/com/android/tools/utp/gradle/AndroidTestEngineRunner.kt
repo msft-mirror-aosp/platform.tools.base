@@ -86,6 +86,10 @@ class AndroidTestEngineRunner(
         val emulatorControlConfig = config.emulatorControlConfig.orNull
         val enabled = emulatorControlConfig?.enabled ?: false
         requestBuilder.configurationParameter("android-test.emulator-control-enabled[$serial]", enabled.toString())
+        config.shardConfig?.orNull?.let { shardConfig ->
+          requestBuilder.configurationParameter("${AndroidTestConfigurationKeys.NUM_SHARDS}[$serial]", shardConfig.totalCount.toString())
+          requestBuilder.configurationParameter("${AndroidTestConfigurationKeys.SHARD_INDEX}[$serial]", shardConfig.index.toString())
+        }
       }
       val request = requestBuilder.build()
       val listener = AndroidTestResultListener()
@@ -144,12 +148,12 @@ class AndroidTestEngineRunner(
         // XML files in the root resultsDir directly and does not scan subdirectories.
         // Therefore, we must copy all generated XML reports to the base resultsDir so that
         // the HTML test report can be generated successfully.
-        val deviceName = config.deviceName.get()
+        val deviceShardName = config.deviceShardName?.orNull ?: config.deviceName.get()
 
         val deviceOutputDir = config.outputDir.get().asFile
         deviceOutputDir.listFiles()?.forEach { xmlFile ->
           if (xmlFile.name.startsWith("TEST-") && xmlFile.extension == "xml") {
-            val expectedXmlName = "TEST-${deviceName}.xml"
+            val expectedXmlName = "TEST-${deviceShardName}.xml"
             val targetXmlFile = File(resultsDir, expectedXmlName)
             if (xmlFile.absolutePath != targetXmlFile.absolutePath) {
               xmlFile.copyTo(targetXmlFile, overwrite = true)

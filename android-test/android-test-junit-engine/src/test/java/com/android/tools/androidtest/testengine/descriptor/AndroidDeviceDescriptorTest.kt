@@ -218,6 +218,50 @@ class AndroidDeviceDescriptorTest {
   }
 
   @Test
+  fun startRunner_withShardingConfigured_injectsNumShardsAndShardIndex() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+
+    whenever(configurationParameters.get("android-test.num-shards[$deviceSerial]")).thenReturn(java.util.Optional.of("10"))
+    whenever(configurationParameters.get("android-test.shard-index[$deviceSerial]")).thenReturn(java.util.Optional.of("3"))
+
+    val descriptor =
+      AndroidDeviceDescriptor(
+        uniqueId,
+        deviceSerial,
+        adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
+        instrumentationRunnerFactory = { _, serial, _, _, _, _, args, _, _, _ ->
+          assertThat(serial).isEqualTo(deviceSerial)
+          assertThat(args["numShards"]).isEqualTo("10")
+          assertThat(args["shardIndex"]).isEqualTo("3")
+          mockAmInstrumentationRunner
+        },
+      )
+
+    val context = AndroidTestExecutionContext(executionRequest)
+    descriptor.startRunner(context)
+  }
+
+  @Test
+  fun startRunner_withoutShardingConfigured_doesNotInjectNumShardsAndShardIndex() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+
+    val descriptor =
+      AndroidDeviceDescriptor(
+        uniqueId,
+        deviceSerial,
+        adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
+        instrumentationRunnerFactory = { _, _, _, _, _, _, args, _, _, _ ->
+          assertThat(args.containsKey("numShards")).isFalse()
+          assertThat(args.containsKey("shardIndex")).isFalse()
+          mockAmInstrumentationRunner
+        },
+      )
+
+    val context = AndroidTestExecutionContext(executionRequest)
+    descriptor.startRunner(context)
+  }
+
+  @Test
   fun `testEnded buffers report entries which are published during test execution`() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
     val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)

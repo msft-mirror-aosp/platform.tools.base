@@ -158,6 +158,11 @@ fun runUtpTestSuiteAndWait(
         }
 
         fork.systemProperty("android-test.install-timeout-ms[$serial]", ((config.installApkTimeout.orNull ?: 0) * 1000).toString())
+
+        config.shardConfig?.orNull?.let { shardConfig ->
+          fork.systemProperty("android-test.num-shards[$serial]", shardConfig.totalCount.toString())
+          fork.systemProperty("android-test.shard-index[$serial]", shardConfig.index.toString())
+        }
       }
 
       // Propagate HOME environment variable to ensure:

@@ -178,6 +178,34 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun runBasicManagedDeviceWithSharding() {
+    rule.build
+      .androidApplication()
+      .files
+      .update("src/androidTest/java/com/example/android/kotlin/InstrumentedTest.kt")
+      .replaceWith(
+        // language=kotlin
+        """
+        package com.example.android.kotlin
+
+        import androidx.test.ext.junit.runners.AndroidJUnit4
+        import org.junit.Test
+        import org.junit.runner.RunWith
+
+        @RunWith(AndroidJUnit4::class)
+        class ExampleInstrumentedTest {
+            @Test
+            fun useAppContext() {}
+
+            @Test
+            fun useAppContext1() {}
+
+            @Test
+            fun useAppContext2() {}
+        }
+        """
+          .trimIndent()
+      )
+
     val result = executor.with(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE, 2).run(":app:device1DebugAndroidTest")
 
     assertTestReportExists()
@@ -185,6 +213,20 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
     result.assertOutputContains("device1_0")
     result.assertOutputContains("device1_1")
+
+    val xmlDir = File(rule.build.androidApplication().buildDir.pathString, "outputs/androidTest-results/managedDevice/debug/device1")
+    val shard0Xml = File(xmlDir, "TEST-device1_0.xml")
+    val shard1Xml = File(xmlDir, "TEST-device1_1.xml")
+    assertThat(shard0Xml).exists()
+    assertThat(shard1Xml).exists()
+
+    val testcaseRegex = Regex("""<testcase\s+name="([^"]+)"""")
+    val shard0Tests = testcaseRegex.findAll(shard0Xml.readText()).map { it.groupValues[1] }.toList()
+    val shard1Tests = testcaseRegex.findAll(shard1Xml.readText()).map { it.groupValues[1] }.toList()
+
+    Truth.assertThat(shard0Tests).isNotEmpty()
+    Truth.assertThat(shard1Tests).isNotEmpty()
+    Truth.assertThat(shard0Tests + shard1Tests).containsExactly("useAppContext", "useAppContext1", "useAppContext2")
   }
 
   @Test
