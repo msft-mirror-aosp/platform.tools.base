@@ -259,7 +259,6 @@ class ExecuteProcessTest {
     val contextFile = File.createTempFile("write-main-callback-shell-script", "bin")
     ObjectOutputStream(FileOutputStream(contextFile)).use { objects -> objects.writeObject(context) }
     val runtime = ManagementFactory.getRuntimeMXBean()
-    val sb = StringBuilder()
     val java = File(runtime.systemProperties["java.home"]!!).resolve("bin/java")
     val classPath =
       runtime.systemProperties["java.class.path"]!!
@@ -269,19 +268,40 @@ class ExecuteProcessTest {
     val mainClass = ShellScriptCallback::class.java.name
     val isolated = workingDir.resolve(shortSha256Of(posixScriptBase.hashCode()))
     isolated.mkdirs()
-    val posixScript = isolated.resolve(posixScriptBaseCleaned)
+
+    val argsFile = isolated.resolve("${posixScriptBaseCleaned}-args.txt")
+    val jvmArgs =
+      listOf(
+        "--class-path",
+        classPath,
+        mainClass,
+        contextFile.path,
+      )
+    argsFile.writeText(
+      jvmArgs.joinToString("\n") { formatArgForArgsFile(it) },
+      Charsets.UTF_8,
+    )
+
     val windowsScript = isolated.resolve("${posixScriptBaseCleaned}.bat")
-    sb.append("$java --class-path ${classPath.replace("\\\\", "/")} ")
-    sb.append("$mainClass $contextFile ")
     windowsScript.writeText("@echo off\r\n")
-    windowsScript.appendText(sb.toString())
-    windowsScript.appendText("%1 %2 %3")
-    posixScript.writeText(sb.toString())
-    posixScript.appendText("\"$1\" \"$2\" \"$3\"")
+    windowsScript.appendText("${quoteWindowsBatch(java.path)} ${quoteWindowsBatch("@$argsFile")} %1 %2 %3\r\n")
+
+    val posixScript = isolated.resolve(posixScriptBaseCleaned)
+    posixScript.writeText("${quotePosix(java.path)} ${quotePosix("@$argsFile")} \"$1\" \"$2\" \"$3\"\n")
     posixScript.setExecutable(true)
+
     // POSIX script name is executable on both Windows and Posix because Windows will search
     // for a script with the same name but with '.bat' extension.
     return posixScript
+  }
+
+  private fun quotePosix(argument: String): String = "'" + argument.replace("'", "'\\''") + "'"
+
+  private fun quoteWindowsBatch(argument: String): String = "\"" + argument.replace("%", "%%") + "\""
+
+  private fun formatArgForArgsFile(arg: String): String {
+    val escaped = arg.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")
+    return "\"$escaped\""
   }
 
   private class TestPathToFileResolver(val working: File) : PathToFileResolver {

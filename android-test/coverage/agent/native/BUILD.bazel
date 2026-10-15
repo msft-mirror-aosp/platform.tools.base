@@ -113,6 +113,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":agent_lib",
+        "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@googletest//:gtest_main",
     ],
 )

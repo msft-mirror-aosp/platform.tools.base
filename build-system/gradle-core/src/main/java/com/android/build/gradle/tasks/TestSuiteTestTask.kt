@@ -57,6 +57,7 @@ import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.getApkFiles
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
+import com.android.build.gradle.internal.test.report.clearTestReportAggregationResults
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.configureAndroidTestEngine
@@ -73,6 +74,7 @@ import com.android.builder.testing.api.DeviceException
 import java.io.File
 import java.util.Locale
 import java.util.Properties
+import java.util.concurrent.ExecutionException
 import javax.inject.Inject
 import kotlin.collections.asIterable
 import kotlin.collections.joinToString
@@ -102,6 +104,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.VerificationException
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
@@ -273,7 +276,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           inputParameter.name == AgpTestSuiteInputParameters.TEST_APKS.propertyName
       }
     ) {
-      provisionDevicesAndExecute { onlineDevices -> executeTests(engineInputParameters, onlineDevices) }
+      runUnwrappingVerificationFailures {
+        provisionDevicesAndExecute { onlineDevices -> executeTests(engineInputParameters, onlineDevices) }
+      }
     } else {
       executeTests(engineInputParameters)
     }
@@ -469,6 +474,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .trimIndent()
 
       if (xmlResultsDirectory.isPresent) {
+        clearTestReportAggregationResults(xmlResultsDirectory)
         processTestReportAggregation(
           testResultsDir,
           xmlResultsDirectory,
@@ -1393,5 +1399,25 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.rootProjectDir.set(services.projectInfo.rootDir)
       task.rootProjectDir.disallowChanges()
     }
+  }
+}
+
+/**
+ * Runs [action], rethrowing a [VerificationException] (thrown when tests fail) without the [ExecutionException]s that device provisioning
+ * wraps it in.
+ *
+ * `DeviceProvider.use` and the managed device locks taken by [AvdComponentsBuildService.runWithAvds] wrap any failure in an
+ * [ExecutionException], once per device provider or managed device. With `--continue`, Gradle only runs the tasks that consume this task's
+ * outputs (such as test report aggregation) if the task fails with a [VerificationException] itself. Other failures are rethrown unchanged.
+ */
+internal fun runUnwrappingVerificationFailures(action: () -> Unit) {
+  try {
+    action()
+  } catch (e: ExecutionException) {
+    var cause = e.cause
+    while (cause is ExecutionException) {
+      cause = cause.cause
+    }
+    throw cause as? VerificationException ?: e
   }
 }

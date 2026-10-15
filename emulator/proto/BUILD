@@ -27,6 +27,7 @@ android_java_proto_library(
     srcs = [
         "emulator_controller.proto",
         "ice_config.proto",
+        "modem_service.proto",
         "rtc_service_v2.proto",
         "snapshot.proto",
         "snapshot_service.proto",

@@ -29,9 +29,6 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
   override fun lint(): TestLintTask {
     val task = super.lint()
-    // This detector isn't intended to be run on the platform
-    task.skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
-
     task.skipTestModes(TestMode.PARENTHESIZED, TestMode.FULLY_QUALIFIED, TestMode.REORDER_ARGUMENTS)
 
     task.skipTestModes(TestMode.JVM_OVERLOADS) // TODO
@@ -4132,6 +4129,164 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
                 runOnUiThread(Runnable { worker() }) // ERROR: pinpointed like a bare lambda
                                          ~~~~~~~~
         1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testMixedPlatformAndAndroidxAnnotations() {
+    // Platform code uses the `android.annotation.*` thread annotations, and may call libraries annotated with
+    // `androidx.annotation.*`, and vice versa
+    lint()
+      .files(
+        java(
+            """
+            package android.annotation;
+            import static java.lang.annotation.ElementType.*;
+            import static java.lang.annotation.RetentionPolicy.SOURCE;
+            import java.lang.annotation.*;
+            @Retention(SOURCE)
+            @Target({METHOD, CONSTRUCTOR, TYPE, PARAMETER})
+            public @interface UiThread {}
+            """
+          )
+          .indented(),
+        java(
+            """
+            package android.annotation;
+            import static java.lang.annotation.ElementType.*;
+            import static java.lang.annotation.RetentionPolicy.SOURCE;
+            import java.lang.annotation.*;
+            @Retention(SOURCE)
+            @Target({METHOD, CONSTRUCTOR, TYPE, PARAMETER})
+            public @interface WorkerThread {}
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+
+            public class Mixed {
+                @androidx.annotation.UiThread static void androidxUi() { }
+
+                @androidx.annotation.MainThread static void androidxMain() { }
+
+                @android.annotation.UiThread static void platformUi() { }
+
+                @android.annotation.WorkerThread
+                static void platformWorkerCallsAndroidxUi() {
+                    androidxUi(); // ERROR
+                }
+
+                @androidx.annotation.WorkerThread
+                static void androidxWorkerCallsPlatformUi() {
+                    platformUi(); // ERROR
+                }
+
+                @android.annotation.UiThread
+                static void platformUiCallsAndroidxMain() {
+                    androidxMain(); // OK: `@UiThread` and `@MainThread` are equivalent
+                }
+
+                @androidx.annotation.MainThread
+                static void androidxMainCallsPlatformUi() {
+                    platformUi(); // OK: `@UiThread` and `@MainThread` are equivalent
+                }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      // The test mode would rewrite the AndroidX annotations into platform ones, defeating the purpose of mixing them
+      .skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
+      .run()
+      .expect(
+        """
+        src/test/pkg/Mixed.java:12: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                androidxUi(); // ERROR
+                ~~~~~~~~~~~~
+        src/test/pkg/Mixed.java:17: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                platformUi(); // ERROR
+                ~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testPlatformAssumptions() {
+    // When analyzing the platform itself, these methods' bodies are available and would otherwise be inferred, or their classes
+    // annotated, as `@{Main,Ui}Thread`. Assumptions take precedence, while their non-assumed siblings are still checked.
+    lint()
+      .files(
+        java(
+            """
+            package android.content.res;
+            import android.graphics.drawable.Drawable;
+            import androidx.annotation.UiThread;
+
+            public class Resources {
+                @UiThread static void ui() { }
+
+                public Drawable getDrawable(int id) { ui(); return null; }
+                public Drawable getDrawable(int id, Theme theme) { ui(); return null; }
+                public int getColor(int id) { ui(); return 0; }
+
+                public final class Theme {
+                    public Drawable getDrawable(int id) { ui(); return null; }
+                }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package android.view;
+            import androidx.annotation.UiThread;
+
+            @UiThread
+            public class View {
+                public boolean removeCallbacks(Runnable action) { return true; }
+                public void invalidate() { }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import android.content.res.Resources;
+            import android.view.View;
+            import androidx.annotation.WorkerThread;
+
+            public class Preloader {
+                @WorkerThread
+                static void preload(Resources resources, Resources.Theme theme, View view, Runnable r) {
+                    resources.getDrawable(1); // OK
+                    resources.getDrawable(2, theme); // OK
+                    theme.getDrawable(3); // OK
+                    view.removeCallbacks(r); // OK
+                    resources.getColor(4); // ERROR
+                    view.invalidate(); // ERROR
+                }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Preloader.java:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                resources.getColor(4); // ERROR
+                          ~~~~~~~~~~~
+        src/test/pkg/Preloader.java:14: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                view.invalidate(); // ERROR
+                     ~~~~~~~~~~~~
+        2 errors
         """
           .trimIndent()
       )

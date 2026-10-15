@@ -22,9 +22,10 @@ import com.android.utils.EnvironmentProvider
 import com.android.utils.ILogger
 import com.android.utils.NullLogger
 import com.google.common.annotations.VisibleForTesting
+import java.io.IOException
+import java.io.UncheckedIOException
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.exists
 
 /**
  * A class that computes various locations used by the Android tools.
@@ -168,13 +169,11 @@ This is the path of preference folder expected by the Android tools."""
 
     // We no longer default to XDG_CONFIG_HOME, as ".android" is not a config directory
     // and a multitude of other tools do not support it, creating inconsistencies, but
-    // if we find it we keep using it for backwards compatibility
+    // if we find it and it contains regular files we keep using it for backwards compatibility
     val legacy = pathLocator.firstPathOf(Global.XDG_CONFIG_HOME)?.resolve(FOLDER_DOT_ANDROID)
-    legacy
-      ?.takeIf { legacy.exists() }
-      ?.also {
-        return it
-      }
+    if (legacy != null && legacy.containsRegularFiles()) {
+      return legacy
+    }
 
     return pathLocator.firstPathOf(Global.USER_HOME, Global.HOME)?.resolve(FOLDER_DOT_ANDROID)
       ?: throw AndroidLocationsException(
@@ -197,6 +196,19 @@ This is the path of preference folder expected by the Android tools."""
     internalAvdLocation = null
     internalGradleAvdLocation = null
     internalUserHomeLocation = null
+  }
+
+  private fun Path.containsRegularFiles(): Boolean {
+    return CancellableFileIo.isDirectory(this) &&
+      try {
+        CancellableFileIo.walk(this).use { stream ->
+          stream.anyMatch { CancellableFileIo.isRegularFile(it) }
+        }
+      } catch (_: IOException) {
+        false
+      } catch (_: UncheckedIOException) {
+        false
+      }
   }
 }
 

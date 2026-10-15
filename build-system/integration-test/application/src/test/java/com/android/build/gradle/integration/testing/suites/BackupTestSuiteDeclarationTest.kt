@@ -23,6 +23,7 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.TestSuite
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching
+import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -132,6 +133,18 @@ class BackupTestSuiteDeclarationTest {
   }
 
   @Test
+  fun testFailedTestsShowTheExceptionMessage() {
+    // Runs at Gradle's default log level, as users do: at the fixture's default INFO level, Gradle prints whole exceptions anyway.
+    // With the default SHORT exception format, the console would show only "java.lang.Exception at <file>:<line>".
+    rule.build.executor
+      .withLoggingLevel(LoggingLevel.LIFECYCLE)
+      .withArgument("-PtoyEngineFailure=Restore restored no app data")
+      .expectFailure()
+      .run(":app:testDebugMyBackupDefaultTestSuite")
+      .assertOutputContains("java.lang.Exception: Restore restored no app data")
+  }
+
+  @Test
   fun testBackupLibrariesAreOnlyAddedToSuiteClasspaths() {
     // Applying a Kotlin compiler plugin makes AGP create compiler plugin classpaths for the suite's compilations.
     val build = rule.build { androidApplication { applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN) } }
@@ -199,6 +212,10 @@ class BackupSuiteCallback : ApplicationComponentCallback {
         testSuites.suites["myBackup"]
           ?: throw RuntimeException("Cannot find myBackup test suite in test suites : " + testSuites.suites.keys.joinToString(", "))
       Truth.assertThat(myBackupTestSuite).isInstanceOf(TestSuite::class.java)
+
+      // Makes the toy engine fail its test with the message of the toyEngineFailure Gradle property, when it is set.
+      val failure = project.providers.gradleProperty("toyEngineFailure")
+      myBackupTestSuite.configureTestTasks { failure.orNull?.let { systemProperty("toyEngine.failure", it) } }
     }
 
     // Verify targetVariants.add("debug") excluded the release build type

@@ -35,6 +35,7 @@ import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.process.CommandLineArgumentProvider
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -172,6 +173,17 @@ class BackupTestSuiteImplTest {
       assertThat(argumentProviders.flatMap { it.asArguments() })
         .containsExactly("-Dandroidx.test.backup.device.serial=emulator-5554", "-Dandroidx.test.backup.device.api=34")
     }
+  }
+
+  @Test
+  fun testFailedTestsShowTheExceptionMessage() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+    val task = project.tasks.register("backupTestSuiteExceptionFormat", org.gradle.api.tasks.testing.Test::class.java).get()
+
+    suite.testTaskConfigActions.forEach { it(task, mock<TestTaskContext>()) }
+
+    assertThat(task.testLogging.exceptionFormat).isEqualTo(TestExceptionFormat.FULL)
   }
 
   @Test

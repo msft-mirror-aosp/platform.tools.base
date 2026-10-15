@@ -65,6 +65,7 @@ class ArtifactsImpl(
   internal val listenerManager = DeferredActionManager()
   val objects: ObjectFactory = project.objects
   internal val buildDirectory = project.layout.buildDirectory
+  private val providers = project.providers
   private val outstandingRequests = Collections.synchronizedList(ArrayList<ArtifactOperationRequest>())
   val logger = project.logger
   val taskContainer = project.tasks
@@ -167,25 +168,37 @@ class ArtifactsImpl(
   private fun <T : FileSystemLocation> getIntermediateOutputPath(type: Artifact<T>, vararg paths: String, forceFilename: String? = null) =
     type.getIntermediateOutputPath(buildDirectory, identifier, *paths, forceFilename = forceFilename)
 
-  fun calculateOutputPath(type: Single<*>, task: Task, fileName: String? = null): File {
+  /**
+   * Returns a lazy location for the output of [taskName] producing [type].
+   *
+   * The location must be computed lazily. It depends on whether [taskName] is the final producer of [type], and on the naming context that
+   * the AGP initial producer sets. Both are only known once every producer is registered, and AGP registers its producers after the Variant
+   * API transforms. A task can be configured long before that, for example by `tasks.all {}` or `TaskProvider.get()`. Computing the
+   * location when the task is configured would freeze a stale value, so two producers could end up writing the same file (b/532206373).
+   */
+  internal fun outputLocation(type: Single<*>, taskName: String, fileName: String? = null): Provider<File> = providers.provider {
+    calculateOutputPath(type, taskName, fileName)
+  }
+
+  internal fun calculateOutputPath(type: Single<*>, taskName: String, fileName: String? = null): File {
     with(getArtifactContainer(type)) {
       return when {
         type.category == INTERMEDIATES && namingContext?.getOutputLocation() == null ->
-          generateIntermediatePath(type, task, false, fileName)
+          generateIntermediatePath(type, taskName, false, fileName)
         //  this switching is for non-intermediate artifacts is safe as the final artifact
         //  ends up in a completely separate directory structure
-        getFinalProvider() == null || task.name == getFinalProvider()?.name -> generateDefaultPath(type, fileName)
-        else -> generateIntermediatePath(type, task, true, fileName) // for outputs type non-final transformations
+        getFinalProvider() == null || taskName == getFinalProvider()?.name -> generateDefaultPath(type, fileName)
+        else -> generateIntermediatePath(type, taskName, true, fileName) // for outputs type non-final transformations
       }
     }
   }
 
   /** Intermediate path always has task name in it */
-  private fun generateIntermediatePath(type: Single<*>, task: Task, ignorePredefinedLocation: Boolean, fileName: String?): File {
+  private fun generateIntermediatePath(type: Single<*>, taskName: String, ignorePredefinedLocation: Boolean, fileName: String?): File {
     val container = getArtifactContainer(type)
     val fileName = calculateFileName(fileName, type)
     val output = container.namingContext?.getOutputLocation()
-    return if (output == null || ignorePredefinedLocation) getIntermediateOutputPath(type, task.name, forceFilename = fileName)
+    return if (output == null || ignorePredefinedLocation) getIntermediateOutputPath(type, taskName, forceFilename = fileName)
     else FileUtils.join(output, fileName)
   }
 
@@ -518,9 +531,8 @@ internal class SingleInitialProviderRequestImpl<TASK : Task, FILE_TYPE : FileSys
     artifactContainer.initArtifactContainer(taskProvider, taskProvider.flatMap { fromProvider(it) }, context)
 
     taskProvider.configure {
-      val outputAbsolutePath = artifactsImpl.calculateOutputPath(type, it)
-      // since the taskProvider will execute, resolve its output path.
-      fromProperty(it).set(outputAbsolutePath)
+      // Lazy, so the location reflects the final producer chain and naming context (b/532206373).
+      fromProperty(it).fileProvider(artifactsImpl.outputLocation(type, it.name))
     }
   }
 }

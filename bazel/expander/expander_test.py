@@ -4,7 +4,7 @@ from tools.base.bazel.expander import expander
 
 
 def read_file(path):
-  with open(path) as f:
+  with open(path, encoding="utf-8") as f:
     return f.read()
 
 
@@ -14,7 +14,7 @@ def get_path(name):
 
 def create_file(name, content):
   path = get_path(name)
-  with open(path, "w") as f:
+  with open(path, "w", encoding="utf-8") as f:
     f.write(content)
   return path
 
@@ -56,6 +56,12 @@ class ExpanderTest(unittest.TestCase):
     dst = get_path("out.txt")
     expander.main(["--template", src, "--out", dst, "--replace", "FOO", "$(inline %s)" % foo,  "--replace", "BAR", "VAL"])
     self.assertEqual("FOO 123\nBAR 456\nBAZ 789 123\nVAL 456\nBAZ 789", read_file(dst))
+
+  def test_utf8(self):
+    src = create_file("template.txt", "Status: ✅ or ❌ - FOO")
+    dst = get_path("out.txt")
+    expander.main(["--template", src, "--out", dst, "--replace", "FOO", "VAL"])
+    self.assertEqual("Status: ✅ or ❌ - VAL", read_file(dst))
 
 
 if __name__ == "__main__":

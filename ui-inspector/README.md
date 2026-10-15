@@ -353,7 +353,63 @@ taking one or more comma-separated facets (the option is also repeatable):
 * `system-composables`: system/framework Composable nodes.
 * `all`: everything above.
 
-*Note: The separate `get-params` command proposed in early designs is not implemented.*
+### Truncated parameter values
+
+Composable parameter and semantics values are not sent in full: the dump expands
+each value 2 levels deep, and includes the first 5 elements of each collection.
+A value with content left out has `"isTruncated": true` and a
+`"continuationToken"`:
+
+```json
+{
+  "name": "sevenItems",
+  "value": "List[7]",
+  "isTruncated": true,
+  "continuationToken": "1:-2038048216:p:1::5:ybkj5j",
+  "isCollection": true,
+  "elements": [
+    {"name": "[0]", "value": "one"}, {"name": "[1]", "value": "two"}, {"name": "[2]", "value": "three"},
+    {"name": "[3]", "value": "four"}, {"name": "[4]", "value": "five"}
+  ]
+}
+```
+
+`get-parameter` takes the token and prints that value as JSON, in the same
+format as in the dump:
+
+```
+$ ui-inspector get-parameter --package com.example.stresstest --continuation-token '1:-2038048216:p:1::5:ybkj5j'
+{"name":"sevenItems","value":"List[7]","isCollection":true,"elements":[{"name":"[5]","value":"six"},{"name":"[6]","value":"seven"}]}
+```
+
+One call returns:
+
+* For a collection, all its elements from the token's position to its end. Its
+  `"value"`, e.g. `"List[100000]"`, tells its size before fetching it, except
+  for `"Iterable"` and `"Sequence"`; write large ones to a file with `--output`.
+* For an object, its content.
+* In both cases, the values inside are expanded as in the dump: 2 levels deep
+  from the requested value, and 5 elements per nested collection. The values
+  cut there have `"isTruncated": true` and a `"continuationToken"` of their own.
+  `get-parameter` does not follow them: each one takes a call of its own.
+
+Nested tokens are not followed because a value can lead back to itself, or to a
+large part of the app's state. An object that references itself, e.g.
+`class Cyclic(val name: String) { var other: Cyclic? = null }` with
+`self.other = self`, shows `self.other.other` with a token in the dump. Fetching
+that token returns `other.other.other` with a new token, and so on: each call
+returns a finite answer, and going deeper is up to the caller.
+
+A collection too large for one call, e.g. an endless `Sequence` built with
+`generateSequence`, is cut off after about 10 MB, again with
+`"isTruncated": true` and a `"continuationToken"` to continue from there.
+
+Tokens are opaque, and resolved against the UI on screen. After the UI changed,
+run `dump-ui` again: `get-parameter` fails when the value is gone, has another
+name or `"value"` (e.g. a list with another size), or is no longer a collection
+when continuing one. A value at the same place with the same name and
+`"value"` is returned as is, e.g. a list of the same size with other elements,
+or a `Sequence` or `Iterable`, whose `"value"` has no size.
 
 ## Change detection
 

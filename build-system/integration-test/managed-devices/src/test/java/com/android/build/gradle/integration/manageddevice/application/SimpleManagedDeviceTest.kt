@@ -186,4 +186,52 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
     result.assertOutputContains("device1_0")
     result.assertOutputContains("device1_1")
   }
+
+  @Test
+  fun runFailingManagedDeviceTestWithContinue() {
+    rule.build
+      .androidApplication()
+      .files
+      .add(
+        "src/androidTest/java/com/example/android/kotlin/FailingInstrumentedTest.kt",
+        // language=kotlin
+        """
+        package com.example.android.kotlin
+
+        import androidx.test.ext.junit.runners.AndroidJUnit4
+        import org.junit.Assert.fail
+        import org.junit.Test
+        import org.junit.runner.RunWith
+
+        @RunWith(AndroidJUnit4::class)
+        class FailingInstrumentedTest {
+            @Test
+            fun testFailure() {
+                fail("This test is supposed to fail")
+            }
+        }
+        """
+          .trimIndent(),
+      )
+
+    // With --continue, the failing managed device test doesn't prevent the report from being generated, and testAllSuites then fails
+    // because the report contains a failing test. There is no connected device, so the connected test task, which also contributes to the
+    // report, is excluded.
+    val result =
+      executor
+        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+        .withArguments(listOf("--continue", "-x", ":app:connectedDebugAndroidTest"))
+        .expectFailure()
+        .run(":app:testAllSuites")
+
+    Truth.assertThat(result.failedTasks).containsExactly(":app:device1DebugAndroidTest", ":app:testAllSuites")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testResultsCollectionDebug")
+    result.assertErrorContains("reports/testAllSuites/test-report/index.html")
+
+    val reportDir = FileUtils.join(rule.build.androidApplication().buildDir.toFile(), "reports", "testAllSuites", "test-report")
+    assertThat(File(reportDir, "index.html")).exists()
+    val dataJsContent = File(reportDir, "data.js").readText()
+    Truth.assertThat(dataJsContent).contains("\"name\":\"useAppContext\"")
+    Truth.assertThat(dataJsContent).contains("\"name\":\"testFailure\"")
+  }
 }

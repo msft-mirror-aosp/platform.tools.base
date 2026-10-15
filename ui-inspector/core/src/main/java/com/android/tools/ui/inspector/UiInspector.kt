@@ -18,7 +18,9 @@ package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbSession
 import com.android.tools.ui.inspector.deploy.InjectionManager
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.UiDump
+import com.android.tools.ui.inspector.model.UiNode
 import java.nio.file.Path
 
 /**
@@ -71,4 +73,22 @@ internal constructor(
       )
     }
   }
+
+  /**
+   * Fetches the content that a dump or an earlier call left out of the parameter value [reference] identifies, in [packageName] on the
+   * device [serial]. The UI must not have changed since then.
+   */
+  suspend fun getParameter(serial: String, packageName: String, reference: ParameterReference): UiNode.ComposeParameter =
+    runWithConnectedInspectors(
+      adbSession,
+      serial,
+      packageName,
+      needsDebugViewAttributes = false,
+      composeInspectorJar,
+      cacheDir,
+      logger,
+      injectionManagerFactory,
+    ) { commandSender, composeInspectorConnected ->
+      fetchParameter(commandSender, composeInspectorConnected, reference)
+    }
 }

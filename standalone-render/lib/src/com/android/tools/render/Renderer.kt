@@ -30,6 +30,10 @@ import com.android.tools.render.validation.PreviewValidator
 import com.android.tools.rendering.RenderLogger
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.RenderService
+import com.android.tools.rendering.compose.ComposeViewInfo
+import com.android.tools.rendering.compose.boundsJsonPath
+import com.android.tools.rendering.compose.parseViewInfo
+import com.android.tools.rendering.compose.toJsonArray
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -195,13 +199,22 @@ class Renderer(
         val relativeImagePath = packagePath + File.separator + imageName
         try {
           val imageRendered = postProcessRenderedImage(config, renderResult)
+          val viewInfos = renderResult.rootViews.flatMap { parseViewInfo(it) }
           if (imageRendered != null) {
             saveImage(imageRendered, outputFolderPath, relativeImagePath)
+            saveViewInfos(viewInfos, outputFolderPath, relativeImagePath)
           }
 
           val screenshotError = renderResult.toScreenshotError(imageRendered)
           // Pass the raw unsanitized display name so downstream test descriptors can display it in reports.
-          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, screenshotError, layout.displayName)
+          PreviewScreenshotResult(
+            screenshot.previewId,
+            screenshot.methodFQN,
+            relativeImagePath,
+            screenshotError,
+            layout.displayName,
+            viewInfos,
+          )
         } catch (t: Throwable) {
           PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, t.toScreenshotError(), layout.displayName)
         } finally {
@@ -220,6 +233,16 @@ class Renderer(
       ImageIO.write(image, "png", imgFile)
     } catch (e: IOException) {
       logger.log(Level.SEVERE, "Failed to write image to $imagePath", e)
+    }
+  }
+
+  internal fun saveViewInfos(viewInfos: List<ComposeViewInfo>, outputFolderPath: String, relativeImagePath: String) {
+    val boundsPath = boundsJsonPath(Paths.get(outputFolderPath, relativeImagePath))
+    try {
+      boundsPath.parent?.let { Files.createDirectories(it) }
+      Files.writeString(boundsPath, viewInfos.toJsonArray().toString())
+    } catch (e: IOException) {
+      logger.log(Level.SEVERE, "Failed to write view info bounds to $boundsPath", e)
     }
   }
 

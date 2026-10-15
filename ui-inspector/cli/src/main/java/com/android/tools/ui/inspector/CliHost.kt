@@ -21,6 +21,7 @@ import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
 import com.android.prefs.AndroidLocationsSingleton
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.printer.json.withJsonPrinter
 import java.io.PrintWriter
 import java.nio.file.Path
@@ -37,6 +38,10 @@ private const val EXIT_ERROR = 1
 
 private const val DEVICE_OPTION_DESCRIPTION =
   "The device serial number. Defaults to the only online device; required when multiple online devices are connected"
+private const val PACKAGE_OPTION_DESCRIPTION = "The app package name. Defaults to the app currently in the foreground"
+private const val PRETTY_OPTION_DESCRIPTION = "Pretty-print the returned JSON"
+private const val OUTPUT_OPTION_DESCRIPTION = "Writes the output to the specified file. If omitted, prints to standard output"
+private const val COMPOSE_INSPECTOR_OPTION_DESCRIPTION = "Path to a local Compose Inspector JAR file to use instead of the one from maven"
 
 /** Where the CLI keeps the Compose inspector jars it downloads, on the host cache. */
 private const val COMPOSE_INSPECTOR_CACHE_PATH = "ui-inspector/cache"
@@ -52,13 +57,20 @@ internal class UiInspectorCommand : Callable<Int> {
 }
 
 /** The `dump-ui` command; [sessionFactory] opens the adb session a run uses. */
-@Command(name = "dump-ui", description = ["Dump UI hierarchy"])
+@Command(
+  name = "dump-ui",
+  description =
+    [
+      "Dump UI hierarchy.",
+      "Composable parameter and semantics values stop after 2 levels of nesting and 5 elements per collection. Such values have " +
+        "\"isTruncated\": true and a \"continuationToken\" that get-parameter takes to fetch the rest.",
+    ],
+)
 internal class DumpUiCommand(private val sessionFactory: () -> AdbSession) : Callable<Int> {
   @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
   @Option(names = ["-h", "--help"], usageHelp = true, description = ["Show this help message and exit"]) private var helpRequested = false
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
-  @Option(names = ["--package"], description = ["The app package name. Defaults to the app currently in the foreground"])
-  var packageName: String? = null
+  @Option(names = ["--package"], description = [PACKAGE_OPTION_DESCRIPTION]) var packageName: String? = null
   @Option(
     names = ["--include"],
     split = ",",
@@ -71,39 +83,17 @@ internal class DumpUiCommand(private val sessionFactory: () -> AdbSession) : Cal
       ],
   )
   internal var include: List<IncludeFacet> = emptyList()
-  @Option(names = ["--pretty", "-p"], description = ["Pretty-print the returned JSON"]) var prettyPrint: Boolean = false
-  @Option(names = ["-o", "--output"], description = ["Writes the output to the specified file. If omitted, prints to standard output"])
-  var output: Path? = null
-  @Option(
-    names = ["--compose-inspector"],
-    description = ["Path to a local Compose Inspector JAR file to use instead of the one from maven"],
-  )
-  var composeInspectorJarPath: String? = null
+  @Option(names = ["--pretty", "-p"], description = [PRETTY_OPTION_DESCRIPTION]) var prettyPrint: Boolean = false
+  @Option(names = ["-o", "--output"], description = [OUTPUT_OPTION_DESCRIPTION]) var output: Path? = null
+  @Option(names = ["--compose-inspector"], description = [COMPOSE_INSPECTOR_OPTION_DESCRIPTION]) var composeInspectorJarPath: String? = null
 
   override fun call(): Int {
     val adbSession = sessionFactory()
     try {
-      val (serial, targetPackage) =
-        runBlocking {
-          val serial =
-            device
-              ?: runCatching { resolveSoleOnlineDevice(adbSession) }
-                .getOrElse { throw IllegalStateException("${it.message} Specify a device with --device.", it) }
-          val targetPackage =
-            packageName
-              ?: runCatching { resolveForegroundPackage(adbSession, serial) }
-                .getOrElse { throw IllegalStateException("${it.message} Specify a package with --package.", it) }
-          serial to targetPackage
-        }
+      val (serial, targetPackage) = resolveTarget(adbSession, device, packageName)
       val err = spec.commandLine().err
       err.println("Executing dump-ui for package: $targetPackage on device: $serial")
-      val inspector =
-        UiInspector(
-          adbSession,
-          cacheDir = AndroidLocationsSingleton.prefsLocation.resolve(COMPOSE_INSPECTOR_CACHE_PATH),
-          composeInspectorJar = composeInspectorJarPath?.let(Paths::get),
-          logger = stderrLogger(err),
-        )
+      val inspector = createUiInspector(adbSession, composeInspectorJarPath, err)
       // The output is opened before the dump runs, so an unwritable path fails before the agent is injected.
       withJsonPrinter(output, prettyPrint) { printer ->
         printer.printDump(runBlocking { inspector.dump(serial, targetPackage, requestedFacets(include)) })
@@ -116,12 +106,93 @@ internal class DumpUiCommand(private val sessionFactory: () -> AdbSession) : Cal
   }
 }
 
+/** The `get-parameter` command; [sessionFactory] opens the adb session a run uses. */
+@Command(
+  name = "get-parameter",
+  description =
+    [
+      "Fetch a Compose parameter value that dump-ui or get-parameter left out. A value with \"isTruncated\": true has a " +
+        "\"continuationToken\"; pass it to --continuation-token. Prints the value as JSON, in the format of dump-ui parameters.",
+      "A collection is returned with all its elements from the token's position to the end, in one call. Its \"value\" " +
+        "(e.g. \"List[100000]\") tells the size before you fetch it, except for \"Iterable\" and \"Sequence\": write large ones to " +
+        "a file with --output.",
+      "Values nested inside the result are not followed. Like in dump-ui, nesting stops 2 levels below the requested value and " +
+        "nested collections show 5 elements; those values have \"isTruncated\" and their own \"continuationToken\".",
+      "A collection too large for one call (e.g. an endless Sequence) is cut off, again with \"isTruncated\" and a " +
+        "\"continuationToken\" to continue.",
+      "Tokens are valid only while the UI is unchanged: after a change, run dump-ui again. A token whose value is gone, or now has " +
+        "another name or \"value\" (e.g. a list with another size), fails with \"no longer available\" and exit code 1; one leading " +
+        "to a value with the same name and \"value\" (e.g. a list of the same size with other elements, or a Sequence, whose " +
+        "\"value\" has no size) returns that value.",
+    ],
+)
+internal class GetParameterCommand(private val sessionFactory: () -> AdbSession) : Callable<Int> {
+  @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
+  @Option(names = ["-h", "--help"], usageHelp = true, description = ["Show this help message and exit"]) private var helpRequested = false
+  @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
+  @Option(names = ["--package"], description = [PACKAGE_OPTION_DESCRIPTION]) var packageName: String? = null
+  @Option(
+    names = ["--continuation-token"],
+    required = true,
+    description =
+      ["The \"continuationToken\" of a value with \"isTruncated\": true in the output of dump-ui or get-parameter, passed unchanged"],
+  )
+  lateinit var continuationToken: String
+  @Option(names = ["--pretty", "-p"], description = [PRETTY_OPTION_DESCRIPTION]) var prettyPrint: Boolean = false
+  @Option(names = ["-o", "--output"], description = [OUTPUT_OPTION_DESCRIPTION]) var output: Path? = null
+  @Option(names = ["--compose-inspector"], description = [COMPOSE_INSPECTOR_OPTION_DESCRIPTION]) var composeInspectorJarPath: String? = null
+
+  override fun call(): Int {
+    try {
+      // Parsed before connecting to the device, so that a mistyped token fails fast.
+      val parameterReference = ParameterReference.parse(continuationToken)
+      val adbSession = sessionFactory()
+      val (serial, targetPackage) = resolveTarget(adbSession, device, packageName)
+      val err = spec.commandLine().err
+      err.println("Executing get-parameter for package: $targetPackage on device: $serial")
+      val inspector = createUiInspector(adbSession, composeInspectorJarPath, err)
+      // The output is opened before the parameter is fetched, so an unwritable path fails before the agent is injected.
+      withJsonPrinter(output, prettyPrint) { printer ->
+        printer.printParameter(runBlocking { inspector.getParameter(serial, targetPackage, parameterReference) })
+      }
+      return EXIT_OK
+    } catch (e: Exception) {
+      spec.commandLine().err.println("Error: ${e.message}")
+      return EXIT_ERROR
+    }
+  }
+}
+
+/** Returns the device serial and the package name a command targets: [device] and [packageName], or the defaults their options document. */
+private fun resolveTarget(adbSession: AdbSession, device: String?, packageName: String?): Pair<String, String> = runBlocking {
+  val serial =
+    device
+      ?: runCatching { resolveSoleOnlineDevice(adbSession) }
+        .getOrElse { throw IllegalStateException("${it.message} Specify a device with --device.", it) }
+  val targetPackage =
+    packageName
+      ?: runCatching { resolveForegroundPackage(adbSession, serial) }
+        .getOrElse { throw IllegalStateException("${it.message} Specify a package with --package.", it) }
+  serial to targetPackage
+}
+
+/** Creates the [UiInspector] of a command, which logs to [err] and uses the Compose inspector at [composeInspectorJarPath] if set. */
+private fun createUiInspector(adbSession: AdbSession, composeInspectorJarPath: String?, err: PrintWriter) =
+  UiInspector(
+    adbSession,
+    cacheDir = AndroidLocationsSingleton.prefsLocation.resolve(COMPOSE_INSPECTOR_CACHE_PATH),
+    composeInspectorJar = composeInspectorJarPath?.let(Paths::get),
+    logger = stderrLogger(err),
+  )
+
 /**
  * Creates the fully configured command line used by [main], whose commands open their adb session with [sessionFactory]. Tests use it too,
  * so production command registration is what gets exercised.
  */
 internal fun createCommandLine(sessionFactory: () -> AdbSession): CommandLine =
-  CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand(sessionFactory))
+  CommandLine(UiInspectorCommand())
+    .addSubcommand("dump-ui", DumpUiCommand(sessionFactory))
+    .addSubcommand("get-parameter", GetParameterCommand(sessionFactory))
 
 fun main(args: Array<String>) {
   exitProcess(createCommandLine { createStandaloneSession(NO_LOGGING) }.execute(*args))

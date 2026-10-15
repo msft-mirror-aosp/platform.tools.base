@@ -1,4 +1,4 @@
-load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "dex_library")
+load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS")
 load("//tools/base/transport/test-framework:transport_test.bzl", "transport_app")
 
 package(default_visibility = ["//visibility:public"])
@@ -8,9 +8,6 @@ transport_app(
     srcs = glob(["src/main/java/**/*.java"]),
     deps = [
         "//tools/base/transport/test-framework/test-app:libtest-app",
-        "@maven//:com.squareup.okhttp.okhttp",
-        "@maven//:com.squareup.okhttp3.okhttp",
-        "@maven//:com.squareup.okio.okio",
     ],
 )
 

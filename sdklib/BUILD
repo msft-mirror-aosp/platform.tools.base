@@ -102,6 +102,16 @@ kotlin_library(
     ],
 )
 
+java_library(
+    name = "sdk_version_info",
+    srcs = ["src/main/java/com/android/sdklib/SdkVersionInfo.java"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/base/annotations",
+        "//tools/base/common:tools.common",
+    ],
+)
+
 generated_libs = [
     ":sdk-addon-1.lib",
     ":sdk-addon-2.lib",

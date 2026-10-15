@@ -1338,11 +1338,15 @@ private constructor(
           // Skip verbose messages
         }
       }
-    val p = sdkHandler.getEmulatorPackage(progress) ?: throw AvdManagerException("The Android Emulator is not installed.")
+    val emulatorPackage =
+      sdkHandler.getEmulatorPackage(progress, useLatestEmulator = true)
+        ?: throw AvdManagerException("The Android Emulator is not installed.")
 
     val mkSdCard =
-      p.mkSdCardBinary
-        ?: throw AvdManagerException("Unable to find \"${SdkConstants.mkSdCardCmdName()}\" in the Android Emulator at \"${p.location}\".")
+      emulatorPackage.mkSdCardBinary
+        ?: throw AvdManagerException(
+          "Unable to find \"${SdkConstants.mkSdCardCmdName()}\" in the Android Emulator at \"${emulatorPackage.location}\"."
+        )
 
     if (!createSdCard(log, mkSdCard.toAbsolutePath().toString(), sdcard.sizeSpec(), path)) {
       // mksdcard's error output has been written to the log.

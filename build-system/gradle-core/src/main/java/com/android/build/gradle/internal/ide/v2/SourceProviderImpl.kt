@@ -39,6 +39,13 @@ data class SourceProviderImpl(
   override val shadersDirectories: Collection<File>?,
   override val mlModelsDirectories: Collection<File>?,
   override val customDirectories: Collection<CustomSourceDirectory>?,
+  override val apiConfigurationName: String?,
+  override val compileOnlyConfigurationName: String?,
+  override val compileOnlyApiConfigurationName: String?,
+  override val implementationConfigurationName: String?,
+  override val runtimeOnlyConfigurationName: String?,
+  override val annotationProcessorConfigurationName: String?,
+  override val kaptConfigurationName: String?,
 ) : SourceProvider, Serializable {
 
   companion object {

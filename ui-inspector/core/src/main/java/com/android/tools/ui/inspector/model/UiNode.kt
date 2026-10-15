@@ -64,11 +64,44 @@ sealed class UiNode {
   sealed class ComposeParameter {
     abstract val name: String
 
-    /** A leaf parameter representing a strongly-typed value. */
-    data class Single(override val name: String, val value: Value) : ComposeParameter()
+    /**
+     * The value of the parameter itself, or null when it has none, which only happens for a [Group]. A parameter whose value is null has
+     * [Value.NullVal] instead.
+     */
+    abstract val value: Value?
 
-    /** A nested group of parameters representing lists or objects. */
-    data class Group(override val name: String, val elements: List<ComposeParameter>, val isCollection: Boolean) : ComposeParameter()
+    /**
+     * A reference used to request data the inspector holds for this parameter but did not send, or null when the inspector sent everything.
+     * See [ParameterReference] for more info.
+     */
+    abstract val reference: ParameterReference?
+
+    /** True when the inspector left out content of this parameter, see [reference]. */
+    val isTruncated: Boolean
+      get() = reference != null
+
+    /** A leaf parameter representing a strongly-typed value. */
+    data class Single(override val name: String, override val value: Value, override val reference: ParameterReference? = null) :
+      ComposeParameter()
+
+    /**
+     * A nested group of parameters representing collections or objects.
+     *
+     * @param elements The parameters the group holds, as sent by the inspector: the elements of a collection, or the properties of an
+     *   object, e.g. "x" and "y" for an Offset. A truncated group holds only some of them, or none.
+     * @param isCollection True for lists, sets, maps, arrays and other iterables, even when none of their elements was sent. Their elements
+     *   are named by index ("[0]") or, for map entries, by key ("[key]"). Null elements, and map entries with a null value, are omitted.
+     * @param value The value of the group as a whole, as reported by the inspector, or null when it has none. For an object it is usually
+     *   its class name (e.g. "Offset"). For a collection it is a summary of its kind and, when known, its total number of elements
+     *   including omitted ones, e.g. "List[7]", "IntArray[8]" or "Map[2]", but just "Iterable" or "Sequence".
+     */
+    data class Group(
+      override val name: String,
+      val elements: List<ComposeParameter>,
+      val isCollection: Boolean,
+      override val value: Value? = null,
+      override val reference: ParameterReference? = null,
+    ) : ComposeParameter()
 
     /** Domain values that preserve original data and type information. */
     sealed class Value {

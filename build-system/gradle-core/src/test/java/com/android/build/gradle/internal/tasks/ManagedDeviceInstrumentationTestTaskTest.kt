@@ -36,7 +36,6 @@ import com.android.tools.utp.gradle.api.EmulatorControlConfig
 import com.android.tools.utp.gradle.api.UtpDependencies
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
@@ -50,6 +49,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildServiceRegistration
+import org.gradle.api.tasks.VerificationException
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -402,7 +402,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
       task.doTaskAction()
 
       error("Should not reach.")
-    } catch (e: GradleException) {
+    } catch (e: VerificationException) {
       assertThat(e.message).startsWith("There were failing tests")
     }
 

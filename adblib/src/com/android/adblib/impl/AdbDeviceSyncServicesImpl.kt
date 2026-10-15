@@ -18,6 +18,8 @@ package com.android.adblib.impl
 import com.android.adblib.AdbDeviceSyncServices
 import com.android.adblib.AdbDeviceSyncServices.ListOptions
 import com.android.adblib.AdbDeviceSyncServices.ListV2Options
+import com.android.adblib.AdbDeviceSyncServices.SendV2Compression
+import com.android.adblib.AdbDeviceSyncServices.SendV2Options
 import com.android.adblib.AdbDeviceSyncServices.StatV2Options
 import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbOutputChannel
@@ -55,6 +57,9 @@ internal class AdbDeviceSyncServicesImpl private constructor(private val syncCon
   /** Helper class to handle `SEND` commands */
   private val sendHandler = SyncSendHandler(syncConnection)
 
+  /** Helper class to handle `SND2` commands */
+  private val sendV2Handler = SyncSendV2Handler(syncConnection)
+
   /** Helper class to handle `RECV` commands */
   private val recvHandler = SyncRecvHandler(syncConnection)
 
@@ -91,6 +96,31 @@ internal class AdbDeviceSyncServicesImpl private constructor(private val syncCon
   ) {
     checkNotClosed()
     sendHandler.send(sourceChannel, remoteFilePath, remoteFileMode, remoteFileTime, progress, bufferSize)
+  }
+
+  override suspend fun sendV2(
+    sourceChannel: AdbInputChannel,
+    remoteFilePath: String,
+    remoteFileMode: RemoteFileMode,
+    remoteFileTime: FileTime?,
+    progress: SyncProgress?,
+    bufferSize: Int,
+    options: SendV2Options,
+  ) {
+    checkNotClosed()
+    if (options.fallbackToSendV1 && !syncConnection.canUseSendV2()) {
+      sendHandler.send(sourceChannel, remoteFilePath, remoteFileMode, remoteFileTime, progress, bufferSize)
+    } else {
+      val compression =
+        when {
+          // The ADB daemon never decompresses the contents of symbolic links
+          remoteFileMode.isSymbolicLink -> SendV2Compression.NONE
+          options.compression == SendV2Compression.AUTO ->
+            if (syncConnection.canUseSendV2Lz4()) SendV2Compression.LZ4 else SendV2Compression.NONE
+          else -> options.compression
+        }
+      sendV2Handler.sendV2(sourceChannel, remoteFilePath, remoteFileMode, remoteFileTime, progress, bufferSize, compression)
+    }
   }
 
   override suspend fun recv(remoteFilePath: String, destinationChannel: AdbOutputChannel, progress: SyncProgress?, bufferSize: Int) {

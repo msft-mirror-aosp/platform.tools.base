@@ -160,8 +160,8 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   /**
    * Adds a failing unit test and a failing instrumentation test to `:lib2`.
    *
-   * These are only added by the tests that verify the behavior on test failures: since failures are never ignored, they fail the build and
-   * prevent the test report tasks (which consume the test task outputs) from running.
+   * These are only added by the tests that verify the behavior on test failures: since failures are never ignored, they fail the build and,
+   * unless the build runs with `--continue`, prevent the test report tasks (which consume the test task outputs) from running.
    */
   private fun addFailingTestsToLib2() {
     val lib2 = rule.build.androidLibrary(":lib2")
@@ -212,6 +212,33 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
     val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
     val outputDir = FileUtils.join(libBuildDir, "reports", "testAllSuites", "test-report")
     assertThat(outputDir).doesNotExist()
+  }
+
+  @Test
+  fun testTestAllSuitesWithFailingTestAndContinue() {
+    addFailingTestsToLib2()
+
+    // With --continue, the failing unit and connected tests don't prevent the report from being generated, and testAllSuites then fails
+    // because the report contains failing tests.
+    val result = rule.build.executor.withArgument("--continue").expectFailure().run(":lib2:testAllSuites")
+    assertThat(result.failedTasks)
+      .containsExactly(":lib2:testDebugUnitTest", ":lib2:testReleaseUnitTest", ":lib2:connectedDebugAndroidTest", ":lib2:testAllSuites")
+    assertThat(result.didWorkTasks).containsAtLeast(":lib2:testResultsCollectionDebug", ":lib2:testResultsCollectionRelease")
+
+    val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
+    val outputDir = FileUtils.join(libBuildDir, "reports", "testAllSuites", "test-report")
+    val reportLocation = ConsoleRenderer().asClickableFileUrl(File(outputDir, "index.html"))
+    result.assertErrorContains("There were failing tests. See the report at: $reportLocation")
+
+    verifyHtmlReport(
+      outputDir = outputDir,
+      taskResult = result,
+      expectedModuleCount = 1,
+      expectedTotalTests = 18,
+      expectedFailedTests = 3,
+      expectedUnitTestSummary = TestSummary(total = 16, passed = 14, failed = 2, skipped = 0),
+      expectedAndroidTestSummary = TestSummary(total = 2, passed = 1, failed = 1, skipped = 0),
+    )
   }
 
   @Test

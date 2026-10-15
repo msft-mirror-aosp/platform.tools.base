@@ -219,6 +219,72 @@ class L8DexDesugarTest {
     TruthHelper.assertThat(hasL8Header).named("Should NOT contain L8 Separator").isFalse()
   }
 
+  /**
+   * Regression test for b/532206373.
+   *
+   * Two things together used to give L8 the same file as both its input and output mapping:
+   * - tasks are configured eagerly (here `tasks.all {}`, which large builds and older plugins often do)
+   * - a third-party plugin transforms OBFUSCATION_MAPPING_FILE (here a task like the Kotlin Compose mapping merge)
+   *
+   * L8 then deleted the shared file during its output clean-up before reading it, and replaced the whole obfuscation mapping with a stub
+   * that held only the L8 section. The final mapping must keep the R8 mapping, the third-party section and the L8 section, and every task
+   * in the transform chain must write to its own file.
+   */
+  @Test
+  fun testMappingIsMergedWithEagerTaskConfigurationAndThirdPartyTransform() {
+    normalSetUp()
+    project.buildFile.appendText(
+      "\n" +
+        """
+        android {
+            buildTypes {
+                debug {
+                    minifyEnabled true
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                }
+            }
+        }
+
+        abstract class AppendMappingSectionTask extends DefaultTask {
+            @InputFile abstract RegularFileProperty getOriginalFile()
+            @OutputFile abstract RegularFileProperty getOutput()
+
+            @TaskAction
+            void run() {
+                File inFile = originalFile.get().asFile
+                File outFile = output.get().asFile
+                if (inFile.canonicalPath == outFile.canonicalPath) {
+                    throw new GradleException("Transform input and output are the same file: " + inFile)
+                }
+                outFile.text = inFile.text + "\n$THIRD_PARTY_SECTION\n"
+            }
+        }
+
+        androidComponents {
+            onVariants(selector().withBuildType("debug")) { variant ->
+                def task = project.tasks.register("appendMappingSection" + variant.name.capitalize(), AppendMappingSectionTask)
+                variant.artifacts.use(task)
+                    .wiredWithFiles({ it.originalFile }, { it.output })
+                    .toTransform(com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE.INSTANCE)
+            }
+        }
+
+        // Configure every task as soon as it is registered.
+        tasks.all { }
+        """
+          .trimIndent()
+    )
+    project.file("proguard-rules.pro").writeText("-keep class com.example.test.BuildConfig { *; }")
+
+    // Run the transform explicitly: depending on the transform order, nothing in assembleDebug may consume the final mapping.
+    project.executor().run("assembleDebug", "appendMappingSectionDebug")
+
+    val content = project.file("build/outputs/mapping/debug/mapping.txt").readLines()
+    TruthHelper.assertThat(content.any { it.contains("com.example.test.BuildConfig ->") }).named("Contains App Mapping").isTrue()
+    TruthHelper.assertThat(content).named("Mapping content").contains(THIRD_PARTY_SECTION)
+    TruthHelper.assertThat(content).named("Mapping content").contains(EXPECTED_L8_HEADER)
+  }
+
   /** MultidexEnabled is required for core library desugaring when minSdkVersion is less than 21. */
   @Test
   fun testMultidexEnabledPrerequisite() {
@@ -333,5 +399,6 @@ class L8DexDesugarTest {
         "dependencies. If you intend to enable core library desugaring, please add " +
         "dependencies to coreLibraryDesugaring configuration."
     private const val EXPECTED_L8_HEADER = "# L8 Desugaring Mapping"
+    private const val THIRD_PARTY_SECTION = "# Third-party mapping section"
   }
 }

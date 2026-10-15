@@ -49,10 +49,10 @@ private fun getFilePaths(
   isExtensionWanted: (String?) -> Boolean,
   includeDirectoryRoot: Boolean = false,
 ): PathCollection {
-  val physicalPaths = hashSetOf<Path>()
-  val physicalDirectoryPaths = hashSetOf<Path>()
-  val virtualFiles = hashSetOf<VirtualFile>()
-  val virtualDirectories = hashSetOf<VirtualFile>()
+  val physicalPaths = linkedSetOf<Path>()
+  val physicalDirectoryPaths = linkedSetOf<Path>()
+  val virtualFiles = linkedSetOf<VirtualFile>()
+  val virtualDirectories = linkedSetOf<VirtualFile>()
 
   fun fromFile(root: File) {
     val path = Paths.get(root.path)
@@ -91,10 +91,10 @@ private fun getFilePaths(
  * our of a non-physical file.
  */
 internal fun Iterable<File>.toPathCollection(): PathCollection {
-  val physicalFilePaths = hashSetOf<Path>()
-  val physicalDirectoryPaths = hashSetOf<Path>()
-  val virtualFiles = hashSetOf<VirtualFile>()
-  val virtualDirectories = hashSetOf<VirtualFile>()
+  val physicalFilePaths = linkedSetOf<Path>()
+  val physicalDirectoryPaths = linkedSetOf<Path>()
+  val virtualFiles = linkedSetOf<VirtualFile>()
+  val virtualDirectories = linkedSetOf<VirtualFile>()
   for (file in this) {
     when (file) {
       is VirtualFileWrapper -> {

@@ -35,6 +35,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.process.CommandLineArgumentProvider
 
 /**
@@ -204,6 +205,9 @@ constructor(
       )
       // Gradle doesn't pass the build's system properties to test JVMs, so forward the ones that select devices.
       task.jvmArgumentProviders.add(DevicePropertiesArgumentProvider(deviceProperties))
+      // The backup library tells why a backup, restore or check failed in the exception message, which Gradle's default SHORT
+      // format leaves out of the console.
+      task.testLogging { it.exceptionFormat = TestExceptionFormat.FULL }
     }
   }
 

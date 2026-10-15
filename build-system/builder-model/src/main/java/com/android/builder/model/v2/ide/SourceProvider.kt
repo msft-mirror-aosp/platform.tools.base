@@ -138,4 +138,29 @@ interface SourceProvider : AndroidModel {
    * @return a [Collection] of custom directories.
    */
   val customDirectories: Collection<CustomSourceDirectory>?
+
+  /** Returns the name of the api configuration for this source set. */
+  val apiConfigurationName: String?
+
+  /** Returns the name of the compileOnly configuration for this source set. */
+  val compileOnlyConfigurationName: String?
+
+  /** Returns the name of the compileOnlyApi configuration for this source set. */
+  val compileOnlyApiConfigurationName: String?
+
+  /** Returns the name of the implementation configuration for this source set. */
+  val implementationConfigurationName: String?
+
+  /** Returns the name of the implementation configuration for this source set. */
+  val runtimeOnlyConfigurationName: String?
+
+  /** Returns the name of the annotation processing tool classpath for this source set. */
+  val annotationProcessorConfigurationName: String?
+
+  /**
+   * Returns the name of the kapt annotation processing tool classpath for this source set.
+   *
+   * This configuration is only created when built-in KAPT support is enabled.
+   */
+  val kaptConfigurationName: String?
 }

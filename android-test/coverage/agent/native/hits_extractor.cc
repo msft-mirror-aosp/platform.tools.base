@@ -123,17 +123,21 @@ bool HitsExtractor::ExtractAndWrite(JNIEnv* jni) const {
 
   jni->ReleaseBooleanArrayElements(hits_array, hits_ptr, JNI_ABORT);
 
+  // 3. Write the hits file even when nothing was hit. Without it the host
+  // can't tell a run that executed no instrumented code from a run that
+  // produced no coverage data.
   if (bitmask.empty()) {
-    Log::I("No coverage hits recorded. Skipping hits file generation.");
-    return true;
+    Log::I("No coverage hits recorded. Writing an empty hits file.");
   }
+  return WriteHitsFile(data_dir_ + "/coverage_hits.pb", bitmask);
+}
 
-  // 3. Serialize to Protobuf.
+bool HitsExtractor::WriteHitsFile(const std::string& path,
+                                  const std::string& bitmask) {
   proto::CoverageHits hits_proto;
   hits_proto.set_version(1);
   hits_proto.set_hit_mask(bitmask);
 
-  std::string path = data_dir_ + "/coverage_hits.pb";
   std::string tmp_path = path + ".tmp";
 
   std::ofstream out(tmp_path, std::ios::binary | std::ios::trunc);

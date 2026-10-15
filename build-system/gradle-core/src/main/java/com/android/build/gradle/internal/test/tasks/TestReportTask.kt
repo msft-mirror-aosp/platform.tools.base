@@ -39,6 +39,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.VerificationException
 import org.gradle.internal.logging.ConsoleRenderer
 
 @CacheableTask
@@ -62,7 +63,8 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
     val testReport = testReport.get().asFile
 
     val rootDir = rootProjectDir.get().asFile
-    XMLReportAggregator(inputDirectories, rootProjectName.get(), rootDir).writeReport(testReport)
+    val aggregator = XMLReportAggregator(inputDirectories, rootProjectName.get(), rootDir)
+    aggregator.writeReport(testReport)
 
     // --- CODE COVERAGE REPORT GENERATION ---
     if (coverageXmlReports.isPresent && coverageXmlReports.get().isNotEmpty()) {
@@ -93,6 +95,11 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
         """
           .trimIndent()
       )
+    }
+
+    if (aggregator.getFailedTestCount() > 0) {
+      val reportUrl = ConsoleRenderer().asClickableFileUrl(File(testReport, "index.html"))
+      throw VerificationException("There were failing tests. See the report at: $reportUrl")
     }
   }
 

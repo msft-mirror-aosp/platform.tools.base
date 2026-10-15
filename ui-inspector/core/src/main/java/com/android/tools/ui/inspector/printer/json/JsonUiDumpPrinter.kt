@@ -106,6 +106,8 @@ private object JsonKeys {
   const val DIRECT_SOURCE = "directSource"
   const val STYLE_CHAIN = "styleChain"
   const val IS_COLLECTION = "isCollection"
+  const val IS_TRUNCATED = "isTruncated"
+  const val CONTINUATION_TOKEN = "continuationToken"
   const val ELEMENTS = "elements"
   const val UNIT = "unit"
   const val NAMESPACE = "namespace"
@@ -156,6 +158,10 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
 
   override fun printDump(uiDump: UiDump) {
     writeJson(serializeUiDump(uiDump))
+  }
+
+  override fun printParameter(parameter: UiNode.ComposeParameter) {
+    writeJson(serializeComposeParameter(parameter))
   }
 
   /** Serializes [jsonObject] to the output stream. */
@@ -325,16 +331,17 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
   private fun serializeComposeParameter(param: UiNode.ComposeParameter): JsonObject {
     val obj = JsonObject()
     obj.addProperty(JsonKeys.NAME, param.name)
-    when (param) {
-      is UiNode.ComposeParameter.Single -> {
-        obj.add(JsonKeys.VALUE, serializeComposeParameterValue(param.value))
-      }
-      is UiNode.ComposeParameter.Group -> {
-        obj.addProperty(JsonKeys.IS_COLLECTION, param.isCollection)
-        val elementsArray = JsonArray()
-        param.elements.forEach { elem -> elementsArray.add(serializeComposeParameter(elem)) }
-        obj.add(JsonKeys.ELEMENTS, elementsArray)
-      }
+    param.value?.let { obj.add(JsonKeys.VALUE, serializeComposeParameterValue(it)) }
+    // Only truncated parameters are marked, so that the dump stays small: a parameter without the keys is complete.
+    param.reference?.let {
+      obj.addProperty(JsonKeys.IS_TRUNCATED, true)
+      obj.addProperty(JsonKeys.CONTINUATION_TOKEN, it.encode())
+    }
+    if (param is UiNode.ComposeParameter.Group) {
+      obj.addProperty(JsonKeys.IS_COLLECTION, param.isCollection)
+      val elementsArray = JsonArray()
+      param.elements.forEach { elem -> elementsArray.add(serializeComposeParameter(elem)) }
+      obj.add(JsonKeys.ELEMENTS, elementsArray)
     }
     return obj
   }

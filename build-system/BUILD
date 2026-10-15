@@ -674,7 +674,7 @@ maven_repository(
         "@maven//:com.google.guava.guava_33.4.0-android",
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.protobuf.protobuf-gradle-plugin",
-        "@maven//:com.google.protobuf.protoc_3.22.3",
+        "@maven//:com.google.protobuf.protoc_3.25.5",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.googlecode.jarjar.jarjar",
         "@maven//:com.googlecode.juniversalchardet.juniversalchardet",

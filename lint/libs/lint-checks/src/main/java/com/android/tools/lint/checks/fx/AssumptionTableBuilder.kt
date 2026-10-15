@@ -62,22 +62,22 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) : Lattice<FX> by lat
   infix fun Pair<ClassId, String>.assumedVirtual(result: ResultTemplate<FX>) {
     val domains = result.domains
     val receiver = domains.firstOrNull() ?: throw IllegalArgumentException("No receiver")
-    val receiverC = receiver.erase()
+    val receiverC = receiver.erase(result.typeBounds)
     require(receiverC == first) { throw IllegalArgumentException("Invalid receiver $receiverC") }
     val rest = domains.subList(1, domains.size)
-    val method = MethodId(true, second, rest.map { it.erase() })
+    val method = MethodId(true, second, rest.map { it.erase(result.typeBounds) })
     MethodRef(first, method) assumedAs result
   }
 
   infix fun Pair<ClassId, String>.assumedStatic(result: ResultTemplate<FX>) {
-    val method = MethodId(false, second, result.domains.map { it.erase() })
+    val method = MethodId(false, second, result.domains.map { it.erase(result.typeBounds) })
     MethodRef(first, method) assumedAs result
   }
 
-  private fun Type<FX>.erase(): ClassId? =
+  private fun Type<FX>.erase(bounds: TypeBounds<Nothing>): ClassId? =
     when (this) {
       is Type.Application -> constructor
-      is Type.Sym.Param,
+      is Type.Sym.Param -> bounds[this]?.singleOrNull()?.erase(bounds)
       is Type.WildCard -> null
       is Type.Ellipsis -> ClassId.Array
       else -> throw IllegalArgumentException("Unexpected: $this")

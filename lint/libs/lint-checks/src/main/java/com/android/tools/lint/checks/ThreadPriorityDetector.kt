@@ -67,8 +67,7 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
           Confusing these scales can lead to bugs. For example, passing `Thread.MAX_PRIORITY` (10) to `Process.setThreadPriority` sets the priority to `THREAD_PRIORITY_BACKGROUND` (slow), which is the opposite of intended. Passing `Process.THREAD_PRIORITY_BACKGROUND` (10) to `Thread.setPriority` sets it to MAX priority. Passing negative values to `Thread.setPriority` causes a runtime exception.
 
           Similarly, `android.os.HandlerThread` inherits from `java.lang.Thread`, but its constructor and internal priority expect `android.os.Process` priorities (such as `Process.THREAD_PRIORITY_DEFAULT` or `Process.THREAD_PRIORITY_BACKGROUND`). Referencing inherited `Thread` priority constants via `HandlerThread` (such as `HandlerThread.MIN_PRIORITY`, `HandlerThread.NORM_PRIORITY`, or `HandlerThread.MAX_PRIORITY`) is misleading and causes incorrect thread priorities (e.g. `HandlerThread.MIN_PRIORITY` is `1`, which corresponds to Linux nice +1 instead of `Process.THREAD_PRIORITY_LOWEST` (19)).
-          """
-            .trimIndent(),
+          """,
         category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.ERROR,

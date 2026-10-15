@@ -118,6 +118,11 @@ public class Locale {
         return qualifier.getRegion() != null && !FAKE_VALUE.equals(qualifier.getRegion());
     }
 
+    /** Returns whether this locale represents an Android pseudolocale (such as en-XA or ar-XB). */
+    public boolean isPseudoLocale() {
+        return qualifier != null && qualifier.isPseudoLocale();
+    }
+
     /**
      * Returns the locale formatted as language-region. If region is not set, language is returned.
      * If language is not set, empty string is returned.

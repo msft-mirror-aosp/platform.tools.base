@@ -38,7 +38,9 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
 import com.android.build.gradle.internal.component.features.InstrumentationCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
+import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.Option
@@ -49,6 +51,8 @@ import com.android.builder.core.ComponentTypeImpl
 import com.android.utils.appendCapitalized
 import java.io.File
 import org.gradle.api.JavaVersion
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 
 class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sourceContainer: TestSuiteSourceContainer) :
   ApkCreationConfig,
@@ -70,6 +74,17 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
 
   override val artifacts: ArtifactsImpl
     get() = sourceContainer.artifacts
+
+  override val builtInKaptSupportMode: BuiltInKaptSupportMode
+    get() = BuiltInKaptSupportMode.NotSupported
+
+  override val useBuiltInKaptSupport: Boolean
+    get() = false
+
+  override fun getBuiltInKotlincOutput(): Provider<Directory>? =
+    artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC).takeIf { useBuiltInKotlinSupport }
+
+  override fun getBuiltInKaptArtifact(internalArtifactType: InternalArtifactType<Directory>): Provider<Directory>? = null
 
   override val testOnlyApk: Boolean
     get() = true

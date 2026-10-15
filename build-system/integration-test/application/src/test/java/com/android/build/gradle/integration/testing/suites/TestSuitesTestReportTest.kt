@@ -19,6 +19,9 @@ package com.android.build.gradle.integration.testing.suites
 import com.android.Version
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
+import com.android.build.api.testsuites.TestEngineInputProperty
+import com.android.build.api.testsuites.TestSuiteExecutionClient
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
@@ -26,6 +29,8 @@ import com.android.build.gradle.options.BooleanOption
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import java.io.File
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -57,6 +62,14 @@ class TestSuitesTestReportTest {
             CustomClassDescriptor::class.java,
           )
           .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", CustomJunitEngineForTesting::class.java.name)
+        jar("com.test:listed-tests-junit-engine:1.0")
+          .addClasses(
+            ListedTestsJunitEngine::class.java,
+            CustomTestDescriptor::class.java,
+            CustomEngineDescriptor::class.java,
+            CustomClassDescriptor::class.java,
+          )
+          .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", ListedTestsJunitEngine::class.java.name)
       }
       .from {
         gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
@@ -211,6 +224,46 @@ class TestSuitesTestReportTest {
   }
 
   @Test
+  fun testReportingWithFailingAndRemovedTests() {
+    val build = rule.build {
+      androidApplication {
+        android {
+          testOptions.customSuites.create("listed") {
+            it.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+              includeEngines.add("listed-tests-junit-engine")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:listed-tests-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.assets {}
+            it.targetVariants.add("debug")
+            it.targets.create("t1") {}
+          }
+        }
+        files { add("src/listed/tests.txt", "com.example.FailingTest\ncom.example.PassingTest") }
+      }
+    }
+
+    // With --continue, the failing test doesn't prevent the report from being generated, and testAllSuites then fails because the report
+    // contains a failing test.
+    var result = build.executor.withArgument("--continue").expectFailure().run(":app:testAllSuites")
+
+    assertThat(result.failedTasks).containsExactly(":app:testDebugListedT1TestSuite", ":app:testAllSuites")
+    assertThat(result.didWorkTasks).contains(":app:testResultsCollectionDebug")
+    result.assertErrorContains("reports/testAllSuites/test-report/index.html")
+    assertThat(build.collectedTestClasses()).containsExactly("com.example.FailingTest", "com.example.PassingTest")
+
+    // Gradle keeps the outputs of the test task across runs, but the results of the removed test class must not be reported anymore.
+    build.androidApplication().files.update("src/listed/tests.txt").replaceWith("com.example.PassingTest")
+    result = build.executor.withArgument("--continue").run(":app:testAllSuites")
+
+    assertThat(result.didWorkTasks).containsAtLeast(":app:testDebugListedT1TestSuite", ":app:testAllSuites")
+    assertThat(build.collectedTestClasses()).containsExactly("com.example.PassingTest")
+  }
+
+  @Test
   fun testTestSuiteCodeCoverageEnabled() {
     val build = rule.build {
       androidApplication {
@@ -349,6 +402,14 @@ class TestSuitesTestReportTest {
     return gson.fromJson(content, T::class.java)
   }
 
+  /** Returns the `com.example` test classes whose results are collected for the testAllSuites report. */
+  private fun GradleBuild.collectedTestClasses(): List<String> =
+    androidApplication()
+      .intermediatesDir
+      .resolve("project_level_test_results/global/testResultsCollectionDebug")
+      .listDirectoryEntries("TEST-com.example.*.xml")
+      .map { it.name.removePrefix("TEST-").substringBefore('_') }
+
   // --- Data classes for parsing JSON from report files ---
 
   data class TestCoverageReport(
@@ -435,6 +496,58 @@ class TestSuitesTestReportTest {
       }
 
       executeNode(request.rootTestDescriptor)
+    }
+  }
+
+  /**
+   * A JUnit engine running the test classes listed in the `tests.txt` file of the test suite source folders, one class name per line. Each
+   * class has a single test, which fails if the class name contains "Failing".
+   *
+   * NOTE: This class avoids using lambdas, anonymous classes, or companion objects to simplify bundling into integration test JARs.
+   */
+  class ListedTestsJunitEngine : TestEngine {
+
+    override fun getId(): String {
+      return "listed-tests-junit-engine"
+    }
+
+    override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
+      val engineDescriptor = CustomEngineDescriptor(uniqueId)
+      val sourceFolders = TestSuiteExecutionClient.default().getInputParameter(TestEngineInputProperty.SOURCE_FOLDERS)
+      for (sourceFolder in sourceFolders.split(File.pathSeparator)) {
+        val testList = File(sourceFolder, "tests.txt")
+        if (!testList.isFile) continue
+        for (line in testList.readLines()) {
+          val className = line.trim()
+          if (className.isEmpty()) continue
+          val classId = uniqueId.append("class", className)
+          val classDescriptor = CustomClassDescriptor(classId, className)
+          classDescriptor.addChild(CustomTestDescriptor(classId.append("test", "test"), "test", className))
+          engineDescriptor.addChild(classDescriptor)
+        }
+      }
+      return engineDescriptor
+    }
+
+    override fun execute(request: ExecutionRequest) {
+      val listener: EngineExecutionListener = request.engineExecutionListener
+      val root = request.rootTestDescriptor
+      listener.executionStarted(root)
+      for (classDescriptor in root.children) {
+        listener.executionStarted(classDescriptor)
+        for (test in classDescriptor.children) {
+          listener.executionStarted(test)
+          val testResult =
+            if (classDescriptor.displayName.contains("Failing")) {
+              TestExecutionResult.failed(AssertionError("${classDescriptor.displayName} is supposed to fail"))
+            } else {
+              TestExecutionResult.successful()
+            }
+          listener.executionFinished(test, testResult)
+        }
+        listener.executionFinished(classDescriptor, TestExecutionResult.successful())
+      }
+      listener.executionFinished(root, TestExecutionResult.successful())
     }
   }
 }

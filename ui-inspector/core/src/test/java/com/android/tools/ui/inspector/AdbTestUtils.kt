@@ -166,6 +166,18 @@ class TestAdbDeviceServices(val delegate: FakeAdbDeviceServices) : AdbDeviceServ
         recordedSyncSends.add(SyncSendParams(remoteFilePath, remoteFileMode))
       }
 
+      override suspend fun sendV2(
+        sourceChannel: AdbInputChannel,
+        remoteFilePath: String,
+        remoteFileMode: RemoteFileMode,
+        remoteFileTime: FileTime?,
+        progress: SyncProgress?,
+        bufferSize: Int,
+        options: AdbDeviceSyncServices.SendV2Options,
+      ) {
+        throw NotImplementedError("Not needed for testing")
+      }
+
       override suspend fun shutdown() {}
 
       override suspend fun recv(remoteFilePath: String, destinationChannel: AdbOutputChannel, progress: SyncProgress?, bufferSize: Int) {

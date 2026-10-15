@@ -18,9 +18,11 @@ package com.android.ide.common.resources.configuration;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
+
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
@@ -590,12 +592,29 @@ public final class LocaleQualifier extends ResourceQualifier {
         return mFull;
     }
 
+    /**
+     * Returns true if this qualifier represents an Android pseudolocale (such as {@code en-rXA} /
+     * {@code en-XA} or {@code ar-rXB} / {@code ar-XB}).
+     */
+    public boolean isPseudoLocale() {
+        return ("en".equals(mLanguage) && "XA".equals(mRegion))
+                || ("ar".equals(mLanguage) && "XB".equals(mRegion))
+                || "Enxa".equals(mScript)
+                || "Arxb".equals(mScript);
+    }
+
     @Override
     public boolean isMatchFor(ResourceQualifier qualifier) {
         if (qualifier instanceof LocaleQualifier) {
             LocaleQualifier other = (LocaleQualifier)qualifier;
 
             if (!Objects.equals(mLanguage, other.mLanguage)) {
+                return false;
+            }
+
+            // A pseudolocale resource (en-rXA, ar-rXB) should only match if the reference qualifier
+            // explicitly requests that pseudolocale.
+            if (isPseudoLocale() && !other.isPseudoLocale()) {
                 return false;
             }
 

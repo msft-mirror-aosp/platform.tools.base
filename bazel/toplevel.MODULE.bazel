@@ -115,6 +115,10 @@ crate.spec(
     package = "rustls",
     version = "=0.23.38",
 )
+crate.spec(
+    package = "rustls-platform-verifier",
+    version = "=0.6.2",
+)
 
 # Disable CPU jitter entropy to avoid https://github.com/aws/aws-lc/issues/3540 on Windows
 # (which leads to b/558351427). CPU jitter was added as an additional default source of entropy in

@@ -16,6 +16,7 @@
 
 package com.android.tools.render.common
 
+import com.android.tools.rendering.compose.ComposeViewInfo
 import java.io.Serializable
 
 /**
@@ -32,4 +33,5 @@ data class PreviewScreenshotResult(
   val imagePath: String,
   val error: ScreenshotError?,
   val displayName: String? = null,
+  val viewInfos: List<ComposeViewInfo> = emptyList(),
 ) : Serializable

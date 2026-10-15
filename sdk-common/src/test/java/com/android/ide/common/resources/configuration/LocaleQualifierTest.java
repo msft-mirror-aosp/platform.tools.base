@@ -22,8 +22,9 @@ import static com.android.ide.common.resources.configuration.LocaleQualifier.isN
 import static com.android.ide.common.resources.configuration.LocaleQualifier.normalizeCase;
 import static com.android.ide.common.resources.configuration.LocaleQualifier.parseBcp47;
 
-import java.util.Locale;
 import junit.framework.TestCase;
+
+import java.util.Locale;
 
 public class LocaleQualifierTest extends TestCase {
 
@@ -307,6 +308,25 @@ public class LocaleQualifierTest extends TestCase {
         assertTrue(getQualifier("b+en+US").isMatchFor(getQualifier("b+en+US")));
         assertTrue(getQualifier("b+en+Knda+US").isMatchFor(getQualifier("b+en+Knda+US")));
         assertTrue(getQualifier("b+en+Knda+US").isMatchFor(getQualifier("b+en")));
+
+        // Pseudolocale checks:
+        assertTrue(getQualifier("en-rXA").isPseudoLocale());
+        assertTrue(getQualifier("b+en+XA").isPseudoLocale());
+        assertTrue(getQualifier("ar-rXB").isPseudoLocale());
+        assertTrue(getQualifier("b+ar+XB").isPseudoLocale());
+        assertFalse(getQualifier("en").isPseudoLocale());
+        assertFalse(getQualifier("en-rUS").isPseudoLocale());
+        assertFalse(getQualifier("ar").isPseudoLocale());
+
+        // Pseudolocale resources match only when requested
+        assertTrue(getQualifier("en-rXA").isMatchFor(getQualifier("en-rXA")));
+        assertFalse(getQualifier("en-rXA").isMatchFor(getQualifier("en")));
+        assertFalse(getQualifier("en-rXA").isMatchFor(getQualifier("en-rUS")));
+        assertTrue(getQualifier("ar-rXB").isMatchFor(getQualifier("ar-rXB")));
+        assertFalse(getQualifier("ar-rXB").isMatchFor(getQualifier("ar")));
+
+        // Non-pseudolocale resources can serve as fallback for pseudolocale requests
+        assertTrue(getQualifier("en").isMatchFor(getQualifier("en-rXA")));
 
         // Apparently isMatchFor is a bit more general than you would think; it
         // can't restrict as shown in these two conditions because then other

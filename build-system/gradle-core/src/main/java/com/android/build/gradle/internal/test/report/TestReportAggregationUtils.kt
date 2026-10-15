@@ -75,6 +75,18 @@ fun processTestReportAggregation(
 }
 
 /**
+ * Removes the results of previous runs from [xmlResultsDirectory], such as the results of test classes that have since been deleted.
+ *
+ * Tasks that don't clear their outputs before running, unlike a `NonIncrementalTask` (e.g. `Test` tasks), call this before
+ * [processTestReportAggregation], so that only the results of the current run are aggregated.
+ */
+fun clearTestReportAggregationResults(xmlResultsDirectory: DirectoryProperty) {
+  if (xmlResultsDirectory.isPresent) {
+    FileUtils.cleanOutputDir(xmlResultsDirectory.get().asFile)
+  }
+}
+
+/**
  * Injects properties into all XML files in the given directory (recursively) and writes them to the outputDir.
  *
  * @param directory The directory containing the XML files to process.

@@ -83,14 +83,16 @@ internal fun UiNode.ComposeParameter.format(): String {
 internal fun formatComposeParameter(param: UiNode.ComposeParameter): String {
   return when (param) {
     is UiNode.ComposeParameter.Single -> {
-      formatComposeValue(param.value)
+      val value = formatComposeValue(param.value)
+      if (param.isTruncated) listOf(value, "{...}").filter { it.isNotEmpty() }.joinToString(" ") else value
     }
     is UiNode.ComposeParameter.Group -> {
       if (param.isCollection) {
-        param.elements.joinToString(prefix = "[", postfix = "]") { formatComposeParameter(it) }
+        val elements = param.elements.map { formatComposeParameter(it) }
+        (if (param.isTruncated) elements + "..." else elements).joinToString(prefix = "[", postfix = "]")
       } else {
-        val fields = param.elements.joinToString(", ") { "${it.name}=${formatComposeParameter(it)}" }
-        "{$fields}"
+        val fields = param.elements.map { "${it.name}=${formatComposeParameter(it)}" }
+        (if (param.isTruncated) fields + "..." else fields).joinToString(prefix = "{", postfix = "}")
       }
     }
   }

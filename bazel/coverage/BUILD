@@ -1106,7 +1106,6 @@ coverage_report(
         "//tools/base/build-system/manifest-merger:tools.manifest-merger_tests.test",
         "//tools/base/build-system/builder:tests.test",
         "//tools/base/build-system/builder-model:tests.test",
-        "//tools/base/build-system/builder-test-api:studio.android.sdktools.builder-test-api.tests_tests",
         "//tools/base/build-system/builder-test-api:tools.builder-test-api_tests",
         "//tools/base/build-system/gradle-core:tests.test",
         "//tools/base/build-system/integration-test/application:automatic-tests",

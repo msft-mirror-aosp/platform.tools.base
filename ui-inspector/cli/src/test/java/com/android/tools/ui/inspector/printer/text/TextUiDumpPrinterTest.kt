@@ -19,6 +19,7 @@ package com.android.tools.ui.inspector.printer.text
 import com.android.tools.ui.inspector.configuration
 import com.android.tools.ui.inspector.model.Dimension
 import com.android.tools.ui.inspector.model.DisplayInfo
+import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.UiDump
 import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.model.UiWindow
@@ -80,6 +81,22 @@ View Hierarchy:
 """
         .trim()
     assertThat(output.toString().trim().normalizeLineEndings()).isEqualTo(expected.normalizeLineEndings())
+  }
+
+  @Test
+  fun testPrintParameter_printsNameAndValue() {
+    val output = ByteArrayOutputStream()
+    val feed =
+      UiNode.ComposeParameter.Group(
+        "feed",
+        listOf(UiNode.ComposeParameter.Single("[0]", UiNode.ComposeParameter.Value.StringVal("a"))),
+        isCollection = true,
+        reference = ParameterReference(1L, 2L, ParameterReference.Kind.PARAMETERS, 0, emptyList(), 1, "feed".hashCode()),
+      )
+
+    TextUiDumpPrinter(PrintStream(output)).printParameter(feed)
+
+    assertThat(output.toString().normalizeLineEndings()).isEqualTo("feed=[a, ...]\n")
   }
 
   @Test

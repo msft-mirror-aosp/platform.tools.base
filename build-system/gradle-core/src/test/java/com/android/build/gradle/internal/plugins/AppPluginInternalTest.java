@@ -57,8 +57,10 @@ import junit.framework.TestCase;
 
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.internal.project.ProjectStateInternal;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.junit.Before;
 import org.junit.Rule;
@@ -654,6 +656,27 @@ public class AppPluginInternalTest {
             assertThat(component.getGlobal().getAsmApiVersion())
                     .isEqualTo(latestAsmField.getInt(null));
         }
+    }
+
+    @Test
+    public void testConnectedTestCoverageReportDependsOnConnectedTestTask() {
+        ApplicationExtension android =
+                project.getExtensions().getByType(ApplicationExtension.class);
+        android.getBuildTypes()
+                .getByName(BuilderConstants.DEBUG)
+                .setEnableAndroidTestCoverage(true);
+        AppPlugin plugin = project.getPlugins().getPlugin(AppPlugin.class);
+        plugin.createAndroidTasks(project);
+
+        // The report must depend on the test task itself, not only on its coverage data, so that it
+        // is skipped when the tests fail with --continue.
+        Task reportTask = project.getTasks().getByName("createDebugAndroidTestCoverageReport");
+        assertThat(
+                        reportTask.getDependsOn().stream()
+                                .filter(TaskProvider.class::isInstance)
+                                .map(it -> ((TaskProvider<?>) it).getName())
+                                .collect(Collectors.toList()))
+                .contains("connectedDebugAndroidTest");
     }
 
     public static List<ComponentCreationConfig> getComponents(
