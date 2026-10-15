@@ -51,6 +51,7 @@
   com/android/tools/build:gradle-settings
   com/android/tools/build:gradle-settings-api
   com/android/tools/build:manifest-merger
+  com/android/tools/build:standalone-tools
   com/android/tools/chunkio:chunkio
   com/android/tools/compose:compose-preview-detector
   com/android/tools/ddms:ddmlib

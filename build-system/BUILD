@@ -665,6 +665,7 @@ maven_repository(
         "//tools/base/android-test/coverage/agent/support:coverage-agent",
         "//tools/base/annotations:annotations",
         "//tools/base/build-system:tools.apksig",
+        "//tools/base/build-system/standalone-tools",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/device_validator:tools.dvlib",

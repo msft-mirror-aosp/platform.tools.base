@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder.testing;
+package com.android.tools.mockablejar;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -54,17 +54,15 @@ import java.util.zip.ZipOutputStream;
 
 public class MockableJarGeneratorTest {
 
-    @Rule
-    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+    @Rule public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
     @Test
     public void testJarRewriting() throws Exception {
         MockableJarGenerator generator = new MockableJarGenerator(true);
 
         File inputJar =
-                TestResources.getFile(
-                        MockableJarGenerator.class, "/testData/testing/non-mockable.jar");
-        File outputJar = new File(mTemporaryFolder.newFolder(),"mockable.jar");
+                TestResources.getFile(MockableJarGenerator.class, "/testData/non-mockable.jar");
+        File outputJar = new File(mTemporaryFolder.newFolder(), "mockable.jar");
 
         generator.createMockableJar(inputJar, outputJar);
 
@@ -72,8 +70,7 @@ public class MockableJarGeneratorTest {
 
         try (JarFile jarFile = new JarFile(outputJar)) {
             Set<String> names =
-                    Collections.list(jarFile.entries())
-                            .stream()
+                    Collections.list(jarFile.entries()).stream()
                             .map(JarEntry::getName)
                             .collect(Collectors.toSet());
             assertThat(names)
@@ -251,8 +248,7 @@ public class MockableJarGeneratorTest {
     }
 
     private static File nonMockableJar() {
-        return TestResources.getFile(
-                MockableJarGenerator.class, "/testData/testing/non-mockable.jar");
+        return TestResources.getFile(MockableJarGenerator.class, "/testData/non-mockable.jar");
     }
 
     private static File androidJar() {

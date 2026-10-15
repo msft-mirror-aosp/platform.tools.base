@@ -16,9 +16,8 @@
 
 package com.android.build.gradle.internal.dependency;
 
-import com.android.builder.testing.MockableJarGenerator;
-import java.io.File;
-import java.io.IOException;
+import com.android.tools.mockablejar.MockableJarGenerator;
+
 import org.gradle.api.artifacts.transform.CacheableTransform;
 import org.gradle.api.artifacts.transform.InputArtifact;
 import org.gradle.api.artifacts.transform.TransformAction;
@@ -29,6 +28,9 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
+
+import java.io.File;
+import java.io.IOException;
 
 /** Transform that converts an Android JAR file into a Mockable Android JAR file. */
 @CacheableTransform

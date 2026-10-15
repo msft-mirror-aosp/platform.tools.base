@@ -533,7 +533,6 @@ com/android/tools/build/builder
   com/android/builder/signing/
   com/android/builder/symbols/
   com/android/builder/tasks/
-  com/android/builder/testing/
   com/android/builder/utils/
   com/android/tools/
   com/android/tools/r8/
@@ -898,6 +897,15 @@ com/android/tools/build/manifest-merger
   com/
   com/android/
   com/android/manifmerger/
+
+com/android/tools/build/standalone-tools
+  META-INF/
+  META-INF/MANIFEST.MF
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/mockablejar/
 
 com/android/tools/chunkio/chunkio
   META-INF/

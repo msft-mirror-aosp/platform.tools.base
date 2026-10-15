@@ -1107,6 +1107,7 @@ coverage_report(
         "//tools/base/build-system/builder-model:tests.test",
         "//tools/base/build-system/builder-test-api:tools.builder-test-api_tests",
         "//tools/base/build-system/gradle-core:tests.test",
+        "//tools/base/build-system/standalone-tools:tests.test",
         "//tools/base/build-system/integration-test/application:automatic-tests",
         "//tools/base/build-system/integration-test/application:coupled_tests",
         "//tools/base/build-system/integration-test/application:deps-tests",

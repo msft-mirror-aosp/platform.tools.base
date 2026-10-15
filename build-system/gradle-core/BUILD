@@ -91,6 +91,7 @@ kotlin_library(
         "//tools/base/build-system/builder-test-api:tools.builder-test-api",
         "//tools/base/build-system/gradle-settings-api",
         "//tools/base/build-system/shrinker",
+        "//tools/base/build-system/standalone-tools",
         "//tools/base/common:tools.common",  # TODO: Not in the pom, but required to compile (?)
         "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/kotlin-multiplatform-models",

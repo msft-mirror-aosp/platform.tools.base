@@ -528,6 +528,7 @@ com.android.tools.build:gradle:$BUILD_VERSION
     com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
     com.android.tools.build:aapt2-proto:$AAPT2_VERSION (runtime)
     com.android.tools.build:aaptcompiler:$BUILD_VERSION (runtime)
+    com.android.tools.build:standalone-tools:$BUILD_VERSION (runtime)
     com.android.tools.analytics-library:crash:$BASE_VERSION (runtime)
     com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
     com.android.tools.lint:lint-model:$BASE_VERSION (runtime)
@@ -606,6 +607,13 @@ com.android.tools.build:manifest-merger:$BASE_VERSION
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
+
+com.android.tools.build:standalone-tools:$BUILD_VERSION
+  pomName=com.android.tools.build.standalone-tools
+  description=Android build tools that can be used without the Android Gradle Plugin.
+  dependencies:
+    org.ow2.asm:asm:9.9 (runtime)
+    org.ow2.asm:asm-tree:9.9 (runtime)
 
 com.android.tools.chunkio:chunkio:$BASE_VERSION
   pomName=ChunkIO

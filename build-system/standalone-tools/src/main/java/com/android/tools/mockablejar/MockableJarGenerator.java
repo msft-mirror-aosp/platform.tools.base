@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder.testing;
+package com.android.tools.mockablejar;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -57,13 +57,10 @@ import java.util.zip.ZipEntry;
  * "Stub!" exceptions.
  *
  * <p>The output does not depend on when or in which timezone it is generated, so outputs can be
- * compared or hashed by content.
- *
- * <p>ATTENTION! Changes to this class change the mockable jar seen by all unit tests. In AGP it is
- * produced by an artifact transform, which Gradle re-runs automatically when the transform's
- * implementation classpath changes (i.e. on a new AGP version).
+ * compared or hashed by content. The output may change between versions of this artifact, so
+ * callers that cache it should include the artifact version in their cache key.
  */
-public class MockableJarGenerator {
+public final class MockableJarGenerator {
     private static final int EMPTY_FLAGS = 0;
     private static final String CONSTRUCTOR = "<init>";
     private static final String CLASS_CONSTRUCTOR = "<clinit>";
@@ -95,6 +92,10 @@ public class MockableJarGenerator {
 
     private final boolean returnDefaultValues;
 
+    /**
+     * @param returnDefaultValues if true, methods return default values (0, false, null); otherwise
+     *     they throw a "Method ... not mocked" {@link RuntimeException}
+     */
     public MockableJarGenerator(boolean returnDefaultValues) {
         this.returnDefaultValues = returnDefaultValues;
     }
@@ -193,13 +194,9 @@ public class MockableJarGenerator {
         return false;
     }
 
-    /**
-     * Writes a modified *.class file to the output JAR file.
-     */
-    private void rewriteClass(
-            JarEntry entry,
-            InputStream inputStream,
-            JarOutputStream outputStream) throws IOException {
+    /** Writes a modified *.class file to the output JAR file. */
+    private void rewriteClass(JarEntry entry, InputStream inputStream, JarOutputStream outputStream)
+            throws IOException {
         ClassReader classReader = new ClassReader(inputStream);
         ClassNode classNode = new ClassNode(Opcodes.ASM9);
 
@@ -207,16 +204,15 @@ public class MockableJarGenerator {
 
         modifyClass(classNode);
 
-        ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        ClassWriter classWriter =
+                new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         classNode.accept(classWriter);
 
         outputStream.putNextEntry(newZipEntry(entry.getName()));
         outputStream.write(classWriter.toByteArray());
     }
 
-    /**
-     * Modifies a {@link ClassNode} to clear final flags and rewrite byte code.
-     */
+    /** Modifies a {@link ClassNode} to clear final flags and rewrite byte code. */
     @SuppressWarnings("unchecked")
     private void modifyClass(ClassNode classNode) {
         // Make the class not final.
@@ -230,9 +226,10 @@ public class MockableJarGenerator {
 
         List<FieldNode> fieldNodes = classNode.fields;
         for (FieldNode fieldNode : fieldNodes) {
-            // Make public instance fields non-final. This is needed e.g. to "mock" SyncResult.stats.
-            if ((fieldNode.access & Opcodes.ACC_PUBLIC) != 0 &&
-                    (fieldNode.access & Opcodes.ACC_STATIC) == 0) {
+            // Make public instance fields non-final. This is needed e.g. to "mock"
+            // SyncResult.stats.
+            if ((fieldNode.access & Opcodes.ACC_PUBLIC) != 0
+                    && (fieldNode.access & Opcodes.ACC_STATIC) == 0) {
                 fieldNode.access &= ~Opcodes.ACC_FINAL;
             }
         }
@@ -243,9 +240,7 @@ public class MockableJarGenerator {
         }
     }
 
-    /**
-     * Rewrites the method bytecode to remove the "Stub!" exception.
-     */
+    /** Rewrites the method bytecode to remove the "Stub!" exception. */
     private void fixMethodBody(MethodNode methodNode, ClassNode classNode) {
         if ((methodNode.access & Opcodes.ACC_ABSTRACT) != 0) {
             // Abstract methods don't have bodies to rewrite.
@@ -310,8 +305,7 @@ public class MockableJarGenerator {
                     RuntimeException.class.getConstructor(String.class);
 
             InsnList instructions = new InsnList();
-            instructions.add(
-                    new TypeInsnNode(Opcodes.NEW, runtimeException));
+            instructions.add(new TypeInsnNode(Opcodes.NEW, runtimeException));
             instructions.add(new InsnNode(Opcodes.DUP));
 
             String className = classNode.name.replace('/', '.');
@@ -324,12 +318,13 @@ public class MockableJarGenerator {
                                     + " not mocked. See"
                                     + " https://developer.android.com/r/studio-ui/build/not-mocked"
                                     + " for details."));
-            instructions.add(new MethodInsnNode(
-                    Opcodes.INVOKESPECIAL,
-                    runtimeException,
-                    CONSTRUCTOR,
-                    Type.getType(constructor).getDescriptor(),
-                    false));
+            instructions.add(
+                    new MethodInsnNode(
+                            Opcodes.INVOKESPECIAL,
+                            runtimeException,
+                            CONSTRUCTOR,
+                            Type.getType(constructor).getDescriptor(),
+                            false));
             instructions.add(new InsnNode(Opcodes.ATHROW));
 
             return instructions;
