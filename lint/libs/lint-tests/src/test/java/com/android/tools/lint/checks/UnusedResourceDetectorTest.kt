@@ -3845,6 +3845,57 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testWatchFaceShapesResources() {
+    lint()
+      .files(
+        xml(
+            "res/xml/watch_face_shapes.xml",
+            """
+          <WatchFaces>
+              <WatchFace shape="CIRCLE" width="300" height="300" file="@raw/watchface_basic" />
+              <WatchFace shape="CIRCLE" width="450" height="450" file="@raw/watchface" />
+          </WatchFaces>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/watchface_basic.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="300" height="300">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/xml/other_watch_face_shapes.xml",
+            """
+          <WatchFaces />
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/xml/other_watch_face_shapes.xml:1: Warning: The resource R.xml.other_watch_face_shapes appears to be unused [UnusedResources]
+        <WatchFaces />
+        ~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
   private val mLibraryStrings =
     xml(
       "res/values/strings.xml",

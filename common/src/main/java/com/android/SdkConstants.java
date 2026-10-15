@@ -1217,6 +1217,7 @@ public final class SdkConstants {
 
     // File names: Watch Face
     public static final String FN_WATCH_FACE_INFO_XML = "watch_face_info.xml";
+    public static final String FN_WATCH_FACE_SHAPES_XML = "watch_face_shapes.xml";
 
     public static final String VIEW = "View";
     public static final String VIEW_GROUP = "ViewGroup";

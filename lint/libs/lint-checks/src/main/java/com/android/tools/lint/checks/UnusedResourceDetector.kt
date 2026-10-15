@@ -27,9 +27,11 @@ import com.android.SdkConstants.DOT_KT
 import com.android.SdkConstants.DOT_XML
 import com.android.SdkConstants.FD_RESOURCES
 import com.android.SdkConstants.FN_WATCH_FACE_INFO_XML
+import com.android.SdkConstants.FN_WATCH_FACE_SHAPES_XML
 import com.android.SdkConstants.TAG_DATA
 import com.android.SdkConstants.TAG_LAYOUT
 import com.android.SdkConstants.TAG_WATCH_FACE
+import com.android.SdkConstants.TAG_WATCH_FACES
 import com.android.SdkConstants.TAG_WATCH_FACE_INFO
 import com.android.SdkConstants.TOOLS_PREFIX
 import com.android.SdkConstants.TOOLS_URI
@@ -616,8 +618,9 @@ class UnusedResourceDetector : ResourceXmlDetector(), SourceCodeScanner, BinaryR
           }
         } else if (type == ResourceType.XML) {
           val isWatchFaceInfoFile = FN_WATCH_FACE_INFO_XML == context.file.name && hasTagName(TAG_WATCH_FACE_INFO, node)
-          if (isWatchFaceInfoFile) {
-            // Watch Face Info files in res/xml/ are entry points
+          val isWatchFaceShapesFile = FN_WATCH_FACE_SHAPES_XML == context.file.name && hasTagName(TAG_WATCH_FACES, node)
+          if (isWatchFaceInfoFile || isWatchFaceShapesFile) {
+            // Watch Face Info and Watch Face shapes files in res/xml/ are entry points
             // read directly by the Wear OS system without an @xml/ reference.
             resource.isReachable = true
           }
