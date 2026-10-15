@@ -146,12 +146,19 @@ public final class SessionHandler {
             Log.e(TAG, "Error handling command", t);
             message = toAgentMessage(commandId, errorResponse("Error handling command: " + t));
         }
-        FramingProtocol.writeMessage(outputStream, message);
-        if (command.getSpecializedCase() == UiInspectorProtocol.Command.SpecializedCase.SHUTDOWN) {
-            shutdownLatch.countDown();
-            return true;
+        boolean isShutdown =
+                command.getSpecializedCase()
+                        == UiInspectorProtocol.Command.SpecializedCase.SHUTDOWN;
+        try {
+            FramingProtocol.writeMessage(outputStream, message);
+        } finally {
+            // The host asked to shut down: failing to acknowledge it does not cancel the shutdown.
+            // The server shuts down after the write, so that it is not torn down while replying.
+            if (isShutdown) {
+                shutdownLatch.countDown();
+            }
         }
-        return false;
+        return isShutdown;
     }
 
     private UiInspectorProtocol.Response.Builder handleInspectorMessage(
@@ -211,8 +218,8 @@ public final class SessionHandler {
     }
 
     /**
-     * Returns the response to a shutdown command. The server shuts down once the response is
-     * written, in {@link #handleCommand}.
+     * Returns the response to a shutdown command. The server shuts down after writing the response,
+     * even if the write fails, in {@link #handleCommand}.
      */
     private UiInspectorProtocol.Response.Builder handleShutdown() {
         return UiInspectorProtocol.Response.newBuilder()

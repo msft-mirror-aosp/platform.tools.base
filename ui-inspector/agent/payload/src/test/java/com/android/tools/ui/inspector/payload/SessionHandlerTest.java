@@ -943,7 +943,7 @@ public final class SessionHandlerTest {
     }
 
     @Test
-    public void testHandle_shutdownWithFailureToWriteResponse_doesNotShutDown() throws Exception {
+    public void testHandle_shutdownWithFailureToWriteResponse_stillShutsDown() throws Exception {
         UiInspectorProtocol.Command command =
                 UiInspectorProtocol.Command.newBuilder()
                         .setCommandId(1)
@@ -962,7 +962,8 @@ public final class SessionHandlerTest {
                         new HashMap<>())
                 .processCommands();
 
-        assertThat(shutdownLatch.getCount()).isEqualTo(1);
+        // The host asked to shut down: failing to acknowledge it does not cancel the shutdown.
+        assertThat(shutdownLatch.getCount()).isEqualTo(0);
         assertThat(crashes).isEmpty();
     }
 
