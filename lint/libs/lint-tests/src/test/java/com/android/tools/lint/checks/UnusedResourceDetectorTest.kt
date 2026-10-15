@@ -3896,6 +3896,83 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testWatchFaceShapesWithUnusedWatchface() {
+    lint()
+      .files(
+        xml(
+            "res/xml/watch_face_shapes.xml",
+            """
+          <WatchFaces>
+              <WatchFace shape="CIRCLE" width="300" height="300" file="@raw/watchface_basic" />
+          </WatchFaces>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/watchface_basic.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="300" height="300">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/raw/watchface.xml:1: Warning: The resource R.raw.watchface appears to be unused [UnusedResources]
+        <WatchFace clipShape="CIRCLE" width="450" height="450">
+        ^
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testWatchFaceWithoutShapesWithUnusedExtraWatchface() {
+    lint()
+      .files(
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/extra_watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/raw/extra_watchface.xml:1: Warning: The resource R.raw.extra_watchface appears to be unused [UnusedResources]
+        <WatchFace clipShape="CIRCLE" width="450" height="450">
+        ^
+        0 errors, 1 warning
+        """
+      )
+  }
+
   private val mLibraryStrings =
     xml(
       "res/values/strings.xml",

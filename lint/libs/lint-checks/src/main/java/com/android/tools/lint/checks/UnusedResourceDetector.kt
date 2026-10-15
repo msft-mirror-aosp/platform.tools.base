@@ -30,7 +30,6 @@ import com.android.SdkConstants.FN_WATCH_FACE_INFO_XML
 import com.android.SdkConstants.FN_WATCH_FACE_SHAPES_XML
 import com.android.SdkConstants.TAG_DATA
 import com.android.SdkConstants.TAG_LAYOUT
-import com.android.SdkConstants.TAG_WATCH_FACE
 import com.android.SdkConstants.TAG_WATCH_FACES
 import com.android.SdkConstants.TAG_WATCH_FACE_INFO
 import com.android.SdkConstants.TOOLS_PREFIX
@@ -610,10 +609,6 @@ class UnusedResourceDetector : ResourceXmlDetector(), SourceCodeScanner, BinaryR
             // Don't flag raw.keep: these are used for resource shrinking
             // keep lists
             //    https://developer.android.com/studio/build/shrink-code.html
-            resource.isReachable = true
-          } else if (hasTagName(TAG_WATCH_FACE, node)) {
-            // Declarative Watch Face Format files in res/raw/ are entry points
-            // read directly by the Wear OS system without an @raw/ reference.
             resource.isReachable = true
           }
         } else if (type == ResourceType.XML) {

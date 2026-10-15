@@ -1216,6 +1216,7 @@ public final class SdkConstants {
     public static final String TAG_IMAGE = "Image";
 
     // File names: Watch Face
+    public static final String FN_WATCH_FACE_XML = "watchface.xml";
     public static final String FN_WATCH_FACE_INFO_XML = "watch_face_info.xml";
     public static final String FN_WATCH_FACE_SHAPES_XML = "watch_face_shapes.xml";
 
