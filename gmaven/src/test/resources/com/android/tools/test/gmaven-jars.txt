@@ -213,6 +213,76 @@ com/android/tools/analytics-library/tracker
   com/android/tools/
   com/android/tools/analytics/
 
+com/android/tools/androidtest/android-test-engine
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/services/org.junit.platform.engine.TestEngine
+  META-INF/unnamed.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/androidtest/
+  com/android/tools/androidtest/testengine/
+  com/android/tools/androidtest/testengine/adb/
+  com/android/tools/androidtest/testengine/collector/
+  com/android/tools/androidtest/testengine/config/
+  com/android/tools/androidtest/testengine/descriptor/
+  com/android/tools/androidtest/testengine/instrument/
+  com/android/tools/androidtest/testengine/report/
+  com/android/tools/androidtest/testengine/util/
+
+com/android/tools/androidtest/android-test-engine-result-listener
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/services/org.junit.platform.launcher.TestExecutionListener
+  META-INF/unnamed.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/androidtest/
+  com/android/tools/androidtest/listener/
+
+com/android/tools/androidtest/test-result-event-proto
+  META-INF/
+  META-INF/MANIFEST.MF
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/androidtest/
+  com/android/tools/androidtest/listener/
+  com/android/tools/androidtest/listener/proto/
+  com/android/tools/androidtest/listener/proto/test_result_event.proto
+
+com/android/tools/androidtest/test-result-proto
+  META-INF/
+  META-INF/MANIFEST.MF
+  NOTICE
+  com/
+  com/google/
+  com/google/testing/
+  com/google/testing/platform/
+  com/google/testing/platform/proto/
+  com/google/testing/platform/proto/api/
+  com/google/testing/platform/proto/api/core/
+  proto/
+  proto/api/
+  proto/api/core/
+  proto/api/core/android_test_device_info.proto
+  proto/api/core/error.proto
+  proto/api/core/error_detail.proto
+  proto/api/core/issue.proto
+  proto/api/core/label.proto
+  proto/api/core/path.proto
+  proto/api/core/platform_error.proto
+  proto/api/core/test_artifact.proto
+  proto/api/core/test_case.proto
+  proto/api/core/test_result.proto
+  proto/api/core/test_status.proto
+  proto/api/core/test_suite_result.proto
+
 com/android/tools/annotations
   META-INF/
   META-INF/MANIFEST.MF

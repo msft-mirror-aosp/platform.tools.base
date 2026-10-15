@@ -35,6 +35,10 @@
   com/android/tools/analytics-library:shared
   com/android/tools/analytics-library:testing
   com/android/tools/analytics-library:tracker
+  com/android/tools/androidtest:android-test-engine
+  com/android/tools/androidtest:android-test-engine-result-listener
+  com/android/tools/androidtest:test-result-event-proto
+  com/android/tools/androidtest:test-result-proto
   com/android/tools/apkdeployer:apkdeployer
   com/android/tools/apkparser:apkanalyzer
   com/android/tools/apkparser:binary-resources

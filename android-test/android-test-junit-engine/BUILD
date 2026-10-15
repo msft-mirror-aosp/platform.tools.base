@@ -1,6 +1,6 @@
-load("//tools/base/android-test:version.bzl", "ANDROID_TEST_ENGINE_VERSION")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
+load("//tools/base/common:version.bzl", "BUILD_VERSION")
 
 maven_library(
     name = "android-test-engine",
@@ -10,10 +10,10 @@ maven_library(
     ]),
     coordinates = "com.android.tools.androidtest:android-test-engine",
     description = "A JUnit TestEngine for running Android instrumentation tests.",
-    notice = "LICENSE",
+    notice = "NOTICE",
     resource_strip_prefix = "tools/base/android-test/android-test-junit-engine/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
-    version = ANDROID_TEST_ENGINE_VERSION,
+    version = BUILD_VERSION,
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/android-test/test-result-proto",
