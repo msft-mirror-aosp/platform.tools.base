@@ -21,13 +21,12 @@ import static com.google.common.truth.Truth.assertThat;
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
 
-import com.android.tools.arttooling.ArtTooling;
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.common.ProtocolConstants;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
-import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -42,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunWith(RobolectricTestRunner.class)
@@ -52,6 +52,16 @@ public final class SessionHandlerTest {
                 @Override
                 public void sendEvent(byte[] data) {}
             };
+
+    /** The bridges created by the test, disposed after it. */
+    private final List<InspectorBridge> createdBridges = new ArrayList<>();
+
+    @After
+    public void tearDown() {
+        for (InspectorBridge bridge : createdBridges) {
+            bridge.dispose();
+        }
+    }
 
     @Test
     public void testHandle_shutdown_disposesInspector() throws Exception {
@@ -81,21 +91,9 @@ public final class SessionHandlerTest {
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         Map<String, InspectorBridge> bridges = new HashMap<>();
-        HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor(
-                        "test_thread_shutdown",
-                        t -> {
-                            throw new RuntimeException(t);
-                        });
-
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear));
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, mockInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
 
         SessionHandler sessionHandler =
                 new SessionHandler(
@@ -114,7 +112,7 @@ public final class SessionHandlerTest {
             }
         }
 
-        primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(viewBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
         assertThat(disposed.get()).isTrue();
         assertThat(shutdownLatch.getCount()).isEqualTo(0);
@@ -151,20 +149,9 @@ public final class SessionHandlerTest {
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         Map<String, InspectorBridge> bridges = new HashMap<>();
-        HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor(
-                        "test_thread_eof",
-                        t -> {
-                            throw new RuntimeException(t);
-                        });
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear));
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, mockInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
 
         SessionHandler sessionHandler =
                 new SessionHandler(
@@ -177,7 +164,6 @@ public final class SessionHandlerTest {
                         bridges);
 
         sessionHandler.processCommands();
-        primaryExecutor.quitSafely();
 
         assertThat(disposed.get()).isFalse();
         assertThat(shutdownLatch.getCount()).isEqualTo(1);
@@ -245,10 +231,8 @@ public final class SessionHandlerTest {
         FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
         ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
 
-        HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor("test_thread_disposed", t -> {});
         InspectorBridge disposedBridge =
-                InspectorBridge.createForTesting(
+                createBridge(
                         "test_inspector",
                         new Inspector(mockConnection) {
                             @Override
@@ -256,10 +240,7 @@ public final class SessionHandlerTest {
 
                             @Override
                             public void onDispose() {}
-                        },
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        hookOwnerId -> {});
+                        });
         disposedBridge.dispose();
         Map<String, InspectorBridge> bridges = new HashMap<>();
         bridges.put("test_inspector", disposedBridge);
@@ -275,7 +256,7 @@ public final class SessionHandlerTest {
                         bridges);
 
         sessionHandler.processCommands();
-        primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(disposedBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
         UiInspectorProtocol.Response response =
                 UiInspectorProtocol.AgentMessage.parseFrom(
@@ -311,10 +292,8 @@ public final class SessionHandlerTest {
         FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
         ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
 
-        HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor("test_thread_disposed_message", t -> {});
         InspectorBridge disposedBridge =
-                InspectorBridge.createForTesting(
+                createBridge(
                         "test_inspector",
                         new Inspector(mockConnection) {
                             @Override
@@ -324,10 +303,7 @@ public final class SessionHandlerTest {
 
                             @Override
                             public void onDispose() {}
-                        },
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        hookOwnerId -> {});
+                        });
         disposedBridge.dispose();
         Map<String, InspectorBridge> bridges = new HashMap<>();
         bridges.put("test_inspector", disposedBridge);
@@ -343,7 +319,7 @@ public final class SessionHandlerTest {
                         bridges);
 
         sessionHandler.processCommands();
-        primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(disposedBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
         UiInspectorProtocol.Response response =
                 UiInspectorProtocol.AgentMessage.parseFrom(
@@ -449,20 +425,9 @@ public final class SessionHandlerTest {
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         Map<String, InspectorBridge> bridges = new HashMap<>();
-        HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor(
-                        "test_thread_multiple",
-                        t -> {
-                            throw new RuntimeException(t);
-                        });
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear));
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, mockInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
 
         SessionHandler sessionHandler =
                 new SessionHandler(
@@ -475,7 +440,6 @@ public final class SessionHandlerTest {
                         bridges);
 
         sessionHandler.processCommands();
-        primaryExecutor.quitSafely();
 
         assertThat(receivedPayloads).hasSize(2);
         assertThat(receivedPayloads.get(0)).isEqualTo(new byte[] {10});
@@ -550,20 +514,9 @@ public final class SessionHandlerTest {
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         Map<String, InspectorBridge> bridges = new HashMap<>();
-        HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor(
-                        "test_thread_error",
-                        t -> {
-                            throw new RuntimeException(t);
-                        });
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        throwingInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear));
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, throwingInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
 
         SessionHandler sessionHandler =
                 new SessionHandler(
@@ -576,7 +529,6 @@ public final class SessionHandlerTest {
                         bridges);
 
         sessionHandler.processCommands();
-        primaryExecutor.quitSafely();
 
         ByteArrayInputStream responseInputStream =
                 new ByteArrayInputStream(outputStream.toByteArray());
@@ -828,16 +780,9 @@ public final class SessionHandlerTest {
                     public void onDispose() {}
                 };
         Map<String, InspectorBridge> bridges = new HashMap<>();
-        HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor("test_thread_io_exception", t -> {});
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        throwingInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        hookOwnerId -> {}));
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, throwingInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
 
         SessionHandler sessionHandler =
                 new SessionHandler(
@@ -850,7 +795,7 @@ public final class SessionHandlerTest {
                         bridges);
 
         sessionHandler.processCommands();
-        primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+        assertThat(viewBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
         ByteArrayInputStream responseInputStream =
                 new ByteArrayInputStream(outputStream.toByteArray());
@@ -873,6 +818,19 @@ public final class SessionHandlerTest {
         assertThat(response2.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
         assertThat(response2.getErrorMessage())
                 .contains("Inspector " + ProtocolConstants.VIEW_INSPECTOR_ID + " crashed");
+    }
+
+    /** Creates a bridge for {@code inspector}, wired like the bridges of the server. */
+    private InspectorBridge createBridge(String inspectorId, Inspector inspector) throws Exception {
+        InspectorBridge bridge =
+                InspectorBridge.create(
+                        inspectorId,
+                        environment -> inspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        t -> {},
+                        hookOwnerId -> {});
+        createdBridges.add(bridge);
+        return bridge;
     }
 
     /** Throws {@code t} even if it is a checked exception, as Kotlin code can. */
@@ -914,16 +872,8 @@ public final class SessionHandlerTest {
                     public void onDispose() {}
                 };
         Map<String, InspectorBridge> bridges = new HashMap<>();
-        HandlerThreadExecutor primaryExecutor =
-                new HandlerThreadExecutor("test_thread_broken_output", t -> {});
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        inspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        hookOwnerId -> {}));
+        InspectorBridge viewBridge = createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, inspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
         List<Throwable> crashes = new ArrayList<>();
 
         new SessionHandler(
@@ -933,13 +883,12 @@ public final class SessionHandlerTest {
                         new CountDownLatch(1),
                         bridges)
                 .processCommands();
-        primaryExecutor.quitSafely();
 
         // The connection is lost: the session ends without running the next command, and it is
         // not reported as a crash. The inspector is kept for the next session.
         assertThat(receivedCommands).hasSize(1);
         assertThat(crashes).isEmpty();
-        assertThat(bridges.get(ProtocolConstants.VIEW_INSPECTOR_ID).isDisposed()).isFalse();
+        assertThat(viewBridge.isDisposed()).isFalse();
     }
 
     @Test

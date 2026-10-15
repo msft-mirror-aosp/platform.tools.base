@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -53,16 +54,13 @@ public final class InspectorBridge {
     private final HandlerThreadExecutor primaryExecutor;
     private final Consumer<String> clearHooks;
 
-    /**
-     * The commands waiting for the inspector's reply. Bridges made by {@code create} fail them if
-     * the inspector crashes.
-     */
+    /** The commands waiting for the inspector's reply, failed if the inspector crashes. */
     private final Set<CompletableFuture<byte[]>> pendingCommands;
 
     /**
      * Whether the bridge was disposed. A bridge disposes itself when its inspector throws from
-     * {@code onReceiveCommand}. A bridge made by {@code create} also disposes itself when a task
-     * that the inspector runs on the bridge's executors throws.
+     * {@code onReceiveCommand}, or when a task that the inspector runs on the bridge's executors
+     * throws.
      */
     private final AtomicBoolean disposed = new AtomicBoolean();
 
@@ -317,30 +315,12 @@ public final class InspectorBridge {
     }
 
     /**
-     * Creates a new [InspectorBridge] for testing with a mocked or stubbed [Inspector] instance.
-     *
-     * <p>{@code primaryExecutor} is not wired to the bridge, so a crash on it neither fails the
-     * commands waiting for a reply nor disposes the bridge; an exception thrown by {@code
-     * onReceiveCommand} still disposes it. Use {@link #create(String, InspectorLoader,
-     * AppInspectionUtils.DelegatingConnection, HandlerThreadExecutor.CrashListener, Consumer)} to
-     * test crashes.
-     *
-     * @param clearHooks removes the hooks of the given owner ID when the bridge is disposed
+     * Waits up to {@code timeout} for the bridge's primary thread to finish after {@link #dispose},
+     * and returns whether it finished.
      */
     @VisibleForTesting
-    public static InspectorBridge createForTesting(
-            String inspectorId,
-            Inspector inspector,
-            AppInspectionUtils.DelegatingConnection connection,
-            HandlerThreadExecutor primaryExecutor,
-            Consumer<String> clearHooks) {
-        return new InspectorBridge(
-                createHookOwnerId(inspectorId),
-                inspector,
-                connection,
-                primaryExecutor,
-                clearHooks,
-                ConcurrentHashMap.newKeySet());
+    boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        return primaryExecutor.awaitTermination(timeout, unit);
     }
 
     /**

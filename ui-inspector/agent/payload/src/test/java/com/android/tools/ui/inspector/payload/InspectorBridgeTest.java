@@ -22,16 +22,14 @@ import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
 import androidx.inspection.InspectorEnvironment;
 
-import com.android.tools.arttooling.ArtTooling;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
-import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -43,6 +41,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @RunWith(RobolectricTestRunner.class)
@@ -54,21 +53,14 @@ public final class InspectorBridgeTest {
                 public void sendEvent(byte[] data) {}
             };
 
-    private HandlerThreadExecutor primaryExecutor;
-
-    @Before
-    public void setUp() {
-        primaryExecutor =
-                new HandlerThreadExecutor(
-                        "test_bridge_thread",
-                        t -> {
-                            throw new RuntimeException(t);
-                        });
-    }
+    /** The bridges created by the test, disposed after it. */
+    private final List<InspectorBridge> bridges = new ArrayList<>();
 
     @After
     public void tearDown() {
-        primaryExecutor.quitSafely();
+        for (InspectorBridge bridge : bridges) {
+            bridge.dispose();
+        }
     }
 
     @Test
@@ -93,13 +85,7 @@ public final class InspectorBridgeTest {
                     public void onDispose() {}
                 };
 
-        InspectorBridge bridgeSeq =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspectorSeq,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear);
+        InspectorBridge bridgeSeq = createBridge(mockInspectorSeq);
 
         CountDownLatch latch = new CountDownLatch(2);
         List<Throwable> errors = new CopyOnWriteArrayList<>();
@@ -128,7 +114,7 @@ public final class InspectorBridgeTest {
                         })
                 .start();
 
-        latch.await(5, TimeUnit.SECONDS);
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(errors).isEmpty();
     }
 
@@ -147,21 +133,15 @@ public final class InspectorBridgeTest {
                     public void onDispose() {}
                 };
 
-        InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear);
+        InspectorBridge bridge = createBridge(mockInspector);
 
         bridge.sendCommand(new byte[] {1});
 
-        assertThat(executionThreadName.get()).startsWith("test_bridge_thread");
+        assertThat(executionThreadName.get()).isEqualTo("ui_inspector_test_inspector");
     }
 
     @Test
-    public void testSendCommand_errorPropagation() {
+    public void testSendCommand_errorPropagation() throws Exception {
         Inspector mockInspector =
                 new Inspector(mockConnection) {
                     @Override
@@ -173,13 +153,7 @@ public final class InspectorBridgeTest {
                     public void onDispose() {}
                 };
 
-        InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear);
+        InspectorBridge bridge = createBridge(mockInspector);
 
         boolean exceptionThrown = false;
         try {
@@ -196,8 +170,7 @@ public final class InspectorBridgeTest {
         IllegalStateException failure = new IllegalStateException("Thrown by onReceiveCommand");
         CountDownLatch disposed = new CountDownLatch(1);
         InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
+                createBridge(
                         new Inspector(mockConnection) {
                             @Override
                             public void onReceiveCommand(byte[] data, CommandCallback callback) {
@@ -208,10 +181,7 @@ public final class InspectorBridgeTest {
                             public void onDispose() {
                                 disposed.countDown();
                             }
-                        },
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        hookOwnerId -> {});
+                        });
         ExecutorService caller = Executors.newSingleThreadExecutor();
         try {
             assertThat(sendCommandForThrowable(caller, bridge)).isSameAs(failure);
@@ -219,7 +189,6 @@ public final class InspectorBridgeTest {
             assertThat(disposed.await(5, TimeUnit.SECONDS)).isTrue();
         } finally {
             caller.shutdownNow();
-            bridge.dispose();
         }
     }
 
@@ -358,7 +327,7 @@ public final class InspectorBridgeTest {
     }
 
     @Test
-    public void testUpdateConnection_updatesDelegatingConnection() {
+    public void testUpdateConnection_updatesDelegatingConnection() throws Exception {
         AppInspectionUtils.DelegatingConnection delegatingConnection =
                 new AppInspectionUtils.DelegatingConnection();
         Inspector mockInspector =
@@ -371,12 +340,7 @@ public final class InspectorBridgeTest {
                 };
 
         InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspector,
-                        delegatingConnection,
-                        primaryExecutor,
-                        ArtTooling::clear);
+                createBridge(mockInspector, delegatingConnection, hookOwnerId -> {});
 
         Connection newConnection =
                 new Connection() {
@@ -403,17 +367,11 @@ public final class InspectorBridgeTest {
                     }
                 };
 
-        InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear);
+        InspectorBridge bridge = createBridge(mockInspector);
 
         bridge.dispose();
 
-        primaryExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        assertThat(bridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
         assertThat(disposed.get()).isTrue();
 
@@ -447,13 +405,7 @@ public final class InspectorBridgeTest {
                     }
                 };
 
-        InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
-                        ArtTooling::clear);
+        InspectorBridge bridge = createBridge(mockInspector);
 
         // Call dispose
         bridge.dispose();
@@ -469,7 +421,7 @@ public final class InspectorBridgeTest {
             rejected = true;
         }
 
-        primaryExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        assertThat(bridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
         assertThat(rejected).isTrue();
         assertThat(commandExecutedAfterDispose.get()).isFalse();
@@ -478,37 +430,54 @@ public final class InspectorBridgeTest {
     @Test
     public void testDispose_clearsOnlyTheHooksOfItsOwnBridge() throws Exception {
         List<String> clearedOwnerIds = new CopyOnWriteArrayList<>();
-        HandlerThreadExecutor secondExecutor =
-                new HandlerThreadExecutor(
-                        "test_bridge_thread_2",
-                        t -> {
-                            throw new RuntimeException(t);
-                        });
         // Two servers in one process can each hold an inspector with the same inspector ID.
         InspectorBridge firstBridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
+                createBridge(
                         createIdleInspector(),
                         new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor,
                         clearedOwnerIds::add);
         InspectorBridge secondBridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
+                createBridge(
                         createIdleInspector(),
                         new AppInspectionUtils.DelegatingConnection(),
-                        secondExecutor,
                         clearedOwnerIds::add);
 
         firstBridge.dispose();
-        primaryExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        assertThat(firstBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
         secondBridge.dispose();
-        secondExecutor.awaitTermination(5, TimeUnit.SECONDS);
+        assertThat(secondBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
         assertThat(clearedOwnerIds).hasSize(2);
         assertThat(clearedOwnerIds.get(0)).isNotEqualTo(clearedOwnerIds.get(1));
         assertThat(clearedOwnerIds.get(0)).startsWith("test_inspector/");
         assertThat(clearedOwnerIds.get(1)).startsWith("test_inspector/");
+    }
+
+    /** Creates a bridge for {@code inspector}, wired like the bridges of the server. */
+    private InspectorBridge createBridge(Inspector inspector) throws Exception {
+        return createBridge(
+                inspector, new AppInspectionUtils.DelegatingConnection(), hookOwnerId -> {});
+    }
+
+    /**
+     * Creates a bridge for {@code inspector}, wired like the bridges of the server.
+     *
+     * @param clearHooks removes the hooks of the given owner ID when the bridge is disposed
+     */
+    private InspectorBridge createBridge(
+            Inspector inspector,
+            AppInspectionUtils.DelegatingConnection connection,
+            Consumer<String> clearHooks)
+            throws Exception {
+        InspectorBridge bridge =
+                InspectorBridge.create(
+                        "test_inspector",
+                        environment -> inspector,
+                        connection,
+                        t -> {},
+                        clearHooks);
+        bridges.add(bridge);
+        return bridge;
     }
 
     private Inspector createIdleInspector() {
