@@ -43,6 +43,8 @@ public class CoverageAgentAttacher extends RunListener {
     /** {@code Debug.attachJvmtiAgent} was added in Android 9 (API 28). */
     static final int MIN_SDK_INT = 28;
 
+    private static final String TRACKER_CLASS_NAME = "com.android.tools.coverage.CoverageTracker";
+
     /** The Android calls the attacher makes, replaced in tests. */
     interface Environment {
         int sdkInt();
@@ -51,6 +53,9 @@ public class CoverageAgentAttacher extends RunListener {
         String argument(String key);
 
         void attachJvmtiAgent(String library, String options) throws Exception;
+
+        /** Whether the agent made {@code CoverageTracker} available to the app. */
+        boolean isCoverageTrackerLoaded();
 
         void dumpCoverageData();
 
@@ -127,6 +132,14 @@ public class CoverageAgentAttacher extends RunListener {
         environment.info("Attempting attachment via Java API: " + agentPath);
         environment.attachJvmtiAgent(agentPath, options);
 
+        // The agent can load but fail to start, for example if it can't set up its runtime. Then
+        // CoverageTracker doesn't exist, and dumping at the end of the run would throw.
+        if (!environment.isCoverageTrackerLoaded()) {
+            environment.warn(
+                    "The coverage agent attached but did not start. Tests run without coverage.");
+            return false;
+        }
+
         // 4. Output the Success Signal for host-side verification.
         environment.info("Successfully attached via Java API.");
         return true;
@@ -147,6 +160,17 @@ public class CoverageAgentAttacher extends RunListener {
         @Override
         public void attachJvmtiAgent(String library, String options) throws Exception {
             Debug.attachJvmtiAgent(library, options, null);
+        }
+
+        @Override
+        public boolean isCoverageTrackerLoaded() {
+            try {
+                // The agent adds CoverageTracker to the boot class path.
+                Class.forName(TRACKER_CLASS_NAME, false, null);
+                return true;
+            } catch (ClassNotFoundException | LinkageError e) {
+                return false;
+            }
         }
 
         @Override

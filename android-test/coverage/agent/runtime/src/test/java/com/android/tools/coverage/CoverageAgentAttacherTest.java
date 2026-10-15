@@ -103,6 +103,19 @@ public class CoverageAgentAttacherTest {
     }
 
     @Test
+    public void doesNotDumpIfTheAgentDidNotStart() throws Exception {
+        // The agent loaded but never made CoverageTracker available, so dumping would throw
+        // NoClassDefFoundError.
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.trackerLoaded = false;
+
+        runTests();
+
+        assertEquals("/data/local/tmp/coverage_agent.so", environment.attachedLibrary);
+        assertEquals(0, environment.dumpCount);
+    }
+
+    @Test
     public void dumpErrorDoesNotEscape() throws Exception {
         environment.arguments.put("coverage-agent-config", CONFIG);
         environment.dumpFailure = new UnsatisfiedLinkError("dumpCoverageData");
@@ -152,6 +165,7 @@ public class CoverageAgentAttacherTest {
         final Map<String, String> arguments = new HashMap<>();
         RuntimeException argumentsFailure;
         Throwable attachFailure;
+        boolean trackerLoaded = true;
         Error dumpFailure;
 
         String attachedLibrary;
@@ -183,6 +197,11 @@ public class CoverageAgentAttacherTest {
             if (attachFailure instanceof Exception) {
                 throw (Exception) attachFailure;
             }
+        }
+
+        @Override
+        public boolean isCoverageTrackerLoaded() {
+            return trackerLoaded;
         }
 
         @Override
