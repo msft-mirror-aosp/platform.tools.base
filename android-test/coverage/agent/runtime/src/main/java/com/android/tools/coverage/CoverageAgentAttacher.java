@@ -16,6 +16,7 @@
 
 package com.android.tools.coverage;
 
+import android.os.Build;
 import android.os.Debug;
 import android.util.Log;
 
@@ -39,8 +40,13 @@ public class CoverageAgentAttacher extends RunListener {
     private static final String TAG = "studio.coverage";
     private static final String CONFIG_KEY = "coverage-agent-config";
 
+    /** {@code Debug.attachJvmtiAgent} was added in Android 9 (API 28). */
+    static final int MIN_SDK_INT = 28;
+
     /** The Android calls the attacher makes, replaced in tests. */
     interface Environment {
+        int sdkInt();
+
         /** Returns the instrumentation argument {@code key}, or null if it isn't set. */
         String argument(String key);
 
@@ -94,6 +100,17 @@ public class CoverageAgentAttacher extends RunListener {
     }
 
     private boolean attachAgent() throws Exception {
+        int sdkInt = environment.sdkInt();
+        if (sdkInt < MIN_SDK_INT) {
+            environment.warn(
+                    "On-device coverage needs Android 9 (API "
+                            + MIN_SDK_INT
+                            + ") or higher, but this device runs API "
+                            + sdkInt
+                            + ". Tests run without coverage.");
+            return false;
+        }
+
         // 1. Get Instrumentation Arguments
         // 2. Extract Config (Format: "/path/to/agent.so=options")
         String config = environment.argument(CONFIG_KEY);
@@ -117,6 +134,11 @@ public class CoverageAgentAttacher extends RunListener {
 
     /** The real Android calls. */
     private static final class AndroidEnvironment implements Environment {
+        @Override
+        public int sdkInt() {
+            return Build.VERSION.SDK_INT;
+        }
+
         @Override
         public String argument(String key) {
             return InstrumentationRegistry.getArguments().getString(key);

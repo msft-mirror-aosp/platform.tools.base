@@ -56,6 +56,18 @@ public class CoverageAgentAttacherTest {
     }
 
     @Test
+    public void doesNotAttachBelowApi28() throws Exception {
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.sdkInt = 27;
+
+        runTests();
+
+        assertNull(environment.attachedLibrary);
+        assertEquals(0, environment.dumpCount);
+        assertTrue(environment.warnings.get(0).contains("API 27"));
+    }
+
+    @Test
     public void attachErrorDoesNotEscape() throws Exception {
         // What a device without Debug.attachJvmtiAgent throws.
         environment.arguments.put("coverage-agent-config", CONFIG);
@@ -136,6 +148,7 @@ public class CoverageAgentAttacherTest {
     }
 
     private static final class FakeEnvironment implements CoverageAgentAttacher.Environment {
+        int sdkInt = CoverageAgentAttacher.MIN_SDK_INT;
         final Map<String, String> arguments = new HashMap<>();
         RuntimeException argumentsFailure;
         Throwable attachFailure;
@@ -146,6 +159,11 @@ public class CoverageAgentAttacherTest {
         int dumpCount;
         final List<String> warnings = new ArrayList<>();
         final List<String> errors = new ArrayList<>();
+
+        @Override
+        public int sdkInt() {
+            return sdkInt;
+        }
 
         @Override
         public String argument(String key) {
