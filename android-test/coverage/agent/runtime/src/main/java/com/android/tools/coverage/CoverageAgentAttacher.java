@@ -26,10 +26,13 @@ import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 
 /**
- * A JUnit {@link RunListener} that attempts to attach the native JVMTI agent using the
- * internal Android Java API (android.os.Debug.attachJvmtiAgent).
+ * A JUnit {@link RunListener} that attempts to attach the native JVMTI agent using the internal
+ * Android Java API (android.os.Debug.attachJvmtiAgent).
  *
  * <p>This provides a resilient, internal attachment path for standard instrumentation runs.
+ *
+ * <p>Coverage is optional: if the agent can't be attached, or its data can't be dumped, the problem
+ * is logged and the tests run and report their results without coverage.
  */
 public class CoverageAgentAttacher extends RunListener {
 
@@ -49,7 +52,7 @@ public class CoverageAgentAttacher extends RunListener {
 
         void warn(String message);
 
-        void error(String message);
+        void error(String message, Throwable throwable);
     }
 
     private final Environment environment;
@@ -65,47 +68,51 @@ public class CoverageAgentAttacher extends RunListener {
 
     @Override
     public void testRunStarted(Description description) throws Exception {
-        attached = attachAgent();
+        try {
+            attached = attachAgent();
+        } catch (Exception | LinkageError e) {
+            // Not only exceptions: without the API the call fails with NoSuchMethodError, and a
+            // missing class or native method with another LinkageError. Anything a listener throws
+            // here would stop the test run. Errors like OutOfMemoryError still propagate.
+            environment.error("Java API attachment failed. Tests run without coverage.", e);
+            attached = false;
+        }
         super.testRunStarted(description);
     }
 
     @Override
     public void testRunFinished(Result result) throws Exception {
         if (attached) {
-            environment.info("Test run finished. Triggering explicit coverage dump.");
-            environment.dumpCoverageData();
+            try {
+                environment.info("Test run finished. Triggering explicit coverage dump.");
+                environment.dumpCoverageData();
+            } catch (Exception | LinkageError e) {
+                environment.error("Coverage dump failed.", e);
+            }
         }
         super.testRunFinished(result);
     }
 
-    private boolean attachAgent() {
-        try {
-            // 1. Get Instrumentation Arguments
-            // 2. Extract Config (Format: "/path/to/agent.so=options")
-            String config = environment.argument(CONFIG_KEY);
+    private boolean attachAgent() throws Exception {
+        // 1. Get Instrumentation Arguments
+        // 2. Extract Config (Format: "/path/to/agent.so=options")
+        String config = environment.argument(CONFIG_KEY);
 
-            if (config == null || config.isEmpty()) {
-                environment.warn(
-                        "No attachment config found in arguments. Skipping Java API path.");
-                return false;
-            }
-
-            String agentPath =
-                    config.contains("=") ? config.substring(0, config.indexOf("=")) : config;
-            String options = config.contains("=") ? config.substring(config.indexOf("=") + 1) : "";
-
-            // 3. Call Debug.attachJvmtiAgent(library, options, classLoader)
-            environment.info("Attempting attachment via Java API: " + agentPath);
-            environment.attachJvmtiAgent(agentPath, options);
-
-            // 4. Output the Success Signal for host-side verification.
-            environment.info("Successfully attached via Java API.");
-            return true;
-
-        } catch (Exception e) {
-            environment.error("Java API attachment failed: " + e.getMessage());
+        if (config == null || config.isEmpty()) {
+            environment.warn("No attachment config found in arguments. Skipping Java API path.");
             return false;
         }
+
+        String agentPath = config.contains("=") ? config.substring(0, config.indexOf("=")) : config;
+        String options = config.contains("=") ? config.substring(config.indexOf("=") + 1) : "";
+
+        // 3. Call Debug.attachJvmtiAgent(library, options, classLoader)
+        environment.info("Attempting attachment via Java API: " + agentPath);
+        environment.attachJvmtiAgent(agentPath, options);
+
+        // 4. Output the Success Signal for host-side verification.
+        environment.info("Successfully attached via Java API.");
+        return true;
     }
 
     /** The real Android calls. */
@@ -136,8 +143,8 @@ public class CoverageAgentAttacher extends RunListener {
         }
 
         @Override
-        public void error(String message) {
-            Log.e(TAG, message);
+        public void error(String message, Throwable throwable) {
+            Log.e(TAG, message, throwable);
         }
     }
 }

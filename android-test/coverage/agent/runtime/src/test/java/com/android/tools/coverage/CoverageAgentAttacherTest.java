@@ -19,6 +19,7 @@ package com.android.tools.coverage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -31,7 +32,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Tests for {@link CoverageAgentAttacher}. */
+/**
+ * Tests that {@link CoverageAgentAttacher} never lets a coverage problem escape into the test run.
+ */
 public class CoverageAgentAttacherTest {
 
     private static final String CONFIG =
@@ -50,6 +53,18 @@ public class CoverageAgentAttacherTest {
         assertEquals("com.example,com/example,/data/cov", environment.attachedOptions);
         assertEquals(1, environment.dumpCount);
         assertTrue(environment.errors.isEmpty());
+    }
+
+    @Test
+    public void attachErrorDoesNotEscape() throws Exception {
+        // What a device without Debug.attachJvmtiAgent throws.
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.attachFailure = new NoSuchMethodError("attachJvmtiAgent");
+
+        runTests();
+
+        assertEquals(0, environment.dumpCount);
+        assertEquals(1, environment.errors.size());
     }
 
     @Test
@@ -76,12 +91,42 @@ public class CoverageAgentAttacherTest {
     }
 
     @Test
+    public void dumpErrorDoesNotEscape() throws Exception {
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.dumpFailure = new UnsatisfiedLinkError("dumpCoverageData");
+
+        runTests();
+
+        assertEquals(1, environment.dumpCount);
+        assertEquals(1, environment.errors.size());
+    }
+
+    @Test
     public void doesNotAttachWithoutConfig() throws Exception {
         runTests();
 
         assertNull(environment.attachedLibrary);
         assertEquals(0, environment.dumpCount);
         assertFalse(environment.warnings.isEmpty());
+    }
+
+    @Test
+    public void attachVirtualMachineErrorIsNotSwallowed() throws Exception {
+        // Only failures that mean "no coverage" are caught. An OutOfMemoryError means the process
+        // itself is broken, so it propagates.
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.attachFailure = new OutOfMemoryError("attach");
+
+        assertThrows(OutOfMemoryError.class, () -> attacher.testRunStarted(Description.EMPTY));
+    }
+
+    @Test
+    public void dumpVirtualMachineErrorIsNotSwallowed() throws Exception {
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.dumpFailure = new OutOfMemoryError("dump");
+        attacher.testRunStarted(Description.EMPTY);
+
+        assertThrows(OutOfMemoryError.class, () -> attacher.testRunFinished(new Result()));
     }
 
     /** Calls the listener the way the test runner does. Anything it throws fails the test. */
@@ -93,7 +138,8 @@ public class CoverageAgentAttacherTest {
     private static final class FakeEnvironment implements CoverageAgentAttacher.Environment {
         final Map<String, String> arguments = new HashMap<>();
         RuntimeException argumentsFailure;
-        Exception attachFailure;
+        Throwable attachFailure;
+        Error dumpFailure;
 
         String attachedLibrary;
         String attachedOptions;
@@ -113,14 +159,20 @@ public class CoverageAgentAttacherTest {
         public void attachJvmtiAgent(String library, String options) throws Exception {
             attachedLibrary = library;
             attachedOptions = options;
-            if (attachFailure != null) {
-                throw attachFailure;
+            if (attachFailure instanceof Error) {
+                throw (Error) attachFailure;
+            }
+            if (attachFailure instanceof Exception) {
+                throw (Exception) attachFailure;
             }
         }
 
         @Override
         public void dumpCoverageData() {
             dumpCount++;
+            if (dumpFailure != null) {
+                throw dumpFailure;
+            }
         }
 
         @Override
@@ -132,7 +184,7 @@ public class CoverageAgentAttacherTest {
         }
 
         @Override
-        public void error(String message) {
+        public void error(String message, Throwable throwable) {
             errors.add(message);
         }
     }
