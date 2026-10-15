@@ -114,8 +114,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
         when (val s = header.status) {
           is MethodBody.Status.Abstract -> true
           is MethodBody.Status.ForChecking -> s.body == null
-          is MethodBody.Status.ForInference,
-          is MethodBody.Status.BasicConstructor -> false
+          is MethodBody.Status.ForInference -> false
         }
       }
     return when (val n = abstractMethods.size) {
@@ -318,19 +317,26 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
         }
       val env = paramDomains.foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
       val methodEnv = classEnv.copy(types = typeParams, vars = env)
-      val body = canonicalOverload?.let { OverloadBody(method, it, methodEnv) } ?: method.uastBody
+      val range = returnType<Nothing>(typeParams.paramNames(), method.javaPsi, classAdapter)
+      val body =
+        when {
+          // A generated overload just runs the canonical method, with defaults for the omitted arguments
+          canonicalOverload != null -> OverloadBody(method, canonicalOverload, methodEnv)
+          // A constructor runs the initializers too, even without a body of its own
+          method.isConstructor -> InitializerBody(method, method.fieldInitializers(), method.uastBody, range)
+          else -> method.uastBody
+        }
 
       return MethodBody(
         domains = domains,
         initEnvironment = methodEnv,
-        returnTypeAnnotation = returnType(typeParams.paramNames(), method.javaPsi, classAdapter),
+        returnTypeAnnotation = range,
         status =
           when (val ann = annotationParser.parseMethodAnnotations(context, method)) {
             is EffectAnnotation.Implicit ->
-              when {
-                body != null -> MethodBody.Status.ForInference(body, ann)
-                method.isConstructor -> MethodBody.Status.BasicConstructor
-                else -> MethodBody.Status.Abstract
+              when (body) {
+                null -> MethodBody.Status.Abstract
+                else -> MethodBody.Status.ForInference(body, ann)
               }
             is EffectAnnotation.Explicit -> MethodBody.Status.ForChecking(ann, body)
           },
@@ -389,8 +395,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
             is MethodBody.Status.ForInference -> s.copy(body = init)
             is MethodBody.Status.ForChecking -> s.copy(body = init)
             // Kotlin forbids default values on overrides, so there are no inherited annotations to honor
-            is MethodBody.Status.Abstract,
-            is MethodBody.Status.BasicConstructor -> MethodBody.Status.ForInference(init, EffectAnnotation.None)
+            is MethodBody.Status.Abstract -> MethodBody.Status.ForInference(init, EffectAnnotation.None)
           }
         val returnType = PsiTypeAdapter.translate(body.initEnvironment.boundParamNames, paramPsi.type)
         acc =
@@ -659,15 +664,13 @@ internal fun UMethod.isKtProperty() =
 internal data class LocalFun(val uast: ULambdaExpression, val sourcePsi: KtNamedFunction)
 
 /** The instance field initializers run directly by this constructor: none if it delegates to another */
-internal fun UMethod.fieldInitializers(): List<UExpression> {
-  if (!isConstructor) return emptyList()
+private fun UMethod.fieldInitializers(): List<UExpression> {
   val delegates =
-    canonicalOverload() != null ||
-      when (val ctor = sourcePsi) {
-        is KtSecondaryConstructor -> ctor.getDelegationCall().isCallToThis
-        is PsiMethod -> JavaPsiConstructorUtil.isChainedConstructorCall(JavaPsiConstructorUtil.findThisOrSuperCallInConstructor(ctor))
-        else -> false
-      }
+    when (val ctor = sourcePsi) {
+      is KtSecondaryConstructor -> ctor.getDelegationCall().isCallToThis
+      is PsiMethod -> JavaPsiConstructorUtil.isChainedConstructorCall(JavaPsiConstructorUtil.findThisOrSuperCallInConstructor(ctor))
+      else -> false
+    }
   if (delegates) return emptyList()
   return getContainingUClass()?.fields.orEmpty().filter { !it.isStatic && it.sourcePsi !is KtParameter }.mapNotNull { it.uastInitializer }
 }

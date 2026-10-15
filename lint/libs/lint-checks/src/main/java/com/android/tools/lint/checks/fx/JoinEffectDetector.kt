@@ -1311,7 +1311,6 @@ private fun <FX : Any> debugEntry(program: Module<FX>, k: Point<FX>, v: Ans<FX>)
         is MethodBody.Status.ForChecking,
         is MethodBody.Status.ForInference -> println("  - $k : (…) -> $v")
         null,
-        is MethodBody.Status.BasicConstructor,
         is MethodBody.Status.Abstract -> {}
       }
     is Point.Instantiation -> println("  - $k : $v")
@@ -1330,8 +1329,7 @@ private fun <FX : Any> resultList(module: Module<FX>, results: Map<Type.MethodRe
                 when (val status = methodBody.status) {
                   is MethodBody.Status.ForChecking -> Effect(status.upperBound.annotated, persistentSetOf(), effectResult.result)
                   is MethodBody.Status.ForInference -> throw IllegalStateException()
-                  is MethodBody.Status.Abstract,
-                  is MethodBody.Status.BasicConstructor -> return@fold m
+                  is MethodBody.Status.Abstract -> return@fold m
                 }
               is EffectResult.Inference -> effectResult.result
               is EffectResult.Inapplicable -> return@fold m

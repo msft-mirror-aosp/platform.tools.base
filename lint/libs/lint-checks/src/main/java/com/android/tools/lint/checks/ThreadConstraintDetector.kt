@@ -18,8 +18,6 @@ package com.android.tools.lint.checks
 import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraint
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder
 import com.android.tools.lint.checks.fx.JoinEffectDetector
-import com.android.tools.lint.checks.fx.analysis.canonicalOverload
-import com.android.tools.lint.checks.fx.analysis.fieldInitializers
 import com.android.tools.lint.checks.fx.analysis.isKtProperty
 import com.android.tools.lint.checks.fx.get
 import com.android.tools.lint.checks.fx.invoke
@@ -321,18 +319,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     fun fromClassOrDefault() =
       when {
         // Constructors don't inherit from class annotations.
-        // If it's trivial, it's `@AnyThread`. Otherwise, it's inferred.
-        // It's trivial only if nothing runs as part of it: no body, no default argument (run by the calls omitting it), no field
-        // initializer, and not a generated overload, which runs the canonical constructor's defaults.
-        method.isConstructor ->
-          if (
-            method.uastBody == null &&
-              method.uastParameters.none { it.uastInitializer != null } &&
-              method.fieldInitializers().isEmpty() &&
-              method.canonicalOverload() == null
-          )
-            lattice.AnyThread
-          else null
+        method.isConstructor -> null
         // Properties only inherit from class annotation if they're open.
         // Otherwise, trivial properties are `@AnyThread`, and user-written {g,s}etters are
         // inferred.

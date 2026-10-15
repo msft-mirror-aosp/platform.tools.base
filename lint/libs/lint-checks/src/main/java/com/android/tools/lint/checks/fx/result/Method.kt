@@ -139,7 +139,6 @@ internal data class MethodBody<out FX>(
     val fx =
       when (status) {
         is Status.Abstract -> "\uD83D\uDD35"
-        is Status.BasicConstructor -> "\uD83D\uDEA7"
         is Status.ForChecking -> "@ ${status.upperBound}"
         is Status.ForInference -> "@ ???"
       }
@@ -151,8 +150,6 @@ internal data class MethodBody<out FX>(
 
   sealed interface Status<out FX> {
     data object Abstract : Status<Nothing>
-
-    data object BasicConstructor : Status<Nothing>
 
     data class ForChecking<out FX>(val upperBound: EffectAnnotation.Explicit<FX>, val body: UExpression?) : Status<FX>
 
