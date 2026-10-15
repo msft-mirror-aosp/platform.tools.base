@@ -38,7 +38,6 @@ fun RecipeExecutor.fullscreenFragmentRecipe(
   packageName: String,
 ) {
   val (projectData, srcOut, resOut) = moduleData
-  val useAndroidX = moduleData.projectTemplateData.androidXSupport
   val ktOrJavaExt = projectData.language.extension
   addAllKotlinDependencies(moduleData)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
@@ -60,7 +59,6 @@ fun RecipeExecutor.fullscreenFragmentRecipe(
           layoutName = layoutName,
           packageName = packageName,
           applicationPackage = projectData.applicationPackage,
-          useAndroidX = useAndroidX,
           isViewBindingSupported = isViewBindingSupported,
         )
       Language.Kotlin ->
@@ -69,7 +67,6 @@ fun RecipeExecutor.fullscreenFragmentRecipe(
           layoutName = layoutName,
           packageName = packageName,
           applicationPackage = projectData.applicationPackage,
-          useAndroidX = useAndroidX,
           isViewBindingSupported = isViewBindingSupported,
         )
     }
