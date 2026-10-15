@@ -253,34 +253,6 @@ coverage_java_test(
     ],
 )
 
-java_library(
-    name = "repo_builder_lib",
-    srcs = ["src/com/android/tools/binaries/RepoBuilder.java"],
-    deps = [
-        ":utils",
-        "@maven//:com.google.guava.guava",
-        "@maven//:org.apache.maven.maven-model-builder",
-    ],
-)
-
-java_binary(
-    name = "repo_builder",
-    main_class = "com.android.tools.binaries.RepoBuilder",
-    visibility = ["//visibility:public"],
-    runtime_deps = [":repo_builder_lib"],
-)
-
-java_test(
-    name = "repo_builder_test",
-    srcs = ["testSrc/com/android/tools/binaries/RepoBuilderTest.java"],
-    test_class = "com.android.tools.binaries.RepoBuilderTest",
-    deps = [
-        ":repo_builder_lib",
-        "@maven//:com.google.truth.truth",
-        "@maven//:junit.junit",
-    ],
-)
-
 java_binary(
     name = "gradlew",
     main_class = "com.android.tools.gradle.GradleW",

@@ -4816,8 +4816,6 @@ tools/base/bazel/src/com/android/tools/binaries/LocalMavenRepositoryGenerator.ja
 tools/base/bazel/src/com/android/tools/binaries/Matryoshka.java
 tools/base/bazel/src/com/android/tools/binaries/ModifyJarManifest.java
 tools/base/bazel/src/com/android/tools/binaries/PomGenerator.java
-tools/base/bazel/src/com/android/tools/binaries/RepoBuilder.java
-tools/base/bazel/src/com/android/tools/binaries/RepoZipper.java
 tools/base/bazel/src/com/android/tools/binaries/ZipMerger.java
 tools/base/bazel/src/com/android/tools/gradle/Gradle.java
 tools/base/bazel/src/com/android/tools/gradle/GradleW.java
@@ -4886,8 +4884,6 @@ tools/base/bazel/testSrc/com/android/tools/binaries/LocalMavenRepositoryGenerato
 tools/base/bazel/testSrc/com/android/tools/binaries/MavenConsistencyTest.java
 tools/base/bazel/testSrc/com/android/tools/binaries/ModifyJarManifestTest.java
 tools/base/bazel/testSrc/com/android/tools/binaries/PomGeneratorTest.java
-tools/base/bazel/testSrc/com/android/tools/binaries/RepoBuilderTest.java
-tools/base/bazel/testSrc/com/android/tools/binaries/RepoZipperTest.java
 tools/base/bazel/testSrc/com/android/tools/binaries/ZipMergerTest.java
 tools/base/bazel/testSrc/com/android/tools/gradle/BenchmarkListener.java
 tools/base/bazel/testSrc/com/android/tools/gradle/BenchmarkRun.java
