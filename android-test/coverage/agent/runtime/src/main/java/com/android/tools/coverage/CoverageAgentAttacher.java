@@ -40,6 +40,9 @@ public class CoverageAgentAttacher extends RunListener {
     private static final String TAG = "studio.coverage";
     private static final String CONFIG_KEY = "coverage-agent-config";
 
+    /** Set by the test orchestrator on the run that only lists the tests. */
+    static final String LIST_TESTS_FOR_ORCHESTRATOR_KEY = "listTestsForOrchestrator";
+
     /** {@code Debug.attachJvmtiAgent} was added in Android 9 (API 28). */
     static final int MIN_SDK_INT = 28;
 
@@ -113,6 +116,11 @@ public class CoverageAgentAttacher extends RunListener {
                             + ") or higher, but this device runs API "
                             + sdkInt
                             + ". Tests run without coverage.");
+            return false;
+        }
+
+        // The orchestrator's listing run doesn't run any test, so there is nothing to measure.
+        if (Boolean.parseBoolean(environment.argument(LIST_TESTS_FOR_ORCHESTRATOR_KEY))) {
             return false;
         }
 

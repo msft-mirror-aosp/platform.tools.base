@@ -127,6 +127,17 @@ public class CoverageAgentAttacherTest {
     }
 
     @Test
+    public void doesNotAttachWhileTheOrchestratorListsTests() throws Exception {
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.arguments.put(CoverageAgentAttacher.LIST_TESTS_FOR_ORCHESTRATOR_KEY, "true");
+
+        runTests();
+
+        assertNull(environment.attachedLibrary);
+        assertEquals(0, environment.dumpCount);
+    }
+
+    @Test
     public void doesNotAttachWithoutConfig() throws Exception {
         runTests();
 
