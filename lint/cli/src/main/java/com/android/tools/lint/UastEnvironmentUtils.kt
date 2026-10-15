@@ -16,11 +16,6 @@
 package com.android.tools.lint
 
 import com.android.SdkConstants.DOT_KTS
-import com.android.tools.idea.gradle.dcl.lang.DeclarativeLanguage
-import com.android.tools.idea.gradle.dcl.lang.DeclarativeParserDefinition
-import com.android.tools.idea.gradle.dcl.lang.DeclarativeUastLanguagePlugin
-import com.android.tools.idea.gradle.dcl.lang.psi.DeclarativeASTFactory
-import com.android.tools.idea.gradle.dcl.lang.psi.DeclarativeFileType
 import com.android.tools.lint.UastEnvironment.Companion.getKlibPaths
 import com.android.tools.lint.UastEnvironment.Configuration.Companion.isKMP
 import com.android.tools.lint.detector.api.GraphUtils
@@ -32,7 +27,6 @@ import com.intellij.codeInsight.InferredAnnotationsManager
 import com.intellij.codeInsight.JavaExpressionTypeNullabilityPatcher
 import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.diagnostic.LoadingState
-import com.intellij.lang.LanguageASTFactory
 import com.intellij.lang.LanguageExtensionPoint
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
@@ -415,7 +409,6 @@ internal fun configureApplicationEnvironment(appEnv: CoreApplicationEnvironment,
 
   appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
   appEnv.addExtension(UEvaluatorExtension.EXTENSION_POINT_NAME, KotlinEvaluatorExtension())
-  appEnv.addExtension(UastLanguagePlugin.EP, DeclarativeUastLanguagePlugin())
   PsiAugmentProvider.EP_NAME.point.registerExtension(RecordAugmentProvider())
 
   configurator(appEnv)
@@ -429,9 +422,6 @@ internal fun configureApplicationEnvironment(appEnv: CoreApplicationEnvironment,
   )
 
   appEnv.registerFileType(KlibMetaFileType, KLIB_METADATA_FILE_EXTENSION)
-  appEnv.registerFileType(DeclarativeFileType.INSTANCE, "dcl")
-  appEnv.addExplicitExtension(LanguageASTFactory.INSTANCE, DeclarativeLanguage.INSTANCE, DeclarativeASTFactory())
-  appEnv.registerParserDefinition(DeclarativeParserDefinition())
 
   // Mark the app as "started" to avoid early bailout paths in Registry.is() and more.
   @Suppress("UnstableApiUsage") LoadingState.setCurrentState(LoadingState.APP_STARTED)

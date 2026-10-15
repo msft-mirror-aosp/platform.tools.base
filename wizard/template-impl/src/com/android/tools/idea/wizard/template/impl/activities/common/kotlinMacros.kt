@@ -46,14 +46,11 @@ fun RecipeExecutor.addComposeDependencies(
 
   // b/502576941: We should opt back into applying the compose plugin here instead of through the Gradle ecosystem plugin for declarative
   // projects.
-  val isDeclarative = data.projectTemplateData.dslLanguage.isDcl
-  if (!isDeclarative) {
-    addPlugin(
-      "org.jetbrains.kotlin.plugin.compose",
-      "org.jetbrains.kotlin:compose-compiler-gradle-plugin",
-      data.projectTemplateData.kotlinVersion,
-    )
-  }
+  addPlugin(
+    "org.jetbrains.kotlin.plugin.compose",
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin",
+    data.projectTemplateData.kotlinVersion,
+  )
   addPlatformDependency(mavenCoordinate = "androidx.compose:compose-bom:$composeBomVersion")
   addPlatformDependency(mavenCoordinate = "androidx.compose:compose-bom:$composeBomVersion", "androidTestImplementation")
 

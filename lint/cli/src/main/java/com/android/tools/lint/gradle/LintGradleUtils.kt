@@ -86,11 +86,7 @@ private fun findFirstIncludedModulePath(root: File): String? {
   val rootFiles = root.listFiles() ?: return null
   for (file in rootFiles) {
     val name = file.name
-    if (
-      name == SdkConstants.FN_SETTINGS_GRADLE ||
-        name == SdkConstants.FN_SETTINGS_GRADLE_KTS ||
-        name == SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE
-    ) {
+    if (name == SdkConstants.FN_SETTINGS_GRADLE || name == SdkConstants.FN_SETTINGS_GRADLE_KTS) {
       if (file.isFile) {
         try {
           return findFirstIncludedModulePath(file.readText())

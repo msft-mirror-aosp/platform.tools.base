@@ -3399,21 +3399,11 @@ com/android/tools/layoutlib/layoutlib-api
 com/android/tools/lint/lint
   META-INF/
   META-INF/MANIFEST.MF
-  META-INF/dcl-lang.kotlin_module
-  META-INF/gradle-declarative-lang.xml
   META-INF/lint-cli.kotlin_module
   NOTICE
   com/
   com/android/
   com/android/tools/
-  com/android/tools/idea/
-  com/android/tools/idea/gradle/
-  com/android/tools/idea/gradle/dcl/
-  com/android/tools/idea/gradle/dcl/lang/
-  com/android/tools/idea/gradle/dcl/lang/lexer/
-  com/android/tools/idea/gradle/dcl/lang/parser/
-  com/android/tools/idea/gradle/dcl/lang/psi/
-  com/android/tools/idea/gradle/dcl/lang/psi/impl/
   com/android/tools/lint/
   com/android/tools/lint/gradle/
   com/android/tools/lint/renderer/
