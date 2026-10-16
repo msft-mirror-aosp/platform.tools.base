@@ -19,7 +19,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +37,7 @@ public class LargeFileSource extends Source {
     private final int compressionLevel;
 
     private static final String TMP_DIR = System.getProperty("java.io.tmpdir");
+    private static final int STORED_READ_BUFFER_SIZE = 256 * 1024;
 
     // Does not load the whole file in memory. If the entry is not compressed, only read it to
     // compute the CRC32 and zero-copy src when needed. If compression is requested, uses a tmp
@@ -55,17 +56,12 @@ public class LargeFileSource extends Source {
             throw new IllegalStateException(msg);
         }
 
-        try (CheckedInputStream in =
-                new CheckedInputStream(Files.newInputStream(src), new CRC32())) {
-            if (compressionLevel == Deflater.NO_COMPRESSION) {
-                buildStored(in);
-                transferSrc = src;
-            } else {
-                buildCompressed(in, compressionLevel, tmpStorage);
-                transferSrc = tmpStorage;
-            }
-            // At this point the input file has been completely read. We can request the crc32.
-            crc = Ints.longToUint(in.getChecksum().getValue());
+        if (compressionLevel == Deflater.NO_COMPRESSION) {
+            crc = Ints.longToUint(buildStored(src));
+            transferSrc = src;
+        } else {
+            crc = Ints.longToUint(buildCompressed(src, compressionLevel, tmpStorage));
+            transferSrc = tmpStorage;
         }
     }
 
@@ -92,19 +88,27 @@ public class LargeFileSource extends Source {
         return tmp;
     }
 
-    private void buildStored(@NonNull InputStream in) throws IOException {
-        byte[] buffer = new byte[4096];
+    // Reads into a large direct buffer: CRC32.update(ByteBuffer) hashes native memory directly
+    // (no copy into a heap array) and the large reads keep the number of syscalls low.
+    private long buildStored(@NonNull Path src) throws IOException {
+        CRC32 crc32 = new CRC32();
+        ByteBuffer buffer = ByteBuffer.allocateDirect(STORED_READ_BUFFER_SIZE);
         long inputSize = 0;
-        int read;
-        while ((read = in.read(buffer)) != -1) {
-            inputSize += read;
+        try (FileChannel channel = FileChannel.open(src, StandardOpenOption.READ)) {
+            while (channel.read(buffer) != -1) {
+                buffer.flip();
+                inputSize += buffer.remaining();
+                crc32.update(buffer);
+                buffer.clear();
+            }
         }
         compressedSize = inputSize;
         uncompressedSize = compressedSize;
         compressionFlag = LocalFileHeader.COMPRESSION_NONE;
+        return crc32.getValue();
     }
 
-    private void buildCompressed(@NonNull InputStream in, int compressionLevel, @NonNull Path tmp)
+    private long buildCompressed(@NonNull Path src, int compressionLevel, @NonNull Path tmp)
             throws IOException {
         // Make sure we are not going to overwrite another tmp file.
         if (Files.exists(tmp)) {
@@ -114,9 +118,12 @@ public class LargeFileSource extends Source {
 
         // Pipe the src into the tmp compressed file.
         Deflater deflater = Compressor.getDeflater(compressionLevel);
-        try (DeflaterOutputStream out =
-                new DeflaterOutputStream(
-                        Files.newOutputStream(tmp, StandardOpenOption.CREATE_NEW), deflater)) {
+        CRC32 crc32 = new CRC32();
+        try (CheckedInputStream in = new CheckedInputStream(Files.newInputStream(src), crc32);
+                DeflaterOutputStream out =
+                        new DeflaterOutputStream(
+                                Files.newOutputStream(tmp, StandardOpenOption.CREATE_NEW),
+                                deflater)) {
 
             // Just in case we crash before writeTo is called, attempt to clean up on VM exit.
             // Path.toFile() is supported only by the default file system.
@@ -133,6 +140,8 @@ public class LargeFileSource extends Source {
         compressedSize = deflater.getBytesWritten();
         uncompressedSize = deflater.getBytesRead();
         compressionFlag = LocalFileHeader.COMPRESSION_DEFLATE;
+        // At this point the input file has been completely read. We can request the crc32.
+        return crc32.getValue();
     }
 
     @Override

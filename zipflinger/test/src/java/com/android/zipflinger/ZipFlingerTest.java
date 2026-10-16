@@ -39,6 +39,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 
 public class ZipFlingerTest extends AbstractZipflingerTest {
@@ -1074,6 +1075,29 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
             Assert.assertEquals("FileBacked entry differ", ByteBuffer.wrap(bytes), buffer);
         }
         Assert.assertFalse("LargeSource tmp file was not deleted", Files.exists(tmpPath));
+    }
+
+    @Test
+    public void testLargeStoredSourceSpanningMultipleReads() throws IOException {
+        // Larger than LargeFileSource's read buffer, and not a multiple of it.
+        byte[] bytes = new byte[2 * 256 * 1024 + 123];
+        Path srcPath = createRandomFile("testLargeStoredSourceSpanningMultipleReads.txt", bytes);
+        CRC32 expectedCrc = new CRC32();
+        expectedCrc.update(bytes);
+
+        LargeFileSource s = new LargeFileSource(srcPath, null, "x", Deflater.NO_COMPRESSION);
+        Assert.assertEquals(Ints.longToUint(expectedCrc.getValue()), s.getCrc());
+        Assert.assertEquals(bytes.length, s.getCompressedSize());
+        Assert.assertEquals(bytes.length, s.getUncompressedSize());
+
+        Path dstFile = getTestPath("testLargeStoredSourceSpanningMultipleReads.zip");
+        try (ZipArchive zipArchive = new ZipArchive(dstFile)) {
+            zipArchive.add(s);
+        }
+        verifyArchive(dstFile);
+        try (ZipRepo zipRepo = new ZipRepo(dstFile)) {
+            Assert.assertEquals(ByteBuffer.wrap(bytes), zipRepo.getContent("x"));
+        }
     }
 
     @Test
