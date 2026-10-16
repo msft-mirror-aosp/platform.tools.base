@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.Version
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -69,7 +68,6 @@ class AndroidTestEngineConnectedTest {
                 implementation.add("androidx.test:monitor:1.4.0-alpha06")
                 implementation.add("androidx.test:rules:1.4.0-alpha06")
                 implementation.add("androidx.test:runner:1.4.0-alpha06")
-                implementation.add("com.android.tools.test:coverage-agent:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
               }
             }
             it.useJunitEngine.apply {
@@ -169,12 +167,26 @@ class AndroidTestEngineConnectedTest {
 
   @Test
   fun runAndroidTestWithOnTheFlyCoverageUsingJUnitTestEngine() {
-    val coverageDir = rule.build.directory.resolve("app/build/intermediates/test_suite_code_coverage").toFile()
+    // With codeCoverage, AGP packages the agent into the suite's test APK and asks the engine to attach it, with the tested app's
+    // namespace as the prefix of the classes to instrument. The application id suffix makes the application id differ from the
+    // namespace, so the prefix the engine falls back to without AGP's (the tested application id) would be a different one.
+    val build = rule.build {
+      androidApplication {
+        android {
+          buildTypes { named("debug") { it.applicationIdSuffix = ".debug" } }
+          testOptions.customSuites.named("myAndroidTestSuite") {
+            it.codeCoverage = true
+            it.useJunitEngine.apply {
+              addInputProperty("android-test.test-package-id", "com.example.android.debug.test")
+              addInputProperty("android-test.instrumentation-target-package-id", "com.example.android.debug")
+            }
+          }
+        }
+      }
+    }
     val result =
-      executor
-        .withArgument("-Dandroid-test.is-test-coverage-enabled=true")
-        .withArgument("-Dandroid-test.coverage-type=ON_THE_FLY")
-        .withArgument("-Dandroid-test.coverage-dir-on-host=${coverageDir.absolutePath}")
+      build.executor
+        // Run on one device only: the devices of a suite run share one coverage folder.
         .withArgument("-Dandroid-test.device-serials=emulator-5554")
         .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
         .withEnableInfoLogging(true)
@@ -184,6 +196,9 @@ class AndroidTestEngineConnectedTest {
     result.assertOutputContains("-e coverage true")
     result.assertOutputContains("-e listener com.android.tools.coverage.CoverageAgentAttacher")
     result.assertOutputContains("-e coverage-agent-config")
+    // The agent's options are "<test package id>,<prefix>,<data dir>": the prefix is the namespace AGP passed, not the application id.
+    result.assertOutputContains(",com/example/android,")
+    result.assertOutputDoesNotContain(",com/example/android/debug,")
 
     // Verify binary artifacts were pulled to the host.
     val coverageSearchDir = rule.build.directory.resolve("app/build/intermediates/test_suite_code_coverage").toFile()
