@@ -275,7 +275,8 @@ class InjectionManagerTest {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected timeout waiting for the digest-scoped socket")
     } catch (e: IllegalStateException) {
-      assertThat(e.message).contains("Timed out waiting for agent socket ${socketName("1234")}")
+      assertThat(e.message).contains("Timed out waiting for the UI Inspector agent to start (socket ${socketName("1234")})")
+      assertThat(e.message).contains("The agent starts on the app's main thread")
     }
   }
 
