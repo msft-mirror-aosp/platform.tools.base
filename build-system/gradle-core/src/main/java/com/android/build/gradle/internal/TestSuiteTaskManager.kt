@@ -59,6 +59,12 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
   ): TaskProvider<out Task> {
     val apkCreationConfig = sourceContainer.creationConfig as ApkCreationConfig
 
+    // Like the androidTest APK, a suite's test APK carries the on-device coverage agent, which the test engine attaches from it.
+    // Only suites that collect coverage need it.
+    if (testSuite.codeCoverageEnabled) {
+      handleOnTheFlyCoverageDependencies(apkCreationConfig)
+    }
+
     val taskContainer = apkCreationConfig.taskContainer
     taskContainer.javacTask = javacTask
     taskContainer.preBuildTask = preBuildTask

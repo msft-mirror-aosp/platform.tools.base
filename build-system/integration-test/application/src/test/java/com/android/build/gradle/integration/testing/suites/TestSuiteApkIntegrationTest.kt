@@ -195,6 +195,35 @@ class TestSuiteApkIntegrationTest {
     ApkSubject.assertThat(customTestApk()) { manifest().contains("android:extractNativeLibs=true") }
   }
 
+  @Test
+  fun testTestApkContainsCoverageAgentWhenSuiteCollectsOnDeviceCoverage() {
+    val build = rule.build {
+      gradleProperties { add(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true) }
+      androidApplication(":app") { android { testOptions.customSuites.named("customTest") { it.codeCoverage = true } } }
+    }
+
+    build.executor.run(":app:packageDebugCustomTest")
+
+    // The engine attaches the agent from the test APK, so the attacher and the native agent must be packaged into it.
+    assertThatApk(customTestApk()).apply {
+      containsClass("Lcom/android/tools/coverage/CoverageAgentAttacher;")
+      contains("lib/x86_64/coverage_agent.so")
+      contains("lib/arm64-v8a/coverage_agent.so")
+    }
+  }
+
+  @Test
+  fun testTestApkDoesNotContainCoverageAgentWhenSuiteDoesNotCollectCoverage() {
+    val build = rule.build { gradleProperties { add(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true) } }
+
+    build.executor.run(":app:packageDebugCustomTest")
+
+    assertThatApk(customTestApk()).apply {
+      doesNotContainClass("Lcom/android/tools/coverage/CoverageAgentAttacher;")
+      doesNotContain("lib/x86_64/coverage_agent.so")
+    }
+  }
+
   private fun customTestApk(): File {
     val buildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val testApk = buildDir.walkTopDown().firstOrNull { it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true) }

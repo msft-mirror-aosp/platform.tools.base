@@ -1593,7 +1593,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     )
   }
 
-  private fun handleOnTheFlyCoverageDependencies(creationConfig: ComponentCreationConfig) {
+  protected fun handleOnTheFlyCoverageDependencies(creationConfig: ComponentCreationConfig) {
     val onTheFlyEnabled = globalConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
     if (onTheFlyEnabled && creationConfig.componentType.isForTesting && creationConfig.componentType.isApk) {
       val coverageAgentDependency = onTheFlyCoverageAgentDependency
