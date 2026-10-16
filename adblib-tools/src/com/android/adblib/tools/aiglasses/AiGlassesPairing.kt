@@ -330,6 +330,45 @@ class AiGlassesPairing(val session: AdbSession) {
   }
 
   /**
+   * Refreshes the Companion app's CDM association for [glassesBluetoothAddress] before pairing.
+   *
+   * Android only allows silent Bluetooth bonding within 10 minutes of CDM approval, so clearing any older association (and pre-creating a
+   * fresh one when [useCdm] is true) prevents system chooser and pairing confirmation dialogs.
+   */
+  private suspend fun ConnectedDevice.refreshCdmAssociation(glassesBluetoothAddress: String, useCdm: Boolean) {
+    // Images with android.companion.cmd_options enabled parse only the --mac-address/--profile options and silently ignore positional
+    // arguments, while images without it (including API 37 release images) reject the options. Try the options first and fall back to
+    // positional arguments when they fail.
+    executeCdmCommand(
+      "cmd companiondevice disassociate 0 $COMPANION_PKG --mac-address $glassesBluetoothAddress",
+      "cmd companiondevice disassociate 0 $COMPANION_PKG $glassesBluetoothAddress",
+    )
+    if (useCdm) {
+      executeCdmCommand(
+        "cmd companiondevice associate 0 $COMPANION_PKG --mac-address $glassesBluetoothAddress --profile $COMPANION_DEVICE_GLASSES_ROLE",
+        "cmd companiondevice associate 0 $COMPANION_PKG $glassesBluetoothAddress $COMPANION_DEVICE_GLASSES_ROLE",
+      )
+    }
+  }
+
+  /** Runs each CDM shell command in turn until one succeeds, logging failures instead of aborting pairing. */
+  private suspend fun ConnectedDevice.executeCdmCommand(vararg commands: String) {
+    for (command in commands) {
+      logger.info { "Executing on $serialNumber: $command" }
+      try {
+        val output = runCatchingIoException(command) { shell.executeAsText(it) }
+        if (output.exitCode == 0 && output.stderr.isBlank()) {
+          return
+        }
+        logger.warn("Command '$command' failed (exit code ${output.exitCode}): ${output.stderr.trim()}")
+      } catch (e: Exception) {
+        e.throwIfCancellation()
+        logger.warn(e, "Command '$command' failed")
+      }
+    }
+  }
+
+  /**
    * Polls until the companion app is in the foreground or the [pollingTimeout] expires.
    *
    * @return true if the companion app is in the foreground, false if the timeout expires.
@@ -420,6 +459,7 @@ class AiGlassesPairing(val session: AdbSession) {
       e.throwIfCancellation()
       logger.warn(e, "Failed to unpair pre-existing bond for $glassesBluetoothAddress; proceeding with pairing")
     }
+    refreshCdmAssociation(glassesBluetoothAddress, useCdm)
     sendPairingCommand(glassesBluetoothAddress, useCdm)
     delay(pairingCommandDelay)
 
@@ -500,6 +540,7 @@ class AiGlassesPairing(val session: AdbSession) {
     private const val COMPANION_PKG = "com.google.android.glasses.companion"
     private const val CORE_PKG = "com.google.android.glasses.core"
     private const val CDM_PKG = "com.android.companiondevicemanager"
+    private const val COMPANION_DEVICE_GLASSES_ROLE = "android.app.role.COMPANION_DEVICE_GLASSES"
 
     private const val CMD_ENABLE_LOCATION = "cmd location set-location-enabled true"
     private const val CMD_GET_BLUETOOTH_STATE = "settings get global bluetooth_on"
