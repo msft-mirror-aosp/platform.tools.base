@@ -1053,6 +1053,7 @@ class InjectionManagerTest {
     )
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -o UID= -p $pid", "10123\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$targetPackage uid:10123\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $targetPackage true", "")
     configureSuccessfulInjection(targetPackage = targetPackage, pid = pid, processName = processName)
 
     val resolvedPackage = resolveForegroundPackage(testSession, deviceSerial)
