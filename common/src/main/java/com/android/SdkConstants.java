@@ -1215,6 +1215,9 @@ public final class SdkConstants {
     public static final String TAG_COMPLICATION = "Complication";
     public static final String TAG_IMAGE = "Image";
 
+    // File names: Watch Face
+    public static final String FN_WATCH_FACE_INFO_XML = "watch_face_info.xml";
+
     public static final String VIEW = "View";
     public static final String VIEW_GROUP = "ViewGroup";
     public static final String FRAME_LAYOUT = "FrameLayout";

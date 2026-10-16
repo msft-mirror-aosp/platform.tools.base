@@ -27,6 +27,7 @@ import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_SHRINK_MODE;
 import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.CONSTRAINT_REFERENCED_IDS;
+import static com.android.SdkConstants.FN_WATCH_FACE_INFO_XML;
 import static com.android.SdkConstants.PREFIX_ANDROID;
 import static com.android.SdkConstants.PREFIX_BINDING_EXPR;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
@@ -40,6 +41,7 @@ import static com.android.SdkConstants.TAG_LAYOUT;
 import static com.android.SdkConstants.TAG_NAVIGATION;
 import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.TAG_WATCH_FACE;
+import static com.android.SdkConstants.TAG_WATCH_FACE_INFO;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VALUE_SAFE;
 import static com.android.SdkConstants.VALUE_STRICT;
@@ -684,6 +686,11 @@ public class ResourceUsageModel {
             if (folderType == ResourceFolderType.RAW
                     && document.getDocumentElement() != null
                     && TAG_WATCH_FACE.equals(document.getDocumentElement().getTagName())) {
+                markReachable(from);
+            } else if (folderType == ResourceFolderType.XML
+                    && FN_WATCH_FACE_INFO_XML.equals(file.getName())
+                    && document.getDocumentElement() != null
+                    && TAG_WATCH_FACE_INFO.equals(document.getDocumentElement().getTagName())) {
                 markReachable(from);
             }
         } else if (isAnalyticsFile(file)) {

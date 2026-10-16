@@ -3792,6 +3792,59 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testWatchFaceInfoResources() {
+    lint()
+      .files(
+        xml(
+            "res/xml/watch_face_info.xml",
+            """
+          <WatchFaceInfo>
+              <Preview value="@drawable/preview" />
+          </WatchFaceInfo>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/preview.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="oval">
+              <solid android:color="#FF000000" />
+          </shape>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/unused_drawable.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="rectangle" />
+          """,
+          )
+          .indented(),
+        xml(
+            "res/xml/other_watch_face_info.xml",
+            """
+          <WatchFaceInfo />
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/xml/other_watch_face_info.xml:1: Warning: The resource R.xml.other_watch_face_info appears to be unused [UnusedResources]
+        <WatchFaceInfo />
+        ~~~~~~~~~~~~~~~~~
+        res/drawable/unused_drawable.xml:1: Warning: The resource R.drawable.unused_drawable appears to be unused [UnusedResources]
+        <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        0 errors, 2 warnings
+        """
+      )
+  }
+
   private val mLibraryStrings =
     xml(
       "res/values/strings.xml",

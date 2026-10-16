@@ -26,9 +26,11 @@ import com.android.SdkConstants.DOT_JAVA
 import com.android.SdkConstants.DOT_KT
 import com.android.SdkConstants.DOT_XML
 import com.android.SdkConstants.FD_RESOURCES
+import com.android.SdkConstants.FN_WATCH_FACE_INFO_XML
 import com.android.SdkConstants.TAG_DATA
 import com.android.SdkConstants.TAG_LAYOUT
 import com.android.SdkConstants.TAG_WATCH_FACE
+import com.android.SdkConstants.TAG_WATCH_FACE_INFO
 import com.android.SdkConstants.TOOLS_PREFIX
 import com.android.SdkConstants.TOOLS_URI
 import com.android.SdkConstants.VALUE_FALSE
@@ -607,19 +609,27 @@ class UnusedResourceDetector : ResourceXmlDetector(), SourceCodeScanner, BinaryR
             // keep lists
             //    https://developer.android.com/studio/build/shrink-code.html
             resource.isReachable = true
-          } else if (
-            xmlContext?.document?.documentElement?.tagName == TAG_WATCH_FACE ||
-              (node as? Element)?.tagName == TAG_WATCH_FACE ||
-              (node as? Element)?.ownerDocument?.documentElement?.tagName == TAG_WATCH_FACE
-          ) {
+          } else if (hasTagName(TAG_WATCH_FACE, node)) {
             // Declarative Watch Face Format files in res/raw/ are entry points
             // read directly by the Wear OS system without an @raw/ reference.
+            resource.isReachable = true
+          }
+        } else if (type == ResourceType.XML) {
+          val isWatchFaceInfoFile = FN_WATCH_FACE_INFO_XML == context.file.name && hasTagName(TAG_WATCH_FACE_INFO, node)
+          if (isWatchFaceInfoFile) {
+            // Watch Face Info files in res/xml/ are entry points
+            // read directly by the Wear OS system without an @xml/ reference.
             resource.isReachable = true
           }
         }
       }
       return resource
     }
+
+    private fun hasTagName(tagName: String, node: Node?): Boolean =
+      xmlContext?.document?.documentElement?.tagName == tagName ||
+        (node as? Element)?.tagName == tagName ||
+        (node as? Element)?.ownerDocument?.documentElement?.tagName == tagName
 
     companion object {
       private fun isKeepFile(name: String, xmlContext: XmlContext?) =
