@@ -179,7 +179,9 @@ public final class InspectorBridge {
                         }
                     });
         } catch (RejectedExecutionException e) {
-            // The executor has already quit.
+            // The executor has already quit, so the inspector cannot be disposed on its thread, but
+            // its hooks can still be cleared.
+            clearHooks.accept(hookOwnerId);
         }
         primaryExecutor.quitSafely();
     }
