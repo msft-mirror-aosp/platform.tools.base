@@ -984,6 +984,7 @@ com/android/tools/emulator/proto
   snapshot.proto
   snapshot_service.proto
   ui_controller_service.proto
+  virtual_scene_service.proto
   waterfall.proto
 
 com/android/tools/external/com-intellij/intellij-core
