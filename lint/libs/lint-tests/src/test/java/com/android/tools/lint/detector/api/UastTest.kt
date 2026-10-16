@@ -2980,6 +2980,74 @@ class UastTest : TestCase() {
     }
   }
 
+  fun testResolveInlineReifiedPropertyFromLibrary() {
+    // b/400503220
+    val testFiles =
+      arrayOf(
+        bytecode(
+          "libs/lib1.jar",
+          kotlin(
+              "src/test/pkg/ReifiedProp.kt",
+              """
+              package test.pkg
+
+              inline val <reified T> T.reifiedVal: String get() = "test"
+              inline val <T> T.nonReifiedVal: String get() = "test"
+            """,
+            )
+            .indented(),
+          0xd7f89dd1,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgAmIWBijg4uJiEGILSS0u8S7hkuTiKAGy9Aqy
+                04V4g1Iz0zJTUwKK8gu8S5QYtBgAuyF2Zj8AAAA=
+                """,
+          """
+                test/pkg/ReifiedPropKt.class:
+                H4sIAAAAAAAA/4WRz28SQRTH38wuC0VLt9TWQmtVulZqotsaD2obozExEhFN
+                IVw4DTBdB5bZZmcgHjn5h/gXePZgiN78o4xvVlR+mHjYN+995/N+7JvvPz5/
+                AYAHcEhgS3Ol/Yt+4J9xcS54920cXbzSaSAE3B4bMT9kMvDftHu8g6pFYDXg
+                eso2WUjgoFxd5E4OZ6S6joUMTgjcPW08XkaflBuNf/O2GS0DGQJ5T3jn3kJf
+                UsEJPf1OKC+ekfPLLZDD3FokZ9P3q1Ec+D2u2zETUvlMykgzLSL0a5GuDcMQ
+                Ezd/d17I3vjVWM6r69V+pEMh/ddcsy7TDCvQwcjCZVNjbGMAR++j/l6Y6Ai9
+                7jGB+mSczeJH3VyWZlKlPXcyLtIjUnIyk7FLt8kd+pI+/PaBfv3oOEU7Y7l2
+                addNJYidIAuA49qm9H0C2dn1mO4NfMSFyXMzr3+vr3H5z6MuJ7BWFZLXhoM2
+                jxusHXKz36jDwiaLhYmn4kpdBJLpYYz+ztlQajHgFTkSSuD1s7+bxWHq0TDu
+                8BfCpBWmaHMJhGOgYJttAXULkAIH4xJGj/AHKJ4p6zS/8slcwz5aJ5Et8NDf
+                Qs/4WbiEKqJwGVbxvJXQaShADnnr/+XsuXLun3Lrc+UOpvxaEt9O7E0o4/kU
+                1TzyGy2wKnClApsVrHYVXdiu4BjFFhAFO7DbgrSCawr2FFxXkFLgKLihIPcT
+                d14pfqkDAAA=
+                """,
+        ),
+        kotlin(
+          """
+            import test.pkg.nonReifiedVal
+            import test.pkg.reifiedVal
+
+            fun test() {
+              val r = Any().reifiedVal
+              val nr = Any().nonReifiedVal
+            }
+          """
+        ),
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            if (node.identifier == "reifiedVal" || node.identifier == "nonReifiedVal") {
+              val txt = node.sourcePsi?.text
+              val resolved = node.resolve()
+              assertNotNull(txt, resolved)
+            }
+            return super.visitSimpleNameReferenceExpression(node)
+          }
+        }
+      )
+    }
+  }
+
   fun test263887242() {
     val source =
       kotlin(
