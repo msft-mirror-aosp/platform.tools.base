@@ -40,15 +40,10 @@ class RClassResourceResolver(private val classLoaderManager: StandaloneModuleCla
   fun resolve(rClassJars: List<String>, resourceIdManager: StandaloneResourceIdManager, apkIdManager: ApkResourceIdManager): List<String> {
     val rClassPackages = mutableSetOf<String>()
 
+    // Only project/library R classes are parsed into the RES_AUTO compiled-ID mapping. Framework (android.R / com.android.internal.R)
+    // IDs are resolved in the ANDROID namespace by ResourceIdManagerBase's framework mapping, as in Android Studio; parsing them here
+    // would make library resources whose names collide with framework ones (e.g. R.string.ok) resolve to framework IDs.
     resourceIdManager.loadCompiledIds { parser ->
-      try {
-        val classLoader = this::class.java.classLoader
-        parser.parseUsingReflection(classLoader.loadClass("android.R"))
-        parser.parseUsingReflection(classLoader.loadClass("com.android.internal.R"))
-      } catch (e: Throwable) {
-        logger.log(Level.WARNING, "Could not load Android framework R classes", e)
-      }
-
       for (path in rClassJars) {
         val file = File(path)
         if (file.isDirectory) {

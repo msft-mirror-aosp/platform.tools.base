@@ -32,6 +32,7 @@ import java.util.zip.ZipOutputStream
 import javax.tools.ToolProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -249,6 +250,65 @@ class RendererClassResolutionTest {
       assertTrue((sharedRef.classLoader as DefaultModuleClassLoader).rClassesInitialized)
       val sharedAttrId = sharedRef.classLoader.loadClass("com.example.mismatch.R\$attr").getDeclaredField("mismatched_attr").getInt(null)
       assertNotEquals(0, sharedAttrId)
+    }
+  }
+
+  @Test
+  fun testLibraryResourcesCollidingWithFrameworkNamesDoNotGetFrameworkIds() {
+    // A Light R.jar (R.class without InnerClasses, b/351302272) whose names collide with android.R: string/ok, color/white, attr/alpha.
+    val libJar = tempFolder.newFile("collide_r.jar")
+    val types = listOf("string" to "ok", "color" to "white", "attr" to "alpha")
+    ZipOutputStream(FileOutputStream(libJar)).use { zos ->
+      zos.putNextEntry(ZipEntry("com/example/collide/R.class"))
+      zos.write(generateClassBytes("com/example/collide/R", innerClasses = emptyList(), fields = emptyList()))
+      zos.closeEntry()
+      for ((type, name) in types) {
+        zos.putNextEntry(ZipEntry("com/example/collide/R\$$type.class"))
+        zos.write(
+          generateClassBytes(
+            internalName = "com/example/collide/R\$$type",
+            innerClasses = listOf(Triple("com/example/collide/R\$$type", "com/example/collide/R", type)),
+            fields = listOf(Triple(name, Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, 0)),
+          )
+        )
+        zos.closeEntry()
+      }
+    }
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example.app",
+        classPath = listOf(libJar.absolutePath),
+        projectClassPath = emptyList(),
+        layoutlibPath = "",
+        rClassJars = listOf(libJar.absolutePath),
+      )
+    bootstrapper.bootstrap().use { renderer ->
+      val module = renderer.module
+      val idManager = module.resourceIdManager
+      val frameworkStringOk = Class.forName("android.R\$string").getField("ok").getInt(null)
+
+      // Framework names are not part of the RES_AUTO compiled IDs.
+      assertNull(idManager.getCompiledId(ResourceReference(ResourceNamespace.RES_AUTO, ResourceType.STRING, "ok")))
+
+      val sharedLoader =
+        module
+          .getClassLoaderProvider(false)
+          .getClassLoader(this::class.java.classLoader, ClassTransform.identity, ClassTransform.identity, Runnable {})
+          .classLoader
+      for ((type, name) in types) {
+        val resourceType = ResourceType.fromClassName(type)!!
+        val id = sharedLoader.loadClass("com.example.collide.R\$$type").getDeclaredField(name).getInt(null)
+        assertEquals("$type/$name must get an app (0x7f) ID, got 0x%08x".format(id), 0x7f, id ushr 24)
+        assertEquals(ResourceReference(ResourceNamespace.RES_AUTO, resourceType, name), idManager.findById(id))
+      }
+
+      // Framework IDs are still resolved, in the ANDROID namespace.
+      val frameworkRef = ResourceReference(ResourceNamespace.ANDROID, ResourceType.STRING, "ok")
+      assertEquals(frameworkRef, idManager.findById(frameworkStringOk))
+      assertEquals(frameworkStringOk, idManager.getCompiledId(frameworkRef))
     }
   }
 
