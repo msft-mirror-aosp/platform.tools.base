@@ -529,9 +529,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           try {
             val coverageFiles = mutableListOf<File>()
 
-            // Device coverage files
+            // Device coverage files: JaCoCo's execution data, or the .pb files of the on-device coverage agent
             coverageFiles.addAll(
-              this.coverageDir.get().asFile.walk().filter { it.isFile && (it.extension == "ec" || it.extension == "exec") }.toList()
+              this.coverageDir
+                .get()
+                .asFile
+                .walk()
+                .filter { it.isFile && (it.extension == "ec" || it.extension == "exec" || it.extension == "pb") }
+                .toList()
             )
 
             // Host coverage files
