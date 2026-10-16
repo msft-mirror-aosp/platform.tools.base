@@ -16,12 +16,11 @@
 
 package com.android.sdklib.integration
 
-import com.android.testutils.AssumeUtil
+import com.android.testutils.OsType
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipInputStream
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -29,6 +28,13 @@ import org.junit.rules.TemporaryFolder
 class SdkCommandLineToolsSmokeTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
+
+  private val platform =
+    when (OsType.getHostOs()) {
+      OsType.WINDOWS -> AndroidSdkCommandLineToolsPlatform.WINDOWS
+      OsType.DARWIN -> AndroidSdkCommandLineToolsPlatform.MAC_ARM64
+      else -> AndroidSdkCommandLineToolsPlatform.LINUX
+    }
 
   val deprecationWarning =
     """
@@ -82,20 +88,15 @@ class SdkCommandLineToolsSmokeTest {
     """
       .trimIndent()
 
-  @Before
-  fun assumeLinux() {
-    AssumeUtil.assumeNotWindows()
-  }
-
   @Test
   fun sdkManagerSmokeTest() {
     val extractedDir = extract()
 
-    val sdkManagerBinary = extractedDir.resolve("cmdline-tools/bin/sdkmanager")
+    val sdkManagerBinary = extractedDir.resolve(platform.getBinaryName("sdkmanager"))
 
     var outFile = temporaryFolder.newFile("out")
     var errFile = temporaryFolder.newFile("err")
-    var processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command("sh", sdkManagerBinary.toString())
+    var processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command(command(sdkManagerBinary))
 
     var returnCode = processBuilder.start().waitFor()
     assertThat(returnCode).named("returnCode").isEqualTo(1)
@@ -104,7 +105,7 @@ class SdkCommandLineToolsSmokeTest {
 
     outFile = temporaryFolder.newFile("outHelp")
     errFile = temporaryFolder.newFile("errHelp")
-    processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command("sh", sdkManagerBinary.toString(), "--help")
+    processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command(command(sdkManagerBinary, "--help"))
 
     returnCode = processBuilder.start().waitFor()
     assertThat(returnCode).named("returnCode").isEqualTo(0)
@@ -112,10 +113,35 @@ class SdkCommandLineToolsSmokeTest {
     assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n").trim()).isEqualTo(deprecationWarning)
   }
 
+  @Test
+  fun r8SmokeTest() {
+    val extractedDir = extract()
+
+    val r8Binary = extractedDir.resolve(platform.getBinaryName("r8"))
+    val envVars = mapOf("JAVA_HOME" to System.getProperty("java.home"))
+
+    val outFile = temporaryFolder.newFile("r8Out")
+    val errFile = temporaryFolder.newFile("r8Err")
+    val processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command(command(r8Binary, "--version"))
+    processBuilder.environment().putAll(envVars)
+
+    val returnCode = processBuilder.start().waitFor()
+    assertThat(returnCode).named("returnCode").isEqualTo(0)
+    assertThat(Files.readAllLines(errFile.toPath())).isEmpty()
+    assertThat(Files.readAllLines(outFile.toPath()).first()).startsWith("R8 ")
+  }
+
+  private fun command(binary: Path, vararg args: String): List<String> =
+    if (platform == AndroidSdkCommandLineToolsPlatform.WINDOWS) {
+      listOf("cmd.exe", "/c", binary.toString(), *args)
+    } else {
+      listOf("sh", binary.toString(), *args)
+    }
+
   fun extract(): Path {
     val extractedDir = temporaryFolder.newFolder("extracted").toPath()
 
-    val zipFile = AndroidSdkCommandLineToolsPlatform.LINUX.zipFile
+    val zipFile = platform.zipFile
 
     ZipInputStream(Files.newInputStream(zipFile).buffered()).use { zip ->
       while (true) {
