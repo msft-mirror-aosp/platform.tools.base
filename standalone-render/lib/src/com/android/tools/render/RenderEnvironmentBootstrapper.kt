@@ -32,6 +32,8 @@ import com.android.tools.res.FrameworkOverlay
 import com.android.tools.res.LocalResourceRepository
 import com.android.tools.res.SingleRepoResourceRepositoryManager
 import com.android.tools.res.apk.ApkResourceRepository
+import com.android.tools.res.ids.ResourceIdManagerBase
+import com.android.tools.res.ids.ResourceIdManagerModelModule
 import com.android.tools.res.ids.apk.ApkResourceIdManager
 import com.android.tools.sdk.AndroidPlatform
 import com.android.tools.sdk.AndroidSdkData
@@ -64,8 +66,7 @@ class RenderEnvironmentBootstrapper(
     val apkIdManager = ApkResourceIdManager()
     resourceApkPath?.let { apkIdManager.loadApkResources(it) }
 
-    val baseIdManager =
-      com.android.tools.res.ids.ResourceIdManagerBase(com.android.tools.res.ids.ResourceIdManagerModelModule.noNamespacingApp(true), true)
+    val baseIdManager = ResourceIdManagerBase(ResourceIdManagerModelModule.appModule(true), true)
 
     val resourceIdManager = StandaloneResourceIdManager(apkIdManager, baseIdManager)
 

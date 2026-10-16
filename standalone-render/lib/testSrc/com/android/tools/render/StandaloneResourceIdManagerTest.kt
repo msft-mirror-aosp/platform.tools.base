@@ -20,6 +20,7 @@ import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.rendering.api.ResourceReference
 import com.android.resources.ResourceType
 import com.android.tools.res.ids.ResourceIdManagerBase
+import com.android.tools.res.ids.ResourceIdManagerModelModule
 import com.android.tools.res.ids.apk.ApkResourceIdManager
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,7 +33,7 @@ class StandaloneResourceIdManagerTest {
   @Test
   fun testFindById_fallsBackToBaseWhenApkEmpty() {
     val apkManager = ApkResourceIdManager() // Empty
-    val baseManager = ResourceIdManagerBase(com.android.tools.res.ids.ResourceIdManagerModelModule.noNamespacingApp(true), true)
+    val baseManager = ResourceIdManagerBase(ResourceIdManagerModelModule.appModule(true), true)
     val manager = StandaloneResourceIdManager(apkManager, baseManager)
 
     // Setup a dynamic ID inside the base manager
@@ -46,7 +47,7 @@ class StandaloneResourceIdManagerTest {
   @Test
   fun testGetCompiledId_fallsBackToBaseWhenApkEmpty() {
     val apkManager = ApkResourceIdManager()
-    val baseManager = ResourceIdManagerBase(com.android.tools.res.ids.ResourceIdManagerModelModule.noNamespacingApp(true), true)
+    val baseManager = ResourceIdManagerBase(ResourceIdManagerModelModule.appModule(true), true)
     val manager = StandaloneResourceIdManager(apkManager, baseManager)
 
     val resRef = ResourceReference(ResourceNamespace.RES_AUTO, ResourceType.STRING, "test_string")
@@ -58,7 +59,7 @@ class StandaloneResourceIdManagerTest {
   @Test
   fun testGetOrGenerateId_delegatesToBase() {
     val apkManager = ApkResourceIdManager()
-    val baseManager = ResourceIdManagerBase(com.android.tools.res.ids.ResourceIdManagerModelModule.noNamespacingApp(true), true)
+    val baseManager = ResourceIdManagerBase(ResourceIdManagerModelModule.appModule(true), true)
     val manager = StandaloneResourceIdManager(apkManager, baseManager)
 
     val resRef = ResourceReference(ResourceNamespace.RES_AUTO, ResourceType.STRING, "test_string")
@@ -70,7 +71,7 @@ class StandaloneResourceIdManagerTest {
   @Test
   fun testResetCompiledIds_isNoOpAndPreservesLoadedCompiledIds() {
     val apkManager = ApkResourceIdManager()
-    val baseManager = ResourceIdManagerBase(com.android.tools.res.ids.ResourceIdManagerModelModule.noNamespacingApp(true), true)
+    val baseManager = ResourceIdManagerBase(ResourceIdManagerModelModule.appModule(true), true)
     val manager = StandaloneResourceIdManager(apkManager, baseManager)
 
     manager.loadCompiledIds { parser -> parser.parseUsingReflection(TestR::class.java) }

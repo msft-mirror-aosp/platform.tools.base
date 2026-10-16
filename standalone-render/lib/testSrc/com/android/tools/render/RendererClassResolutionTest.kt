@@ -156,7 +156,7 @@ class RendererClassResolutionTest {
 
     val apkIdManager = ApkResourceIdManager()
     val resourceIdManager =
-      StandaloneResourceIdManager(apkIdManager, ResourceIdManagerBase(ResourceIdManagerModelModule.noNamespacingApp(true), true))
+      StandaloneResourceIdManager(apkIdManager, ResourceIdManagerBase(ResourceIdManagerModelModule.appModule(true), true))
     val rClassPaths = listOf(appDir.absolutePath, libJar.absolutePath)
     val classLoaderManager = StandaloneModuleClassLoaderManager(rClassPaths, emptyList())
     try {
