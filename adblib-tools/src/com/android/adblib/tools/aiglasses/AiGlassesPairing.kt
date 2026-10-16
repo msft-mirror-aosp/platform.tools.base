@@ -218,6 +218,17 @@ class AiGlassesPairing(val session: AdbSession) {
   }
 
   /**
+   * Polls the Bluetooth address of the device until it is set or the 30-second polling timeout expires.
+   *
+   * After a data wipe the address stays unset until the Bluetooth stack first starts and reports it, so call
+   * [ensureBluetoothAndLocationEnabled] first.
+   *
+   * @return The Bluetooth MAC address in the format "XX:XX:XX:XX:XX:XX", or null if it is still unset when the timeout expires.
+   * @throws IOException if a communication error occurs with the device.
+   */
+  suspend fun ConnectedDevice.waitForBluetoothAddress(): String? = pollUntilTimeout { getBluetoothAddress() }
+
+  /**
    * Checks the bond state of the glasses with the specified Bluetooth address.
    *
    * @param glassesBluetoothAddress The Bluetooth address of the glasses.
@@ -373,16 +384,8 @@ class AiGlassesPairing(val session: AdbSession) {
    *
    * @return true if the companion app is in the foreground, false if the timeout expires.
    */
-  private suspend fun ConnectedDevice.waitForCompanionAppInForeground(): Boolean {
-    val start = TimeSource.Monotonic.markNow()
-    while (start.elapsedNow() < pollingTimeout) {
-      if (checkCompanionAppInForeground()) {
-        return true
-      }
-      delay(pollingInterval)
-    }
-    return false
-  }
+  private suspend fun ConnectedDevice.waitForCompanionAppInForeground(): Boolean =
+    pollUntilTimeout { true.takeIf { checkCompanionAppInForeground() } } ?: false
 
   /**
    * Polls the pairing state until it returns a non-null value or the [pollingTimeout] expires.
@@ -392,33 +395,38 @@ class AiGlassesPairing(val session: AdbSession) {
    *   "WORKER_GLASSES_CORE_CONNECTION_FAILED", "WORKER_GLASSES_CORE_CONNECTED", "PAIRED", "WORKER_BOND_FAILED", "WORKER_CONNECTION_FAILED",
    *   "WORKER_CANCELLED", "ERROR".
    */
-  private suspend fun ConnectedDevice.waitForPairingState(): String? {
+  private suspend fun ConnectedDevice.waitForPairingState(): String? = pollUntilTimeout { pollPairingState() }
+
+  /**
+   * Returns the first non-null result of [block], waiting [pollingInterval] between runs. [block] always runs at least once; once
+   * [pollingTimeout] has elapsed, the next null result ends the wait and returns null.
+   */
+  private suspend inline fun <T : Any> pollUntilTimeout(block: () -> T?): T? {
     val start = TimeSource.Monotonic.markNow()
-    while (start.elapsedNow() < pollingTimeout) {
-      val state = pollPairingState()
-      if (state != null) {
-        return state
+    while (true) {
+      block()?.let {
+        return it
       }
+      if (start.elapsedNow() >= pollingTimeout) return null
       delay(pollingInterval)
     }
-    return null
-  }
-
-  private suspend fun ConnectedDevice.isBluetoothEnabled(): Boolean {
-    val result = runCatchingIoException(CMD_GET_BLUETOOTH_STATE) { shell.executeAsText(it) }
-    return result.stdout.trim() == "1"
   }
 
   /**
-   * Ensures location services and Bluetooth are enabled on the device.
+   * Enables location services and Bluetooth on the device, then waits for the Bluetooth adapter to turn on.
+   *
+   * Bluetooth is always enabled because the `bluetooth_on` setting only records the saved preference: it stays 1 while the stack is
+   * starting or after it has stopped. Enabling an adapter that is already on or turning on does nothing. The device bounds the wait; if
+   * Bluetooth does not turn on in time, this logs a warning and returns.
    *
    * @throws IOException if a communication error occurs with the device.
    */
   suspend fun ConnectedDevice.ensureBluetoothAndLocationEnabled() {
     runCatchingIoException(CMD_ENABLE_LOCATION) { shell.executeAsText(it) }
-    if (!isBluetoothEnabled()) {
-      logger.info { "Bluetooth is disabled, enabling it..." }
-      runCatchingIoException(CMD_ENABLE_BLUETOOTH) { shell.executeAsText(it) }
+    runCatchingIoException(CMD_ENABLE_BLUETOOTH) { shell.executeAsText(it) }
+    val output = runCatchingIoException(CMD_WAIT_FOR_BLUETOOTH_ON) { shell.executeAsText(it) }
+    if (output.exitCode != 0) {
+      logger.warn("Bluetooth on $serialNumber did not turn on (exit code ${output.exitCode}): ${output.stderr.trim()}")
     }
   }
 
@@ -543,8 +551,8 @@ class AiGlassesPairing(val session: AdbSession) {
     private const val COMPANION_DEVICE_GLASSES_ROLE = "android.app.role.COMPANION_DEVICE_GLASSES"
 
     private const val CMD_ENABLE_LOCATION = "cmd location set-location-enabled true"
-    private const val CMD_GET_BLUETOOTH_STATE = "settings get global bluetooth_on"
     private const val CMD_ENABLE_BLUETOOTH = "cmd bluetooth_manager enable"
+    private const val CMD_WAIT_FOR_BLUETOOTH_ON = "cmd bluetooth_manager wait-for-state:STATE_ON"
     private const val CMD_INPUT_TAB = "input keyevent KEYCODE_TAB"
     private const val CMD_INPUT_CENTER = "input keyevent KEYCODE_DPAD_CENTER"
     private const val SETUP_ACTIVITY_NAME = ".setup.ui.SetupActivity"

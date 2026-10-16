@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.takeWhile
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -518,12 +519,9 @@ class AiGlassesPairingTest {
   }
 
   @Test
-  fun pairToGlasses_enablesBluetoothIfDisabled() = runBlockingWithTimeout {
+  fun pairToGlasses_turnsBluetoothOnBeforeLaunchingCompanionApp() = runBlockingWithTimeout {
     val device = createConnectedDevice()
     val glassesAddress = "AA:BB:CC:DD:EE:FF"
-
-    // Mock the enable command
-    registerBroadcastResponse("cmd bluetooth_manager enable", "")
 
     // Initial state for pairing
     registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
@@ -542,8 +540,6 @@ class AiGlassesPairingTest {
     )
 
     setupDeviceMocks()
-    // Override the default mock from setupDeviceMocks
-    registerBroadcastResponse("settings get global bluetooth_on", "0")
 
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
 
@@ -561,14 +557,19 @@ class AiGlassesPairingTest {
       }
       .collect()
 
-    // Verify that the enable command was executed
-    assertTrue(executedCommands.contains("cmd bluetooth_manager enable"))
-    // Verify we checked the status
-    assertTrue(executedCommands.contains("settings get global bluetooth_on"))
+    val expectedOrder =
+      listOf(
+        "cmd location set-location-enabled true",
+        "cmd bluetooth_manager enable",
+        "cmd bluetooth_manager wait-for-state:STATE_ON",
+        "monkey -p com.google.android.glasses.companion -c android.intent.category.LAUNCHER 1",
+      )
+    assertEquals(expectedOrder, executedCommands.filter { it in expectedOrder })
   }
 
   @Test
-  fun pairToGlasses_doesNotEnableBluetoothIfEnabled() = runBlockingWithTimeout {
+  fun pairToGlasses_turnsBluetoothOnEvenWhenBluetoothOnSettingIsSet() = runBlockingWithTimeout {
+    // bluetooth_on stays 1 while the Bluetooth stack is down, so it must not decide whether to enable Bluetooth.
     val device = createConnectedDevice()
     val glassesAddress = "AA:BB:CC:DD:EE:FF"
 
@@ -588,7 +589,8 @@ class AiGlassesPairingTest {
       "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
     )
 
-    setupDeviceMocks() // This also sets it to "1"
+    setupDeviceMocks()
+    registerBroadcastResponse("settings get global bluetooth_on", "1")
 
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
 
@@ -606,10 +608,9 @@ class AiGlassesPairingTest {
       }
       .collect()
 
-    // Verify that the enable command was NOT executed
-    assertFalse(executedCommands.contains("cmd bluetooth_manager enable"))
-    // Verify we checked the status
-    assertTrue(executedCommands.contains("settings get global bluetooth_on"))
+    assertTrue(executedCommands.contains("cmd bluetooth_manager enable"))
+    assertTrue(executedCommands.contains("cmd bluetooth_manager wait-for-state:STATE_ON"))
+    assertFalse(executedCommands.contains("settings get global bluetooth_on"))
   }
 
   @Test
@@ -867,17 +868,64 @@ class AiGlassesPairingTest {
     }
 
   @Test
-  fun ensureBluetoothAndLocationEnabled_enablesLocationAndBluetoothWhenDisabled() = runBlockingWithTimeout {
+  fun ensureBluetoothAndLocationEnabled_enablesLocationAndBluetoothThenWaitsForOn() = runBlockingWithTimeout {
     val device = createConnectedDevice()
     registerBroadcastResponse("cmd location set-location-enabled true", "")
-    registerBroadcastResponse("settings get global bluetooth_on", "0")
     registerBroadcastResponse("cmd bluetooth_manager enable", "")
+    registerBroadcastResponse("cmd bluetooth_manager wait-for-state:STATE_ON", "")
 
     AiGlassesPairing(fakeAdbRule.adbSession).run { device.ensureBluetoothAndLocationEnabled() }
 
-    assertTrue(executedCommands.contains("cmd location set-location-enabled true"))
-    assertTrue(executedCommands.contains("settings get global bluetooth_on"))
-    assertTrue(executedCommands.contains("cmd bluetooth_manager enable"))
+    assertEquals(
+      listOf("cmd location set-location-enabled true", "cmd bluetooth_manager enable", "cmd bluetooth_manager wait-for-state:STATE_ON"),
+      executedCommands,
+    )
+  }
+
+  @Test
+  fun ensureBluetoothAndLocationEnabled_returnsWhenBluetoothDoesNotTurnOn() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    registerBroadcastResponse("cmd location set-location-enabled true", "")
+    registerBroadcastResponse("cmd bluetooth_manager enable", "")
+    registerShellResponses(
+      "cmd bluetooth_manager wait-for-state:STATE_ON",
+      ShellResponse(stderr = "BluetoothShellCommand: wait-for-state:STATE_ON: Failed with status=-1\n", exitCode = 255),
+    )
+
+    AiGlassesPairing(fakeAdbRule.adbSession).run { device.ensureBluetoothAndLocationEnabled() }
+
+    assertEquals(
+      listOf("cmd location set-location-enabled true", "cmd bluetooth_manager enable", "cmd bluetooth_manager wait-for-state:STATE_ON"),
+      executedCommands,
+    )
+  }
+
+  @Test
+  fun waitForBluetoothAddress_pollsUntilAddressIsSet() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    registerShellResponses(
+      "settings get secure bluetooth_address",
+      ShellResponse("null\n"),
+      ShellResponse("null\n"),
+      ShellResponse("AA:BB:CC:DD:EE:FF\n"),
+    )
+
+    val address = AiGlassesPairing(fakeAdbRule.adbSession).run { device.waitForBluetoothAddress() }
+
+    assertEquals("AA:BB:CC:DD:EE:FF", address)
+    assertEquals(3, executedCommands.count { it == "settings get secure bluetooth_address" })
+  }
+
+  @Test
+  fun waitForBluetoothAddress_returnsNullWhenAddressIsNeverSet() = runBlockingWithTimeout {
+    AiGlassesPairing.setPollingTimeoutForTest(Duration.ZERO)
+    val device = createConnectedDevice()
+    registerBroadcastResponse("settings get secure bluetooth_address", "null\n")
+
+    val address = AiGlassesPairing(fakeAdbRule.adbSession).run { device.waitForBluetoothAddress() }
+
+    assertNull(address)
+    assertEquals(listOf("settings get secure bluetooth_address"), executedCommands)
   }
 
   @Test
@@ -1035,7 +1083,8 @@ class AiGlassesPairingTest {
   }
 
   private fun setupDeviceMocks(glassesAddress: String = "AA:BB:CC:DD:EE:FF") {
-    registerBroadcastResponse("settings get global bluetooth_on", "1")
+    registerBroadcastResponse("cmd bluetooth_manager enable", "")
+    registerBroadcastResponse("cmd bluetooth_manager wait-for-state:STATE_ON", "")
     registerBroadcastResponse("cmd location set-location-enabled true", "")
     registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.NEARBY_WIFI_DEVICES", "")
     registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.BLUETOOTH_CONNECT", "")
@@ -1121,6 +1170,41 @@ class AiGlassesPairingTest {
 
   private fun registerBroadcastResponse(command: String, response: String) {
     broadcastResponses[command] = response
+  }
+
+  private data class ShellResponse(val stdout: String = "", val stderr: String = "", val exitCode: Int = 0)
+
+  /** Answers [command] with the next of [responses] on each run, repeating the last one once they run out. */
+  private fun registerShellResponses(command: String, vararg responses: ShellResponse) {
+    require(responses.isNotEmpty()) { "At least one ShellResponse must be provided for '$command'" }
+    val runs = AtomicInteger()
+    for (type in listOf(ShellProtocolType.SHELL, ShellProtocolType.SHELL_V2)) {
+      fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+        0,
+        object : ShellHandler(type) {
+          override fun shouldExecute(shellCommand: String, shellCommandArgs: String?): Boolean {
+            val fullCommand = if (shellCommandArgs == null) shellCommand else "$shellCommand $shellCommandArgs"
+            return fullCommand == command
+          }
+
+          override fun execute(
+            fakeAdbServer: FakeAdbServer,
+            statusWriter: StatusWriter,
+            shellCommandOutput: ShellCommandOutput,
+            device: DeviceState,
+            shellCommand: String,
+            shellCommandArgs: String?,
+          ) {
+            statusWriter.writeOk()
+            executedCommands.add(command)
+            val response = responses[runs.getAndIncrement().coerceAtMost(responses.lastIndex)]
+            shellCommandOutput.writeStdout(response.stdout)
+            shellCommandOutput.writeStderr(response.stderr)
+            shellCommandOutput.writeExitCode(response.exitCode)
+          }
+        },
+      )
+    }
   }
 
   /** Fake handler that intercepts a target command matching registered responses. */

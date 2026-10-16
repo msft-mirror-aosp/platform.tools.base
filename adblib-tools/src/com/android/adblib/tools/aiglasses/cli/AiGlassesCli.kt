@@ -55,6 +55,7 @@ object AiGlassesCli {
           return
         }
 
+    glasses.ensureBluetoothAndLocationEnabled()
     val pairedBluetoothDeviceCount = glasses.getPairedBluetoothDeviceCount()
     if (pairedBluetoothDeviceCount != null && pairedBluetoothDeviceCount > 0) {
       println("Glasses already paired; factory reset (wipe data) to pair a new device")
@@ -67,7 +68,7 @@ object AiGlassesCli {
     }
 
     val glassesBluetoothAddress =
-      glasses.getBluetoothAddress()
+      glasses.waitForBluetoothAddress()
         ?: run {
           println("Failed to retrieve glasses bluetooth address")
           return
