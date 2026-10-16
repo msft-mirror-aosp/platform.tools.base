@@ -28,6 +28,8 @@ import com.android.tools.ui.inspector.TestAdbDeviceServices
 import com.android.tools.ui.inspector.TestAdbHostServices
 import com.android.tools.ui.inspector.TestAdbSession
 import com.android.tools.ui.inspector.UiInspector
+import com.android.tools.ui.inspector.client.AGENT_RESPONSE_TIMEOUT
+import com.android.tools.ui.inspector.client.AgentNotRespondingException
 import com.android.tools.ui.inspector.client.CommandSender
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.common.FramingProtocol
@@ -47,6 +49,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.concurrent.thread
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancelAndJoin
@@ -1722,6 +1726,44 @@ class InjectionManagerTest {
   }
 
   @Test
+  fun testRunWithConnectedInspectors_reusedServerNotResponding_isNotRetried() = runBlocking {
+    configureSuccessfulInjection()
+    // The reused server reads the first command and never answers, like a frozen app. It is alive, so the timeout must propagate instead
+    // of triggering a full injection, which could not succeed in a frozen app either.
+    val server = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        server.accept().use { socket ->
+          FramingProtocol.readMessage(socket.getInputStream())
+          socket.getInputStream().read()
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.add(server.localPort.toString())
+
+    var thrown: Exception? = null
+    val logged = loggedDuring {
+      try {
+        runWithConnectedInspectorsForTest(responseTimeout = 100.milliseconds) { _, _ ->
+          fail("The block must not run when the app is frozen")
+        }
+        fail("Expected the timeout to propagate")
+      } catch (e: Exception) {
+        thrown = e
+      }
+    }
+    serverThread.join(5000)
+    server.close()
+
+    assertThat(thrown).isInstanceOf(AgentNotRespondingException::class.java)
+    // The server saw the connection close.
+    assertThat(serverThread.isAlive).isFalse()
+    assertThat(logged).doesNotContain("attaching the agent again")
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
+  }
+
+  @Test
   fun testRunWithConnectedInspectors_agentCrashIsNotRetried() = runBlocking {
     configureSuccessfulInjection()
     // The reused server reports an explicit crash instead of answering the first command: the server is alive, so the crash must
@@ -1950,6 +1992,7 @@ class InjectionManagerTest {
   /** Runs [runWithConnectedInspectors] with all facets off, routing [injectionManagerFactory] to this test's dummy artifact paths. */
   private suspend fun runWithConnectedInspectorsForTest(
     composeInspectorOverrideJarPath: Path? = null,
+    responseTimeout: Duration = AGENT_RESPONSE_TIMEOUT,
     block: suspend (CommandSender, Boolean) -> Unit,
   ) {
     runWithConnectedInspectors(
@@ -1974,6 +2017,7 @@ class InjectionManagerTest {
           tempFileSuffixGenerator = { "test.tmp" },
         )
       },
+      responseTimeout = responseTimeout,
       block = block,
     )
   }

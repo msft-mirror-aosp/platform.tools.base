@@ -144,6 +144,12 @@ Then connects to `<localHostPort>`.
 
 The data exchanged over the socket is serialized using protocol buffers.
 
+The host waits at most 90 seconds for the response to each command. An
+app paused in a debugger that suspends all threads cannot answer at all,
+so without this limit the host would wait forever. When the limit is
+reached, the host closes the connection and fails with an error saying
+the app did not respond.
+
 ### Agent
 
 The agent is structured into distinct layers to bypass Android's class
@@ -331,7 +337,10 @@ Before injecting, the host:
   proves the reused server is alive — it may have expired between the
   check and the connection, and an adb forward's device side is only
   established lazily — so if the connection or that first round trip
-  fails, the host falls back to one full injection and retries.
+  fails, the host falls back to one full injection and retries. A first
+  round trip that times out is not retried: the server is alive but the
+  app is frozen, and a new injection would need the app's main thread
+  too.
 * If the socket is absent, the host runs the full injection sequence.
 
 To prevent resource leaks if a device is unplugged, the agent implements a

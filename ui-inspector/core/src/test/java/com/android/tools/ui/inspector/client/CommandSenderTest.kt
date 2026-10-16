@@ -28,9 +28,12 @@ import com.google.protobuf.ByteString
 import java.io.IOException
 import java.net.ServerSocket
 import java.util.concurrent.Executors
+import kotlin.concurrent.thread
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
@@ -46,6 +49,10 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
 import org.junit.Test
 
+/**
+ * Tests that send a command on the test dispatcher and wait for its response use runBlocking. Under runTest, the response timeout would run
+ * on the virtual clock, which jumps ahead while a test waits for real socket I/O, and fire at once.
+ */
 class CommandSenderTest {
 
   private val executor = Executors.newSingleThreadExecutor()
@@ -57,7 +64,7 @@ class CommandSenderTest {
   }
 
   @Test
-  fun testSendMessage() = runTest {
+  fun testSendMessage(): Unit = runBlocking {
     val serverSocket = ServerSocket(0)
     val port = serverSocket.localPort
 
@@ -99,7 +106,7 @@ class CommandSenderTest {
   }
 
   @Test
-  fun testSendMessage_Concurrent() = runTest {
+  fun testSendMessage_Concurrent(): Unit = runBlocking {
     val serverSocket = ServerSocket(0)
     val port = serverSocket.localPort
 
@@ -154,7 +161,7 @@ class CommandSenderTest {
   }
 
   @Test
-  fun testEvents() = runTest {
+  fun testEvents(): Unit = runBlocking {
     val serverSocket = ServerSocket(0)
     val port = serverSocket.localPort
 
@@ -189,8 +196,8 @@ class CommandSenderTest {
       try {
         CommandSender.connect("127.0.0.1", port, this).use { sender ->
           val eventDeferred = CompletableDeferred<UiInspectorProtocol.Event>()
-          val collectJob = launch { sender.events.collect { eventDeferred.complete(it) } }
-          runCurrent()
+          // Undispatched, so that the collector subscribes before the server sends the event: the flow does not replay it.
+          val collectJob = launch(start = CoroutineStart.UNDISPATCHED) { sender.events.collect { eventDeferred.complete(it) } }
 
           val cmd = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
           val response = sender.sendMessage(cmd)
@@ -212,7 +219,7 @@ class CommandSenderTest {
   }
 
   @Test
-  fun testAgentCrash() = runTest {
+  fun testAgentCrash(): Unit = runBlocking {
     val serverSocket = ServerSocket(0)
     val port = serverSocket.localPort
 
@@ -256,7 +263,7 @@ class CommandSenderTest {
   }
 
   @Test
-  fun testDisconnection() = runTest {
+  fun testDisconnection(): Unit = runBlocking {
     val serverSocket = ServerSocket(0)
     val port = serverSocket.localPort
 
@@ -292,7 +299,7 @@ class CommandSenderTest {
   }
 
   @Test
-  fun testClose() = runTest {
+  fun testClose(): Unit = runBlocking {
     val serverSocket = ServerSocket(0)
     val port = serverSocket.localPort
     val writeCompleted = CompletableDeferred<Unit>()
@@ -441,7 +448,7 @@ class CommandSenderTest {
   }
 
   @Test
-  fun testParentScopeCancellation() = runTest {
+  fun testParentScopeCancellation(): Unit = runBlocking {
     val serverSocket = ServerSocket(0)
     val port = serverSocket.localPort
     val connectionAccepted = CompletableDeferred<Unit>()
@@ -670,6 +677,39 @@ class CommandSenderTest {
       }
 
       serverTask.await()
+    } finally {
+      serverSocket.close()
+    }
+  }
+
+  @Test
+  fun testSendMessage_noResponseWithinTimeout_failsAndCloses(): Unit = runBlocking {
+    val serverSocket = ServerSocket(0)
+    // Reads the command and never answers, like a frozen app, until the client closes the connection.
+    val serverThread = thread {
+      runCatching {
+        serverSocket.accept().use { socket ->
+          FramingProtocol.readMessage(socket.getInputStream())
+          socket.getInputStream().read()
+        }
+      }
+    }
+    try {
+      coroutineScope {
+        CommandSender.connect("127.0.0.1", serverSocket.localPort, this, responseTimeout = 100.milliseconds).use { sender ->
+          val command = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
+
+          val failure = runCatching { sender.sendMessage(command) }.exceptionOrNull()
+
+          assertThat(failure).isInstanceOf(AgentNotRespondingException::class.java)
+          assertThat(failure).hasMessageThat().startsWith("The app did not respond within ")
+          assertThat(sender.pendingCommandCount).isEqualTo(0)
+          // The connection is closed, so the next command fails the same way.
+          assertThat(runCatching { sender.sendMessage(command) }.exceptionOrNull()).isSameAs(failure)
+        }
+      }
+      serverThread.join(5000)
+      assertThat(serverThread.isAlive).isFalse()
     } finally {
       serverSocket.close()
     }

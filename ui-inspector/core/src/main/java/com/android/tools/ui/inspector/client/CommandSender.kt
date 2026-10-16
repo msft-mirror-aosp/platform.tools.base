@@ -28,6 +28,8 @@ import java.io.IOException
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -41,17 +43,30 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.annotations.TestOnly
 
 /** Exception thrown when the UI Inspector agent crashes on the device. */
 internal class InspectorCrashException(errorMessage: String, val stackTrace: String) :
   IOException("Agent crashed: $errorMessage\n$stackTrace")
 
+/** How long a command waits for the agent's response. */
+internal val AGENT_RESPONSE_TIMEOUT = 90.seconds
+
+/**
+ * Exception thrown when the agent does not answer a command in time, for example because the app is paused in a debugger.
+ *
+ * It is not an [IOException]: the connection works, so it must not be mistaken for a server that is gone.
+ */
+internal class AgentNotRespondingException(timeout: Duration) :
+  Exception("The app did not respond within ${timeout.inWholeSeconds} seconds. It may be paused in a debugger, or frozen.")
+
 /**
  * Sends messages to the UI Inspector agent running on the device and receives responses. Uses the shared FramingProtocol for message
  * framing.
  */
-internal class CommandSender private constructor(private val socket: Socket, private val scope: CoroutineScope) : AutoCloseable {
+internal class CommandSender
+private constructor(private val socket: Socket, private val scope: CoroutineScope, private val responseTimeout: Duration) : AutoCloseable {
 
   companion object {
     /**
@@ -60,15 +75,21 @@ internal class CommandSender private constructor(private val socket: Socket, pri
      * @param host The host address (typically 127.0.0.1).
      * @param port The port number.
      * @param scope The [CoroutineScope] whose lifetime dictates the connection.
+     * @param responseTimeout How long a command waits for its response before failing and closing the connection.
      */
-    suspend fun connect(host: String, port: Int, scope: CoroutineScope): CommandSender {
+    suspend fun connect(
+      host: String,
+      port: Int,
+      scope: CoroutineScope,
+      responseTimeout: Duration = AGENT_RESPONSE_TIMEOUT,
+    ): CommandSender {
       var socket: Socket? = null
       var commandSender: CommandSender? = null
       try {
         return withContext(Dispatchers.IO) {
           val s = Socket(host, port)
           socket = s
-          val sender = CommandSender(s, scope)
+          val sender = CommandSender(s, scope, responseTimeout)
           commandSender = sender
           sender
         }
@@ -179,6 +200,11 @@ internal class CommandSender private constructor(private val socket: Socket, pri
     }
   }
 
+  /**
+   * Sends [command] and returns the agent's response.
+   *
+   * @throws AgentNotRespondingException when the response does not arrive within the response timeout. The connection is then closed.
+   */
   suspend fun sendMessage(command: Command): Response {
     val commandId = nextCommandId.getAndIncrement()
     val commandWithId = command.toBuilder().setCommandId(commandId).build()
@@ -197,7 +223,15 @@ internal class CommandSender private constructor(private val socket: Socket, pri
         // writeMessage is already thread-safe
         FramingProtocol.writeMessage(outputStream, payload)
       }
-      return deferred.await()
+      val response = withTimeoutOrNull(responseTimeout) { deferred.await() }
+      if (response == null) {
+        // The response or a connection failure can arrive right at the deadline.
+        if (deferred.isCompleted) return deferred.await()
+        val exception = AgentNotRespondingException(responseTimeout)
+        closeInternal(exception)
+        throw exception
+      }
+      return response
     } catch (e: Throwable) {
       synchronized(stateLock) { pendingCommands.remove(commandId) }
       throw e
