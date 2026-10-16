@@ -22,6 +22,8 @@ import com.android.resources.ResourceType
 import com.android.tools.res.ids.ResourceIdManagerBase
 import com.android.tools.res.ids.apk.ApkResourceIdManager
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -64,4 +66,37 @@ class StandaloneResourceIdManagerTest {
     val id = manager.getOrGenerateId(resRef)
     assertEquals(id, baseManager.getOrGenerateId(resRef)) // Must match
   }
+
+  @Test
+  fun testResetCompiledIds_isNoOpAndPreservesLoadedCompiledIds() {
+    val apkManager = ApkResourceIdManager()
+    val baseManager = ResourceIdManagerBase(com.android.tools.res.ids.ResourceIdManagerModelModule.noNamespacingApp(true), true)
+    val manager = StandaloneResourceIdManager(apkManager, baseManager)
+
+    manager.loadCompiledIds { parser -> parser.parseUsingReflection(TestR::class.java) }
+
+    val resRef = ResourceReference(ResourceNamespace.RES_AUTO, ResourceType.STRING, "compiled_str")
+    val compiledId = manager.getCompiledId(resRef)
+    assertNotNull(compiledId)
+    assertEquals(0x7f010001, compiledId)
+    assertEquals(resRef, manager.findById(0x7f010001))
+
+    var resetProviderInvoked = false
+    manager.resetCompiledIds { resetProviderInvoked = true }
+
+    assertFalse(resetProviderInvoked)
+    assertEquals(0x7f010001, manager.getCompiledId(resRef))
+    assertEquals(resRef, manager.findById(0x7f010001))
+    assertNull(manager.findById(0))
+  }
+
+  class R {
+    class string {
+      companion object {
+        @JvmField val compiled_str: Int = 0x7f010001
+      }
+    }
+  }
 }
+
+private typealias TestR = StandaloneResourceIdManagerTest.R

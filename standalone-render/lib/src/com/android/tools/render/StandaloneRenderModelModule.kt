@@ -16,6 +16,10 @@
 
 package com.android.tools.render
 
+import com.android.annotations.VisibleForTesting
+import com.android.ide.common.rendering.api.ResourceNamespace
+import com.android.ide.common.rendering.api.ResourceReference
+import com.android.resources.ResourceType
 import com.android.tools.module.AndroidModuleInfo
 import com.android.tools.module.ModuleDependencies
 import com.android.tools.module.ModuleKey
@@ -31,6 +35,9 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
+import java.lang.reflect.Modifier
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -50,6 +57,8 @@ class StandaloneRenderModelModule(
   private val assetFileOpener = StandaloneAssetFileOpener(resourceApkPath)
   override val assetRepository = AssetRepositoryBase(assetFileOpener)
   private val logger = Logger.getLogger(StandaloneRenderModelModule::class.java.name)
+  private val rClassInitLock = Any()
+  private val initializedClassLoaders = Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>()))
 
   override val manifest: RenderModelManifest? = null
 
@@ -83,29 +92,57 @@ class StandaloneRenderModelModule(
    * Android library AARs ship with R.class files containing 0 for all IDs. In standard APK builds, AAPT2 and AGP recompile these into
    * finalized R classes. In the standalone rendering environment, we must manually initialize these library R-classes with dynamic
    * Layoutlib IDs before Compose reads them.
+   *
+   * The set of [packages] is fixed for a module, so this runs at most once per [ClassLoader] instance (b/567993824); probing every
+   * [ResourceType] for every package on each RenderTask is expensive in projects with many library modules.
    */
-  private fun initializeLibraryResourceIds(
+  @VisibleForTesting
+  fun initializeLibraryResourceIds(
     classLoader: ClassLoader,
     packages: List<String>,
-    resourceIdManager: com.android.tools.res.ids.ResourceIdManager,
+    resourceIdManager: ResourceIdManager,
+  ) {
+    if (isRClassesInitialized(classLoader)) return
+    synchronized(rClassInitLock) {
+      if (isRClassesInitialized(classLoader)) return
+      doInitializeLibraryResourceIds(classLoader, packages, resourceIdManager)
+      if (classLoader is DefaultModuleClassLoader) {
+        classLoader.rClassesInitialized = true
+      } else {
+        initializedClassLoaders.add(classLoader)
+      }
+    }
+  }
+
+  private fun isRClassesInitialized(classLoader: ClassLoader): Boolean =
+    if (classLoader is DefaultModuleClassLoader) classLoader.rClassesInitialized else initializedClassLoaders.contains(classLoader)
+
+  private fun doInitializeLibraryResourceIds(
+    classLoader: ClassLoader,
+    packages: List<String>,
+    resourceIdManager: ResourceIdManager,
   ) {
     packages.forEach { pkg ->
       try {
         val className = "$pkg.R"
-        val rClass =
-          try {
-            classLoader.loadClass(className)
-          } catch (e: ClassNotFoundException) {
-            return@forEach
-          }
+        try {
+          classLoader.loadClass(className)
+        } catch (e: ClassNotFoundException) {
+          return@forEach
+        } catch (e: LinkageError) {
+          return@forEach
+        }
 
         val innerClasses =
-          com.android.resources.ResourceType.values().mapNotNull { resType ->
+          ResourceType.values().mapNotNull { resType ->
+            if (resType == ResourceType.STYLEABLE) return@mapNotNull null
             val classFilePath = "${pkg.replace('.', '/')}/R$${resType.getName()}.class"
             if (classLoader.getResource(classFilePath) != null) {
               try {
                 classLoader.loadClass("$pkg.R$${resType.getName()}")
               } catch (e: ClassNotFoundException) {
+                null
+              } catch (e: LinkageError) {
                 null
               }
             } else {
@@ -114,21 +151,21 @@ class StandaloneRenderModelModule(
           }
 
         for (innerClass in innerClasses) {
-          val typeName = innerClass.simpleName
-          val type = com.android.resources.ResourceType.fromClassName(typeName) ?: continue
-          if (type == com.android.resources.ResourceType.STYLEABLE) continue
+          val typeName = innerClass.name.substringAfterLast('$')
+          val type = ResourceType.fromClassName(typeName) ?: continue
+          if (type == ResourceType.STYLEABLE) continue
 
           for (field in innerClass.declaredFields) {
             if (field.type != Int::class.javaPrimitiveType && field.type != Int::class.java) continue
-            if (!java.lang.reflect.Modifier.isStatic(field.modifiers)) continue
+            if (!Modifier.isStatic(field.modifiers) || Modifier.isFinal(field.modifiers)) continue
 
             try {
               field.isAccessible = true
               if (field.getInt(null) == 0) {
                 val dynamicId =
                   resourceIdManager.getOrGenerateId(
-                    com.android.ide.common.rendering.api.ResourceReference(
-                      com.android.ide.common.rendering.api.ResourceNamespace.RES_AUTO,
+                    ResourceReference(
+                      ResourceNamespace.RES_AUTO,
                       type,
                       field.name,
                     )
@@ -143,6 +180,8 @@ class StandaloneRenderModelModule(
       } catch (e: Exception) {
         // Log unexpected errors but continue with other packages
         logger.log(Level.FINE, "Failed to initialize resource IDs for package $pkg", e)
+      } catch (e: LinkageError) {
+        logger.log(Level.FINE, "Linkage error while initializing resource IDs for package $pkg", e)
       }
     }
   }

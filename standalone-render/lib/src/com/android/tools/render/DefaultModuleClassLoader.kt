@@ -71,4 +71,7 @@ class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private
 
   val classesToPaths: Map<String, String>
     get() = loader.classesToPaths
+
+  /** Whether library R-class fields loaded by this class loader have already been assigned resource IDs. */
+  @Volatile var rClassesInitialized: Boolean = false
 }

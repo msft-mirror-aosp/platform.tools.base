@@ -61,5 +61,6 @@ kotlin_test(
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
+        "@maven//:org.ow2.asm.asm",
     ],
 )
