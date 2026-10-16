@@ -165,8 +165,6 @@ def _iml_module_impl(ctx):
     # Kotlin
     kotlin_providers = []
     if kotlin_srcs:
-        kotlinc_opts.append("-Xcontext-parameters")  # Needed to use the Kotlin K2 analysis API (b/308454624).
-
         # TODO(b/310045274): remove this usage of KtAllowProhibitedAnalyzeFromWriteAction.
         kotlinc_opts.append("-opt-in=org.jetbrains.kotlin.analysis.api.permissions.KaAllowProhibitedAnalyzeFromWriteAction")
         kotlin_providers.append(kotlin_compile(
@@ -179,7 +177,7 @@ def _iml_module_impl(ctx):
             out_ijar = kotlin_ijar,
             java_runtime = java_runtime,
             kotlinc_opts = kotlinc_opts,
-            kotlin_version = "2.3",  # Constrained by the kotlin-stdlib version in IntelliJ.
+            kotlin_version = "2.4",  # Constrained by the kotlin-stdlib version in IntelliJ.
         ))
         jars.append(kotlin_jar)
         ijars.append(kotlin_ijar)
