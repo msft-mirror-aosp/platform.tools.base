@@ -16,3 +16,4 @@ tools/external/bazelbuild-rules-kotlin
 prebuilts/tools/common/external-src-archives/bazel-skylib/bazel-skylib-1.6.1
 prebuilts/tools/common/external-src-archives/bazel-toolchains/bazel-toolchains-5.1.2
 prebuilts/tools/common/external-src-archives/bazelbuild-rules_android
+hardware/google/aemu

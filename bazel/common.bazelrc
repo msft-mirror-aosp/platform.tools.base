@@ -44,6 +44,7 @@ common --legacy_important_outputs
 # its skipLibCheck strategy in .bazelrc. "honor_tsconfig" means respecting whatever
 # skipLibCheck setting is configured inside each package's local tsconfig.json file.
 common --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
+common --@aspect_rules_ts//ts:default_to_tsc_transpiler=true
 
 # Configure PIE linkmode for compatibility with clang toolchain.
 common --@rules_go//go/config:linkmode=pie
