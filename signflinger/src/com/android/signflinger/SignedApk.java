@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.apksig.ApkSignerEngine;
 import com.android.apksig.DefaultApkSignerEngine;
 import com.android.apksig.apk.ApkFormatException;
-import com.android.apksig.internal.util.FileChannelDataSource;
 import com.android.apksig.util.DataSource;
 import com.android.apksig.util.DataSources;
 import com.android.zipflinger.Archive;
@@ -224,7 +223,7 @@ public class SignedApk implements Archive {
         }
         Path path = archive.getPath();
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
-            FileChannelDataSource dataSource = new FileChannelDataSource(channel);
+            DataSource dataSource = asDataSource(channel, 0, channel.size());
             signer.signV4(dataSource, options.v4Output, FAIL_ON_V4_ERROR);
         } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
             throw new IllegalStateException("V4 Signing error", e);
@@ -319,7 +318,7 @@ public class SignedApk implements Archive {
             throws ApkFormatException, SignatureException, NoSuchAlgorithmException,
                     InvalidKeyException, IOException {
         DataSource beforeCentralDir =
-                DataSources.asDataSource(raf, zipInfo.payload.first, zipInfo.payload.size());
+                asDataSource(raf.getChannel(), zipInfo.payload.first, zipInfo.payload.size());
         DataSource centralDir = DataSources.asDataSource(raf, zipInfo.cd.first, zipInfo.cd.size());
         DataSource eocd = DataSources.asDataSource(raf, zipInfo.eocd.first, zipInfo.eocd.size());
 
@@ -329,5 +328,17 @@ public class SignedApk implements Archive {
 
         // Write block
         return outputApkSigningBlockRequest.getApkSigningBlock();
+    }
+
+    // Memory-mapping lets apksig hash the file without copying it into heap buffers, and from
+    // multiple threads without contending on the channel's lock. Windows is excluded because a
+    // mapped file cannot be truncated or deleted until the mapping is garbage collected.
+    @NonNull
+    private static DataSource asDataSource(@NonNull FileChannel channel, long offset, long size)
+            throws IOException {
+        if (size > Integer.MAX_VALUE || OS.isWindows()) {
+            return DataSources.asDataSource(channel, offset, size);
+        }
+        return DataSources.asDataSource(channel.map(FileChannel.MapMode.READ_ONLY, offset, size));
     }
 }
