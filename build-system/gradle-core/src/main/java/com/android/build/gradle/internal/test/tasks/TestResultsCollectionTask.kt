@@ -44,7 +44,9 @@ import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_MET
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.UNIT_TEST_TEST_SUITE_NAME
 import com.android.buildanalyzer.common.TaskCategory
+import com.android.tools.coverage.reporter.CoverageXmlMerger
 import java.io.File
+import java.nio.file.Files
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -318,7 +320,7 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
         // Writes the XML report of a test suite with writeReport, which gets the report name and the XML file name without its
         // extension, then adds the metadata of the suite to the XML.
-        fun writeXmlReport(testSuiteName: String, writeReport: (reportName: String, xmlReportFileName: String) -> Unit) {
+        fun writeXmlReport(testSuiteName: String, writeReport: (reportName: String, xmlReportFileName: String) -> Unit): File {
           val baseReportName = "${parameters.variantName.get()}${formattedName}${testSuiteName.capitalizeFirstChar()}"
           var xmlReportFileName = "${baseReportName}XmlReport"
 
@@ -343,6 +345,7 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
             ),
             sourceFolders = parameters.sourceFolders.files.map { it.relativeTo(rootDir).path },
           )
+          return xmlFile
         }
 
         val generateXmlReport = { coverageFiles: Collection<File>, testSuiteName: String ->
@@ -365,6 +368,7 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
         // With android.experimental.androidTest.coverage.useOnDeviceAgent, device tests write the agent's .pb files instead of
         // JaCoCo's execution data.
+        val onDeviceXmlReports = mutableListOf<File>()
         val generateOnDeviceXmlReport = { coverageRoots: Collection<File>, testSuiteName: String ->
           val runs = findOnDeviceCoverageFiles(coverageRoots)
           if (runs.size > 1) {
@@ -374,21 +378,60 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
           }
           runs.firstOrNull()?.let { run ->
             try {
-              writeXmlReport(testSuiteName) { reportName, xmlReportFileName ->
-                generateOnTheFlyXml(
-                  metadataFile = run.metadata,
-                  hitsFile = run.hits,
-                  outputFile = File(parameters.reportOutputDir.asFile.get(), "${xmlReportFileName}.xml"),
-                  reportName = reportName,
-                  testPackageId = null,
-                  exclusions = emptySet(),
-                  // Only classes with a source in the tested variant are reported, which leaves out the test classes.
-                  sourceFolders = parameters.sourceFolders.files,
-                )
-              }
+              onDeviceXmlReports +=
+                writeXmlReport(testSuiteName) { reportName, xmlReportFileName ->
+                  generateOnTheFlyXml(
+                    metadataFile = run.metadata,
+                    hitsFile = run.hits,
+                    outputFile = File(parameters.reportOutputDir.asFile.get(), "${xmlReportFileName}.xml"),
+                    reportName = reportName,
+                    testPackageId = null,
+                    exclusions = emptySet(),
+                    // Only classes with a source in the tested variant are reported, which leaves out the test classes.
+                    sourceFolders = parameters.sourceFolders.files,
+                  )
+                }
             } catch (e: Exception) {
               logger.warn("Unable to generate the on-device coverage report of '$testSuiteName'", e)
             }
+          }
+        }
+
+        // The agent's data can't be merged with JaCoCo's execution data, so "Aggregated" merges the XML report of the JaCoCo data
+        // with the XML reports of the on-device data instead.
+        val generateMergedXmlReport = { jacocoCoverageFiles: Collection<File>, testSuiteName: String ->
+          val jacocoReportDir = Files.createTempDirectory("coverage").toFile()
+          try {
+            writeXmlReport(testSuiteName) { reportName, xmlReportFileName ->
+              val jacocoReports =
+                if (jacocoCoverageFiles.isEmpty()) {
+                  emptyList()
+                } else {
+                  generateReport(
+                    coverageFiles = jacocoCoverageFiles,
+                    reportDir = jacocoReportDir,
+                    classFolders = parameters.classFolders.files,
+                    sourceFolders = parameters.sourceFolders.files,
+                    tabWidth = 4,
+                    reportName = reportName,
+                    logger = logger,
+                    reportTypes = listOf(ReportType.XML),
+                    xmlReportName = "jacoco",
+                  )
+                  listOf(File(jacocoReportDir, "jacoco.xml"))
+                }
+              CoverageXmlMerger()
+                .merge(
+                  jacocoReports + onDeviceXmlReports,
+                  reportName,
+                  File(parameters.reportOutputDir.asFile.get(), "${xmlReportFileName}.xml"),
+                )
+            }
+          } catch (e: Exception) {
+            logger.warn("Unable to add the on-device coverage to the '$testSuiteName' coverage report", e)
+            generateXmlReport(jacocoCoverageFiles, testSuiteName)
+          } finally {
+            jacocoReportDir.deleteRecursively()
           }
         }
 
@@ -416,7 +459,11 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
         }
 
         val mergedCoverageFiles = connectedTestCoverageFile + unitTestCoverageFile + testSuiteCoverageFiles
-        generateXmlReport(mergedCoverageFiles, "Aggregated")
+        if (onDeviceXmlReports.isEmpty()) {
+          generateXmlReport(mergedCoverageFiles, "Aggregated")
+        } else {
+          generateMergedXmlReport(mergedCoverageFiles, "Aggregated")
+        }
 
         parameters.dependantModulesReports.asFileTree.forEach { xmlFile ->
           if (xmlFile.isFile && xmlFile.extension == "xml") {

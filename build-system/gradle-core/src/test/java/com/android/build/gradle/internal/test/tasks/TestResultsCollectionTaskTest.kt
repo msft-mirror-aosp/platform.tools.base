@@ -303,6 +303,37 @@ class TestResultsCollectionTaskTest {
     assertThat(File(reportOutputDir, "debugAppMySuiteXmlReport.xml")).exists()
   }
 
+  @Test
+  fun testCodeCoverageCollectionWorkerAction_aggregatedReportIncludesOnDeviceCoverage() {
+    val reportOutputDir = temporaryFolder.newFolder("coverage_output_dir")
+    val unitTestCoverageFile = File(temporaryFolder.newFolder("unit_test_coverage"), "test.exec").apply { writeText("") }
+    val connectedDir = temporaryFolder.newFolder("connected")
+    writeOnDeviceCoverage(File(connectedDir, "device-1/coverage_data"))
+
+    coverageWorker(reportOutputDir, unitTestCoverageFile = unitTestCoverageFile, connectedTestCoverageDirectory = connectedDir).execute()
+
+    val xmlReport = File(reportOutputDir, "debugAppAggregatedXmlReport.xml")
+    assertThat(xmlReport).exists()
+    assertThat(readReportProperties(xmlReport)).containsEntry(TEST_SUITE_METADATA_SUITE_KEY, "Aggregated")
+    assertThat(xmlReport.readText()).contains("<class name=\"com/example/app/Foo\"")
+  }
+
+  @Test
+  fun testCodeCoverageCollectionWorkerAction_aggregatedReportWithOnlyOnDeviceCoverage() {
+    val reportOutputDir = temporaryFolder.newFolder("coverage_output_dir")
+    val connectedDir = temporaryFolder.newFolder("connected")
+    writeOnDeviceCoverage(File(connectedDir, "device-1/coverage_data"))
+    val suiteDir = temporaryFolder.newFolder("suite_coverage")
+    File(suiteDir, TEST_SUITE_METADATA_FILE).writeText("$TEST_SUITE_METADATA_SUITE_KEY=mySuite")
+    writeOnDeviceCoverage(File(suiteDir, "coverage_data"))
+
+    coverageWorker(reportOutputDir, connectedTestCoverageDirectory = connectedDir, testSuiteCoverageData = suiteDir).execute()
+
+    val xmlReport = File(reportOutputDir, "debugAppAggregatedXmlReport.xml")
+    assertThat(xmlReport).exists()
+    assertThat(xmlReport.readText()).contains("<class name=\"com/example/app/Foo\"")
+  }
+
   /** Writes the files of one on-device coverage run: `Foo.bar()` and the test method calling it were both hit. */
   private fun writeOnDeviceCoverage(runDir: File) {
     runDir.mkdirs()
@@ -340,6 +371,7 @@ class TestResultsCollectionTaskTest {
   /** Returns a worker for the given coverage inputs, where only `com/example/app/Foo.kt` has a source in the tested variant. */
   private fun coverageWorker(
     reportOutputDir: File,
+    unitTestCoverageFile: File? = null,
     connectedTestCoverageDirectory: File? = null,
     testSuiteCoverageData: File? = null,
   ): CodeCoverageCollectionWorkerAction {
@@ -349,7 +381,7 @@ class TestResultsCollectionTaskTest {
       override fun getParameters(): TestResultsCollectionTask.CodeCoverageWorkParameters {
         return object : TestResultsCollectionTask.CodeCoverageWorkParameters {
           override val reportOutputDir = project.objects.directoryProperty().apply { set(reportOutputDir) }
-          override val unitTestCoverageFile = project.files()
+          override val unitTestCoverageFile = project.files(listOfNotNull(unitTestCoverageFile))
           override val connectedTestCoverageDirectory = project.files(listOfNotNull(connectedTestCoverageDirectory))
           override val testSuiteCoverageData = project.files(listOfNotNull(testSuiteCoverageData))
           override val classFolders = project.files()
