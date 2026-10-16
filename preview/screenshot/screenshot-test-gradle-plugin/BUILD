@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
@@ -70,6 +71,7 @@ gradle_build(
     gradle_properties = GRADLE_PROPERTIES | SCREENSHOT_TEST_PLUGIN_GRADLE_PROPERTIES,
     output_file = "screenshot-test-gradle-plugin.zip",
     output_file_source = "dist/repo.zip",
+    problems_report_path = "build/build/root/reports/problems/problems-report.html",
     repos = [
         ":maven_dependencies",
         "//tools/base:agp_artifacts",
@@ -80,6 +82,20 @@ gradle_build(
         "//tools/base/build-system/integration-test:__subpackages__",
         "//tools/base/preview/screenshot:__pkg__",
     ],
+)
+
+diff_test(
+    name = "screenshot-test-gradle-plugin_problems_test",
+    failure_message = """
+       Replace the known_problems.txt file in this directory with screenshot-test-gradle-plugin_problems.txt from the artifacts of //tools/base/preview/screenshot/screenshot-test-gradle-plugin:screenshot-test-gradle-plugin target in this bazel invocation.
+
+       Alternatively, run the following command to update (make sure build is executed remotely by adding --config=remote, or --config=remote-exec):
+         bazel build --config=remote //tools/base/preview/screenshot/screenshot-test-gradle-plugin:screenshot-test-gradle-plugin_problems.txt && cp `bazel info bazel-genfiles`/tools/base/preview/screenshot/screenshot-test-gradle-plugin/screenshot-test-gradle-plugin_problems.txt `bazel info workspace`/tools/base/preview/screenshot/screenshot-test-gradle-plugin/known_problems.txt
+    """,
+    file1 = ":screenshot-test-gradle-plugin_problems.txt",
+    file2 = "known_problems.txt",
+    # Only run on linux, as the problems are uninterestingly different across platforms
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 gradle_test(
