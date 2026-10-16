@@ -23,10 +23,18 @@ import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_MET
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
 import com.android.testutils.truth.PathSubject.assertThat
+import com.android.tools.coverage.proto.CoverageMetadataProto.BlockMetadata
+import com.android.tools.coverage.proto.CoverageMetadataProto.ClassMetadata
+import com.android.tools.coverage.proto.CoverageMetadataProto.CoverageHits
+import com.android.tools.coverage.proto.CoverageMetadataProto.CoverageMetadata
+import com.android.tools.coverage.proto.CoverageMetadataProto.LineMetadata
+import com.android.tools.coverage.proto.CoverageMetadataProto.MethodMetadata
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import com.google.protobuf.ByteString
 import java.io.File
 import java.io.IOException
+import java.util.BitSet
 import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -241,6 +249,128 @@ class TestResultsCollectionTaskTest {
     assertThat(fooBar1File.readText()).isEqualTo("foo_bar_content")
     assertThat(fooBar2File.readText()).isEqualTo("fooBar_content")
     assertThat(clashLocalFile.readText()).isEqualTo("clashing_dependent_content")
+  }
+
+  @Test
+  fun testCodeCoverageCollectionWorkerAction_reportsOnDeviceCoverageOfConnectedTests() {
+    val reportOutputDir = temporaryFolder.newFolder("coverage_output_dir")
+    val connectedDir = temporaryFolder.newFolder("connected")
+    writeOnDeviceCoverage(File(connectedDir, "device-1/coverage_data"))
+
+    coverageWorker(reportOutputDir, connectedTestCoverageDirectory = connectedDir).execute()
+
+    val xmlReport = File(reportOutputDir, "debugAppAndroidTestXmlReport.xml")
+    assertThat(xmlReport).exists()
+    assertThat(readReportProperties(xmlReport)).containsEntry(TEST_SUITE_METADATA_SUITE_KEY, "androidTest")
+    assertThat(xmlReport.readText()).contains("<class name=\"com/example/app/Foo\"")
+    // The test class has no source in the tested variant, so it isn't part of the report.
+    assertThat(xmlReport.readText()).doesNotContain("FooTest")
+  }
+
+  @Test
+  fun testCodeCoverageCollectionWorkerAction_reportsOnDeviceCoverageOfTestSuites() {
+    val reportOutputDir = temporaryFolder.newFolder("coverage_output_dir")
+    val suiteDir = temporaryFolder.newFolder("suite_coverage")
+    File(suiteDir, TEST_SUITE_METADATA_FILE).writeText("$TEST_SUITE_METADATA_SUITE_KEY=mySuite")
+    writeOnDeviceCoverage(File(suiteDir, "coverage_data"))
+
+    coverageWorker(reportOutputDir, testSuiteCoverageData = suiteDir).execute()
+
+    val xmlReport = File(reportOutputDir, "debugAppMySuiteXmlReport.xml")
+    assertThat(xmlReport).exists()
+    assertThat(readReportProperties(xmlReport)).containsEntry(TEST_SUITE_METADATA_SUITE_KEY, "mySuite")
+    assertThat(xmlReport.readText()).contains("<class name=\"com/example/app/Foo\"")
+  }
+
+  @Test
+  fun testCodeCoverageCollectionWorkerAction_unreadableOnDeviceCoverageDoesNotStopOtherReports() {
+    val reportOutputDir = temporaryFolder.newFolder("coverage_output_dir")
+    val connectedRunDir = File(temporaryFolder.newFolder("connected"), "device-1/coverage_data").apply { mkdirs() }
+    File(connectedRunDir, "coverage_metadata.pb").writeText("not a proto")
+    File(connectedRunDir, "coverage_hits.pb").writeText("not a proto")
+    val suiteDir = temporaryFolder.newFolder("suite_coverage")
+    File(suiteDir, TEST_SUITE_METADATA_FILE).writeText("$TEST_SUITE_METADATA_SUITE_KEY=mySuite")
+    writeOnDeviceCoverage(File(suiteDir, "coverage_data"))
+
+    coverageWorker(
+        reportOutputDir,
+        connectedTestCoverageDirectory = connectedRunDir.parentFile.parentFile,
+        testSuiteCoverageData = suiteDir,
+      )
+      .execute()
+
+    assertThat(File(reportOutputDir, "debugAppAndroidTestXmlReport.xml")).doesNotExist()
+    assertThat(File(reportOutputDir, "debugAppMySuiteXmlReport.xml")).exists()
+  }
+
+  /** Writes the files of one on-device coverage run: `Foo.bar()` and the test method calling it were both hit. */
+  private fun writeOnDeviceCoverage(runDir: File) {
+    runDir.mkdirs()
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .setVersion(1)
+        .addClasses(onDeviceClass(className = "Lcom/example/app/Foo;", sourceFile = "Foo.kt", methodName = "bar", blockId = 0, line = 3))
+        .addClasses(
+          onDeviceClass(className = "Lcom/example/app/FooTest;", sourceFile = "FooTest.kt", methodName = "testBar", blockId = 1, line = 7)
+        )
+        .build()
+    File(runDir, "coverage_metadata.pb").outputStream().use { metadata.writeTo(it) }
+    val hitBlocks = BitSet().apply { set(0, 2) }
+    val hits = CoverageHits.newBuilder().setVersion(1).setHitMask(ByteString.copyFrom(hitBlocks.toByteArray())).build()
+    File(runDir, "coverage_hits.pb").outputStream().use { hits.writeTo(it) }
+  }
+
+  private fun onDeviceClass(className: String, sourceFile: String, methodName: String, blockId: Int, line: Int): ClassMetadata =
+    ClassMetadata.newBuilder()
+      .setClassName(className)
+      .setSourceFile(sourceFile)
+      .addMethods(
+        MethodMetadata.newBuilder()
+          .setName(methodName)
+          .setSignature("()V")
+          .addBlocks(
+            BlockMetadata.newBuilder()
+              .setBlockId(blockId)
+              .setBranchCount(1)
+              .addLines(LineMetadata.newBuilder().setLineNumber(line).setInstructionCount(2))
+          )
+      )
+      .build()
+
+  /** Returns a worker for the given coverage inputs, where only `com/example/app/Foo.kt` has a source in the tested variant. */
+  private fun coverageWorker(
+    reportOutputDir: File,
+    connectedTestCoverageDirectory: File? = null,
+    testSuiteCoverageData: File? = null,
+  ): CodeCoverageCollectionWorkerAction {
+    val sourceFolder = File(temporaryFolder.root, "src/main/kotlin")
+    File(sourceFolder, "com/example/app/Foo.kt").apply { parentFile.mkdirs() }.writeText("package com.example.app")
+    return object : CodeCoverageCollectionWorkerAction() {
+      override fun getParameters(): TestResultsCollectionTask.CodeCoverageWorkParameters {
+        return object : TestResultsCollectionTask.CodeCoverageWorkParameters {
+          override val reportOutputDir = project.objects.directoryProperty().apply { set(reportOutputDir) }
+          override val unitTestCoverageFile = project.files()
+          override val connectedTestCoverageDirectory = project.files(listOfNotNull(connectedTestCoverageDirectory))
+          override val testSuiteCoverageData = project.files(listOfNotNull(testSuiteCoverageData))
+          override val classFolders = project.files()
+          override val sourceFolders = project.files(sourceFolder)
+          override val dependantModulesReports = project.files()
+          override val variantName = project.objects.property(String::class.java).apply { set("debug") }
+          override val projectName = project.objects.property(String::class.java).apply { set("app") }
+          override val projectRoot = project.objects.directoryProperty().apply { set(temporaryFolder.root) }
+        }
+      }
+    }
+  }
+
+  private fun readReportProperties(xmlReport: File): Map<String, String> {
+    val docFactory = DocumentBuilderFactory.newInstance()
+    docFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    val properties = docFactory.newDocumentBuilder().parse(xmlReport).getElementsByTagName("property")
+    return (0 until properties.length).associate { index ->
+      val property = properties.item(index) as Element
+      property.getAttribute("name") to property.getAttribute("value")
+    }
   }
 
   @Throws(IOException::class)

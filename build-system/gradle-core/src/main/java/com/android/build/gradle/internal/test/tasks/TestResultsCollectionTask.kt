@@ -21,6 +21,8 @@ import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
+import com.android.build.gradle.internal.coverage.findOnDeviceCoverageFiles
+import com.android.build.gradle.internal.coverage.generateOnTheFlyXml
 import com.android.build.gradle.internal.coverage.generateReport
 import com.android.build.gradle.internal.coverage.getUnitTestJacocoVersion
 import com.android.build.gradle.internal.coverage.report.ReportType
@@ -314,42 +316,79 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
         val usedXmlFileNames = mutableSetOf<String>()
         val formattedName = formatProjectName(parameters.projectName.get())
 
+        // Writes the XML report of a test suite with writeReport, which gets the report name and the XML file name without its
+        // extension, then adds the metadata of the suite to the XML.
+        fun writeXmlReport(testSuiteName: String, writeReport: (reportName: String, xmlReportFileName: String) -> Unit) {
+          val baseReportName = "${parameters.variantName.get()}${formattedName}${testSuiteName.capitalizeFirstChar()}"
+          var xmlReportFileName = "${baseReportName}XmlReport"
+
+          var counter = 1
+          val originalXmlReportFileName = xmlReportFileName
+          while (usedXmlFileNames.contains(xmlReportFileName)) {
+            xmlReportFileName = "${originalXmlReportFileName}_${counter++}"
+          }
+          usedXmlFileNames.add(xmlReportFileName)
+
+          writeReport(baseReportName, xmlReportFileName)
+
+          val xmlFile = File(parameters.reportOutputDir.asFile.get().absolutePath, "${xmlReportFileName}.xml")
+          val rootDir = parameters.projectRoot.get().asFile
+
+          injectMetadataInXmlReport(
+            xmlFile,
+            mapOf(
+              TEST_SUITE_METADATA_MODULE_KEY to parameters.projectName.get(),
+              TEST_SUITE_METADATA_SUITE_KEY to testSuiteName,
+              TEST_SUITE_METADATA_VARIANT_KEY to parameters.variantName.get(),
+            ),
+            sourceFolders = parameters.sourceFolders.files.map { it.relativeTo(rootDir).path },
+          )
+        }
+
         val generateXmlReport = { coverageFiles: Collection<File>, testSuiteName: String ->
           if (coverageFiles.isNotEmpty()) {
-            val baseReportName = "${parameters.variantName.get()}${formattedName}${testSuiteName.capitalizeFirstChar()}"
-            var xmlReportFileName = "${baseReportName}XmlReport"
-
-            var counter = 1
-            val originalXmlReportFileName = xmlReportFileName
-            while (usedXmlFileNames.contains(xmlReportFileName)) {
-              xmlReportFileName = "${originalXmlReportFileName}_${counter++}"
+            writeXmlReport(testSuiteName) { reportName, xmlReportFileName ->
+              generateReport(
+                coverageFiles = coverageFiles,
+                reportDir = parameters.reportOutputDir.asFile.get(),
+                classFolders = parameters.classFolders.files,
+                sourceFolders = parameters.sourceFolders.files,
+                tabWidth = 4,
+                reportName = reportName,
+                logger = logger,
+                reportTypes = listOf(ReportType.XML),
+                xmlReportName = xmlReportFileName,
+              )
             }
-            usedXmlFileNames.add(xmlReportFileName)
+          }
+        }
 
-            generateReport(
-              coverageFiles = coverageFiles,
-              reportDir = parameters.reportOutputDir.asFile.get(),
-              classFolders = parameters.classFolders.files,
-              sourceFolders = parameters.sourceFolders.files,
-              tabWidth = 4,
-              reportName = baseReportName,
-              logger = logger,
-              reportTypes = listOf(ReportType.XML),
-              xmlReportName = xmlReportFileName,
+        // With android.experimental.androidTest.coverage.useOnDeviceAgent, device tests write the agent's .pb files instead of
+        // JaCoCo's execution data.
+        val generateOnDeviceXmlReport = { coverageRoots: Collection<File>, testSuiteName: String ->
+          val runs = findOnDeviceCoverageFiles(coverageRoots)
+          if (runs.size > 1) {
+            logger.warn(
+              "Found on-device coverage of ${runs.size} test runs for '$testSuiteName', only ${runs.first().metadata.parent} is reported."
             )
-
-            val xmlFile = File(parameters.reportOutputDir.asFile.get().absolutePath, "${xmlReportFileName}.xml")
-            val rootDir = parameters.projectRoot.get().asFile
-
-            injectMetadataInXmlReport(
-              xmlFile,
-              mapOf(
-                TEST_SUITE_METADATA_MODULE_KEY to parameters.projectName.get(),
-                TEST_SUITE_METADATA_SUITE_KEY to testSuiteName,
-                TEST_SUITE_METADATA_VARIANT_KEY to parameters.variantName.get(),
-              ),
-              sourceFolders = parameters.sourceFolders.files.map { it.relativeTo(rootDir).path },
-            )
+          }
+          runs.firstOrNull()?.let { run ->
+            try {
+              writeXmlReport(testSuiteName) { reportName, xmlReportFileName ->
+                generateOnTheFlyXml(
+                  metadataFile = run.metadata,
+                  hitsFile = run.hits,
+                  outputFile = File(parameters.reportOutputDir.asFile.get(), "${xmlReportFileName}.xml"),
+                  reportName = reportName,
+                  testPackageId = null,
+                  exclusions = emptySet(),
+                  // Only classes with a source in the tested variant are reported, which leaves out the test classes.
+                  sourceFolders = parameters.sourceFolders.files,
+                )
+              }
+            } catch (e: Exception) {
+              logger.warn("Unable to generate the on-device coverage report of '$testSuiteName'", e)
+            }
           }
         }
 
@@ -361,12 +400,18 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
             file.isFile && (file.extension == "ec" || file.extension == "exec")
           }
         generateXmlReport(connectedTestCoverageFile, CONNECTED_TEST_TEST_SUITE_NAME)
+        if (connectedTestCoverageFile.isEmpty()) {
+          generateOnDeviceXmlReport(parameters.connectedTestCoverageDirectory.files, CONNECTED_TEST_TEST_SUITE_NAME)
+        }
 
         val testSuiteCoverageFiles = mutableListOf<File>()
         parameters.testSuiteCoverageData.files.forEach { directory ->
           getTestSuiteCoverageFiles(directory)?.let { (testSuiteName, coverageFiles) ->
             generateXmlReport(coverageFiles, testSuiteName)
             testSuiteCoverageFiles.addAll(coverageFiles)
+            if (coverageFiles.isEmpty()) {
+              generateOnDeviceXmlReport(listOf(directory), testSuiteName)
+            }
           }
         }
 
