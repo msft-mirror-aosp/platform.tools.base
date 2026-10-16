@@ -71,6 +71,9 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
   }
 
   val dumpResponse = viewInspectorResponse.dumpViewsResponse
+  if (dumpResponse.errorMessage.isNotEmpty()) {
+    throw IllegalStateException(dumpResponse.errorMessage)
+  }
   val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
   val displays = dumpResponse.displaysList.map(::convertDisplay)
