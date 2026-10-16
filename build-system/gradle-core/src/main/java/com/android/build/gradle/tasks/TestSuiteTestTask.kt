@@ -59,8 +59,10 @@ import com.android.build.gradle.internal.tasks.getApkFiles
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
 import com.android.build.gradle.internal.test.report.clearTestReportAggregationResults
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
+import com.android.build.gradle.internal.testing.INSTRUMENTATION_ARGS_KEY
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.configureAndroidTestEngine
+import com.android.build.gradle.internal.testing.formatInstrumentationArgs
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -907,10 +909,26 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.engineInputProperties.set(junitEngineSpec.inputProperties)
       // add default properties.
       task.engineInputProperties.put(TestEngineInputProperty.TESTED_APPLICATION_ID, testedVariant.applicationId)
-      task.engineInputProperties.put(
-        "com.android.agp.test.COVERAGE_TYPE",
-        if (creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)) "ON_THE_FLY" else "NONE",
-      )
+      // Only a suite that collects coverage carries the on-device coverage agent in its test APK, so only such a suite asks the
+      // engine to attach it.
+      val onDeviceCoverage =
+        creationConfig.codeCoverageEnabled &&
+          !isUpdate &&
+          creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
+      task.engineInputProperties.put("com.android.agp.test.COVERAGE_TYPE", if (onDeviceCoverage) "ON_THE_FLY" else "NONE")
+      if (onDeviceCoverage) {
+        // The agent instruments the classes under the tested app's namespace, as for androidTest. Without this prefix, the engine
+        // falls back to the tested application id, which doesn't match when there is an applicationIdSuffix.
+        val suiteArgs = junitEngineSpec.inputProperties.getting(INSTRUMENTATION_ARGS_KEY).orElse("")
+        task.engineInputProperties.put(
+          INSTRUMENTATION_ARGS_KEY,
+          testedVariant.namespace.zip(suiteArgs) { namespace, args ->
+            val prefixArg = formatInstrumentationArgs(mapOf("com.android.tools.coverage.prefixes" to namespace.replace('.', '/')))
+            // The engine keeps the last value of a repeated key, so arguments set on the suite take precedence.
+            if (args.isBlank()) prefixArg else "$prefixArg,$args"
+          },
+        )
+      }
       task.engineInputProperties.disallowChanges()
 
       task.useJUnitPlatform { testFramework: JUnitPlatformOptions ->
