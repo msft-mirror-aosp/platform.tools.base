@@ -39,7 +39,6 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:kxml2",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/adt/idea/.idea/libraries:javax-inject",
-        "//tools/adt/idea/.idea/libraries:aapt-proto",
         "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
         "//tools/adt/idea/.idea/libraries:studio-proto",
     ],
@@ -56,7 +55,6 @@ iml_module(
     test_deps = [
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "@intellij//:intellij-sdk",
-        "//tools/adt/idea/.idea/libraries:aapt-proto",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:kotlin-test",
         "//tools/base/testutils:studio.android.sdktools.testutils",
@@ -101,7 +99,6 @@ maven_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/analytics-library/shared:tools.analytics-shared",
-        "//tools/base/build-system/aapt2-proto",
         "//tools/base/common:tools.common",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/sdklib:tools.sdklib",
@@ -146,7 +143,6 @@ kotlin_test(
     deps = [
         ":tools.sdk-common",
         "//tools/base/annotations",
-        "//tools/base/build-system/aapt2-proto",
         "//tools/base/build-system/builder-model",
         "//tools/base/common:tools.common",
         "//tools/base/layoutlib-api:tools.layoutlib-api",

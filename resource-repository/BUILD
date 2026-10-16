@@ -94,19 +94,3 @@ kotlin_library(
         "@maven//:net.sf.kxml.kxml2",
     ],
 )
-
-kotlin_library(
-    name = "tools.resource-repository.test.util",
-    srcs = [
-        "test/java/com/android/resources/AarTestUtils.kt",
-    ],
-    visibility = [
-        "//tools/adt/idea/render-resources:__pkg__",
-    ],
-    deps = [
-        ":tools.resource-repository",
-        "//tools/base/common:tools.common",
-        "//tools/base/sdk-common:tools.sdk-common",
-        "//tools/base/testutils:tools.testutils",
-    ],
-)

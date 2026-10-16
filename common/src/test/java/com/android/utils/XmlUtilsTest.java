@@ -36,7 +36,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -603,9 +602,6 @@ public class XmlUtilsTest extends TestCase {
         assertThat(XmlUtils.isProtoXml(proto)).isTrue();
         assertThat(XmlUtils.isProtoXml(text)).isFalse();
         assertThat(XmlUtils.isProtoXml(textWithBom)).isFalse();
-        assertThat(XmlUtils.isProtoXml(new ByteArrayInputStream(proto))).isTrue();
-        assertThat(XmlUtils.isProtoXml(new ByteArrayInputStream(text))).isFalse();
-        assertThat(XmlUtils.isProtoXml(new ByteArrayInputStream(textWithBom))).isFalse();
     }
 
     public void testCreateXmlInputFactoryDisablesDtdAndExternalEntities() throws Exception {

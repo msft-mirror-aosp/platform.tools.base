@@ -200,7 +200,6 @@ com.android.tools:sdk-common:$BASE_VERSION
   description=sdk-common library used by other Android tools libraries.
   dependencies:
     com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
-    com.android.tools.build:aapt2-proto:$AAPT2_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)

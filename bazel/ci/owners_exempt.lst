@@ -6057,7 +6057,6 @@ tools/base/sdk-common/src/main/java/com/android/ide/common/resources/MergingExce
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/NoOpResourcePreprocessor.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/NodeUtils.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/PatternBasedFileFilter.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/resources/ProtoXmlPullParser.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/RelativeResourceUtils.kt
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/ResourceCompilationService.kt
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/ResourceFile.java
@@ -6251,7 +6250,6 @@ tools/base/sdk-common/src/test/java/com/android/ide/common/resources/LocaleTest.
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/MergeResourceWriterWithCompilerTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/MergingExceptionTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/NodeUtilsTest.java
-tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ProtoXmlPullParserTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/RecordingLogger.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/RelativeResourcesUtilsTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceCompilationServiceTest.java

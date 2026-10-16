@@ -1285,36 +1285,4 @@ public class XmlUtils {
         }
         return true;
     }
-
-    /**
-     * Checks if the given input stream is likely to represent XML in a proto format.
-     *
-     * @param stream the candidate XML stream to check
-     * @return true if the stream is likely to represent proto XML
-     */
-    public static boolean isProtoXml(@NonNull InputStream stream) {
-        boolean isProto = false;
-        int readLimit = 100;
-        if (stream.markSupported()) {
-            stream.mark(readLimit);
-            try {
-                try {
-                    int c;
-                    for (int i = 0; i < readLimit && (c = stream.read()) >= 0; i++) {
-                        if (i == 0 && c != PROTO_XML_LEAD_BYTE) {
-                            break;
-                        } else if (!Character.isWhitespace(c)) {
-                            isProto = c != '<';
-                            break;
-                        }
-                    }
-                } finally {
-                    stream.reset();
-                }
-            } catch (IOException e) {
-                // Ignore and assume text XML.
-            }
-        }
-        return isProto;
-    }
 }

@@ -19,7 +19,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.util.PathString;
 import com.android.ide.common.util.PathStrings;
-import com.android.utils.XmlUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +30,6 @@ import org.xmlpull.v1.XmlPullParserException;
 public class AndroidManifestPackageNameUtils {
     /**
      * Reads package name from the AndroidManifest.xml file in the given directory.
-     * The AndroidManifest.xml file can be in either text or proto format.
      *
      * @param manifestFile the AndroidManifest.xml file
      * @return the package name from the manifest
@@ -48,15 +46,8 @@ public class AndroidManifestPackageNameUtils {
 
     private static String getPackageName(@NonNull InputStream stream)
             throws XmlPullParserException, IOException {
-        stream.mark(1);
-        // Instantiate an XML pull parser based on the contents of the stream.
-        XmlPullParser parser;
-        if (XmlUtils.isProtoXml(stream)) {
-            parser = new ProtoXmlPullParser(); // Parser for proto XML used in AARs.
-        } else {
-            parser = new KXmlParser(); // Parser for regular text XML.
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
-        }
+        XmlPullParser parser = new KXmlParser();
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
         parser.setInput(stream, null);
         if (parser.nextTag() == XmlPullParser.START_TAG) {
             return parser.getAttributeValue(null, "package");
