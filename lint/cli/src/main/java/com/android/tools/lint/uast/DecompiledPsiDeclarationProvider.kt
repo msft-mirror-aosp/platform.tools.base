@@ -71,12 +71,6 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
         ?.getProperties(variableLikeSymbol, variableLikeSymbol.containingJvmClassName)
     if (candidates?.size == 1) return candidates.single()
     else {
-      // Weigh [PsiField]
-      candidates
-        ?.firstOrNull { psiMember -> psiMember is PsiField }
-        ?.let {
-          return it
-        }
       if (variableLikeSymbol is KaPropertySymbol) {
         val getterSymbol = variableLikeSymbol.getter
         val setterSymbol = variableLikeSymbol.setter
@@ -93,6 +87,12 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
             return it
           }
       }
+      // Weigh [PsiField]
+      candidates
+        ?.firstOrNull { psiMember -> psiMember is PsiField }
+        ?.let {
+          return it
+        }
       return candidates?.firstOrNull()
     }
   }

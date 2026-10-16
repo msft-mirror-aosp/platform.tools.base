@@ -831,7 +831,29 @@ class UastTest : TestCase() {
         ),
       )
 
+    data class ExpectedResolvedMember(
+      val name: String,
+      val containingClassName: String,
+      val isField: Boolean = false,
+    )
+
+    val expectedMembers =
+      listOf(
+        ExpectedResolvedMember("JVM_FIELD_FLAG", "Dependency", isField = true),
+        ExpectedResolvedMember("getJVM_STATIC_FLAG", "Companion"),
+        ExpectedResolvedMember("getVAL_FLAG", "Companion"),
+        ExpectedResolvedMember("getVarFlag", "Companion"),
+        ExpectedResolvedMember("JVM_FIELD_FLAG", "OtherDependency", isField = true),
+        ExpectedResolvedMember("getJVM_STATIC_FLAG", "Named"),
+        ExpectedResolvedMember("getVAL_FLAG", "Named"),
+        ExpectedResolvedMember("getVarFlag", "Named"),
+        ExpectedResolvedMember("getVAL_FLAG", "DependencyObject"),
+        ExpectedResolvedMember("getVarFlag", "DependencyObject"),
+        ExpectedResolvedMember("getDEPENDENCY_TOP_LEVEL_VAL_FLAG", "FlagKt"),
+      )
+
     check(*testFiles) { file ->
+      var count = 0
       file.accept(
         object : AbstractUastVisitor() {
           override fun visitCallExpression(node: UCallExpression): Boolean {
@@ -843,10 +865,57 @@ class UastTest : TestCase() {
             val arg = node.valueArguments.singleOrNull()
             val selector = arg?.findSelector() as? USimpleNameReferenceExpression
             val resolved = selector?.resolve()
-            assertNotNull(resolved)
-            assertTrue(resolved is PsiField)
+            assertNotNull(node.asRenderString(), resolved)
+            val expectedMember = expectedMembers[count++]
+            if (expectedMember.isField) {
+              assertTrue("Expected PsiField but got $resolved", resolved is PsiField)
+              assertEquals(expectedMember.name, (resolved as PsiField).name)
+              assertEquals(expectedMember.containingClassName, resolved.containingClass?.name)
+            } else {
+              assertTrue("Expected PsiMethod but got $resolved", resolved is PsiMethod)
+              assertEquals(expectedMember.name, (resolved as PsiMethod).name)
+              assertEquals(expectedMember.containingClassName, resolved.containingClass?.name)
+            }
 
             return super.visitCallExpression(node)
+          }
+
+          override fun afterVisitFile(node: UFile) {
+            assertEquals(expectedMembers.size, count)
+            super.afterVisitFile(node)
+          }
+        }
+      )
+    }
+  }
+
+  fun testResolveCompiledKotlinProperty_pairFirst() {
+    // b/556855454
+    val testFiles =
+      arrayOf(
+        kotlin(
+            """
+          package test.pkg
+
+          fun test(pair: Pair<String, Int>) {
+            val x = pair.first
+          }
+        """
+          )
+          .indented()
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            if (node.identifier == "first") {
+              val resolved = node.resolve()
+              assertNotNull(resolved)
+              assertTrue("Expected PsiMethod, but got $resolved", resolved is PsiMethod)
+              assertEquals("getFirst", (resolved as PsiMethod).name)
+            }
+            return super.visitSimpleNameReferenceExpression(node)
           }
         }
       )
@@ -5630,8 +5699,8 @@ interface Callback {
               return super.visitSimpleNameReferenceExpression(node)
             }
             val resolved = node.resolve()
-            assertTrue(txt, resolved is PsiField)
-            assertEquals(txt, "internalVal", (resolved as? PsiField)?.name)
+            assertTrue(txt, resolved is PsiMethod)
+            assertEquals(txt, "getInternalVal\$main", (resolved as? PsiMethod)?.name)
             return super.visitSimpleNameReferenceExpression(node)
           }
         }
