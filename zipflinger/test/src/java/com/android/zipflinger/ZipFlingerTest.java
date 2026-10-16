@@ -1101,6 +1101,34 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     }
 
     @Test
+    public void testSourcesFromPathStoredUsesLargeFileSourceAboveLimit() throws IOException {
+        byte[] small = new byte[Sources.STORED_LARGE_LIMIT];
+        byte[] large = new byte[Sources.STORED_LARGE_LIMIT + 1];
+        Path smallPath = createRandomFile("testSourcesFromPathSmall.txt", small);
+        Path largePath = createRandomFile("testSourcesFromPathLarge.txt", large);
+
+        Source smallStored = Sources.from(smallPath, "small", Deflater.NO_COMPRESSION);
+        Source largeStored = Sources.from(largePath, "large", Deflater.NO_COMPRESSION);
+        Source largeDeflated = Sources.from(largePath, "deflated", Deflater.BEST_SPEED);
+        Assert.assertTrue(smallStored instanceof BytesSource);
+        Assert.assertTrue(largeStored instanceof LargeFileSource);
+        Assert.assertTrue(largeDeflated instanceof BytesSource);
+
+        Path dstFile = getTestPath("testSourcesFromPathStored.zip");
+        try (ZipArchive zipArchive = new ZipArchive(dstFile)) {
+            zipArchive.add(smallStored);
+            zipArchive.add(largeStored);
+            zipArchive.add(largeDeflated);
+        }
+        verifyArchive(dstFile);
+        try (ZipRepo zipRepo = new ZipRepo(dstFile)) {
+            Assert.assertEquals(ByteBuffer.wrap(small), zipRepo.getContent("small"));
+            Assert.assertEquals(ByteBuffer.wrap(large), zipRepo.getContent("large"));
+            Assert.assertEquals(ByteBuffer.wrap(large), zipRepo.getContent("deflated"));
+        }
+    }
+
+    @Test
     public void testLargeCompressedSourceNoTmp() throws IOException {
         byte[] bytes = new byte[4096];
         Path srcPath = createRandomFile("testLargeCompressedSourceNoTmp.txt", bytes);
