@@ -214,13 +214,24 @@ fun tryCreateConfigurationParameters(projectOptions: ProjectOptions, variant: Va
   /** Prefab settings. */
   val prefabPackageDirectoryList =
     if (variant.buildFeatures.prefab) {
+      // Library module packages and AAR packages are consumed as separate artifact types so that the configure task can
+      // declare the AAR transforms without also depending on library modules' C/C++ builds. See createCxxTasks.
       variant.variantDependencies
         .getArtifactCollection(
           AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
           AndroidArtifacts.ArtifactScope.ALL,
-          AndroidArtifacts.ArtifactType.PREFAB_PACKAGE,
+          AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_FROM_MODULE,
         )
         .artifactFiles
+        .plus(
+          variant.variantDependencies
+            .getArtifactCollection(
+              AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+              AndroidArtifacts.ArtifactScope.ALL,
+              AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_FROM_AAR,
+            )
+            .artifactFiles
+        )
     } else {
       null
     }

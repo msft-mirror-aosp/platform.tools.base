@@ -195,6 +195,8 @@ public class AndroidArtifacts {
 
     private static final String TYPE_PREFAB_PACKAGE = "android-prefab";
     private static final String TYPE_PREFAB_PACKAGE_CONFIGURATION = "android-prefab-configuration";
+    private static final String TYPE_PREFAB_PACKAGE_FROM_AAR = "android-prefab-from-aar";
+    private static final String TYPE_PREFAB_PACKAGE_FROM_MODULE = "android-prefab-from-module";
 
     private static final String TYPE_DESUGAR_LIB_MERGED_KEEP_RULES =
             "android-desugar-lib-merged-keep-rules";
@@ -437,6 +439,16 @@ public class AndroidArtifacts {
          */
         PREFAB_PACKAGE(TYPE_PREFAB_PACKAGE),
         PREFAB_PACKAGE_CONFIGURATION(TYPE_PREFAB_PACKAGE_CONFIGURATION),
+        /**
+         * A {@link #PREFAB_PACKAGE} extracted from an AAR by AarTransform. Library modules don't
+         * publish it, so depending on it pulls in only the AAR transforms.
+         */
+        PREFAB_PACKAGE_FROM_AAR(TYPE_PREFAB_PACKAGE_FROM_AAR),
+        /**
+         * A {@link #PREFAB_PACKAGE} published by a library module. No transform produces it, so
+         * reading its location never runs a transform.
+         */
+        PREFAB_PACKAGE_FROM_MODULE(TYPE_PREFAB_PACKAGE_FROM_MODULE),
         ANNOTATIONS(TYPE_EXT_ANNOTATIONS),
         PUBLIC_RES(TYPE_PUBLIC_RES),
         UNFILTERED_PROGUARD_RULES(TYPE_UNFILTERED_PROGUARD_RULES),
