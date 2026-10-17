@@ -52,6 +52,7 @@ kotlin_test(
     deps = [
         ":tools.standalone-render.lib",
         "//prebuilts/tools/common/lint-psi/intellij-core",
+        "//tools/adt/idea/layoutlib:tools.layoutlib",
         "//tools/adt/idea/preview-elements:tools.preview-elements",
         "//tools/adt/idea/render-resources:tools.render-resources",
         "//tools/adt/idea/rendering:tools.rendering",

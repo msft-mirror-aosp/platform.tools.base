@@ -166,9 +166,31 @@ class ScreenshotRenderTest {
         textNode.parameters?.get("text") ?: textNode.semantics?.get("text"),
       )
     }
+    val warmRenderResult =
+      standaloneRenderer.render(
+        screenshots = screenshots,
+        outputFolder = treeOutputFolder.absolutePath,
+        includeComponentTree = true,
+        renderImage = false,
+      )
+    assertNull(warmRenderResult.globalError)
+    assertEquals(screenshots.size, warmRenderResult.screenshotResults.size)
+    warmRenderResult.screenshotResults.forEach { assertNull(it.error) }
     assertNotNull(StandalonePreviewRenderer::class.java.getMethod("render", List::class.java, String::class.java))
+    assertNotNull(
+      StandalonePreviewRenderer::class.java.getConstructor(
+        String::class.java,
+        String::class.java,
+        String::class.java,
+        List::class.java,
+        String::class.java,
+        List::class.java,
+        List::class.java,
+      )
+    )
 
     // Stop the daemon otherwise it could keep the lock on the temporary folder
+    StandalonePreviewRenderer.closeWarmRenderer()
     gradleProject.executeGradleTask("--stop")
   }
 }

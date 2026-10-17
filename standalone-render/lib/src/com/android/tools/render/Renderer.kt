@@ -65,6 +65,14 @@ class Renderer(
   private val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
   private val previewValidator = PreviewValidator()
 
+  /**
+   * Refreshes the module classloader with updated [newClassPath] and [newProjectClassPath] so modified user `.class` files are loaded
+   * freshly while keeping the warm Layoutlib environment and external library classes intact.
+   */
+  fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>) {
+    moduleClassLoaderManager.refreshClassPath(newClassPath, newProjectClassPath)
+  }
+
   companion object {
     private val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>| ]+""".toRegex()
     private val invalidPathCharsRegex = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()
@@ -463,6 +471,8 @@ class Renderer(
 
   override fun close() {
     moduleClassLoaderManager.close()
-    Disposer.dispose(project)
+    if (!project.isDisposed) {
+      Disposer.dispose(project)
+    }
   }
 }
