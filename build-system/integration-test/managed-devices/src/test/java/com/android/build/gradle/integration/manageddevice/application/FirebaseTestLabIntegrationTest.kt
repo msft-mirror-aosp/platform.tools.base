@@ -67,6 +67,7 @@ import java.util.LinkedList
 import java.util.Queue
 import java.util.zip.GZIPOutputStream
 import org.gradle.api.Project
+import org.gradle.api.services.BuildServiceRegistration
 import org.junit.Rule
 import org.junit.Test
 
@@ -123,20 +124,21 @@ class FirebaseTestLabIntegrationTest {
 
     override fun handleProject(project: Project) {
       project.afterEvaluate {
-        // Remove FTL service before injecting our modded version
-        project.gradle.sharedServices.registrations.apply {
-          remove(getByName(TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, project)))
-        }
+        val serviceName = TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, project)
+        // Isolated Projects only permits `findByName` on the build service registrations, so
+        // instead of replacing the FTL build service registered by the plugin, override its
+        // parameters before the service is instantiated.
+        @Suppress("UNCHECKED_CAST")
+        val registration =
+          checkNotNull(project.gradle.sharedServices.registrations.findByName(serviceName)) {
+            "Build service $serviceName is not registered"
+          }
+            as BuildServiceRegistration<TestLabBuildService, TestLabBuildService.Parameters>
 
-        // Inject FTL build service with FakeHttpHandler so that it does not send server calls to
+        // Inject FakeHttpHandler so that the FTL build service does not send server calls to
         // the real FTL server
-        project.gradle.sharedServices.registerIfAbsent(
-          TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, project),
-          TestLabBuildService::class.java,
-        ) {
-          TestLabBuildService.RegistrationAction(project).configure(it.parameters, FakeHttpHandler())
-          it.parameters.offlineMode.set(false)
-        }
+        registration.parameters.httpHandler.set(FakeHttpHandler())
+        registration.parameters.offlineMode.set(false)
       }
     }
   }
