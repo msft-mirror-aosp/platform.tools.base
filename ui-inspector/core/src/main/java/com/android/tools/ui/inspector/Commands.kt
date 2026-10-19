@@ -282,7 +282,7 @@ internal suspend fun fetchParameter(
     // another name or value, or is no longer a collection.
     val isStillCollection = page is UiNode.ComposeParameter.Group && page.isCollection
     if (page == null || !pageReference.matches(page) || (mustBeCollection && !isStillCollection)) {
-      error("The parameter is no longer available: the UI changed since the dump, or its window closed. Run dump-ui again.")
+      error("The parameter is no longer available: the UI changed since the dump, or its window closed. Dump the UI again.")
     }
     return page
   }

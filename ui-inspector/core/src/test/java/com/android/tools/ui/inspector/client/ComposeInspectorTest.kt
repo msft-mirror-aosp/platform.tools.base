@@ -1681,7 +1681,10 @@ class ComposeInspectorTest {
         }
       }
 
-    assertThat(exception).hasMessageThat().contains("no longer available")
+    // The message names no command: the UI inspector is used by several CLIs, whose commands have other names.
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo("The parameter is no longer available: the UI changed since the dump, or its window closed. Dump the UI again.")
   }
 
   @Test
