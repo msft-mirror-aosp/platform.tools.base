@@ -284,7 +284,7 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
       listOf(
         ArtifactType.AIDL to FusedArtifact.Directory(MERGED_AIDL),
         ArtifactType.RENDERSCRIPT to FusedArtifact.Directory(MERGED_RENDERSCRIPT_HEADERS),
-        ArtifactType.PREFAB_PACKAGE to FusedArtifact.Directory(MERGED_PREFAB_PACKAGE),
+        ArtifactType.PREFAB_PACKAGE_FROM_AAR to FusedArtifact.Directory(MERGED_PREFAB_PACKAGE),
         ArtifactType.PREFAB_PACKAGE_CONFIGURATION to FusedArtifact.Directory(MERGED_PREFAB_PACKAGE_CONFIGURATION),
         ArtifactType.ASSETS to FusedArtifact.Directory(MERGED_ASSETS),
         ArtifactType.JNI to FusedArtifact.Directory(MERGED_JNI),

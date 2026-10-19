@@ -193,7 +193,6 @@ public class AndroidArtifacts {
     private static final String TYPE_NAVIGATION_XML = "android-navigation-xml";
     private static final String TYPE_CODE_COVERAGE_DATA = "android-code-coverage-data";
 
-    private static final String TYPE_PREFAB_PACKAGE = "android-prefab";
     private static final String TYPE_PREFAB_PACKAGE_CONFIGURATION = "android-prefab-configuration";
     private static final String TYPE_PREFAB_PACKAGE_FROM_AAR = "android-prefab-from-aar";
     private static final String TYPE_PREFAB_PACKAGE_FROM_MODULE = "android-prefab-from-module";
@@ -431,22 +430,21 @@ public class AndroidArtifacts {
         JNI(TYPE_JNI),
         SHARED_JNI(TYPE_SHARED_JNI),
 
-        /**
-         * A directory containing a Prefab package.json file and associated modules.
-         *
-         * <p>Processed by Prefab to generate inputs for ExternalNativeBuild modules to consume
-         * dependencies from AARs. https://google.github.io/prefab/
-         */
-        PREFAB_PACKAGE(TYPE_PREFAB_PACKAGE),
         PREFAB_PACKAGE_CONFIGURATION(TYPE_PREFAB_PACKAGE_CONFIGURATION),
         /**
-         * A {@link #PREFAB_PACKAGE} extracted from an AAR by AarTransform. Library modules don't
-         * publish it, so depending on it pulls in only the AAR transforms.
+         * A directory containing a Prefab package.json file and associated modules, extracted from
+         * an AAR by AarTransform. Processed by Prefab to generate inputs for ExternalNativeBuild
+         * modules. https://google.github.io/prefab/
+         *
+         * <p>Library modules don't publish this type, so depending on it pulls in only the AAR
+         * transforms. Consumers that need every Prefab package also read {@link
+         * #PREFAB_PACKAGE_FROM_MODULE}.
          */
         PREFAB_PACKAGE_FROM_AAR(TYPE_PREFAB_PACKAGE_FROM_AAR),
         /**
-         * A {@link #PREFAB_PACKAGE} published by a library module. No transform produces it, so
-         * reading its location never runs a transform.
+         * A Prefab package directory published by a library module. No transform produces this
+         * type, so reading its location never runs a transform, while depending on its files builds
+         * the library's C/C++. See {@link #PREFAB_PACKAGE_FROM_AAR}.
          */
         PREFAB_PACKAGE_FROM_MODULE(TYPE_PREFAB_PACKAGE_FROM_MODULE),
         ANNOTATIONS(TYPE_EXT_ANNOTATIONS),
