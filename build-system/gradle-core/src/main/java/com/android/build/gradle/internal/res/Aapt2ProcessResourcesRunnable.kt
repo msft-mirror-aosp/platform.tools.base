@@ -27,7 +27,6 @@ import com.android.builder.internal.aapt.v2.Aapt2Exception
 import com.android.builder.internal.aapt.v2.Aapt2InternalException
 import com.android.builder.symbols.exportToCompiledJava
 import com.android.ide.common.process.ProcessException
-import com.android.ide.common.symbols.RGeneration
 import com.android.ide.common.symbols.SymbolIo
 import com.android.ide.common.symbols.SymbolTable
 import com.android.ide.common.symbols.getPackageNameFromManifest
@@ -86,8 +85,7 @@ fun processResources(
     throw ProcessException("Failed to execute aapt", e)
   }
 
-  val sourceOut = aaptConfig.sourceOutputDir
-  if (sourceOut != null || rJar != null) {
+  if (rJar != null) {
     // Figure out what the main symbol file's package is.
     var mainPackageName = aaptConfig.customPackageForR
     if (mainPackageName == null) {
@@ -103,29 +101,25 @@ fun processResources(
     var depSymbolTables: List<SymbolTable> = symbolTableLoader.invoke(aaptConfig.librarySymbolTableFiles)
 
     val finalIds = aaptConfig.useFinalIds
-    if (rJar != null) { // non-namespaced case
-      val localSymbolsFile = aaptConfig.localSymbolTableFile
-      val nonTransitiveRClass = localSymbolsFile != null
+    val localSymbolsFile = aaptConfig.localSymbolTableFile
+    val nonTransitiveRClass = localSymbolsFile != null
 
-      // If we're generating a non-transitive R class for the current module, we need to read
-      // the local symbols file and add it to the dependencies symbol tables. It doesn't have
-      // the correct IDs, so we skip the values - they will be resolved in the next line from
-      // the R.txt.
-      if (nonTransitiveRClass) {
-        val localSymbols = SymbolIo.readRDef(localSymbolsFile!!.toPath()).rename(mainSymbols.tablePackage)
-        depSymbolTables = depSymbolTables.plus(localSymbols)
-      }
-
-      // Replace the default values from the dependency table with the allocated values from
-      // the main table.
-      depSymbolTables = depSymbolTables.map { t -> t.withValuesFrom(mainSymbols) }
-
-      // If our local R class is transitive, add the table of *all* symbols to generate.
-      if (!nonTransitiveRClass) depSymbolTables = depSymbolTables.plus(mainSymbols)
-
-      exportToCompiledJava(depSymbolTables, rJar.toPath(), finalIds)
-    } else { // namespaced case, TODO: use exportToCompiledJava instead b/130110629
-      RGeneration.generateRForLibraries(mainSymbols, depSymbolTables, sourceOut!!, finalIds)
+    // If we're generating a non-transitive R class for the current module, we need to read
+    // the local symbols file and add it to the dependencies symbol tables. It doesn't have
+    // the correct IDs, so we skip the values - they will be resolved in the next line from
+    // the R.txt.
+    if (nonTransitiveRClass) {
+      val localSymbols = SymbolIo.readRDef(localSymbolsFile!!.toPath()).rename(mainSymbols.tablePackage)
+      depSymbolTables = depSymbolTables.plus(localSymbols)
     }
+
+    // Replace the default values from the dependency table with the allocated values from
+    // the main table.
+    depSymbolTables = depSymbolTables.map { t -> t.withValuesFrom(mainSymbols) }
+
+    // If our local R class is transitive, add the table of *all* symbols to generate.
+    if (!nonTransitiveRClass) depSymbolTables = depSymbolTables.plus(mainSymbols)
+
+    exportToCompiledJava(depSymbolTables, rJar.toPath(), finalIds)
   }
 }

@@ -349,9 +349,6 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   // the current sub-project's resources.
   object RES_STATIC_LIBRARY : InternalArtifactType<RegularFile>(FILE), Replaceable
 
-  // Final R class sources (to package)
-  object RUNTIME_R_CLASS_SOURCES : InternalArtifactType<Directory>(DIRECTORY, Category.GENERATED)
-
   // --- JNI libs ---
   // packaged JNI for inter-project intermediate publishing
   object LIBRARY_JNI : InternalArtifactType<Directory>(DIRECTORY), Replaceable

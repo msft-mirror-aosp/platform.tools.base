@@ -200,8 +200,6 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
 
   @get:Input abstract val projectBaseName: Property<String>
 
-  @get:Input abstract val namespaced: Property<Boolean>
-
   @get:Input abstract val applicationId: Property<String>
 
   @get:Classpath @get:Optional @get:Incremental abstract val inputResourcesDir: DirectoryProperty
@@ -307,7 +305,6 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
       parameters.manifestMergeBlameFile.set(manifestMergeBlameFile)
       parameters.mergeBlameDirectory.set(mergeBlameLogFolder)
       parameters.namespace.set(namespace)
-      parameters.namespaced.set(namespaced)
       parameters.packageId.set(resOffset)
       parameters.resourceConfigs.set(resourceConfigs)
       parameters.sharedLibraryDependencies.from(sharedLibraryDependencies)
@@ -357,7 +354,6 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
     abstract val manifestMergeBlameFile: RegularFileProperty
     abstract val mergeBlameDirectory: DirectoryProperty
     abstract val namespace: Property<String>
-    abstract val namespaced: Property<Boolean>
     abstract val packageId: Property<Int>
     abstract val resourceConfigs: SetProperty<String>
     abstract val sharedLibraryDependencies: ConfigurableFileCollection
@@ -704,7 +700,6 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
         task.compiledDependenciesResources.disallowChanges()
         task.sourceSetMaps.disallowChanges()
       }
-      task.namespaced.setDisallowChanges(false)
     }
   }
 
@@ -854,16 +849,12 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
                 }
               }
 
-          if (parameters.namespaced.get()) {
-            configBuilder.setStaticLibraryDependencies(ImmutableList.copyOf(parameters.dependencies.files))
-          } else {
-            if (generateRClass) {
-              configBuilder.setLibrarySymbolTableFiles(parameters.dependencies.files)
-            }
-            configBuilder.addResourceDir(checkNotNull(parameters.inputResourcesDirectory.orNull?.asFile))
-            if (parameters.inputNavigationDirectory.isPresent) {
-              configBuilder.addResourceDir(parameters.inputNavigationDirectory.get().asFile)
-            }
+          if (generateRClass) {
+            configBuilder.setLibrarySymbolTableFiles(parameters.dependencies.files)
+          }
+          configBuilder.addResourceDir(checkNotNull(parameters.inputResourcesDirectory.orNull?.asFile))
+          if (parameters.inputNavigationDirectory.isPresent) {
+            configBuilder.addResourceDir(parameters.inputNavigationDirectory.get().asFile)
           }
 
           val logger = Logging.getLogger(LinkApplicationAndroidResourcesTask::class.java)

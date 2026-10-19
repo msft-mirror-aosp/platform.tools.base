@@ -72,8 +72,6 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
 
   @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-  @get:OutputDirectory @get:Optional abstract val partialRDirectory: DirectoryProperty
-
   @get:Nested abstract val aapt2: Aapt2Input
 
   override fun doTaskAction(inputChanges: InputChanges) {
@@ -90,7 +88,6 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
         }
       )
       parameters.inputDirectories.from(inputDirectories)
-      parameters.partialRDirectory.set(partialRDirectory)
       parameters.pseudoLocalize.set(pseudoLocalesEnabled)
       parameters.resSourceSet.set(resSourceSetMap)
     }
@@ -103,7 +100,6 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
     abstract val incremental: Property<Boolean>
     abstract val incrementalChanges: Property<SerializableInputChanges>
     abstract val inputDirectories: ConfigurableFileCollection
-    abstract val partialRDirectory: DirectoryProperty
     abstract val pseudoLocalize: Property<Boolean>
     abstract val resSourceSet: RegularFileProperty
   }
@@ -143,13 +139,6 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
       }
     }
 
-    /** Given an input resource file return the partial R file to generate, or null if partial R generation is not enabled */
-    private fun computePartialR(file: File): File? {
-      val partialRDirectory = parameters.partialRDirectory.orNull?.asFile ?: return null
-      val compiledName = Aapt2RenamingConventions.compilationRename(file)
-      return partialRDirectory.resolve(partialRDirectory.resolve("$compiledName-R.txt"))
-    }
-
     private fun submitFileToBeCompiled(file: File, compilationService: WorkerExecutorResourceCompilationService) {
       val dir = File(parameters.outputDirectory.asFile.get(), FD_RES_NAVIGATION)
       dir.mkdir()
@@ -158,7 +147,6 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
         CompileResourceRequest(
           file,
           parameters.outputDirectory.asFile.get(),
-          partialRFile = computePartialR(file),
           isPseudoLocalize = parameters.pseudoLocalize.get(),
           isPngCrunching = false,
           resourcePathEncoding = ResourcePathEncoding.Relative(resPaths),
@@ -169,7 +157,6 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
     private fun handleModifiedFile(file: File, changeType: FileStatus, compilationService: WorkerExecutorResourceCompilationService) {
       if (changeType == FileStatus.CHANGED || changeType == FileStatus.REMOVED) {
         FileUtils.deleteIfExists(File(parameters.outputDirectory.asFile.get(), Aapt2RenamingConventions.compilationRename(file)))
-        computePartialR(file)?.let { partialRFile -> FileUtils.delete(partialRFile) }
       }
       if (changeType == FileStatus.NEW || changeType == FileStatus.CHANGED) {
         submitFileToBeCompiled(file, compilationService)
@@ -208,7 +195,6 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
       task.pseudoLocalesEnabled.setDisallowChanges(creationConfig.androidResourcesCreationConfig!!.pseudoLocalesEnabled)
 
       creationConfig.services.initializeAapt2Input(task.aapt2, task)
-      task.partialRDirectory.disallowChanges()
 
       val sourceSetMap = creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
       task.resSourceSetMap.setDisallowChanges(sourceSetMap)

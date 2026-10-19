@@ -122,9 +122,6 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
 
   @get:Input abstract val addLocaleConfigAttribute: Property<Boolean>
 
-  // Ignore flag
-  @get:Optional @get:Input abstract val namespacedAndroidResources: Property<Boolean>
-
   @Throws(IOException::class)
   override fun doTaskAction() {
     if (baseModuleDebuggable.isPresent) {

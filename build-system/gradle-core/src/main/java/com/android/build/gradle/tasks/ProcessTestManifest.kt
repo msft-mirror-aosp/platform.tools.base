@@ -88,9 +88,6 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
   var navigationJsons: FileCollection? = null
     private set
 
-  // Ignore namespaced flag
-  @get:Optional @get:Input abstract val namespacedAndroidResources: Property<Boolean>
-
   @get:Input abstract val disallowSdkVersionsInUsesSdkInManifest: Property<Boolean>
 
   override fun doTaskAction() {
