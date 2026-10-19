@@ -56,8 +56,15 @@ or downloaded when running on CI (under Artifacts/Archives/undeclared_outputs.zi
 
 When making a large refactoring you can update all baselines by running
 ```
-bazel run --test_env=UPDATE_LINT_BASELINE=1  $(bazel query --output=label 'kind(.*lint_test, //tools/...)')
+for target in $(bazel query --output=label '
+  let t = attr(baseline, ".+", kind("lint_test rule",
+    //tools/... - //tools/base/lint/studio-checks/integration-test/...))
+  in $t - attr(baseline, "empty_baseline\.xml$", $t)
+'); do
+  bazel run --test_env=UPDATE_LINT_BASELINE=1 "$target"
+done
 ```
+(`bazel run` takes one target at a time; only tests with a baseline can update one).
 
 ### Which checks are run?
 We run all the default checks that come with the Lint tool as well as a few custom checks, which you

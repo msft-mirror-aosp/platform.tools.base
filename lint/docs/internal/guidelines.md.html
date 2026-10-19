@@ -54,12 +54,17 @@ idea.is.internal=true
 # Updating Baselines
 
 If you've added a new lint check which has a number of existing
-violations in the Studio tree, you can run the following target
-to update the baselines:
+violations in the Studio tree, you can update all baselines with
+(`bazel run` takes one target at a time):
 
 ```
-bazel run --test_env=UPDATE_LINT_BASELINE=1  \
-  $(bazel query --output=label 'kind(.*lint_test, //tools/...)')
+for target in $(bazel query --output=label '
+  let t = attr(baseline, ".+", kind("lint_test rule",
+    //tools/... - //tools/base/lint/studio-checks/integration-test/...))
+  in $t - attr(baseline, "empty_baseline\.xml$", $t)
+'); do
+  bazel run --test_env=UPDATE_LINT_BASELINE=1 "$target"
+done
 ```
 
 # Registering Inspections
