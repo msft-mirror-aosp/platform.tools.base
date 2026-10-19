@@ -304,13 +304,17 @@ def kotlin_library(
         fail("lint_baseline set for rule that has no sources")
 
     if lint_enabled and srcs:
+        lint_tags = list(kwargs.get("tags") or [])
+        if "noci:studio-win" not in lint_tags:
+            lint_tags.append("noci:studio-win")
+
         lint_test(
             name = name + "_lint_test",
             srcs = srcs,
             baseline = lint_baseline,
             deps = collections.uniq((deps or []) + (exports or []) + (lint_classpath or [])),
             custom_rules = LINT_CUSTOM_RULES + lint_custom_rules,
-            tags = ["noci:studio-win"],
+            tags = lint_tags,
             is_test_sources = lint_is_test_sources,
             extra_args = ["--java-language-level", jvm_target] + lint_extra_args,
             # Unset when partial analysis is off, so the aspect does not run at all. The
@@ -319,6 +323,7 @@ def kotlin_library(
             partial_module = (":" + name) if lint_partial_analysis else None,
             partial_deps = (lint_classpath or []) if lint_partial_analysis else [],
             timeout = lint_timeout if lint_timeout else None,
+            target_compatible_with = kwargs.get("target_compatible_with", None),
         )
 
 def _is_dir(file, basename):
