@@ -72,7 +72,11 @@ data class ComposeScreenshotPreviewElement(private val composePreviewElement: Co
         } else {
           null
         }
-      ResolvedScreenshotLayout(instance.toPreviewXml().buildString(), displayName)
+      ResolvedScreenshotLayout(
+        instance.toPreviewXml().buildString(),
+        displayName,
+        deviceSpec = instance.configuration.deviceSpec.takeIf { it.isNotEmpty() },
+      )
     }
 }
 

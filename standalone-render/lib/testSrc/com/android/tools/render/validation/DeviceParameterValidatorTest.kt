@@ -102,6 +102,9 @@ class DeviceParameterValidatorTest {
     assertValid("spec:width=200dp,height=200dp,isRound=false,chinSize=0dp")
     assertValid("spec:width=411dp,height=891dp,windowPosture=tabletop,pointerPrecision=fine,keyboardKind=physical")
     assertValid("spec:width=411dp,height=891dp,hasCamera=false,hasMicrophone=false,viewingDistance=far")
+    assertValid("spec:width=411dp,height=891dp,expand=vertical,maxHeight=2000dp,maxWidth=1000dp")
+    assertValid("spec:width=1080px,height=2400px,expand=HORIZONTAL,maxHeight=5000PX,maxWidth=3000px")
+    assertValid("spec:width=411dp,height=891dp,expand=Vertical,maxHeight=0.5dp")
     assertValid("spec:id=my_device,width=900px,height=1900px")
     // Whitespace around names, values and separators is trimmed by the renderer, trailing separators are ignored.
     assertValid("spec: width = 411dp , height = 891dp ,")
@@ -113,6 +116,8 @@ class DeviceParameterValidatorTest {
     assertValid("spec:parent=pixel_5,orientation=landscape")
     assertValid("spec:parent=pixel_fold,windowPosture=book,cutout=none,navigation=gesture")
     assertValid("spec:parent=pixel_5,hasCamera=true,hasMicrophone=false,keyboardKind=none,pointerPrecision=coarse,viewingDistance=near")
+    assertValid("spec:parent=pixel_5,expand=vertical,maxHeight=2000dp")
+    assertValid("spec:parent=pixel_5,expand=HORIZONTAL,maxWidth=3000PX,maxHeight=5000px")
   }
 
   @Test
@@ -151,6 +156,14 @@ class DeviceParameterValidatorTest {
     assertSingleError("spec:width=Infinitydp,height=891dp", "'width' must be a positive dimension", "got: 'Infinitydp'")
     assertSingleError("spec:width=411dp,height=891dp,chinSize=-1dp", "'chinSize' must be a non-negative dimension", "got: '-1dp'")
     assertSingleError("spec:width=411dp,height=891dp,chinSize=30", "'chinSize' must be a non-negative dimension", "got: '30'")
+    assertSingleError("spec:width=411dp,height=891dp,maxHeight=0dp", "'maxHeight' must be a positive dimension", "got: '0dp'")
+    assertSingleError("spec:width=411dp,height=891dp,maxHeight=0.2dp", "'maxHeight' must be a positive dimension", "got: '0.2dp'")
+    assertSingleError("spec:parent=pixel_5,maxWidth=0.49px", "'maxWidth' must be a positive dimension", "got: '0.49px'")
+    assertSingleError("spec:parent=pixel_5,maxHeight=-10dp", "'maxHeight' must be a positive dimension", "got: '-10dp'")
+    assertSingleError("spec:parent=pixel_5,maxWidth=2000", "'maxWidth' must be a positive dimension", "got: '2000'")
+    assertSingleError("spec:parent=pixel_5,maxHeight=2000pt", "'maxHeight' must be a positive dimension", "got: '2000pt'")
+    assertSingleError("spec:parent=pixel_5,maxHeight=NaNdp", "'maxHeight' must be a positive dimension", "got: 'NaNdp'")
+    assertSingleError("spec:parent=pixel_5,maxWidth=Infinitypx", "'maxWidth' must be a positive dimension", "got: 'Infinitypx'")
   }
 
   @Test
@@ -160,6 +173,31 @@ class DeviceParameterValidatorTest {
       "spec:width=411dp,height=891dp,chinSize=30px",
       "'width', 'height', 'chinSize' must use the same unit",
       "width=411dp, height=891dp, chinSize=30px",
+    )
+    assertSingleError(
+      "spec:width=411dp,height=891dp,maxHeight=2000px",
+      "'width', 'height', 'maxHeight' must use the same unit",
+      "width=411dp, height=891dp, maxHeight=2000px",
+    )
+    assertSingleError(
+      "spec:width=411dp,height=891dp,maxHeight=2000PX",
+      "'width', 'height', 'maxHeight' must use the same unit",
+      "width=411dp, height=891dp, maxHeight=2000PX",
+    )
+    assertSingleError(
+      "spec:width=411dp,height=891dp,maxWidth=1000px",
+      "'width', 'height', 'maxWidth' must use the same unit",
+      "width=411dp, height=891dp, maxWidth=1000px",
+    )
+    assertSingleError(
+      "spec:parent=pixel_5,maxHeight=2000dp,maxWidth=1000px",
+      "'maxHeight', 'maxWidth' must use the same unit",
+      "maxHeight=2000dp, maxWidth=1000px",
+    )
+    assertSingleError(
+      "spec:parent=pixel_5,maxHeight=2000DP,maxWidth=1000PX",
+      "'maxHeight', 'maxWidth' must use the same unit",
+      "maxHeight=2000DP, maxWidth=1000PX",
     )
   }
 
@@ -186,6 +224,8 @@ class DeviceParameterValidatorTest {
     assertSingleError("spec:parent=pixel_5,pointerPrecision=mouse", "'pointerPrecision' must be one of 'coarse', 'fine', 'blunt', 'none'")
     assertSingleError("spec:parent=pixel_5,keyboardKind=qwerty", "'keyboardKind' must be one of 'virtual', 'physical', 'none'")
     assertSingleError("spec:parent=pixel_5,viewingDistance=close", "'viewingDistance' must be one of 'near', 'medium', 'far'")
+    assertSingleError("spec:width=411dp,height=891dp,expand=both", "'expand' must be one of 'vertical', 'horizontal'", "got: 'both'")
+    assertSingleError("spec:parent=pixel_5,expand=none", "'expand' must be one of 'vertical', 'horizontal'", "got: 'none'")
   }
 
   @Test
@@ -197,6 +237,7 @@ class DeviceParameterValidatorTest {
     )
     // Parameter names are case-sensitive; a case-insensitive match is suggested.
     assertSingleError("spec:Width=411dp,height=891dp,width=411dp", "Unknown device spec parameter 'Width' (did you mean 'width'?)")
+    assertSingleError("spec:parent=pixel_5,EXPAND=vertical", "Unknown device spec parameter 'EXPAND' (did you mean 'expand'?)")
     assertSingleError("spec:parent=pixel_5,foo=bar", "Unknown device spec parameter 'foo'", "Supported parameters: 'parent', 'orientation'")
   }
 
@@ -205,6 +246,8 @@ class DeviceParameterValidatorTest {
     assertSingleError("spec:parent=pixel_5,width=411dp", "'width' cannot be combined with 'parent'", "Parameters supported with 'parent'")
     assertSingleError("spec:parent=pixel_5,dpi=420", "'dpi' cannot be combined with 'parent'")
     assertSingleError("spec:parent=pixel_5,isRound=true", "'isRound' cannot be combined with 'parent'")
+    // An unsupported custom dimension alongside 'parent' must not trigger a spurious unit-mismatch error with maxHeight.
+    assertSingleError("spec:parent=pixel_5,width=411dp,maxHeight=2000px", "'width' cannot be combined with 'parent'")
   }
 
   @Test
@@ -274,6 +317,7 @@ class DeviceParameterValidatorTest {
   fun testSpecsWithAParentInTheCatalogAreValid() {
     assertTrue(DeviceParameterValidator.validate("spec:parent=tv_1080p", catalog).isEmpty())
     assertTrue(DeviceParameterValidator.validate("spec:parent=pixel_5,orientation=landscape", catalog).isEmpty())
+    assertTrue(DeviceParameterValidator.validate("spec:parent=pixel_5,expand=vertical,maxHeight=2000dp", catalog).isEmpty())
   }
 
   @Test

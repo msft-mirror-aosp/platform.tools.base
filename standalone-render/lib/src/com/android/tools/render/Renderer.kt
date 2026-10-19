@@ -19,11 +19,14 @@ package com.android.tools.render
 import com.android.ide.common.rendering.HardwareConfigHelper
 import com.android.ide.common.rendering.api.Result
 import com.android.ide.common.rendering.api.SessionParams
+import com.android.ide.common.rendering.api.SessionParams.RenderingMode
 import com.android.resources.ResourceFolderType
 import com.android.sdklib.devices.Device
 import com.android.sdklib.devices.screenShape
 import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
+import com.android.tools.preview.config.ExpandAxis
+import com.android.tools.preview.config.ExpandSettings
 import com.android.tools.render.animation.AnimationRenderOptions
 import com.android.tools.render.animation.PreviewAnimationResult
 import com.android.tools.render.common.ComponentBounds
@@ -45,6 +48,10 @@ import com.android.tools.rendering.RenderService
 import com.android.tools.rendering.RenderTask
 import com.android.tools.rendering.compose.ComposeViewInfo
 import com.android.tools.rendering.compose.parseViewInfo
+import com.android.tools.rendering.compose.supportedComposePreviewDeviceSpecParameters
+import com.android.tools.rendering.compose.supportsExpand
+import com.android.tools.rendering.compose.unsupportedComposePreviewDeviceSpecWarning
+import com.android.tools.rendering.expandedScreenShape
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
@@ -274,6 +281,13 @@ class Renderer(
   val renderThreadPoisonedReason: String?
     get() = callbackRunner.unrecoveredRenderThreadReason
 
+  /**
+   * The `spec:` device string parameter names supported by the project's `androidx.compose.ui:ui-tooling`, see
+   * [ClassLoader.supportedComposePreviewDeviceSpecParameters].
+   */
+  internal val supportedDeviceSpecParameters: Set<String>
+    get() = moduleClassLoaderManager.getShared(Renderer::class.java.classLoader).classLoader.supportedComposePreviewDeviceSpecParameters()
+
   companion object {
     private const val END_OF_BATCH_IN_FLIGHT_TIMEOUT_MS = 250L
     private const val DISPOSAL_DRAIN_TIMEOUT_SECONDS = 5L
@@ -473,7 +487,14 @@ class Renderer(
           val viewInfos = renderResult.rootViews.flatMap { parseViewInfo(it) }
           val imageRendered =
             if (configuration.renderImage) {
-              val image = postProcessRenderedImage(config, renderResult, renderRequest.expandToContent, renderRequest.showDecorations)
+              val image =
+                postProcessRenderedImage(
+                  config,
+                  renderResult,
+                  renderRequest.expandToContent,
+                  renderRequest.showDecorations,
+                  layout.expandSettings,
+                )
               if (image != null) {
                 saveImage(image, outputFolderPath, relativeImagePath)
               }
@@ -665,6 +686,11 @@ class Renderer(
    *
    * If [RenderRequest.resolvedLayoutsProvider] is null, falls back to rendering each layout from [RenderRequest.xmlLayoutsProvider] wrapped
    * in a [ResolvedScreenshotLayout] with null display name.
+   *
+   * Layouts with [ResolvedScreenshotLayout.expandSettings] are rendered with an expanded rendering mode only if the project's
+   * `androidx.compose.ui:ui-tooling` supports it. Otherwise, they are rendered at the device size, and the returned
+   * [ResolvedScreenshotLayout] has null [ResolvedScreenshotLayout.expandSettings]. Device spec parameters that the project's `ui-tooling`
+   * doesn't support are reported with a warning in the [RenderResult] of each layout, and logged once.
    */
   @JvmOverloads
   fun renderResolvedLayouts(
@@ -683,12 +709,21 @@ class Renderer(
         ?: {
           request.xmlLayoutsProvider().map { ResolvedScreenshotLayout(it) }
         }
+    // Only read from the project's ui-tooling if a layout is expanded or uses ui-tooling device spec parameters.
+    val supportedParameters by lazy(LazyThreadSafetyMode.NONE) { supportedDeviceSpecParameters }
+    var warningLogged = false
     return layoutsProvider().map {
       val configuration = baseConfiguration.clone()
       request.configurationModifier(configuration)
       val layoutPreviewName = it.displayName?.let { displayName -> "$previewName [$displayName]" } ?: previewName
-      Triple(
-        configuration,
+      val expandSettings = it.expandSettings?.takeIf { supportedParameters.supportsExpand() }
+      val warning =
+        unsupportedComposePreviewDeviceSpecWarning(it.deviceSpec, hasExpandSettings = it.expandSettings != null) { supportedParameters }
+      if (warning != null && !warningLogged) {
+        warningLogged = true
+        logger.log(Level.WARNING, "Preview $previewName: $warning")
+      }
+      val renderResult =
         render(
           configuration,
           it.xmlLayout,
@@ -698,15 +733,19 @@ class Renderer(
           allowShowDecorations = request.showDecorations,
           transparentBackground = request.transparentBackground,
           expandToContent = request.expandToContent,
-        ),
-        it,
-      )
+          renderingMode = expandSettings?.axis?.renderingMode,
+          warning = warning,
+        )
+      Triple(configuration, renderResult, it.copy(expandSettings = expandSettings))
     }
   }
 
   /**
    * Renders [xmlLayout]. When [renderImage] and [executeCallbacks] are `true`, layoutlib callbacks are executed between renders (see
    * [StaticPreviewCallbackRunner.renderExecutingCallbacks]). When [renderImage] is `false`, the layout is only inflated.
+   *
+   * @param renderingMode The [RenderingMode] to use for this render, or null to use the default one of the [renderService].
+   * @param warning A warning to add to the [RenderLogger] of this render, or null if there is none. Warnings do not make the render fail.
    */
   private fun render(
     configuration: Configuration,
@@ -717,10 +756,13 @@ class Renderer(
     allowShowDecorations: Boolean = false,
     transparentBackground: Boolean = false,
     expandToContent: Boolean = false,
+    renderingMode: RenderingMode? = null,
+    warning: String? = null,
   ): RenderResult {
     awaitOutstandingDisposals()
     val disposable = Disposer.newCheckedDisposable()
     val logger = renderService.createLogger(project)
+    warning?.let { logger.warning(null, it, null, null) }
     val composeViewAdapters: MutableSet<Any> = ConcurrentHashMap.newKeySet()
     val recordAdapters: (RenderResult) -> Unit = { composeViewAdapters.addAll(findComposeViewAdapters(it.rootViews)) }
     return try {
@@ -740,7 +782,11 @@ class Renderer(
       }
 
       val renderTask =
-        renderService.taskBuilder(module, configuration, logger).build(disposable).get()
+        renderService
+          .taskBuilder(module, configuration, logger)
+          .apply { renderingMode?.let { withRenderingMode(it) } }
+          .build(disposable)
+          .get()
           ?: run {
             Disposer.dispose(disposable)
             return createRenderTaskErrorResult(logger)
@@ -750,8 +796,10 @@ class Renderer(
 
       if (allowShowDecorations) {
         renderTask.setDecorations(true)
-        renderTask.setRenderingMode(SessionParams.RenderingMode.NORMAL)
-      } else if (expandToContent) {
+        if (renderingMode == null) {
+          renderTask.setRenderingMode(SessionParams.RenderingMode.NORMAL)
+        }
+      } else if (expandToContent && renderingMode == null) {
         renderTask.setRenderingMode(SessionParams.RenderingMode.FULL_EXPAND)
       }
 
@@ -928,6 +976,7 @@ class Renderer(
     renderResult: RenderResult,
     expandToContent: Boolean = false,
     showDecorations: Boolean = false,
+    expandSettings: ExpandSettings? = null,
   ): BufferedImage? {
     val imageCopy = renderResult.renderedImage.copy
     if (imageCopy == null && renderResult.renderResult.status != Result.Status.SUCCESS) return null
@@ -939,7 +988,8 @@ class Renderer(
       } else {
         rawImage
       }
-    val screenShape = config.device?.screenShape(0.0, 0.0, Dimension(image.width, image.height)) ?: return image
+    val deviceShape = config.device?.screenShape(0.0, 0.0, Dimension(image.width, image.height))
+    val screenShape = expandedScreenShape(deviceShape, expandSettings?.axis?.renderingMode, image.width, image.height) ?: return image
     return resizeImage(image, screenShape)
   }
 
@@ -1163,3 +1213,11 @@ internal class LayoutResultIdAllocator(
 
   fun previewNameFor(layout: ResolvedScreenshotLayout): String = layout.displayName?.let { "$basePreviewName [$it]" } ?: basePreviewName
 }
+
+/** The [RenderingMode] that grows the render area along this axis, to fit the scrollable content of an expanded preview. */
+internal val ExpandAxis.renderingMode: RenderingMode
+  get() =
+    when (this) {
+      ExpandAxis.vertical -> RenderingMode.V_SCROLL
+      ExpandAxis.horizontal -> RenderingMode.H_SCROLL
+    }

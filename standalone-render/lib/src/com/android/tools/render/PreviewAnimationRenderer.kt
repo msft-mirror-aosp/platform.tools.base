@@ -20,6 +20,7 @@ import com.android.ide.common.rendering.api.Result
 import com.android.resources.ResourceFolderType
 import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
+import com.android.tools.preview.config.ExpandSettings
 import com.android.tools.render.animation.AnimationPreviewRunner
 import com.android.tools.render.animation.AnimationRenderOptions
 import com.android.tools.render.animation.PreviewAnimationManifest
@@ -32,6 +33,8 @@ import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.RenderService
 import com.android.tools.rendering.RenderTask
+import com.android.tools.rendering.compose.supportsExpand
+import com.android.tools.rendering.compose.unsupportedComposePreviewDeviceSpecWarning
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
 import com.intellij.openapi.util.Disposer
 import java.io.File
@@ -143,6 +146,9 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
       }
 
     val idAllocator = LayoutResultIdAllocator(screenshot, resolvedLayouts, baseResultId)
+    // Only read from the project's ui-tooling if a layout is expanded or uses ui-tooling device spec parameters.
+    val supportedParameters by lazy(LazyThreadSafetyMode.NONE) { renderer.supportedDeviceSpecParameters }
+    var warningLogged = false
 
     return resolvedLayouts.map { layout ->
       val resultId = idAllocator.nextResultId(layout, nextPreviewIndex)
@@ -151,6 +157,15 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
 
       val configuration = renderer.baseConfiguration.clone()
       previewElement.applyTo(configuration)
+      val expandSettings = layout.expandSettings?.takeIf { supportedParameters.supportsExpand() }
+      val warning =
+        unsupportedComposePreviewDeviceSpecWarning(layout.deviceSpec, hasExpandSettings = layout.expandSettings != null) {
+          supportedParameters
+        }
+      if (warning != null && !warningLogged) {
+        warningLogged = true
+        logger.log(Level.WARNING, "Preview ${idAllocator.basePreviewName}: $warning")
+      }
       val animatedXmlLayout = AnimationPreviewRunner.injectAnimationClockStartTime(layout.xmlLayout, 0L)
 
       renderAnimatedLayoutSession(
@@ -164,6 +179,8 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
         resultId = resultId,
         relativeManifestPath = relativeManifestPath,
         options = options,
+        expandSettings = expandSettings,
+        warning = warning,
       )
     }
   }
@@ -179,10 +196,13 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
     resultId: String,
     relativeManifestPath: String,
     options: AnimationRenderOptions,
+    expandSettings: ExpandSettings? = null,
+    warning: String? = null,
   ): PreviewAnimationResult {
     renderer.awaitOutstandingDisposals()
     val disposable = Disposer.newCheckedDisposable()
     val renderLogger = renderer.renderService.createLogger(renderer.project)
+    warning?.let { renderLogger.warning(null, it, null, null) }
     val composeViewAdapters: MutableSet<Any> = ConcurrentHashMap.newKeySet()
     val recordAdapters: (RenderResult) -> Unit = { composeViewAdapters.addAll(findComposeViewAdapters(it.rootViews)) }
     var initialResult: RenderResult? = null
@@ -215,7 +235,11 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
       }
 
       val renderTask =
-        renderer.renderService.taskBuilder(renderer.module, configuration, renderLogger).build(disposable).get()
+        renderer.renderService
+          .taskBuilder(renderer.module, configuration, renderLogger)
+          .apply { expandSettings?.axis?.renderingMode?.let { withRenderingMode(it) } }
+          .build(disposable)
+          .get()
           ?: run {
             val errResult = renderer.createRenderTaskErrorResult(renderLogger)
             val error =
@@ -275,7 +299,7 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
             if (frameResult.renderResult.status != Result.Status.SUCCESS && firstFrameError == null) {
               firstFrameError = frameResult.toScreenshotError(null, expectImage = true)
             }
-            renderer.postProcessRenderedImage(configuration, frameResult)
+            renderer.postProcessRenderedImage(configuration, frameResult, expandSettings = expandSettings)
           },
           saveFrameImage = { frameIndex, frameImage ->
             val relFramePath = packagePath + File.separator + "${resultId}_frame_${String.format(Locale.US, "%02d", frameIndex)}.png"

@@ -19,6 +19,7 @@ package com.android.tools.render.validation
 import com.android.ide.common.util.enumValueOfOrNull
 import com.android.tools.preview.config.Cutout
 import com.android.tools.preview.config.DimUnit
+import com.android.tools.preview.config.ExpandAxis
 import com.android.tools.preview.config.KeyboardKind
 import com.android.tools.preview.config.Navigation
 import com.android.tools.preview.config.Orientation
@@ -26,6 +27,8 @@ import com.android.tools.preview.config.PointerPrecision
 import com.android.tools.preview.config.Preview.DeviceSpec
 import com.android.tools.preview.config.ViewingDistance
 import com.android.tools.preview.config.WindowPosture
+import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * A parameter of the DeviceSpec language.
@@ -39,10 +42,15 @@ internal class DeviceSpecParameter(val name: String, val expected: String, val a
 /** A dimension of the DeviceSpec language, e.g. `411dp`. */
 internal class DeviceSpecDimension(val value: Float, val unit: DimUnit) {
   companion object {
-    /** Parses [text] like `parseAndroidNumberOrNull` in `DeviceConfig.kt` does: a float immediately followed by a [DimUnit] suffix. */
-    fun parse(text: String): DeviceSpecDimension? {
-      val unit = enumValueOfOrNull<DimUnit>(text.takeLast(2)) ?: return null
-      val value = text.dropLast(2).toFloatOrNull() ?: return null
+    /**
+     * Parses [text] like `parseAndroidNumberOrNull` in `DeviceConfig.kt` does: a float immediately followed by a [DimUnit] suffix.
+     *
+     * When [ignoreCase] is `true`, [text] is lowercased with [Locale.US] first, matching `parseMaxSizeOrNull` in `DeviceConfig.kt`.
+     */
+    fun parse(text: String, ignoreCase: Boolean = false): DeviceSpecDimension? {
+      val normalized = if (ignoreCase) text.lowercase(Locale.US) else text
+      val unit = enumValueOfOrNull<DimUnit>(normalized.takeLast(2)) ?: return null
+      val value = normalized.dropLast(2).toFloatOrNull() ?: return null
       return DeviceSpecDimension(value, unit)
     }
   }
@@ -73,6 +81,9 @@ internal object DeviceSpecParameters {
       booleanParameter(DeviceSpec.PARAMETER_HAS_CAMERA),
       booleanParameter(DeviceSpec.PARAMETER_HAS_MICROPHONE),
       enumParameter<ViewingDistance>(DeviceSpec.PARAMETER_VIEWING_DISTANCE),
+      expandParameter(DeviceSpec.PARAMETER_EXPAND),
+      maxSizeParameter(DeviceSpec.PARAMETER_MAX_HEIGHT),
+      maxSizeParameter(DeviceSpec.PARAMETER_MAX_WIDTH),
     )
 
   /**
@@ -112,6 +123,24 @@ internal object DeviceSpecParameters {
     return DeviceSpecParameter(name, expected) { text ->
       val dimension = DeviceSpecDimension.parse(text)
       dimension != null && dimension.value.isFinite() && (if (allowZero) dimension.value >= 0f else dimension.value > 0f)
+    }
+  }
+
+  /** The renderer parses `expand` case-insensitively with [ExpandAxis.fromSpecValue]. */
+  private fun expandParameter(name: String): DeviceSpecParameter {
+    val expected = "one of " + ExpandAxis.entries.joinToString(", ") { "'${it.name}'" }
+    return DeviceSpecParameter(name, expected) { ExpandAxis.fromSpecValue(it) != null }
+  }
+
+  /**
+   * The renderer parses `maxHeight` and `maxWidth` with `parseMaxSizeOrNull`, accepting case-insensitive `dp`/`px` suffixes and finite
+   * values rounding to at least 1.
+   */
+  private fun maxSizeParameter(name: String): DeviceSpecParameter {
+    val expected = "a positive dimension with a 'dp' or 'px' suffix such as '2000dp'"
+    return DeviceSpecParameter(name, expected) { text ->
+      val dimension = DeviceSpecDimension.parse(text, ignoreCase = true)
+      dimension != null && dimension.value.isFinite() && dimension.value.roundToInt() >= 1
     }
   }
 }

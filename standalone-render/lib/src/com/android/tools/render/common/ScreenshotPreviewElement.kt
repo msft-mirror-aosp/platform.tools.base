@@ -17,12 +17,23 @@
 package com.android.tools.render.common
 
 import com.android.tools.preview.ConfigurablePreviewElement
+import com.android.tools.preview.config.ExpandSettings
+import com.android.tools.preview.config.parseExpandSettings
 
 /**
  * Represents a resolved preview layout along with an optional display name from a parameter provider (e.g.
  * [androidx.compose.ui.tooling.preview.PreviewParameterProvider.getDisplayName]).
+ *
+ * @param deviceSpec The raw `device` string of the preview (e.g. `"spec:parent=pixel_7,expand=vertical"`), or null if not set.
+ * @param expandSettings The [ExpandSettings] of the preview, parsed from [deviceSpec] by default, null if the render area of the preview
+ *   does not grow to fit its scrollable content.
  */
-data class ResolvedScreenshotLayout(val xmlLayout: String, val displayName: String? = null)
+data class ResolvedScreenshotLayout(
+  val xmlLayout: String,
+  val displayName: String? = null,
+  val deviceSpec: String? = null,
+  val expandSettings: ExpandSettings? = deviceSpec?.let { parseExpandSettings(it) },
+)
 
 /** Interface required to be implemented for a [PreviewScreenshot] to be rendered. */
 interface ScreenshotPreviewElement : ConfigurablePreviewElement<Unit> {

@@ -67,6 +67,7 @@ private class DeviceSpecValidation(private val spec: String, private val catalog
     checkParameterValues()
     if (isParentBased) {
       checkParentExists()
+      checkDimensionUnits()
     } else {
       checkRequiredParameters()
       checkDimensionUnits()
@@ -148,12 +149,18 @@ private class DeviceSpecValidation(private val spec: String, private val catalog
     }
   }
 
-  /** The renderer requires `width`, `height` and `chinSize` to share the same unit. */
+  /**
+   * The renderer requires all dimension parameters in a spec (e.g. `width`, `height`, `chinSize`, `maxHeight`, `maxWidth`) to share the
+   * same unit.
+   */
   private fun checkDimensionUnits() {
     val dimensions =
-      parameters.filterKeys(DeviceSpec::isDimensionParameter).mapNotNull { (name, value) ->
-        DeviceSpecDimension.parse(value)?.let { dimension -> name to dimension }
-      }
+      parameters
+        .filterKeys { it in supportedParameters && DeviceSpec.isDimensionParameter(it) }
+        .mapNotNull { (name, value) ->
+          val ignoreCase = name == DeviceSpec.PARAMETER_MAX_HEIGHT || name == DeviceSpec.PARAMETER_MAX_WIDTH
+          DeviceSpecDimension.parse(value, ignoreCase)?.let { dimension -> name to dimension }
+        }
     if (dimensions.distinctBy { (_, dimension) -> dimension.unit }.size <= 1) return
     val names = dimensions.joinToString(", ") { (name, _) -> "'$name'" }
     val values = dimensions.joinToString(", ") { (name, _) -> "$name${DeviceSpec.OPERATOR}${parameters[name]}" }
