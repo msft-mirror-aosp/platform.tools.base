@@ -43,6 +43,8 @@ import com.android.tools.ui.inspector.statProbeCommand
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
+import java.io.File
+import java.io.IOException
 import java.io.OutputStream
 import java.net.ServerSocket
 import java.nio.file.Files
@@ -80,6 +82,12 @@ private val BASE_STAGING_PATHS =
     "$STAGING_DIR/libarttooling.$EMPTY_FILE_DIGEST.jar",
     "$STAGING_DIR/lib_ui_inspector_payload.$EMPTY_FILE_DIGEST.jar",
   )
+
+/** A downloader for runs that must not download anything: they detect no Compose or use a Compose inspector override jar. */
+private val NO_DOWNLOADS =
+  object : ArtifactDownloader {
+    override fun download(url: String, outputFile: File) = throw AssertionError("Unexpected download of $url")
+  }
 
 class InjectionManagerTest {
 
@@ -1630,7 +1638,7 @@ class InjectionManagerTest {
     class StopAfterCapture : Exception()
     for (overrideJar in listOf(Paths.get("/some/override.jar"), null)) {
       val inspector =
-        UiInspector(testSession, tempFolder.root.toPath(), overrideJar, logger) { _, _, _, overridePath, _ ->
+        UiInspector(testSession, tempFolder.root.toPath(), overrideJar, logger, artifactDownloader = null) { _, _, _, overridePath, _ ->
           capturedOverridePaths.add(overridePath)
           throw StopAfterCapture()
         }
@@ -1641,6 +1649,33 @@ class InjectionManagerTest {
     }
 
     assertThat(capturedOverridePaths).containsExactly(Paths.get("/some/override.jar"), null).inOrder()
+  }
+
+  @Test
+  fun testDump_downloadsTheComposeInspectorWithTheGivenDownloader() = runBlocking {
+    configureSuccessfulInjection()
+    val liveServer = ServerSocket(0)
+    val serverThread = startScriptedLiveAgent(liveServer, composeVersion = "1.6.0")
+    testHostServices.queuedForwardPorts.add(liveServer.localPort.toString())
+    val requestedUrls = mutableListOf<String>()
+    // The downloader records the request and fails it, like a network without access to Maven: only the threading is under test.
+    val downloader =
+      object : ArtifactDownloader {
+        override fun download(url: String, outputFile: File) {
+          requestedUrls.add(url)
+          throw IOException("Simulated download failure")
+        }
+      }
+    val inspector = uiInspectorWithDummyArtifacts(downloader)
+
+    val exception = assertThrows(IOException::class.java) { runBlocking { inspector.dump(deviceSerial, packageName) } }
+    serverThread.join(5000)
+    liveServer.close()
+
+    assertThat(requestedUrls).containsExactly("https://maven.google.com/androidx/compose/ui/ui-android/1.6.0/ui-android-1.6.0.aar")
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo("Could not resolve the Compose inspector for Compose 1.6.0: Simulated download failure")
   }
 
   @Test
@@ -2004,6 +2039,7 @@ class InjectionManagerTest {
       needsDebugViewAttributes = false,
       composeInspectorOverrideJarPath = composeInspectorOverrideJarPath,
       composeInspectorCacheDir = tempFolder.root.toPath(),
+      composeInspectorDownloader = NO_DOWNLOADS,
       logger = logger,
       injectionManagerFactory = { session, serial, pkg, overridePath, logger ->
         InjectionManager(
@@ -2024,8 +2060,11 @@ class InjectionManagerTest {
     )
   }
 
-  /** Starts a loopback agent that answers View inspector creation with success and Compose version detection with "no Compose". */
-  private fun startScriptedLiveAgent(serverSocket: ServerSocket): Thread = thread {
+  /**
+   * Starts a loopback agent that answers View inspector creation with success and Compose version detection with [composeVersion], or with
+   * "no Compose" if it is null.
+   */
+  private fun startScriptedLiveAgent(serverSocket: ServerSocket, composeVersion: String? = null): Thread = thread {
     runCatching {
       serverSocket.accept().use { socket ->
         val input = socket.getInputStream()
@@ -2040,12 +2079,14 @@ class InjectionManagerTest {
             .build(),
         )
         val getVersion = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+        val versions = UiInspectorProtocol.GetVersionResponse.newBuilder()
+        composeVersion?.let { versions.putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, it) }
         writeAgentResponse(
           output,
           UiInspectorProtocol.Response.newBuilder()
             .setCommandId(getVersion.commandId)
             .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
-            .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
+            .setGetVersion(versions)
             .build(),
         )
       }
@@ -2059,23 +2100,30 @@ class InjectionManagerTest {
 
   /** Dumps with all facets off, routing the [UiInspector] to this test's dummy artifact paths, and discards the result. */
   private suspend fun dumpWithDummyArtifacts() {
-    val inspector =
-      UiInspector(testSession, tempFolder.root.toPath(), composeInspectorJar = null, logger) { session, serial, pkg, overridePath, logger ->
-        InjectionManager(
-          session,
-          serial,
-          pkg,
-          composeInspectorOverrideJarPath = overridePath,
-          logger,
-          agentPathResolver,
-          dummyJar,
-          dummyPayload,
-          dummyViewInspector,
-          tempFileSuffixGenerator = { "test.tmp" },
-        )
-      }
-    inspector.dump(deviceSerial, packageName)
+    uiInspectorWithDummyArtifacts(NO_DOWNLOADS).dump(deviceSerial, packageName)
   }
+
+  /** Creates a [UiInspector] that downloads with [artifactDownloader] and is routed to this test's dummy artifact paths. */
+  private fun uiInspectorWithDummyArtifacts(artifactDownloader: ArtifactDownloader) =
+    UiInspector(testSession, tempFolder.root.toPath(), composeInspectorJar = null, logger, artifactDownloader) {
+      session,
+      serial,
+      pkg,
+      overridePath,
+      logger ->
+      InjectionManager(
+        session,
+        serial,
+        pkg,
+        composeInspectorOverrideJarPath = overridePath,
+        logger,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        dummyViewInspector,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+    }
 
   /** Returns a local TCP port that nothing is listening on. */
   private fun findClosedPort(): Int = ServerSocket(0).use { it.localPort }

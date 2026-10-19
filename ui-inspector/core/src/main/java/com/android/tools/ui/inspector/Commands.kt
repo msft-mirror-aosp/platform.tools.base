@@ -28,6 +28,7 @@ import com.android.tools.ui.inspector.client.mavenComposeInspectorResolver
 import com.android.tools.ui.inspector.client.queryComposeParameters
 import com.android.tools.ui.inspector.client.queryComposeTree
 import com.android.tools.ui.inspector.client.queryParameterDetails
+import com.android.tools.ui.inspector.deploy.ArtifactDownloader
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InjectionMode
 import com.android.tools.ui.inspector.deploy.InjectionResult
@@ -65,6 +66,7 @@ internal suspend fun <T> runWithConnectedInspectors(
   needsDebugViewAttributes: Boolean,
   composeInspectorOverrideJarPath: Path?,
   composeInspectorCacheDir: Path,
+  composeInspectorDownloader: ArtifactDownloader,
   logger: Logger,
   injectionManagerFactory: InjectionManagerFactory,
   responseTimeout: Duration = AGENT_RESPONSE_TIMEOUT,
@@ -73,7 +75,7 @@ internal suspend fun <T> runWithConnectedInspectors(
   val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath, logger)
   val resolveComposeInspectorJar =
     composeInspectorOverrideJarPath?.let { path -> { _: String -> path.toFile() } }
-      ?: mavenComposeInspectorResolver(composeInspectorCacheDir)
+      ?: mavenComposeInspectorResolver(composeInspectorCacheDir, composeInspectorDownloader)
   return try {
     try {
       connectAndRunInspectors(

@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector.deploy
 
 import java.io.File
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.AtomicMoveNotSupportedException
@@ -26,16 +27,17 @@ import java.util.zip.ZipInputStream
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-/** Abstraction for downloading remote artifacts. */
-internal interface ArtifactDownloader {
+/** Downloads remote artifacts, e.g. the Compose inspector from Google Maven. */
+interface ArtifactDownloader {
 
   /**
    * Downloads the artifact payload from the specified [url] and writes it to the [outputFile].
    *
    * @param url The URL of the remote artifact.
    * @param outputFile The local file where the downloaded bytes will be written.
+   * @throws IOException when the artifact cannot be downloaded. Other exceptions are reported as defects, not as download failures.
    */
-  fun download(url: String, outputFile: File)
+  @Throws(IOException::class) fun download(url: String, outputFile: File)
 }
 
 /** Default connect timeout for artifact downloads. */
@@ -79,6 +81,7 @@ internal class MavenArtifactResolver(
 ) {
 
   companion object {
+    // TODO: support downloading from other sources too, for example a company's own Maven repository.
     private const val GOOGLE_MAVEN_BASE_URL = "https://maven.google.com"
     private const val PAYLOAD_JAR_ENTRY_NAME = "inspector.jar"
   }
