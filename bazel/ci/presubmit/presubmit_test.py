@@ -213,7 +213,7 @@ class PresubmitTest(parameterized.TestCase):
     ):
       mock_generate.assert_not_called()
 
-    if result.strategy == 'impacted_targets':
+    if result.strategy == presubmit.SelectivePresubmitStrategy.IMPACTED_TARGETS:
       self.build_env.bazel_cquery.assert_called_with(
           'base_target1 union attr(tags, "includefilter", base_target1) union'
           ' base_target2 union attr(tags, "includefilter", base_target2) except'
@@ -223,6 +223,7 @@ class PresubmitTest(parameterized.TestCase):
           ' "excludefilter", base_target2) except attr(tags, "manual",'
           ' base_target2) except attr(target_compatible_with,'
           ' "@platforms//:incompatible", base_target2)',
+          '--config=ci',
       )
 
 
