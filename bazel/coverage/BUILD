@@ -1071,7 +1071,6 @@ coverage_report(
         "//tools/adt/idea/smali:intellij.android.smali.tests_tests",
         "//tools/adt/idea/streaming:intellij.android.streaming.tests_tests",
         "//tools/adt/idea/studio-updater:integration_test",
-        "//tools/adt/idea/swingp:intellij.android.adt.swingp.tests_tests",
         "//tools/adt/idea/testartifacts:intellij.android.testartifacts.tests_tests",
         "//tools/adt/idea/transport-database:intellij.android.transportDatabase.tests_tests",
         "//tools/adt/idea/utp:utp.tests_tests",
