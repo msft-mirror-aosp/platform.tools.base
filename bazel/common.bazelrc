@@ -288,6 +288,7 @@ common:without_vendor --lockfile_mode=off
 common:without_vendor --//tools/base/bazel:without-vendor
 
 # Build arguments for IntelliJ Platform targets (@tools_idea//...).
-common --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k25
+# TODO(b/575483670): Restore when idea.MODULE.bazel is included again.
+# common --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k25
 common --strategy=JvmCompile=worker
 common --strategy=HavenCli=worker

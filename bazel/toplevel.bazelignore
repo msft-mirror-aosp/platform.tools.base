@@ -6,6 +6,8 @@ tools/adt/idea/studio/monobuild/out
 tools/idea
 tools/vendor/intellij/cidr
 tools/adt/idea/aswb/testing/test_deps/projects
+# TODO(b/575483670): Re-enable; these tests build IntelliJ from source via @tools_idea (idea.MODULE.bazel).
+tools/adt/idea/ij-debugger-tests
 prebuilts/rust
 
 # Packages that are typically ignored in WORKSPACE due to a local_repository
