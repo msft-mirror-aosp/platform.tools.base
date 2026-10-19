@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/src/test/java">
+      <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/src/test/resources">
+      <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="library" scope="TEST" name="studio-sdk" level="project" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="android.sdktools.analyzer" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="google-dexlib2" level="project" />
+    <orderEntry type="library" scope="TEST" name="libbinary-resources" level="project" />
+    <orderEntry type="module" module-name="android.sdktools.sdk-common" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="junit4" level="project" />
+    <orderEntry type="module" module-name="android.sdktools.testutils" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="truth" level="project" />
+    <orderEntry type="library" scope="TEST" name="jimfs" level="project" />
+  </component>
+  <component name="TestModuleProperties" production-module="android.sdktools.analyzer" />
+</module>

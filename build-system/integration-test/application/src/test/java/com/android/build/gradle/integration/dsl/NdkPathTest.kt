@@ -29,14 +29,13 @@ import org.junit.Test
 
 class NdkPathTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android { ndkPath = "/path/to/ndk" }
-      }
-      androidApplication { pluginCallbacks += AppCallback::class.java }
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { ndkPath = "/path/to/ndk" }
     }
+    androidApplication { pluginCallbacks += AppCallback::class.java }
+  }
 
   class AppCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

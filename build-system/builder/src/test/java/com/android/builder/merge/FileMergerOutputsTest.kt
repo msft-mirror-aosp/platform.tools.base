@@ -16,11 +16,16 @@
 
 package com.android.builder.merge
 
+import com.android.builder.files.ZipTestTool
 import com.android.builder.packaging.ParsedPackagingOptions
 import org.junit.Assert
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class FileMergerOutputsTest {
+
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
   class MockSourceMergeOutputWriter : SourceMergeOutputWriter {
     var createZipSourceCalled = false
@@ -72,6 +77,50 @@ class FileMergerOutputsTest {
   }
 
   @Test
+  fun testLazyFileMergerInputZipSourcePreservation() {
+    val jarFile = ZipTestTool.createZipFile(temporaryFolder.root.resolve("test.jar").absolutePath, "path", "content")
+
+    val algorithm = JavaResZipSourceMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
+    val writer = MockSourceMergeOutputWriter()
+    val output = FileMergerOutputs.fromAlgorithmAndWriter(algorithm, writer)
+
+    output.use {
+      it.open()
+      val input = LazyFileMergerInput("i0", jarFile)
+      input.use {
+        input.open()
+        output.create("path", listOf(input), true)
+      }
+      // Since LazyFileMergerInput implements FileMergerZipInput,
+      // the JavaResZipSourceMerger should use the ZipSource direct copy branch
+      Assert.assertTrue(writer.createZipSourceCalled)
+      Assert.assertFalse(writer.createInputStreamCalled)
+    }
+  }
+
+  @Test
+  fun testLazyFileMergerInputWithPathFilterZipSourcePreservation() {
+    val jarFile =
+      ZipTestTool.createZipFile(temporaryFolder.root.resolve("test2.jar").absolutePath, "path", "content", "filtered_out", "other_content")
+
+    val algorithm = JavaResZipSourceMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
+    val writer = MockSourceMergeOutputWriter()
+    val output = FileMergerOutputs.fromAlgorithmAndWriter(algorithm, writer)
+
+    output.use {
+      it.open()
+      val input = LazyFileMergerInput("i0", jarFile, { it == "path" })
+      input.use {
+        it.open()
+        output.create("path", listOf(input), true)
+      }
+      // Verify that even with filtering, direct ZipSource copying optimization is preserved
+      Assert.assertTrue(writer.createZipSourceCalled)
+      Assert.assertFalse(writer.createInputStreamCalled)
+    }
+  }
+
+  @Test
   fun testFromAlgorithmAndWriterWithJavaResZipSourceWriterMerged() {
     // Force MERGE action to trigger InputStream fallback (returns ByteArray from merger)
     val algorithm = JavaResZipSourceMerger(ParsedPackagingOptions(emptyList(), emptyList(), listOf("path")))
@@ -86,6 +135,34 @@ class FileMergerOutputsTest {
       // Since it's a MERGE action, JavaResZipSourceMerger returns a ByteArray,
       // and FileMergerOutputs will call writer.create(path, inputStream, compress)
       Assert.assertTrue(writer.createInputStreamCalled)
+    }
+  }
+
+  @Test
+  fun testFromAlgorithmAndWriterWithFallbackToInputStream() {
+    val algorithm = JavaResZipSourceMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
+    val writer = MockSourceMergeOutputWriter()
+    val output = FileMergerOutputs.fromAlgorithmAndWriter(algorithm, writer)
+
+    output.open()
+    output.use {
+      val input =
+        object : FileMergerInput {
+          override fun getName() = "i0"
+
+          override fun getAllPaths() = setOf("path")
+
+          override fun open() {}
+
+          override fun close() {}
+
+          override fun openPath(path: String) = java.io.ByteArrayInputStream(byteArrayOf())
+        }
+      output.create("path", listOf(input), true)
+
+      // Should fall back to InputStream
+      Assert.assertTrue(writer.createInputStreamCalled)
+      Assert.assertFalse(writer.createZipSourceCalled)
     }
   }
 }

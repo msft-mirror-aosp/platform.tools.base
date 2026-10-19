@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.manageddevice.application
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
@@ -107,7 +106,7 @@ class TestSuiteWithManagedDeviceTest {
         androidApplication {
           addManagedDevice("myGMD")
           android {
-            testOptions.suites.create("myTestSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myTestSuite") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -146,6 +145,6 @@ class TestSuiteWithManagedDeviceTest {
 
   @Test
   fun testSuiteWithManagedDevice() {
-    executor.run(":app:testMyTestSuiteGMDMyGMDDebugTestSuite")
+    executor.run(":app:testDebugMyTestSuiteGMDMyGMDTestSuite")
   }
 }

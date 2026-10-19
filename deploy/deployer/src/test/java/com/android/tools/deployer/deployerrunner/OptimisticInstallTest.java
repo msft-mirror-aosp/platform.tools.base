@@ -53,7 +53,7 @@ import java.util.List;
 @RunWith(ApiLevel.class)
 public class OptimisticInstallTest {
     @Rule public TestName name = new TestName();
-    @Rule @ApiLevel.Init public FakeDeviceConnection connection;
+    @Rule @ApiLevel.Init public FakeDeviceConnection.WithAdbLib connection;
 
     private static final String BASE = "tools/base/deploy/deployer/src/test/resource/";
 
@@ -92,6 +92,7 @@ public class OptimisticInstallTest {
         dexDb = new SqlApkFileDatabase(dbFile, null);
         cacheDb = new DeploymentCacheDatabase(2);
         runner = new DeployerRunner(cacheDb, dexDb, service);
+        runner.setServerPort(connection.getServer().getPort());
     }
 
     @After

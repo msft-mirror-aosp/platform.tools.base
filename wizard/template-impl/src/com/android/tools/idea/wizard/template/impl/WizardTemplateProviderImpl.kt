@@ -21,7 +21,6 @@ import com.android.tools.idea.wizard.template.WizardTemplateProvider
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.aiGlassesActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.aiStarter.aiStarterTemplate
 import com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.androidTVActivityTemplate
-import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.archStarterActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.basicActivity.basicActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.bottomNavigationActivity.bottomNavigationActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.composeActivityMaterial3Template
@@ -83,7 +82,6 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
       composeActivityMaterial3Template,
       firebaseAiLogicActivityTemplate,
       composeNavigationUiActivityMaterial3Template,
-      archStarterActivityTemplate,
       aiStarterTemplate,
       kmpAiStarterTemplate,
       xrActivityTemplate,

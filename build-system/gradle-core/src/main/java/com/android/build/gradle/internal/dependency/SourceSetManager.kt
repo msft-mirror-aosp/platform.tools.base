@@ -121,7 +121,6 @@ open class SourceSetManager(
 
     val configuration = configurations.maybeCreate(name)
 
-    configuration.isVisible = false
     configuration.description = description
     configuration.isCanBeConsumed = false
     configuration.isCanBeResolved = canBeResolved

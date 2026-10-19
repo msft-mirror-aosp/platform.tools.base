@@ -30,27 +30,26 @@ import org.junit.Test
 class AarPublishTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary(":library") {
-        android {
-          namespace = "com.example.library"
-          buildTypes { named("debug") { it.isTestCoverageEnabled = true } }
-        }
-        files {
-          add(
-            "src/main/res/values/strings.xml",
-            // language=xml
-            """
-            <resources>
-                <string name="one">Some string</string>
-            </resources>
-            """
-              .trimIndent(),
-          )
-        }
+  val rule = GradleRule.from {
+    androidLibrary(":library") {
+      android {
+        namespace = "com.example.library"
+        buildTypes { named("debug") { it.isTestCoverageEnabled = true } }
+      }
+      files {
+        add(
+          "src/main/res/values/strings.xml",
+          // language=xml
+          """
+          <resources>
+              <string name="one">Some string</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
       }
     }
+  }
 
   /* Test to verify that AARs do not include Jacoco dependencies when published. */
   @Test
@@ -72,48 +71,47 @@ class AarPublishTest {
 
   @Test
   fun canPublishMinifiedLibraryAarWithCoverageEnabled() {
-    val build =
-      rule.build {
-        androidLibrary(":library") {
-          android {
-            buildTypes {
-              named("release") {
-                it.isMinifyEnabled = true
-                it.proguardFiles += File("proguard-rules.pro")
-              }
+    val build = rule.build {
+      androidLibrary(":library") {
+        android {
+          buildTypes {
+            named("release") {
+              it.isMinifyEnabled = true
+              it.proguardFiles += File("proguard-rules.pro")
             }
           }
-          files {
-            add(
-              "src/main/java/com/example/Foo.java",
-              // language=java
-              """
-              package com.example;
-              public class Foo { }
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/main/java/com/example/Bar.java",
-              // language=java
-              """
-              package com.example;
-              public class Bar { }
-              """
-                .trimIndent(),
-            )
-            add(
-              "proguard-rules.pro",
-              """
-              -keep class com.example.Foo {
-                <init>();
-              }
-              """
-                .trimIndent(),
-            )
-          }
+        }
+        files {
+          add(
+            "src/main/java/com/example/Foo.java",
+            // language=java
+            """
+            package com.example;
+            public class Foo { }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/com/example/Bar.java",
+            // language=java
+            """
+            package com.example;
+            public class Bar { }
+            """
+              .trimIndent(),
+          )
+          add(
+            "proguard-rules.pro",
+            """
+            -keep class com.example.Foo {
+              <init>();
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run("library:assembleRelease")
 

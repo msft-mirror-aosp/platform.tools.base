@@ -1,0 +1,53 @@
+apply plugin: 'com.android.tools.java'
+apply plugin: 'com.android.tools.kotlin'
+
+repositories {
+    maven { url = uri(rootProject.cloneArtifacts.repository) }
+}
+
+dependencies {
+
+    implementation project(':base:build-system:integration-test:framework')
+    implementation project(':base:build-system:gradle-core')
+
+    testImplementation project(':base:build-system:integration-test:framework')
+    testImplementation libs.com.android.tools.analyticsLibrary.protos
+    testImplementation libs.com.android.tools.build.apksig
+    testImplementation project(':base:builder')
+    testImplementation project(':base:builder-model')
+    testImplementation libs.com.android.tools.sdkCommon
+    testImplementation libs.com.android.tools.common
+    testImplementation libs.com.android.tools.testutils
+    // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to Groovy versions.
+    testImplementation(project(':base:build-system:gradle-core')) { transitive = false }
+    testImplementation project(':base:build-system:gradle-kotlin')
+    testImplementation project(':base:build-system:gradle-settings-api')
+
+    testImplementation libs.kotlin_stdlib
+
+    testImplementation gradleApi()
+    testImplementation libs.apache_commons_io
+    testImplementation libs.apache_commons_lang
+    testImplementation libs.google_api_client
+    testImplementation libs.google_storage_client
+    testImplementation libs.junit
+    testImplementation libs.protobuf
+    testImplementation libs.protobuf_util
+    testImplementation libs.truth
+
+    testImplementation libs.mockito_core
+
+    testImplementation libs.kotlin_gradle_plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
+
+}
+
+configurations {
+    // google-api-client depends on guava-jdk5.
+    testCompile.exclude group: 'com.google.guava', module: 'guava-jdk5'
+}
+
+apply from: '../integration-tests.gradle'
+
+test {
+    dependsOn ':publishAndroidGradleLocal'
+}

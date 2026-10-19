@@ -30,11 +30,16 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
+import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.getOption
 import com.android.builder.core.ComponentType
+import com.android.builder.core.ComponentTypeImpl
 import com.android.utils.appendCapitalized
+import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
@@ -45,7 +50,7 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
   HostTestCreationConfig, Component by (testSuite.testedVariant as Component), ComponentCreationConfig by testSuite.testedVariant {
 
   override val componentType: ComponentType
-    get() = com.android.builder.core.ComponentTypeImpl.UNIT_TEST
+    get() = ComponentTypeImpl.UNIT_TEST
 
   // HostTestCreationConfig
   override val hostTestName: String
@@ -56,13 +61,17 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
   }
 
   override val codeCoverageEnabled: Boolean
-    get() = false
+    get() = testSuite.codeCoverageEnabled
 
   // HostTest
   override val androidResourcesIncluded: Boolean
     get() = testSuite.androidResourcesIncluded
 
   override fun configureTestTask(action: (Test) -> Unit) {
+    // No-op
+  }
+
+  override fun withTestTaskProvider(action: (TaskProvider<out Test>) -> Unit) {
     // No-op
   }
 
@@ -97,9 +106,42 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
   override val artifacts: ArtifactsImpl
     get() = sourceContainer.artifacts
 
+  override val builtInKaptSupportMode: BuiltInKaptSupportMode
+    get() = BuiltInKaptSupportMode.NotSupported
+
+  override val useBuiltInKaptSupport: Boolean
+    get() = false
+
+  override fun getBuiltInKotlincOutput(): Provider<Directory>? =
+    artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC).takeIf { useBuiltInKotlinSupport }
+
+  override fun getBuiltInKaptArtifact(internalArtifactType: InternalArtifactType<Directory>): Provider<Directory>? = null
+
   override val taskContainer: MutableTaskContainer by lazy { MutableTaskContainer() }
 
   override val sources: InternalSources by lazy { TestSuiteHostJarSources(testSuite.testedVariant.sources, sourceContainer) }
+
+  override val variantDependencies: VariantDependencies by lazy {
+    val classpath = sourceContainer.suiteSourceClasspath
+    VariantDependencies(
+      variantName = name,
+      componentType = ComponentTypeImpl.UNIT_TEST,
+      compileClasspath = classpath.compileClasspath,
+      runtimeClasspath = classpath.runtimeClasspath,
+      lintChecksClasspath = testSuite.testedVariant.variantDependencies.lintChecksClasspath,
+      sourceSetRuntimeConfigurations = listOf(classpath.runtimeClasspath),
+      sourceSetImplementationConfigurations = emptyList(),
+      elements = emptyMap(),
+      providedClasspath = testSuite.testedVariant.variantDependencies.runtimeClasspath,
+      annotationProcessorConfiguration = null,
+      reverseMetadataValuesConfiguration = null,
+      testedVariant = testSuite.testedVariant,
+      project = sourceContainer.project,
+      projectOptions = testSuite.services.projectOptions,
+      isSelfInstrumenting = false,
+      sourceSetConfigurationsMap = emptyMap(),
+    )
+  }
 
   override val paths: VariantPathHelper by lazy {
     TestSuitePathHelper(
@@ -142,15 +184,31 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
 }
 
 class TestSuiteHostJarSources(val delegate: InternalSources, val sourceContainer: TestSuiteSourceContainer) : InternalSources by delegate {
-  override val assets: LayeredSourceDirectoriesImpl?
-    get() = null
+  override val java: FlatSourceDirectoriesImpl?
+    get() = (sourceContainer.source as? com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet)?.java
 
-  override val res: LayeredSourceDirectoriesImpl?
-    get() = null
+  override val kotlin: FlatSourceDirectoriesImpl?
+    get() = (sourceContainer.source as? com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet)?.kotlin
 
   override val jniLibs: LayeredSourceDirectoriesImpl?
     get() = null
 
   override val resources: FlatSourceDirectoriesImpl?
     get() = (sourceContainer.source as? com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet)?.resources
+
+  override fun java(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    java?.let(action)
+  }
+
+  override fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    kotlin?.let(action)
+  }
+
+  override fun jniLibs(action: (LayeredSourceDirectoriesImpl) -> Unit) {
+    jniLibs?.let(action)
+  }
+
+  override fun resources(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    resources?.let(action)
+  }
 }

@@ -35,13 +35,21 @@ class XMLReportAggregatorTest {
   private lateinit var outputDir: File
   private lateinit var inputDir1: File
   private lateinit var inputDir2: File
+  private lateinit var defaultRootDir: File
 
   @Before
   fun setUp() {
     outputDir = temporaryFolder.newFolder("output")
     inputDir1 = temporaryFolder.newFolder("input1")
     inputDir2 = temporaryFolder.newFolder("input2")
+    defaultRootDir = temporaryFolder.newFolder("default_root")
   }
+
+  private fun createAggregator(
+    files: List<File>,
+    projectName: String,
+    rootDir: File = defaultRootDir,
+  ): XMLReportAggregator = XMLReportAggregator(files, projectName, rootDir)
 
   private fun createXmlReport(directory: File, fileName: String, content: String) {
     File(directory, fileName).writeText(content)
@@ -64,7 +72,7 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir1, "test-report.xml", xmlContent)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "MyProject")
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "MyProject")
     val report = aggregator.generateReport()
 
     assertThat(report.projectName).isEqualTo("MyProject")
@@ -93,10 +101,14 @@ class XMLReportAggregatorTest {
 
     val testCase = clazz.testCases.first()
     assertThat(testCase.name).isEqualTo("testExample")
-    assertThat(testCase.testSuiteSummaries.map { it.name }).containsExactly("unitTest", "Aggregated")
-    assertThat(testCase.testSuiteResults).hasSize(1)
 
-    val suiteResult = testCase.testSuiteResults.find { it.testSuiteName == "unitTest" }
+    // Extract properties from the first target (Host default)
+    val target = testCase.targets.first()
+    assertThat(target.name).isEqualTo(UNKNOWN_TARGET)
+    assertThat(target.testSuiteSummaries.map { it.name }).containsExactly("unitTest", "Aggregated")
+    assertThat(target.testSuiteResults).hasSize(1)
+
+    val suiteResult = target.testSuiteResults.find { it.testSuiteName == "unitTest" }
     assertThat(suiteResult).isNotNull()
     assertThat(suiteResult?.variantResults?.get("debug")?.status).isEqualTo("pass")
   }
@@ -139,7 +151,7 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir2, "test-report-2.xml", xmlContent2)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2), projectName = "MyMultiVariantProject")
+    val aggregator = createAggregator(files = listOf(inputDir1, inputDir2), projectName = "MyMultiVariantProject")
     val report = aggregator.generateReport()
 
     assertThat(report.projectName).isEqualTo("MyMultiVariantProject")
@@ -164,24 +176,24 @@ class XMLReportAggregatorTest {
     assertThat(unitTestClass.testCases).hasSize(2)
 
     val testPass = unitTestClass.testCases.find { it.name == "testPass" }
-    assertThat(testPass?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("pass")
+    assertThat(testPass?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("pass")
 
     val testFail = unitTestClass.testCases.find { it.name == "testFail" }
-    assertThat(testFail?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("fail")
+    assertThat(testFail?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("fail")
 
-    val stackTraceId = testFail?.testSuiteResults?.first()?.variantResults?.get("debug")?.stackTraceId
+    val stackTraceId = testFail?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("debug")?.stackTraceId
     assertThat(stackTraceId).isNotNull()
-    val group = testFail?.commonStackTraces?.find { it.id == stackTraceId }
+    val group = testFail?.targets?.first()?.commonStackTraces?.find { it.id == stackTraceId }
     assertThat(group?.stackTrace).contains("stacktrace here")
 
     val otherTestClass = pkg.classes.findOrThrow({ it.name == "MyOtherClassTest" }) { "MyOtherClassTest not found" }
     assertThat(otherTestClass.testCases).hasSize(2)
 
     val testAnotherPass = otherTestClass.testCases.find { it.name == "testAnotherPass" }
-    assertThat(testAnotherPass?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("pass")
+    assertThat(testAnotherPass?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("pass")
 
     val testSkipped = otherTestClass.testCases.find { it.name == "testSkipped" }
-    assertThat(testSkipped?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("skipped")
+    assertThat(testSkipped?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("skipped")
   }
 
   @Test
@@ -201,7 +213,7 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir1, "test-report.xml", xmlContent)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "MyProject")
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "MyProject")
     aggregator.writeReport(outputDir)
 
     assertThat(aggregator.getTestCount()).isEqualTo(1)
@@ -216,6 +228,76 @@ class XMLReportAggregatorTest {
     assertThat(dataJsContent).contains("\"timestamp\"")
     assertThat(dataJsContent).contains("debug")
     assertThat(dataJsContent).contains("testExample")
+  }
+
+  @Test
+  fun testGetFailedTestCount_countsFailuresAndErrors() {
+    val xmlContent1 =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="2" failures="1" errors="0" skipped="0" time="0.2">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testPass" classname="com.example.app.MyClassTest" time="0.1"/>
+          <testcase name="testFail" classname="com.example.app.MyClassTest" time="0.1">
+              <failure message="assertion failed">stacktrace here</failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report-1.xml", xmlContent1)
+
+    val xmlContent2 =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.lib.MyTestSuite" tests="2" failures="0" errors="1" skipped="1" time="0.2">
+          <properties>
+              <property name="testedVariantName" value="release"/>
+              <property name="modulePath" value=":lib"/>
+              <property name="testSuiteName" value="androidTest"/>
+          </properties>
+          <testcase name="testError" classname="com.example.lib.MyClassTest" time="0.1">
+              <error message="crashed">stacktrace here</error>
+          </testcase>
+          <testcase name="testSkipped" classname="com.example.lib.MyClassTest" time="0.1">
+              <skipped/>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir2, "test-report-2.xml", xmlContent2)
+
+    val aggregator = createAggregator(files = listOf(inputDir1, inputDir2), projectName = "MyProject")
+
+    assertThat(aggregator.getFailedTestCount()).isEqualTo(2)
+  }
+
+  @Test
+  fun testGetFailedTestCount_noFailures() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="2" failures="0" errors="0" skipped="1" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+          <testcase name="testSkipped" classname="com.example.app.MyClassTest" time="0.0">
+              <skipped/>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "MyProject")
+
+    assertThat(aggregator.getFailedTestCount()).isEqualTo(0)
   }
 
   @Test
@@ -240,7 +322,7 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir1, "test-report.xml", xmlContent)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "FailureProject")
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "FailureProject")
     val report = aggregator.generateReport()
 
     val module = report.modules.findOrThrow({ it.name == ":lib" }) { ":lib module not found" }
@@ -250,11 +332,11 @@ class XMLReportAggregatorTest {
 
     assertThat(testCase.name).isEqualTo("testFailure")
 
-    val suiteResult = testCase.testSuiteResults.find { it.testSuiteName == "failedUnitTest" }
+    val suiteResult = testCase.targets.first().testSuiteResults.find { it.testSuiteName == "failedUnitTest" }
     assertThat(suiteResult?.variantResults?.get("debug")?.status).isEqualTo("fail")
 
     val stackTraceId = suiteResult?.variantResults?.get("debug")?.stackTraceId
-    val group = testCase.commonStackTraces.find { it.id == stackTraceId }
+    val group = testCase.targets.first().commonStackTraces.find { it.id == stackTraceId }
     assertThat(group?.stackTrace).contains("java.lang.RuntimeException: This is a test exception")
     assertThat(group?.stackTrace).contains("at com.example.app.MyFailedClassTest.testFailure(MyFailedClassTest.kt:10)")
   }
@@ -263,7 +345,7 @@ class XMLReportAggregatorTest {
   fun testProcessXmlForAggregation_nonExistentDirectory() {
     val nonExistentDir = File(temporaryFolder.root, "nonExistent")
 
-    val aggregator = XMLReportAggregator(files = listOf(nonExistentDir), projectName = "ProjectWithMissingFile")
+    val aggregator = createAggregator(files = listOf(nonExistentDir), projectName = "ProjectWithMissingFile")
     // This should not throw an exception, but rather log a warning
     val report = aggregator.generateReport()
     assertThat(report.modules).isEmpty()
@@ -303,7 +385,7 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir2, "trial-report.xml", trialDebugXml)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2), projectName = "VariantSpecificProject")
+    val aggregator = createAggregator(files = listOf(inputDir1, inputDir2), projectName = "VariantSpecificProject")
     val report = aggregator.generateReport()
 
     assertThat(report.variants).containsExactly("stagingDebug", "trialDebug").inOrder()
@@ -315,7 +397,7 @@ class XMLReportAggregatorTest {
     val exampleTestCase =
       exampleInstrumentedTest.testCases.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in ExampleInstrumentedTest not found" }
 
-    val exampleSuiteResult = exampleTestCase.testSuiteResults.find { it.testSuiteName == "AndroidTest" }
+    val exampleSuiteResult = exampleTestCase.targets.first().testSuiteResults.find { it.testSuiteName == "AndroidTest" }
     assertThat(exampleSuiteResult?.variantResults).hasSize(2)
     assertThat(exampleSuiteResult?.variantResults?.get("stagingDebug")?.status).isEqualTo("pass")
     assertThat(exampleSuiteResult?.variantResults?.get("trialDebug")?.status).isEqualTo("pass")
@@ -325,7 +407,7 @@ class XMLReportAggregatorTest {
     val stagingTestCase =
       stagingInstrumentedTest.testCases.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in StagingInstrumentedTest not found" }
 
-    val stagingSuiteResult = stagingTestCase.testSuiteResults.find { it.testSuiteName == "AndroidTest" }
+    val stagingSuiteResult = stagingTestCase.targets.first().testSuiteResults.find { it.testSuiteName == "AndroidTest" }
     assertThat(stagingSuiteResult?.variantResults).hasSize(1)
     assertThat(stagingSuiteResult?.variantResults).containsKey("stagingDebug")
     assertThat(stagingSuiteResult?.variantResults?.get("stagingDebug")?.status).isEqualTo("pass")
@@ -387,7 +469,7 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir1, "skippedOnly.xml", skippedOnlyXml)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "SummaryProject")
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "SummaryProject")
     val report = aggregator.generateReport()
 
     val appModule = report.modules.findOrThrow({ it.name == ":app" }) { ":app module not found" }
@@ -466,10 +548,401 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir1, "report-C.xml", xmlC)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "DeterministicProject")
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "DeterministicProject")
     val report = aggregator.generateReport()
 
     // Assert that the parsed variants are sorted alphabetically
     assertThat(report.variants).containsExactly("variantA", "variantB", "variantC").inOrder()
+  }
+
+  @Test
+  fun testGenerateReport_screenshotProperties() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="screenshotTest"/>
+          </properties>
+          <testcase name="testScreenshot" classname="com.example.app.MyScreenshotTest" time="0.1">
+              <properties>
+                  <property name="PreviewScreenshot.diffPercent" value="0.08"/>
+                  <property name="PreviewScreenshot.previewName" value="Phone"/>
+                  <property name="PreviewScreenshot.methodName" value="MessagesScreenPreview"/>
+                  <property name="PreviewScreenshot.refImagePath" value="path/to/ref.png"/>
+                  <property name="PreviewScreenshot.newImagePath" value="path/to/new.png"/>
+                  <property name="PreviewScreenshot.diffImagePath" value="path/to/diff.png"/>
+              </properties>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "screenshot-test-report.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "ScreenshotProject")
+    val report = aggregator.generateReport()
+
+    val module = report.modules.first()
+    val pkg = module.packages.first()
+    val clazz = pkg.classes.first()
+    val testCase = clazz.testCases.first()
+
+    assertThat(testCase.name).isEqualTo("testScreenshot")
+
+    val suiteResult = testCase.targets.first().testSuiteResults.find { it.testSuiteName == "screenshotTest" }
+    val variantResult = suiteResult?.variantResults?.get("debug")
+
+    assertThat(variantResult).isNotNull()
+    assertThat(variantResult?.diffPercent).isEqualTo("0.08")
+    assertThat(variantResult?.previewName).isEqualTo("Phone")
+    assertThat(variantResult?.methodName).isEqualTo("MessagesScreenPreview")
+    assertThat(variantResult?.refImagePath).isEqualTo("path/to/ref.png")
+    assertThat(variantResult?.newImagePath).isEqualTo("path/to/new.png")
+    assertThat(variantResult?.diffImagePath).isEqualTo("path/to/diff.png")
+  }
+
+  @Test
+  fun testGenerateReport_multipleTargets() {
+    val pixel7Xml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+              <property name="testTarget" value="pixel7"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "pixel7-report.xml", pixel7Xml)
+
+    val pixel8Xml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="1" errors="0" skipped="0" time="0.15">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+              <property name="testTarget" value="pixel8"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.15">
+              <failure message="assertion failed">stacktrace here</failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir2, "pixel8-report.xml", pixel8Xml)
+
+    val aggregator = createAggregator(files = listOf(inputDir1, inputDir2), projectName = "MultiTargetProject")
+    val report = aggregator.generateReport()
+
+    assertThat(report.projectName).isEqualTo("MultiTargetProject")
+    // Should capture both unique targets
+    assertThat(report.targets).containsExactly("pixel7", "pixel8").inOrder()
+
+    val module = report.modules.first()
+    val pkg = module.packages.first()
+    val clazz = pkg.classes.first()
+    val testCase = clazz.testCases.first()
+
+    assertThat(testCase.name).isEqualTo("testExample")
+    // There should be two targets under this testcase
+    assertThat(testCase.targets).hasSize(2)
+
+    val target7 = testCase.targets.find { it.name == "pixel7" }
+    assertThat(target7).isNotNull()
+    val suiteResult7 = target7?.testSuiteResults?.find { it.testSuiteName == "unitTest" }
+    assertThat(suiteResult7?.variantResults?.get("debug")?.status).isEqualTo("pass")
+
+    val target8 = testCase.targets.find { it.name == "pixel8" }
+    assertThat(target8).isNotNull()
+    val suiteResult8 = target8?.testSuiteResults?.find { it.testSuiteName == "unitTest" }
+    assertThat(suiteResult8?.variantResults?.get("debug")?.status).isEqualTo("fail")
+
+    // Check package level aggregation
+    // Both pixel7 (passed) and pixel8 (failed) should be aggregated
+    val packageSummary = pkg.testSuiteSummaries.find { it.name == "unitTest" }
+    assertThat(packageSummary).isNotNull()
+    val debugSummary = packageSummary?.variantSummaries?.find { it.name == "debug" }
+    assertThat(debugSummary?.total).isEqualTo(2)
+    assertThat(debugSummary?.passed).isEqualTo(1)
+    assertThat(debugSummary?.failed).isEqualTo(1)
+  }
+
+  @Test
+  fun testCalculateRelativeRootDir_nestedModule() {
+    val rootDir = File("/repo/project")
+    val outputDir = File("/repo/project/nested/designkit/build/reports/tests/screenshotTest")
+    val relative = XMLReportAggregator.calculateRelativeRootDir(outputDir, rootDir)
+    assertThat(relative).isEqualTo("../../../../../../")
+  }
+
+  @Test
+  fun testCalculateRelativeRootDir_singleLevelModule() {
+    val rootDir = File("/repo/project")
+    val outputDir = File("/repo/project/app/build/reports/tests/screenshotTest")
+    val relative = XMLReportAggregator.calculateRelativeRootDir(outputDir, rootDir)
+    assertThat(relative).isEqualTo("../../../../../")
+  }
+
+  @Test
+  fun testCalculateRelativeRootDir_rootLevelReport() {
+    val rootDir = File("/repo/project")
+    val outputDir = File("/repo/project/build/reports/tests/screenshotTest")
+    val relative = XMLReportAggregator.calculateRelativeRootDir(outputDir, rootDir)
+    assertThat(relative).isEqualTo("../../../../")
+  }
+
+  @Test
+  fun testCalculateRelativeRootDir_sameDir() {
+    val rootDir = File("/repo/project")
+    val outputDir = File("/repo/project")
+    val relative = XMLReportAggregator.calculateRelativeRootDir(outputDir, rootDir)
+    assertThat(relative).isEqualTo("")
+  }
+
+  @Test
+  fun testCalculateRelativeRootDir_nonExistentPaths() {
+    val rootDir = File("/non/existent/root/path")
+    val outputDir = File("/non/existent/root/path/module/build/reports")
+    val relative = XMLReportAggregator.calculateRelativeRootDir(outputDir, rootDir)
+    assertThat(relative).isEqualTo("../../../")
+  }
+
+  @Test
+  fun testWriteReport_withRootDir_includesRelativeRootDirInDataJs() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":sub:module"/>
+              <property name="testSuiteName" value="screenshotTest"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report.xml", xmlContent)
+
+    val fakeRootDir = temporaryFolder.newFolder("fake_root")
+    val reportOutputDir = File(fakeRootDir, "sub/module/build/reports/tests/screenshotTest").also { it.mkdirs() }
+
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "TestProj", rootDir = fakeRootDir)
+    aggregator.writeReport(reportOutputDir)
+
+    val dataJs = File(reportOutputDir, "data.js")
+    assertThat(dataJs.exists()).isTrue()
+    val dataJsContent = dataJs.readText()
+    assertThat(dataJsContent).contains("\"relativeRootDir\":\"../../../../../../\"")
+
+    val generatedReport = aggregator.generateReport(outputDir = reportOutputDir)
+    assertThat(generatedReport.relativeRootDir).isEqualTo("../../../../../../")
+  }
+
+  @Test
+  fun testWriteReport_retainsOriginalRelativeAndAbsolutePathsWithoutCopyingFiles() {
+    val srcDir = temporaryFolder.newFolder("src_screenshots")
+    val refFile = File(srcDir, "ref.png").also { it.writeText("fake ref content") }
+    val newFile = File(srcDir, "new.png").also { it.writeText("fake new content") }
+    val diffFile = File(srcDir, "diff.png").also { it.writeText("fake diff content") }
+
+    val relRefPath = "relative/path/to/ref.png"
+    val absNewPath = newFile.absolutePath
+    val relDiffPath = "relative/diff.png"
+
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="1" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="screenshotTest"/>
+          </properties>
+          <testcase name="testScreenshot" classname="com.example.app.MyScreenshotTest" time="0.1">
+              <properties>
+                  <property name="PreviewScreenshot.refImagePath" value="$relRefPath"/>
+                  <property name="PreviewScreenshot.newImagePath" value="$absNewPath"/>
+                  <property name="PreviewScreenshot.diffImagePath" value="$relDiffPath"/>
+              </properties>
+              <failure message="diff found">diff details</failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "screenshot-report.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "ScreenshotProject")
+    aggregator.writeReport(outputDir)
+
+    // No files should be copied - aggregator is a pure data aggregator
+    val screenshotsDir = File(outputDir, "screenshots")
+    assertThat(screenshotsDir.exists()).isFalse()
+
+    // Verify data.js retains original relative and absolute paths
+    val dataJs = File(outputDir, "data.js")
+    assertThat(dataJs.exists()).isTrue()
+    val dataJsContent = dataJs.readText()
+    assertThat(dataJsContent).contains("\"refImagePath\":\"$relRefPath\"")
+    val escapedAbsNewPath = absNewPath.replace("\\", "\\\\")
+    assertThat(dataJsContent).contains("\"newImagePath\":\"$escapedAbsNewPath\"")
+    assertThat(dataJsContent).contains("\"diffImagePath\":\"$relDiffPath\"")
+
+    // Verify report data model directly
+    val report = aggregator.generateReport(outputDir)
+    val variantResult =
+      report.modules
+        .first()
+        .packages
+        .first()
+        .classes
+        .first()
+        .testCases
+        .first()
+        .targets
+        .first()
+        .testSuiteResults
+        .first()
+        .variantResults["debug"]
+    assertThat(variantResult).isNotNull()
+    assertThat(variantResult?.refImagePath).isEqualTo(relRefPath)
+    assertThat(variantResult?.newImagePath).isEqualTo(absNewPath)
+    assertThat(variantResult?.diffImagePath).isEqualTo(relDiffPath)
+  }
+
+  @Test
+  fun testWriteReport_handlesMissingAndNonExistentFilesGracefully() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="screenshotTest"/>
+          </properties>
+          <testcase name="testMissing" classname="com.example.app.MyScreenshotTest" time="0.1">
+              <properties>
+                  <property name="PreviewScreenshot.refImagePath" value="/non/existent/missing_ref.png"/>
+                  <property name="PreviewScreenshot.diffImagePath" value="no diff"/>
+              </properties>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "missing-report.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "MissingFileProject")
+    // Should not throw or crash
+    aggregator.writeReport(outputDir)
+
+    val dataJsContent = File(outputDir, "data.js").readText()
+    assertThat(dataJsContent).contains("\"refImagePath\":\"/non/existent/missing_ref.png\"")
+    assertThat(dataJsContent).contains("\"diffImagePath\":\"no diff\"")
+  }
+
+  @Test
+  fun testWriteReport_nestedModuleWithExplicitRootDir() {
+    val rootProjectDir = temporaryFolder.newFolder("module_root")
+    val submoduleDir = File(rootProjectDir, "feature/submodule").also { it.mkdirs() }
+    val submoduleReportDir = File(submoduleDir, "build/reports/tests/screenshotTest").also { it.mkdirs() }
+    val submoduleXmlDir = File(submoduleDir, "build/test-results/screenshotTest").also { it.mkdirs() }
+
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.submodule.SubmoduleTest" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":feature:submodule"/>
+              <property name="testSuiteName" value="screenshotTest"/>
+          </properties>
+          <testcase name="testPreview" classname="com.example.submodule.SubmoduleScreenshotTest" time="0.1">
+              <properties>
+                  <property name="PreviewScreenshot.refImagePath" value="feature/submodule/src/test/screenshots/golden_preview.png"/>
+              </properties>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(submoduleXmlDir, "submodule-report.xml", xmlContent)
+
+    val aggregator = XMLReportAggregator(files = listOf(submoduleXmlDir), projectName = "MultiModuleProject", rootDir = rootProjectDir)
+    aggregator.writeReport(submoduleReportDir)
+
+    val dataJs = File(submoduleReportDir, "data.js")
+    assertThat(dataJs.exists()).isTrue()
+    val dataJsContent = dataJs.readText()
+    assertThat(dataJsContent).contains("\"relativeRootDir\":\"../../../../../../\"")
+    assertThat(dataJsContent).contains("\"refImagePath\":\"feature/submodule/src/test/screenshots/golden_preview.png\"")
+
+    // No file copying / disk duplication: no screenshots folder created
+    val screenshotsDir = File(submoduleReportDir, "screenshots")
+    assertThat(screenshotsDir.exists()).isFalse()
+  }
+
+  @Test
+  fun testWriteReport_handlesStatusStringsWithoutFileLookup() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="screenshotTest"/>
+          </properties>
+          <testcase name="testStatusStrings" classname="com.example.app.MyScreenshotTest" time="0.1">
+              <properties>
+                  <property name="PreviewScreenshot.diffImagePath" value="images match"/>
+                  <property name="PreviewScreenshot.newImagePath" value="none"/>
+              </properties>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "status-report.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "StatusStringProject")
+    aggregator.writeReport(outputDir)
+
+    val dataJsContent = File(outputDir, "data.js").readText()
+    assertThat(dataJsContent).contains("\"diffImagePath\":\"images match\"")
+    assertThat(dataJsContent).contains("\"newImagePath\":\"none\"")
+  }
+
+  @Test
+  fun testWriteReport_standardUnitTest() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.StandardUnitTest" tests="2" failures="0" errors="0" skipped="0" time="0.5">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testAdd" classname="com.example.app.CalculatorTest" time="0.2"/>
+          <testcase name="testSubtract" classname="com.example.app.CalculatorTest" time="0.3"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "unit-test-report.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "UnitTestProject")
+    aggregator.writeReport(outputDir)
+
+    val dataJs = File(outputDir, "data.js")
+    assertThat(dataJs.exists()).isTrue()
+    assertThat(File(outputDir, "index.html").exists()).isTrue()
+    assertThat(dataJs.readText()).contains("\"testAdd\"")
   }
 }

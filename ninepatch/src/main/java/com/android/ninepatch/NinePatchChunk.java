@@ -17,6 +17,7 @@
 package com.android.ninepatch;
 
 import com.google.common.io.LittleEndianDataOutputStream;
+
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -337,10 +338,20 @@ public class NinePatchChunk implements Serializable {
 
         boolean[] result = new boolean[1];
         Pair<List<Pair<Integer>>> left = getPatches(column, result);
+        if (left.mSecond.isEmpty()) {
+            left.mSecond.add(new Pair<Integer>(1, height));
+            result[0] = true;
+            left.mFirst.clear();
+        }
         mVerticalStartWithPatch = result[0];
 
         result = new boolean[1];
         Pair<List<Pair<Integer>>> top = getPatches(row, result);
+        if (top.mSecond.isEmpty()) {
+            top.mSecond.add(new Pair<Integer>(1, width));
+            result[0] = true;
+            top.mFirst.clear();
+        }
         mHorizontalStartWithPatch = result[0];
 
         mFixed = getRectangles(left.mFirst, top.mFirst);
@@ -367,10 +378,11 @@ public class NinePatchChunk implements Serializable {
         column = GraphicsUtilities.getPixels(image, width + 1, 1, 1, height, column);
 
         Pair<List<Pair<Integer>>> bottom = getPatches(row, result);
-        mHorizontalPadding = getPadding(bottom.mFirst);
+        mHorizontalPadding =
+                getPadding(bottom.mSecond.isEmpty() ? top.mFirst : bottom.mFirst, width);
 
         Pair<List<Pair<Integer>>> right = getPatches(column, result);
-        mVerticalPadding = getPadding(right.mFirst);
+        mVerticalPadding = getPadding(right.mSecond.isEmpty() ? left.mFirst : right.mFirst, height);
 
         ArrayList<Rectangle> allRegions = new ArrayList<>();
         allRegions.addAll(mHorizontalPatches);
@@ -441,20 +453,15 @@ public class NinePatchChunk implements Serializable {
         return rectangles;
     }
 
-    private Pair<Integer> getPadding(List<Pair<Integer>> pairs) {
+    private Pair<Integer> getPadding(List<Pair<Integer>> pairs, int length) {
         if (pairs.isEmpty()) {
             return new Pair<Integer>(0, 0);
-        } else if (pairs.size() == 1) {
-            if (pairs.get(0).mFirst == 0) {
-                return new Pair<Integer>(pairs.get(0).mSecond - pairs.get(0).mFirst, 0);
-            } else {
-                return new Pair<Integer>(0, pairs.get(0).mSecond - pairs.get(0).mFirst);
-            }
-        } else {
-            int index = pairs.size() - 1;
-            return new Pair<Integer>(pairs.get(0).mSecond - pairs.get(0).mFirst,
-                    pairs.get(index).mSecond - pairs.get(index).mFirst);
         }
+        Pair<Integer> first = pairs.get(0);
+        Pair<Integer> last = pairs.get(pairs.size() - 1);
+        int left = first.mFirst == 0 ? first.mSecond - first.mFirst : 0;
+        int right = last.mSecond == length ? last.mSecond - last.mFirst : 0;
+        return new Pair<Integer>(left, right);
     }
 
     private List<Rectangle> getRectangles(List<Pair<Integer>> leftPairs,
@@ -518,12 +525,6 @@ public class NinePatchChunk implements Serializable {
             patches.add(new Pair<Integer>(lastIndex, pixels.length));
         } else {
             fixed.add(new Pair<Integer>(lastIndex, pixels.length));
-        }
-
-        if (patches.isEmpty()) {
-            patches.add(new Pair<Integer>(1, pixels.length));
-            startWithPatch[0] = true;
-            fixed.clear();
         }
 
         return new Pair<List<Pair<Integer>>>(fixed, patches);

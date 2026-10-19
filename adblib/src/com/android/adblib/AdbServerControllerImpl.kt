@@ -89,40 +89,39 @@ internal class AdbServerControllerImpl(private val host: AdbSessionHost, configu
   }
 
   private suspend inline fun transitionCurrentState(transition: State.(TransitionStatus) -> State) {
-    val transitionJob =
-      stateLock.withLock {
-        // Throw if [closed] was called
-        currentState.scope.ensureActive()
+    val transitionJob = stateLock.withLock {
+      // Throw if [closed] was called
+      currentState.scope.ensureActive()
 
-        val newState = currentState.transition(currentJobTransitionStatus)
+      val newState = currentState.transition(currentJobTransitionStatus)
 
-        // Await on the same job if we are transitioning to the same state
-        if (currentState == newState) {
-          return@withLock currentJob
-        }
-
-        currentJob?.cancelAndJoin()
-
-        val newTransitionJob =
-          currentState.scope
-            .async {
-              when (newState) {
-                is InitialState -> Unit // should not happen
-                is StartingState -> newState.performStart()
-                is StoppingState -> newState.performStop()
-                is RestartingState -> newState.performRestart()
-              }
-            }
-            .also { currentJobTransitionStatus = TransitionStatus.IN_PROGRESS }
-
-        newTransitionJob.invokeOnCompletion { e ->
-          currentJobTransitionStatus = if (e == null) TransitionStatus.COMPLETED_OK else TransitionStatus.COMPLETED_FAILURE
-        }
-
-        currentState = newState
-        currentJob = newTransitionJob
-        newTransitionJob
+      // Await on the same job if we are transitioning to the same state
+      if (currentState == newState) {
+        return@withLock currentJob
       }
+
+      currentJob?.cancelAndJoin()
+
+      val newTransitionJob =
+        currentState.scope
+          .async {
+            when (newState) {
+              is InitialState -> Unit // should not happen
+              is StartingState -> newState.performStart()
+              is StoppingState -> newState.performStop()
+              is RestartingState -> newState.performRestart()
+            }
+          }
+          .also { currentJobTransitionStatus = TransitionStatus.IN_PROGRESS }
+
+      newTransitionJob.invokeOnCompletion { e ->
+        currentJobTransitionStatus = if (e == null) TransitionStatus.COMPLETED_OK else TransitionStatus.COMPLETED_FAILURE
+      }
+
+      currentState = newState
+      currentJob = newTransitionJob
+      newTransitionJob
+    }
 
     try {
       transitionJob?.awaitOrThrow()
@@ -265,7 +264,18 @@ internal class AdbServerControllerImpl(private val host: AdbSessionHost, configu
 
     private suspend fun runAdbProcess(path: Path, commandArgs: List<String>, envVars: Map<String, String>, failedLogMessage: String) {
       try {
-        processRunner.runProcess(path, commandArgs, envVars)
+        val processResult = processRunner.runProcess(path, commandArgs, envVars)
+        if (processResult.exitCode != 0) {
+          // Non-zero exit codes are logged as warnings because downstream connection attempts may still succeed.
+          // If `kill-server` fails, subsequent launch or connection attempts will catch any permanent issues.
+          // If `start-server` fails (e.g. port already bound or adb concurrently started by another process),
+          // we still try to connect to and use whatever is listening on the port, delegating connection/compatibility
+          // failures to the socket layer.
+          logger.warn(
+            "'$path ${commandArgs.joinToString(" ")}' exited with code ${processResult.exitCode}\n" +
+              "Stdout: ${processResult.stdout}\nStderr: ${processResult.stderr}"
+          )
+        }
       } catch (e: Throwable) {
         e.rethrowCancellation()
         logger.info(e) { "$failedLogMessage: `$path $commandArgs`" }

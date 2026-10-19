@@ -17,11 +17,14 @@
 package com.android.tools.maven;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.apache.maven.model.Model;
 import org.apache.maven.repository.internal.ArtifactDescriptorReaderDelegate;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.resolution.ArtifactDescriptorResult;
 import org.eclipse.aether.util.artifact.DelegatingArtifact;
 
@@ -30,6 +33,15 @@ public class HandleAarDescriptorReaderDelegate extends ArtifactDescriptorReaderD
     public void populateResult(
             RepositorySystemSession session, ArtifactDescriptorResult result, Model model) {
         super.populateResult(session, result, model);
+
+        List<Dependency> updatedDeps = resolveUnspecifiedKotlinVersions(result.getDependencies(), model);
+        if (updatedDeps != null) {
+            result.setDependencies(updatedDeps);
+        }
+        List<Dependency> updatedManagedDeps = resolveUnspecifiedKotlinVersions(result.getManagedDependencies(), model);
+        if (updatedManagedDeps != null) {
+            result.setManagedDependencies(updatedManagedDeps);
+        }
 
         if (model.getPackaging().equals("pom") && !result.getArtifact().getClassifier().isEmpty()) {
             // We consider it OK to have a JAR dependency to an artifact that has packaging=pom as long as the
@@ -141,5 +153,81 @@ public class HandleAarDescriptorReaderDelegate extends ArtifactDescriptorReaderD
 
     private static String getArtifactExtension(Model model) {
         return EXTENSIONS_MAP.getOrDefault(model.getPackaging(), model.getPackaging());
+    }
+
+    /**
+     * Resolves literal "unspecified" Kotlin dependency versions on the fly.
+     *
+     * Some POMs are published with a literal "unspecified" version due to a Gradle publishing
+     * bug. Since Maven's dependencyManagement is not transitive, Aether fails to resolve them
+     * transitively and crashes in the offline sandbox. This is resolved by looking up the correct
+     * version in the POM's own dependencyManagement and rewriting the dependency.
+     */
+    private static List<Dependency> resolveUnspecifiedKotlinVersions(List<Dependency> dependencies, Model model) {
+        // Find if there is a managed version for kotlin-stdlib or kotlin-stdlib-common in the model
+        String managedStdlibVersion = null;
+        String managedCommonVersion = null;
+        if (model.getDependencyManagement() != null && model.getDependencyManagement().getDependencies() != null) {
+            for (org.apache.maven.model.Dependency managedDep : model.getDependencyManagement().getDependencies()) {
+                if ("org.jetbrains.kotlin".equals(managedDep.getGroupId())) {
+                    if ("kotlin-stdlib".equals(managedDep.getArtifactId())
+                            && managedDep.getVersion() != null
+                            && !managedDep.getVersion().isEmpty()) {
+                        managedStdlibVersion = managedDep.getVersion();
+                    }
+                    if ("kotlin-stdlib-common".equals(managedDep.getArtifactId())
+                            && managedDep.getVersion() != null
+                            && !managedDep.getVersion().isEmpty()) {
+                        managedCommonVersion = managedDep.getVersion();
+                    }
+                }
+            }
+        }
+
+        // Resolve target version from the POM's own dependencyManagement only
+        String targetVersion = null;
+        if (managedStdlibVersion != null) {
+            targetVersion = managedStdlibVersion;
+        } else if (managedCommonVersion != null) {
+            targetVersion = managedCommonVersion;
+        }
+
+        if (targetVersion == null) {
+            return null; // No managed version found in this POM, do not rewrite
+        }
+
+        boolean modified = false;
+        List<Dependency> updated = new ArrayList<>();
+        for (Dependency dependency : dependencies) {
+            Artifact artifact = dependency.getArtifact();
+            if (artifact != null && "org.jetbrains.kotlin".equals(artifact.getGroupId())
+                    && "unspecified".equals(artifact.getVersion())) {
+
+                String targetArtifactId = artifact.getArtifactId();
+
+                // Always rewrite kotlin-stdlib-common to kotlin-stdlib
+                if ("kotlin-stdlib-common".equals(artifact.getArtifactId())) {
+                    targetArtifactId = "kotlin-stdlib";
+                }
+
+                modified = true;
+                Artifact rewrittenArtifact = new org.eclipse.aether.artifact.DefaultArtifact(
+                        artifact.getGroupId(),
+                        targetArtifactId,
+                        artifact.getClassifier(),
+                        artifact.getExtension(),
+                        targetVersion
+                );
+                updated.add(new Dependency(
+                        rewrittenArtifact,
+                        dependency.getScope(),
+                        dependency.getOptional(),
+                        dependency.getExclusions()
+                ));
+                continue;
+            }
+            updated.add(dependency);
+        }
+        return modified ? updated : null;
     }
 }

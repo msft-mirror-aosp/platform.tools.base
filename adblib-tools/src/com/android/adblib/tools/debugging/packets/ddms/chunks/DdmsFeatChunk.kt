@@ -31,11 +31,10 @@ internal data class DdmsFeatChunk(val features: List<String>) {
     internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsFeatChunk {
       // Read payload into "buffer"
       workBuffer.clear()
-      val buffer =
-        chunk.withPayload { payload ->
-          payload.readNBytes(workBuffer, chunk.length)
-          workBuffer.afterChannelRead()
-        }
+      val buffer = chunk.withPayload { payload ->
+        payload.readNBytes(workBuffer, chunk.length)
+        workBuffer.afterChannelRead()
+      }
 
       buffer.order(DDMS_CHUNK_BYTE_ORDER)
       val count = readInt(buffer)

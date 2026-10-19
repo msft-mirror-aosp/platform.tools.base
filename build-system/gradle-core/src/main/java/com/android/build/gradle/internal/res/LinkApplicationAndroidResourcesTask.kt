@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig
+import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
@@ -142,6 +143,14 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
   @get:OutputFile @get:Optional abstract val mainDexListProguardOutputFile: RegularFileProperty
 
   @get:OutputFile @get:Optional abstract val stableIdsOutputFileProperty: RegularFileProperty
+
+  /**
+   * The resource ids of the application under test to keep when linking the resources of its test suites, as the classes of the tested
+   * application may have inlined them.
+   *
+   * When not set, the resource ids of the previous execution are kept if [useStableIds] is enabled.
+   */
+  @get:InputFile @get:Optional @get:PathSensitive(PathSensitivity.NONE) abstract val appUnderTestStableIdsFile: RegularFileProperty
 
   @get:InputFiles
   @get:Optional
@@ -251,7 +260,9 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
 
   override fun doTaskAction(inputChanges: InputChanges) {
     val stableIdsFile = stableIdsOutputFileProperty.orNull?.asFile
-    if (useStableIds.get() && inputChanges.isIncremental) {
+    if (appUnderTestStableIdsFile.isPresent) {
+      doFullTaskAction(appUnderTestStableIdsFile.get().asFile)
+    } else if (useStableIds.get() && inputChanges.isIncremental) {
       // For now, we don't care about what changed - we only want to preserve the res IDs from the
       // previous run if stable IDs support is enabled.
       doFullTaskAction(stableIdsFile)
@@ -519,8 +530,13 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
       task.incrementalDirectory.set(creationConfig.paths.getIncrementalDir(name))
       task.incrementalDirectory.disallowChanges()
 
+      val mainVariant = (creationConfig as? HostTestCreationConfig)?.mainVariant ?: creationConfig
+      if (creationConfig is HostTestCreationConfig && mainVariant is ApplicationCreationConfig) {
+        task.appUnderTestStableIdsFile.setDisallowChanges(mainVariant.artifacts.get(InternalArtifactType.STABLE_RESOURCE_IDS_FILE))
+      }
+
       task.resourceConfigs.setDisallowChanges(
-        if (creationConfig is ApplicationCreationConfig) {
+        if (mainVariant is ApplicationCreationConfig) {
           androidResourcesCreationConfig.resourceConfigurations
         } else {
           ImmutableSet.of()
@@ -542,9 +558,9 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
 
       task.componentType.setDisallowChanges(creationConfig.componentType)
 
-      if (creationConfig is ApkCreationConfig) {
-        task.noCompress.set(creationConfig.androidResources.noCompress)
-        task.aaptAdditionalParameters.set(creationConfig.androidResources.aaptAdditionalParameters)
+      if (mainVariant is ApkCreationConfig) {
+        task.noCompress.set(mainVariant.androidResources.noCompress)
+        task.aaptAdditionalParameters.set(mainVariant.androidResources.aaptAdditionalParameters)
       }
       task.noCompress.disallowChanges()
       task.aaptAdditionalParameters.disallowChanges()
@@ -595,13 +611,13 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
 
       task.outputsHandler.setDisallowChanges(MultiOutputHandler.create(creationConfig))
 
-      when (creationConfig) {
+      when (mainVariant) {
         is ApplicationCreationConfig -> {
-          task.localeFilters.setDisallowChanges(creationConfig.androidResources.localeFilters)
+          task.localeFilters.setDisallowChanges(mainVariant.androidResources.localeFilters)
         }
 
         is DynamicFeatureCreationConfig -> {
-          task.localeFilters.setDisallowChanges(creationConfig.baseModuleLocaleFilters)
+          task.localeFilters.setDisallowChanges(mainVariant.baseModuleLocaleFilters)
         }
 
         else -> {

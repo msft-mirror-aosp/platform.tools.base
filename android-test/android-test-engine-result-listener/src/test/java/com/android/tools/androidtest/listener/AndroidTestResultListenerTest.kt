@@ -256,6 +256,68 @@ class AndroidTestResultListenerTest {
   }
 
   @Test
+  fun executionFinished_aborted() {
+    val listener = AndroidTestResultListener()
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:myTest]")
+    val methodSource = MethodSource.from("com.example.MyTest", "myMethod")
+    whenever(testIdentifier.source).thenReturn(Optional.of(methodSource))
+
+    val throwable = org.opentest4j.TestAbortedException("Test ignored")
+    listener.executionFinished(testIdentifier, TestExecutionResult.aborted(throwable))
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.hasTestCaseFinished()).isTrue()
+    val testResult = event.testCaseFinished.testCaseResult.unpack(TestResultProto.TestResult::class.java)
+    assertThat(testResult.testStatus).isEqualTo(TestStatusProto.TestStatus.IGNORED)
+    assertThat(event.deviceId).isEqualTo("my-device")
+  }
+
+  @Test
+  fun testSuiteFinished_aborted() {
+    val listener = AndroidTestResultListener()
+    val deviceIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
+    whenever(deviceIdentifier.isContainer).thenReturn(true)
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:myTest]")
+
+    listener.executionStarted(deviceIdentifier)
+    listener.executionStarted(testIdentifier)
+    listener.executionFinished(testIdentifier, TestExecutionResult.aborted(org.opentest4j.TestAbortedException("Test ignored")))
+    outputStream.reset()
+    listener.executionFinished(deviceIdentifier, TestExecutionResult.successful())
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.hasTestSuiteFinished()).isTrue()
+    val suiteResult = event.testSuiteFinished.testSuiteResult.unpack(TestSuiteResultProto.TestSuiteResult::class.java)
+    assertThat(suiteResult.testStatus).isEqualTo(TestStatusProto.TestStatus.PASSED)
+  }
+
+  @Test
+  fun executionSkipped() {
+    val listener = AndroidTestResultListener()
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:myTest]")
+    val methodSource = MethodSource.from("com.example.MyTest", "myMethod")
+    whenever(testIdentifier.source).thenReturn(Optional.of(methodSource))
+
+    listener.executionSkipped(testIdentifier, "Test ignored")
+
+    val output = outputStream.toString()
+    val lines = output.trim().lines()
+    assertThat(lines).hasSize(3)
+
+    val event1 = decodeEvent(lines[0])
+    assertThat(event1.hasTestSuiteStarted()).isTrue()
+
+    val event2 = decodeEvent(lines[1])
+    assertThat(event2.hasTestCaseStarted()).isTrue()
+
+    val event3 = decodeEvent(lines[2])
+    assertThat(event3.hasTestCaseFinished()).isTrue()
+    val testResult = event3.testCaseFinished.testCaseResult.unpack(TestResultProto.TestResult::class.java)
+    assertThat(testResult.testStatus).isEqualTo(TestStatusProto.TestStatus.IGNORED)
+    assertThat(event3.deviceId).isEqualTo("my-device")
+  }
+
+  @Test
   fun testPlanExecutionFinished() {
     val listener = AndroidTestResultListener()
     val testPlan = mock<TestPlan>()
@@ -370,6 +432,53 @@ class AndroidTestResultListenerTest {
   }
 
   @Test
+  fun testSuiteFinished_concurrentExecutionFinished_recordsAllTestResults() {
+    val tempFile = File.createTempFile("test-results-concurrent", ".pb")
+    systemPropertyOverrides.setProperty(AndroidTestResultListenerKeys.TEST_RESULTS_FILE, tempFile.absolutePath)
+    try {
+      val listener = AndroidTestResultListener()
+      val deviceIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
+      whenever(deviceIdentifier.isContainer).thenReturn(true)
+      listener.executionStarted(deviceIdentifier)
+
+      val testCount = 50
+      val testIdentifiers =
+        (0 until testCount).map { i ->
+          val id = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:test_$i]")
+          val methodSource = MethodSource.from("com.example.MyTest", "test_$i")
+          whenever(id.source).thenReturn(Optional.of(methodSource))
+          id
+        }
+
+      val executor = java.util.concurrent.Executors.newFixedThreadPool(10)
+      val startLatch = CountDownLatch(1)
+      val doneLatch = CountDownLatch(testCount)
+
+      for (testId in testIdentifiers) {
+        executor.submit {
+          try {
+            startLatch.await()
+            listener.executionFinished(testId, TestExecutionResult.successful())
+          } finally {
+            doneLatch.countDown()
+          }
+        }
+      }
+
+      startLatch.countDown()
+      assertThat(doneLatch.await(10, TimeUnit.SECONDS)).isTrue()
+      executor.shutdown()
+
+      listener.executionFinished(deviceIdentifier, TestExecutionResult.successful())
+
+      val testSuiteResult = tempFile.inputStream().use { TestSuiteResultProto.TestSuiteResult.parseFrom(it) }
+      assertThat(testSuiteResult.testResultCount).isEqualTo(testCount)
+    } finally {
+      tempFile.delete()
+    }
+  }
+
+  @Test
   fun printTestResultEvent_disabled() {
     systemPropertyOverrides.setProperty(AndroidTestResultListenerKeys.STREAM_BASE64_ENCODED_RESULT, "false")
     val listener = AndroidTestResultListener()
@@ -449,5 +558,58 @@ class AndroidTestResultListenerTest {
     assertThat(artifact.label.label).isEqualTo("logcat")
     assertThat(artifact.label.namespace).isEqualTo("android")
     assertThat(artifact.sourcePath.path).isEqualTo(logcatPath)
+  }
+
+  @Test
+  fun reportingEntryPublished_withBenchmarkTracePaths_isIncludedInTestResult() {
+    val listener = AndroidTestResultListener()
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:android-test-engine]/[device:my-device]/[test:myTest]")
+    val tracePath1 = "/path/to/trace1.pb"
+    val tracePath2 = "/path/to/trace2.pb"
+    val reportEntry1 = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_TRACE_PATHS, "$tracePath1,$tracePath2")
+    val messagePath = "/path/to/message.txt"
+    val reportEntry2 = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH, messagePath)
+
+    listener.reportingEntryPublished(testIdentifier, reportEntry1)
+    listener.reportingEntryPublished(testIdentifier, reportEntry2)
+
+    outputStream.reset()
+    listener.executionFinished(testIdentifier, TestExecutionResult.successful())
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.hasTestCaseFinished()).isTrue()
+    val testResult = event.testCaseFinished.testCaseResult.unpack(TestResultProto.TestResult::class.java)
+    assertThat(testResult.outputArtifactCount).isEqualTo(3)
+
+    val artifact1 = testResult.getOutputArtifact(0)
+    assertThat(artifact1.label.label).isEqualTo("additionaltestoutput.benchmark.trace")
+    assertThat(artifact1.label.namespace).isEqualTo("android")
+    assertThat(artifact1.sourcePath.path).isEqualTo(tracePath1)
+
+    val artifact2 = testResult.getOutputArtifact(1)
+    assertThat(artifact2.label.label).isEqualTo("additionaltestoutput.benchmark.trace")
+    assertThat(artifact2.label.namespace).isEqualTo("android")
+    assertThat(artifact2.sourcePath.path).isEqualTo(tracePath2)
+
+    val artifact3 = testResult.getOutputArtifact(2)
+    assertThat(artifact3.label.label).isEqualTo("additionaltestoutput.benchmark.message")
+    assertThat(artifact3.label.namespace).isEqualTo("android")
+    assertThat(artifact3.sourcePath.path).isEqualTo(messagePath)
+  }
+
+  @Test
+  fun testSuiteStarted_deviceSerialWithColon() {
+    val listener = AndroidTestResultListener()
+    val serial = "192.168.0.7:5555"
+    val deviceUniqueId = org.junit.platform.engine.UniqueId.forEngine("mock").append("device", serial)
+    val testIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = deviceUniqueId.toString())
+    whenever(testIdentifier.isContainer).thenReturn(true)
+
+    val reportEntry = mock<ReportEntry>()
+    whenever(reportEntry.keyValuePairs).thenReturn(mapOf(AndroidTestReportKeys.TEST_COUNT to "1"))
+    listener.reportingEntryPublished(testIdentifier, reportEntry)
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.deviceId).isEqualTo(serial)
   }
 }

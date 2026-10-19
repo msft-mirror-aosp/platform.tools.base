@@ -230,6 +230,45 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
     assertThat(kotlinGetNameMethod.variantLineNumbers).containsExactly(TestVariantLineNumber("debug", 19))
   }
 
+  @Test
+  fun `unit test report still uses JaCoCo when the on-device coverage agent is enabled`() {
+    // The on-device coverage agent only replaces JaCoCo for tests that run on a device. Unit tests
+    // keep running with the JaCoCo agent on the JVM, so their report must read the JaCoCo data.
+    val run =
+      testProject
+        .executor()
+        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+        .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+        .run("createDebugUnitTestCoverageReport")
+
+    val reportDir = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug")
+    val generatedCoverageReport = File(reportDir, "index.html")
+    run.stdout.use { assertThat(ScannerSubject.assertThat(it).contains("View coverage report at ${generatedCoverageReport.toURI()}")) }
+    assertThat(File(reportDir, "report.xml").exists()).isTrue()
+
+    // The same coverage as without the on-device agent.
+    val report = parseReportJs<TestCoverageReport>(File(reportDir, "data/report-data.js"))
+    val unitTestSuite = report.testSuiteCoverages.single { it.name == "UnitTest" }
+    verifyVariantCoverage(
+      unitTestSuite.variantCoverages.single { it.name == "debug" },
+      instPercent = 88,
+      instCovered = 23,
+      instTotal = 26,
+      branchPercent = 0,
+    )
+  }
+
+  @Test
+  fun `unit test report with the on-device coverage agent enabled and aggregation disabled`() {
+    // The on-device agent requires report aggregation, but only for the reports it produces. The
+    // JaCoCo report for unit tests must not fail on that requirement.
+    testProject.executor().with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true).run("createDebugUnitTestCoverageReport")
+
+    val reportDir = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug")
+    assertThat(File(reportDir, "index.html").exists()).isTrue()
+    assertThat(File(reportDir, "report.xml").exists()).isTrue()
+  }
+
   // Regression test for b/188953818.
   private fun checkHighlightedSourceCodeReportFiles(buildDir: File) {
     val reportPackageInfoDir = FileUtils.join(buildDir, "reports", "coverage", "test", "debug", "com.android.tests")

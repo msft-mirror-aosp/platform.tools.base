@@ -16,6 +16,7 @@
 
 package com.android.build.api.variant
 
+import org.gradle.api.Incubating
 import org.gradle.api.Named
 
 /**
@@ -34,6 +35,15 @@ interface TestSuiteBuilder : Named {
 
   /** Enables or disable the test suite for the current variant. */
   var enable: Boolean
+
+  /**
+   * Specifies test suite code coverage data collection by configuring the JacocoPlugin.
+   *
+   * When enabled, the Jacoco plugin is applied and coverage data is collected by the Jacoco plugin.
+   *
+   * If the value is initialized from the DSL [com.android.build.api.dsl.AgpTestSuite.codeCoverage], it will be used.
+   */
+  @Incubating fun setEnabledCodeCoverage(value: Boolean)
 
   /** Configure the [com.android.build.api.dsl.JUnitEngineSpec] for this test suite in this variant. */
   val junitEngineSpec: JUnitEngineSpecBuilder

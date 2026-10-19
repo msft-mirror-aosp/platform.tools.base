@@ -720,14 +720,13 @@ private fun DiffChunk.perfectRepair(source: List<String>): DiffChunk? {
 
   // Pick the candidate starting index closest to the chunk's original starting position
   val bestStart0 = candidates.minBy { abs(it - start0) }
-  val newChunkLines =
-    lines.mapIndexed { lineIndexInChunk, line ->
-      if (line.type == LineType.ADDED) line
-      else {
-        val sourceLineIndex = bestStart0 + lines.subList(0, lineIndexInChunk).count { it.type != LineType.ADDED }
-        DiffLine.fromRawLine(source[sourceLineIndex], line.type)
-      }
+  val newChunkLines = lines.mapIndexed { lineIndexInChunk, line ->
+    if (line.type == LineType.ADDED) line
+    else {
+      val sourceLineIndex = bestStart0 + lines.subList(0, lineIndexInChunk).count { it.type != LineType.ADDED }
+      DiffLine.fromRawLine(source[sourceLineIndex], line.type)
     }
+  }
 
   return DiffChunk(bestStart0 + 1, oldLength, bestStart0 + 1, newLength, newChunkLines)
 }

@@ -13,7 +13,6 @@ genrule(
     cmd = "$(location //tools/base/bazel:bin2c) -lang=cxx -variable=coverage_rt_jar" +
           " -output=$(location coverage_rt.cc)" +
           " $(location //tools/base/android-test/coverage/agent/runtime:coverage_tracker_dex)",
-    tags = ["testonly"],
     tools = [
         "//tools/base/bazel:bin2c",
     ],
@@ -23,23 +22,42 @@ genrule(
 cc_library(
     name = "agent_lib",
     srcs = [
+        "constructor_analyzer.cc",
         "hits_extractor.cc",
         "instrumenter.cc",
+        "kotlin_compose_filter.cc",
+        "kotlin_coroutine_filter.cc",
+        "kotlin_generated_filter.cc",
+        "kotlin_lateinit_filter.cc",
         "metadata_collector.cc",
+        "parameter_shifter.cc",
+        "register_scanner.cc",
+        "synthetic_filter.cc",
+        "tagging_manager.cc",
     ],
     hdrs = [
+        "constructor_analyzer.h",
+        "filter_interface.h",
         "hits_extractor.h",
         "instrumenter.h",
+        "kotlin_compose_filter.h",
+        "kotlin_coroutine_filter.h",
+        "kotlin_generated_filter.h",
+        "kotlin_lateinit_filter.h",
         "metadata_collector.h",
+        "parameter_shifter.h",
+        "register_scanner.h",
+        "synthetic_filter.h",
+        "tagging_manager.h",
     ],
     copts = ANDROID_COPTS,
-    tags = ["testonly"],
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/android-test/coverage/common:log",
-        "//tools/base/android-test/coverage/proto:coverage_metadata_cc_proto",
+        "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@slicer",
     ],
+    alwayslink = 1,
 )
 
 cc_binary(
@@ -51,7 +69,6 @@ cc_binary(
     copts = ANDROID_COPTS,
     linkopts = ANDROID_LINKOPTS,
     linkshared = 1,
-    tags = ["testonly"],
     deps = [
         ":agent_lib",
     ],
@@ -61,14 +78,11 @@ android_cc_binary(
     name = "android_coverage_agent",
     binary = ":coverage_agent.so",
     filename = "coverage_agent.so",
-    tags = ["testonly"],
-    visibility = ["//visibility:public"],
 )
 
 jni_library(
     name = "coverage_agent_jni",
-    tags = ["testonly"],
-    visibility = ["//visibility:public"],
+    visibility = ["//tools/base/android-test/coverage/agent/support:__pkg__"],
     deps = select({
         "//tools/base/bazel:without_vendor": [":placeholder"],
         "//conditions:default": [
@@ -86,19 +100,20 @@ genrule(
     name = "placeholder",
     outs = ["placeholder.txt"],
     cmd = "touch $@",
-    tags = ["testonly"],
 )
 
 cc_test(
     name = "agent_unit_tests",
     size = "small",
     srcs = [
+        "bytecode_helpers_test.cc",
         "hits_extractor_test.cc",
         "metadata_collector_test.cc",
     ],
     linkstatic = 1,
     deps = [
         ":agent_lib",
+        "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@googletest//:gtest_main",
     ],
 )

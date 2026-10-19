@@ -17,7 +17,6 @@
 package com.android.repository.impl.installer;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.Installer;
 import com.android.repository.api.InstallerFactory;
@@ -25,7 +24,6 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.PackageOperation;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Uninstaller;
 
 /**
@@ -36,23 +34,11 @@ import com.android.repository.api.Uninstaller;
 public abstract class AbstractInstallerFactory implements InstallerFactory {
 
     private StatusChangeListenerFactory mListenerFactory;
-    protected InstallerFactory mFallbackFactory;
-
-    @Override
-    public void setFallbackFactory(@Nullable InstallerFactory fallback) {
-        mFallbackFactory = fallback;
-        if (mFallbackFactory != null && mListenerFactory != null) {
-            mFallbackFactory.setListenerFactory(mListenerFactory);
-        }
-    }
 
     @Override
     public void setListenerFactory(
             @NonNull StatusChangeListenerFactory listenerFactory) {
         mListenerFactory = listenerFactory;
-        if (mFallbackFactory != null) {
-            mFallbackFactory.setListenerFactory(listenerFactory);
-        }
     }
 
     @NonNull
@@ -61,14 +47,7 @@ public abstract class AbstractInstallerFactory implements InstallerFactory {
             @NonNull RemotePackage remote,
             @NonNull RepoManager mgr,
             @NonNull Downloader downloader) {
-        if (!canHandlePackage(remote, mgr) && mFallbackFactory != null) {
-            return mFallbackFactory.createInstaller(remote, mgr, downloader);
-        }
         Installer installer = doCreateInstaller(remote, mgr, downloader);
-        if (mFallbackFactory != null) {
-            installer.setFallbackOperation(
-                    mFallbackFactory.createInstaller(remote, mgr, downloader));
-        }
         registerListeners(installer);
         return installer;
     }
@@ -91,13 +70,7 @@ public abstract class AbstractInstallerFactory implements InstallerFactory {
     @Override
     public final Uninstaller createUninstaller(
             @NonNull LocalPackage local, @NonNull RepoManager mgr) {
-        if (!canHandlePackage(local, mgr) && mFallbackFactory != null) {
-            return mFallbackFactory.createUninstaller(local, mgr);
-        }
         Uninstaller uninstaller = doCreateUninstaller(local, mgr);
-        if (mFallbackFactory != null) {
-            uninstaller.setFallbackOperation(mFallbackFactory.createUninstaller(local, mgr));
-        }
         registerListeners(uninstaller);
         return uninstaller;
     }
@@ -106,12 +79,4 @@ public abstract class AbstractInstallerFactory implements InstallerFactory {
     @NonNull
     protected abstract Uninstaller doCreateUninstaller(
             @NonNull LocalPackage p, @NonNull RepoManager mgr);
-
-    /**
-     * Subclasses should override this to indicate whether they can generate installers/uninstallers
-     * for the given package.
-     */
-    protected boolean canHandlePackage(@NonNull RepoPackage pack, @NonNull RepoManager manager) {
-        return true;
-    }
 }

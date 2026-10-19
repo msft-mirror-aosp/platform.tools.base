@@ -1,4 +1,4 @@
-load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "java_proto_library", "maven_proto_library")
+load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "maven_proto_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
 
 maven_proto_library(
@@ -27,10 +27,12 @@ android_java_proto_library(
     srcs = [
         "emulator_controller.proto",
         "ice_config.proto",
+        "modem_service.proto",
         "rtc_service_v2.proto",
         "snapshot.proto",
         "snapshot_service.proto",
         "ui_controller_service.proto",
+        "virtual_scene_service.proto",
     ],
     grpc_support = True,
     java_deps = ["@maven//:io.grpc.grpc-all"],

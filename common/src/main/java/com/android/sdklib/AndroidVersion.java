@@ -136,6 +136,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     public static final Pattern PREVIEW_PATTERN = Pattern.compile("^[A-Z][0-9A-Za-z_]*$");
+    // The NDK uses hyphens in codenames in meta/platforms.json (e.g. "O-MR1"); Lint config allows
+    // lowercase codenames
+    public static final Pattern PREVIEW_PATTERN_RELAXED =
+            Pattern.compile("^[A-Za-z][0-9A-Za-z_-]*$");
     public static final Pattern API_LEVEL_PATTERN =
             Pattern.compile("(\\d+)(\\.(\\d+))?(-ext(\\d+))?");
     public static final Pattern BETA_PATTERN = Pattern.compile("(\\d+)(\\.(\\d+))?-beta(\\d+)");
@@ -287,7 +291,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
             checkNotNull(extensionLevel, "extensionLevel required when isBaseExtension is false");
         }
         mAndroidApiLevel = androidApiLevel;
-        mCodename = sanitizeCodename(codename);
+        mCodename = validateCodename(sanitizeCodename(codename));
         mExtensionLevel = extensionLevel;
         mIsBaseExtension = isBaseExtension;
         mBetaNumber = betaNumber;
@@ -295,10 +299,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Returns an AndroidVersion with the same API level and codename, and a base extension level,
-     * e.g. "33-ext4" would become "33". This will set the extensionLevel property based on the API
-     * level if known (although, since it is the base extension level, it will not be rendered in
-     * getApiStringWithExtension()).
+     * Returns this AndroidVersion with a base extension level, e.g. "33-ext4" would become "33".
+     * This will set the extensionLevel property based on the API level if known (although, since it
+     * is the base extension level, it will not be rendered in getApiStringWithExtension()); other
+     * properties are preserved.
      */
     public AndroidVersion withBaseExtensionLevel() {
         int baseExtensionLevel = getBaseExtensionLevel(mAndroidApiLevel);
@@ -306,20 +310,25 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
                 mAndroidApiLevel,
                 mCodename,
                 baseExtensionLevel <= 0 ? null : baseExtensionLevel,
-                true);
+                true,
+                mBetaNumber,
+                mCanaryNumber);
     }
 
     /**
-     * Returns this AndroidVersion with the same API level and codename and the specified extension
-     * level, e.g. new AndroidVersion(33).withExtensionLevel(4).getApiStringWithExtension() would be
-     * "33-ext4".
+     * Returns this AndroidVersion with the specified extension level, e.g. new
+     * AndroidVersion(33).withExtensionLevel(4).getApiStringWithExtension() would be "33-ext4".
+     * isBaseExtension will be set if we know that the specified extension is the base for the API
+     * level; other properties will be preserved.
      */
     public AndroidVersion withExtensionLevel(int extensionLevel) {
         return new AndroidVersion(
                 mAndroidApiLevel,
                 mCodename,
                 extensionLevel,
-                extensionLevel == getBaseExtensionLevel(mAndroidApiLevel));
+                extensionLevel == getBaseExtensionLevel(mAndroidApiLevel),
+                mBetaNumber,
+                mCanaryNumber);
     }
 
     /**
@@ -773,6 +782,13 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
             if (codename.isEmpty() || SdkConstants.CODENAME_RELEASE.equals(codename)) {
                 codename = null;
             }
+        }
+        return codename;
+    }
+
+    private static String validateCodename(@Nullable String codename) {
+        if (codename != null && !PREVIEW_PATTERN_RELAXED.matcher(codename).matches()) {
+            throw new IllegalArgumentException("Invalid codename: " + codename);
         }
         return codename;
     }

@@ -12,6 +12,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import com.google.common.truth.Truth
 import java.io.File
 import kotlin.io.path.pathString
 import org.gradle.api.Project
@@ -29,12 +30,11 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
   val ruleBuilder = GradleRule.configure().withCustomSdkDir(customAndroidSdkRule)
 
   @get:Rule
-  val rule =
-    ruleBuilder.from {
-      simpleGMDProject()
-      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
-      androidApplication { pluginCallbacks += ConfigureTestTaskCallback::class.java }
-    }
+  val rule = ruleBuilder.from {
+    simpleGMDProject()
+    gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
+    androidApplication { pluginCallbacks += ConfigureTestTaskCallback::class.java }
+  }
 
   private val executor: GradleTaskExecutor
     get() = rule.build.executor.withCustomAndroidSdk(customAndroidSdkRule).withEnableInfoLogging(false)
@@ -61,32 +61,97 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   private fun assertTestReportExists() {
     val reportDir =
-      FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "device1")
+      File(
+        FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "device1")
+      )
     assertThat(File(reportDir, "index.html")).exists()
-    assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
-    assertThat(File(reportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    if (!runWithBuiltInPlatform) {
+      assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
+      assertThat(File(reportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    }
 
     val mergedTestReportDir =
-      FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "allDevices")
+      File(
+        FileUtils.join(
+          rule.build.androidApplication().buildDir.pathString,
+          "reports",
+          "androidTests",
+          "managedDevice",
+          "debug",
+          "allDevices",
+        )
+      )
     assertThat(File(mergedTestReportDir, "index.html")).exists()
-    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
-    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    if (!runWithBuiltInPlatform) {
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    }
+  }
+
+  private fun verifyMetadataInjected(enabled: Boolean) {
+    val reportDir =
+      File(
+        FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "device1")
+      )
+    assertThat(File(reportDir, "index.html")).exists()
+
+    val aggregationActive = enabled || runWithBuiltInPlatform
+
+    if (aggregationActive) {
+      assertThat(File(reportDir, "data.js")).exists()
+      assertThat(File(reportDir, "script.js")).exists()
+      assertThat(File(reportDir, "styles.css")).exists()
+      assertThat(File(reportDir, "com.example.android.kotlin.html")).doesNotExist()
+
+      val dataJsContent = File(reportDir, "data.js").readText()
+      Truth.assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = ")
+      Truth.assertThat(dataJsContent).contains("\"testSuites\"")
+      Truth.assertThat(dataJsContent).contains("\"androidTest\"")
+      Truth.assertThat(dataJsContent).contains("\"variants\"")
+      Truth.assertThat(dataJsContent).contains("\"debug\"")
+      Truth.assertThat(dataJsContent).contains("\"name\":\":app\"")
+      Truth.assertThat(dataJsContent).contains("\"name\":\"useAppContext\"")
+    } else {
+      assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
+      assertThat(File(reportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    }
+
+    val mergedTestReportDir =
+      File(
+        FileUtils.join(
+          rule.build.androidApplication().buildDir.pathString,
+          "reports",
+          "androidTests",
+          "managedDevice",
+          "debug",
+          "allDevices",
+        )
+      )
+    assertThat(File(mergedTestReportDir, "index.html")).exists()
+    if (enabled) {
+      assertThat(File(mergedTestReportDir, "data.js")).exists()
+      assertThat(File(mergedTestReportDir, "script.js")).exists()
+      assertThat(File(mergedTestReportDir, "styles.css")).exists()
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).doesNotExist()
+    } else {
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    }
   }
 
   private fun assertTestPassedInReport() {
     val xmlDir = File(rule.build.androidApplication().buildDir.pathString, "outputs/androidTest-results/managedDevice/debug/device1")
     val xmlFiles =
       xmlDir.walkTopDown().filter { file -> file.isFile && file.name.startsWith("TEST-device1") && file.name.endsWith(".xml") }.toList()
-    com.google.common.truth.Truth.assertThat(xmlFiles).isNotEmpty()
+    Truth.assertThat(xmlFiles).isNotEmpty()
 
-    val testPassed =
-      xmlFiles.any { file ->
-        val content = file.readText()
-        content.contains("""<testcase name="useAppContext" classname="com.example.android.kotlin.ExampleInstrumentedTest"""") &&
-          content.contains("""failures="0"""") &&
-          content.contains("""errors="0"""")
-      }
-    com.google.common.truth.Truth.assertWithMessage("useAppContext test case not found or failed in XML reports").that(testPassed).isTrue()
+    val testPassed = xmlFiles.any { file ->
+      val content = file.readText()
+      content.contains("""<testcase name="useAppContext" classname="com.example.android.kotlin.ExampleInstrumentedTest"""") &&
+        content.contains("""failures="0"""") &&
+        content.contains("""errors="0"""")
+    }
+    Truth.assertWithMessage("useAppContext test case not found or failed in XML reports").that(testPassed).isTrue()
   }
 
   companion object {
@@ -101,10 +166,46 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
     assertTestReportExists()
     assertTestPassedInReport()
+    verifyMetadataInjected(enabled = false)
+  }
+
+  @Test
+  fun runBasicManagedDeviceWithReportAggregation() {
+    val result = executor.with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true).run(":app:device1DebugAndroidTest")
+
+    verifyMetadataInjected(enabled = true)
   }
 
   @Test
   fun runBasicManagedDeviceWithSharding() {
+    rule.build
+      .androidApplication()
+      .files
+      .update("src/androidTest/java/com/example/android/kotlin/InstrumentedTest.kt")
+      .replaceWith(
+        // language=kotlin
+        """
+        package com.example.android.kotlin
+
+        import androidx.test.ext.junit.runners.AndroidJUnit4
+        import org.junit.Test
+        import org.junit.runner.RunWith
+
+        @RunWith(AndroidJUnit4::class)
+        class ExampleInstrumentedTest {
+            @Test
+            fun useAppContext() {}
+
+            @Test
+            fun useAppContext1() {}
+
+            @Test
+            fun useAppContext2() {}
+        }
+        """
+          .trimIndent()
+      )
+
     val result = executor.with(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE, 2).run(":app:device1DebugAndroidTest")
 
     assertTestReportExists()
@@ -112,5 +213,67 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
     result.assertOutputContains("device1_0")
     result.assertOutputContains("device1_1")
+
+    val xmlDir = File(rule.build.androidApplication().buildDir.pathString, "outputs/androidTest-results/managedDevice/debug/device1")
+    val shard0Xml = File(xmlDir, "TEST-device1_0.xml")
+    val shard1Xml = File(xmlDir, "TEST-device1_1.xml")
+    assertThat(shard0Xml).exists()
+    assertThat(shard1Xml).exists()
+
+    val testcaseRegex = Regex("""<testcase\s+name="([^"]+)"""")
+    val shard0Tests = testcaseRegex.findAll(shard0Xml.readText()).map { it.groupValues[1] }.toList()
+    val shard1Tests = testcaseRegex.findAll(shard1Xml.readText()).map { it.groupValues[1] }.toList()
+
+    Truth.assertThat(shard0Tests).isNotEmpty()
+    Truth.assertThat(shard1Tests).isNotEmpty()
+    Truth.assertThat(shard0Tests + shard1Tests).containsExactly("useAppContext", "useAppContext1", "useAppContext2")
+  }
+
+  @Test
+  fun runFailingManagedDeviceTestWithContinue() {
+    rule.build
+      .androidApplication()
+      .files
+      .add(
+        "src/androidTest/java/com/example/android/kotlin/FailingInstrumentedTest.kt",
+        // language=kotlin
+        """
+        package com.example.android.kotlin
+
+        import androidx.test.ext.junit.runners.AndroidJUnit4
+        import org.junit.Assert.fail
+        import org.junit.Test
+        import org.junit.runner.RunWith
+
+        @RunWith(AndroidJUnit4::class)
+        class FailingInstrumentedTest {
+            @Test
+            fun testFailure() {
+                fail("This test is supposed to fail")
+            }
+        }
+        """
+          .trimIndent(),
+      )
+
+    // With --continue, the failing managed device test doesn't prevent the report from being generated, and testAllSuites then fails
+    // because the report contains a failing test. There is no connected device, so the connected test task, which also contributes to the
+    // report, is excluded.
+    val result =
+      executor
+        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+        .withArguments(listOf("--continue", "-x", ":app:connectedDebugAndroidTest"))
+        .expectFailure()
+        .run(":app:testAllSuites")
+
+    Truth.assertThat(result.failedTasks).containsExactly(":app:device1DebugAndroidTest", ":app:testAllSuites")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testResultsCollectionDebug")
+    result.assertErrorContains("reports/testAllSuites/test-report/index.html")
+
+    val reportDir = FileUtils.join(rule.build.androidApplication().buildDir.toFile(), "reports", "testAllSuites", "test-report")
+    assertThat(File(reportDir, "index.html")).exists()
+    val dataJsContent = File(reportDir, "data.js").readText()
+    Truth.assertThat(dataJsContent).contains("\"name\":\"useAppContext\"")
+    Truth.assertThat(dataJsContent).contains("\"name\":\"testFailure\"")
   }
 }

@@ -218,6 +218,26 @@ header {
     background-color: var(--bg-hover);
 }
 
+.ts-selector-btn:disabled,
+.ts-selector-btn.unclickable {
+    cursor: default;
+    pointer-events: none;
+    background: transparent;
+    outline: none;
+}
+
+.ts-selector-btn:disabled:hover,
+.ts-selector-btn.unclickable:hover {
+    background-color: transparent;
+}
+
+.ts-selector-btn:disabled .ts-value-container svg,
+.ts-selector-btn.unclickable .ts-value-container svg,
+.ts-selector-btn:disabled #ts-all-state svg,
+.ts-selector-btn.unclickable #ts-all-state svg {
+    display: none;
+}
+
 #ts-all-state {
     display: flex;
     align-items: center;
@@ -462,25 +482,6 @@ header {
 }
 .search-clear-btn:hover { color: var(--text-gray-500); }
 
-/* Tooltip */
-[data-tooltip] { position: relative; }
-[data-tooltip]:hover::after,
-[data-tooltip]:focus-visible::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 110%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--bg-tooltip);
-    color: var(--text-inverse);
-    padding: 0.375rem 0.625rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    z-index: 1000;
-    box-shadow: var(--shadow-md);
-}
-
 /* --- Custom Tooltip --- */
 #a11y-tooltip {
     position: fixed;
@@ -492,13 +493,19 @@ header {
     font-size: 0.75rem;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s;
+    visibility: hidden;
+    /* No transition on the hidden state: the tooltip disappears instantly.
+       Fading it out would make it translucent on the way, revealing whatever it
+       overlaps (e.g. checkboxes in an open dropdown) through the box. */
+    transition: none;
     box-shadow: var(--shadow-lg);
     max-width: 300px;
     word-wrap: break-word;
 }
 #a11y-tooltip.visible {
     opacity: 1;
+    visibility: visible;
+    transition: opacity 0.15s;
     pointer-events: auto; /* Allow hovering over the tooltip itself */
 }
 #a11y-tooltip::after {
@@ -516,6 +523,40 @@ header {
 #a11y-tooltip.bottom::after {
     top: -10px; left: var(--arrow-x, 50%); margin-left: -5px;
     border-color: transparent transparent #1f2937 transparent;
+}
+/* Rich header info tooltip (title + body) */
+#a11y-tooltip.info {
+    max-width: 280px;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+}
+#a11y-tooltip .info-tooltip-title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    color: #ffffff;
+}
+#a11y-tooltip .info-tooltip-body {
+    display: block;
+    color: #d1d5db;
+}
+/* Labels that explain themselves on hover/focus */
+[data-info-key] {
+    cursor: help;
+    text-decoration: underline dotted transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.15s ease;
+}
+[data-info-key]:hover,
+[data-info-key]:focus-visible {
+    text-decoration-color: currentColor;
+}
+/* Inside sortable headers and buttons the label is still a click target */
+th[data-sort-by] [data-info-key],
+button [data-info-key] {
+    cursor: pointer;
 }
 /* --- Utilities --- */
 .list-disc { list-style-type: disc; }
@@ -1277,17 +1318,20 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
    HELP HUB STYLES
    ========================================================================== */
 
+/* Icon-only FAB: fixed square box + full radius keeps the glyph centred. */
 .fab {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 2rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 9999px;
   background-color: var(--text-gray-900);
   color: var(--text-inverse);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
   box-shadow: var(--shadow-lg);
   cursor: pointer;
   transition: transform 0.2s, background-color 0.2s;

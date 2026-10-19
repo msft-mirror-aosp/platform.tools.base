@@ -426,6 +426,7 @@ private fun ModelSnapshotter<AndroidArtifact>.snapshotAndroidArtifact() {
   item("assembleTaskOutputListingFile", AndroidArtifact::assembleTaskOutputListingFile)
   dataObject("testInfo", AndroidArtifact::testInfo) {
     item("animationsDisabled", TestInfo::animationsDisabled)
+    item("instrumentInPrivateComputeCore", TestInfo::instrumentInPrivateComputeCore)
     item("execution", TestInfo::execution)
     valueList("additionalRuntimeApks", TestInfo::additionalRuntimeApks) { it?.sorted() }
     item("instrumentedTestTaskName", TestInfo::instrumentedTestTaskName)

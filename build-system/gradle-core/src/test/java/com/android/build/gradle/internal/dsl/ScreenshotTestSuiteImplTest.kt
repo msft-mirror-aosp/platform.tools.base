@@ -17,9 +17,11 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
+import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.services.createDslServices
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.junit.Test
 
 class ScreenshotTestSuiteImplTest {
@@ -35,8 +37,10 @@ class ScreenshotTestSuiteImplTest {
     val suite =
       dslServices.newDecoratedInstance(ScreenshotAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
-    // 1. Assert targets: default targets are created
+    // 1. Assert targets: default target is created
     assertThat(suite.targets.names).containsExactly("default")
+    assertThat(suite.requiresUpdateTask).isTrue()
+    assertThat(dslSuite.imageDifferenceThreshold).isNull()
 
     // 2. Assert JUnit engine defaults: "preview-screenshot-test-engine" is included
     assertThat(suite.useJunitEngine.includeEngines).containsExactly("preview-screenshot-test-engine")
@@ -121,5 +125,42 @@ class ScreenshotTestSuiteImplTest {
 
     // Instantiation should succeed even if configurations is unsupported
     assertThat(suite.targets.names).containsExactly("default")
+    assertThat(suite.requiresUpdateTask).isTrue()
+  }
+
+  @Test
+  fun testImageDifferenceThreshold() {
+    val dslSuite = dslServices.newDecoratedInstance(ScreenshotTestSuiteImpl::class.java, "screenshotTest", dslServices)
+    assertThat(dslSuite.imageDifferenceThreshold).isNull()
+    dslSuite.imageDifferenceThreshold = 0.0001f
+    assertThat(dslSuite.imageDifferenceThreshold).isEqualTo(0.0001f)
+  }
+
+  @Test
+  fun testTaskLoggingConfiguration() {
+    val dslSuite = dslServices.newDecoratedInstance(ScreenshotTestSuiteImpl::class.java, "screenshotTest", dslServices)
+    val suite =
+      dslServices.newDecoratedInstance(ScreenshotAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+
+    val validateTask = project.tasks.register("validateScreenshotTestSuiteTask", org.gradle.api.tasks.testing.Test::class.java).get()
+    val updateTask = project.tasks.register("updateScreenshotTestSuiteTask", org.gradle.api.tasks.testing.Test::class.java).get()
+
+    fun context(isUpdate: Boolean) =
+      object : TestTaskContext {
+        override val targetName = "default"
+        override val isUpdateTask = isUpdate
+        override val suiteName = "screenshotTest"
+        override val targetedVariant = "debug"
+        override val targetedDevices = emptyList<String>()
+      }
+
+    suite.testTaskConfigActions.forEach { action -> validateTask.action(context(isUpdate = false)) }
+    suite.testTaskConfigActions.forEach { action -> updateTask.action(context(isUpdate = true)) }
+
+    assertThat(validateTask.testLogging.showStandardStreams).isTrue()
+    assertThat(validateTask.testLogging.exceptionFormat).isEqualTo(TestExceptionFormat.FULL)
+
+    assertThat(updateTask.testLogging.showStandardStreams).isTrue()
+    assertThat(updateTask.testLogging.exceptionFormat).isEqualTo(TestExceptionFormat.SHORT)
   }
 }

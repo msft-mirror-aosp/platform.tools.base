@@ -19,13 +19,19 @@ package com.android.tools.coverage;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * Host-side unit tests for the CoverageTracker runtime.
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+/** Host-side unit tests and high-concurrency stress tests for CoverageTracker. */
 public class CoverageTrackerTest {
 
     @Before
@@ -35,22 +41,32 @@ public class CoverageTrackerTest {
 
     @Test
     public void testHitRecording() {
-        boolean[] hits = CoverageTracker.getHits();
-        assertNotNull(hits);
-        assertFalse("Block 10 should not be hit yet", hits[10]);
-        
+        boolean[] initialHits = CoverageTracker.getHits();
+        assertNotNull(initialHits);
+        assertFalse("Block 10 should not be hit yet", 10 < initialHits.length && initialHits[10]);
+
         CoverageTracker.hit(10);
+
+        boolean[] hits = CoverageTracker.getHits();
         assertTrue("Block 10 should be hit", hits[10]);
+        assertFalse("Block 11 should not be hit yet", hits[11]);
     }
 
     @Test
-    public void testMultipleHits() {
-        CoverageTracker.hit(100);
-        CoverageTracker.hit(500);
-        
+    public void testMultipleHitsAndLazyAllocation() {
+        // Hits on different pages to verify dynamic, lazy page allocations.
+        int block1 = 42; // Page 0
+        int block2 = 100_000; // Page 1 (100,000 / 65,536 = 1)
+        int block3 = 500_000; // Page 7 (500,000 / 65,536 = 7)
+
+        CoverageTracker.hit(block1);
+        CoverageTracker.hit(block2);
+        CoverageTracker.hit(block3);
+
         boolean[] hits = CoverageTracker.getHits();
-        assertTrue("Block 100 should be hit", hits[100]);
-        assertTrue("Block 500 should be hit", hits[500]);
+        assertTrue("Block 42 should be hit", hits[block1]);
+        assertTrue("Block 100,000 should be hit", hits[block2]);
+        assertTrue("Block 500,000 should be hit", hits[block3]);
         assertFalse("Block 200 should not be hit", hits[200]);
     }
 
@@ -58,16 +74,88 @@ public class CoverageTrackerTest {
     public void testClear() {
         CoverageTracker.hit(42);
         assertTrue(CoverageTracker.getHits()[42]);
-        
+
         CoverageTracker.clear();
-        assertFalse("Array should be cleared", CoverageTracker.getHits()[42]);
+        boolean[] clearedHits = CoverageTracker.getHits();
+        assertFalse("Array should be cleared", 42 < clearedHits.length && clearedHits[42]);
     }
 
     @Test
     public void testOutOfBoundsHit() {
         // These calls should be silently ignored and not throw exceptions.
         CoverageTracker.hit(-1);
-        CoverageTracker.hit(CoverageTracker.getHits().length);
-        CoverageTracker.hit(Integer.MAX_VALUE);
+    }
+
+    @Test
+    public void testDirectoryExpansion() {
+        // Lands on Page 1,068, forcing dynamic directory resizing.
+        int hugeBlockId = 70_000_000;
+
+        CoverageTracker.hit(hugeBlockId);
+
+        boolean[] hits = CoverageTracker.getHits();
+        assertTrue("Block 70,000,000 should be hit", hits[hugeBlockId]);
+    }
+
+    @Test
+    public void testConcurrencyStressTest() throws Exception {
+        final int numThreads = 16;
+        final int maxBlockId = 1_500_000; // Addresses up to Page 22
+        final int numProbes = 500_000;
+
+        ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+        List<Callable<Void>> tasks = new ArrayList<>();
+
+        // Run 16 concurrent threads rapidly hitting widely varying block ranges in parallel.
+        // This forces multiple background threads to concurrently race and trigger dynamic,
+        // lazy Copy-On-Write allocations for different pages.
+        for (int i = 0; i < numThreads; ++i) {
+            final int threadId = i;
+            tasks.add(
+                    () -> {
+                        for (int j = 0; j < numProbes; ++j) {
+                            // Generate block ID spreading across multiple pages
+                            int blockId = (j * numThreads + threadId) % maxBlockId;
+                            CoverageTracker.hit(blockId);
+                        }
+                        return null;
+                    });
+        }
+
+        try {
+            // Execute all tasks in parallel
+            List<Future<Void>> futures = threadPool.invokeAll(tasks);
+            for (Future<Void> future : futures) {
+                future.get(); // Propagates any JMM, race, or index crashes
+            }
+        } catch (Exception e) {
+            fail("High-concurrency paged stress test failed with exception: " + e.getMessage());
+        } finally {
+            threadPool.shutdown();
+        }
+
+        // Assert full state consistency and accuracy
+        boolean[] finalHits = CoverageTracker.getHits();
+        assertNotNull(finalHits);
+
+        // Verify that every single thread's hit was captured with perfect precision
+        for (int i = 0; i < numThreads; ++i) {
+            for (int j = 0; j < 1000; ++j) {
+                int blockId = (j * numThreads + i) % maxBlockId;
+                assertTrue("Hit on Block " + blockId + " was lost!", finalHits[blockId]);
+            }
+        }
+    }
+
+    @Test
+    public void testClearResetsDimensions() {
+        // Assert that hitting a block on page 1 expands flat Hits output
+        CoverageTracker.hit(100_000);
+        assertTrue(CoverageTracker.getHits().length > 65536);
+
+        // Assert that clear() successfully shrinks segments back to size 0
+        CoverageTracker.clear();
+        boolean[] hits = CoverageTracker.getHits();
+        assertTrue("Clearing should reset active directory size to 0", hits.length == 0);
     }
 }

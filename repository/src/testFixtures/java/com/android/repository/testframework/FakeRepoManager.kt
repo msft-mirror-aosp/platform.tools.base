@@ -29,6 +29,7 @@ import com.android.repository.api.SchemaModule
 import com.android.repository.api.SettingsController
 import com.android.repository.impl.meta.RepositoryPackages
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
 import org.w3c.dom.ls.LSResourceResolver
@@ -104,9 +105,13 @@ class FakeRepoManager(
     localListeners.remove(listener)
   }
 
-  fun updateLocalPackages(localPackages: Collection<LocalPackage>) {
+  fun setLocalPackages(localPackages: Collection<LocalPackage>) {
     packages.setLocalPkgInfos(localPackages)
     localListeners.forEach { it.loaded(packages) }
+  }
+
+  fun setLocalPackages(vararg localPackages: LocalPackage) {
+    setLocalPackages(localPackages.toList())
   }
 
   override fun addRemoteChangeListener(listener: RepoLoadedListener) {
@@ -117,14 +122,20 @@ class FakeRepoManager(
     remoteListeners.remove(listener)
   }
 
-  fun updateRemotePackages(localPackages: Collection<RemotePackage>) {
+  fun setRemotePackages(localPackages: Collection<RemotePackage>) {
     packages.setRemotePkgInfos(localPackages)
     remoteListeners.forEach { it.loaded(packages) }
   }
 
-  override fun installBeginning(repoPackage: RepoPackage, installer: PackageOperation) {}
+  private val inProgressInstalls = ConcurrentHashMap<RepoPackage, PackageOperation>()
 
-  override fun installEnded(repoPackage: RepoPackage) {}
+  override fun installBeginning(repoPackage: RepoPackage, installer: PackageOperation) {
+    inProgressInstalls[repoPackage] = installer
+  }
 
-  override fun getInProgressInstallOperation(remotePackage: RepoPackage): PackageOperation? = null
+  override fun installEnded(repoPackage: RepoPackage) {
+    inProgressInstalls.remove(repoPackage)
+  }
+
+  override fun getInProgressInstallOperation(remotePackage: RepoPackage): PackageOperation? = inProgressInstalls[remotePackage]
 }

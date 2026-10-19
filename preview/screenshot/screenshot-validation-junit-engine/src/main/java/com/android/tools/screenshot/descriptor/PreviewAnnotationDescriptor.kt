@@ -49,7 +49,10 @@ class PreviewAnnotationDescriptor(
 
     private val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()
 
-    private fun calcPreviewId(preview: PreviewMethod, previewAnnotation: BaseAnnotationRepresentation): String {
+    private fun calcPreviewId(
+      preview: PreviewMethod,
+      previewAnnotation: BaseAnnotationRepresentation,
+    ): String {
       val previewIdBuilder = StringBuilder(preview.method.methodFqn)
 
       val previewName = previewAnnotation.parameters["name"]
@@ -66,19 +69,34 @@ class PreviewAnnotationDescriptor(
 
       val digest = MessageDigest.getInstance("SHA-1")
 
-      updateAndAppendHash(digest, previewIdBuilder, "annotation-parameters", previewAnnotation.parameters)
+      updateAndAppendHash(
+        digest,
+        previewIdBuilder,
+        "annotation-parameters",
+        previewAnnotation.parameters,
+      )
 
       if (preview.method.parameters.isNotEmpty()) {
         // Currently only one param is supported and max size of method.parameters is 1
         for (param in preview.method.parameters) {
-          updateAndAppendHash(digest, previewIdBuilder, "method-parameter-annotations", param.annotationParameters)
+          updateAndAppendHash(
+            digest,
+            previewIdBuilder,
+            "method-parameter-annotations",
+            param.annotationParameters,
+          )
         }
       }
 
       return previewIdBuilder.toString()
     }
 
-    private fun updateAndAppendHash(digest: MessageDigest, builder: StringBuilder, dataSectionName: String, dataMap: Map<String, *>) {
+    private fun updateAndAppendHash(
+      digest: MessageDigest,
+      builder: StringBuilder,
+      dataSectionName: String,
+      dataMap: Map<String, *>,
+    ) {
       if (dataMap.isNotEmpty()) {
         digest.update(dataSectionName.toByteArray())
         for ((key, value) in dataMap.toSortedMap()) {
@@ -133,7 +151,18 @@ class PreviewAnnotationDescriptor(
         }
       }
 
-    context.renderer.render(previewScreenshot, context.previewImageOutputDir.absolutePath).forEachIndexed { idx, result ->
+    val results = context.renderer.render(previewScreenshot, context.previewImageOutputDir.absolutePath)
+    val seenParamNames = mutableSetOf<String>()
+    val duplicateParamNames = mutableSetOf<String>()
+    for (result in results) {
+      val name = result.displayName?.takeIf { it.isNotBlank() }
+      if (name != null && !seenParamNames.add(name)) {
+        duplicateParamNames.add(name)
+      }
+    }
+
+    val usedParamSuffixes = mutableSetOf<String>()
+    results.forEachIndexed { idx, result ->
       val previewNameBuilder = StringBuilder()
       val nameParam = previewScreenshot.previewParams["name"]
       nameParam?.let { previewNameBuilder.append("_$it") }
@@ -148,9 +177,25 @@ class PreviewAnnotationDescriptor(
             }
           }
       }
+      val paramDisplayName = result.displayName?.takeIf { it.isNotBlank() }
+      var paramSuffix: String? = null
       if (previewScreenshot is ComposeScreenshot) {
         if (previewScreenshot.methodParams.isNotEmpty()) {
-          otherParamsBuilder.append("_${previewScreenshot.methodParams}_$idx")
+          val baseParamSuffix =
+            when {
+              paramDisplayName == null -> idx.toString()
+              paramDisplayName in duplicateParamNames -> "${paramDisplayName}_$idx"
+              else -> paramDisplayName
+            }
+          paramSuffix =
+            if (usedParamSuffixes.add(baseParamSuffix)) {
+              baseParamSuffix
+            } else {
+              val nameWithIndex = "${baseParamSuffix}_$idx"
+              usedParamSuffixes.add(nameWithIndex)
+              nameWithIndex
+            }
+          otherParamsBuilder.append("_${previewScreenshot.methodParams}_$paramSuffix")
         }
       }
 
@@ -159,10 +204,30 @@ class PreviewAnnotationDescriptor(
       }
 
       val previewDisplayName =
-        nameParam?.toString() ?: otherParamsBuilder.toString().removePrefix("_").takeIf { it.isNotEmpty() } ?: methodName
+        if (nameParam != null && paramDisplayName != null) {
+          if (paramSuffix != null && paramSuffix != paramDisplayName) {
+            "$nameParam - $paramSuffix"
+          } else {
+            "$nameParam - $paramDisplayName"
+          }
+        } else {
+          nameParam?.toString()
+            ?: paramSuffix
+            ?: paramDisplayName
+            ?: otherParamsBuilder.toString().removePrefix("_").takeIf { it.isNotEmpty() }
+            ?: methodName
+        }
 
       val childNode =
-        PreviewScreenshotDescriptor(uniqueId, className, methodName, previewNameBuilder.toString(), previewDisplayName, idx, result)
+        PreviewScreenshotDescriptor(
+          uniqueId,
+          className,
+          methodName,
+          previewNameBuilder.toString(),
+          previewDisplayName,
+          idx,
+          result,
+        )
       addChild(childNode)
       dynamicTestExecutor.execute(childNode)
     }
@@ -182,7 +247,12 @@ class PreviewAnnotationDescriptor(
   }
 
   private fun convertMap(map: Map<String, Any?>): SortedMap<String, String> =
-    map.map { (key, value) -> key to (if (key == "provider") (value as Type).className else value.toString()) }.toMap().toSortedMap()
+    map
+      .map { (key, value) ->
+        key to (if (key == "provider") (value as Type).className else value.toString())
+      }
+      .toMap()
+      .toSortedMap()
 
   /**
    * Sort provided list of maps

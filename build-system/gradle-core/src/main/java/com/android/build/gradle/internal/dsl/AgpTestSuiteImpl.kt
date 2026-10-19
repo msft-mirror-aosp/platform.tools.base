@@ -23,12 +23,14 @@ import com.android.build.api.dsl.TestSuiteAssetsSpec
 import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.ComponentIdentity
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 /**
@@ -78,10 +80,19 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
    */
   fun targetVariants(vararg targetVariants: String) = this.targetVariants.addAll(targetVariants)
 
+  /**
+   * Returns whether this suite tests [variant].
+   *
+   * @param testBuildType the module's tested build type, or null if the module has none.
+   */
+  internal open fun targetsVariant(variant: ComponentIdentity, testBuildType: String?): Boolean = targetVariants.contains(variant.name)
+
   private val targets =
     dslServices.domainObjectContainer(AgpTestSuiteTarget::class.java) { name -> AgpTestSuiteTargetImpl(this@AgpTestSuiteImpl, name) }
 
   override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget> = targets
+
+  override var requiresUpdateTask = false
 
   override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
     addSource<TestSuiteAssetsSpecImpl>(action)
@@ -114,10 +125,15 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
     testTaskConfigActions.add(action)
   }
 
+  override fun withTestTaskProviders(action: TaskProvider<Test>.(TestTaskContext) -> Unit) {
+    testTaskProviderConfigActions.add { context -> @Suppress("UNCHECKED_CAST") (this as TaskProvider<Test>).action(context) }
+  }
+
   override var codeCoverage = false
 
   /** Internal APIs */
   internal val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
+  internal val testTaskProviderConfigActions = mutableListOf<TaskProvider<out Test>.(TestTaskContext) -> Unit>()
 
   /** Private APIs */
   private inline fun <reified T : TestSuiteSourceCreationConfig> addSource(initializationBlock: T.() -> Unit) {

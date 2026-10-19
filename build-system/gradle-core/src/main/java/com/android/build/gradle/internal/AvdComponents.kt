@@ -61,39 +61,38 @@ constructor(private val objectFactory: ObjectFactory, private val providerFactor
     val deviceLockTimeoutMinutes: Property<Int>
   }
 
-  private val avdManager: Provider<AvdManager> =
-    providerFactory.provider {
-      val locationsService = parameters.androidLocationsService.get()
-      val versionedSdkLoader = parameters.sdkService.map { it.sdkLoader(parameters.compileSdkVersion, parameters.buildToolsRevision) }
-      val adbHelper = versionedSdkLoader.get().adbHelper.get()
-      val snapshotTimeoutSecs =
-        if (parameters.deviceSetupTimeoutMinutes.isPresent()) {
-          parameters.deviceSetupTimeoutMinutes.get() * 60L
-        } else {
-          null
-        }
-      val avdFolder = parameters.avdLocation.get().asFile
-      AvdManager(
-        avdFolder,
-        versionedSdkLoader,
-        AndroidSdkHandler.getInstance(locationsService, parameters.sdkService.get().sdkDirectoryProvider.get().asFile.toPath()),
-        locationsService,
-        AvdSnapshotHandler(
-          parameters.showEmulatorKernelLogging.get(),
-          parameters.emulatorGpuFlag.get(),
-          snapshotTimeoutSecs,
-          adbHelper,
-          emulatorDirectory,
-          QemuExecutor(emulatorDirectory),
-        ),
-        ManagedVirtualDeviceLockManager(
-          locationsService,
-          parameters.maxConcurrentDevices.getOrElse(DEFAULT_MAX_GMDS),
-          parameters.deviceLockTimeoutMinutes.getOrElse(DEFAULT_DEVICE_LOCK_TIMEOUT_MINUTES) * 60,
-        ),
+  private val avdManager: Provider<AvdManager> = providerFactory.provider {
+    val locationsService = parameters.androidLocationsService.get()
+    val versionedSdkLoader = parameters.sdkService.map { it.sdkLoader(parameters.compileSdkVersion, parameters.buildToolsRevision) }
+    val adbHelper = versionedSdkLoader.get().adbHelper.get()
+    val snapshotTimeoutSecs =
+      if (parameters.deviceSetupTimeoutMinutes.isPresent()) {
+        parameters.deviceSetupTimeoutMinutes.get() * 60L
+      } else {
+        null
+      }
+    val avdFolder = parameters.avdLocation.get().asFile
+    AvdManager(
+      avdFolder,
+      versionedSdkLoader,
+      AndroidSdkHandler.getInstance(locationsService, parameters.sdkService.get().sdkDirectoryProvider.get().asFile.toPath()),
+      locationsService,
+      AvdSnapshotHandler(
+        parameters.showEmulatorKernelLogging.get(),
+        parameters.emulatorGpuFlag.get(),
+        snapshotTimeoutSecs,
         adbHelper,
-      )
-    }
+        emulatorDirectory,
+        QemuExecutor(emulatorDirectory),
+      ),
+      ManagedVirtualDeviceLockManager(
+        locationsService,
+        parameters.maxConcurrentDevices.getOrElse(DEFAULT_MAX_GMDS),
+        parameters.deviceLockTimeoutMinutes.getOrElse(DEFAULT_DEVICE_LOCK_TIMEOUT_MINUTES) * 60,
+      ),
+      adbHelper,
+    )
+  }
 
   /** Returns the location of the shared avd folder. */
   val avdFolder: Provider<Directory> = parameters.avdLocation

@@ -38,189 +38,232 @@ import java.util.concurrent.CountDownLatch;
 
 /** Handles a single connection session with the host. */
 public final class SessionHandler {
-  private static final String TAG = ProtocolConstants.LOG_TAG_PREFIX + ".SessionHandler";
+    private static final String TAG = ProtocolConstants.LOG_TAG_PREFIX + ".SessionHandler";
 
-  private final InputStream inputStream;
-  private final OutputStream outputStream;
-  private final HandlerThreadExecutor.CrashListener crashListener;
-  private final CountDownLatch shutdownLatch;
-  private final Map<String, InspectorBridge> inspectorBridges;
-  private final ClassLoader classLoader;
+    private final InputStream inputStream;
+    private final OutputStream outputStream;
+    private final HandlerThreadExecutor.CrashListener crashListener;
+    private final CountDownLatch shutdownLatch;
+    private final Map<String, InspectorBridge> inspectorBridges;
+    private final ClassLoader classLoader;
 
-  public SessionHandler(
-      InputStream inputStream,
-      OutputStream outputStream,
-      HandlerThreadExecutor.CrashListener crashListener,
-      CountDownLatch shutdownLatch,
-      Map<String, InspectorBridge> inspectorBridges) {
-    this(inputStream, outputStream, crashListener, shutdownLatch, inspectorBridges, SessionHandler.class.getClassLoader());
-  }
-
-  @VisibleForTesting
-  public SessionHandler(
-      InputStream inputStream,
-      OutputStream outputStream,
-      HandlerThreadExecutor.CrashListener crashListener,
-      CountDownLatch shutdownLatch,
-      Map<String, InspectorBridge> inspectorBridges,
-      ClassLoader classLoader) {
-    this.inputStream = inputStream;
-    this.outputStream = outputStream;
-    this.crashListener = crashListener;
-    this.shutdownLatch = shutdownLatch;
-    this.inspectorBridges = inspectorBridges;
-    this.classLoader = classLoader;
-  }
-
-  /**
-   * Reads and executes a continuous stream of commands from the host. Loops until the connection is broken or a shutdown command is
-   * received.
-   */
-  public void processCommands() {
-    try {
-      while (!Thread.currentThread().isInterrupted()) {
-        byte[] commandBytes = FramingProtocol.readMessage(inputStream);
-        UiInspectorProtocol.Command command = UiInspectorProtocol.Command.parseFrom(commandBytes);
-        int commandId = command.getCommandId();
-
-        boolean shouldTerminate = handleCommand(command, commandId);
-        if (shouldTerminate) {
-          break;
-        }
-      }
-    } catch (EOFException e) {
-      Log.i(TAG, "Client disconnected (EOF)");
-    } catch (IOException e) {
-      Log.i(TAG, "Client connection lost: " + e.getMessage());
-    } catch (Exception e) {
-      Log.e(TAG, "Error handling client session", e);
-      crashListener.onCrash(e);
-    } finally {
-      // Clear active connections in each inspector
-      for (InspectorBridge bridge : inspectorBridges.values()) {
-        bridge.updateConnection(null);
-      }
+    public SessionHandler(
+            InputStream inputStream,
+            OutputStream outputStream,
+            HandlerThreadExecutor.CrashListener crashListener,
+            CountDownLatch shutdownLatch,
+            Map<String, InspectorBridge> inspectorBridges) {
+        this(
+                inputStream,
+                outputStream,
+                crashListener,
+                shutdownLatch,
+                inspectorBridges,
+                SessionHandler.class.getClassLoader());
     }
-  }
 
-  /** Handles a single command and returns whether to terminate the session. Every command must receive a response. */
-  private boolean handleCommand(UiInspectorProtocol.Command command, int commandId) throws IOException {
-    try {
-      switch (command.getSpecializedCase()) {
-        case INSPECTOR_MESSAGE:
-          handleInspectorMessage(command.getInspectorMessage(), commandId);
-          return false;
-        case CREATE_INSPECTOR:
-          handleCreateInspector(command.getCreateInspector(), commandId);
-          return false;
-        case SHUTDOWN:
-          handleShutdown(commandId);
-          return true;
-        case GET_VERSION:
-          handleGetVersion(command.getGetVersion(), commandId);
-          return false;
-        default:
+    @VisibleForTesting
+    public SessionHandler(
+            InputStream inputStream,
+            OutputStream outputStream,
+            HandlerThreadExecutor.CrashListener crashListener,
+            CountDownLatch shutdownLatch,
+            Map<String, InspectorBridge> inspectorBridges,
+            ClassLoader classLoader) {
+        this.inputStream = inputStream;
+        this.outputStream = outputStream;
+        this.crashListener = crashListener;
+        this.shutdownLatch = shutdownLatch;
+        this.inspectorBridges = inspectorBridges;
+        this.classLoader = classLoader;
+    }
+
+    /**
+     * Reads and executes a continuous stream of commands from the host. Loops until the connection
+     * is broken or a shutdown command is received.
+     */
+    public void processCommands() {
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                byte[] commandBytes = FramingProtocol.readMessage(inputStream);
+                UiInspectorProtocol.Command command =
+                        UiInspectorProtocol.Command.parseFrom(commandBytes);
+                int commandId = command.getCommandId();
+
+                boolean shouldTerminate = handleCommand(command, commandId);
+                if (shouldTerminate) {
+                    break;
+                }
+            }
+        } catch (EOFException e) {
+            Log.i(TAG, "Client disconnected (EOF)");
+        } catch (IOException e) {
+            Log.i(TAG, "Client connection lost: " + e.getMessage());
+        } catch (Throwable t) {
+            Log.e(TAG, "Error handling client session", t);
+            crashListener.onCrash(t);
+        } finally {
+            // Clear active connections in each inspector
+            for (InspectorBridge bridge : inspectorBridges.values()) {
+                bridge.updateConnection(null);
+            }
+        }
+    }
+
+    /**
+     * Handles a single command and returns whether to terminate the session. Every command must
+     * receive a response.
+     *
+     * <p>Running the command, including serializing its response, is kept apart from writing the
+     * response, so that only a failure to write it, which means the connection to the host is lost,
+     * ends the session. A failure of the command, whatever its type, is replied as an error.
+     */
+    private boolean handleCommand(UiInspectorProtocol.Command command, int commandId)
+            throws IOException {
+        byte[] message;
+        try {
+            UiInspectorProtocol.Response.Builder response;
+            switch (command.getSpecializedCase()) {
+                case INSPECTOR_MESSAGE:
+                    response = handleInspectorMessage(command.getInspectorMessage());
+                    break;
+                case CREATE_INSPECTOR:
+                    response = handleCreateInspector(command.getCreateInspector());
+                    break;
+                case SHUTDOWN:
+                    response = handleShutdown();
+                    break;
+                case GET_VERSION:
+                    response = handleGetVersion(command.getGetVersion());
+                    break;
+                default:
                     throw new IllegalStateException(
                             "Unhandled top-level command: " + command.getSpecializedCase());
             }
-    } catch (IOException e) {
-      throw e;
-    } catch (Exception e) {
-      Log.e(TAG, "Error handling command", e);
-      replyError(commandId, "Error handling command: " + e.getMessage());
-      return false;
-    }
-  }
-
-  private void handleInspectorMessage(UiInspectorProtocol.InspectorMessageCommand message, int commandId) throws Exception {
-    InspectorBridge inspectorBridge = inspectorBridges.get(message.getInspectorId());
-    if (inspectorBridge == null) {
-      throw new IllegalStateException("Unknown inspector ID: " + message.getInspectorId());
-    }
-    byte[] responseBytes = inspectorBridge.sendCommand(message.getPayload().toByteArray());
-
-    UiInspectorProtocol.Response.Builder responseBuilder = UiInspectorProtocol.Response.newBuilder();
-    responseBuilder.setInspectorMessage(
-        UiInspectorProtocol.InspectorMessageResponse.newBuilder()
-            .setInspectorId(message.getInspectorId())
-            .setPayload(ByteString.copyFrom(responseBytes))
-            .build());
-    reply(commandId, responseBuilder);
-  }
-
-  private void handleCreateInspector(UiInspectorProtocol.CreateInspectorCommand command, int commandId) throws Exception {
-    String inspectorId = command.getInspectorId();
-    String dexPath = command.getDexPath();
-
-    InspectorBridge bridge = inspectorBridges.get(inspectorId);
-    if (bridge != null) {
-      // Update the bridge with the new session's connection to resume event sending.
-      Connection newRealConnection = AppInspectionUtils.createAppInspectionConnection(inspectorId, outputStream, crashListener);
-      bridge.updateConnection(newRealConnection);
-    } else {
-      AppInspectionUtils.DelegatingConnection delegatingConnection = new AppInspectionUtils.DelegatingConnection();
-      Connection realConnection = AppInspectionUtils.createAppInspectionConnection(inspectorId, outputStream, crashListener);
-      delegatingConnection.activeConnection = realConnection;
-      InspectorBridge newBridge = InspectorBridge.create(inspectorId, dexPath, delegatingConnection, crashListener);
-
-      inspectorBridges.put(inspectorId, newBridge);
+            response.setStatus(UiInspectorProtocol.Response.Status.SUCCESS);
+            message = toAgentMessage(commandId, response);
+        } catch (Throwable t) {
+            Log.e(TAG, "Error handling command", t);
+            message = toAgentMessage(commandId, errorResponse("Error handling command: " + t));
+        }
+        boolean isShutdown =
+                command.getSpecializedCase()
+                        == UiInspectorProtocol.Command.SpecializedCase.SHUTDOWN;
+        try {
+            FramingProtocol.writeMessage(outputStream, message);
+        } finally {
+            // The host asked to shut down: failing to acknowledge it does not cancel the shutdown.
+            // The server shuts down after the write, so that it is not torn down while replying.
+            if (isShutdown) {
+                shutdownLatch.countDown();
+            }
+        }
+        return isShutdown;
     }
 
-    UiInspectorProtocol.Response.Builder responseBuilder = UiInspectorProtocol.Response.newBuilder();
-    responseBuilder.setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.newBuilder().build());
-    reply(commandId, responseBuilder);
-  }
+    private UiInspectorProtocol.Response.Builder handleInspectorMessage(
+            UiInspectorProtocol.InspectorMessageCommand message) throws Exception {
+        InspectorBridge inspectorBridge = inspectorBridges.get(message.getInspectorId());
+        if (inspectorBridge == null) {
+            throw new IllegalStateException("Unknown inspector ID: " + message.getInspectorId());
+        }
+        if (inspectorBridge.isDisposed()) {
+            throw new IllegalStateException(
+                    "Inspector " + message.getInspectorId() + " crashed and was disposed");
+        }
+        byte[] responseBytes = inspectorBridge.sendCommand(message.getPayload().toByteArray());
 
-  private void handleShutdown(int commandId) throws IOException {
-    UiInspectorProtocol.Response.Builder responseBuilder = UiInspectorProtocol.Response.newBuilder();
-    responseBuilder.setShutdown(UiInspectorProtocol.ShutdownResponse.newBuilder().build());
-    reply(commandId, responseBuilder);
-    shutdownLatch.countDown();
-  }
-
-  private void handleGetVersion(UiInspectorProtocol.GetVersionCommand command, int commandId) throws IOException {
-    Map<String, String> versions = new HashMap<>();
-    for (String libraryId : command.getLibraryIdsList()) {
-      String version = performVersionDetection(libraryId);
-      if (version != null) {
-        versions.put(libraryId, version);
-      }
+        return UiInspectorProtocol.Response.newBuilder()
+                .setInspectorMessage(
+                        UiInspectorProtocol.InspectorMessageResponse.newBuilder()
+                                .setInspectorId(message.getInspectorId())
+                                .setPayload(ByteString.copyFrom(responseBytes))
+                                .build());
     }
 
-    UiInspectorProtocol.Response.Builder responseBuilder = UiInspectorProtocol.Response.newBuilder();
-    responseBuilder.setGetVersion(UiInspectorProtocol.GetVersionResponse.newBuilder().putAllVersions(versions).build());
-    reply(commandId, responseBuilder);
-  }
+    private UiInspectorProtocol.Response.Builder handleCreateInspector(
+            UiInspectorProtocol.CreateInspectorCommand command) throws Exception {
+        String inspectorId = command.getInspectorId();
+        String dexPath = command.getDexPath();
 
-  private String performVersionDetection(String libraryId) {
-    if (ProtocolConstants.COMPOSE_UI_LIBRARY_ID.equals(libraryId)) {
-      return ComposeInspectionUtils.detectComposeVersion(classLoader);
-    } else {
-      throw new IllegalArgumentException("Unsupported library ID: " + libraryId);
+        InspectorBridge bridge = inspectorBridges.get(inspectorId);
+        if (bridge != null && bridge.isDisposed()) {
+            // The inspector crashed: replace it with a new one.
+            inspectorBridges.remove(inspectorId, bridge);
+            bridge = null;
+        }
+        if (bridge != null) {
+            // Update the bridge with the new session's connection to resume event sending.
+            Connection newRealConnection =
+                    AppInspectionUtils.createAppInspectionConnection(
+                            inspectorId, outputStream, crashListener);
+            bridge.updateConnection(newRealConnection);
+        } else {
+            AppInspectionUtils.DelegatingConnection delegatingConnection =
+                    new AppInspectionUtils.DelegatingConnection();
+            Connection realConnection =
+                    AppInspectionUtils.createAppInspectionConnection(
+                            inspectorId, outputStream, crashListener);
+            delegatingConnection.activeConnection = realConnection;
+            InspectorBridge newBridge =
+                    InspectorBridge.create(
+                            inspectorId, dexPath, delegatingConnection, crashListener);
+
+            inspectorBridges.put(inspectorId, newBridge);
+        }
+
+        return UiInspectorProtocol.Response.newBuilder()
+                .setCreateInspector(
+                        UiInspectorProtocol.CreateInspectorResponse.newBuilder().build());
     }
-  }
 
-  private void reply(int commandId, UiInspectorProtocol.Response.Builder responseBuilder) throws IOException {
-    writeResponse(commandId, UiInspectorProtocol.Response.Status.SUCCESS, null, responseBuilder);
-  }
-
-  private void replyError(int commandId, String errorMessage) throws IOException {
-    writeResponse(commandId, UiInspectorProtocol.Response.Status.ERROR, errorMessage, UiInspectorProtocol.Response.newBuilder());
-  }
-
-  private void writeResponse(
-      int commandId,
-      UiInspectorProtocol.Response.Status status,
-      String errorMessage,
-      UiInspectorProtocol.Response.Builder responseBuilder) throws IOException {
-    responseBuilder.setCommandId(commandId).setStatus(status);
-    if (errorMessage != null) {
-      responseBuilder.setErrorMessage(errorMessage);
+    /**
+     * Returns the response to a shutdown command. The server shuts down after writing the response,
+     * even if the write fails, in {@link #handleCommand}.
+     */
+    private UiInspectorProtocol.Response.Builder handleShutdown() {
+        return UiInspectorProtocol.Response.newBuilder()
+                .setShutdown(UiInspectorProtocol.ShutdownResponse.newBuilder().build());
     }
-        UiInspectorProtocol.AgentMessage agentMessage =
-                UiInspectorProtocol.AgentMessage.newBuilder()
-                        .setResponse(responseBuilder.build())
-                        .build();
-        FramingProtocol.writeMessage(outputStream, agentMessage.toByteArray());
-  }
+
+    private UiInspectorProtocol.Response.Builder handleGetVersion(
+            UiInspectorProtocol.GetVersionCommand command) {
+        Map<String, String> versions = new HashMap<>();
+        for (String libraryId : command.getLibraryIdsList()) {
+            String version = performVersionDetection(libraryId);
+            if (version != null) {
+                versions.put(libraryId, version);
+            }
+        }
+
+        return UiInspectorProtocol.Response.newBuilder()
+                .setGetVersion(
+                        UiInspectorProtocol.GetVersionResponse.newBuilder()
+                                .putAllVersions(versions)
+                                .build());
+    }
+
+    private String performVersionDetection(String libraryId) {
+        if (ProtocolConstants.COMPOSE_UI_LIBRARY_ID.equals(libraryId)) {
+            return ComposeInspectionUtils.detectComposeVersion(classLoader);
+        } else {
+            throw new IllegalArgumentException("Unsupported library ID: " + libraryId);
+        }
+    }
+
+    /** Returns an error response with the given message. */
+    private static UiInspectorProtocol.Response.Builder errorResponse(String errorMessage) {
+        return UiInspectorProtocol.Response.newBuilder()
+                .setStatus(UiInspectorProtocol.Response.Status.ERROR)
+                .setErrorMessage(errorMessage);
+    }
+
+    /** Serializes the response to a command into the message sent to the host. */
+    private static byte[] toAgentMessage(
+            int commandId, UiInspectorProtocol.Response.Builder response) {
+        return UiInspectorProtocol.AgentMessage.newBuilder()
+                .setResponse(response.setCommandId(commandId).build())
+                .build()
+                .toByteArray();
+    }
 }

@@ -1,0 +1,17 @@
+<component name="libraryTable">
+  <library name="robolectric">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/robolectric/4.14.1/robolectric-4.14.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/annotations/4.14.1/annotations-4.14.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/junit/4.14.1/junit-4.14.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/shadowapi/4.14.1/shadowapi-4.14.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/shadows-framework/4.14.1/shadows-framework-4.14.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/sandbox/4.14.1/sandbox-4.14.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/utils/4.14.1/utils-4.14.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/resources/4.14.1/resources-4.14.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/org/robolectric/pluginapi/4.14.1/pluginapi-4.14.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

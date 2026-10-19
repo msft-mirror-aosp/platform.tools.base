@@ -54,9 +54,4 @@ public class LintInferredAnnotationsManager extends InferredAnnotationsManager {
             @NonNull PsiModifierListOwner psiModifierListOwner) {
         return PsiAnnotation.EMPTY_ARRAY;
     }
-
-    @Override
-    public boolean isInferredAnnotation(@NonNull PsiAnnotation psiAnnotation) {
-        return false;
-    }
 }

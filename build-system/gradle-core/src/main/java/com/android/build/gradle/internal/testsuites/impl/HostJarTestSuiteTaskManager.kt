@@ -16,13 +16,18 @@
 
 package com.android.build.gradle.internal.testsuites.impl
 
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.LifecycleTasksImpl
+import com.android.build.api.variant.Packaging
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.TestSuiteTaskManager
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
+import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
@@ -60,9 +65,10 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
     taskFactory: TaskFactory,
     taskCreationServices: TaskCreationServices,
   ): TaskProvider<out Task> {
-    val hostJarConfig = TestSuiteHostJarCreationConfig(testSuite, sourceContainer)
+    val hostJarConfig = sourceContainer.creationConfig as TestSuiteHostJarCreationConfig
 
     testSuiteTaskManager.createAnchorTasksForSuite(hostJarConfig)
+    testSuiteTaskManager.createAssembleTaskForSuite(hostJarConfig)
 
     // first process java resources.
     val config =
@@ -71,7 +77,7 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
           get() = listOf()
 
         override val useBuiltInKotlinSupport: Boolean
-          get() = false // so far, since we don't compile yet.
+          get() = hostJarConfig.useBuiltInKotlinSupport
 
         override val packageJacocoRuntime: Boolean
           get() = false
@@ -81,6 +87,9 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
 
         override val sources: FlatSourceDirectoriesImpl
           get() = source.resources
+
+        override val packaging: Packaging
+          get() = testSuite.testedVariant.packaging
 
         override fun setJavaResTask(task: TaskProvider<out Sync>) {}
 
@@ -111,7 +120,9 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
       setupAndroidResourceTasks(testSuite, taskFactory, hostJarConfig)
     }
 
-    return task
+    setupAssembleTasks(testSuite, hostJarConfig, task)
+
+    return hostJarConfig.taskContainer.assembleTask
   }
 
   private fun setupAndroidResourceTasks(
@@ -121,12 +132,19 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
   ) {
     val testedVariant = testSuite.testedVariant
     if (testedVariant.componentType.isApk) {
-      if (hostJarConfig.androidResourcesIncluded) {
+      if (testedVariant is ApplicationCreationConfig) {
+        // The resources and assets of the tested application miss the ones of the dependencies that only the test suite has, so the test
+        // suite merges and links its own.
+        testSuiteTaskManager.createHostJarTestSuiteResourcesTasks(hostJarConfig)
+        testSuite.artifacts.copy(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT, hostJarConfig.artifacts)
+        testSuite.artifacts.copy(SingleArtifact.ASSETS, hostJarConfig.artifacts)
+      } else {
+        // Linking the resources of a dynamic feature requires the ones of its base module.
         testSuiteTaskManager.createTestSuiteProcessTestManifestTask(hostJarConfig)
-        testSuite.artifacts.copy(InternalArtifactType.MERGED_MANIFESTS, hostJarConfig.artifacts)
+        testSuite.artifacts.copy(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT, testedVariant.artifacts)
+        testSuite.artifacts.copy(SingleArtifact.ASSETS, testedVariant.artifacts)
       }
-      testSuite.artifacts.copy(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT, testedVariant.artifacts)
-      testSuite.artifacts.copy(SingleArtifact.ASSETS, testedVariant.artifacts)
+      testSuite.artifacts.copy(InternalArtifactType.MERGED_MANIFESTS, hostJarConfig.artifacts)
 
       taskFactory.register(PackageForHostTest.TestSuiteCreationAction(testSuite))
     } else if (testedVariant.componentType.isAar) {
@@ -160,11 +178,13 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
         javaPreCompileTaskCreationConfig.taskContainer,
       )
     val javacTask = taskFactory.register(JavaCompileCreationAction(javaCompileConfig))
-    hostJarConfig.taskContainer.compileTask?.configure { it.dependsOn(javacTask) }
+    hostJarConfig.taskContainer.javacTask = javacTask
+    TaskManager.setJavaCompilerTask(javacTask, hostJarConfig)
+
     testSuiteTaskManager.setupCompilationContext(
       artifacts = sourceContainer.artifacts,
-      useBuiltInKotlinSupport = true,
-      useBuiltInKaptSupport = false,
+      useBuiltInKotlinSupport = hostJarConfig.useBuiltInKotlinSupport,
+      useBuiltInKaptSupport = hostJarConfig.useBuiltInKaptSupport,
     )
 
     val builtInCreationConfig =
@@ -174,11 +194,25 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
         source = source,
         testedVariant = testSuite.testedVariant,
         services = taskCreationServices,
-        javaPreCompileTaskCreationConfig.taskContainer,
+        hostJarConfig.taskContainer,
         javacTask,
       )
     testSuiteTaskManager.maybeCreateKotlinTasks(builtInCreationConfig)
 
     /// TODO : add asm processing pipeline and lint task
+  }
+
+  private fun setupAssembleTasks(
+    testSuite: TestSuiteCreationConfig,
+    hostJarConfig: TestSuiteHostJarCreationConfig,
+    javaResTask: TaskProvider<out Task>,
+  ) {
+    hostJarConfig.taskContainer.assembleTask.configure { task: Task ->
+      task.dependsOn(hostJarConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES))
+      task.dependsOn(javaResTask)
+      if (testSuite.androidResourcesIncluded) {
+        task.dependsOn(testSuite.artifacts.get(InternalArtifactType.APK_FOR_LOCAL_TEST))
+      }
+    }
   }
 }

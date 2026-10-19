@@ -545,6 +545,47 @@ class DiffUtilDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testNonEqualsObjectMethodCall() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.recyclerview.widget.DiffUtil;
+
+            public class CheeseDiff extends DiffUtil.ItemCallback<Cheese> {
+                @Override
+                public boolean areItemsTheSame(Cheese oldItem, Cheese newItem) {
+                    return oldItem.id == newItem.id;
+                }
+
+                @Override
+                public boolean areContentsTheSame(Cheese oldItem, Cheese newItem) {
+                    System.out.println("comparing " + oldItem.toString());
+                    return oldItem.id == newItem.id;
+                }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+
+            public class Cheese {
+                public int id;
+                public String name;
+            }
+            """
+          )
+          .indented(),
+        *diffUtilStubs,
+      )
+      .run()
+      .expectClean()
+  }
+
   override fun getDetector(): Detector {
     return DiffUtilDetector()
   }

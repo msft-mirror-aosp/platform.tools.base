@@ -27,17 +27,16 @@ import com.android.utils.cxx.CxxDiagnosticCode.BUILD_SETTINGS_MACRO_EXPANSION_DE
 
 /** Expand ${ndk.abi} and ${abi.systemVersion} in environment names. */
 fun Settings.expandInheritEnvironmentMacros(abi: CxxAbiModel): Settings {
-  val environments =
-    environments.map { configuration ->
-      configuration.copy(
-        inheritEnvironments =
-          configuration.inheritEnvironments.map { environment ->
-            val result =
-              environment.replace(NDK_ABI.ref, abi.name).replace(NDK_PLATFORM_SYSTEM_VERSION.ref, abi.abiPlatformVersion.toString())
-            result
-          }
-      )
-    }
+  val environments = environments.map { configuration ->
+    configuration.copy(
+      inheritEnvironments =
+        configuration.inheritEnvironments.map { environment ->
+          val result =
+            environment.replace(NDK_ABI.ref, abi.name).replace(NDK_PLATFORM_SYSTEM_VERSION.ref, abi.abiPlatformVersion.toString())
+          result
+        }
+    )
+  }
   return copy(environments = environments)
 }
 

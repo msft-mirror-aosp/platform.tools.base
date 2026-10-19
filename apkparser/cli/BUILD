@@ -7,14 +7,6 @@ iml_module(
     name = "studio.android.sdktools.apkparser-cli",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.apkparser-cli.iml"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:junit4",
-    ],
-    test_resources = ["src/test/resources"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -27,6 +19,27 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:libbinary-resources",
         "//prebuilts/tools/common/m2:jopt-simple-4.9",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.apkparser-cli.tests",
+    iml_files = ["android.sdktools.apkparser-cli.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/apkparser/cli:studio.android.sdktools.apkparser-cli",
+        "@intellij//:intellij-sdk",
+        "//tools/base/apkparser/analyzer:studio.android.sdktools.analyzer",
+        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
+        "//tools/adt/idea/.idea/libraries:google-dexlib2",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/apkparser/cli:studio.android.sdktools.apkparser-cli"],
+    test_resources = ["src/test/resources"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 coverage_java_library(

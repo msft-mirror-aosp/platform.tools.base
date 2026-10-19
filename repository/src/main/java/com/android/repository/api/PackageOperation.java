@@ -99,6 +99,16 @@ public interface PackageOperation {
     InstallStatus getInstallStatus();
 
     /**
+     * Gives up on this operation: nothing is working on it any more, for example because the user cancelled the install. The {@link
+     * #getInstallStatus() status} becomes {@link InstallStatus#FAILED} and the operation stops being {@link
+     * RepoManager#getInProgressInstallOperation(RepoPackage) in progress}, so that anything watching it knows not to wait for it. Any work
+     * that was already prepared is left on disk, so a later operation on the same package can pick up where this one left off.
+     *
+     * <p>Does nothing if the operation has already finished.
+     */
+    default void abandon(@NonNull ProgressIndicator progress) {}
+
+    /**
      * A listener that will be called when the {@link #getInstallStatus() status} of this installer
      * changes.
      */
@@ -128,19 +138,4 @@ public interface PackageOperation {
      */
     @NonNull
     String getName();
-
-    /**
-     * If this operation fails, it might be possible to try the install a different way.
-     * Specifically, if we have a
-     * {@link InstallerFactory#setFallbackFactory(InstallerFactory) fallback factory}, this could be
-     * an operation created by that factory.
-     */
-    @Nullable
-    PackageOperation getFallbackOperation();
-
-    /**
-     * Sets the operation used to retry if this operation fails.
-     * @see #getFallbackOperation()
-     */
-    void setFallbackOperation(@Nullable PackageOperation fallback);
 }

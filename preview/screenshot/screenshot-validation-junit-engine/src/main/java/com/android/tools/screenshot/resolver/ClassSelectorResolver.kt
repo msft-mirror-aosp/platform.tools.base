@@ -35,7 +35,11 @@ class ClassSelectorResolver : SelectorResolver {
       .map { classContainerDescriptor ->
         Resolution.match(
           Match.exact(classContainerDescriptor) {
-            findMethods(selector.javaClass, { isAnnotated(it, PreviewTest::class.java) }, HierarchyTraversalMode.TOP_DOWN)
+            findMethods(
+                selector.javaClass,
+                { isAnnotated(it, PreviewTest::class.java) },
+                HierarchyTraversalMode.TOP_DOWN,
+              )
               .asSequence()
               .map { DiscoverySelectors.selectMethod(selector.javaClass, it) }
               .toMutableSet()

@@ -1,9 +1,19 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_java//java:defs.bzl", "java_import", "java_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:maven.bzl", "maven_library", "maven_repository")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_FOR_TESTS", "KGP_VERSION_FOR_TESTS")
 load("//tools/base/common:version.bzl", "BUILD_VERSION", "IS_AGP_RELEASE_BRANCH")
 load("hybrid_build.bzl", "GRADLE_PROPERTIES")
+
+exports_files(["convert_problems.py"])  # Needed for other BUILD files to be able to use "gradle_build"
+
+py_binary(
+    name = "convert_problems",
+    srcs = ["convert_problems.py"],
+    visibility = ["//visibility:public"],
+)
 
 maven_library(
     name = "tools.apksig",
@@ -49,6 +59,12 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.21",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.21",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.6.0",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.6.0"],
     visibility = ["//visibility:public"],
 )
 
@@ -490,6 +506,7 @@ ANDROID_GRADLE_PLUGIN_SOURCE_FILES = [
     ":agp_gradle_build_files",
     "//prebuilts/tools/common/aapt/protos:agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
+    "//tools/base/android-test:agp_gradle_build_files",
     "//tools/base/build-analyzer/common:agp_gradle_build_files",
     "//tools/base/build-system/aapt2:agp_gradle_build_files",
     "//tools/base/build-system/aapt2-proto:agp_gradle_build_files",
@@ -520,10 +537,11 @@ ANDROID_GRADLE_PLUGIN_SOURCE_FILES = [
 gradle_build(
     name = "android_gradle_plugin",
     build_file = "//tools:agp_gradle_build_root_build_file",
-    data = ["//prebuilts/studio/jdk/jdk11:jdk_runtime_files"] + ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
+    data = ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES,
     output_file = "android_gradle_plugin.zip",
     output_file_source = "dist/repo.zip",
+    problems_report_path = "build/build/root/reports/problems/problems-report.html",
     repos = [
         "//tools/base:agp_dependencies",
         "//tools/base:agp_artifacts",
@@ -532,10 +550,24 @@ gradle_build(
     visibility = ["//visibility:public"],
 )
 
+diff_test(
+    name = "android_gradle_plugin_problems_test",
+    failure_message = """
+       Replace the known_problems.txt file in this directory with android_gradle_plugin_problems.txt from the artifacts of //tools/base/build-system:android_gradle_plugin target in this bazel invocation.
+
+       Alternatively, run the following command to update (make sure build is executed remotely by adding --config=remote, or --config=remote-exec):
+         bazel build --config=remote //tools/base/build-system:android_gradle_plugin_problems.txt && cp `bazel info bazel-genfiles`/tools/base/build-system/android_gradle_plugin_problems.txt `bazel info workspace`/tools/base/build-system/known_problems.txt
+    """,
+    file1 = ":android_gradle_plugin_problems.txt",
+    file2 = "known_problems.txt",
+    # Only run on linux, as the problems are uninterestingly different across platforms
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
 gradle_build(
     name = "android_gradle_plugin_9",
     build_file = "//tools:agp_gradle_build_root_build_file",
-    data = ["//prebuilts/studio/jdk/jdk11:jdk_runtime_files"] + ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
+    data = ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = select({
         "//tools/base/bazel:release": {
             "hybrid-build-embedded-in-bazel": "true",
@@ -564,7 +596,7 @@ DECLARATIVE_ANDROID_GRADLE_PLUGIN_SOURCE_FILES = ANDROID_GRADLE_PLUGIN_SOURCE_FI
 gradle_build(
     name = "declarative_android_gradle_plugin",
     build_file = "//tools:agp_gradle_build_root_build_file",
-    data = ["//prebuilts/studio/jdk/jdk11:jdk_runtime_files"] + DECLARATIVE_ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
+    data = DECLARATIVE_ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES,
     output_file = "declarative_android_gradle_plugin.zip",
     output_file_source = "dist/repo.zip",
@@ -622,14 +654,6 @@ maven_repository(
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/signflinger",
-        "//tools/base/utp/android-device-provider-ddmlib-proto",
-        "//tools/base/utp/android-test-plugin-host-additional-test-output-proto",
-        "//tools/base/utp/android-test-plugin-host-apk-installer-proto",
-        "//tools/base/utp/android-test-plugin-host-coverage-proto",
-        "//tools/base/utp/android-test-plugin-host-device-info-proto",
-        "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
-        "//tools/base/utp/android-test-plugin-host-logcat-proto",
-        "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "//tools/base/zipflinger",
         "//tools/data-binding:tools.baseLibrary",
         "//tools/data-binding:tools.baseLibrarySupport",
@@ -650,7 +674,7 @@ maven_repository(
         "@maven//:com.google.guava.guava_33.4.0-android",
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.protobuf.protobuf-gradle-plugin",
-        "@maven//:com.google.protobuf.protoc_3.22.3",
+        "@maven//:com.google.protobuf.protoc_3.25.5",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.googlecode.jarjar.jarjar",
         "@maven//:com.googlecode.juniversalchardet.juniversalchardet",
@@ -670,7 +694,9 @@ maven_repository(
         "@maven//:org.apache.groovy.groovy-all",
         "@maven//:org.apache.httpcomponents.httpmime",
         "@maven//:org.apache.maven.maven-aether-provider",
+        "@maven//:org.bouncycastle.bc-jdk18on-bom",
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
+        "@maven//:org.bouncycastle.bcprov-jdk18on",
         "@maven//:org.eclipse.aether.aether-connector-basic",
         "@maven//:org.eclipse.aether.aether-transport-file",
         "@maven//:org.eclipse.aether.aether-transport-http",
@@ -714,8 +740,8 @@ gradle_test(
     # keep sorted
     data = [
         ":agp_gradle_build_files",
-        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//tools:agp_gradle_build_files",
+        "//tools/base/android-test:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-api:agp_gradle_build_files",
@@ -741,7 +767,6 @@ gradle_build(
     name = "android_gradle_plugin_dackka_docs",
     build_file = "//tools:agp_gradle_build_root_build_file",
     data = [
-        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//prebuilts/tools/common/dackka",
     ] + ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES,
@@ -775,7 +800,6 @@ gradle_build(
     name = "android_gradle_plugin_metalava_api",
     build_file = "//tools:agp_gradle_build_root_build_file",
     data = [
-        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//prebuilts/tools/common/dackka",
     ] + ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES,
@@ -801,8 +825,8 @@ gradle_test(
     # keep sorted
     data = [
         ":agp_gradle_build_files",
-        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//tools:agp_gradle_build_files",
+        "//tools/base/android-test:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-api:agp_gradle_build_files",
@@ -832,8 +856,8 @@ gradle_test(
     # keep sorted
     data = [
         ":agp_gradle_build_files",
-        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//tools:agp_gradle_build_files",
+        "//tools/base/android-test:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",
@@ -861,8 +885,8 @@ gradle_test(
     # keep sorted
     data = [
         ":agp_gradle_build_files",
-        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//tools:agp_gradle_build_files",
+        "//tools/base/android-test:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",

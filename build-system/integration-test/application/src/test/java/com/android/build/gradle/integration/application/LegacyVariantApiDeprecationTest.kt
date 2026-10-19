@@ -39,26 +39,24 @@ import org.junit.Test
 class LegacyVariantApiDeprecationTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") { android { namespace = "com.example.app" } }
-      androidLibrary(":lib") { android { namespace = "com.example.lib" } }
-      androidFeature(":feature") { android { namespace = "com.example.feature" } }
-      androidTest(":test") {
-        android {
-          namespace = "com.example.test"
-          targetProjectPath = ":app"
-        }
+  val rule = GradleRule.from {
+    androidApplication(":app") { android { namespace = "com.example.app" } }
+    androidLibrary(":lib") { android { namespace = "com.example.lib" } }
+    androidFeature(":feature") { android { namespace = "com.example.feature" } }
+    androidTest(":test") {
+      android {
+        namespace = "com.example.test"
+        targetProjectPath = ":app"
       }
     }
+  }
 
   @Test
   fun testAppAndTestedVariantsDeprecation() {
-    val build =
-      rule.build {
-        androidApplication(":app") { pluginCallbacks.add(AppDeprecationCallback::class.java) }
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
-      }
+    val build = rule.build {
+      androidApplication(":app") { pluginCallbacks.add(AppDeprecationCallback::class.java) }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
 
     val result = build.executor.run("help")
 
@@ -70,11 +68,10 @@ class LegacyVariantApiDeprecationTest {
 
   @Test
   fun testLibraryVariantsDeprecation() {
-    val build =
-      rule.build {
-        androidLibrary(":lib") { pluginCallbacks.add(LibDeprecationCallback::class.java) }
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
-      }
+    val build = rule.build {
+      androidLibrary(":lib") { pluginCallbacks.add(LibDeprecationCallback::class.java) }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
 
     val result = build.executor.run("help")
 
@@ -86,11 +83,10 @@ class LegacyVariantApiDeprecationTest {
 
   @Test
   fun testDynamicFeatureVariantsDeprecation() {
-    val build =
-      rule.build {
-        androidFeature(":feature") { pluginCallbacks.add(AppDeprecationCallback::class.java) }
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
-      }
+    val build = rule.build {
+      androidFeature(":feature") { pluginCallbacks.add(AppDeprecationCallback::class.java) }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
 
     val featureBuildFile = build.directory.resolve("feature/build.gradle")
 

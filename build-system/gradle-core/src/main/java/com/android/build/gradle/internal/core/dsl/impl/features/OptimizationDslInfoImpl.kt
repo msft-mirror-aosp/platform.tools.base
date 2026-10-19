@@ -118,11 +118,11 @@ class OptimizationDslInfoImpl(
         if (componentType.isTestComponent && buildTypeObj is LibraryBuildType) {
           return buildTypeObj.androidTest.enableMinification
         } else {
-          return buildTypeObj.isMinifyEnabled
+          return buildTypeObj.isMinifyEnabled || applicationOptimizationEnabled
         }
       }
 
-      override fun resourcesShrinkingEnabled(): Boolean = buildTypeObj.isShrinkResources
+      override fun resourcesShrinkingEnabled(): Boolean = buildTypeObj.isShrinkResources || applicationOptimizationEnabled
     }
   }
 

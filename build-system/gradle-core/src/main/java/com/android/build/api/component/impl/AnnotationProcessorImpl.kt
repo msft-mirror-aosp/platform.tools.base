@@ -66,49 +66,48 @@ class AnnotationProcessorImpl(
    *
    * This method can only be called during execution time as it resolves Variant APIs [Provider] instances.
    */
-  val finalListOfClassNames: Provider<List<String>> =
-    classNames.map {
-      if (dataBindingEnabled) {
-        val updatedListOfClassNames = it.toMutableList()
-        // We want to pass data binding processor's class name to the Java compiler.
-        // However, if the class names of other annotation processors were not added
-        // previously, adding the class name of data binding alone would disable Java
-        // compiler's automatic discovery of annotation processors and the other annotation
-        // processors would not be invoked.
-        // Therefore, we add data binding only if another class name was specified before.
+  val finalListOfClassNames: Provider<List<String>> = classNames.map {
+    if (dataBindingEnabled) {
+      val updatedListOfClassNames = it.toMutableList()
+      // We want to pass data binding processor's class name to the Java compiler.
+      // However, if the class names of other annotation processors were not added
+      // previously, adding the class name of data binding alone would disable Java
+      // compiler's automatic discovery of annotation processors and the other annotation
+      // processors would not be invoked.
+      // Therefore, we add data binding only if another class name was specified before.
 
-        // so first, we check if is provided from the [arguments]
-        val processorsProvidedThroughArguments = arguments.get()["-processor"] != null
-        if (arguments.get()["-processor"]?.contains(DataBindingBuilder.PROCESSOR_NAME) == true) {
-          return@map updatedListOfClassNames
-        }
-
-        // second, we check if it is provided from the [argumentProviders]
-        val argumentProvidersAsString =
-          argumentProviders
-            .filter { provider -> provider !is DataBindingCompilerArguments }
-            .map(CommandLineArgumentProvider::asArguments)
-            .flatten()
-            .joinToString()
-        val processorsProvidedThroughArgumentProviders = argumentProvidersAsString.contains("-processor")
-        if (processorsProvidedThroughArgumentProviders && argumentProvidersAsString.contains(DataBindingBuilder.PROCESSOR_NAME)) {
-          return@map updatedListOfClassNames
-        }
-
-        // finally, if other processors were specified through arguments or
-        // argumentProviders, we must add the databinding one.
-        // otherwise, check [classNames] and add it if it is not empty and not present.
-        if (
-          processorsProvidedThroughArguments ||
-            processorsProvidedThroughArgumentProviders ||
-            (it.isNotEmpty() && !it.contains(DataBindingBuilder.PROCESSOR_NAME))
-        ) {
-          updatedListOfClassNames.add(DataBindingBuilder.PROCESSOR_NAME)
-        }
-        updatedListOfClassNames
-      } else {
-        // if databinding is not enabled, just return the collection unmodified.
-        it
+      // so first, we check if is provided from the [arguments]
+      val processorsProvidedThroughArguments = arguments.get()["-processor"] != null
+      if (arguments.get()["-processor"]?.contains(DataBindingBuilder.PROCESSOR_NAME) == true) {
+        return@map updatedListOfClassNames
       }
+
+      // second, we check if it is provided from the [argumentProviders]
+      val argumentProvidersAsString =
+        argumentProviders
+          .filter { provider -> provider !is DataBindingCompilerArguments }
+          .map(CommandLineArgumentProvider::asArguments)
+          .flatten()
+          .joinToString()
+      val processorsProvidedThroughArgumentProviders = argumentProvidersAsString.contains("-processor")
+      if (processorsProvidedThroughArgumentProviders && argumentProvidersAsString.contains(DataBindingBuilder.PROCESSOR_NAME)) {
+        return@map updatedListOfClassNames
+      }
+
+      // finally, if other processors were specified through arguments or
+      // argumentProviders, we must add the databinding one.
+      // otherwise, check [classNames] and add it if it is not empty and not present.
+      if (
+        processorsProvidedThroughArguments ||
+          processorsProvidedThroughArgumentProviders ||
+          (it.isNotEmpty() && !it.contains(DataBindingBuilder.PROCESSOR_NAME))
+      ) {
+        updatedListOfClassNames.add(DataBindingBuilder.PROCESSOR_NAME)
+      }
+      updatedListOfClassNames
+    } else {
+      // if databinding is not enabled, just return the collection unmodified.
+      it
     }
+  }
 }

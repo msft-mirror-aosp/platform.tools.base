@@ -65,7 +65,10 @@ class ImageDifferTest {
   fun pixelPerfectSimilar() {
     val result = PixelPerfect().diff(loadTestImage("circle"), loadTestImage("circle"))
     assertIs<ImageDiffer.DiffResult.Similar>(result)
-    assertEquals("Pixel percentage difference: 0.00%. 0 of 65536 pixels are different", result.description)
+    assertEquals(
+      "Pixel percentage difference: 0.00%. 0 of 65536 pixels are different",
+      result.description,
+    )
     assertNull(result.highlights)
     assertThat(result.percentDiff).isEqualTo(0.0)
   }
@@ -78,7 +81,10 @@ class ImageDifferTest {
 
     val result = differ.diff(a, b)
     assertIs<ImageDiffer.DiffResult.Similar>(result)
-    assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
+    assertEquals(
+      "Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different",
+      result.description,
+    )
     verifyHighlightsPattern(result.highlights!!, a, b)
     assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
   }
@@ -90,7 +96,10 @@ class ImageDifferTest {
     val result = PixelPerfect().diff(a, b)
 
     assertIs<ImageDiffer.DiffResult.Different>(result)
-    assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
+    assertEquals(
+      "Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different",
+      result.description,
+    )
     verifyHighlightsPattern(result.highlights, a, b)
     assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
   }
@@ -100,7 +109,11 @@ class ImageDifferTest {
     assertEquals("PixelPerfect", PixelPerfect().name)
   }
 
-  private fun verifyHighlightsPattern(highlights: BufferedImage, a: BufferedImage, b: BufferedImage) {
+  private fun verifyHighlightsPattern(
+    highlights: BufferedImage,
+    a: BufferedImage,
+    b: BufferedImage,
+  ) {
     assertEquals(a.width, highlights.width)
     assertEquals(a.height, highlights.height)
     for (x in 0 until highlights.width) {

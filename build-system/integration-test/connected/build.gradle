@@ -40,14 +40,13 @@ dependencies {
     testImplementation libs.apache_commons_io
     testImplementation libs.apache_commons_lang
     testImplementation libs.apache_compress
-    testImplementation libs.com.android.tools.utp.androidTestPluginHostDeviceInfoProto
+    testImplementation libs.android_test_result_proto
     testImplementation libs.google_api_client
     testImplementation libs.google_storage_client
     testImplementation libs.junit
     testImplementation libs.protobuf
     testImplementation libs.protobuf_util
     testImplementation libs.truth
-    testImplementation libs.unified_test_platform
     testImplementation 'org.junit.platform:junit-platform-engine:1.9.2'
 
     testImplementation libs.mockito_core

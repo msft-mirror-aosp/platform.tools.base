@@ -32,22 +32,21 @@ import org.junit.Test
 class UnitTestComponentDefaultsTest {
 
   @get:Rule
-  val appWithNewUnitTestBehavior =
-    GradleRule.from {
-      androidApplication {
-        android {
-          buildTypes { create("qa") { it.isDebuggable = true } }
-          testBuildType = "qa"
-          flavorDimensions += "color"
-          productFlavors {
-            create("defaults") { it.dimension = "color" }
-            create("override") { it.dimension = "color" }
-          }
+  val appWithNewUnitTestBehavior = GradleRule.from {
+    androidApplication {
+      android {
+        buildTypes { create("qa") { it.isDebuggable = true } }
+        testBuildType = "qa"
+        flavorDimensions += "color"
+        productFlavors {
+          create("defaults") { it.dimension = "color" }
+          create("override") { it.dimension = "color" }
         }
-        pluginCallbacks += CustomizeUnitTestEnabling::class.java
       }
-      gradleProperties { add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, true) }
+      pluginCallbacks += CustomizeUnitTestEnabling::class.java
     }
+    gradleProperties { add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, true) }
+  }
 
   class CustomizeUnitTestEnabling : ApplicationComponentCallback {
 

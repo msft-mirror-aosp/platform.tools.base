@@ -150,8 +150,16 @@ interface BaseFlavor : VariantDimension {
    * }
    * ````
    *
-   * You can also use this property to filter resources for screen densities. For example, specifying `hdpi` removes all other screen
-   * density resources (such as `mdpi`, `xhdpi`, etc) from the final APK.
+   * You can also specify a single screen density, which targets that density in the final APK. Resources for other densities are removed,
+   * except that a resource with no version at the target density is kept at the closest density available. Only one density may be
+   * specified. To target a density without `resourceConfigurations`, pass AAPT2's `--preferred-density` flag directly:
+   * ````
+   * android {
+   *     androidResources {
+   *         additionalParameters += ["--preferred-density", "hdpi"]
+   *     }
+   * }
+   * ````
    *
    * **Note:** `auto` is no longer supported because it created a number of issues with multi-module projects. Instead, you should specify a
    * list of locales that your app supports, as shown in the sample above. Android plugin 3.1.0 and higher ignore the ` auto` argument, and
@@ -160,26 +168,30 @@ interface BaseFlavor : VariantDimension {
    * To learn more, see [Remove unused alternative resources](https://d.android.com/studio/build/shrink-code.html#unused-alt-resources).
    */
   @Deprecated(
-    "Support for resource configurations will be removed. For language " +
-      "resource configurations in applications, use androidResources.localeFilters."
+    "Support for resource configurations will be removed. For locales, use " +
+      "androidResources.localeFilters. For screen density, pass AAPT2's --preferred-density flag " +
+      "via androidResources.additionalParameters."
   )
   val resourceConfigurations: MutableSet<String>
 
   @Deprecated(
-    "Support for resource configurations will be removed. For language " +
-      "resource configurations in applications, use androidResources.localeFilters."
+    "Support for resource configurations will be removed. For locales, use " +
+      "androidResources.localeFilters. For screen density, pass AAPT2's --preferred-density flag " +
+      "via androidResources.additionalParameters."
   )
   fun resConfigs(config: Collection<String>)
 
   @Deprecated(
-    "Support for resource configurations will be removed. For language " +
-      "resource configurations in applications, use androidResources.localeFilters."
+    "Support for resource configurations will be removed. For locales, use " +
+      "androidResources.localeFilters. For screen density, pass AAPT2's --preferred-density flag " +
+      "via androidResources.additionalParameters."
   )
   fun resConfig(config: String)
 
   @Deprecated(
-    "Support for resource configurations will be removed. For language " +
-      "resource configurations in applications, use androidResources.localeFilters."
+    "Support for resource configurations will be removed. For locales, use " +
+      "androidResources.localeFilters. For screen density, pass AAPT2's --preferred-density flag " +
+      "via androidResources.additionalParameters."
   )
   fun resConfigs(vararg config: String)
 

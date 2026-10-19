@@ -496,7 +496,7 @@ open class Context(
 
     /** For a given [source] code contents and a [startOffset], returns the previous line if it is a comment line suppress directive. */
     fun getSuppressionDirective(prefix: String, source: CharSequence, startOffset: Int): String? {
-      if (source.startsWith("//", startOffset) || source.startsWith("/*")) {
+      if (source.startsWith("//", startOffset) || source.startsWith("/*", startOffset)) {
         var index = startOffset + 2
         while (index < source.length && source[index] == ' ') {
           index++

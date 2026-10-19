@@ -17,7 +17,6 @@
 package com.android.tools.idea.wizard.template.impl.fragments.fullscreenFragment.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -28,7 +27,6 @@ fun fullscreenFragmentJava(
   layoutName: String,
   packageName: String,
   applicationPackage: String?,
-  useAndroidX: Boolean,
   isViewBindingSupported: Boolean,
 ): String {
 
@@ -45,11 +43,11 @@ package ${packageName};
 
 import android.annotation.SuppressLint;
 
-import ${getMaterialComponentName("android.support.annotation.NonNull", useAndroidX)};
-import ${getMaterialComponentName("android.support.annotation.Nullable", useAndroidX)};
-import ${getMaterialComponentName("android.support.v7.app.ActionBar", useAndroidX)};
-import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)};
-import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)};
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -59,7 +57,6 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;

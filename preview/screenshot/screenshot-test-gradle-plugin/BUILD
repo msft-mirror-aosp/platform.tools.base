@@ -30,6 +30,7 @@ filegroup(
 SCREENSHOT_TEST_GRADLE_PLUGIN_SOURCE_FILES = [
     ":agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
+    "//tools/base/android-test:agp_gradle_build_files",
     "//tools/base/build-system/builder-model:agp_gradle_build_files",
     "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-api:agp_gradle_build_files",
@@ -66,7 +67,7 @@ maven_repository(
 gradle_build(
     name = "screenshot-test-gradle-plugin",
     build_file = "//tools:agp_gradle_build_root_build_file",
-    data = ["//prebuilts/studio/jdk/jdk11:jdk_runtime_files"] + SCREENSHOT_TEST_GRADLE_PLUGIN_SOURCE_FILES,
+    data = SCREENSHOT_TEST_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES | SCREENSHOT_TEST_PLUGIN_GRADLE_PROPERTIES,
     output_file = "screenshot-test-gradle-plugin.zip",
     output_file_source = "dist/repo.zip",
@@ -84,10 +85,10 @@ gradle_build(
 
 gradle_test(
     name = "screenshot-test-gradle-plugin_test",
+    timeout = "long",
     build_file = "//tools:agp_gradle_build_root_build_file",
     data = [
         ":agp_gradle_test_files",
-        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
     ] + SCREENSHOT_TEST_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES | SCREENSHOT_TEST_PLUGIN_GRADLE_PROPERTIES,
     repos = [

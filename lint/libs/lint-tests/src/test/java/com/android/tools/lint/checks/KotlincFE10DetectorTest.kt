@@ -15,11 +15,32 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 
 class KotlincFE10DetectorTest : AbstractCheckTest() {
+  companion object {
+    // This class has been removed upstream. This stub is sufficient to keep the tests passing.
+    // We can probably remove KotlincFE10Detector and tests, eventually.
+    val kotlinUastResolveProviderServiceStub: TestFile =
+      TestFiles.kotlin(
+          """
+          package org.jetbrains.uast.kotlin
+
+          import org.jetbrains.kotlin.psi.KtElement
+          import org.jetbrains.kotlin.resolve.BindingContext
+
+          interface KotlinUastResolveProviderService : BaseKotlinUastResolveProviderService {
+              fun getBindingContext(element: KtElement): BindingContext
+              fun getBindingContextIfAny(element: KtElement): BindingContext?
+          }
+          """
+        )
+        .indented()
+  }
+
   override fun getDetector(): Detector {
     return KotlincFE10Detector()
   }
@@ -89,6 +110,7 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
           )
           .indented(),
         *TestFiles.getLintClassPath(),
+        kotlinUastResolveProviderServiceStub,
       )
       .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS)
       .run()
@@ -167,6 +189,7 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
           )
           .indented(),
         *TestFiles.getLintClassPath(),
+        kotlinUastResolveProviderServiceStub,
       )
       .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS)
       .run()
@@ -261,6 +284,7 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
           )
           .indented(),
         *TestFiles.getLintClassPath(),
+        kotlinUastResolveProviderServiceStub,
       )
       .skipTestModes(TestMode.BODY_REMOVAL, TestMode.IMPORT_ALIAS, TestMode.IF_TO_WHEN)
       .allowDuplicates()

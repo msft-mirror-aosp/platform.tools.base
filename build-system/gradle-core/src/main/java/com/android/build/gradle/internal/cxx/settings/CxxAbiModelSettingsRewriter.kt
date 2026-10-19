@@ -121,11 +121,10 @@ private fun CxxAbiModel.calculateConfigurationArgumentsExceptHash(providers: Pro
   val rewriteConfig = getAbiRewriteConfiguration(providers, layout)
   val argsAdded =
     copy(cmake = cmake?.copy(buildCommandArgs = rewriteConfig.buildCommandArgs), configurationArguments = rewriteConfig.configurationArgs)
-  val argsRewritten =
-    argsAdded.rewrite { property, value ->
-      val replaced = property.let { Macro.withBinding(it).firstOrNull()?.ref } ?: value
-      rewriteConfig.reifier(replaced)
-    }
+  val argsRewritten = argsAdded.rewrite { property, value ->
+    val replaced = property.let { Macro.withBinding(it).firstOrNull()?.ref } ?: value
+    rewriteConfig.reifier(replaced)
+  }
   // Remove arguments that supersede earlier arguments and remove properties that
   // have a blank value.
   return argsRewritten.copy(

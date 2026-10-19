@@ -1,10 +1,12 @@
 """This module implements the iml_module rule."""
 
+load("@rules_cc//cc:defs.bzl", "CcInfo")
+load("@rules_java//java:defs.bzl", "JavaInfo")
 load("//tools/base/intellij-bazel:transitioned_java.bzl", "DEFAULT_INTELLIJ_PLATFORM", "transitioned_java")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file", "label_workspace_path")
 load(":kotlin.bzl", "kotlin_compile")
-load(":kotlin_common.bzl", "KtJvmToolchainInfo", "default_javac_opts", "default_kotlinc_opts", "select_java_compile_toolchain", "select_java_runtime")
+load(":kotlin_common.bzl", "KtJvmToolchainInfo", "add_jvm_target_opts", "select_java_compile_toolchain", "select_java_runtime")
 load(":lint.bzl", "lint_test")
 load(":merge_archives.bzl", "run_singlejar")
 
@@ -12,9 +14,9 @@ ImlModuleInfo = provider(
     doc = "Info produced by the iml_module rule.",
     fields = [
         "module_jars",
-        "java_deps",
-        "test_provider",
-        "main_provider",
+        "java_deps",  # Deprecated: redundant with 'deps'.
+        "test_provider",  # Deprecated: use the JavaInfo provider directly (we no longer have mixed prod/test modules).
+        "main_provider",  # Deprecated: use the JavaInfo provider directly.
         "deps",
         "jvm_target",
         "names",
@@ -96,36 +98,69 @@ def resources_impl(ctx, name, roots, resources, resources_jar):
         mnemonic = "zipper",
     )
 
+def merge_runfiles(deps):
+    return depset(transitive = [
+        dep[DefaultInfo].default_runfiles.files
+        for dep in deps
+        if dep[DefaultInfo].default_runfiles
+    ])
+
 # buildifier: disable=native-java-common
 # buildifier: disable=native-java-info
-def _iml_module_jar_impl(
-        ctx,
-        name,
-        roots,
-        java_srcs,
-        kotlin_srcs,
-        resources,
-        res_zips,
-        output_jar,
-        java_deps,
-        java_runtime_deps,
-        exports,
-        friend_jars,
-        module_name):
+def _iml_module_impl(ctx):
+    (iml_file,) = ctx.files.iml_files  # There is always exactly 1 .iml file nowadays.
+    module_name = iml_file.basename.removesuffix(".iml")
+
+    # Check module visibility. For historical reasons we only check 'prod' deps.
+    for dep in ctx.attr.deps:
+        if ImlModuleInfo in dep:
+            dep_vis = dep[ImlModuleInfo].module_visibility
+            if dep_vis and ctx.label not in [Label(vis) for vis in dep_vis]:
+                fail("The module %s, declares specific module visibility not including %s" % (dep.label, ctx.label))
+
+    # Check that dependencies are consistent with the JVM target for this module. For historical reasons we only check 'prod' deps.
+    for dep in ctx.attr.deps:
+        if ImlModuleInfo in dep:
+            dep_info = dep[ImlModuleInfo]
+            if ctx.attr.jvm_target and (not dep_info.jvm_target or int(dep_info.jvm_target) > int(ctx.attr.jvm_target)):
+                fail("The module %s has a jvm_target of \"%s\", but depends on module %s with target \"%s\"" % (
+                    ctx.attr.name,
+                    ctx.attr.jvm_target,
+                    dep_info.names[0],
+                    dep_info.jvm_target,
+                ))
+
+    # Collect JavaInfo from dependencies.
+    java_deps = [dep[JavaInfo] for dep in ctx.attr.deps + ctx.attr.test_deps if JavaInfo in dep]
+    java_runtime_deps = [dep[JavaInfo] for dep in ctx.attr.runtime_deps]
+    exports = [export[JavaInfo] for export in ctx.attr.exports if JavaInfo in export]
+    friends = [friend[JavaInfo] for friend in ctx.attr.friends]
+
+    # Compiler args and JVM target.
+    java_compile_toolchain = select_java_compile_toolchain(ctx.attr._java_toolchains, ctx.attr.jvm_target)
+    java_runtime = select_java_runtime(ctx.attr._java_toolchains, ctx.attr.jvm_target)
+    javac_opts, kotlinc_opts = add_jvm_target_opts(
+        ctx.attr._java_toolchains,
+        ctx.attr.jvm_target,
+        ctx.attr.javacopts,
+        ctx.attr.kotlinc_opts,
+        label = ctx.label,
+    )
+
+    java_srcs = ctx.files.java_srcs
+    kotlin_srcs = ctx.files.kotlin_srcs
+    output_jar = ctx.outputs.output_jar
+
+    # A prefix for intermediate files.
+    name = ctx.attr.output_jar.name.removesuffix(".jar")
+
     jars = []
     ijars = []
-    sourcepath = []
 
     java_jar = ctx.actions.declare_file(name + ".java.jar") if java_srcs else None
     kotlin_jar = ctx.actions.declare_file(name + ".kotlin.jar") if kotlin_srcs else None
     kotlin_ijar = ctx.actions.declare_file(name + ".kotlin-ijar.jar") if kotlin_srcs else None
     full_ijar = ctx.actions.declare_file(name + ".merged-ijar-iml.jar")
-
-    # Compiler args and JVM target.
-    java_compile_toolchain = select_java_compile_toolchain(ctx.attr._java_toolchains, ctx.attr.jvm_target)
-    java_runtime = select_java_runtime(ctx.attr._java_toolchains, ctx.attr.jvm_target)
-    javac_opts = default_javac_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.javacopts
-    kotlinc_opts = default_kotlinc_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.kotlinc_opts
 
     # Kotlin
     kotlin_providers = []
@@ -139,7 +174,7 @@ def _iml_module_jar_impl(
             name = module_name,
             srcs = java_srcs + kotlin_srcs,
             deps = java_deps,
-            friend_jars = friend_jars,
+            friend_jars = [jar for friend in friends for jar in friend.compile_jars.to_list()],
             out = kotlin_jar,
             out_ijar = kotlin_ijar,
             java_runtime = java_runtime,
@@ -150,17 +185,14 @@ def _iml_module_jar_impl(
         ijars.append(kotlin_ijar)
 
     # Resources.
-    if resources:
+    if ctx.files.resources:
         resources_jar = ctx.actions.declare_file(name + ".res.jar")
-        resources_impl(ctx, name, roots, resources, resources_jar)
+        resources_impl(ctx, name, ctx.attr.roots, ctx.files.resources, resources_jar)
         jars.append(resources_jar)
-    if res_zips:
-        jars += res_zips
+    jars += ctx.files.res_zips
 
     # Java
     if java_srcs:
-        compiled_java = java_jar
-
         # Bazel normally places transitive deps on the classpath (subject to
         # strict-deps enforcement and reduced-classpath optimizations). However,
         # in order to match JPS, we compile against direct deps only.
@@ -170,11 +202,10 @@ def _iml_module_jar_impl(
         java_provider = java_common.compile(
             ctx,
             source_files = java_srcs,
-            output = compiled_java,
+            output = java_jar,
             deps = compile_deps,
             javac_opts = javac_opts,
             java_toolchain = java_compile_toolchain,
-            sourcepath = sourcepath,
         )
 
         ijars += java_provider.compile_jars.to_list()
@@ -195,76 +226,14 @@ def _iml_module_jar_impl(
         allow_duplicates = True,
     )
 
-    main_provider = JavaInfo(
+    java_info = java_common.merge([JavaInfo(
         output_jar = output_jar,
-        compile_jar = full_ijar or output_jar,
+        compile_jar = full_ijar,
         deps = java_deps,
         runtime_deps = java_runtime_deps,
-    )
-    main_provider = java_common.merge([main_provider] + exports)
-    main_provider_no_deps = JavaInfo(
-        output_jar = output_jar,
-        compile_jar = full_ijar or output_jar,
-    )
-    return main_provider, main_provider_no_deps
-
-def merge_runfiles(deps):
-    return depset(transitive = [
-        dep[DefaultInfo].default_runfiles.files
-        for dep in deps
-        if dep[DefaultInfo].default_runfiles
-    ])
-
-# buildifier: disable=native-java-common
-# buildifier: disable=native-java-info
-def _iml_module_impl(ctx):
-    names = [iml.basename[:-4] for iml in ctx.files.iml_files if iml.basename.endswith(".iml")]
-
-    # Prod dependencies.
-    java_deps = []
-    for this_dep in ctx.attr.deps:
-        if ImlModuleInfo in this_dep:
-            dep_vis = this_dep[ImlModuleInfo].module_visibility
-            if dep_vis and ctx.label not in [Label(vis) for vis in dep_vis]:
-                fail("The module %s, declares specific module visibility not including %s" % (this_dep.label, ctx.label))
-        if JavaInfo in this_dep:
-            java_deps.append(this_dep[JavaInfo])
-
-    # Check that dependencies are consistent with the JVM target for this module.
-    if ctx.attr.jvm_target:
-        for dep in ctx.attr.deps:
-            if ImlModuleInfo in dep:
-                if not dep[ImlModuleInfo].jvm_target or int(dep[ImlModuleInfo].jvm_target) > int(ctx.attr.jvm_target):
-                    fail("The module %s has a jvm_target of \"%s\", but depends on module %s with target \"%s\"" % (
-                        ctx.attr.name,
-                        ctx.attr.jvm_target,
-                        dep[ImlModuleInfo].names[0],
-                        dep[ImlModuleInfo].jvm_target,
-                    ))
-
-    # Test dependencies (superset of prod).
-    test_java_deps = []
-    for this_dep in ctx.attr.test_deps:
-        if JavaInfo in this_dep:
-            test_java_deps.append(this_dep[JavaInfo])
-        if ImlModuleInfo in this_dep:
-            test_java_deps.append(this_dep[ImlModuleInfo].test_provider)
-
-    # Runtime dependencies.
-    java_runtime_deps = [dep[JavaInfo] for dep in ctx.attr.runtime_deps]
-
-    # Exports.
-    exports = []
-    test_exports = []
-    for export in ctx.attr.exports:
-        if JavaInfo in export:
-            exports.append(export[JavaInfo])
-        if ImlModuleInfo in export:
-            test_exports.append(export[ImlModuleInfo].test_provider)
+    )] + exports)
 
     # Runfiles.
-    # Note: the runfiles for test-only deps should technically not be in
-    # the prod module, but it is simpler this way (and not very harmful).
     transitive_data = depset(
         direct = ctx.files.iml_files + ctx.files.data,
         transitive = [
@@ -275,58 +244,20 @@ def _iml_module_impl(ctx):
     )
     runfiles = ctx.runfiles(transitive_files = transitive_data)
 
-    # If multiple modules we use the label, otherwise use the exact module name
-    module_name = names[0] if len(names) == 1 else ctx.label.name
-    main_provider, main_provider_no_deps = _iml_module_jar_impl(
-        ctx = ctx,
-        name = ctx.label.name,
-        roots = ctx.attr.roots,
-        java_srcs = ctx.files.java_srcs,
-        kotlin_srcs = ctx.files.kotlin_srcs,
-        resources = ctx.files.resources,
-        res_zips = ctx.files.res_zips,
-        output_jar = ctx.outputs.production_jar,
-        java_deps = java_deps,
-        java_runtime_deps = java_runtime_deps,
-        exports = exports,
-        friend_jars = [],
-        module_name = module_name,
-    )
-
-    friend_jars = main_provider.compile_jars.to_list()
-    for test_friend in ctx.attr.test_friends:
-        friend_jars += test_friend[JavaInfo].compile_jars.to_list()
-
-    test_provider, _ = _iml_module_jar_impl(
-        ctx = ctx,
-        name = ctx.label.name + "_test",
-        roots = ctx.attr.test_roots,
-        java_srcs = ctx.files.java_test_srcs,
-        kotlin_srcs = ctx.files.kotlin_test_srcs,
-        resources = ctx.files.test_resources,
-        res_zips = [],
-        output_jar = ctx.outputs.test_jar,
-        java_deps = [main_provider_no_deps] + test_java_deps,
-        java_runtime_deps = java_runtime_deps,
-        exports = exports + test_exports,
-        friend_jars = friend_jars,
-        module_name = module_name,
-    )
-
     iml_module_info = ImlModuleInfo(
-        module_jars = ctx.outputs.production_jar,
+        module_jars = output_jar,
         java_deps = java_deps,
-        test_provider = test_provider,
-        main_provider = main_provider,
+        test_provider = java_info,
+        main_provider = java_info,
         deps = ctx.attr.deps,
         jvm_target = ctx.attr.jvm_target,
         module_visibility = ctx.attr.module_visibility,
-        names = names,
+        names = [module_name],
     )
 
     return [
         iml_module_info,
-        main_provider,
+        java_info,
         DefaultInfo(runfiles = runfiles),
     ]
 
@@ -344,28 +275,22 @@ _iml_module_ = rule(
         "kotlin_srcs": attr.label_list(allow_files = True),
         "kotlin_use_compose": attr.bool(),
         "kotlin_use_serialization": attr.bool(),
-        "kotlin_use_ir": attr.bool(),
-        "java_test_srcs": attr.label_list(allow_files = True),
-        "kotlin_test_srcs": attr.label_list(allow_files = True),
         "jvm_target": attr.string(),
         "javacopts": attr.string_list(),
         "kotlinc_opts": attr.string_list(),
         "resources": attr.label_list(allow_files = True),
-        "manifests": attr.label_list(allow_files = True),
         "res_zips": attr.label_list(allow_files = True),
-        "test_resources": attr.label_list(allow_files = True),
         "package_prefixes": attr.string_dict(),
-        "test_class": attr.string(),
         "exports": attr.label_list(providers = [[JavaInfo], [ImlModuleInfo]]),
         "module_visibility": attr.string_list(),
         "roots": attr.string_list(),
-        "test_roots": attr.string_list(),
         # TODO(b/218538628): Add proper support for native libs; right now they are effectively data deps.
         "deps": attr.label_list(providers = [[JavaInfo], [ImlModuleInfo], [CcInfo]]),
         "runtime_deps": attr.label_list(providers = [JavaInfo]),
-        "test_deps": attr.label_list(providers = [[JavaInfo], [ImlModuleInfo], [CcInfo]]),
-        "test_friends": attr.label_list(providers = [JavaInfo]),
+        "test_deps": attr.label_list(providers = [[JavaInfo], [ImlModuleInfo], [CcInfo]]),  # Separate from 'deps' only for historical reasons.
+        "friends": attr.label_list(providers = [JavaInfo]),
         "data": attr.label_list(allow_files = True),
+        "output_jar": attr.output(mandatory = True),
         "_java_toolchains": attr.label(
             default = Label("//tools/base/bazel:default_java_toolchain_bundle"),
             providers = [KtJvmToolchainInfo],
@@ -401,31 +326,9 @@ _iml_module_ = rule(
             cfg = "exec",
             allow_single_file = [".jar"],
         ),
-        "_kotlin": attr.label(
-            default = Label("@maven//:org.jetbrains.kotlin.kotlin-stdlib"),
-            allow_files = True,
-        ),
     },
     fragments = ["java"],
-    outputs = {
-        "production_jar": "%{name}.jar",
-        "test_jar": "%{name}_test.jar",
-    },
     implementation = _iml_module_impl,
-)
-
-def _iml_test_module_impl(ctx):
-    runfiles = ctx.attr.iml_module[DefaultInfo].default_runfiles
-    return [
-        ctx.attr.iml_module[ImlModuleInfo].test_provider,  # JavaInfo.
-        DefaultInfo(runfiles = runfiles),
-    ]
-
-_iml_test_module_ = rule(
-    attrs = {
-        "iml_module": attr.label(providers = [ImlModuleInfo]),
-    },
-    implementation = _iml_test_module_impl,
 )
 
 def iml_module(
@@ -443,7 +346,7 @@ def iml_module(
         visibility = [],
         module_visibility = [],
         exports = [],
-        jvm_target = "21",
+        jvm_target = "25",
         javacopts = [],
         javacopts_from_jps = [],
         kotlinc_opts = [],
@@ -452,10 +355,11 @@ def iml_module(
         test_deps = [],
         test_flaky = False,
         test_jvm_flags = [],
-        test_timeout = "moderate",
-        test_class = "com.android.testutils.JarTestSuite",
+        test_timeout = None,
+        test_class = None,
         test_shard_count = None,
         split_test_targets = None,
+        shorten_test_target_name = False,
         tags = None,
         compatible_intellij_platforms = None,
         test_tags = None,
@@ -465,6 +369,7 @@ def iml_module(
         test_main_class = None,
         lint_baseline = None,
         lint_enabled = True,
+        lint_partial_analysis = False,
         lint_timeout = None,
         exec_properties = {},
         kotlin_use_compose = False,
@@ -473,9 +378,9 @@ def iml_module(
     """A macro corresponding to an IntelliJ module.
 
     Generates the following targets:
-    * "${NAME}": A java library target from srcs.
-    * "${NAME}_testlib": A java library from test_srcs.
-    * "${NAME}_tests": A java test to run tests from the _testlib target.
+    * "${NAME}": A java library target from srcs or test_srcs
+    * "${NAME}_testlib": An alias of "${NAME}", kept for existing users. Test modules only.
+    * "${NAME}_tests": A java test to run the module's tests. Test modules only.
     * "${NAME}_tests__${split-test}": If using split_test_targets (optional).
 
     Instantiating this rule looks similar to an .iml definition.
@@ -489,11 +394,7 @@ def iml_module(
         resources: The directories with the production resources.
         res_zips: Resource zip achives.
         test_resources: The directories with the test resources.
-        deps: A tag enhanced list of dependency tags. These dependencies can contain a
-              list of tags after the label, e.g., //target[module, test]. Supported tags:
-                * module: It treats the dependency as a module dependency, making
-                          production and test sources depend on each other correctly.
-                * test:   This dependency is included and available for test sources only.
+        deps: Compile-time dependencies (COMPILE and PROVIDED scope in the .iml).
         runtime_deps: Runtime dependencies.
         test_friends: Kotlin test friends.
         module_visibility: A specific list of modules this module is visible to.
@@ -513,6 +414,7 @@ def iml_module(
                             This class sets up the test environment for the code in the test target and allows to
                             customize access to additional data for the testing code.
         test_shard_count: Number of shards to use for testing, should not be used with split_test_targets.
+        shorten_test_target_name: Drops the module name from test targets to workaround Windows path length limitations
         split_test_targets: A dict indicating split test targets to create, should not be used with test_shard_count.
                             Each split target runs a subset of tests matching a package name or FQCN.
                             If a test target does not define a `test_filter`, it will run the set of tests that
@@ -532,13 +434,23 @@ def iml_module(
         test_main_class: See See https://bazel.build/reference/be/java#java_test_args.
         lint_baseline: See impl.
         lint_enabled: enable or disable Lint checks
+        lint_partial_analysis: See lint_test; runs lint in two-phase partial analysis mode.
         lint_timeout: See impl.
         exec_properties: See https://bazel.build/reference/be/common-definitions#common.exec_properties
         kotlin_use_compose: See impl.
         kotlin_use_serialization: See impl.
+        test_deps: Test-only dependencies (TEST scope in the .iml). Only allowed in test modules.
+        compatible_intellij_platforms: Platforms this target is compatible with.
+        generate_coverage_baseline: Whether to generate coverage baseline.
     """
-    srcs = split_srcs(srcs, resources, exclude)
-    split_test_srcs = split_srcs(test_srcs, test_resources, exclude)
+
+    # We no longer support mixed prod/test modules (b/565759009).
+    if (srcs or resources) and (test_srcs or test_resources):
+        fail(("iml_module %s has both production and test sources. Please move the test sources to a " +
+              "separate test module. (b/565759009)") % name)
+
+    is_test_module = bool(test_srcs or test_resources)
+    module_srcs = split_srcs(srcs + test_srcs, resources + test_resources, exclude)
 
     # Use target_compatible_with to configure which platforms this module
     # compiles against.
@@ -552,17 +464,15 @@ def iml_module(
         name = name,
         tags = tags,
         visibility = visibility,
-        java_srcs = srcs.javas,
-        kotlin_srcs = srcs.kotlins,
+        testonly = is_test_module,  # This ensure prod modules never depend on test modules.
+        output_jar = name + ("_test.jar" if is_test_module else ".jar"),  # Test jars are named differently only for historical reasons.
+        java_srcs = module_srcs.javas,
+        kotlin_srcs = module_srcs.kotlins,
         kotlin_use_compose = kotlin_use_compose,
         kotlin_use_serialization = kotlin_use_serialization,
-        resources = srcs.resources,
+        resources = module_srcs.resources,
         res_zips = res_zips,
-        roots = srcs.roots,
-        java_test_srcs = split_test_srcs.javas,
-        kotlin_test_srcs = split_test_srcs.kotlins,
-        test_resources = split_test_srcs.resources,
-        test_roots = split_test_srcs.roots,
+        roots = module_srcs.roots,
         package_prefixes = package_prefixes,
         jvm_target = jvm_target,
         javacopts = javacopts + javacopts_from_jps,
@@ -572,31 +482,32 @@ def iml_module(
         exports = exports,
         deps = deps,
         runtime_deps = runtime_deps,
-        test_deps = deps + test_deps,
-        test_friends = test_friends,
+        test_deps = test_deps,
+        friends = test_friends,
         data = data,
-        test_class = test_class,
         target_compatible_with = target_compatible_with,
     )
 
-    if generate_coverage_baseline and (srcs.javas + srcs.kotlins) and not compatible_intellij_platforms:
+    prod_srcs = [] if is_test_module else module_srcs.javas + module_srcs.kotlins
+    if generate_coverage_baseline and prod_srcs and not compatible_intellij_platforms:
         coverage_baseline(
             name = name,
-            srcs = srcs.javas + srcs.kotlins,
+            srcs = prod_srcs,
             jar = name + ".jar",
             tags = tags,
         )
 
-    _iml_test_module_(
-        name = name + "_testlib",
-        tags = tags,
-        iml_module = ":" + name,
-        testonly = True,
-        visibility = visibility,
-        target_compatible_with = target_compatible_with,
-    )
+    if is_test_module:
+        # This _testlib target exists for historical reasons. It could be removed if we rewrite all references.
+        native.alias(
+            name = name + "_testlib",
+            actual = ":" + name,
+            tags = tags,
+            testonly = True,
+            visibility = visibility,
+        )
 
-    lint_srcs = srcs.javas + srcs.kotlins + srcs.resources
+    lint_srcs = [] if is_test_module else module_srcs.javas + module_srcs.kotlins + module_srcs.resources
     if lint_baseline and not lint_srcs:
         fail("lint_baseline set for iml_module that has no sources")
 
@@ -615,6 +526,9 @@ def iml_module(
             custom_rules = ["//tools/base/lint:studio-checks.lint-rules.jar", "//tools/base/lint/studio-checks/compose-desktop-checks"],
             external_annotations = ["//tools/base/external-annotations:annotations.zip"],
             tags = lint_tags,
+            # Unset when partial analysis is off, so the aspect does not run at all; it
+            # reaches the module dependencies through the iml_module target itself.
+            partial_module = (":" + name) if lint_partial_analysis else None,
             timeout = lint_timeout if lint_timeout else None,
             target_compatible_with = target_compatible_with,
         )
@@ -639,11 +553,12 @@ def iml_module(
             test_shard_count = test_shard_count,
             test_tags = test_tags,
             test_data = test_data,
+            shorten_target_name = shorten_test_target_name,
             runtime_deps = [":" + name + "_testlib"] + test_utils,
             jvm_flags = test_jvm_flags + ["-Dtest.suite.jar=" + name + "_test.jar"],
             main_class = test_main_class,
-            test_class = test_class,
-            timeout = test_timeout,
+            test_class = test_class or "com.android.testutils.JarTestSuite",
+            timeout = test_timeout or "moderate",
             exec_properties = exec_properties,
             visibility = visibility,
             target_compatible_with = target_compatible_with,
@@ -911,6 +826,7 @@ def _gen_tests(
         test_shard_count = None,
         test_tags = None,
         test_data = None,
+        shorten_target_name = False,
         jvm_flags = [],
         visibility = [],
         intellij_platform = "studio-sdk",
@@ -927,8 +843,10 @@ def _gen_tests(
         test_shard_count: Shard count for the generated test. Only valid for single tests.
         test_tags: optional list of tags to include for test targets.
         test_data: optional list of data to include for test targets.
+        shorten_target_name: drops the module name from test targets to workaround Windows path length limitations
         jvm_flags: Extra flags passed to java_test().
         visibility: Target visibility.
+        intellij_platform: The target intellij platform.
         **kwargs: Additional arguments passed to java_test().
     """
 
@@ -945,13 +863,14 @@ def _gen_tests(
             split_test_targets = split_test_targets,
             test_tags = test_tags,
             test_data = test_data,
+            shorten_target_name = shorten_target_name,
             jvm_flags = jvm_flags,
             visibility = visibility,
             **kwargs
         )
     else:
         coverage_java_test(
-            name = name + "_tests",
+            name = "tests" if shorten_target_name else name + "_tests",
             flaky = test_flaky,
             shard_count = test_shard_count,
             tags = test_tags,
@@ -966,6 +885,7 @@ def _gen_split_tests(
         split_test_targets,
         test_tags = None,
         test_data = None,
+        shorten_target_name = False,
         timeout = None,
         exec_properties = None,
         jvm_flags = [],
@@ -984,6 +904,7 @@ def _gen_split_tests(
         split_test_targets: A dict of names to split_test_target definitions.
         test_tags: optional list of tags to include for test targets.
         test_data: optional list of data to include for test targets.
+        shorten_target_name: drops the module name from test targets to workaround Windows path length limitations
         timeout: optional timeout that applies to this split test only (overriding target level).
         exec_properties: See https://bazel.build/reference/be/common-definitions#common-attributes
         jvm_flags: Extra flags passed to java_test().
@@ -991,10 +912,12 @@ def _gen_split_tests(
         **kwargs: Extra arguments passed to java_test().
     """
 
+    name = "tests" if shorten_target_name else name + "_tests"
+
     # create a _tests__all target for local development with all test sources
     # primarily useful if users want to specify a --test_filter themselves
     coverage_java_test(
-        name = name + "_tests__all",
+        name = name + "__all",
         data = test_data + _get_unique_split_data(split_test_targets),
         tags = ["manual"],
         exec_properties = exec_properties,
@@ -1004,7 +927,7 @@ def _gen_split_tests(
     )
     split_tests = []
     for split_name in split_test_targets:
-        test_name = name + "_tests__" + split_name
+        test_name = name + "__" + split_name
         split_target = split_test_targets[split_name]
         shard_count = split_target.get("shard_count")
         tags = list(split_target.get("tags", default = []))
@@ -1035,7 +958,7 @@ def _gen_split_tests(
             **kwargs
         )
     native.test_suite(
-        name = name + "_tests",
+        name = name,
         tags = ["manual"] if test_tags and "manual" in test_tags else [],
         tests = split_tests,
         visibility = visibility,

@@ -260,7 +260,6 @@ public class VariantDependenciesBuilder {
 
         final String compileClasspathName = variantName + "CompileClasspath";
         Configuration compileClasspath = configurations.maybeCreate(compileClasspathName);
-        compileClasspath.setVisible(false);
         compileClasspath.setDescription(
                 "Resolved configuration for compilation for variant: " + variantName);
         compileClasspath.setExtendsFrom(compileClasspaths);
@@ -307,7 +306,6 @@ public class VariantDependenciesBuilder {
 
         Configuration annotationProcessor =
                 configurations.maybeCreate(variantName + "AnnotationProcessorClasspath");
-        annotationProcessor.setVisible(false);
         annotationProcessor.setDescription(
                 "Resolved configuration for annotation-processor for variant: " + variantName);
         annotationProcessor.setExtendsFrom(annotationConfigs);
@@ -321,7 +319,6 @@ public class VariantDependenciesBuilder {
 
         final String runtimeClasspathName = variantName + "RuntimeClasspath";
         Configuration runtimeClasspath = configurations.maybeCreate(runtimeClasspathName);
-        runtimeClasspath.setVisible(false);
         runtimeClasspath.setDescription(
                 "Resolved configuration for runtime for variant: " + variantName);
         runtimeClasspath.setExtendsFrom(runtimeClasspaths);
@@ -350,7 +347,6 @@ public class VariantDependenciesBuilder {
         final String lintChecksClasspathName = variantName + "LintChecksClasspath";
         Configuration lintChecksClasspath =
                 project.getConfigurations().maybeCreate(lintChecksClasspathName);
-        lintChecksClasspath.setVisible(false);
         lintChecksClasspath.setDescription(
                 "Resolved configuration for lint check compilation for variant: " + variantName);
         lintChecksClasspath.extendsFrom(compileClasspath, runtimeClasspath);
@@ -388,7 +384,6 @@ public class VariantDependenciesBuilder {
             Configuration testedApks =
                     configurations.maybeCreate(
                             StringHelper.appendCapitalized(variantName, CONFIG_NAME_TESTED_APKS));
-            testedApks.setVisible(false);
             testedApks.setDescription(
                     "Resolved configuration for tested apks for variant: " + variantName);
             testedApks.extendsFrom(globalTestedApks);
@@ -601,7 +596,6 @@ public class VariantDependenciesBuilder {
                                 new PublishedConfigSpec(
                                         APK_PUBLICATION, component.getComponentName(), false),
                                 apkPublication);
-                        apkPublication.setVisible(false);
                         apkPublication.setCanBeConsumed(false);
                     } else {
                         assert component.getType() == AbstractPublishing.Type.AAB
@@ -625,7 +619,6 @@ public class VariantDependenciesBuilder {
                                 new PublishedConfigSpec(
                                         AAB_PUBLICATION, component.getComponentName(), false),
                                 aabPublication);
-                        aabPublication.setVisible(false);
                         aabPublication.setCanBeConsumed(false);
                     }
                 }
@@ -893,7 +886,6 @@ public class VariantDependenciesBuilder {
         Configuration config = configurations.maybeCreate(configName);
         config.setDescription(configDesc);
         config.setCanBeResolved(false);
-        config.setVisible(false);
         config.setCanBeConsumed(false);
 
         final AttributeContainer attrContainer = config.getAttributes();

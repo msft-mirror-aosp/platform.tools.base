@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="adblib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/adblib/studio.android.sdktools.adblib.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/adblib/libadb-server-proto.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../adblib/src" />
+    </SOURCES>
+  </library>
+</component>

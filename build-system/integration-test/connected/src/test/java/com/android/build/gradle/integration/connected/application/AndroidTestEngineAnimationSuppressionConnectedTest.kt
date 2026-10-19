@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -51,7 +50,7 @@ class AndroidTestEngineAnimationSuppressionConnectedTest {
         android {
           testOptions {
             animationsDisabled = true
-            suites.create("myAndroidTestSuite", AgpTestSuite::class.java) {
+            customSuites.create("myAndroidTestSuite") {
               it.testApk {
                 dependencies {
                   implementation.add("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")
@@ -68,6 +67,7 @@ class AndroidTestEngineAnimationSuppressionConnectedTest {
                 inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
                 inputs.add(AgpTestSuiteInputParameters.AAPT2_EXECUTABLE)
+                inputs.add(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED)
                 includeEngines.add("android-test-engine")
                 addInputProperty("android-test.listener.stream-base64-encoded-result", "true")
                 addInputProperty("android-test.instrumentation-runner-class", "androidx.test.runner.AndroidJUnitRunner")
@@ -140,7 +140,7 @@ class AndroidTestEngineAnimationSuppressionConnectedTest {
 
   @Test
   fun testDeviceAnimationSuppression() {
-    val result = executor.run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
+    val result = executor.run(":app:testDebugMyAndroidTestSuiteT1TestSuite")
 
     result.assertOutputContains("emulator-5554 - 13 > com.example.android.AnimationSuppressionTest.verifyAnimationsDisabledOnDevice PASSED")
   }

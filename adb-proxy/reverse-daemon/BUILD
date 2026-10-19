@@ -1,5 +1,5 @@
 load("//tools/base/bazel:android.bzl", "dex_library")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -30,4 +30,19 @@ genrule(
     cmd = "$(location //tools/base/bazel:unzipper) $(location :reverse_daemon_apk.jar) classes.dex:$(location :reverse_daemon.dex)",
     tools = ["//tools/base/bazel:unzipper"],
     visibility = ["//visibility:public"],
+)
+
+kotlin_test(
+    name = "reverse_daemon_test",
+    srcs = glob(["testSrc/**/*.kt"]),
+    friends = [":reverse_daemon_lib"],
+    jvm_flags = ["-Dtest.suite.jar=reverse_daemon_test.jar"],
+    test_class = "com.android.testutils.JarTestSuite",
+    deps = [
+        ":reverse_daemon_lib",
+        "//tools/base/adb-proxy:reverse_lib",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+    ],
 )

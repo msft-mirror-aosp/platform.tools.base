@@ -121,15 +121,14 @@ class PluralsDetector : ResourceXmlDetector() {
     missing.removeAll(defined)
     if (!missing.isEmpty()) {
       val examplesLookup = PluralExamplesLookup.getInstance()
-      val withExamples =
-        missing.map { form ->
-          val example = examplesLookup.findExample(language, form.name)?.formattedWithNumber()
-          if (example != null) {
-            "`${form.name}` (e.g. \"$example\")"
-          } else {
-            "`${form.name}`"
-          }
+      val withExamples = missing.map { form ->
+        val example = examplesLookup.findExample(language, form.name)?.formattedWithNumber()
+        if (example != null) {
+          "`${form.name}` (e.g. \"$example\")"
+        } else {
+          "`${form.name}`"
         }
+      }
       val languageDescription = getLanguageDescription(language)
       val message =
         if (withExamples.size == 1) {
@@ -155,7 +154,18 @@ class PluralsDetector : ResourceXmlDetector() {
           getLanguageDescription(language),
           Quantity.formatSet(extra),
         )
-      context.report(EXTRA, element, context.getLocation(element), message)
+
+      val itemFixes =
+        (0 until n).mapNotNull {
+          val child = children.item(it) as? Element ?: return@mapNotNull null
+          if (child.tagName != TAG_ITEM) return@mapNotNull null
+          val quantity = Quantity[child.getAttribute(ATTR_QUANTITY)]
+          if (quantity == null || quantity !in extra) return@mapNotNull null
+          fix().replace().range(context.getLocation(child)).with("").build()
+        }
+      val fixLabel = if (itemFixes.size == 1) "Remove unused quantity" else "Remove unused quantities"
+      val fix = fix().name(fixLabel, "Remove unused quantities").composite(itemFixes).autoFix()
+      context.report(EXTRA, element, context.getLocation(element), message, fix)
     }
   }
 

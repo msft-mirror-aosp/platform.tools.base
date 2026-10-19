@@ -16,23 +16,41 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraint
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder
 import com.android.tools.lint.checks.fx.JoinEffectDetector
+import com.android.tools.lint.checks.fx.analysis.canonicalOverload
+import com.android.tools.lint.checks.fx.analysis.fieldInitializers
 import com.android.tools.lint.checks.fx.analysis.isKtProperty
+import com.android.tools.lint.checks.fx.get
+import com.android.tools.lint.checks.fx.invoke
 import com.android.tools.lint.checks.fx.result.AssumptionTable
+import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.EffectAnnotation
 import com.android.tools.lint.checks.fx.result.EffectAnnotation.Explicit
 import com.android.tools.lint.checks.fx.result.Error
+import com.android.tools.lint.checks.fx.result.MethodId
+import com.android.tools.lint.checks.fx.result.Type
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawStatic
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawVirtual
 import com.android.tools.lint.checks.fx.result.Type.Sym.Companion.chain
+import com.android.tools.lint.checks.fx.result.plus
 import com.android.tools.lint.checks.fx.utils.Encoder
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.client.api.JavaEvaluator
+import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiParameter
+import java.util.Date
+import java.util.TimerTask
+import java.util.function.Supplier
 import kotlinx.collections.immutable.persistentMapOf
+import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.uast.UAnnotation
@@ -43,8 +61,10 @@ import org.jetbrains.uast.UExpressionList
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.USwitchExpression
+import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.resolveToUElement
+import org.jetbrains.uast.util.isConstructorCall
 
 /**
  * An abstract thread detector parameterized by:
@@ -109,6 +129,8 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
                 parentSite.expression -> "Condition must run from $t1, while branches must run from $t2"
                 else -> "Branch must run from $t2, incompatible with the another that must run from $t1"
               }
+            is UVariable -> "Initializer must run from $t2, incompatible with an earlier initializer that must run from $t1"
+            is UMethod -> "Constructor body must run from $t2, incompatible with initializers that must run from $t1"
             else -> "Expression results in an unsatisfiable thread requirement ($t2, after inferred $t1)"
           }
         context.report(unsatisfiableConstraintIssue, context.locationOf(site), message)
@@ -139,13 +161,17 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
           null -> context.report(violationIssue, context.locationOf(call), "Call fails thread requirements on arguments")
           else -> {
             assert(constraints.isNotEmpty())
-            val concreteReasons =
-              constraints.mapNotNull { failure ->
-                when (val arg = paramToArg[failure.invocation.chain.first]) {
-                  null -> null
-                  else -> arg to failure
-                }
+            fun requiring(inferredLower: ThreadConstraint<T>) =
+              when (inferredLower) {
+                lattice.NoThread -> UNSATISFIABLE_REQUIREMENT
+                else -> "is requiring $inferredLower"
               }
+            val concreteReasons = constraints.mapNotNull { failure ->
+              when (val arg = paramToArg[failure.invocation.chain.first] ?: argumentOfAssumedDomain(call, failure.invocation)) {
+                null -> null
+                else -> arg to failure
+              }
+            }
             when {
               concreteReasons.isEmpty() -> {
                 val message =
@@ -153,9 +179,9 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
                     val (param, chain) = symCall.chain
                     when {
                       chain.size == 1 && chain.first().name == "invoke" ->
-                        "Argument at `$param` must run from $expectedUpper, but is requiring $inferredLower."
+                        "Argument at `$param` must run from $expectedUpper, but ${requiring(inferredLower)}."
                       else ->
-                        "Argument at `$param` must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call is requiring $inferredLower."
+                        "Argument at `$param` must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call ${requiring(inferredLower)}."
                     }
                   }
                 context.report(violationIssue, context.locationOf(call), message)
@@ -170,9 +196,9 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
                   val message =
                     when {
                       chain.size == 1 && chain.first().name == "invoke" ->
-                        "Argument must run from $expectedUpper, but is requiring $inferredLower"
+                        "Argument must run from $expectedUpper, but ${requiring(inferredLower)}"
                       else ->
-                        "Argument must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call is requiring $inferredLower"
+                        "Argument must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call ${requiring(inferredLower)}"
                     }
                   context.report(violationIssue, context.locationOf(arg), message)
                 }
@@ -214,35 +240,68 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       }
       is Error.ConflictingInference -> {
         val baseAnn = error.conflictingBase.annotated
-        val baseStr =
-          when (val baseName = (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
-            null -> "a super method"
-            else -> "super method `$baseName.${error.conflictingBase.origin.name}(…)`"
-          }
-
-        val message =
+        val requirement =
           when (error.inferredLowerBound) {
-            lattice.NoThread -> "Call has an unsatisfiable thread requirement, but $baseStr is allowing $baseAnn"
-            else -> "Call must be from ${error.inferredLowerBound}, but $baseStr is allowing $baseAnn"
+            lattice.NoThread -> "Call $UNSATISFIABLE_REQUIREMENT"
+            else -> "Call must be from ${error.inferredLowerBound}"
           }
 
-        context.report(violationIssue, context.locationOf(error.site), message)
+        val conflict =
+          when (val origin = error.conflictingBase.origin) {
+            is UCallExpression -> {
+              val callee =
+                when {
+                  origin.isConstructorCall() ->
+                    (origin.classReference?.resolvedName ?: origin.resolve()?.containingClass?.name)?.let { "constructor `$it`" }
+                  else -> (origin.methodName ?: origin.methodIdentifier?.name)?.let { "`$it`" }
+                } ?: "the call"
+              "the work passed to $callee is expected to run from $baseAnn"
+            }
+            else -> {
+              val baseStr =
+                when (val baseName = (origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
+                  null -> "a super method"
+                  else -> "super method `$baseName.${origin.name}(…)`"
+                }
+              "$baseStr is allowing $baseAnn"
+            }
+          }
+
+        context.report(violationIssue, context.locationOf(error.site), "$requirement, but $conflict")
       }
     }
 
-  private fun Context.locationOf(site: UElement) = client.getUastParser(project).createLocation(site)
+  private fun Context.locationOf(site: UElement): Location {
+    val parser = client.getUastParser(project)
+    if (site.sourcePsi == null) {
+      // Kotlin's synthesized constructor body has no source of its own; point at the declared body rather than the whole constructor
+      ((site.uastParent as? UMethod)?.sourcePsi as? KtDeclarationWithBody)?.bodyExpression?.let {
+        return parser.createLocation(it)
+      }
+    }
+    return parser.createLocation(site)
+  }
+
+  override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
+    // Keep matching baselines from before improvements addressing b/459895811
+    if (issue.id != violationIssue.id) return super.sameMessage(issue, new, old)
+    // An unsatisfiable requirement used to be spelled as requiring `@NoThread`
+    val reworded = old.replace(LEGACY_NO_THREAD_REQUIREMENT, UNSATISFIABLE_REQUIREMENT)
+    if (stringsEquivalent(reworded, new) || sameArgumentMessage(new, reworded)) return true
+    val newExpected = CALLBACK_BODY_MESSAGE.find(new)?.groupValues?.get(1) ?: return false
+    return LEGACY_ARGUMENT_MESSAGE.findAll(old).any { sameThread(it.groupValues[1], newExpected) }
+  }
 
   override fun resolveAnnotations(
     context: JavaContext,
     targetAnn: Explicit<ThreadConstraint<T>>,
     baseAnns: List<Explicit<ThreadConstraint<T>>>,
-  ): Explicit<ThreadConstraint<T>> =
-    targetAnn.also {
-      val conflicts = baseAnns.filter { !(lattice.precede(targetAnn.annotated, it.annotated)) }
-      if (conflicts.isNotEmpty()) {
-        report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
-      }
+  ): Explicit<ThreadConstraint<T>> = targetAnn.also {
+    val conflicts = baseAnns.filter { !(lattice.precede(targetAnn.annotated, it.annotated)) }
+    if (conflicts.isNotEmpty()) {
+      report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
     }
+  }
 
   override fun inheritAnnotations(
     evaluator: JavaEvaluator,
@@ -253,19 +312,33 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       else -> EffectAnnotation.Implicit(baseAnns)
     }
 
+  override fun parseClassImmediateAnnotations(evaluator: JavaEvaluator, klass: PsiClass): ThreadConstraint<T>? =
+    parseAnnotations(evaluator.getAnnotations(klass, false))
+
   override fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod): ThreadConstraint<T>? {
     fun fromMethod() = parseAnnotations(evaluator.getAnnotations(method.javaPsi, false))
-    fun fromClass() = parseAnnotations(evaluator.getAnnotations(method.getContainingUClass()?.javaPsi, false))
+    fun fromClass() = method.getContainingUClass()?.javaPsi?.let { parseClassImmediateAnnotations(evaluator, it) }
     fun fromClassOrDefault() =
       when {
         // Constructors don't inherit from class annotations.
         // If it's trivial, it's `@AnyThread`. Otherwise, it's inferred.
-        method.isConstructor -> if (method.uastBody == null) lattice.AnyThread else null
+        // It's trivial only if nothing runs as part of it: no body, no default argument (run by the calls omitting it), no field
+        // initializer, and not a generated overload, which runs the canonical constructor's defaults.
+        method.isConstructor ->
+          if (
+            method.uastBody == null &&
+              method.uastParameters.none { it.uastInitializer != null } &&
+              method.fieldInitializers().isEmpty() &&
+              method.canonicalOverload() == null
+          )
+            lattice.AnyThread
+          else null
         // Properties only inherit from class annotation if they're open.
         // Otherwise, trivial properties are `@AnyThread`, and user-written {g,s}etters are
         // inferred.
         method.sourcePsi is KtProperty -> if (method.isFinal) lattice.AnyThread else fromClass()
         method.sourcePsi is KtPropertyAccessor -> if (method.isFinal) null else fromClass()
+        evaluator.isStatic(method.javaPsi) -> null
         else -> fromClass()
       }
 
@@ -362,6 +435,118 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
 
     companion object {
       inline fun <reified T : Enum<T>> of(): ThreadConstraintLattice<T> = ThreadConstraintLattice(T::class.java)
+    }
+  }
+
+  companion object {
+    private const val UNSATISFIABLE_REQUIREMENT = "has an unsatisfiable thread requirement"
+
+    /** How [UNSATISFIABLE_REQUIREMENT] read before improvements to b/459895811 */
+    private const val LEGACY_NO_THREAD_REQUIREMENT = "is requiring `@NoThread`"
+
+    /** Whole-call report before improvements to b/459895811, naming a generated argument. Group 1 is the expected thread. */
+    private val LEGACY_ARGUMENT_MESSAGE = Regex("""Argument at \S+ must (?:run|allow calling \S+) from (.+?), but """)
+
+    private fun sameThread(t1: String, t2: String) = t1.replace("`", "") == t2.replace("`", "")
+
+    /** Report on statement inside callback passed to an assumed callee. Group 1 is the expected thread. */
+    private val CALLBACK_BODY_MESSAGE =
+      Regex(
+        """^Call (?:must be from .+?|has an unsatisfiable thread requirement), but the work passed to .+ is expected to run from (.+)$"""
+      )
+
+    /**
+     * Adds assumptions on common concurrency utilities whose callbacks execute on some other thread.
+     *
+     * @param background denotes "some fresh or pooled background thread" (e.g. Android's `@WorkerThread`, Studio's `@Slow`)
+     */
+    fun <T : Enum<T>> AssumptionTableBuilder<ThreadConstraint<T>>.assumeCommonConcurrencySignatures(background: ThreadConstraint<T>) {
+      val runnableId = ClassId.of<Runnable>()
+      val longId = ClassId.of("long")
+      val stringId = ClassId.of<String>()
+
+      // `Thread`s constructed with a runnable execute it on a fresh (background) thread once started.
+      run {
+        val threadFqn = "java.lang.Thread"
+        val thread = ClassId.of(threadFqn)
+
+        rawStatic("Thread", threadFqn, runnableId) assumedAs
+          forAll<Runnable> { runnable ->
+            given(runnable) {
+              range = thread()
+              constraint += runnable[Runnable::run] to background
+            }
+          }
+        rawStatic("Thread", threadFqn, runnableId, stringId) assumedAs
+          forAll<Runnable> { runnable ->
+            given(runnable, Type.String) {
+              range = thread()
+              constraint += runnable[Runnable::run] to background
+            }
+          }
+
+        // `kotlin.concurrent.thread` likewise runs its block on a fresh thread.
+        rawStatic(
+          "thread",
+          "kotlin.concurrent.ThreadsKt",
+          ClassId.of("boolean"),
+          ClassId.of("boolean"),
+          ClassId.of<ClassLoader>(),
+          stringId,
+          ClassId.of("int"),
+          ClassId.of("kotlin.jvm.functions.Function0"),
+        ) assumedAs
+          forAll(Function0::class(Type.Unit)) { block ->
+            given(Type.Boolean, Type.Boolean, ClassLoader::class(), Type.String, Type.Int, block) {
+              range = thread()
+              constraint += block[MethodId.Invoke[0]] to background
+            }
+          }
+      }
+
+      // `CompletableFuture`'s no-executor `*Async` entry points run their callbacks on the common pool.
+      run {
+        val cfFqn = "java.util.concurrent.CompletableFuture"
+        val cf = ClassId.of(cfFqn)
+
+        rawStatic("runAsync", cfFqn, runnableId) assumedAs
+          forAll<Runnable> { runnable ->
+            given(runnable) {
+              range = cf(Type.Unit)
+              constraint += runnable[Runnable::run] to background
+            }
+          }
+        rawStatic("supplyAsync", cfFqn, ClassId.of<Supplier<*>>()) assumedAs
+          forAll { u ->
+            forAll(Supplier::class(u)) { supplier ->
+              given(supplier) {
+                range = cf(u)
+                constraint += supplier[Supplier<*>::get] to background
+              }
+            }
+          }
+      }
+
+      // `Timer` executes its tasks on its own dedicated (background) thread.
+      run {
+        val timerFqn = "java.util.Timer"
+        val timer = ClassId.of(timerFqn)
+        val timerTaskId = ClassId.of<TimerTask>()
+        val dateId = ClassId.of<Date>()
+
+        rawVirtual("schedule", timerFqn, timerTaskId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Type.Long) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("schedule", timerFqn, timerTaskId, dateId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Date::class()) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("schedule", timerFqn, timerTaskId, longId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Type.Long, Type.Long) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("schedule", timerFqn, timerTaskId, dateId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Date::class(), Type.Long) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("scheduleAtFixedRate", timerFqn, timerTaskId, longId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Type.Long, Type.Long) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("scheduleAtFixedRate", timerFqn, timerTaskId, dateId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Date::class(), Type.Long) { constraint += task[TimerTask::run] to background } }
+      }
     }
   }
 }

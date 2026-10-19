@@ -1475,8 +1475,9 @@ class GooglePlaySdkIndexTest {
   }
 
   private fun verifyVulnerabilityMessages(version: String, vulnerabilityDescriptions: List<String>) {
-    val expectedNonBlockingMessages =
-      vulnerabilityDescriptions.map { description -> "com.example.ads.third.party:example version $version $description." }
+    val expectedNonBlockingMessages = vulnerabilityDescriptions.map { description ->
+      "com.example.ads.third.party:example version $version $description."
+    }
     assertThat(index.generateVulnerabilityMessages("com.example.ads.third.party", "example", version).map { it.description })
       .isEqualTo(expectedNonBlockingMessages)
   }

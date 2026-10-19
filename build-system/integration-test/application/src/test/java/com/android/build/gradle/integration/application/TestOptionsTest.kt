@@ -26,17 +26,16 @@ class TestOptionsTest {
 
   @Test
   fun testApplicationBuildFailedWhenSetTestOptionsTargetSdk() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          android {
-            testOptions {
-              targetSdk = 22
-              unitTests { isIncludeAndroidResources = true }
-            }
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          testOptions {
+            targetSdk = 22
+            unitTests { isIncludeAndroidResources = true }
           }
         }
       }
+    }
 
     val result = build.executor.expectFailure().run("assemble")
     result.assertErrorContains("targetSdk is set as 22 in testOptions for non library module")
@@ -44,34 +43,32 @@ class TestOptionsTest {
 
   @Test
   fun testApplicationBuildFailedWhenSetTestOptionsTargetSdkSpecRelease() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          android {
-            testOptions {
-              targetSdk { version = release(22) }
-              unitTests { isIncludeAndroidResources = true }
-            }
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          testOptions {
+            targetSdk { version = release(22) }
+            unitTests { isIncludeAndroidResources = true }
           }
         }
       }
+    }
     val result = build.executor.expectFailure().run("assemble")
     result.assertErrorContains("targetSdk is set as version = release(22) in testOptions for non library module")
   }
 
   @Test
   fun testApplicationBuildFailedWhenSetTestOptionsTargetSdkSpecPreview() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          android {
-            testOptions {
-              targetSdk { version = preview("T") }
-              unitTests { isIncludeAndroidResources = true }
-            }
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          testOptions {
+            targetSdk { version = preview("T") }
+            unitTests { isIncludeAndroidResources = true }
           }
         }
       }
+    }
 
     val result = build.executor.expectFailure().run("assemble")
     result.assertErrorContains("targetSdk is set as version = preview(\"T\") in testOptions for non library module")

@@ -54,6 +54,7 @@ import com.android.build.gradle.internal.services.LintClassLoaderBuildService
 import com.android.build.gradle.internal.services.LintParallelBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.getBuildService
+import com.android.build.gradle.internal.utils.KOTLIN_MPP_PLUGIN_ID
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.getDesugaredMethods
@@ -100,6 +101,7 @@ import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.Callable
+import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -115,6 +117,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
@@ -136,10 +139,15 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaLauncher
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.jvm.toolchain.JavaToolchainSpec
 import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.Companion.DEFAULT
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 abstract class LintTool {
@@ -152,14 +160,19 @@ abstract class LintTool {
    *
    * Used both for the [lintCacheDirectory] and for the classloader cache in [AndroidLintWorkAction]
    *
-   * For published versions it will include the version of lint from maven e.g. `30.2.0-alpha05` and for -dev versions, also a hash of the
-   * jars: `30.2.0-dev_920ff9cabfbb40d0318735f9fe403b9/`
+   * For published versions it will include the version of lint from maven and hash calculated from classpath filenames e.g.
+   * `30.2.0-alpha05_920ff9cabfbb40d0318735f9fe403b9` For -dev versions it will include a hash of the jars:
+   * `30.2.0-dev_920ff9cabfbb40d0318735f9fe403b9/`
    */
   @get:Input abstract val versionKey: Property<String>
 
   @get:Input abstract val runInProcess: Property<Boolean>
 
   @get:Input @get:Optional abstract val workerHeapSize: Property<String>
+
+  @get:Internal abstract val javaExecutablePath: Property<String>
+
+  @get:Internal abstract val javaMajorVersion: Property<JavaLanguageVersion>
 
   /** The lint cache parent dir for artifacts recomputable by lint that save analysis time */
   @get:Internal abstract val lintCacheDirectory: DirectoryProperty
@@ -193,7 +206,13 @@ abstract class LintTool {
 
   @get:Internal abstract val lintClassLoaderBuildService: Property<LintClassLoaderBuildService>
 
-  fun initialize(taskCreationServices: TaskCreationServices, task: Task) {
+  @JvmOverloads
+  fun initialize(
+    taskCreationServices: TaskCreationServices,
+    task: Task,
+    lintOptions: Lint? = null,
+    projectTargetCompatibility: JavaVersion? = null,
+  ) {
     classpath.fromDisallowChanges(taskCreationServices.lintFromMaven.files)
     getBuildService<LintClassLoaderBuildService, BuildServiceParameters.None>(taskCreationServices.buildServiceRegistry).let {
       lintClassLoaderBuildService.setDisallowChanges(it)
@@ -201,10 +220,15 @@ abstract class LintTool {
     }
     versionKey.setDisallowChanges(deriveVersionKey(taskCreationServices, lintClassLoaderBuildService))
     val projectOptions = taskCreationServices.projectOptions
-    runInProcess.setDisallowChanges(projectOptions.getProvider(BooleanOption.RUN_LINT_IN_PROCESS))
+    runInProcess.setDisallowChanges(getLintRunInProcessProvider(projectOptions, lintOptions))
     workerHeapSize.setDisallowChanges(projectOptions.getProvider(StringOption.LINT_HEAP_SIZE))
     lintCacheDirectory.setDisallowChanges(
       taskCreationServices.projectInfo.buildDirectory.dir("${SdkConstants.FD_INTERMEDIATES}/lint-cache/${task.name}")
+    )
+    val launcherProvider = getLintJavaLauncherProvider(task.project, lintOptions, projectTargetCompatibility, projectOptions)
+    javaExecutablePath.setDisallowChanges(launcherProvider.map { it.executablePath.asFile.absolutePath })
+    javaMajorVersion.setDisallowChanges(
+      launcherProvider.map { it.metadata.languageVersion }.orElse(JavaLanguageVersion.of(JavaVersion.current().majorVersion))
     )
   }
 
@@ -262,11 +286,23 @@ abstract class LintTool {
       } else {
         workerExecutor.processIsolation {
           it.classpath.from(classpath)
+          javaExecutablePath.orNull?.let { executable ->
+            logger.info("Android Lint is running out of process using toolchain launcher: $executable")
+            it.forkOptions.executable = executable
+          }
           // Default to using the main Gradle daemon heap size to smooth the transition
           // for build authors.
           it.forkOptions.maxHeapSize =
             LintParallelBuildService.calculateLintHeapSize(workerHeapSize.orNull, Runtime.getRuntime().maxMemory())
           it.forkOptions.systemProperty("java.awt.headless", "true")
+          // b/553121473 Suppress JDK 24+ sun.misc.Unsafe and native access warnings emitted by
+          // lint's kotlin-compiler / intellij-core dependencies (see IJPL-191435 and KT-76111).
+          if (javaMajorVersion.get() >= JavaLanguageVersion.of(24)) {
+            it.forkOptions.jvmArgs(
+              "--sun-misc-unsafe-memory-access=allow",
+              "--enable-native-access=ALL-UNNAMED",
+            )
+          }
         }
       }
     workQueue.submit(AndroidLintWorkAction::class.java) { parameters ->
@@ -348,12 +384,22 @@ abstract class ProjectInputs {
     initializeFromProject(creationConfig.services.projectInfo, lintMode)
     projectType.setDisallowChanges(creationConfig.componentType.toLintModelModuleType())
 
+    // Target-specific baseline for Android targets in KMP projects, or the legacy non-target-specific
+    // baseline (lint-baseline.xml) for non-KMP projects or backward compatibility fallback.
+    val defaultBaselineFileName =
+      if (creationConfig is KmpComponentCreationConfig) {
+        LINT_BASELINE_ANDROID_FILE_NAME
+      } else {
+        LINT_BASELINE_FILE_NAME
+      }
+
     lintOptions.initialize(
       globalConfig.lintOptions,
       lintMode,
       creationConfig.services.projectInfo.projectDirectory,
       creationConfig.services.projectOptions[BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION],
       checkDependenciesOverride,
+      defaultBaselineFileName,
     )
 
     resourcePrefix.setDisallowChanges(globalConfig.resourcePrefix)
@@ -374,15 +420,25 @@ abstract class ProjectInputs {
     dslLintOptions: Lint,
     lintMode: LintMode,
     checkDependenciesOverride: Boolean? = null,
+    isKmp: Boolean = false,
   ) {
     initializeFromProject(ProjectInfo(project), lintMode)
     projectType.setDisallowChanges(LintModelModuleType.JAVA_LIBRARY)
+    // Target-specific baseline for JVM targets in KMP projects, or the legacy non-target-specific
+    // baseline (lint-baseline.xml) for non-KMP projects or backward compatibility fallback.
+    val defaultBaselineFileName =
+      if (isKmp) {
+        LINT_BASELINE_JVM_FILE_NAME
+      } else {
+        LINT_BASELINE_FILE_NAME
+      }
     lintOptions.initialize(
       dslLintOptions,
       lintMode,
       project.layout.projectDirectory,
       projectOptions[BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION],
       checkDependenciesOverride,
+      defaultBaselineFileName,
     )
 
     resourcePrefix.setDisallowChanges("")
@@ -488,10 +544,22 @@ abstract class LintOptionsInput {
   @get:Input abstract val checkDependencies: Property<Boolean>
   @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val lintConfig: RegularFileProperty
   @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val baseline: RegularFileProperty
+  @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val legacyBaseline: RegularFileProperty
   @get:Input abstract val severityOverrides: MapProperty<String, LintModelSeverity>
   @get:Input abstract val ignoreTestSources: Property<Boolean>
   @get:Input abstract val ignoreTestFixturesSources: Property<Boolean>
   @get:Input @get:Optional abstract val defaultBaseline: Property<Boolean>
+  @get:Internal abstract val lintMode: Property<LintMode>
+
+  @Internal
+  fun getResolvedBaseline(): File? {
+    val target = baseline.orNull?.asFile ?: return null
+    val legacy = legacyBaseline.orNull?.asFile
+    if (lintMode.orNull == LintMode.UPDATE_BASELINE) {
+      return target
+    }
+    return resolveBaselineFile(target, legacy)
+  }
 
   fun initialize(
     lintOptions: Lint,
@@ -499,6 +567,7 @@ abstract class LintOptionsInput {
     projectDirectory: Directory,
     useBaselineConvention: Boolean = false,
     checkDependenciesOverrideForAggregateReporting: Boolean? = null,
+    defaultBaselineFileName: String = LINT_BASELINE_FILE_NAME,
   ) {
     disable.setDisallowChanges(lintOptions.disable)
     enable.setDisallowChanges(lintOptions.enable)
@@ -517,6 +586,7 @@ abstract class LintOptionsInput {
     checkDependencies.setDisallowChanges(checkDependenciesOverrideForAggregateReporting ?: lintOptions.checkDependencies)
     lintOptions.lintConfig?.let { lintConfig.set(it) }
     lintConfig.disallowChanges()
+    this.lintMode.setDisallowChanges(lintMode)
     // The baseline file does not affect analysis, but otherwise it is an input.
     if (lintMode != LintMode.ANALYSIS) {
       val dslBaseline = lintOptions.baseline
@@ -524,13 +594,18 @@ abstract class LintOptionsInput {
         baseline.set(dslBaseline)
         defaultBaseline.setDisallowChanges(false)
       } else if (useBaselineConvention) {
-        baseline.set(projectDirectory.file("lint-baseline.xml"))
+        val targetBaselineFile = projectDirectory.file(defaultBaselineFileName)
+        baseline.set(targetBaselineFile)
+        if (lintMode != LintMode.UPDATE_BASELINE && defaultBaselineFileName != LINT_BASELINE_FILE_NAME) {
+          legacyBaseline.set(projectDirectory.file(LINT_BASELINE_FILE_NAME))
+        }
         defaultBaseline.setDisallowChanges(true)
       } else {
         defaultBaseline.setDisallowChanges(false)
       }
     }
     baseline.disallowChanges()
+    legacyBaseline.disallowChanges()
     severityOverrides.setDisallowChanges((lintOptions as LintImpl).severityOverridesMap)
     ignoreTestSources.setDisallowChanges(lintOptions.ignoreTestSources)
     ignoreTestFixturesSources.setDisallowChanges(lintOptions.ignoreTestFixturesSources)
@@ -566,10 +641,106 @@ abstract class LintOptionsInput {
       sarifOutput = null,
       checkReleaseBuilds = true, // Handled in LintTaskManager & LintPlugin
       checkDependencies = checkDependencies.get(),
-      baselineFile = baseline.orNull?.asFile,
+      baselineFile = getResolvedBaseline(),
       severityOverrides = severityOverrides.get(),
     )
   }
+}
+
+private val logger = Logging.getLogger(LintTool::class.java)
+
+internal fun hasToolchainSpec(toolchainSpec: JavaToolchainSpec?): Boolean =
+  toolchainSpec?.let { it.languageVersion.isPresent || it.vendor.isPresent || it.implementation.isPresent } ?: false
+
+internal fun isLintRunInProcess(runInProcess: Boolean, hasToolchainSpec: Boolean = false): Boolean = !hasToolchainSpec && runInProcess
+
+internal fun getLintRunInProcessProvider(projectOptions: ProjectOptions, lintOptions: Lint? = null): Provider<Boolean> {
+  return projectOptions.getProvider(BooleanOption.RUN_LINT_IN_PROCESS).map { runInProcess ->
+    val hasToolchain = hasToolchainSpec(lintOptions?.toolchain)
+    isLintRunInProcess(runInProcess = runInProcess, hasToolchainSpec = hasToolchain)
+  }
+}
+
+/**
+ * Minimum JDK required by AGP to run Lint. Mirrors
+ * [com.android.build.gradle.internal.plugins.AndroidPluginBaseServices.minRequiredJavaVersion].
+ */
+private fun getMinRequiredJdk(projectOptions: ProjectOptions? = null): JavaVersion {
+  projectOptions?.simulatedAGPVersion?.let { simulatedAgpVersion ->
+    if (simulatedAgpVersion > AgpVersion.parse("10.0.0-alpha01")) return JavaVersion.VERSION_21
+  }
+  return JavaVersion.VERSION_17
+}
+
+internal fun getLintJavaLauncherProvider(
+  project: Project,
+  lintOptions: Lint? = null,
+  projectTargetCompatibility: JavaVersion? = null,
+  projectOptions: ProjectOptions? = null,
+): Provider<JavaLauncher> {
+  val providerFactory = project.providers
+  if (lintOptions == null) {
+    return providerFactory.provider { null }
+  }
+  val toolchainSpec = lintOptions.toolchain
+  val javaToolchainService = project.extensions.findByType(JavaToolchainService::class.java)
+
+  return providerFactory
+    .provider<JavaToolchainService> {
+      if (!hasToolchainSpec(toolchainSpec)) {
+        if (projectTargetCompatibility != null && JavaVersion.current() < projectTargetCompatibility) {
+          throw GradleException(
+            """
+            The Gradle daemon is running on Java ${JavaVersion.current()}, but the project is compiled for Java $projectTargetCompatibility.
+            Lint requires the JVM executing it to be at least the same version as the project's target compatibility.
+            Please run Gradle on a newer JVM or configure a toolchain for Lint (e.g. `android.lint.toolchain.languageVersion.set(JavaLanguageVersion.of(${projectTargetCompatibility.majorVersion}))`).
+            """
+              .trimIndent()
+          )
+        }
+        return@provider null
+      }
+
+      if (!toolchainSpec.languageVersion.isPresent) {
+        throw GradleException("Configured Lint toolchain must specify a 'languageVersion' when vendor or implementation is configured.")
+      }
+
+      val configuredVersion = toolchainSpec.languageVersion.get().asInt()
+
+      // 1. Baseline Check
+      val minRequiredJdk = getMinRequiredJdk(projectOptions)
+      if (configuredVersion < minRequiredJdk.majorVersion.toInt()) {
+        throw GradleException(
+          "Configured Lint toolchain JDK ($configuredVersion) is below AGP's minimum required JDK (${minRequiredJdk.majorVersion})."
+        )
+      }
+
+      // 2. Bytecode Check
+      if (projectTargetCompatibility != null && JavaVersion.toVersion(configuredVersion.toString()) < projectTargetCompatibility) {
+        throw GradleException(
+          "Configured Lint toolchain JDK ($configuredVersion) cannot analyze project code compiled for Java $projectTargetCompatibility."
+        )
+      }
+
+      javaToolchainService ?: throw GradleException("Configured Lint toolchain requires 'JavaToolchainService'.")
+    }
+    .flatMap { service: JavaToolchainService? ->
+      if (service == null) {
+        providerFactory.provider { null }
+      } else {
+        service.launcherFor { spec ->
+          if (toolchainSpec.languageVersion.isPresent) {
+            spec.languageVersion.set(toolchainSpec.languageVersion)
+          }
+          if (toolchainSpec.vendor.isPresent) {
+            spec.vendor.set(toolchainSpec.vendor)
+          }
+          if (toolchainSpec.implementation.isPresent) {
+            spec.implementation.set(toolchainSpec.implementation)
+          }
+        }
+      }
+    }
 }
 
 /** System properties which can affect lint's behavior. */
@@ -600,7 +771,7 @@ abstract class SystemPropertyInputs {
 
   @get:Input @get:Optional abstract val userHome: Property<String>
 
-  fun initialize(providerFactory: ProviderFactory, lintMode: LintMode) {
+  fun initialize(providerFactory: ProviderFactory, lintMode: LintMode, javaLauncher: Provider<JavaLauncher>? = null) {
     if (lintMode == LintMode.ANALYSIS) {
       lintAutofix.disallowChanges()
       lintBaselinesContinue.disallowChanges()
@@ -613,10 +784,15 @@ abstract class SystemPropertyInputs {
       userHome.setDisallowChanges(providerFactory.systemProperty("user.home"))
     }
     androidLintLogJarProblems.setDisallowChanges(providerFactory.systemProperty("android.lint.log-jar-problems"))
-    javaHome.setDisallowChanges(providerFactory.systemProperty("java.home"))
+    val launcher = javaLauncher ?: providerFactory.provider<JavaLauncher> { null }
+    javaHome.setDisallowChanges(
+      launcher.map { it.metadata.installationPath.asFile.absolutePath }.orElse(providerFactory.systemProperty("java.home"))
+    )
     // Normalize the java.version to only capture the major version, because different JDK
     // vendors and minor versions can cause cache misses
-    javaVersion.setDisallowChanges(providerFactory.systemProperty("java.version").map { JavaVersion.toVersion(it).majorVersion })
+    javaVersion.setDisallowChanges(
+      launcher.map { it.metadata.languageVersion.asInt().toString() }.orElse(JavaVersion.current().majorVersion)
+    )
     lintApiDatabase.fileProvider(providerFactory.systemProperty("LINT_API_DATABASE").map { File(it) }.filter { it.isFile })
     lintApiDatabase.disallowChanges()
     lintConfigurationOverride.fileProvider(
@@ -900,6 +1076,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             variantCreationConfig.sources,
             lintMode,
             projectDir = variantCreationConfig.services.provider { variantCreationConfig.services.projectInfo.projectDirectory },
+            additionalKotlinSourceDirectories = getKmpAndroidCommonSourceDirectories(task, variantCreationConfig),
           )
       )
 
@@ -924,6 +1101,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             lintMode,
             projectDir = variantCreationConfig.services.provider { variantCreationConfig.services.projectInfo.projectDirectory },
             unitTestOnly = true,
+            additionalKotlinSourceDirectories = getKmpAndroidCommonSourceDirectories(task, it),
           )
       )
     }
@@ -937,6 +1115,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             lintMode,
             projectDir = variantCreationConfig.services.provider { variantCreationConfig.services.projectInfo.projectDirectory },
             instrumentationTestOnly = true,
+            additionalKotlinSourceDirectories = getKmpAndroidCommonSourceDirectories(task, it),
           )
       )
     }
@@ -950,6 +1129,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             lintMode,
             projectDir = variantCreationConfig.services.provider { variantCreationConfig.services.projectInfo.projectDirectory },
             testFixtureOnly = true,
+            additionalKotlinSourceDirectories = getKmpAndroidCommonSourceDirectories(task, it),
           )
       )
     }
@@ -964,6 +1144,32 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
     buildFeatures.initialize(variantCreationConfig)
     initializeLibraryDependencyCacheBuildService(task)
     mavenCoordinatesCache.setDisallowChanges(getBuildService(variantCreationConfig.services.buildServiceRegistry))
+  }
+
+  /**
+   * Returns the common (and intermediate) Kotlin source directories for a KMP project that applies an Android target via the Kotlin
+   * Multiplatform plugin together with a standard AGP plugin (e.g. `com.android.application`/`com.android.library` + `kotlin {
+   * androidTarget() }`). For such projects AGP's sources model only contains the Android source set of the given component (`androidMain`
+   * for the main component, `androidUnitTest`/`androidInstrumentedTest` for the test components), so without this lint would ignore
+   * `commonMain`/`commonTest` (and any intermediate source sets). The component's Kotlin compilation is looked up by [creationConfig] name,
+   * and its default source set (the Android one) is excluded because it is already part of the AGP sources model. The newer
+   * `com.android.kotlin.multiplatform.library` plugin ([KmpComponentCreationConfig]) already wires common sources into the AGP sources
+   * model and is skipped here. Returns null when the Kotlin Multiplatform plugin is not applied or the component has no matching Kotlin
+   * compilation.
+   */
+  private fun getKmpAndroidCommonSourceDirectories(task: Task, creationConfig: ComponentCreationConfig): FileCollection? {
+    val project = task.project
+    // The new KMP Android library plugin already includes common sources in the AGP sources model.
+    if (creationConfig is KmpComponentCreationConfig) return null
+    if (!project.pluginManager.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) return null
+    val kotlinExtension = project.extensions.findByName("kotlin") as? KotlinMultiplatformExtension ?: return null
+    val androidTarget = kotlinExtension.targets.firstOrNull { it.platformType == KotlinPlatformType.androidJvm } ?: return null
+    val compilation = androidTarget.compilations.findByName(creationConfig.name) ?: return null
+    val result = project.files()
+    (compilation.allKotlinSourceSets - compilation.defaultSourceSet).forEach { sourceSet ->
+      result.from(sourceSet.kotlin.sourceDirectories)
+    }
+    return result
   }
 
   internal fun initializeForStandalone(
@@ -1129,7 +1335,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
       )
       val sourceDirectories =
         project.files().also { fileCollection ->
-          jvmMainCompilation.kotlinSourceSets.forEach { fileCollection.from(it.kotlin.sourceDirectories) }
+          jvmMainCompilation.allKotlinSourceSets.forEach { fileCollection.from(it.kotlin.sourceDirectories) }
         }
       mainSourceProvider.set(
         project.objects
@@ -1158,7 +1364,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
       )
       val sourceDirectories =
         project.files().also { fileCollection ->
-          jvmTestCompilation.kotlinSourceSets.forEach { fileCollection.from(it.kotlin.sourceDirectories) }
+          jvmTestCompilation.allKotlinSourceSets.forEach { fileCollection.from(it.kotlin.sourceDirectories) }
         }
       hostTestSourceProvider.set(
         project.objects
@@ -1309,6 +1515,7 @@ abstract class SourceProviderInput {
     unitTestOnly: Boolean = false,
     instrumentationTestOnly: Boolean = false,
     testFixtureOnly: Boolean = false,
+    additionalKotlinSourceDirectories: FileCollection? = null,
   ): SourceProviderInput {
     this.manifestFilePath.set(sources.manifestFile)
     this.manifestFilePath.disallowChanges()
@@ -1326,6 +1533,9 @@ abstract class SourceProviderInput {
 
     sources.java?.getFilteredSourceProviders(javaDirectories)
     sources.kotlin?.getFilteredSourceProviders(javaDirectories)
+    // For KMP projects using an Android target (com.android.application/library + kotlin { androidTarget() }), the AGP sources model above
+    // only contains the androidMain source set. Add the common (and intermediate) Kotlin source sets so lint also analyzes commonMain.
+    additionalKotlinSourceDirectories?.let { javaDirectories.from(it) }
     javaDirectories.disallowChanges()
 
     sources.res?.getFilteredSourceProviders(this.resDirectories)
@@ -2364,6 +2574,9 @@ enum class LintMode {
 
 const val LINT_XML_CONFIG_FILE_NAME = "lint.xml"
 
+internal const val LINT_PRINT_STACKTRACE_ENVIRONMENT_VARIABLE = "LINT_PRINT_STACKTRACE"
+internal const val ANDROID_LINT_JARS_ENVIRONMENT_VARIABLE = "ANDROID_LINT_JARS"
+
 internal fun maybeCreateLintChecksClasspath(
   project: Project,
   variantName: String?,
@@ -2372,7 +2585,6 @@ internal fun maybeCreateLintChecksClasspath(
 ): Configuration {
   val lintChecksClasspathName = variantName + "LintChecksClasspath"
   val lintChecksClasspath = project.configurations.maybeCreate(lintChecksClasspathName)
-  lintChecksClasspath.isVisible = false
   lintChecksClasspath.description = "Resolved configuration for lint check compilation for variant: $variantName"
   lintChecksClasspath.extendsFrom(compileClasspath, runtimeClasspath)
   lintChecksClasspath.isCanBeConsumed = false

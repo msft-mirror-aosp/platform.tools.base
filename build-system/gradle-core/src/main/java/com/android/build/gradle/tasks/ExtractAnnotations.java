@@ -378,7 +378,15 @@ public abstract class ExtractAnnotations extends NonIncrementalTask {
                             .getServices()
                             .fileCollection(creationConfig.getGlobal().getFilteredBootClasspath()));
 
-            task.getLintTool().initialize(creationConfig.getServices(), task);
+            task.getLintTool()
+                    .initialize(
+                            creationConfig.getServices(),
+                            task,
+                            creationConfig.getGlobal().getLintOptions(),
+                            creationConfig
+                                    .getGlobal()
+                                    .getCompileOptions()
+                                    .getTargetCompatibility());
 
             ConfigurableFileCollection files = creationConfig.getServices().fileCollection();
             creationConfig

@@ -87,17 +87,28 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.tracer.iml"],
     lint_baseline = "lint_baseline.xml",
-    # do not sort: must match IML order
-    test_deps = [
-        "//prebuilts/tools/common/m2:collection-jvm-1.4.5",
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:truth",
-    ],
-    test_srcs = ["testSrc"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
         "//tools/adt/idea/.idea/libraries:androidx-tracing",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.tracer.tests",
+    iml_files = ["android.sdktools.tracer.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/tracer:studio.android.sdktools.tracer",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/.idea/libraries:androidx-tracing",
+        "//prebuilts/tools/common/m2:collection-jvm-1.4.5",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
+    test_friends = ["//tools/base/tracer:studio.android.sdktools.tracer"],
+    test_srcs = ["testSrc"],
+    visibility = ["//visibility:public"],
 )

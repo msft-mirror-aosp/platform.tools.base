@@ -95,6 +95,7 @@ iml_module(
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
+        "@intellij//:com.intellij.gradle",
         "//tools/adt/idea/.idea/libraries:agp-version",
         "//tools/adt/idea/gradle-declarative-lang:intellij.android.gradle.declarative.lang",
     ],

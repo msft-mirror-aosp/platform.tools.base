@@ -17,21 +17,31 @@
 package com.android.build.gradle.internal.testing;
 
 import static com.google.common.truth.Truth.assertThat;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 import com.android.ddmlib.IDevice;
+import com.android.ddmlib.IShellOutputReceiver;
+import com.android.sdklib.AndroidVersion;
 import com.android.utils.ILogger;
+
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class ConnectedDeviceTest {
     @Rule public MockitoRule rule = MockitoJUnit.rule();
@@ -104,5 +114,43 @@ public class ConnectedDeviceTest {
         when(mIDevice.getSystemProperty(IDevice.PROP_DEVICE_DENSITY))
                 .thenReturn(Futures.immediateFuture("480"));
         assertThat(device.getDensity()).isEqualTo(480);
+    }
+
+    @Test
+    public void testGetLanguageSplitsPreL() throws Exception {
+        when(mIDevice.getVersion()).thenReturn(new AndroidVersion(20));
+        assertThat(mDevice.getLanguageSplits()).isNull();
+    }
+
+    @Test
+    public void testGetLanguageSplits() throws Exception {
+        when(mIDevice.getVersion()).thenReturn(new AndroidVersion(27));
+        String[] configs =
+                new String[] {
+                    "config:"
+                        + " mcc310-mnc410-en-rGB,fr-rFR-ldltr-sw411dp-w411dp-h746dp-normal-long-notround-lowdr-nowidecg-port-notnight-560dpi-finger-keysexposed-nokeys-navhidden-nonav-v27",
+                    "abi: arm64-v8a,armeabi-v7a,armeabi",
+                    "recentConfigs:",
+                    "  config:"
+                        + " mcc310-mnc410-es-rUS,fr-rFR-ldltr-sw411dp-w411dp-h746dp-normal-long-notround-lowdr-nowidecg-port-notnight-560dpi-finger-keysexposed-nokeys-navhidden-nonav-v27",
+                    "  config:"
+                        + " mcc310-mnc410-it-rIT,fr-rBE-ldltr-sw411dp-w774dp-h383dp-normal-long-notround-lowdr-nowidecg-land-notnight-560dpi-finger-keysexposed-nokeys-navhidden-nonav-v27",
+                    // fixed order for wide gamut and HDR
+                    "  config:"
+                        + " en-rUS,de-rDE-ldltr-sw411dp-w411dp-h746dp-normal-long-notround-nowidecg-lowdr-port-notnight-560dpi-finger-keysexposed-nokeys-navhidden-nonav-v27",
+                };
+        doAnswer(
+                        invocation -> {
+                            IShellOutputReceiver receiver = invocation.getArgument(1);
+                            for (String line : configs) {
+                                byte[] byteArray = (line + "\n").getBytes(StandardCharsets.UTF_8);
+                                receiver.addOutput(byteArray, 0, byteArray.length);
+                            }
+                            return null;
+                        })
+                .when(mIDevice)
+                .executeShellCommand(anyString(), any(), anyLong(), any());
+
+        assertThat(mDevice.getLanguageSplits()).containsExactly("en", "fr", "es", "it", "de");
     }
 }

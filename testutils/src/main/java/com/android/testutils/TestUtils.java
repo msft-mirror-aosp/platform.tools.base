@@ -35,6 +35,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,7 +62,7 @@ public class TestUtils {
      * <p>This version needs to be present in prebuilts for tests to pass (see
      * tools/base/bazel/README.md).
      */
-    public static final String KOTLIN_VERSION_FOR_TESTS = "2.4.20-Beta1";
+    public static final String KOTLIN_VERSION_FOR_TESTS = "2.5.0-Beta1";
 
     /** KSP version used by AGP integration tests. */
     public static final String KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2";
@@ -84,7 +85,7 @@ public class TestUtils {
      * <p>The following script updates the dev Kotlin version:
      * sync-memory-tests/src/com/android/tools/idea/gradle/project/sync/UpdateBenchmarkVersions.kt
      */
-    public static final String LATEST_KOTLIN_VERSION = "2.4.20-dev-6612";
+    public static final String LATEST_KOTLIN_VERSION = "2.5.0-dev-9824";
 
     /** Compose compiler compatible with {@link #KOTLIN_VERSION_FOR_COMPOSE_TESTS}. */
     public static final String COMPOSE_COMPILER_FOR_TESTS = "1.5.11";
@@ -463,11 +464,13 @@ public class TestUtils {
      */
     @NonNull
     public static Path getLocalMavenRepoFile(@NonNull String path) {
-        if (runningFromBazel()) {
-            return resolveWorkspacePath("../+_repo_rules2+maven/repository/" + path);
-        } else {
+        if (!runningFromBazel()) {
             return resolveWorkspacePath("prebuilts/tools/common/m2/repository/" + path);
         }
+        // The test utils library is shipped to gMaven. We have to hardcode the
+        // canonical name of maven repository instead of using the repo map so
+        // we don't add a repo map resource to the jar.
+        return resolveWorkspacePath("../+new_local_repository+maven/" + path);
     }
 
     @NonNull
@@ -512,27 +515,6 @@ public class TestUtils {
             }
         }
         return stringBuilder.toString();
-    }
-
-    @NonNull
-    public static Path getJava8Jdk() {
-        OsType osType = OsType.getHostOs();
-        String hostDir;
-        switch (osType) {
-            case LINUX:
-                hostDir = "linux";
-                break;
-            case DARWIN:
-                hostDir = "mac/Contents/Home";
-                break;
-            case WINDOWS:
-                hostDir = "win64";
-                break;
-            default:
-                throw new IllegalStateException(
-                        "Java8 JDK not found for platform: " + OsType.getOsName());
-        }
-        return resolveWorkspacePath("prebuilts/studio/jdk/jdk8/" + hostDir);
     }
 
     @NonNull
@@ -823,33 +805,65 @@ public class TestUtils {
      *     an exit value other than 0
      */
     public static void launchProcess(@NonNull Class toRun, String... args) {
-        List<String> commandAndArgs = new LinkedList<>();
-        commandAndArgs.add(FileUtils.join(System.getProperty("java.home"), "bin", "java"));
-        commandAndArgs.add("-cp");
-        commandAndArgs.add(System.getProperty("java.class.path"));
-        commandAndArgs.add(toRun.getName());
-        commandAndArgs.addAll(Arrays.asList(args));
-
-        ProcessBuilder processBuilder = new ProcessBuilder(commandAndArgs);
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        Process process;
+        // Pass the classpath via a Java argument file rather than directly on the command line, as
+        // it may exceed the Windows command-line length limit (32,767 characters). This happens,
+        // for example, when Bazel's Windows Java launcher passes a long classpath to the test JVM
+        // via a flagfile, so that java.class.path contains the full classpath.
+        Path argFile;
         try {
-            process = processBuilder.start();
+            argFile = Files.createTempFile("launch-process-args", ".txt");
+            Files.write(
+                    argFile,
+                    Arrays.asList(
+                            "-cp", quoteForJavaArgFile(System.getProperty("java.class.path"))),
+                    StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         try {
-            process.waitFor();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+            List<String> commandAndArgs = new LinkedList<>();
+            commandAndArgs.add(FileUtils.join(System.getProperty("java.home"), "bin", "java"));
+            commandAndArgs.add("@" + argFile);
+            commandAndArgs.add(toRun.getName());
+            commandAndArgs.addAll(Arrays.asList(args));
 
-        if (process.exitValue() != 0) {
-            throw new RuntimeException(
-                    "Process returned non-zero exit value: " + process.exitValue());
+            ProcessBuilder processBuilder = new ProcessBuilder(commandAndArgs);
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            Process process;
+            try {
+                process = processBuilder.start();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            try {
+                process.waitFor();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (process.exitValue() != 0) {
+                throw new RuntimeException(
+                        "Process returned non-zero exit value: " + process.exitValue());
+            }
+        } finally {
+            try {
+                Files.deleteIfExists(argFile);
+            } catch (IOException ignored) {
+                // Best effort
+            }
         }
+    }
+
+    /**
+     * Quotes an argument for use in a Java argument file ({@code java @argfile}), escaping
+     * backslashes and double quotes, which are interpreted as escape characters within quotes.
+     */
+    @NonNull
+    private static String quoteForJavaArgFile(@NonNull String argument) {
+        return "\"" + argument.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
     // disable tests when running on Windows in Bazel.

@@ -19,58 +19,60 @@ package com.android.tools.ui.inspector.payload.appinspection;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * An executor that runs tasks on a dedicated [HandlerThread]. It replicates the behavior of App Inspection's HandlerThreadExecutor to
- * ensure sequential execution and safe exception handling.
+ * An executor that runs tasks on a dedicated [HandlerThread]. It replicates the behavior of App
+ * Inspection's HandlerThreadExecutor to ensure sequential execution and safe exception handling.
  */
 public final class HandlerThreadExecutor implements Executor {
-  private final HandlerThread thread;
-  private final Handler handler;
+    private final HandlerThread thread;
+    private final Handler handler;
 
-  public interface CrashListener {
-    void onCrash(Throwable t);
-  }
-
-  public HandlerThreadExecutor(String name, CrashListener crashListener) {
-    this.thread = new HandlerThread(name);
-    this.thread.start();
-    this.handler = new Handler(thread.getLooper()) {
-      @Override
-      public void dispatchMessage(Message msg) {
-        if (msg.getCallback() != null) {
-          try {
-            msg.getCallback().run();
-          } catch (Throwable t) {
-            crashListener.onCrash(t);
-          }
-        } else {
-          super.dispatchMessage(msg);
-        }
-      }
-    };
-  }
-
-  public Handler getHandler() {
-    return handler;
-  }
-
-  @Override
-  public void execute(Runnable command) {
-    if (!handler.post(command)) {
-      throw new RejectedExecutionException("Handler thread has quit");
+    public interface CrashListener {
+        void onCrash(Throwable t);
     }
-  }
 
-  public void quitSafely() {
-    thread.quitSafely();
-  }
+    public HandlerThreadExecutor(String name, CrashListener crashListener) {
+        this.thread = new HandlerThread(name);
+        this.thread.start();
+        this.handler =
+                new Handler(thread.getLooper()) {
+                    @Override
+                    public void dispatchMessage(Message msg) {
+                        if (msg.getCallback() != null) {
+                            try {
+                                msg.getCallback().run();
+                            } catch (Throwable t) {
+                                crashListener.onCrash(t);
+                            }
+                        } else {
+                            super.dispatchMessage(msg);
+                        }
+                    }
+                };
+    }
 
-  public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-    thread.join(unit.toMillis(timeout));
-    return !thread.isAlive();
-  }
+    public Handler getHandler() {
+        return handler;
+    }
+
+    @Override
+    public void execute(Runnable command) {
+        if (!handler.post(command)) {
+            throw new RejectedExecutionException("Handler thread has quit");
+        }
+    }
+
+    public void quitSafely() {
+        thread.quitSafely();
+    }
+
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        thread.join(unit.toMillis(timeout));
+        return !thread.isAlive();
+    }
 }

@@ -32,6 +32,9 @@ interface AdbUsageTracker {
 
     // Info about device state change
     val adbDeviceStateChange: AdbDeviceStateChangeEvent? = null,
+
+    // Info about `isAppInfoSupported` reason
+    val appInfoSupport: AppInfoSupportEvent? = null,
   )
 
   data class DeviceInfo(
@@ -111,6 +114,19 @@ interface AdbUsageTracker {
   }
 
   data class AdbDeviceStateChangeEvent(val deviceState: DeviceState, val previousDeviceState: DeviceState?, val lastOnlineMs: Long?)
+
+  enum class AppInfoSupportReason {
+    SUPPORTED,
+    TRACK_APP_NOT_SUPPORTED,
+    APP_INFO_NOT_SUPPORTED,
+    ACTIVITY_MANAGER_CAPABILITIES_NOT_SUPPORTED,
+    VM_CAPABILITIES_NOT_SUPPORTED,
+    FRAMEWORK_CAPABILITIES_NOT_SUPPORTED,
+    API_LEVEL_IS_DEFAULT,
+    DISABLED_BY_CONFIG_PROPERTY,
+  }
+
+  data class AppInfoSupportEvent(val reason: AppInfoSupportReason)
 }
 
 internal class NoopAdbUsageTracker : AdbUsageTracker {

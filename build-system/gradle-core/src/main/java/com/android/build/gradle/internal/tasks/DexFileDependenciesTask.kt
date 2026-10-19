@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreati
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.ClassFileInputs
@@ -70,6 +71,11 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
   @get:Optional @get:Input abstract val libConfiguration: Property<String>
 
   @get:Input abstract val enableApiModeling: Property<Boolean>
+
+  /**
+   * Whether to use a no-op consumer for global synthetics in D8. When true, D8 desugaring skips generating individual per-class `.globals`
+   * files because a pre-baked shared `globals.dex` will be bundled in the final APK instead.
+   */
   @get:Input abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
 
   private lateinit var errorFormatMode: SyncOptions.ErrorFormatMode
@@ -108,6 +114,11 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
     abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
     abstract val libConfiguration: Property<String>
     abstract val enableApiModeling: Property<Boolean>
+
+    /**
+     * Whether to use a no-op consumer for global synthetics in D8. When true, D8 desugaring skips generating individual per-class
+     * `.globals` files because a pre-baked shared `globals.dex` will be bundled in the final APK instead.
+     */
     abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
     abstract val outputGlobalSynthetics: DirectoryProperty
   }
@@ -176,7 +187,9 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
       super.configure(task)
 
       val classesAreInstrumentedWithAsm = creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true
-      val classesAreInstrumentedWithJacoco = creationConfig.requiresJacocoTransformation
+      val classesAreInstrumentedWithJacoco =
+        creationConfig.requiresJacocoTransformation &&
+          !creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]
       val inputClassesArtifact =
         when {
           classesAreInstrumentedWithJacoco && classesAreInstrumentedWithAsm -> AndroidArtifacts.ArtifactType.JACOCO_ASM_INSTRUMENTED_JARS

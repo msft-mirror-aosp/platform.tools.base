@@ -13,6 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const AGGREGATED_SUITE_NAME = 'Aggregated';
+const TEST_STATUS = Object.freeze({
+  PASSED: 'passed',
+  FAILED: 'failed',
+  SKIPPED: 'skipped',
+  PASS: 'pass',
+  FAIL: 'fail',
+});
+const ALL_TEST_STATUSES = Object.freeze([
+  TEST_STATUS.PASSED,
+  TEST_STATUS.FAILED,
+  TEST_STATUS.SKIPPED,
+]);
+
 /**
  * UI Utilities
  * Collection of helper functions for DOM manipulation and common UI patterns.
@@ -29,6 +43,12 @@ const UIUtils = {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  },
+
+  formatSuiteName(name) {
+    if (!name) return "";
+    const str = String(name);
+    return str.charAt(0).toLowerCase() + str.slice(1);
   },
 
   /**
@@ -170,8 +190,8 @@ const UIUtils = {
               dropdownMenu.classList.add('hidden');
               const btn = TestReportApp.getDropdownConfigs().find(c => c.dropdown === dropdownMenu)?.btn;
               if (btn) {
-                  btn.setAttribute('aria-expanded', 'false');
-                  btn.focus();
+                btn.setAttribute('aria-expanded', 'false');
+                btn.focus();
               }
             }
           };
@@ -212,6 +232,95 @@ const BREADCRUMB_ACTIONS = {
   GO_TO_TEST_CASES: 'go-to-test-cases'
 };
 
+/**
+ * Header Info Tooltips — Content
+ * ------------------------------------------------------------------
+ * All explanatory copy for header/label tooltips lives here so it can be
+ * edited in one place. Each entry has a short `title` and a `body`.
+ * Elements opt in with `data-info-key="<key>"`. Entries may be functions
+ * when the copy depends on runtime context, in which case the value of
+ * `data-info-arg` is passed in.
+ */
+const HEADER_INFO = {
+  // --- Top header stats ---
+  'stat.modules': {
+    title: 'Modules',
+    body: 'Number of Gradle modules (e.g. :app, :core:data) whose test results are included in this report.',
+  },
+  'stat.packages': {
+    title: 'Packages',
+    body: 'Total packages containing test classes across all modules.',
+  },
+  'stat.classes': {
+    title: 'Classes',
+    body: 'Total test classes across all modules that reported at least one test result.',
+  },
+
+  // --- Header controls ---
+  'header.testSuite': {
+    title: 'Test Suite',
+    body: 'Choose whose results you are looking at. “all” combines every test suite; pick a single suite to see only the tests that suite ran.',
+  },
+  'header.groupBy': {
+    title: 'Group by',
+    body: 'Changes the granularity of the rows below — list results by Modules, by Packages, by Classes, or as a flat list of individual Test Cases.',
+  },
+
+  // --- Main table: name column (contextual) ---
+  'col.project': {
+    title: 'Project hierarchy',
+    body: 'Expandable tree of Modules → Packages → Classes → Test Cases, plus Targets when tests ran on more than one target. Counts on a parent row are the totals of everything underneath it.',
+  },
+  'col.modules': {
+    title: 'Module',
+    body: 'Gradle module name. Counts are the totals of all test classes in the module. Click a module to drill into its packages.',
+  },
+  'col.packages': {
+    title: 'Package',
+    body: 'Kotlin/Java package. Counts are the totals of all test classes in the package. Click a package to drill into its classes.',
+  },
+  'col.classes': {
+    title: 'Class',
+    body: 'Test class name. Counts are the totals of its test cases. Click a class to drill into its test cases.',
+  },
+  'col.testCases': {
+    title: 'Test Case',
+    body: 'An individual test method. Failed test cases are links: click one to open its stack trace.',
+  },
+  'col.path': {
+    title: 'Path',
+    body: 'Where this item lives: its Gradle module, package and, for test cases, class.',
+  },
+  'col.module': {
+    title: 'Module',
+    body: 'Gradle module that owns this package.',
+  },
+  'col.target': {
+    title: 'Target',
+    body: 'The test suite target the test case ran on — a named run context configured for the test suite, such as locally connected devices or a Gradle Managed Device.',
+  },
+
+  // --- Main table: per-variant metric columns ---
+  'col.pass': {
+    title: 'Pass',
+    body: 'Number of tests that completed successfully for this variant under the selected test suite. Click to sort.',
+  },
+  'col.fail': {
+    title: 'Fail',
+    body: 'Number of tests where an assertion failed or an unexpected exception was thrown. Click to sort.',
+  },
+  'col.skip': {
+    title: 'Skip',
+    body: 'Number of tests reported as skipped, e.g. ignored or disabled with annotations like @Ignore. Skipped tests are excluded from the pass rate. Click to sort.',
+  },
+  'col.passRate': {
+    title: 'Pass Rate',
+    body: 'passed / (passed + failed), with the raw counts shown underneath. Skipped tests are excluded. Green is 95 % or above, yellow 80 % to 94.9 %, red below 80 %. Click to sort.',
+  },
+};
+
+const TOOLTIP_SELECTOR = '[data-info-key], [data-tooltip], [title], [data-stored-title]';
+
 const Tooltip = {
   element: null,
   activeTarget: null,
@@ -222,24 +331,24 @@ const Tooltip = {
     if (!this.element) return;
 
     document.body.addEventListener('mouseover', (e) => {
-      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      const target = e.target.closest(TOOLTIP_SELECTOR);
       if (target && !target.contains(e.relatedTarget)) this.show(target);
     });
 
     document.body.addEventListener('mouseout', (e) => {
-      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      const target = e.target.closest(TOOLTIP_SELECTOR);
       if (target && !target.contains(e.relatedTarget)) {
         this.startHide();
       }
     });
 
     document.body.addEventListener('focusin', (e) => {
-      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      const target = this.resolveFocusTarget(e.target);
       if (target && !target.contains(e.relatedTarget)) this.show(target);
     });
 
     document.body.addEventListener('focusout', (e) => {
-      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      const target = this.resolveFocusTarget(e.target);
       if (target && !target.contains(e.relatedTarget)) {
         this.hide();
       }
@@ -248,9 +357,38 @@ const Tooltip = {
     // Dismiss tooltip on scroll (prevent detaching from element)
     window.addEventListener('scroll', () => this.hide(), true);
 
+    // Clicking a sortable header re-renders the table head, detaching the
+    // info tooltip's target; dismiss it up front.
+    document.addEventListener('mousedown', () => {
+      if (this.element.classList.contains('info')) this.hide();
+    }, true);
+
     // Keep tooltip open when hovering over it
     this.element.addEventListener('mouseenter', () => this.clearHide());
     this.element.addEventListener('mouseleave', () => this.startHide());
+  },
+
+  /**
+   * Focusable containers (e.g. sortable <th>, the Test Suite button) wrap a
+   * non-focusable label carrying `data-info-key`. When such a container gains
+   * focus, surface the info tooltip of its label.
+   */
+  resolveFocusTarget(el) {
+    const direct = el.closest(TOOLTIP_SELECTOR);
+    if (direct) return direct;
+    if (!el.matches || !el.matches('button, th')) return null;
+    // Skip labels inside hidden states (e.g. the Test Suite button swaps
+    // between an "all" and a "selected" layout).
+    return [...el.querySelectorAll('[data-info-key]')].find(n => n.getClientRects().length > 0) || null;
+  },
+
+  /** Returns {title?, body} for an info-key target, or null. */
+  resolveInfo(target) {
+    const key = target.dataset.infoKey;
+    if (!key) return null;
+    let entry = HEADER_INFO[key];
+    if (typeof entry === 'function') entry = entry(target.dataset.infoArg || '');
+    return entry || null;
   },
 
   show(target) {
@@ -258,6 +396,12 @@ const Tooltip = {
 
     if (this.activeTarget && this.activeTarget !== target) {
       this.hide();
+    }
+
+    const info = this.resolveInfo(target);
+    if (info) {
+      this.showInfo(target, info);
+      return;
     }
 
     let text = target.getAttribute('data-tooltip') || target.getAttribute('title') || target.dataset.storedTitle;
@@ -274,18 +418,51 @@ const Tooltip = {
 
     // Establish programmatic connection for ALL targets
     if (!target.hasAttribute('aria-describedby')) {
-        target.setAttribute('aria-describedby', 'a11y-tooltip');
-        target.dataset.addedAriaDescribedby = 'true';
+      target.setAttribute('aria-describedby', 'a11y-tooltip');
+      target.dataset.addedAriaDescribedby = 'true';
     }
 
     // Ensure accessible name is preserved if no other source exists
     if (!target.hasAttribute('aria-label') && !target.hasAttribute('aria-labelledby')) {
-        target.setAttribute('aria-label', text);
-        target.dataset.addedAriaLabel = 'true';
+      target.setAttribute('aria-label', text);
+      target.dataset.addedAriaLabel = 'true';
     }
 
     this.activeTarget = target;
+    this.element.classList.remove('info');
     this.element.textContent = text;
+    this.position(target);
+  },
+
+  /**
+   * Renders a rich (title + body) header info tooltip. Unlike plain tooltips,
+   * the target keeps its visible label as its accessible name; the
+   * explanation is only exposed as a description via aria-describedby.
+   */
+  showInfo(target, info) {
+    if (!target.hasAttribute('aria-describedby')) {
+      target.setAttribute('aria-describedby', 'a11y-tooltip');
+      target.dataset.addedAriaDescribedby = 'true';
+    }
+
+    this.activeTarget = target;
+    this.element.classList.add('info');
+    this.element.textContent = '';
+    if (info.title) {
+      const titleEl = document.createElement('span');
+      titleEl.className = 'info-tooltip-title';
+      titleEl.textContent = info.title;
+      this.element.appendChild(titleEl);
+    }
+    const bodyEl = document.createElement('span');
+    bodyEl.className = 'info-tooltip-body';
+    bodyEl.textContent = info.body;
+    this.element.appendChild(bodyEl);
+
+    this.position(target);
+  },
+
+  position(target) {
     this.element.classList.remove('top', 'bottom');
     this.element.classList.add('visible');
 
@@ -304,7 +481,6 @@ const Tooltip = {
     }
 
     // Keep within viewport horizontal bounds
-    const originalLeft = left;
     left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
 
     // Position arrow to point at target center
@@ -333,12 +509,12 @@ const Tooltip = {
         delete this.activeTarget.dataset.storedTitle;
       }
       if (this.activeTarget.dataset.addedAriaDescribedby) {
-          this.activeTarget.removeAttribute('aria-describedby');
-          delete this.activeTarget.dataset.addedAriaDescribedby;
+        this.activeTarget.removeAttribute('aria-describedby');
+        delete this.activeTarget.dataset.addedAriaDescribedby;
       }
       if (this.activeTarget.dataset.addedAriaLabel) {
-          // Keep aria-label intact to ensure permanent accessible name
-          delete this.activeTarget.dataset.addedAriaLabel;
+        // Keep aria-label intact to ensure permanent accessible name
+        delete this.activeTarget.dataset.addedAriaLabel;
       }
     }
 
@@ -358,18 +534,19 @@ const TestReportApp = {
   state: {
     viewMode: 'flat',
     density: 'comfy',
-    currentFlatView: 'modules',
+    currentFlatView: 'testCases',
     selectedModule: null,
     selectedPackage: null,
     selectedClass: null,
     currentView: 'report',
     currentTestCase: null,
     currentStackTraceContext: {},
-    filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
-    sort: { by: 'name', order: 'asc' },
+    filters: { variants: [], search: '', status: [...ALL_TEST_STATUSES], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [], targets: [] },
+    sort: { by: 'fail', order: 'desc' },
     isResizing: false,
     columnWidths: {},
     variants: [],
+    targets: [],
     processedData: null
   },
   elements: {},
@@ -399,100 +576,100 @@ const TestReportApp = {
     const headerRow = this.elements.tableHeaders;
 
     const setColumnWidth = (id, width) => {
-        document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
-        const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
-        if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
+      document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+      const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
+      if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
     };
 
     headerRow.addEventListener('pointerdown', (e) => {
-        if (e.target.classList.contains('resizer')) {
-            if (this.state.isResizing) return;
+      if (e.target.classList.contains('resizer')) {
+        if (this.state.isResizing) return;
 
-            const resizer = e.target;
-            const resizerId = resizer.dataset.resizerId;
-            const columnTh = resizer.closest('th');
-            const startX = e.pageX;
-            const startWidth = columnTh.getBoundingClientRect().width;
-            let animationFrameId = null;
+        const resizer = e.target;
+        const resizerId = resizer.dataset.resizerId;
+        const columnTh = resizer.closest('th');
+        const startX = e.pageX;
+        const startWidth = columnTh.getBoundingClientRect().width;
+        let animationFrameId = null;
 
-            resizer.setPointerCapture(e.pointerId);
-            resizer.classList.add('resizing');
-            this.state.isResizing = true;
+        resizer.setPointerCapture(e.pointerId);
+        resizer.classList.add('resizing');
+        this.state.isResizing = true;
 
-            const onPointerMove = (moveEvt) => {
-                const diffX = moveEvt.pageX - startX;
-                const newWidth = Math.max(50, startWidth + diffX);
-                this.state.columnWidths[resizerId] = newWidth;
+        const onPointerMove = (moveEvt) => {
+          const diffX = moveEvt.pageX - startX;
+          const newWidth = Math.max(50, startWidth + diffX);
+          this.state.columnWidths[resizerId] = newWidth;
 
-                if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                animationFrameId = requestAnimationFrame(() => {
-                    setColumnWidth(resizerId, newWidth);
-                });
-            };
+          if (animationFrameId) cancelAnimationFrame(animationFrameId);
+          animationFrameId = requestAnimationFrame(() => {
+            setColumnWidth(resizerId, newWidth);
+          });
+        };
 
-            const onPointerUp = (upEvt) => {
-                resizer.releasePointerCapture(upEvt.pointerId);
-                resizer.classList.remove('resizing');
-                resizer.removeEventListener('pointermove', onPointerMove);
-                resizer.removeEventListener('pointerup', onPointerUp);
-                resizer.removeEventListener('pointercancel', onPointerUp);
-                setTimeout(() => { this.state.isResizing = false; }, 0);
-            };
+        const onPointerUp = (upEvt) => {
+          resizer.releasePointerCapture(upEvt.pointerId);
+          resizer.classList.remove('resizing');
+          resizer.removeEventListener('pointermove', onPointerMove);
+          resizer.removeEventListener('pointerup', onPointerUp);
+          resizer.removeEventListener('pointercancel', onPointerUp);
+          setTimeout(() => { this.state.isResizing = false; }, 0);
+        };
 
-            resizer.addEventListener('pointermove', onPointerMove);
-            resizer.addEventListener('pointerup', onPointerUp);
-            resizer.addEventListener('pointercancel', onPointerUp);
+        resizer.addEventListener('pointermove', onPointerMove);
+        resizer.addEventListener('pointerup', onPointerUp);
+        resizer.addEventListener('pointercancel', onPointerUp);
 
-            e.preventDefault();
-            e.stopPropagation();
-        }
+        e.preventDefault();
+        e.stopPropagation();
+      }
     });
 
     headerRow.addEventListener('dblclick', (e) => {
-        if (e.target.classList.contains('resizer')) {
-            const id = e.target.dataset.resizerId;
-            delete this.state.columnWidths[id];
-            document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
-            // Update to default width instead of removing
-            const newWidth = e.target.closest('th').getBoundingClientRect().width;
-            e.target.setAttribute('aria-valuenow', Math.round(newWidth));
-            e.preventDefault();
-            e.stopPropagation();
-        }
+      if (e.target.classList.contains('resizer')) {
+        const id = e.target.dataset.resizerId;
+        delete this.state.columnWidths[id];
+        document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+        // Update to default width instead of removing
+        const newWidth = e.target.closest('th').getBoundingClientRect().width;
+        e.target.setAttribute('aria-valuenow', Math.round(newWidth));
+        e.preventDefault();
+        e.stopPropagation();
+      }
     });
 
     headerRow.addEventListener('keydown', (e) => {
-        if (e.target.classList.contains('resizer')) {
-            const id = e.target.dataset.resizerId;
-            const columnTh = e.target.closest('th');
-            const currentWidth = columnTh.getBoundingClientRect().width;
-            let newWidth = this.state.columnWidths[id] || currentWidth;
+      if (e.target.classList.contains('resizer')) {
+        const id = e.target.dataset.resizerId;
+        const columnTh = e.target.closest('th');
+        const currentWidth = columnTh.getBoundingClientRect().width;
+        let newWidth = this.state.columnWidths[id] || currentWidth;
 
-            if (e.key === 'ArrowLeft') {
-                newWidth = Math.max(50, newWidth - 10);
-                this.state.columnWidths[id] = newWidth;
-                setColumnWidth(id, newWidth);
-                e.preventDefault();
-            } else if (e.key === 'ArrowRight') {
-                newWidth = Math.min(1000, newWidth + 10);
-                this.state.columnWidths[id] = newWidth;
-                setColumnWidth(id, newWidth);
-                e.preventDefault();
-            } else if (e.key === 'Enter' || e.key === ' ') {
-                e.stopImmediatePropagation();
-                delete this.state.columnWidths[id];
-                document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
-                // Update to default width instead of removing
-                const resetWidth = e.target.closest('th').getBoundingClientRect().width;
-                e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
-                e.preventDefault();
-            }
+        if (e.key === 'ArrowLeft') {
+          newWidth = Math.max(50, newWidth - 10);
+          this.state.columnWidths[id] = newWidth;
+          setColumnWidth(id, newWidth);
+          e.preventDefault();
+        } else if (e.key === 'ArrowRight') {
+          newWidth = Math.min(1000, newWidth + 10);
+          this.state.columnWidths[id] = newWidth;
+          setColumnWidth(id, newWidth);
+          e.preventDefault();
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.stopImmediatePropagation();
+          delete this.state.columnWidths[id];
+          document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+          // Update to default width instead of removing
+          const resetWidth = e.target.closest('th').getBoundingClientRect().width;
+          e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
+          e.preventDefault();
         }
+      }
     });
 
     // Apply initial widths if any
     for (const [id, width] of Object.entries(this.state.columnWidths)) {
-        setColumnWidth(id, width);
+      setColumnWidth(id, width);
     }
   },
 
@@ -538,6 +715,7 @@ const TestReportApp = {
       pkgChipContainer: document.getElementById('pkg-chip-container'),
       clsChipContainer: document.getElementById('cls-chip-container'),
       tcChipContainer: document.getElementById('tc-chip-container'),
+      tgtChipContainer: document.getElementById('tgt-chip-container'),
 
       moduleFilterBtn: document.getElementById('mod-filter-btn'),
       moduleFilterText: document.getElementById('mod-filter-text'),
@@ -559,6 +737,11 @@ const TestReportApp = {
       tcFilterDropdown: document.getElementById('tc-dropdown'),
       tcFilterList: document.getElementById('tc-filter-list'),
 
+      targetFilterBtn: document.getElementById('tgt-filter-btn'),
+      targetFilterText: document.getElementById('tgt-filter-text'),
+      targetFilterDropdown: document.getElementById('tgt-dropdown'),
+      targetFilterList: document.getElementById('tgt-filter-list'),
+
       addFilterBtn: document.getElementById('add-filter-btn'),
       addFilterDropdown: document.getElementById('add-filter-dropdown'),
       addFilterList: document.getElementById('add-filter-list'),
@@ -579,7 +762,18 @@ const TestReportApp = {
   setupTestResults(rootReport) {
     this.state.variants = rootReport.variants;
     this.state.testSuites = rootReport.testSuites;
+    this.state.targets = rootReport.targets || [];
+    this.state.relativeRootDir = rootReport.relativeRootDir;
     this.state.filters.variants = [...rootReport.variants];
+
+    const actualSuites = (rootReport.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
+    if (actualSuites.length === 1) {
+      this.state.filters.testSuite = actualSuites[0];
+    }
+
+    if ((this.state.sort.by === TEST_STATUS.FAIL || this.state.sort.by === TEST_STATUS.FAILED) && rootReport.variants && rootReport.variants.length > 0) {
+      this.state.sort.by = `${rootReport.variants[0]}.fail`;
+    }
 
     // Populate header
     if (this.elements.appTitle) this.elements.appTitle.textContent = rootReport.projectName || 'Test Report';
@@ -588,45 +782,88 @@ const TestReportApp = {
     if (this.elements.totalPackages) this.elements.totalPackages.textContent = rootReport.numberOfPackages || 0;
     if (this.elements.totalClasses) this.elements.totalClasses.textContent = rootReport.numberOfClasses || 0;
 
-    const annotateType = (node, type) => {
-        node.type = type;
-        const childType = this.getChildType(type);
-        if (!childType) return;
-
-        const childKey = this.pluralize(childType);
-        const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
-        children.forEach(child => annotateType(child, childType));
-    };
-    rootReport.modules.forEach(m => annotateType(m, 'module'));
-
     this.processedData = rootReport;
+
+    // Build O(1) test case index asynchronously in time-sliced background chunks to prevent UI thread freezing
+    this.buildTestCaseIndexAsync(rootReport);
+  },
+
+  async buildTestCaseIndexAsync(rootReport) {
+    this.testCaseIndex = new Map();
+
+    const annotateType = (node, type) => {
+      node.type = type;
+      const childType = this.getChildType(type);
+      if (!childType) return;
+
+      const childKey = this.pluralize(childType);
+      const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
+      children.forEach(child => annotateType(child, childType));
+    };
+
+    const modules = rootReport.modules || [];
+    let itemsProcessed = 0;
+    const CHUNK_SIZE = 200; // Yield to event loop every 200 classes to keep UI responsive
+
+    for (const m of modules) {
+      annotateType(m, 'module');
+      for (const p of (m.packages || [])) {
+        for (const c of (p.classes || [])) {
+          itemsProcessed++;
+          for (const tc of (c.testCases || [])) {
+            const entry = { testCase: tc, moduleName: m.name, packageName: p.name, className: c.name, classNode: c };
+            this.testCaseIndex.set(`${m.name}:${p.name}:${c.name}:${tc.name}`, entry);
+            const nameKey = (tc.name || '').toLowerCase();
+            if (!this.testCaseIndex.has(nameKey)) {
+              this.testCaseIndex.set(nameKey, entry);
+            }
+          }
+          if (itemsProcessed % CHUNK_SIZE === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+        }
+      }
+    }
   },
 
   populateFilters() {
     // Test Suite Dropdown
-    const testSuiteOptions = [
-      { name: 'All', value: 'all' },
-      ...this.state.testSuites.filter(ts => ts !== 'Aggregated').map(ts => ({ name: ts, value: ts }))
-    ];
-    UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
-      this.state.filters.testSuite = newVal;
+    const actualSuites = (this.state.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
+    const isSingleSuite = actualSuites.length === 1;
 
-      if (newVal === 'all') {
-        this.elements.tsAllState.classList.remove('hidden');
-        this.elements.tsSelectedState.classList.add('hidden');
-      } else {
-        this.elements.tsAllState.classList.add('hidden');
-        this.elements.tsSelectedState.classList.remove('hidden');
-        this.elements.testSuiteFilterText.textContent = newVal;
+    if (isSingleSuite) {
+      this.state.filters.testSuite = actualSuites[0];
+      if (this.elements.testSuiteFilterList) {
+        this.elements.testSuiteFilterList.innerHTML = '';
       }
-      this.render();
-      Navigation.push();
-    }, false, false);
+    } else {
+      const testSuiteOptions = [
+        { name: 'all', value: 'all' },
+        ...[...actualSuites]
+          .sort((a, b) => UIUtils.formatSuiteName(a).localeCompare(UIUtils.formatSuiteName(b)))
+          .map(ts => ({ name: UIUtils.formatSuiteName(ts), value: ts }))
+      ];
+      UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
+        this.state.filters.testSuite = newVal;
+        this.updateTestSuiteUI();
+        this.render();
+        Navigation.push();
+      }, false, false);
+    }
+    this.updateTestSuiteUI();
 
     // Variants Dropdown
     const variantOptions = this.state.variants.map(v => ({ name: v, value: v }));
     UIUtils.buildActionDropdown(this.elements.variantFilterList, variantOptions, this.state.filters.variants, (newArr) => {
       this.state.filters.variants = newArr;
+      const { variant, metric } = this.parseSortKey(this.state.sort.by);
+      if (variant && !newArr.includes(variant)) {
+        if (newArr.length > 0) {
+          this.state.sort.by = `${newArr[0]}.${metric}`;
+        } else {
+          this.state.sort.by = 'name';
+        }
+      }
       this.updateVariantButtonText();
       this.render();
       Navigation.push();
@@ -639,26 +876,26 @@ const TestReportApp = {
 
   buildStatusDropdown() {
     const statusOptions = [
-      { name: 'Passed', value: 'passed' },
-      { name: 'Failed', value: 'failed' },
-      { name: 'Skipped', value: 'skipped' }
+      { name: 'Passed', value: TEST_STATUS.PASSED },
+      { name: 'Failed', value: TEST_STATUS.FAILED },
+      { name: 'Skipped', value: TEST_STATUS.SKIPPED }
     ];
     if (!Array.isArray(this.state.filters.status)) {
-        this.state.filters.status = ['passed', 'failed', 'skipped'];
+      this.state.filters.status = [...ALL_TEST_STATUSES];
     }
 
     const updateStatusButtonText = () => {
       let label = 'Status: All';
       const statusArr = this.state.filters.status;
       if (statusArr.length === 0 || statusArr.length === statusOptions.length) {
-          label = 'Status: All';
+        label = 'Status: All';
       } else if (statusArr.length === 1) {
-          label = 'Status: ' + statusOptions.find(o => o.value === statusArr[0])?.name;
+        label = 'Status: ' + statusOptions.find(o => o.value === statusArr[0])?.name;
       } else {
-          label = `Status: ${statusArr.length} Selected`;
+        label = `Status: ${statusArr.length} Selected`;
       }
       if (this.elements.statusFilterText) {
-          this.elements.statusFilterText.textContent = label;
+        this.elements.statusFilterText.textContent = label;
       }
     };
 
@@ -679,11 +916,11 @@ const TestReportApp = {
     if (this.elements.variantFilterBtn) {
       let label = 'Filter by Variant';
       if (selectedCount === totalCount && totalCount > 0) {
-          label = 'Filter by Variant: All';
+        label = 'Filter by Variant: All';
       } else if (selectedCount === 1) {
-          label = `Filter by Variant: ${this.state.filters.variants[0]}`;
+        label = `Filter by Variant: ${this.state.filters.variants[0]}`;
       } else {
-          label = `Filter by Variant: ${selectedCount} Selected`;
+        label = `Filter by Variant: ${selectedCount} Selected`;
       }
       this.elements.variantFilterBtn.setAttribute('data-tooltip', label);
       this.elements.variantFilterBtn.setAttribute('aria-label', label);
@@ -695,8 +932,8 @@ const TestReportApp = {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (Tooltip.activeTarget) {
-            Tooltip.hide();
-            return;
+          Tooltip.hide();
+          return;
         }
         const openDropdownConf = this.getDropdownConfigs().find(c => c.dropdown && !c.dropdown.classList.contains('hidden'));
         if (openDropdownConf) {
@@ -706,79 +943,86 @@ const TestReportApp = {
         } else if (this.elements.searchWrapper && this.elements.searchWrapper.classList.contains('expanded')) {
           this.elements.searchWrapper.classList.remove('expanded');
           setTimeout(() => {
-              this.elements.searchRevealBtn.classList.remove('hidden');
-              this.elements.searchRevealBtn.focus();
+            this.elements.searchRevealBtn.classList.remove('hidden');
+            this.elements.searchRevealBtn.focus();
           }, 300);
         }
       }
     });
 
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-        if (btn && dropdown) {
-            btn.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.toggleDropdown(dropdown, btn);
-                } else if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (dropdown.classList.contains('hidden')) {
-                        this.toggleDropdown(dropdown, btn);
-                    } else {
-                        const firstItem = dropdown.querySelector('button, [tabindex="0"], input');
-                        if (firstItem) firstItem.focus();
-                    }
-                }
-            });
-            dropdown.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    const items = Array.from(dropdown.querySelectorAll('input:not([disabled]), button:not([disabled]), [role="option"], [role="menuitem"]'))
-                        .filter(el => el.style.display !== 'none' && el.offsetWidth > 0 && el.offsetHeight > 0);
-                    if (items.length === 0) return;
-                    const currentIndex = items.indexOf(document.activeElement);
-                    let nextIndex = 0;
-                    if (e.key === 'ArrowDown') {
-                        nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-                    } else {
-                        nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-                    }
-                    items[nextIndex].focus();
-                }
-            });
-        }
+      if (btn && dropdown) {
+        btn.addEventListener('keydown', (e) => {
+          if (btn.disabled || btn.classList.contains('unclickable') || btn.getAttribute('aria-disabled') === 'true') {
+            return;
+          }
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleDropdown(dropdown, btn);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (dropdown.classList.contains('hidden')) {
+              this.toggleDropdown(dropdown, btn);
+            } else {
+              const firstItem = dropdown.querySelector('button, [tabindex="0"], input');
+              if (firstItem) firstItem.focus();
+            }
+          }
+        });
+        dropdown.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const items = Array.from(dropdown.querySelectorAll('input:not([disabled]), button:not([disabled]), [role="option"], [role="menuitem"]'))
+              .filter(el => el.style.display !== 'none' && el.offsetWidth > 0 && el.offsetHeight > 0);
+            if (items.length === 0) return;
+            const currentIndex = items.indexOf(document.activeElement);
+            let nextIndex = 0;
+            if (e.key === 'ArrowDown') {
+              nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+            } else {
+              nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+            }
+            items[nextIndex].focus();
+          }
+        });
+      }
     });
 
     this.elements.searchInput.addEventListener('input', () => {
       this.state.filters.search = this.elements.searchInput.value.trim();
       if (this.state.filters.search.length > 0) {
-          this.elements.searchClearBtn.classList.remove('hidden');
+        this.elements.searchClearBtn.classList.remove('hidden');
       } else {
-          this.elements.searchClearBtn.classList.add('hidden');
+        this.elements.searchClearBtn.classList.add('hidden');
       }
       this.render();
     });
 
     if (this.elements.searchClearBtn) {
-        this.elements.searchClearBtn.addEventListener('click', () => {
-            this.elements.searchInput.value = '';
-            this.state.filters.search = '';
-            this.elements.searchClearBtn.classList.add('hidden');
-            this.render();
-            this.elements.searchInput.focus();
-        });
+      this.elements.searchClearBtn.addEventListener('click', () => {
+        this.elements.searchInput.value = '';
+        this.state.filters.search = '';
+        this.elements.searchClearBtn.classList.add('hidden');
+        this.render();
+        this.elements.searchInput.focus();
+      });
     }
 
     if (this.elements.searchRevealBtn) {
-        this.elements.searchRevealBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.elements.searchRevealBtn.classList.add('hidden');
-            this.elements.searchWrapper.classList.add('expanded');
-            this.elements.searchInput.focus();
-        });
+      this.elements.searchRevealBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.elements.searchRevealBtn.classList.add('hidden');
+        this.elements.searchWrapper.classList.add('expanded');
+        this.elements.searchInput.focus();
+      });
     }
 
-    this.elements.testSuiteFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.testSuiteFilterDropdown, this.elements.testSuiteFilterBtn));
+    this.elements.testSuiteFilterBtn.addEventListener('click', () => {
+      const actualSuites = (this.state.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
+      if (actualSuites.length <= 1) return;
+      this.toggleDropdown(this.elements.testSuiteFilterDropdown, this.elements.testSuiteFilterBtn);
+    });
     this.elements.variantFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.variantFilterDropdown, this.elements.variantFilterBtn));
     this.elements.statusFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.statusFilterDropdown, this.elements.statusFilterBtn));
 
@@ -786,295 +1030,353 @@ const TestReportApp = {
     if (this.elements.packageFilterBtn) this.elements.packageFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.packageFilterDropdown, this.elements.packageFilterBtn));
     if (this.elements.classFilterBtn) this.elements.classFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.classFilterDropdown, this.elements.classFilterBtn));
     if (this.elements.tcFilterBtn) this.elements.tcFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.tcFilterDropdown, this.elements.tcFilterBtn));
+    if (this.elements.targetFilterBtn) this.elements.targetFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.targetFilterDropdown, this.elements.targetFilterBtn));
 
     // Add Filter Logic
     if (this.elements.addFilterBtn) {
-        this.elements.addFilterBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleDropdown(this.elements.addFilterDropdown, this.elements.addFilterBtn);
-        });
+      this.elements.addFilterBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.elements.addFilterDropdown, this.elements.addFilterBtn);
+      });
     }
 
     const filterTypeConfig = {
-        'status': { container: this.elements.statusChipContainer, dropdown: this.elements.statusFilterDropdown, btn: this.elements.statusFilterBtn },
-        'module': { container: this.elements.modChipContainer, dropdown: this.elements.moduleFilterDropdown, btn: this.elements.moduleFilterBtn, stateKey: 'modules' },
-        'package': { container: this.elements.pkgChipContainer, dropdown: this.elements.packageFilterDropdown, btn: this.elements.packageFilterBtn, stateKey: 'packages' },
-        'class': { container: this.elements.clsChipContainer, dropdown: this.elements.classFilterDropdown, btn: this.elements.classFilterBtn, stateKey: 'classes' },
-        'testCase': { container: this.elements.tcChipContainer, dropdown: this.elements.tcFilterDropdown, btn: this.elements.tcFilterBtn, stateKey: 'testCases' }
+      'status': { container: this.elements.statusChipContainer, dropdown: this.elements.statusFilterDropdown, btn: this.elements.statusFilterBtn },
+      'module': { container: this.elements.modChipContainer, dropdown: this.elements.moduleFilterDropdown, btn: this.elements.moduleFilterBtn, stateKey: 'modules' },
+      'package': { container: this.elements.pkgChipContainer, dropdown: this.elements.packageFilterDropdown, btn: this.elements.packageFilterBtn, stateKey: 'packages' },
+      'class': { container: this.elements.clsChipContainer, dropdown: this.elements.classFilterDropdown, btn: this.elements.classFilterBtn, stateKey: 'classes' },
+      'testCase': { container: this.elements.tcChipContainer, dropdown: this.elements.tcFilterDropdown, btn: this.elements.tcFilterBtn, stateKey: 'testCases' },
+      'target': { container: this.elements.tgtChipContainer, dropdown: this.elements.targetFilterDropdown, btn: this.elements.targetFilterBtn, stateKey: 'targets' }
     };
 
     if (this.elements.addFilterList) {
-        this.elements.addFilterList.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const target = e.target.closest('.dropdown-item');
-            if (!target) return;
+      this.elements.addFilterList.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.target.closest('.dropdown-item');
+        if (!target) return;
 
-            const filterType = target.dataset.filterType;
-            const config = filterTypeConfig[filterType];
+        const filterType = target.dataset.filterType;
+        const config = filterTypeConfig[filterType];
 
-            if (config) {
-                config.container.classList.remove('hidden');
-                this.elements.addFilterDropdown.classList.add('hidden');
-                this.handleHeaderFilterChange(filterType);
-                this.updateFilterButtons();
-                this.render();
-                Navigation.push();
+        if (config) {
+          config.container.classList.remove('hidden');
+          this.elements.addFilterDropdown.classList.add('hidden');
+          this.handleHeaderFilterChange(filterType);
+          this.updateFilterButtons();
+          this.render();
+          Navigation.push();
 
-                setTimeout(() => {
-                    this.toggleDropdown(config.dropdown, config.btn);
-                }, 0);
-            }
-        });
+          setTimeout(() => {
+            this.toggleDropdown(config.dropdown, config.btn);
+          }, 0);
+        }
+      });
     }
 
     // Close Filter Logic
     document.querySelectorAll('.chip-close').forEach(closeBtn => {
-        closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const filterType = closeBtn.dataset.filterClose;
-            const config = filterTypeConfig[filterType];
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const filterType = closeBtn.dataset.filterClose;
+        const config = filterTypeConfig[filterType];
 
-            if (config) {
-                if (filterType === 'status') {
-                    this.state.filters.status = ['passed', 'failed', 'skipped'];
-                    this.buildStatusDropdown();
-                } else {
-                    this.state.filters[config.stateKey] = [];
-                }
-                config.container.classList.add('hidden');
-                this.handleHeaderFilterChange();
-                this.updateFilterButtons();
-                this.render();
-                Navigation.push();
-            }
-        });
+        if (config) {
+          if (filterType === 'status') {
+            this.state.filters.status = [...ALL_TEST_STATUSES];
+            this.buildStatusDropdown();
+          } else {
+            this.state.filters[config.stateKey] = [];
+          }
+          config.container.classList.add('hidden');
+          this.handleHeaderFilterChange();
+          this.updateFilterButtons();
+          this.render();
+          Navigation.push();
+        }
+      });
     });
 
     if (this.elements.viewSegments) {
-        this.elements.viewSegments.addEventListener('click', (e) => {
-            const btn = e.target.closest('.segment-btn');
-            if (!btn) return;
-            this.state.viewMode = btn.dataset.value;
-            this.updateViewModeUI();
-            this.resetSelection();
-            this.render();
-            Navigation.push();
-        });
+      this.elements.viewSegments.addEventListener('click', (e) => {
+        const btn = e.target.closest('.segment-btn');
+        if (!btn) return;
+        this.state.viewMode = btn.dataset.value;
+        this.updateViewModeUI();
+        this.resetSelection();
+        this.render();
+        Navigation.push();
+      });
     }
 
     if (this.elements.densitySegments) {
-        this.elements.densitySegments.addEventListener('click', (e) => {
-            const btn = e.target.closest('.segment-btn');
-            if (!btn) return;
-            this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => {
-                b.classList.remove('active');
-                b.setAttribute('aria-pressed', 'false');
-            });
-            btn.classList.add('active');
-            btn.setAttribute('aria-pressed', 'true');
-            this.state.density = btn.dataset.value;
-            if (this.elements.mainTable) {
-                if (this.state.density === 'compact') {
-                    this.elements.mainTable.classList.add('table-compact');
-                } else {
-                    this.elements.mainTable.classList.remove('table-compact');
-                }
-            }
+      this.elements.densitySegments.addEventListener('click', (e) => {
+        const btn = e.target.closest('.segment-btn');
+        if (!btn) return;
+        this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
         });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        this.state.density = btn.dataset.value;
+        if (this.elements.mainTable) {
+          if (this.state.density === 'compact') {
+            this.elements.mainTable.classList.add('table-compact');
+          } else {
+            this.elements.mainTable.classList.remove('table-compact');
+          }
+        }
+      });
     }
 
     if (this.elements.groupByBtn) {
-        this.elements.groupByBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleDropdown(this.elements.groupByDropdown, this.elements.groupByBtn);
-        });
+      this.elements.groupByBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.elements.groupByDropdown, this.elements.groupByBtn);
+      });
     }
 
     if (this.elements.groupByDropdown) {
-        this.elements.groupByDropdown.addEventListener('click', (e) => {
-            const target = e.target.closest('.dropdown-item');
-            if (target) {
-                this.state.currentFlatView = target.dataset.value;
-                this.elements.groupByDropdown.classList.add('hidden');
-                this.elements.groupByBtn.setAttribute('aria-expanded', 'false');
-                this.elements.groupByBtn.focus();
+      this.elements.groupByDropdown.addEventListener('click', (e) => {
+        const target = e.target.closest('.dropdown-item');
+        if (target) {
+          this.state.currentFlatView = target.dataset.value;
+          this.elements.groupByDropdown.classList.add('hidden');
+          this.elements.groupByBtn.setAttribute('aria-expanded', 'false');
+          this.elements.groupByBtn.focus();
 
-                // When changing the grouping via the dropdown, we reset all selections
-                // to show the global list for that grouping, consistent with coverage report.
-                this.resetSelection();
+          // When changing the grouping via the dropdown, we reset all selections
+          // to show the global list for that grouping, consistent with coverage report.
+          this.resetSelection();
 
-                this.render();
-                Navigation.push();
-            }
-        });
+          this.render();
+          Navigation.push();
+        }
+      });
     }
     this.elements.resultsData.addEventListener('click', (e) => {
-        if (this.state.viewMode === 'flat') {
-            const clickable = e.target.closest('[data-interactive="flat"]');
-            if (clickable) {
-                e.preventDefault();
-                this.handleFlatRowClick(clickable);
-            }
-        } else {
-            const treeToggle = e.target.closest('[data-interactive="tree"]');
-            if (treeToggle) {
-                e.preventDefault();
-                this.handleTreeRowClick(treeToggle);
-            }
+      const stackTrigger = e.target.closest('.stack-trace-trigger');
+      if (stackTrigger) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openStackTrace(stackTrigger);
+        return;
+      }
+      if (this.state.viewMode === 'flat') {
+        const clickable = e.target.closest('[data-interactive="flat"]');
+        if (clickable) {
+          e.preventDefault();
+          this.handleFlatRowClick(clickable);
         }
+      } else {
+        const treeToggle = e.target.closest('[data-interactive="tree"]');
+        if (treeToggle) {
+          e.preventDefault();
+          this.handleTreeRowClick(treeToggle);
+        }
+      }
     });
     this.elements.resultsData.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status, .stack-trace-trigger');
-            if (clickable) {
-                e.preventDefault();
-                clickable.click();
-            }
+      if (e.key === 'Enter' || e.key === ' ') {
+        const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status, .stack-trace-trigger');
+        if (clickable) {
+          e.preventDefault();
+          clickable.click();
         }
+      }
     });
     const handleBreadcrumbAction = (e) => {
-        const link = e.target.closest('a[data-action]');
-        if (!link) return;
-        e.preventDefault();
-        const { action, moduleName, packageName } = link.dataset;
+      const link = e.target.closest('a[data-action]');
+      if (!link) return;
+      e.preventDefault();
+      const { action, moduleName, packageName } = link.dataset;
 
-        if (action === BREADCRUMB_ACTIONS.GO_TO_MODULES) {
-            this.state.selectedModule = null;
-            this.state.selectedPackage = null;
-            this.state.selectedClass = null;
-            this.state.currentFlatView = 'modules';
-        } else if (action === BREADCRUMB_ACTIONS.GO_TO_PACKAGES) {
-            this.state.selectedModule = moduleName || this.state.selectedModule;
-            this.state.selectedPackage = null;
-            this.state.selectedClass = null;
-            this.state.currentFlatView = 'packages';
-        } else if (action === BREADCRUMB_ACTIONS.GO_TO_CLASSES) {
-            this.state.selectedModule = moduleName || this.state.selectedModule;
-            this.state.selectedPackage = packageName || this.state.selectedPackage;
-            this.state.selectedClass = null;
-            this.state.currentFlatView = 'classes';
-        } else if (action === BREADCRUMB_ACTIONS.GO_TO_TEST_CASES) {
-            this.state.selectedModule = moduleName || this.state.selectedModule;
-            this.state.selectedPackage = packageName || this.state.selectedPackage;
-            this.state.selectedClass = link.dataset.className || this.state.selectedClass;
-            this.state.currentFlatView = 'testCases';
-        }
+      if (action === BREADCRUMB_ACTIONS.GO_TO_MODULES) {
+        this.state.selectedModule = null;
+        this.state.selectedPackage = null;
+        this.state.selectedClass = null;
+        this.state.currentFlatView = 'modules';
+      } else if (action === BREADCRUMB_ACTIONS.GO_TO_PACKAGES) {
+        this.state.selectedModule = moduleName || this.state.selectedModule;
+        this.state.selectedPackage = null;
+        this.state.selectedClass = null;
+        this.state.currentFlatView = 'packages';
+      } else if (action === BREADCRUMB_ACTIONS.GO_TO_CLASSES) {
+        this.state.selectedModule = moduleName || this.state.selectedModule;
+        this.state.selectedPackage = packageName || this.state.selectedPackage;
+        this.state.selectedClass = null;
+        this.state.currentFlatView = 'classes';
+      } else if (action === BREADCRUMB_ACTIONS.GO_TO_TEST_CASES) {
+        this.state.selectedModule = moduleName || this.state.selectedModule;
+        this.state.selectedPackage = packageName || this.state.selectedPackage;
+        this.state.selectedClass = link.dataset.className || this.state.selectedClass;
+        this.state.currentFlatView = 'testCases';
+      }
 
-        this.state.viewMode = 'flat';
-        this.updateViewModeUI();
-        this.showReportView();
-        this.render();
-        Navigation.push();
+      this.state.viewMode = 'flat';
+      this.updateViewModeUI();
+      this.showReportView();
+      this.render();
+      Navigation.push();
     };
 
     this.elements.breadcrumbs.addEventListener('click', handleBreadcrumbAction);
     this.elements.stackTraceBreadcrumbs.addEventListener('click', handleBreadcrumbAction);
 
     this.elements.breadcrumbs.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            const link = e.target.closest('.breadcrumb-link');
-            if (link) {
-                e.preventDefault();
-                link.click();
-            }
+      if (e.key === 'Enter' || e.key === ' ') {
+        const link = e.target.closest('.breadcrumb-link');
+        if (link) {
+          e.preventDefault();
+          link.click();
         }
+      }
     });
 
     this.elements.stackTraceBreadcrumbs.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            const link = e.target.closest('.breadcrumb-link');
-            if (link) {
-                e.preventDefault();
-                link.click();
-            }
+      if (e.key === 'Enter' || e.key === ' ') {
+        const link = e.target.closest('.breadcrumb-link');
+        if (link) {
+          e.preventDefault();
+          link.click();
         }
+      }
     });
 
     this.elements.tableHeaders.addEventListener('click', (e) => {
-        if (this.state.isResizing || e.target.classList.contains('resizer')) return;
-        const th = e.target.closest('[data-sort-by]');
-        if (!th) return;
+      if (this.state.isResizing || e.target.classList.contains('resizer')) return;
+      const th = e.target.closest('[data-sort-by]');
+      if (!th) return;
 
-        const newSortBy = th.dataset.sortBy;
-        if (this.state.sort.by === newSortBy) {
-            this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc';
-        } else {
-            this.state.sort.by = newSortBy;
-            this.state.sort.order = 'asc';
-        }
+      const newSortBy = th.dataset.sortBy;
+      const isAlreadyActive = this.isSortActive(newSortBy);
+      if (isAlreadyActive) {
+        this.state.sort.by = newSortBy;
+        this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.state.sort.by = newSortBy;
+        this.state.sort.order = (newSortBy === 'name') ? 'asc' : 'desc';
+      }
 
-        const headerName = th.textContent.replace(/[▲▼]/g, '').trim();
-        const orderText = this.state.sort.order === 'asc' ? 'ascending' : 'descending';
-        this.announce(`Sorted by ${headerName}, ${orderText}`);
+      const headerName = th.textContent.replace(/[▲▼]/g, '').trim();
+      const orderText = this.state.sort.order === 'asc' ? 'ascending' : 'descending';
+      this.announce(`Sorted by ${headerName}, ${orderText}`);
 
-        this.render();
-        Navigation.push();
+      this.render();
+      Navigation.push();
     });
     this.elements.tableHeaders.addEventListener('keydown', (e) => {
-        if (e.target.classList.contains('resizer')) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-            const th = e.target.closest('[data-sort-by]');
-            if (th) {
-                e.preventDefault();
-                th.click();
-            }
+      if (e.target.classList.contains('resizer')) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        const th = e.target.closest('[data-sort-by]');
+        if (th) {
+          e.preventDefault();
+          th.click();
         }
+      }
     });
 
   },
 
+  updateTestSuiteUI() {
+    const actualSuites = (this.state.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
+    const isSingleSuite = actualSuites.length === 1;
+
+    if (isSingleSuite) {
+      this.state.filters.testSuite = actualSuites[0];
+      if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
+      if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
+      if (this.elements.testSuiteFilterText) {
+        this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(actualSuites[0]);
+      }
+      if (this.elements.testSuiteFilterBtn) {
+        this.elements.testSuiteFilterBtn.disabled = true;
+        this.elements.testSuiteFilterBtn.classList.add('unclickable');
+        this.elements.testSuiteFilterBtn.setAttribute('aria-disabled', 'true');
+        this.elements.testSuiteFilterBtn.setAttribute('aria-expanded', 'false');
+        this.elements.testSuiteFilterBtn.removeAttribute('aria-haspopup');
+        this.elements.testSuiteFilterBtn.tabIndex = -1;
+      }
+      if (this.elements.testSuiteFilterDropdown) {
+        this.elements.testSuiteFilterDropdown.classList.add('hidden');
+      }
+    } else {
+      if (this.elements.testSuiteFilterBtn) {
+        this.elements.testSuiteFilterBtn.disabled = false;
+        this.elements.testSuiteFilterBtn.classList.remove('unclickable');
+        this.elements.testSuiteFilterBtn.removeAttribute('aria-disabled');
+        this.elements.testSuiteFilterBtn.setAttribute('aria-haspopup', 'listbox');
+        this.elements.testSuiteFilterBtn.tabIndex = 0;
+      }
+      if (this.elements.tsAllState && this.elements.tsSelectedState) {
+        if (this.state.filters.testSuite === 'all') {
+          this.elements.tsAllState.classList.remove('hidden');
+          this.elements.tsSelectedState.classList.add('hidden');
+        } else {
+          this.elements.tsAllState.classList.add('hidden');
+          this.elements.tsSelectedState.classList.remove('hidden');
+          if (this.elements.testSuiteFilterText) {
+            this.elements.testSuiteFilterText.textContent = UIUtils.formatSuiteName(this.state.filters.testSuite);
+          }
+        }
+      }
+    }
+  },
+
   updateFilterButtons() {
-      let activeChipsCount = 0;
-      const { filters } = this.state;
+    let activeChipsCount = 0;
+    const { filters } = this.state;
 
-      const updateChip = (type, stateArray, totalCount, textElement, chipContainer) => {
-          if (!textElement) return;
+    const updateChip = (type, stateArray, totalCount, textElement, chipContainer) => {
+      if (!textElement) return;
 
-          let label = `${type.charAt(0).toUpperCase() + type.slice(1)}: All`;
-          if (stateArray.length > 0 && stateArray.length < totalCount) {
-              if (stateArray.length === 1) {
-                  label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray[0]}`;
-              } else {
-                  label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray.length} Selected`;
-              }
-          }
-          textElement.textContent = label;
+      let label = `${type.charAt(0).toUpperCase() + type.slice(1)}: All`;
+      if (stateArray.length > 0 && stateArray.length < totalCount) {
+        if (stateArray.length === 1) {
+          label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray[0]}`;
+        } else {
+          label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray.length} Selected`;
+        }
+      }
+      textElement.textContent = label;
 
-          if (stateArray.length > 0 || !chipContainer.classList.contains('hidden')) {
-              chipContainer.classList.remove('hidden');
-              activeChipsCount++;
-              this.toggleAddFilterOption(type, false);
-          } else {
-              this.toggleAddFilterOption(type, true);
-          }
-      };
-
-      const totalModules = this.processedData.modules ? this.processedData.modules.length : 0;
-      const totalPackages = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).map(p => p.name)))].length : 0;
-      const totalClasses = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).map(c => c.name))))].length : 0;
-      const totalTestCases = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).flatMap(c => (c.testCases || []).map(tc => tc.name)))))].length : 0;
-
-      updateChip('module', filters.modules, totalModules, this.elements.moduleFilterText, this.elements.modChipContainer);
-      updateChip('package', filters.packages, totalPackages, this.elements.packageFilterText, this.elements.pkgChipContainer);
-      updateChip('class', filters.classes, totalClasses, this.elements.classFilterText, this.elements.clsChipContainer);
-      updateChip('testCase', filters.testCases, totalTestCases, this.elements.tcFilterText, this.elements.tcChipContainer);
-
-      const isStatusVisible = !this.elements.statusChipContainer.classList.contains('hidden');
-      if (isStatusVisible) {
-          activeChipsCount++;
-          this.toggleAddFilterOption('status', false);
+      if (stateArray.length > 0 || !chipContainer.classList.contains('hidden')) {
+        chipContainer.classList.remove('hidden');
+        activeChipsCount++;
+        this.toggleAddFilterOption(type, false);
       } else {
-          this.toggleAddFilterOption('status', true);
+        this.toggleAddFilterOption(type, true);
       }
+    };
 
-      if (this.elements.addFilterBtn) {
-          if (activeChipsCount === 5) { // module, package, class, testCase, status
-              this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
-          } else {
-              this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
-          }
+    const totalModules = this.processedData.modules ? this.processedData.modules.length : 0;
+    const totalPackages = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).map(p => p.name)))].length : 0;
+    const totalClasses = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).map(c => c.name))))].length : 0;
+    const totalTestCases = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).flatMap(c => (c.testCases || []).map(tc => tc.name)))))].length : 0;
+    const totalTargets = this.processedData.targets ? this.processedData.targets.length : 0;
+
+    updateChip('module', filters.modules, totalModules, this.elements.moduleFilterText, this.elements.modChipContainer);
+    updateChip('package', filters.packages, totalPackages, this.elements.packageFilterText, this.elements.pkgChipContainer);
+    updateChip('class', filters.classes, totalClasses, this.elements.classFilterText, this.elements.clsChipContainer);
+    updateChip('testCase', filters.testCases, totalTestCases, this.elements.tcFilterText, this.elements.tcChipContainer);
+    updateChip('target', filters.targets, totalTargets, this.elements.targetFilterText, this.elements.tgtChipContainer);
+
+    const isStatusVisible = !this.elements.statusChipContainer.classList.contains('hidden');
+    if (isStatusVisible) {
+      activeChipsCount++;
+      this.toggleAddFilterOption('status', false);
+    } else {
+      this.toggleAddFilterOption('status', true);
+    }
+
+    if (this.elements.addFilterBtn) {
+      if (activeChipsCount === 6) { // module, package, class, testCase, target, status
+        this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
+      } else {
+        this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
       }
+    }
   },
 
   updateViewModeUI() {
@@ -1088,109 +1390,113 @@ const TestReportApp = {
   },
 
   toggleAddFilterOption(type, show) {
-      if (!this.elements.addFilterList) return;
-      const option = this.elements.addFilterList.querySelector(`[data-filter-type="${type}"]`);
-      if (option) {
-          if (show) {
-              option.classList.remove('hidden');
-              option.style.display = '';
-          } else {
-              option.classList.add('hidden');
-              option.style.display = 'none';
-          }
+    if (!this.elements.addFilterList) return;
+    const option = this.elements.addFilterList.querySelector(`[data-filter-type="${type}"]`);
+    if (option) {
+      if (show) {
+        option.classList.remove('hidden');
+        option.style.display = '';
+      } else {
+        option.classList.add('hidden');
+        option.style.display = 'none';
       }
+    }
   },
 
   getDropdownConfigs() {
-      return [
-          { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
-          { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
-          { btn: this.elements.statusFilterBtn, dropdown: this.elements.statusFilterDropdown },
-          { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
-          { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
-          { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
-          { btn: this.elements.tcFilterBtn, dropdown: this.elements.tcFilterDropdown },
-          { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
-          { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
-      ];
+    return [
+      { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
+      { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
+      { btn: this.elements.statusFilterBtn, dropdown: this.elements.statusFilterDropdown },
+      { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
+      { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
+      { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
+      { btn: this.elements.tcFilterBtn, dropdown: this.elements.tcFilterDropdown },
+      { btn: this.elements.targetFilterBtn, dropdown: this.elements.targetFilterDropdown },
+      { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
+      { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
+    ];
   },
 
   toggleDropdown(dropdownToToggle, button) {
+    if (button && (button.disabled || button.classList.contains('unclickable') || button.getAttribute('aria-disabled') === 'true')) {
+      return;
+    }
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-        if (dropdown && dropdown !== dropdownToToggle) {
-            dropdown.classList.add('hidden');
-            if (btn) btn.setAttribute('aria-expanded', 'false');
-        }
+      if (dropdown && dropdown !== dropdownToToggle) {
+        dropdown.classList.add('hidden');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
     });
 
     if (dropdownToToggle) {
-        const isHidden = dropdownToToggle.classList.contains('hidden');
-        if (isHidden) {
-            dropdownToToggle.classList.remove('hidden');
-            if (button) button.setAttribute('aria-expanded', 'true');
+      const isHidden = dropdownToToggle.classList.contains('hidden');
+      if (isHidden) {
+        dropdownToToggle.classList.remove('hidden');
+        if (button) button.setAttribute('aria-expanded', 'true');
 
-            // Focus management
-            setTimeout(() => {
-                const searchInput = dropdownToToggle.querySelector('input');
-                if (searchInput) {
-                    searchInput.focus();
-                } else {
-                    const firstItem = dropdownToToggle.querySelector('button, [tabindex="0"], input');
-                    if (firstItem) firstItem.focus();
-                }
-            }, 0);
-        } else {
-            dropdownToToggle.classList.add('hidden');
-            if (button) {
-                button.setAttribute('aria-expanded', 'false');
-                button.focus();
-            }
+        // Focus management
+        setTimeout(() => {
+          const searchInput = dropdownToToggle.querySelector('input');
+          if (searchInput) {
+            searchInput.focus();
+          } else {
+            const firstItem = dropdownToToggle.querySelector('button, [tabindex="0"], input');
+            if (firstItem) firstItem.focus();
+          }
+        }, 0);
+      } else {
+        dropdownToToggle.classList.add('hidden');
+        if (button) {
+          button.setAttribute('aria-expanded', 'false');
+          button.focus();
         }
+      }
     }
   },
 
   closeAllDropdowns() {
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-        if (dropdown && !dropdown.classList.contains('hidden')) {
-            dropdown.classList.add('hidden');
-            if (btn) {
-                btn.setAttribute('aria-expanded', 'false');
-                btn.focus();
-            }
+      if (dropdown && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        if (btn) {
+          btn.setAttribute('aria-expanded', 'false');
+          btn.focus();
         }
+      }
     });
   },
 
   announce(message) {
-      const announcer = document.getElementById('a11y-announcer');
-      if (announcer) {
-          announcer.textContent = '';
-          if (this.announceTimeout) clearTimeout(this.announceTimeout);
-          // Small delay to ensure the DOM change is registered
-          this.announceTimeout = setTimeout(() => {
-              announcer.textContent = message;
-          }, 50);
-      }
+    const announcer = document.getElementById('a11y-announcer');
+    if (announcer) {
+      announcer.textContent = '';
+      if (this.announceTimeout) clearTimeout(this.announceTimeout);
+      // Small delay to ensure the DOM change is registered
+      this.announceTimeout = setTimeout(() => {
+        announcer.textContent = message;
+      }, 50);
+    }
   },
   closeDropdownsOnClickOutside() {
     document.addEventListener('click', (e) => {
       this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-          if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
-              dropdown.classList.add('hidden');
-              if (btn) btn.setAttribute('aria-expanded', 'false');
-          }
+        if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.add('hidden');
+          if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
       });
 
       // Search Input Collapse
       if (this.elements.searchWrapper && this.elements.searchRevealBtn) {
-          if (!this.elements.searchWrapper.contains(e.target) && !this.elements.searchRevealBtn.contains(e.target)) {
-              if (this.elements.searchInput && this.elements.searchInput.value === '') {
-                  this.elements.searchWrapper.classList.remove('expanded');
-                  setTimeout(() => {
-                      this.elements.searchRevealBtn.classList.remove('hidden');
-                  }, 300);
-              }
+        if (!this.elements.searchWrapper.contains(e.target) && !this.elements.searchRevealBtn.contains(e.target)) {
+          if (this.elements.searchInput && this.elements.searchInput.value === '') {
+            this.elements.searchWrapper.classList.remove('expanded');
+            setTimeout(() => {
+              this.elements.searchRevealBtn.classList.remove('hidden');
+            }, 300);
           }
+        }
       }
     });
   },
@@ -1199,28 +1505,31 @@ const TestReportApp = {
     if (this.state.viewMode !== 'flat') return;
 
     if (explicitType) {
-        const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases' };
-        if (viewMap[explicitType]) {
-            this.state.currentFlatView = viewMap[explicitType];
-        }
+      const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases', 'target': 'testCases' };
+      if (viewMap[explicitType]) {
+        this.state.currentFlatView = viewMap[explicitType];
+      }
     } else {
-        const { classes, packages, modules, testCases } = this.state.filters;
-        const activeChips = [];
-        if (!this.elements.tcChipContainer.classList.contains('hidden')) activeChips.push('testCase');
-        if (!this.elements.clsChipContainer.classList.contains('hidden')) activeChips.push('class');
-        if (!this.elements.pkgChipContainer.classList.contains('hidden')) activeChips.push('package');
-        if (!this.elements.modChipContainer.classList.contains('hidden')) activeChips.push('module');
+      const { classes, packages, modules, testCases, targets } = this.state.filters;
+      const activeChips = [];
+      if (!this.elements.tgtChipContainer.classList.contains('hidden')) activeChips.push('target');
+      if (!this.elements.tcChipContainer.classList.contains('hidden')) activeChips.push('testCase');
+      if (!this.elements.clsChipContainer.classList.contains('hidden')) activeChips.push('class');
+      if (!this.elements.pkgChipContainer.classList.contains('hidden')) activeChips.push('package');
+      if (!this.elements.modChipContainer.classList.contains('hidden')) activeChips.push('module');
 
-        if (testCases.length > 0 || activeChips.includes('testCase')) {
-            this.state.currentFlatView = 'testCases';
-        } else if (classes.length > 0 || activeChips.includes('class')) {
-            this.state.currentFlatView = 'classes';
-        } else if (packages.length > 0 || activeChips.includes('package')) {
-            this.state.currentFlatView = 'packages';
-        } else {
-            // Always fallback to modules if deeper hierarchies aren't active
-            this.state.currentFlatView = 'modules';
-        }
+      if (targets.length > 0 || activeChips.includes('target') || testCases.length > 0 || activeChips.includes('testCase')) {
+        this.state.currentFlatView = 'testCases';
+      } else if (classes.length > 0 || activeChips.includes('class')) {
+        this.state.currentFlatView = 'classes';
+      } else if (packages.length > 0 || activeChips.includes('package')) {
+        this.state.currentFlatView = 'packages';
+      } else if (modules.length > 0 || activeChips.includes('module')) {
+        this.state.currentFlatView = 'modules';
+      } else {
+        // Fallback to testCases if no hierarchy filters are active
+        this.state.currentFlatView = 'testCases';
+      }
     }
 
     // Reset drill-down context to avoid confusing states when grouping abruptly changes
@@ -1236,17 +1545,17 @@ const TestReportApp = {
   handleFlatRowClick(target) {
     const { name, type, moduleName, packageName } = target.dataset;
     if (type === 'module') {
-        this.state.selectedModule = name;
-        this.state.currentFlatView = 'packages';
+      this.state.selectedModule = name;
+      this.state.currentFlatView = 'packages';
     } else if (type === 'package') {
-        this.state.selectedModule = moduleName;
-        this.state.selectedPackage = name;
-        this.state.currentFlatView = 'classes';
+      this.state.selectedModule = moduleName;
+      this.state.selectedPackage = name;
+      this.state.currentFlatView = 'classes';
     } else if (type === 'class') {
-        this.state.selectedModule = moduleName;
-        this.state.selectedPackage = packageName;
-        this.state.selectedClass = name;
-        this.state.currentFlatView = 'testCases';
+      this.state.selectedModule = moduleName;
+      this.state.selectedPackage = packageName;
+      this.state.selectedClass = name;
+      this.state.currentFlatView = 'testCases';
     }
     this.render();
     Navigation.push();
@@ -1264,13 +1573,13 @@ const TestReportApp = {
       document.querySelectorAll(`[data-parent-id="${row.dataset.id}"]`).forEach(child => {
         child.classList.toggle('hidden', !isOpen);
         if (!isOpen) {
-            const childArrow = child.querySelector('.collapsible-arrow.open');
-            const childToggle = child.querySelector('[data-interactive="tree"]');
-            if (childArrow) {
-                childArrow.classList.remove('open');
-                if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
-                this.collapseDescendants(child);
-            }
+          const childArrow = child.querySelector('.collapsible-arrow.open');
+          const childToggle = child.querySelector('[data-interactive="tree"]');
+          if (childArrow) {
+            childArrow.classList.remove('open');
+            if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
+            this.collapseDescendants(child);
+          }
         }
       });
     }
@@ -1282,9 +1591,9 @@ const TestReportApp = {
       const childArrow = child.querySelector('.collapsible-arrow.open');
       const childToggle = child.querySelector('[data-interactive="tree"]');
       if (childArrow) {
-          childArrow.classList.remove('open');
-          if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
-          this.collapseDescendants(child);
+        childArrow.classList.remove('open');
+        if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
+        this.collapseDescendants(child);
       }
     });
   },
@@ -1298,11 +1607,11 @@ const TestReportApp = {
       if (!nodes) return [];
       const hasSearch = !!this.state.filters.search;
       const hasDropdownFilters = this.state.filters.modules.length > 0 ||
-                                 this.state.filters.packages.length > 0 ||
-                                 this.state.filters.classes.length > 0 ||
-                                 this.state.filters.testCases.length > 0;
-      const ALL_STATUSES = ['passed', 'failed', 'skipped'];
-      const hasStatusFilters = this.state.filters.status.length < ALL_STATUSES.length;
+        this.state.filters.packages.length > 0 ||
+        this.state.filters.classes.length > 0 ||
+        this.state.filters.testCases.length > 0 ||
+        (this.state.filters.targets && this.state.filters.targets.length > 0);
+      const hasStatusFilters = this.state.filters.status.length < ALL_TEST_STATUSES.length;
       const hasTestSuiteFilter = this.state.filters.testSuite !== 'all';
       const isFiltering = hasSearch || hasDropdownFilters || hasStatusFilters || hasTestSuiteFilter;
 
@@ -1312,6 +1621,7 @@ const TestReportApp = {
         if (type === 'package' && this.state.filters.packages.length > 0 && !this.state.filters.packages.includes(node.name)) return false;
         if (type === 'class' && this.state.filters.classes.length > 0 && !this.state.filters.classes.includes(node.name)) return false;
         if (type === 'testCase' && this.state.filters.testCases.length > 0 && !this.state.filters.testCases.includes(node.name)) return false;
+        if (type === 'target' && this.state.filters.targets && this.state.filters.targets.length > 0 && !this.state.filters.targets.includes(node.name)) return false;
 
         // Drill-down selection filters (Flat view only)
         if (this.state.viewMode === 'flat') {
@@ -1342,7 +1652,7 @@ const TestReportApp = {
         }
 
         // Test Suite Filter
-        if (hasTestSuiteFilter && type !== 'testCase') {
+        if (hasTestSuiteFilter && type !== 'testCase' && type !== 'target') {
           if (node.testSuiteSummaries) {
             const suiteMatch = node.testSuiteSummaries.find(ts => ts.name === this.state.filters.testSuite);
             if (!suiteMatch) return false;
@@ -1362,16 +1672,16 @@ const TestReportApp = {
             this.state.filters.variants.forEach(v => {
               const res = this.getVariantResultForTestCase(node, this.state.filters.testSuite, v);
               if (res) {
-                  if (res.status === 'fail') hasFail = true;
-                  if (res.status === 'pass') hasPass = true;
-                  if (res.status === 'skipped') hasSkipped = true;
+                if (res.status === TEST_STATUS.FAIL) hasFail = true;
+                if (res.status === TEST_STATUS.PASS) hasPass = true;
+                if (res.status === TEST_STATUS.SKIPPED) hasSkipped = true;
               }
             });
 
             matchesStatus = false;
-            if (hasPass && this.state.filters.status.includes('passed')) matchesStatus = true;
-            if (hasFail && this.state.filters.status.includes('failed')) matchesStatus = true;
-            if (hasSkipped && this.state.filters.status.includes('skipped')) matchesStatus = true;
+            if (hasPass && this.state.filters.status.includes(TEST_STATUS.PASSED)) matchesStatus = true;
+            if (hasFail && this.state.filters.status.includes(TEST_STATUS.FAILED)) matchesStatus = true;
+            if (hasSkipped && this.state.filters.status.includes(TEST_STATUS.SKIPPED)) matchesStatus = true;
 
             if (!matchesStatus) return false;
           }
@@ -1381,34 +1691,29 @@ const TestReportApp = {
         if (!isFiltering) return true;
 
         if (!this.getChildType(type)) { // Leaf node (testCase)
-            return hasSearch ? effectiveMatchesSearch : true;
+          return hasSearch ? effectiveMatchesSearch : true;
         }
 
         return effectiveMatchesSearch || hasVisibleChildren;
       });
     };
 
-    const sortNodes = (nodes) => {
+    const sortNodes = (nodes, type = 'module') => {
       if (!nodes) return;
-      nodes.sort((a, b) => {
-        const valA = a.name.toLowerCase();
-        const valB = b.name.toLowerCase();
-        if (valA < valB) return this.state.sort.order === 'asc' ? -1 : 1;
-        if (valA > valB) return this.state.sort.order === 'asc' ? 1 : -1;
-        return 0;
-      });
+      nodes.sort((a, b) => this.compareNodes(a, b));
 
-      nodes.forEach(node => {
-        const childKey = this.pluralize(this.getChildType(node.type));
-        let children = node[childKey] || (node.type === 'class' ? node.testCases : []);
-        if (children) sortNodes(children);
-      });
+      const childType = this.getChildType(type);
+      if (childType) {
+        const childKey = this.pluralize(childType);
+        nodes.forEach(node => {
+          let children = node[childKey] || (type === 'class' ? node.testCases : []);
+          if (children) sortNodes(children, childType);
+        });
+      }
     };
 
     finalData.modules = applyFilters(finalData.modules, 'module');
-    if (this.state.sort.by === 'name') {
-      sortNodes(finalData.modules);
-    }
+    sortNodes(finalData.modules, 'module');
 
     return finalData;
   },
@@ -1418,12 +1723,12 @@ const TestReportApp = {
     this.updateDynamicFilters();
 
     if (this.state.currentView === 'stack-trace') {
-        this.renderStackTraceGrid(this.state.currentTestCase);
+      this.renderStackTraceGrid(this.state.currentTestCase);
     } else {
-        const data = this.getFilteredAndSortedData();
-        this.renderTable(data);
-        this.updateGroupByText();
-        this.updateTooltipsForOverflow();
+      const data = this.getFilteredAndSortedData();
+      this.renderTable(data);
+      this.updateGroupByText();
+      this.updateTooltipsForOverflow();
     }
 
     const visibleItemsCount = this.elements.resultsData.querySelectorAll('tr.table-row:not(.hidden)').length;
@@ -1454,11 +1759,13 @@ const TestReportApp = {
     const packageOptions = [...new Set(basePackages.map(p => p.name))].sort().map(name => ({ name, value: name }));
     const classOptions = [...new Set(filteredPackages.flatMap(p => p.classes || []).map(c => c.name))].sort().map(name => ({ name, value: name }));
     const testCaseOptions = [...new Set(filteredClasses.flatMap(c => c.testCases || []).map(tc => tc.name))].sort().map(name => ({ name, value: name }));
+    const targetOptions = (this.processedData.targets || []).map(t => ({ name: t, value: t }));
 
     UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, (newArr) => {
       filters.packages = [];
       filters.classes = [];
       filters.testCases = [];
+      filters.targets = [];
       filters.modules = newArr;
       this.handleHeaderFilterChange('module');
       this.updateFilterButtons();
@@ -1469,6 +1776,7 @@ const TestReportApp = {
     UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, (newArr) => {
       filters.classes = [];
       filters.testCases = [];
+      filters.targets = [];
       filters.packages = newArr;
       this.handleHeaderFilterChange('package');
       this.updateFilterButtons();
@@ -1478,6 +1786,7 @@ const TestReportApp = {
 
     UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, (newArr) => {
       filters.testCases = [];
+      filters.targets = [];
       filters.classes = newArr;
       this.handleHeaderFilterChange('class');
       this.updateFilterButtons();
@@ -1486,8 +1795,17 @@ const TestReportApp = {
     });
 
     UIUtils.buildActionDropdown(this.elements.tcFilterDropdown, testCaseOptions, filters.testCases, (newArr) => {
+      filters.targets = [];
       filters.testCases = newArr;
       this.handleHeaderFilterChange('testCase');
+      this.updateFilterButtons();
+      this.render();
+      Navigation.push();
+    });
+
+    UIUtils.buildActionDropdown(this.elements.targetFilterDropdown, targetOptions, filters.targets, (newArr) => {
+      filters.targets = newArr;
+      this.handleHeaderFilterChange('target');
       this.updateFilterButtons();
       this.render();
       Navigation.push();
@@ -1497,27 +1815,27 @@ const TestReportApp = {
   updateGroupByText() {
     if (!this.elements.groupByText) return;
     const viewMap = {
-        'modules': 'Modules',
-        'packages': 'Packages',
-        'classes': 'Classes',
-        'testCases': 'Test Cases'
+      'modules': 'Modules',
+      'packages': 'Packages',
+      'classes': 'Classes',
+      'testCases': 'Test Cases'
     };
-    this.elements.groupByText.textContent = viewMap[this.state.currentFlatView] || 'Modules';
+    this.elements.groupByText.textContent = viewMap[this.state.currentFlatView] || 'Test Cases';
 
     if (this.elements.groupByDropdown) {
-        this.elements.groupByDropdown.querySelectorAll('.dropdown-item').forEach(item => {
-            if (item.dataset.value === this.state.currentFlatView) {
-                item.classList.add('active-popover-item');
-                item.setAttribute('aria-selected', 'true');
-            } else {
-                item.classList.remove('active-popover-item');
-                item.setAttribute('aria-selected', 'false');
-            }
-        });
+      this.elements.groupByDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+        if (item.dataset.value === this.state.currentFlatView) {
+          item.classList.add('active-popover-item');
+          item.setAttribute('aria-selected', 'true');
+        } else {
+          item.classList.remove('active-popover-item');
+          item.setAttribute('aria-selected', 'false');
+        }
+      });
     }
 
     if (this.elements.groupByBtn) {
-        this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
+      this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
     }
   },
 
@@ -1533,77 +1851,101 @@ const TestReportApp = {
 
   renderHeaders() {
     const variantsToShow = this.state.filters.variants;
-    const sortIndicator = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? '▲' : '▼') : '';
-    const getAriaSort = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
-    let nameHeader = this.state.viewMode === 'tree' ? 'Name' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1);
+    const sortIndicator = (key) => this.isSortActive(key) ? (this.state.sort.order === 'asc' ? '▲' : '▼') : '';
+    const getAriaSort = (key) => this.isSortActive(key) ? (this.state.sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
+    let nameHeader = this.state.viewMode === 'tree' ? 'Name' : (this.state.currentFlatView === 'testCases' ? 'Test Case' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1));
+    // Contextual info tooltip for the name column
+    const nameInfoKey = this.state.viewMode === 'tree'
+      ? 'col.project'
+      : ({ modules: 'col.modules', packages: 'col.packages', classes: 'col.classes', testCases: 'col.testCases' }[this.state.currentFlatView] || 'col.project');
 
     let pathHeader = '';
     let pathSubHeader = '';
     if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
       if (this.state.currentFlatView === 'classes' || this.state.currentFlatView === 'testCases') {
         const pathWidth = Math.round(this.state.columnWidths['path'] || 300);
-        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path"><span data-info-key="col.path">Path</span><div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
         pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
       } else if (this.state.currentFlatView === 'packages') {
         const moduleWidth = Math.round(this.state.columnWidths['module'] || 200);
-        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module"><span data-info-key="col.module">Module</span><div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
         pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
       }
+    }
+
+    let targetHeader = '';
+    let targetSubHeader = '';
+    if (this.state.viewMode === 'flat' && this.state.currentFlatView === 'testCases' && !this.hasOnlyDefaultTarget()) {
+      const targetWidth = Math.round(this.state.columnWidths['target'] || 150);
+      targetHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-target"><span data-info-key="col.target">Target</span><div class="resizer" data-resizer-id="target" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${targetWidth}"></div></th>`;
+      targetSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-target"></th>`;
     }
 
     const nameWidth = Math.round(this.state.columnWidths['name'] || 400);
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
-                <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>
+                <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}"><span data-info-key="${nameInfoKey}">${nameHeader}</span> ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>
+                ${targetHeader}
                 ${pathHeader}
                 ${variantsToShow.map(v => `<th scope="col" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
             </tr>
             <tr class="border-b border-gray-200">
                 <th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
+                ${targetSubHeader}
                 ${pathSubHeader}
-                ${variantsToShow.map(v => `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
+                ${variantsToShow.map(v => {
+                  const passKey = `${v}.pass`;
+                  const failKey = `${v}.fail`;
+                  const skipKey = `${v}.skip`;
+                  const rateKey = `${v}.rate`;
+                  const escV = UIUtils.escapeHTML(v);
+                  return `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${passKey}" aria-sort="${getAriaSort(passKey)}" aria-label="Sort by Pass for ${escV}"><span data-info-key="col.pass">Pass</span> ${sortIndicator(passKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${failKey}" aria-sort="${getAriaSort(failKey)}" aria-label="Sort by Fail for ${escV}"><span data-info-key="col.fail">Fail</span> ${sortIndicator(failKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${skipKey}" aria-sort="${getAriaSort(skipKey)}" aria-label="Sort by Skip for ${escV}"><span data-info-key="col.skip">Skip</span> ${sortIndicator(skipKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${rateKey}" aria-sort="${getAriaSort(rateKey)}" aria-label="Sort by Pass Rate for ${escV}"><span data-info-key="col.passRate">Pass Rate</span> ${sortIndicator(rateKey)}</th>`;
+                }).join('')}
             </tr>`;
   },
 
   renderBreadcrumbs() {
     if (this.state.viewMode !== 'flat') {
-        this.elements.breadcrumbs.innerHTML = '';
-        return;
+      this.elements.breadcrumbs.innerHTML = '';
+      return;
     }
     const { selectedModule, selectedPackage, selectedClass } = this.state;
     let html = '';
 
     // "Project" is the root link
     if (selectedModule) {
-        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
+      html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
     } else {
-        html += `<span class="breadcrumb-current">Project</span>`;
+      html += `<span class="breadcrumb-current">Project</span>`;
     }
 
     // Module level
     if (selectedModule) {
-        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
-        if (selectedPackage) {
-            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" aria-label="Go back to module: ${UIUtils.escapeHTML(selectedModule)}">${UIUtils.escapeHTML(selectedModule)}</a>`;
-        } else {
-            html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedModule)}</span>`;
-        }
+      html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
+      if (selectedPackage) {
+        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" aria-label="Go back to module: ${UIUtils.escapeHTML(selectedModule)}">${UIUtils.escapeHTML(selectedModule)}</a>`;
+      } else {
+        html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedModule)}</span>`;
+      }
     }
 
     // Package level
     if (selectedPackage) {
-        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
-        if (selectedClass) {
-            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" aria-label="Go back to package: ${UIUtils.escapeHTML(selectedPackage)}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
-        } else {
-            html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedPackage)}</span>`;
-        }
+      html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
+      if (selectedClass) {
+        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" aria-label="Go back to package: ${UIUtils.escapeHTML(selectedPackage)}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
+      } else {
+        html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedPackage)}</span>`;
+      }
     }
 
     // Class level
     if (selectedClass) {
-        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
-        html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedClass)}</span>`;
+      html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
+      html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedClass)}</span>`;
     }
 
     this.elements.breadcrumbs.innerHTML = html;
@@ -1617,6 +1959,7 @@ const TestReportApp = {
       if (type === 'module') currentContext.moduleName = node.name;
       if (type === 'package') currentContext.packageName = node.name;
       if (type === 'class') currentContext.className = node.name;
+      if (type === 'testCase') currentContext.testCaseName = node.name;
 
       const childType = this.getChildType(type);
       const childKey = this.pluralize(childType);
@@ -1625,8 +1968,16 @@ const TestReportApp = {
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
       let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
-      if (type === 'testCase' && this.hasVisibleFailures(node)) {
-          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View stack trace for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
+      if (type === 'class') {
+        nameContent += this.getClassSuiteBadges(node);
+      } else if (type === 'testCase') {
+        if (this.hasOnlyDefaultTarget() && this.isTestCaseClickable(node)) {
+          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
+        } else {
+          nameContent = `<span class="font-medium text-gray-800">${UIUtils.escapeHTML(node.name)}</span>`;
+        }
+      } else if (type === 'target' && this.isTestCaseClickable(node)) {
+        nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(currentContext.testCaseName || '')}" data-target="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
       }
 
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
@@ -1659,49 +2010,92 @@ const TestReportApp = {
     let items = [];
     const view = this.state.currentFlatView;
     if (data.modules) {
-        if (view === 'modules') items = data.modules.map(i => ({ ...i, type: 'module' }));
-        else if (view === 'packages') items = data.modules.flatMap(m => m.packages.map(i => ({ ...i, parent: m.name, moduleName: m.name, type: 'package' })));
-        else if (view === 'classes') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name, moduleName: m.name, packageName: p.name, type: 'class' }))));
-        else if (view === 'testCases') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.flatMap(c => c.testCases.map(i => ({ ...i, parent: c.name, moduleName: m.name, packageName: p.name, className: c.name, type: 'testCase' })))));
+      if (view === 'modules') items = data.modules.map(i => ({ ...i, type: 'module' }));
+      else if (view === 'packages') items = data.modules.flatMap(m => m.packages.map(i => ({ ...i, parent: m.name, moduleName: m.name, type: 'package' })));
+      else if (view === 'classes') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name, moduleName: m.name, packageName: p.name, type: 'class' }))));
+      else if (view === 'testCases') {
+        items = data.modules.flatMap(m =>
+          m.packages.flatMap(p =>
+            p.classes.flatMap(c =>
+              c.testCases.flatMap(tc => {
+                if (tc.targets && tc.targets.length > 0 && !this.hasOnlyDefaultTarget()) {
+                  return tc.targets.map(tgt => ({
+                    ...tc,
+                    parent: c.name,
+                    moduleName: m.name,
+                    packageName: p.name,
+                    className: c.name,
+                    type: 'testCase',
+                    target: tgt
+                  }));
+                } else {
+                  return [{
+                    ...tc,
+                    parent: c.name,
+                    moduleName: m.name,
+                    packageName: p.name,
+                    className: c.name,
+                    type: 'testCase'
+                  }];
+                }
+              })
+            )
+          )
+        );
+      }
     }
 
-    this.elements.resultsData.innerHTML = items.map(item => {
-        let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
-        if (item.type !== 'testCase') {
-            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
-        } else if (this.hasVisibleFailures(item)) {
-            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View stack trace for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
-        }
+    items.sort((a, b) => this.compareNodes(a, b));
 
-        let pathCell = '';
-        if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
-            if (view === 'packages') {
-                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${UIUtils.escapeHTML(item.moduleName)}">${UIUtils.escapeHTML(item.moduleName)}</td>`;
-            } else if (view === 'classes') {
-                pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)}">
+    this.elements.resultsData.innerHTML = items.map(item => {
+      let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+      if (item.type !== 'testCase') {
+        const suiteBadges = (item.type === 'class') ? this.getClassSuiteBadges(item) : '';
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}${suiteBadges}</td>`;
+      } else if (this.isTestCaseClickable(item)) {
+        const targetAttr = item.target ? `data-target="${UIUtils.escapeHTML(item.target.name)}"` : '';
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" ${targetAttr} tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+      } else {
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-gray-800" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+      }
+
+      let targetCell = '';
+      if (this.state.viewMode === 'flat' && view === 'testCases' && !this.hasOnlyDefaultTarget()) {
+        const targetName = item.target ? item.target.name : '-';
+        targetCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-target" title="${UIUtils.escapeHTML(targetName)}">${UIUtils.escapeHTML(targetName)}</td>`;
+      }
+
+      let pathCell = '';
+      if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
+        if (view === 'packages') {
+          pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${UIUtils.escapeHTML(item.moduleName)}">${UIUtils.escapeHTML(item.moduleName)}</td>`;
+        } else if (view === 'classes') {
+          pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                         <span class="text-xs text-gray-500 truncate-block">${UIUtils.escapeHTML(item.moduleName)}</span>
                         <span class="text-sm text-gray-500 truncate-block">${UIUtils.escapeHTML(item.packageName)}</span>
                     </div>
                 </td>`;
-            } else if (view === 'testCases') {
-                pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)} > ${UIUtils.escapeHTML(item.className)}">
+        } else if (view === 'testCases') {
+          pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)} > ${UIUtils.escapeHTML(item.className)}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                         <span class="text-xs text-gray-500 truncate-block">${UIUtils.escapeHTML(item.moduleName)}</span>
                         <span class="text-sm text-gray-500 truncate-block">${UIUtils.escapeHTML(item.packageName)} > ${UIUtils.escapeHTML(item.className)}</span>
                     </div>
                 </td>`;
-            }
         }
+      }
 
-        const context = {
-            moduleName: item.moduleName,
-            packageName: item.packageName,
-            className: item.className
-        };
+      const context = {
+        moduleName: item.moduleName,
+        packageName: item.packageName,
+        className: item.className,
+        targetName: item.target ? item.target.name : undefined
+      };
 
-        return `<tr class="table-row">
+      return `<tr class="table-row">
             ${nameTd}
+            ${targetCell}
             ${pathCell}
             ${this._renderStatusCell(item, context)}
         </tr>`;
@@ -1742,40 +2136,78 @@ const TestReportApp = {
   // --- HELPERS ---
 
   getVariantResultForTestCase(testCase, suiteName, variantName) {
-      if (!testCase.testSuiteResults) return null;
-      let suitesToSearch = [];
-      if (suiteName === 'all') {
-          suitesToSearch = testCase.testSuiteResults;
-      } else {
-          const specific = testCase.testSuiteResults.find(ts => ts.testSuiteName === suiteName);
-          if (specific) suitesToSearch = [specific];
-      }
+    const testSuiteResults = (testCase.target ? testCase.target.testSuiteResults : null) ||
+                            ((testCase.targets && testCase.targets[0]) ? testCase.targets[0].testSuiteResults : null) ||
+                            testCase.testSuiteResults;
+    if (!testSuiteResults) return null;
+    let suitesToSearch = [];
+    if (suiteName === 'all') {
+      suitesToSearch = testSuiteResults;
+    } else {
+      const specific = testSuiteResults.find(ts => ts.testSuiteName === suiteName);
+      if (specific) suitesToSearch = [specific];
+    }
 
-      // Priority: Fail > Pass > Skipped
-      let finalRes = null;
-      for (const suite of suitesToSearch) {
-          const res = suite.variantResults[variantName];
-          if (res) {
-              if (res.status === 'fail') return res;
-              if (res.status === 'pass') finalRes = res;
-              if (res.status === 'skipped' && !finalRes) finalRes = res;
-          }
+    // Priority: Fail > Pass > Skipped
+    let finalRes = null;
+    for (const suite of suitesToSearch) {
+      const res = suite.variantResults[variantName];
+      if (res) {
+        if (res.status === TEST_STATUS.FAIL) return res;
+        if (res.status === TEST_STATUS.PASS) finalRes = res;
+        if (res.status === TEST_STATUS.SKIPPED && !finalRes) finalRes = res;
       }
-      return finalRes;
+    }
+    return finalRes;
   },
 
   hasVisibleFailures(node) {
-    if (!node || node.type !== 'testCase') return false;
+    if (!node) return false;
     const activeSuite = this.state.filters.testSuite;
     const activeVariants = this.state.filters.variants;
 
-    return (node.commonStackTraces || []).some(group => {
-        for (const [suite, variants] of Object.entries(group.occurrences)) {
-            if (activeSuite !== 'all' && suite !== activeSuite) continue;
-            if (variants.some(v => activeVariants.includes(v))) return true;
-        }
-        return false;
+    const targetNode = node.type === 'target' ? node : (node.target ? node.target : ((node.targets && node.targets[0]) ? node.targets[0] : null));
+    const commonStackTraces = targetNode ? targetNode.commonStackTraces : (node.commonStackTraces || []);
+
+    return (commonStackTraces || []).some(group => {
+      for (const [suite, variants] of Object.entries(group.occurrences)) {
+        if (activeSuite !== 'all' && suite !== activeSuite) continue;
+        if (variants.some(v => activeVariants.includes(v))) return true;
+      }
+      return false;
     });
+  },
+
+  isTestCaseClickable(node) {
+    if (!node) return false;
+    const screenshotItems = this.getScreenshotData(node);
+    if (screenshotItems && screenshotItems.length > 0) return true;
+    return this.hasVisibleFailures(node);
+  },
+
+  getClassSuiteBadges(node) {
+    if (!node) return '';
+    if (node._suiteBadges !== undefined) return node._suiteBadges;
+
+    const summaries = node.target ? node.target.testSuiteSummaries : ((node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries);
+    if (!summaries || summaries.length === 0) {
+      node._suiteBadges = '';
+      return '';
+    }
+
+    const suiteNames = summaries
+      .map(ts => ts.name)
+      .filter(name => name && name !== AGGREGATED_SUITE_NAME);
+
+    if (suiteNames.length === 0) {
+      node._suiteBadges = '';
+      return '';
+    }
+
+    node._suiteBadges = suiteNames
+      .map(name => `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem;">${UIUtils.escapeHTML(UIUtils.formatSuiteName(name))}</span>`)
+      .join('');
+    return node._suiteBadges;
   },
 
   _renderStatusCell(node, context = {}) {
@@ -1787,32 +2219,34 @@ const TestReportApp = {
 
     const suiteFilter = this.state.filters.testSuite;
 
+    const testSuiteSummaries = node.target ? node.target.testSuiteSummaries : ((node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries);
+
     return `${variantsToShow.map(v => {
-        let variantSummary = null;
-        if (suiteFilter === 'all') {
-            const aggregatedSuite = node.testSuiteSummaries.find(ts => ts.name === 'Aggregated');
-            if (aggregatedSuite) {
-                variantSummary = aggregatedSuite.variantSummaries.find(vs => vs.name === v);
-            }
-        } else {
-            const suiteSummary = node.testSuiteSummaries.find(ts => ts.name === suiteFilter);
-            if (suiteSummary) {
-                variantSummary = suiteSummary.variantSummaries.find(vs => vs.name === v);
-            }
+      let variantSummary = null;
+      if (suiteFilter === 'all') {
+        const aggregatedSuite = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === AGGREGATED_SUITE_NAME) : null;
+        if (aggregatedSuite) {
+          variantSummary = aggregatedSuite.variantSummaries.find(vs => vs.name === v);
         }
+      } else {
+        const suiteSummary = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === suiteFilter) : null;
+        if (suiteSummary) {
+          variantSummary = suiteSummary.variantSummaries.find(vs => vs.name === v);
+        }
+      }
 
-        if (!variantSummary || variantSummary.total === 0) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
+      if (!variantSummary || variantSummary.total === 0) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
 
-        const { passed, failed, skipped, rate } = variantSummary;
-        const relevantTotal = passed + failed;
-        const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
+      const { passed, failed, skipped, rate } = variantSummary;
+      const relevantTotal = passed + failed;
+      const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
 
-        const filter = this.state.filters.status;
-        const showPassed = filter.includes('passed');
-        const showFailed = filter.includes('failed');
-        const showSkipped = filter.includes('skipped');
+      const filter = this.state.filters.status;
+      const showPassed = filter.includes(TEST_STATUS.PASSED);
+      const showFailed = filter.includes(TEST_STATUS.FAILED);
+      const showSkipped = filter.includes(TEST_STATUS.SKIPPED);
 
-        return `
+      return `
             <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200" aria-label="${showPassed ? passed : '-'} passed tests for ${UIUtils.escapeHTML(v)}">${showPassed ? passed : '-'}</td>
             <td class="py-3 px-4 text-center ${showFailed && failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500'} border-l border-gray-200" aria-label="${showFailed ? failed : '-'} failed tests for ${UIUtils.escapeHTML(v)}">${showFailed ? failed : '-'}</td>
             <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}" aria-label="${showSkipped ? skipped : '-'} skipped tests for ${UIUtils.escapeHTML(v)}">${showSkipped ? skipped : '-'}</td>
@@ -1826,32 +2260,58 @@ const TestReportApp = {
   },
 
   openStackTrace(element) {
-    const { module, package: pkg, class: clz, testCase: tcName } = element.dataset;
+    const { module, package: pkg, class: clz, testCase: tcName, target: tgtName } = element.dataset;
+    if (!tcName) return;
 
-    // Find the test case object in the processed data
-    const findTestCase = (nodes) => {
-        for (const m of nodes) {
-            if (m.name === module) {
-                for (const p of m.packages) {
-                    if (p.name === pkg) {
-                        for (const c of p.classes) {
-                            if (c.name === clz) {
-                                return c.testCases.find(t => t.name === tcName);
-                            }
-                        }
-                    }
+    let res = null;
+
+    if (this.testCaseIndex) {
+      // 1. Try exact fully-qualified key lookup O(1)
+      const exactKey = `${module}:${pkg}:${clz}:${tcName}`;
+      res = this.testCaseIndex.get(exactKey);
+
+      // 2. Fallback to case-insensitive testCase name lookup O(1)
+      if (!res) {
+        res = this.testCaseIndex.get((tcName || '').toLowerCase());
+      }
+    }
+
+    // 3. Fallback to direct search if index is still populating in background
+    if (!res && this.processedData?.modules) {
+      for (const m of this.processedData.modules) {
+        if (!module || m.name === module) {
+          for (const p of (m.packages || [])) {
+            if (!pkg || p.name === pkg) {
+              for (const c of (p.classes || [])) {
+                if (!clz || c.name === clz) {
+                  const t = (c.testCases || []).find(tc => tc.name === tcName || tc.name.toLowerCase() === (tcName || '').toLowerCase());
+                  if (t) {
+                    res = { testCase: t, moduleName: m.name, packageName: p.name, className: c.name };
+                    break;
+                  }
                 }
+              }
             }
+          }
         }
-        return null;
-    };
+      }
+    }
 
-    const testCase = findTestCase(this.processedData.modules);
-    if (testCase) {
-        this.activeTrigger = element;
-        const context = { moduleName: module, packageName: pkg, className: clz, testCaseName: tcName };
-        this.showStackTraceView(testCase, context);
-        Navigation.push();
+    if (res) {
+      this.activeTrigger = element;
+      const testCaseClone = { ...res.testCase };
+      if (tgtName && testCaseClone.targets) {
+        testCaseClone.target = testCaseClone.targets.find(t => t.name === tgtName);
+      }
+      const context = {
+        moduleName: module || res.moduleName,
+        packageName: pkg || res.packageName,
+        className: clz || res.className,
+        testCaseName: tcName,
+        targetName: tgtName
+      };
+      this.showStackTraceView(testCaseClone, context);
+      Navigation.push();
     }
   },
 
@@ -1865,106 +2325,856 @@ const TestReportApp = {
     this.elements.reportView.classList.add('hidden-view');
     this.elements.stackTraceView.classList.remove('hidden-view');
     if (this.elements.filterControlsGroup) {
-        this.elements.filterControlsGroup.classList.add('hidden');
+      this.elements.filterControlsGroup.classList.add('hidden');
     }
     if (this.elements.searchContainer) this.elements.searchContainer.classList.add('hidden');
     if (this.elements.viewSegments) this.elements.viewSegments.classList.add('hidden');
     if (this.elements.densitySegments) this.elements.densitySegments.classList.add('hidden');
 
-    this.renderStackTraceGrid(testCase);
+    this.renderStackTraceGrid(testCase, context);
     this.renderStackTraceBreadcrumbs(context);
     window.scrollTo(0, 0);
   },
 
-  renderStackTraceGrid(testCase) {
+  renderStackTraceGrid(testCase, context = {}) {
     const grid = this.elements.stackTraceGrid;
     grid.innerHTML = "";
 
     const activeSuite = this.state.filters.testSuite;
     const activeVariants = this.state.filters.variants;
 
+    const screenshotItems = this.getScreenshotData(testCase);
+    if (screenshotItems.length > 0) {
+      this.renderScreenshotTestView(grid, testCase, screenshotItems, context);
+      return;
+    }
+
+    // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
+    // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
+    const commonStackTraces = testCase.target ? testCase.target.commonStackTraces : (((testCase.targets && testCase.targets[0]) ? testCase.targets[0].commonStackTraces : testCase.commonStackTraces));
+
     // Filter groups and their internal occurrences based on active filters
-    const filteredGroups = (testCase.commonStackTraces || []).map(group => {
-        const filteredOccurrences = {};
-        let hasMatch = false;
+    const filteredGroups = (commonStackTraces || []).map(group => {
+      const filteredOccurrences = {};
+      let hasMatch = false;
 
-        for (const [suite, variants] of Object.entries(group.occurrences)) {
-            if (activeSuite !== 'all' && suite !== activeSuite) continue;
+      for (const [suite, variants] of Object.entries(group.occurrences)) {
+        if (activeSuite !== 'all' && suite !== activeSuite) continue;
 
-            const matchedVariants = variants.filter(v => activeVariants.includes(v));
-            if (matchedVariants.length > 0) {
-                filteredOccurrences[suite] = matchedVariants;
-                hasMatch = true;
-            }
+        const matchedVariants = variants.filter(v => activeVariants.includes(v));
+        if (matchedVariants.length > 0) {
+          filteredOccurrences[suite] = matchedVariants;
+          hasMatch = true;
         }
+      }
 
-        return hasMatch ? { ...group, filteredOccurrences } : null;
+      return hasMatch ? { ...group, filteredOccurrences } : null;
     }).filter(g => g !== null);
 
     if (filteredGroups.length === 0) {
-        grid.innerHTML = '<div class="p-8 text-center text-gray-500 w-full">No stack trace available for the selected filters.</div>';
-        return;
+      grid.innerHTML = '<div class="p-8 text-center text-gray-500 w-full">No stack trace available for the selected filters.</div>';
+      return;
     }
 
     const isMultiView = filteredGroups.length > 1;
 
     filteredGroups.forEach((group, index) => {
-        const viewId = `st-view-${index}`;
-        const titleId = `st-title-${index}`;
+      const viewId = `st-view-${index}`;
+      const titleId = `st-title-${index}`;
 
-        const variantView = document.createElement("div");
-        variantView.className = "variant-code-view";
-        variantView.id = viewId;
-        if (isMultiView) {
-            variantView.classList.add("multi-view");
-        }
+      const variantView = document.createElement("div");
+      variantView.className = "variant-code-view";
+      variantView.id = viewId;
+      if (isMultiView) {
+        variantView.classList.add("multi-view");
+      }
 
-        const header = document.createElement("div");
-        header.className = "variant-header";
+      const header = document.createElement("div");
+      header.className = "variant-header";
 
-        const titleDiv = document.createElement("div");
-        titleDiv.className = "flex items-center gap-2";
-        titleDiv.innerHTML = `
-            <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <h2 class="text-sm font-semibold text-gray-900" id="${titleId}">Stack Trace</h2>
-        `;
-        header.appendChild(titleDiv);
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "flex items-center gap-2 flex-wrap";
+      titleDiv.id = titleId;
 
-        const occurrencesDiv = document.createElement("div");
-        occurrencesDiv.className = "flex flex-wrap gap-1 mt-2";
+      for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
+        const tag = document.createElement("span");
+        tag.className = "occurrence-tag";
+        tag.textContent = `${UIUtils.formatSuiteName(suite)} (${variants.join(", ")})`;
+        titleDiv.appendChild(tag);
+      }
+      header.appendChild(titleDiv);
+      variantView.appendChild(header);
 
-        for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
-            const tag = document.createElement("span");
-            tag.className = "occurrence-tag";
-            tag.textContent = `${suite} (${variants.join(", ")})`;
-            occurrencesDiv.appendChild(tag);
-        }
-        header.appendChild(occurrencesDiv);
-        variantView.appendChild(header);
+      const container = document.createElement("div");
+      container.className = "code-container";
+      container.setAttribute("tabindex", "0");
+      container.setAttribute("aria-labelledby", titleId);
 
-        const container = document.createElement("div");
-        container.className = "code-container";
-        container.setAttribute("tabindex", "0");
-        container.setAttribute("aria-labelledby", titleId);
+      const pre = document.createElement("pre");
+      pre.className = "stack-trace-pre font-mono text-sm text-red-800 whitespace-pre-wrap break-all";
+      pre.textContent = group.stackTrace || "";
+      container.appendChild(pre);
 
-        const pre = document.createElement("pre");
-        pre.className = "font-mono text-sm text-red-600 whitespace-pre-wrap break-all";
-        pre.textContent = group.stackTrace;
-        container.appendChild(pre);
-
-        variantView.appendChild(container);
-        grid.appendChild(variantView);
+      variantView.appendChild(container);
+      grid.appendChild(variantView);
     });
 
     // Auto-focus the first stack trace for keyboard users
     const firstContainer = grid.querySelector('.code-container');
     if (firstContainer) {
-        setTimeout(() => firstContainer.focus(), 100);
+      setTimeout(() => firstContainer.focus(), 100);
     }
+  },
+
+
+  getScreenshotData(testCase) {
+    const items = [];
+    const targets = testCase.target ? [testCase.target] : (testCase.targets || [testCase]);
+
+    targets.forEach(target => {
+      const results = target.testSuiteResults || [];
+      results.forEach(suiteResult => {
+        const suiteName = suiteResult.testSuiteName || "screenshotTest";
+        const variantResults = suiteResult.variantResults || {};
+
+        for (const [variantName, res] of Object.entries(variantResults)) {
+          if (res.refImagePath || res.newImagePath || res.diffImagePath || res.previewName) {
+            let stackTrace = "";
+            const commonStackTraces = target.commonStackTraces || testCase.commonStackTraces || [];
+            if (res.stackTraceId) {
+              const match = commonStackTraces.find(st => st.id === res.stackTraceId);
+              if (match) stackTrace = match.stackTrace;
+            }
+            if (!stackTrace && commonStackTraces.length > 0) {
+              stackTrace = commonStackTraces[0].stackTrace;
+            }
+
+            items.push({
+              targetName: target.name || "",
+              suiteName: suiteName,
+              variantName: variantName,
+              status: res.status || "pass",
+              previewName: res.previewName || testCase.name,
+              methodName: res.methodName || testCase.name,
+              refImagePath: res.refImagePath || "",
+              newImagePath: res.newImagePath || "",
+              diffImagePath: res.diffImagePath || "",
+              stackTrace: stackTrace
+            });
+          }
+        }
+      });
+    });
+    return items;
+  },
+
+  resolveImagePath(imagePath) {
+    if (!imagePath) return '';
+    let cleanPath = imagePath.replace(/\\/g, '/');
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://') || cleanPath.startsWith('data:') || cleanPath.startsWith('file://')) {
+      return cleanPath;
+    }
+    if (cleanPath.startsWith('file:/')) {
+      return 'file:///' + cleanPath.slice(6).replace(/^\/+/, '');
+    }
+    if (cleanPath.startsWith('./')) {
+      cleanPath = cleanPath.slice(2);
+    }
+
+    // Windows absolute path: e.g. C:/path/to/image.png
+    if (/^[a-zA-Z]:\//.test(cleanPath)) {
+      return 'file:///' + cleanPath;
+    }
+
+    // Unix absolute path: e.g. /path/to/image.png
+    if (cleanPath.startsWith('/')) {
+      return cleanPath.startsWith('//') ? 'file:' + cleanPath : 'file://' + cleanPath;
+    }
+
+    const relRoot = (this.state && this.state.relativeRootDir != null)
+      ? this.state.relativeRootDir
+      : (typeof TEST_DATA_SOURCE !== 'undefined' && TEST_DATA_SOURCE && TEST_DATA_SOURCE.relativeRootDir != null
+          ? TEST_DATA_SOURCE.relativeRootDir
+          : null);
+
+    if (typeof relRoot === 'string') {
+      const prefix = relRoot ? (relRoot.endsWith('/') ? relRoot : relRoot + '/') : '';
+      return prefix + cleanPath;
+    }
+
+    return '../../../../../' + cleanPath;
+  },
+
+  hasValidImagePath(imagePath) {
+    if (!imagePath || typeof imagePath !== 'string') return false;
+    const lower = imagePath.trim().toLowerCase();
+    if (lower === 'no diff' || lower === 'images match' || lower === 'no diff (passed)' || lower === 'none' || lower === 'n/a') return false;
+    if (lower.startsWith('data:image/')) return true;
+    const cleanForExt = lower.split('?')[0].split('#')[0];
+    return cleanForExt.endsWith('.png') || cleanForExt.endsWith('.jpg') || cleanForExt.endsWith('.jpeg') || cleanForExt.endsWith('.webp') || cleanForExt.endsWith('.svg');
+  },
+
+  /**
+   * Resolves the parent class node and module/package metadata for a given test case.
+   *
+   * Frequency & Performance Rationale:
+   * - This method is NOT called during bulk report table rendering, so it will NOT hang page rendering.
+   * - It is only called on-demand when a user clicks to view/switch stack traces or screenshot details.
+   * - It uses `this.testCaseIndex` (an O(1) Map built asynchronously on load) as the primary lookup path.
+   * - The linear scan below is purely a fallback in case the index is still populating in the background.
+   */
+  getClassForTestCase(testCase, context = {}) {
+    if (!testCase) return null;
+    const { moduleName, packageName, className } = context;
+
+    // 1. Primary Path: Fast O(1) Map lookup
+    if (this.testCaseIndex && testCase.name) {
+      const exactKey = `${moduleName}:${packageName}:${className}:${testCase.name}`;
+      let res = this.testCaseIndex.get(exactKey);
+      if (!res) {
+        res = this.testCaseIndex.get((testCase.name || '').toLowerCase());
+        if (res) {
+          if (moduleName && res.moduleName !== moduleName) res = null;
+          if (packageName && res.packageName !== packageName) res = null;
+          if (className && res.className !== className) res = null;
+        }
+      }
+      if (res?.classNode) {
+        return { moduleName: res.moduleName, packageName: res.packageName, className: res.className, classNode: res.classNode };
+      }
+    }
+
+    if (!this.processedData?.modules) return null;
+
+    // 2. Fallback Path: Linear scan used only if background index is still building or missing entry
+    for (const m of this.processedData.modules) {
+      if (moduleName && m.name !== moduleName) continue;
+      for (const p of (m.packages || [])) {
+        if (packageName && p.name !== packageName) continue;
+        for (const c of (p.classes || [])) {
+          if (className && c.name !== className) continue;
+          if ((c.testCases || []).some(tc => tc.name === testCase.name || tc === testCase)) {
+            return { moduleName: m.name, packageName: p.name, className: c.name, classNode: c };
+          }
+        }
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Finds a test case entry by module, package, class, and test case name.
+   *
+   * Frequency & Performance Rationale:
+   * - Only invoked on single-item user click events (e.g. sidebar switching).
+   * - Uses `this.testCaseIndex` Map for O(1) lookup.
+   * - Linear scan is only a fallback for when background indexing is incomplete.
+   */
+  findTestCase(moduleName, packageName, className, testCaseName) {
+    // 1. Primary Path: Fast O(1) Map lookup
+    if (this.testCaseIndex) {
+      const exactKey = `${moduleName}:${packageName}:${className}:${testCaseName}`;
+      const res = this.testCaseIndex.get(exactKey);
+      if (res) return res;
+    }
+    // 2. Fallback Path: Linear scan used only if background index is still building
+    if (this.processedData?.modules) {
+      for (const m of this.processedData.modules) {
+        if (!moduleName || m.name === moduleName) {
+          for (const p of (m.packages || [])) {
+            if (!packageName || p.name === packageName) {
+              for (const c of (p.classes || [])) {
+                if (!className || c.name === className) {
+                  const tc = (c.testCases || []).find(t => t.name === testCaseName);
+                  if (tc) return { testCase: tc, moduleName: m.name, packageName: p.name, className: c.name };
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
+  },
+
+  getTestCaseOverallStatus(testCase) {
+    if (!testCase) return TEST_STATUS.PASS;
+    const targets = testCase.target ? [testCase.target] : (testCase.targets || [testCase]);
+    let hasFail = false;
+    let hasPass = false;
+
+    targets.forEach(t => {
+      const results = t.testSuiteResults || [];
+      results.forEach(sr => {
+        for (const res of Object.values(sr.variantResults || {})) {
+          if (res.status === TEST_STATUS.FAIL) hasFail = true;
+          if (res.status === TEST_STATUS.PASS) hasPass = true;
+        }
+      });
+    });
+
+    if (hasFail) return TEST_STATUS.FAIL;
+    if (hasPass) return TEST_STATUS.PASS;
+    return TEST_STATUS.SKIPPED;
+  },
+
+  filterSidebarTestCases(inputElement) {
+    const query = (inputElement.value || '').toLowerCase();
+    const list = inputElement.closest('.screenshot-sidebar').querySelectorAll('.sidebar-test-item');
+    list.forEach(item => {
+      const name = (item.dataset.testCase || '').toLowerCase();
+      item.style.display = name.includes(query) ? 'flex' : 'none';
+    });
+  },
+
+  switchScreenshotTestCase(clickedElement) {
+    const { module, package: pkg, class: clz, testCase: tcName } = clickedElement.dataset;
+    if (!tcName) return;
+
+    const sidebar = clickedElement.closest('.screenshot-sidebar');
+    if (sidebar) {
+      sidebar.querySelectorAll('.sidebar-test-item').forEach(el => el.classList.remove('active'));
+      clickedElement.classList.add('active');
+    }
+
+    const testCaseEntry = this.findTestCase(module, pkg, clz, tcName);
+    if (!testCaseEntry) return;
+
+    const mainContent = clickedElement.closest('.screenshot-layout').querySelector('.screenshot-main-content');
+    if (mainContent) {
+      const activeVariants = this.state.filters.variants || [];
+      const screenshotItems = this.getScreenshotData(testCaseEntry.testCase);
+      let item = screenshotItems.find(i => activeVariants.includes(i.variantName)) || screenshotItems[0];
+      if (item) {
+        this.renderScreenshotMainContent(mainContent, testCaseEntry.testCase, item);
+      }
+    }
+
+    const updatedContext = {
+      moduleName: testCaseEntry.moduleName || module || '',
+      packageName: testCaseEntry.packageName || pkg || '',
+      className: testCaseEntry.className || clz || '',
+      testCaseName: testCaseEntry.testCase?.name || tcName
+    };
+
+    this.state.currentTestCase = testCaseEntry.testCase;
+    this.state.currentStackTraceContext = updatedContext;
+    this.renderStackTraceBreadcrumbs(updatedContext);
+    this.announce(`Showing screenshot test case: ${updatedContext.testCaseName}`);
+    document.title = `Stack Trace: ${updatedContext.testCaseName} - ${this.baseTitle}`;
+  },
+
+  renderScreenshotTestView(container, testCase, screenshotItems, context = {}) {
+    const activeVariants = this.state.filters.variants || [];
+    let item = screenshotItems.find(i => activeVariants.includes(i.variantName)) || screenshotItems[0];
+
+    const classInfo = this.getClassForTestCase(testCase, context) || {};
+    const moduleName = context.moduleName || classInfo.moduleName || '';
+    const packageName = context.packageName || classInfo.packageName || '';
+    const className = context.className || classInfo.className || 'Test Suite';
+    const classNode = classInfo.classNode;
+    const classTestCases = classNode ? (classNode.testCases || []) : [testCase];
+
+    container.innerHTML = '';
+
+    const layout = document.createElement('div');
+    layout.className = 'screenshot-layout';
+
+    // 1. Left Sidebar: List of all tests in the class file
+    const sidebar = document.createElement('aside');
+    sidebar.className = 'screenshot-sidebar';
+
+    const testListHtml = classTestCases.map(tc => {
+      const isSelected = tc.name === testCase.name;
+      const tcStatus = this.getTestCaseOverallStatus(tc);
+      const symbolMap = { pass: '✓', fail: '✕', skipped: '⊝' };
+      const symbol = symbolMap[tcStatus] || '✓';
+
+      return `
+        <li class="sidebar-test-item ${isSelected ? 'active' : ''}" data-module="${UIUtils.escapeHTML(moduleName)}" data-package="${UIUtils.escapeHTML(packageName)}" data-class="${UIUtils.escapeHTML(className)}" data-test-case="${UIUtils.escapeHTML(tc.name)}">
+          <span class="tc-status-icon ${tcStatus}">${symbol}</span>
+          <span class="tc-name truncate" title="${UIUtils.escapeHTML(tc.name)}">${UIUtils.escapeHTML(tc.name)}</span>
+        </li>
+      `;
+    }).join('');
+
+    sidebar.innerHTML = `
+      <div class="sidebar-header">
+        <div class="sidebar-class-name">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span class="truncate font-bold" title="${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</span>
+        </div>
+        <span class="sidebar-count-badge">${classTestCases.length} test${classTestCases.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="sidebar-search-box">
+        <input type="text" class="sidebar-search-input" placeholder="Search tests in file...">
+      </div>
+      <ul class="sidebar-test-list">
+        ${testListHtml}
+      </ul>
+    `;
+
+    sidebar.addEventListener('click', (e) => {
+      const itemEl = e.target.closest('.sidebar-test-item');
+      if (itemEl) {
+        this.switchScreenshotTestCase(itemEl);
+      }
+    });
+    const searchInput = sidebar.querySelector('.sidebar-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        this.filterSidebarTestCases(searchInput);
+      });
+    }
+
+    layout.appendChild(sidebar);
+
+    // 2. Right Main Content Panel
+    const mainContent = document.createElement('main');
+    mainContent.className = 'screenshot-main-content';
+    layout.appendChild(mainContent);
+
+    container.appendChild(layout);
+
+    this.renderScreenshotMainContent(mainContent, testCase, item);
+  },
+
+  renderScreenshotMainContent(mainContent, testCase, item) {
+    mainContent.innerHTML = '';
+    const isPassed = item.status === TEST_STATUS.PASS;
+    const isFailed = item.status === TEST_STATUS.FAIL;
+    const statusClass = isPassed ? TEST_STATUS.PASS : (isFailed ? TEST_STATUS.FAIL : 'error');
+    const statusText = isPassed ? 'PASSED' : (isFailed ? 'FAILED' : 'ERROR');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'screenshot-view-container';
+
+    // 1. Header Card
+    const headerCard = document.createElement('div');
+    headerCard.className = 'screenshot-header-card';
+    headerCard.innerHTML = `
+      <div class="screenshot-title-zone">
+        <div class="screenshot-main-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span>${UIUtils.escapeHTML(testCase.name)}</span>
+        </div>
+        <div class="screenshot-meta-badges">
+          <span class="meta-pill"><span class="meta-pill-label">Method:</span> ${UIUtils.escapeHTML(item.methodName)}</span>
+          <span class="meta-pill"><span class="meta-pill-label">Preview:</span> ${UIUtils.escapeHTML(item.previewName)}</span>
+          <span class="meta-pill"><span class="meta-pill-label">Variant:</span> ${UIUtils.escapeHTML(item.variantName)}</span>
+          <span class="meta-pill"><span class="meta-pill-label">Suite:</span> ${UIUtils.escapeHTML(UIUtils.formatSuiteName(item.suiteName))}</span>
+        </div>
+      </div>
+      <div>
+        <span class="status-badge-lg ${statusClass}">${statusText}</span>
+      </div>
+    `;
+    wrapper.appendChild(headerCard);
+
+    // 2. Error Section (if test failed or error or stack trace exists)
+    if (!isPassed || item.stackTrace) {
+      const errorBox = document.createElement('div');
+      errorBox.className = 'screenshot-error-box';
+
+      let errorTitle = 'Screenshot Test Failure';
+      if (item.stackTrace.includes('ScreenshotImageNotFoundException') || item.stackTrace.includes('Reference image file does not exist')) {
+        errorTitle = 'Reference Image Missing';
+      } else if (item.stackTrace.includes('Size Mismatch')) {
+        errorTitle = 'Image Size Mismatch';
+      } else if (item.stackTrace.includes('mismatch') || item.stackTrace.includes('differ')) {
+        errorTitle = 'Screenshot Pixel Mismatch';
+      }
+
+      const safeTrace = UIUtils.escapeHTML(item.stackTrace);
+      errorBox.innerHTML = `
+        <div class="error-box-header">
+          <div class="error-box-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>${UIUtils.escapeHTML(errorTitle)}</span>
+          </div>
+          ${item.stackTrace ? `<button class="copy-btn" id="btn-copy-stack-trace">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span>Copy Stack Trace</span>
+          </button>` : ''}
+        </div>
+        ${item.stackTrace ? `<pre class="error-stack-pre">${safeTrace}</pre>` : ''}
+      `;
+      wrapper.appendChild(errorBox);
+
+      const copyBtn = errorBox.querySelector('#btn-copy-stack-trace');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          this.copyToClipboard(item.stackTrace, copyBtn);
+        });
+      }
+    }
+
+    // 3. Image Differences & Comparison Card
+    const comparisonCard = document.createElement('div');
+    comparisonCard.className = 'screenshot-comparison-card';
+
+    const isSizeMismatch = item.stackTrace && item.stackTrace.includes('Size Mismatch');
+    const disableSlider = isPassed || isSizeMismatch;
+
+    const hasValidRef = this.hasValidImagePath(item.refImagePath);
+    const hasValidDiff = this.hasValidImagePath(item.diffImagePath);
+    const hasValidNew = this.hasValidImagePath(item.newImagePath) || (isPassed && hasValidRef);
+    const refUrl = this.resolveImagePath(item.refImagePath);
+    let newUrl = this.resolveImagePath(item.newImagePath);
+    if ((!item.newImagePath || !this.hasValidImagePath(item.newImagePath)) && isPassed && item.refImagePath) {
+      newUrl = refUrl;
+    }
+    const diffUrl = this.resolveImagePath(item.diffImagePath);
+
+    comparisonCard.innerHTML = `
+      <div class="comparison-toolbar">
+        <div class="comparison-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+          <span>Screenshot Comparison & Differences</span>
+        </div>
+        ${!disableSlider ? `
+          <div class="mode-switcher" role="tablist" aria-label="Comparison View Mode">
+            <button class="mode-btn active" data-mode="side-by-side" role="tab" aria-selected="true">
+              🔲 Side-by-Side
+            </button>
+            <button class="mode-btn" data-mode="slider" role="tab" aria-selected="false">
+              ↔️ Split Slider
+            </button>
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- Mode 1: Side-by-Side Cards -->
+      <div id="sc-view-side-by-side" class="image-cards-grid">
+        <!-- Reference Image Card -->
+        <div class="img-card">
+          <div class="img-card-header">
+            <span class="img-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Reference Image (Golden)
+            </span>
+          </div>
+          <div class="img-card-body">
+            ${hasValidRef ? `
+              <img src="${UIUtils.escapeHTML(refUrl)}" alt="Reference Image" class="preview-img" draggable="false" data-lightbox-src="${UIUtils.escapeHTML(refUrl)}" data-lightbox-title="Reference Image" data-error-title="Reference Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${UIUtils.escapeHTML(refUrl)}" data-lightbox-title="Reference Image">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                Zoom
+              </button>
+            ` : `
+              <div class="img-placeholder-card">
+                <div class="placeholder-icon warn">📷</div>
+                <div class="placeholder-title">No Reference Image</div>
+                <div class="placeholder-desc">Reference image file has not been saved yet for this test.</div>
+              </div>
+            `}
+          </div>
+          <div class="img-card-footer">
+            <span class="truncate">${UIUtils.escapeHTML(item.refImagePath || 'N/A')}</span>
+          </div>
+        </div>
+
+        <!-- Diff Image Card -->
+        <div class="img-card">
+          <div class="img-card-header">
+            <span class="img-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"/><rect x="8" y="2" width="13" height="13" rx="2"/></svg>
+              Difference Image (Diff)
+            </span>
+          </div>
+          <div class="img-card-body">
+            ${hasValidDiff ? `
+              <img src="${UIUtils.escapeHTML(diffUrl)}" alt="Diff Image" class="preview-img" draggable="false" data-lightbox-src="${UIUtils.escapeHTML(diffUrl)}" data-lightbox-title="Difference Image" data-error-title="Diff Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${UIUtils.escapeHTML(diffUrl)}" data-lightbox-title="Difference Image">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                Zoom
+              </button>
+            ` : `
+              <div class="img-placeholder-card">
+                ${isPassed ? `
+                  <div class="placeholder-icon pass">✓</div>
+                  <div class="placeholder-title" style="color: #16a34a;">No Differences</div>
+                  <div class="placeholder-desc">The new image matches the reference image perfectly (100% match).</div>
+                ` : (item.stackTrace && item.stackTrace.includes('Size Mismatch') ? `
+                  <div class="placeholder-icon warn">📐</div>
+                  <div class="placeholder-title" style="color: #d97706;">Size Mismatch</div>
+                  <div class="placeholder-desc">Image dimensions differ between reference and actual screenshots. Diff image could not be generated.</div>
+                ` : (!item.refImagePath ? `
+                  <div class="placeholder-icon">ℹ️</div>
+                  <div class="placeholder-title">Reference Missing</div>
+                  <div class="placeholder-desc">Reference image does not exist. Update test task to generate reference image.</div>
+                ` : `
+                  <div class="placeholder-icon warn">❌</div>
+                  <div class="placeholder-title" style="color: #dc2626;">No Diff Image</div>
+                  <div class="placeholder-desc">No pixel difference image was generated for this test run.</div>
+                `))}
+              </div>
+            `}
+          </div>
+          <div class="img-card-footer">
+            <span class="truncate">${UIUtils.escapeHTML(item.diffImagePath || (isPassed ? 'No Diff (Passed)' : 'N/A'))}</span>
+          </div>
+        </div>
+
+        <!-- New Image Card -->
+        <div class="img-card">
+          <div class="img-card-header">
+            <span class="img-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              New Image (Actual)
+            </span>
+          </div>
+          <div class="img-card-body">
+            ${hasValidNew ? `
+              <img src="${UIUtils.escapeHTML(newUrl)}" alt="New Image" class="preview-img" draggable="false" data-lightbox-src="${UIUtils.escapeHTML(newUrl)}" data-lightbox-title="New Image" data-error-title="New Image Missing">
+              <button class="img-zoom-btn" data-lightbox-src="${UIUtils.escapeHTML(newUrl)}" data-lightbox-title="New Image">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                Zoom
+              </button>
+            ` : `
+              <div class="img-placeholder-card">
+                <div class="placeholder-icon warn">⚠️</div>
+                <div class="placeholder-title">No New Image</div>
+                <div class="placeholder-desc">New screenshot is not available.</div>
+              </div>
+            `}
+          </div>
+          <div class="img-card-footer">
+            <span class="truncate">${UIUtils.escapeHTML(item.newImagePath || (isPassed ? 'Same as Reference' : 'N/A'))}</span>
+          </div>
+        </div>
+      </div>
+
+      ${!disableSlider ? `
+        <!-- Mode 2: Split Slider View -->
+        <div class="slider-view-wrapper hidden">
+          <div class="slider-controls-bar">
+            <span>Drag the divider line to compare Reference (Left) vs New (Right)</span>
+            <span class="slider-split-percent text-blue-600 font-bold">50% Reference | 50% New</span>
+          </div>
+          <div class="slider-container">
+            <span class="slider-badge left-badge">Reference (Golden)</span>
+            <span class="slider-badge right-badge">New (Rendered)</span>
+            <img src="${UIUtils.escapeHTML(newUrl)}" class="slider-img-base" alt="New Base" draggable="false">
+            <div class="slider-img-overlay" style="clip-path: inset(0 50% 0 0);">
+              <img src="${UIUtils.escapeHTML(refUrl)}" alt="Reference Overlay" draggable="false">
+            </div>
+            <div class="slider-divider" style="left: 50%;">
+              <div class="slider-handle">↔</div>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+    `;
+
+    comparisonCard.addEventListener('click', (e) => {
+      const modeBtn = e.target.closest('.mode-btn[data-mode]');
+      if (modeBtn) {
+        this.switchScreenshotMode(modeBtn.dataset.mode, modeBtn);
+        return;
+      }
+      const lightboxTrigger = e.target.closest('[data-lightbox-src]');
+      if (lightboxTrigger) {
+        this.openLightbox(lightboxTrigger.dataset.lightboxSrc, lightboxTrigger.dataset.lightboxTitle);
+      }
+    });
+    comparisonCard.querySelectorAll('img.preview-img[data-error-title]').forEach((imgEl) => {
+      imgEl.addEventListener('error', () => {
+        this.handleImageError(imgEl, imgEl.dataset.errorTitle);
+      });
+    });
+
+    wrapper.appendChild(comparisonCard);
+
+    // 4. File Paths Summary Card
+    const pathsCard = document.createElement('div');
+    pathsCard.className = 'screenshot-paths-card';
+    pathsCard.innerHTML = `
+      <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Image File Paths & Details
+      </h3>
+      <div class="path-row">
+        <span class="path-label">Reference Image Path:</span>
+        <span class="path-value">${UIUtils.escapeHTML(item.refImagePath || 'Not set')}</span>
+        ${item.refImagePath ? `<button class="copy-btn" id="btn-copy-ref-path">Copy</button>` : ''}
+      </div>
+      <div class="path-row">
+        <span class="path-label">Diff Image Path:</span>
+        <span class="path-value">${UIUtils.escapeHTML(item.diffImagePath || 'None')}</span>
+        ${item.diffImagePath ? `<button class="copy-btn" id="btn-copy-diff-path">Copy</button>` : ''}
+      </div>
+      <div class="path-row">
+        <span class="path-label">New Image Path:</span>
+        <span class="path-value">${UIUtils.escapeHTML(item.newImagePath || 'Not set')}</span>
+        ${item.newImagePath ? `<button class="copy-btn" id="btn-copy-new-path">Copy</button>` : ''}
+      </div>
+    `;
+    wrapper.appendChild(pathsCard);
+
+    // Attach copy button listeners
+    const copyRefBtn = pathsCard.querySelector('#btn-copy-ref-path');
+    if (copyRefBtn) copyRefBtn.addEventListener('click', () => this.copyToClipboard(item.refImagePath, copyRefBtn));
+
+    const copyDiffBtn = pathsCard.querySelector('#btn-copy-diff-path');
+    if (copyDiffBtn) copyDiffBtn.addEventListener('click', () => this.copyToClipboard(item.diffImagePath, copyDiffBtn));
+
+    const copyNewBtn = pathsCard.querySelector('#btn-copy-new-path');
+    if (copyNewBtn) copyNewBtn.addEventListener('click', () => this.copyToClipboard(item.newImagePath, copyNewBtn));
+
+    mainContent.appendChild(wrapper);
+
+    // Initialize interactive split slider
+    if (!disableSlider) {
+      setTimeout(() => this.initSplitSlider(comparisonCard), 50);
+    }
+  },
+
+  switchScreenshotMode(mode, btnElement) {
+    const container = btnElement.closest('.screenshot-comparison-card');
+    if (!container) return;
+    container.querySelectorAll('.mode-btn').forEach(btn => {
+      const isActive = btn.dataset.mode === mode;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    const sideBySideView = container.querySelector('.image-cards-grid');
+    const sliderView = container.querySelector('.slider-view-wrapper');
+
+    if (sideBySideView) sideBySideView.classList.toggle('hidden', mode !== 'side-by-side');
+    if (sliderView) sliderView.classList.toggle('hidden', mode !== 'slider');
+  },
+
+  initSplitSlider(container) {
+    if (!container) return;
+    const sliderBox = container.querySelector('.slider-container');
+    const overlayBox = container.querySelector('.slider-img-overlay');
+    const divider = container.querySelector('.slider-divider');
+    const percentText = container.querySelector('.slider-split-percent');
+
+    if (!sliderBox || !overlayBox || !divider) return;
+
+    let isDragging = false;
+
+    const setPosition = (clientX) => {
+      const rect = sliderBox.getBoundingClientRect();
+      let x = clientX - rect.left;
+      if (x < 0) x = 0;
+      if (x > rect.width) x = rect.width;
+
+      const pct = Math.round((x / rect.width) * 100);
+      divider.style.left = `${pct}%`;
+      overlayBox.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+      if (percentText) {
+        percentText.textContent = `${pct}% Reference | ${100 - pct}% New`;
+      }
+    };
+
+    sliderBox.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      setPosition(e.clientX);
+      sliderBox.setPointerCapture(e.pointerId);
+    });
+
+    sliderBox.addEventListener('pointermove', (e) => {
+      if (isDragging) {
+        setPosition(e.clientX);
+      }
+    });
+
+    const stopDrag = (e) => {
+      if (isDragging) {
+        isDragging = false;
+        try { sliderBox.releasePointerCapture(e.pointerId); } catch (err) { }
+      }
+    };
+
+    sliderBox.addEventListener('pointerup', stopDrag);
+    sliderBox.addEventListener('pointercancel', stopDrag);
+  },
+
+  copyToClipboard(text, btn) {
+    if (!navigator.clipboard) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    } else {
+      navigator.clipboard.writeText(text);
+    }
+    const origText = btn.innerHTML;
+    btn.innerHTML = `<span>Copied!</span>`;
+    setTimeout(() => { btn.innerHTML = origText; }, 1800);
+  },
+
+  handleImageError(imgElement, placeholderText) {
+    const parent = imgElement.parentElement;
+    if (parent) {
+      parent.innerHTML = `
+        <div class="img-placeholder-card">
+          <div class="placeholder-icon warn">⚠️</div>
+          <div class="placeholder-title">${UIUtils.escapeHTML(placeholderText)}</div>
+          <div class="placeholder-desc">File could not be loaded from disk or path does not exist.</div>
+        </div>
+      `;
+    }
+  },
+
+  openLightbox(imgSrc, title) {
+    let overlay = document.getElementById('screenshot-lightbox');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'screenshot-lightbox';
+      overlay.className = 'lightbox-overlay';
+      overlay.innerHTML = `
+        <div class="lightbox-content">
+          <img id="lightbox-main-img" class="lightbox-img" src="" alt="">
+          <div class="lightbox-toolbar">
+            <span id="lightbox-title" class="font-bold"></span>
+            <button class="lightbox-btn">✕ Close</button>
+          </div>
+        </div>
+      `;
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay || e.target.closest('.lightbox-btn')) {
+          TestReportApp.closeLightbox();
+        }
+      });
+      document.body.appendChild(overlay);
+    }
+
+    const img = overlay.querySelector('#lightbox-main-img');
+    const titleEl = overlay.querySelector('#lightbox-title');
+    if (img) img.src = imgSrc;
+    if (titleEl) titleEl.textContent = title || 'Image Zoom';
+
+    overlay.classList.remove('hidden');
+  },
+
+  closeLightbox() {
+    const overlay = document.getElementById('screenshot-lightbox');
+    if (overlay) overlay.classList.add('hidden');
   },
 
   showReportView() {
@@ -1977,15 +3187,15 @@ const TestReportApp = {
     this.elements.stackTraceView.classList.add('hidden-view');
     this.elements.reportView.classList.remove('hidden-view');
     if (this.elements.filterControlsGroup) {
-        this.elements.filterControlsGroup.classList.remove('hidden');
+      this.elements.filterControlsGroup.classList.remove('hidden');
     }
     if (this.elements.searchContainer) this.elements.searchContainer.classList.remove('hidden');
     if (this.elements.viewSegments) this.elements.viewSegments.classList.remove('hidden');
     if (this.elements.densitySegments) this.elements.densitySegments.classList.remove('hidden');
 
     if (this.activeTrigger) {
-        this.activeTrigger.focus();
-        this.activeTrigger = null;
+      this.activeTrigger.focus();
+      this.activeTrigger = null;
     }
   },
 
@@ -1995,38 +3205,206 @@ const TestReportApp = {
         <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
 
     if (moduleName) {
-        html += `
+      html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" aria-label="Go back to module: ${UIUtils.escapeHTML(moduleName)}">${UIUtils.escapeHTML(moduleName)}</a>`;
     }
     if (packageName) {
-         html += `
+      html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" aria-label="Go back to package: ${UIUtils.escapeHTML(packageName)}">${UIUtils.escapeHTML(packageName)}</a>`;
     }
     if (className) {
-        html += `
+      html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_TEST_CASES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" data-class-name="${UIUtils.escapeHTML(className)}" aria-label="Go back to class: ${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</a>`;
     }
     if (testCaseName) {
+      if (context.targetName) {
+        html += `
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <span class="text-gray-600">${UIUtils.escapeHTML(testCaseName)}</span>
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <span class="font-semibold text-gray-800">${UIUtils.escapeHTML(context.targetName)}</span>`;
+      } else {
         html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <span class="font-semibold text-gray-800">${UIUtils.escapeHTML(testCaseName)}</span>`;
+      }
     }
     html += `</div>`;
 
     this.elements.stackTraceBreadcrumbs.innerHTML = html;
   },
 
+  hasOnlyDefaultTarget() {
+    const targets = this.state.targets || [];
+    return targets.length === 0 || (targets.length === 1 && (targets[0] === 'unknown_target' || targets[0] === 'default' || targets[0] === ''));
+  },
+
   getChildType(parentType) {
-    const hierarchy = { 'root': 'module', 'module': 'package', 'package': 'class', 'class': 'testCase', 'testCase': null };
+    if (parentType === 'testCase' && this.hasOnlyDefaultTarget()) {
+      return null;
+    }
+    const hierarchy = { 'root': 'module', 'module': 'package', 'package': 'class', 'class': 'testCase', 'testCase': 'target', 'target': null };
     return hierarchy[parentType];
   },
 
   pluralize(type) {
-    const pluralMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases' };
+    const pluralMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases', 'target': 'targets' };
     return pluralMap[type];
+  },
+
+  parseSortKey(key) {
+    if (!key || key === 'name') {
+      return { variant: null, metric: 'name' };
+    }
+    const dotIndex = key.indexOf('.');
+    if (dotIndex !== -1) {
+      return {
+        variant: key.substring(0, dotIndex),
+        metric: key.substring(dotIndex + 1)
+      };
+    }
+    return {
+      variant: null,
+      metric: key
+    };
+  },
+
+  normalizeMetric(metric) {
+    if (!metric) return '';
+    const m = metric.toLowerCase();
+    if (m === TEST_STATUS.PASS || m === TEST_STATUS.PASSED) return TEST_STATUS.PASSED;
+    if (m === TEST_STATUS.FAIL || m === TEST_STATUS.FAILED) return TEST_STATUS.FAILED;
+    if (m === 'skip' || m === TEST_STATUS.SKIPPED) return TEST_STATUS.SKIPPED;
+    if (m === 'rate' || m === 'passrate' || m === 'pass_rate') return 'rate';
+    if (m === 'name') return 'name';
+    return m;
+  },
+
+  isSortActive(key) {
+    if (this.state.sort.by === key) return true;
+    const { variant, metric } = this.parseSortKey(key);
+    const active = this.parseSortKey(this.state.sort.by);
+    const normMetric = this.normalizeMetric(metric);
+    const activeNormMetric = this.normalizeMetric(active.metric);
+
+    if (activeNormMetric !== normMetric) return false;
+
+    if (active.variant && variant) {
+      return active.variant === variant;
+    }
+
+    const visibleVariants = this.state.filters.variants && this.state.filters.variants.length > 0
+      ? this.state.filters.variants
+      : (this.state.variants || []);
+    if (!active.variant && visibleVariants.length > 0) {
+      return variant === visibleVariants[0];
+    }
+
+    return false;
+  },
+
+  getNodeMetric(node, variantName, metric) {
+    if (!node) return 0;
+    const normMetric = this.normalizeMetric(metric);
+    const suiteFilter = this.state.filters.testSuite;
+
+    let summariesList = [];
+    if (node.target && node.target.testSuiteSummaries) {
+      summariesList = [node.target.testSuiteSummaries];
+    } else if (node.targets && node.targets.length > 0) {
+      summariesList = node.targets.map(t => t.testSuiteSummaries).filter(Boolean);
+    } else if (node.testSuiteSummaries) {
+      summariesList = [node.testSuiteSummaries];
+    }
+
+    if (summariesList.length === 0) return 0;
+
+    let targetVariants = [];
+    if (variantName) {
+      targetVariants = [variantName];
+    } else if (this.state.filters.variants && this.state.filters.variants.length > 0) {
+      targetVariants = [this.state.filters.variants[0]];
+    } else if (this.state.variants && this.state.variants.length > 0) {
+      targetVariants = [this.state.variants[0]];
+    }
+
+    let totalPassed = 0;
+    let totalFailed = 0;
+    let totalSkipped = 0;
+
+    summariesList.forEach(testSuiteSummaries => {
+      let suiteSummary = null;
+      if (suiteFilter === 'all') {
+        suiteSummary = testSuiteSummaries.find(ts => ts.name === AGGREGATED_SUITE_NAME);
+      } else {
+        suiteSummary = testSuiteSummaries.find(ts => ts.name === suiteFilter);
+      }
+      if (!suiteSummary || !suiteSummary.variantSummaries) return;
+
+      suiteSummary.variantSummaries.forEach(vs => {
+        if (targetVariants.includes(vs.name)) {
+          totalPassed += vs.passed || 0;
+          totalFailed += vs.failed || 0;
+          totalSkipped += vs.skipped || 0;
+        }
+      });
+    });
+
+    if (normMetric === TEST_STATUS.PASSED) return totalPassed;
+    if (normMetric === TEST_STATUS.FAILED) return totalFailed;
+    if (normMetric === TEST_STATUS.SKIPPED) return totalSkipped;
+    if (normMetric === 'rate') {
+      if (summariesList.length === 1 && targetVariants.length === 1) {
+        const testSuiteSummaries = summariesList[0];
+        const suiteSummary = (suiteFilter === 'all')
+          ? testSuiteSummaries.find(ts => ts.name === AGGREGATED_SUITE_NAME)
+          : testSuiteSummaries.find(ts => ts.name === suiteFilter);
+        if (suiteSummary && suiteSummary.variantSummaries) {
+          const vs = suiteSummary.variantSummaries.find(s => s.name === targetVariants[0]);
+          if (vs && vs.rate !== undefined) return vs.rate;
+        }
+      }
+      const relevant = totalPassed + totalFailed;
+      return relevant > 0 ? (totalPassed / relevant) * 100 : 0;
+    }
+    return 0;
+  },
+
+  compareNodes(a, b) {
+    const { by, order } = this.state.sort;
+    const { variant, metric } = this.parseSortKey(by);
+    const normMetric = this.normalizeMetric(metric);
+
+    if (normMetric === 'name') {
+      const valA = (a.name || '').toLowerCase();
+      const valB = (b.name || '').toLowerCase();
+      if (valA < valB) return order === 'asc' ? -1 : 1;
+      if (valA > valB) return order === 'asc' ? 1 : -1;
+      return 0;
+    }
+
+    const valA = this.getNodeMetric(a, variant, normMetric);
+    const valB = this.getNodeMetric(b, variant, normMetric);
+
+    if (valA !== valB) {
+      return order === 'asc' ? valA - valB : valB - valA;
+    }
+
+    // Tie-breaker: sort by name ascending
+    const nameA = (a.name || '').toLowerCase();
+    const nameB = (b.name || '').toLowerCase();
+    if (nameA < nameB) return -1;
+    if (nameA > nameB) return 1;
+
+    const parentA = (a.parent || a.moduleName || '').toLowerCase();
+    const parentB = (b.parent || b.moduleName || '').toLowerCase();
+    if (parentA < parentB) return -1;
+    if (parentA > parentB) return 1;
+
+    return 0;
   }
 };
 
@@ -2062,7 +3440,8 @@ const Navigation = {
       module: !TestReportApp.elements.modChipContainer.classList.contains('hidden'),
       package: !TestReportApp.elements.pkgChipContainer.classList.contains('hidden'),
       class: !TestReportApp.elements.clsChipContainer.classList.contains('hidden'),
-      testCase: !TestReportApp.elements.tcChipContainer.classList.contains('hidden')
+      testCase: !TestReportApp.elements.tcChipContainer.classList.contains('hidden'),
+      target: !TestReportApp.elements.tgtChipContainer.classList.contains('hidden')
     };
 
     return state;
@@ -2099,26 +3478,31 @@ const Navigation = {
       ...state
     };
 
+    const actualSuites = (TestReportApp.state.testSuites || []).filter(ts => ts !== AGGREGATED_SUITE_NAME);
+    if (actualSuites.length === 1) {
+      TestReportApp.state.filters.testSuite = actualSuites[0];
+    }
+
     // Update search UI to match restored state
     if (TestReportApp.elements.searchInput) {
       TestReportApp.elements.searchInput.value = TestReportApp.state.filters.search || '';
       if (TestReportApp.elements.searchInput.value) {
         if (TestReportApp.elements.searchWrapper) {
-            TestReportApp.elements.searchWrapper.classList.add('expanded');
+          TestReportApp.elements.searchWrapper.classList.add('expanded');
         }
         if (TestReportApp.elements.searchRevealBtn) {
-            TestReportApp.elements.searchRevealBtn.classList.add('transparent');
+          TestReportApp.elements.searchRevealBtn.classList.add('transparent');
         }
         if (TestReportApp.elements.searchClearBtn) {
           TestReportApp.elements.searchClearBtn.classList.remove('hidden');
         }
       } else {
         if (TestReportApp.elements.searchWrapper) {
-            TestReportApp.elements.searchWrapper.classList.remove('expanded');
+          TestReportApp.elements.searchWrapper.classList.remove('expanded');
         }
         if (TestReportApp.elements.searchRevealBtn) {
-            TestReportApp.elements.searchRevealBtn.classList.remove('transparent');
-            TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
+          TestReportApp.elements.searchRevealBtn.classList.remove('transparent');
+          TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
         }
         if (TestReportApp.elements.searchClearBtn) {
           TestReportApp.elements.searchClearBtn.classList.add('hidden');
@@ -2149,33 +3533,25 @@ const Navigation = {
       TestReportApp.elements.pkgChipContainer.classList.toggle('hidden', !state.chipVisibility.package);
       TestReportApp.elements.clsChipContainer.classList.toggle('hidden', !state.chipVisibility.class);
       TestReportApp.elements.tcChipContainer.classList.toggle('hidden', !state.chipVisibility.testCase);
+      if (TestReportApp.elements.tgtChipContainer) {
+        TestReportApp.elements.tgtChipContainer.classList.toggle('hidden', !state.chipVisibility.target);
+      }
     }
 
     // Rebuild static dropdowns to reflect restored state (test suite, variants, status)
     TestReportApp.populateFilters();
 
     // Update test suite UI specifically since populateFilters handles the dropdown but not the external UI elements fully unless changed
-    if (TestReportApp.elements.tsAllState && TestReportApp.elements.tsSelectedState) {
-      if (TestReportApp.state.filters.testSuite === 'all') {
-        TestReportApp.elements.tsAllState.classList.remove('hidden');
-        TestReportApp.elements.tsSelectedState.classList.add('hidden');
-      } else {
-        TestReportApp.elements.tsAllState.classList.add('hidden');
-        TestReportApp.elements.tsSelectedState.classList.remove('hidden');
-        if (TestReportApp.elements.testSuiteFilterText) {
-          TestReportApp.elements.testSuiteFilterText.textContent = TestReportApp.state.filters.testSuite;
-        }
-      }
-    }
+    TestReportApp.updateTestSuiteUI();
 
     // Re-render
     if (TestReportApp.state.currentView === 'stack-trace') {
-        TestReportApp.showStackTraceView(TestReportApp.state.currentTestCase, TestReportApp.state.currentStackTraceContext);
+      TestReportApp.showStackTraceView(TestReportApp.state.currentTestCase, TestReportApp.state.currentStackTraceContext);
     } else {
-        TestReportApp.showReportView();
-        if (selectionChanged || oldView === 'report') {
-            TestReportApp.render();
-        }
+      TestReportApp.showReportView();
+      if (selectionChanged || oldView === 'report') {
+        TestReportApp.render();
+      }
     }
     TestReportApp.updateFilterButtons();
   }
@@ -2190,99 +3566,99 @@ document.addEventListener('DOMContentLoaded', () => {
  * HELP HUB INITIALIZATION
  */
 function initHelpHub() {
-    const helpHubFab = document.getElementById("help-hub-fab");
-    const helpHubPanel = document.getElementById("help-hub-panel");
-    const closeHelpHubBtn = document.getElementById("close-help-hub");
+  const helpHubFab = document.getElementById("help-hub-fab");
+  const helpHubPanel = document.getElementById("help-hub-panel");
+  const closeHelpHubBtn = document.getElementById("close-help-hub");
 
-    if (!helpHubFab || !helpHubPanel) return;
+  if (!helpHubFab || !helpHubPanel) return;
 
-    function togglePanel(open) {
-        const isOpening = typeof open === 'boolean' ? open : !helpHubPanel.classList.contains("open");
-        helpHubPanel.classList.toggle("open", isOpening);
-        helpHubFab.setAttribute("aria-expanded", isOpening);
-        helpHubPanel.setAttribute("aria-hidden", !isOpening);
+  function togglePanel(open) {
+    const isOpening = typeof open === 'boolean' ? open : !helpHubPanel.classList.contains("open");
+    helpHubPanel.classList.toggle("open", isOpening);
+    helpHubFab.setAttribute("aria-expanded", isOpening);
+    helpHubPanel.setAttribute("aria-hidden", !isOpening);
 
-        if (isOpening) {
-            requestAnimationFrame(() => {
-                closeHelpHubBtn?.focus();
-            });
-        } else {
-            helpHubFab.focus();
-        }
+    if (isOpening) {
+      requestAnimationFrame(() => {
+        closeHelpHubBtn?.focus();
+      });
+    } else {
+      helpHubFab.focus();
     }
+  }
 
-    // Focus Trap
-    helpHubPanel.addEventListener("keydown", (e) => {
-        if (e.key !== "Tab") return;
+  // Focus Trap
+  helpHubPanel.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
 
-        const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
+    const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
 
-        if (e.shiftKey) { // Shift + Tab
-            if (document.activeElement === firstElement) {
-                lastElement.focus();
-                e.preventDefault();
-            }
-        } else { // Tab
-            if (document.activeElement === lastElement) {
-                firstElement.focus();
-                e.preventDefault();
-            }
-        }
+    if (e.shiftKey) { // Shift + Tab
+      if (document.activeElement === firstElement) {
+        lastElement.focus();
+        e.preventDefault();
+      }
+    } else { // Tab
+      if (document.activeElement === lastElement) {
+        firstElement.focus();
+        e.preventDefault();
+      }
+    }
+  });
+
+  helpHubFab.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    togglePanel();
+  });
+
+  if (closeHelpHubBtn) {
+    closeHelpHubBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      togglePanel(false);
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
+      togglePanel(false);
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
+      togglePanel(false);
+    }
+  });
+
+  const legendItems = helpHubPanel.querySelectorAll(".legend-item");
+  legendItems.forEach(item => {
+    const header = item.querySelector(".legend-item-header");
+    const toggle = () => {
+      const isOpen = item.classList.contains("open");
+      legendItems.forEach(i => {
+        i.classList.remove("open");
+        const h = i.querySelector(".legend-item-header");
+        if (h) h.setAttribute("aria-expanded", "false");
+      });
+      item.classList.toggle("open", !isOpen);
+      header.setAttribute("aria-expanded", !isOpen);
+    };
+
+    header.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggle();
     });
 
-    helpHubFab.addEventListener("click", (e) => {
+    header.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         e.stopPropagation();
-        togglePanel();
+        toggle();
+      }
     });
-
-    if (closeHelpHubBtn) {
-        closeHelpHubBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            togglePanel(false);
-        });
-    }
-
-    document.addEventListener("click", (e) => {
-        if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
-            togglePanel(false);
-        }
-    });
-
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
-            togglePanel(false);
-        }
-    });
-
-    const legendItems = helpHubPanel.querySelectorAll(".legend-item");
-    legendItems.forEach(item => {
-        const header = item.querySelector(".legend-item-header");
-        const toggle = () => {
-            const isOpen = item.classList.contains("open");
-            legendItems.forEach(i => {
-                i.classList.remove("open");
-                const h = i.querySelector(".legend-item-header");
-                if (h) h.setAttribute("aria-expanded", "false");
-            });
-            item.classList.toggle("open", !isOpen);
-            header.setAttribute("aria-expanded", !isOpen);
-        };
-
-        header.addEventListener("click", (e) => {
-            e.stopPropagation();
-            toggle();
-        });
-
-        header.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.stopPropagation();
-                toggle();
-            }
-        });
-    });
+  });
 }
 

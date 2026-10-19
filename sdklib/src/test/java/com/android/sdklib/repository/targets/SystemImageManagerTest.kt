@@ -18,6 +18,7 @@ package com.android.sdklib.repository.targets
 import com.android.SdkConstants
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.repository.AndroidSdkHandler
+import com.android.sdklib.testing.PathContext
 import com.android.sdklib.testing.TestSystemImages
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.collect.ImmutableList
@@ -98,6 +99,57 @@ class SystemImageManagerTest {
     assertThat(img.abiTypes).containsExactly("x86_64", "x86")
     assertThat(img.translatedAbiTypes).containsExactly(SdkConstants.ABI_ARM64_V8A)
     assertThat(img.tags).containsExactly(SystemImageTags.PLAY_STORE_TAG, SystemImageTags.TABLET_TAG)
+  }
+
+  @Test
+  fun reloadPackages() {
+    val manager = handler.getSystemImageManager(testImages.progress)
+    val img1 = sysImg23.image
+
+    assertThat(manager.images).containsExactly(img1)
+    assertThat(manager.systemImageFlow.value).containsExactly(img1.location, img1)
+    assertThat(manager.getImageAt(img1.location)).isEqualTo(img1)
+    assertThat(manager.getImageAt(googleApisSysImg23.path)).isNull()
+
+    // Write a second system image to disk and reload the local repo packages
+    PathContext(googleApisSysImg23.path).apply(googleApisSysImg23.definition)
+    val repoManager = handler.getRepoManager(testImages.progress)
+    repoManager.markInvalid()
+    repoManager.reloadLocalIfNeeded(testImages.progress)
+
+    // SystemImageManager listens for local changes via RepoManager, automatically invalidating its cache
+    val img2 = googleApisSysImg23.image
+    assertThat(manager.images).containsExactly(img1, img2)
+    assertThat(manager.systemImageFlow.value).containsExactly(img1.location, img1, img2.location, img2)
+    assertThat(manager.getImageAt(img2.location)).isEqualTo(img2)
+  }
+
+  @Test
+  fun verifyMultiImagePackage() {
+    PathContext(multiImageAddon.path).apply(multiImageAddon.definition)
+    val localPackage = handler.getLocalPackage("add-ons;addon-multi_image-google-15", testImages.progress)!!
+    val manager = handler.getSystemImageManager(testImages.progress)
+
+    val packageImages = manager.getImagesInPackage(localPackage)
+    assertThat(packageImages).hasSize(2)
+
+    val x86Img = packageImages.find { it.primaryAbiType == "x86" }!!
+    val armImg = packageImages.find { it.primaryAbiType == "armeabi-v7a" }!!
+
+    assertEquals(multiImageAddon.path.resolve("images/x86/"), x86Img.location)
+    assertEquals(multiImageAddon.path.resolve("images/armeabi-v7a/"), armImg.location)
+    assertEquals(x86Img, manager.getImageAt(x86Img.location))
+    assertEquals(armImg, manager.getImageAt(armImg.location))
+  }
+
+  @Test
+  fun verifyPackageWithoutImages() {
+    PathContext(platform34WithoutImages.path).apply(platform34WithoutImages.definition)
+    val localPackage = handler.getLocalPackage("platforms;android-34", testImages.progress)!!
+    val manager = handler.getSystemImageManager(testImages.progress)
+
+    assertThat(manager.getImagesInPackage(localPackage)).isEmpty()
+    assertThat(manager.images).isEmpty()
   }
 
   val platform13 =
@@ -312,11 +364,9 @@ class SystemImageManagerTest {
       }
     }
 
-  val googleApis13 =
+  val multiImageAddon =
     with(testImages) {
-      TestSdkPackage("add-ons/addon-google_apis-google-13") {
-        write("images/system.img")
-
+      TestSdkPackage("add-ons/addon-multi_image-google-15") {
         write(
           "package.xml",
           """
@@ -325,28 +375,52 @@ class SystemImageManagerTest {
                          xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/01"
                          xmlns:ns4="http://schemas.android.com/repository/android/common/01"
                          xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/01">
-            <localPackage path="add-ons;addon-google_apis-google-13" obsolete="false">
+            <localPackage path="add-ons;addon-multi_image-google-15" obsolete="false">
               <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:addonDetailsType">
-                <api-level>13</api-level>
+                <api-level>15</api-level>
                 <vendor>
                   <id>google</id>
                   <display>Google Inc.</display>
                 </vendor>
                 <tag>
                   <id>google_apis</id>
-                  <display>
-                    Google APIs
-                  </display>
+                  <display>Google APIs</display>
                 </tag>
               </type-details>
               <revision>
                 <major>1</major>
-                <minor>0</minor>
-                <micro>0</micro>
               </revision>
-              <display-name>Google APIs, Android 13</display-name>
+              <display-name>Multi Image Addon, Android 15</display-name>
             </localPackage>
           </ns5:sdk-addon>
+          """
+            .trimIndent(),
+        )
+        write("images/x86/system.img")
+        write("images/armeabi-v7a/system.img")
+      }
+    }
+
+  val platform34WithoutImages =
+    with(testImages) {
+      TestSdkPackage("platforms/android-34") {
+        write("android.jar")
+        write(
+          "package.xml",
+          """
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:sdk-repository xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/01">
+            <localPackage path="platforms;android-34" obsolete="false">
+              <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns2:platformDetailsType">
+                <api-level>34</api-level>
+                <layoutlib api="4"/>
+              </type-details>
+              <revision>
+                <major>1</major>
+              </revision>
+              <display-name>API 34: Android 14.0</display-name>
+            </localPackage>
+          </ns2:sdk-repository>
           """
             .trimIndent(),
         )

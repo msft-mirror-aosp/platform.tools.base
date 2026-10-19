@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.avd;
 
 import static com.android.sdklib.devices.Device.isAiGlasses;
+import static com.android.sdklib.devices.Device.isAiGlassesDisplayless;
 import static com.android.sdklib.devices.Device.isAutomotive;
 import static com.android.sdklib.devices.Device.isAutomotiveDistantDisplay;
 import static com.android.sdklib.devices.Device.isRollable;
@@ -399,8 +400,11 @@ public class HardwareProperties {
         if (isAiGlasses(d)) {
             props.put(ConfigKey.LCD_TRANSPARENT, "yes");
             props.put(HW_LED_INDICATORS, "yes");
+            if (isAiGlassesDisplayless(d)) {
+                props.put(ConfigKey.DISPLAYLESS, "yes");
+            }
         } else if (isXrGlasses(d)) {
-            props.put(HW_DIMMING_LEVELS, "0.00390625,0.25,0.5,0.75,0.99609375");
+            props.put(HW_DIMMING_LEVELS, "0.19921875,0.38671875,0.57421875,0.76171875,0.94921875");
         }
 
         HashFunction md5 = Hashing.md5();

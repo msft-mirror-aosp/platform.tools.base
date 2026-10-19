@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.connected.application
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
@@ -133,7 +132,7 @@ class TestSuiteDeviceTest {
             )
           }
           android {
-            testOptions.suites.create("myTestSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myTestSuite") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -148,7 +147,7 @@ class TestSuiteDeviceTest {
               it.targetVariants.add("debug")
               it.targets.create("t1") {}
             }
-            testOptions.suites.create("myTestSuiteApk", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myTestSuiteApk") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -164,7 +163,7 @@ class TestSuiteDeviceTest {
               it.targets.create("t1") {}
               it.testApk { dependencies { implementation.add("junit:junit:4.13.2") } }
             }
-            testOptions.suites.create("myEmptyTestSuiteApk", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myEmptyTestSuiteApk") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -180,7 +179,7 @@ class TestSuiteDeviceTest {
               it.targets.create("t1") {}
               it.testApk {}
             }
-            testOptions.suites.create("myPureEmptyTestSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myPureEmptyTestSuite") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -231,19 +230,19 @@ class TestSuiteDeviceTest {
 
   @Test
   fun allOnlineDeviceShouldBePassedByDefault() {
-    executor.run(":app:testMyTestSuiteT1DebugTestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
+    executor.run(":app:testDebugMyTestSuiteT1TestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
   }
 
   @Test
   fun testApkSuiteShouldRun() {
-    executor.run(":app:testMyTestSuiteApkT1DebugTestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
+    executor.run(":app:testDebugMyTestSuiteApkT1TestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
   }
 
   @Test
   fun selectDeviceByEnvVariable() {
     executor
       .withEnvironmentVariables(mapOf("ANDROID_SERIAL" to "emulator-5554"))
-      .run(":app:testMyTestSuiteT1DebugTestSuite")
+      .run(":app:testDebugMyTestSuiteT1TestSuite")
       .assertOutputContains("Serial IDs = emulator-5554")
   }
 
@@ -251,20 +250,20 @@ class TestSuiteDeviceTest {
   fun selectDeviceByProjectProperty() {
     executor
       .withArguments(listOf("-PcustomSerials=emulator-5554"))
-      .run(":app:testMyTestSuiteT1DebugTestSuite")
+      .run(":app:testDebugMyTestSuiteT1TestSuite")
       .assertOutputContains("Serial IDs = emulator-5554")
   }
 
   @Test
   fun testApkSuiteShouldFailWhenNoTests() {
-    executor.expectFailure().run(":app:testMyEmptyTestSuiteApkT1DebugTestSuite")
+    executor.expectFailure().run(":app:testDebugMyEmptyTestSuiteApkT1TestSuite")
   }
 
   @Test
   fun pureEmptySuiteShouldBeSkipped() {
-    val result = executor.run(":app:testMyPureEmptyTestSuiteT1DebugTestSuite")
+    val result = executor.run(":app:testDebugMyPureEmptyTestSuiteT1TestSuite")
     result.assertOutputDoesNotContain("Serial IDs =")
-    assertThat(result.findTask(":app:testMyPureEmptyTestSuiteT1DebugTestSuite")?.wasSkipped()).isTrue()
+    assertThat(result.findTask(":app:testDebugMyPureEmptyTestSuiteT1TestSuite")?.wasSkipped()).isTrue()
   }
 }
 

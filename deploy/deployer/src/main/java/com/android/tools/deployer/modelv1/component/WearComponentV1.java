@@ -16,10 +16,10 @@
 package com.android.tools.deployer.modelv1.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.MultiLineReceiver;
-import com.android.ddmlib.MultiReceiver;
+import com.android.tools.deployer.common.DeployerIShellOutputReceiver;
+import com.android.tools.deployer.common.DeployerMultiLineReceiver;
+import com.android.tools.deployer.common.DeployerMultiReceiver;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.component.WearComponent;
 import com.android.utils.ILogger;
@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 
 public interface WearComponentV1 extends AppComponentV1 {
 
-    public static class DebugCommandReceiver extends MultiLineReceiver {
+    public static class DebugCommandReceiver extends DeployerMultiLineReceiver {
         private final @NotNull Pattern exceptionPattern = Pattern.compile("(Exception)");
         private boolean exceptionStatus = false;
 
@@ -55,7 +55,7 @@ public interface WearComponentV1 extends AppComponentV1 {
         }
     }
 
-    default void setUpAmDebugApp(@NonNull IDevice device, String appId) throws ModelException {
+    default void setUpAmDebugApp(@NonNull DeviceHolder device, String appId) throws ModelException {
         DebugCommandReceiver amReceiver = new DebugCommandReceiver();
         runShellCommand(
                 String.format("%s '%s'", WearComponent.ShellCommand.AM_SET_DEBUG_APP, appId),
@@ -66,8 +66,8 @@ public interface WearComponentV1 extends AppComponentV1 {
         }
     }
 
-    default void setUpDebugSurfaceDebugApp(@NonNull IDevice device, String appId, ILogger logger)
-            throws ModelException {
+    default void setUpDebugSurfaceDebugApp(
+            @NonNull DeviceHolder device, String appId, ILogger logger) throws ModelException {
         CommandResultReceiverV1 surfaceReceiver = new CommandResultReceiverV1();
         runShellCommand(
                 String.format(
@@ -81,13 +81,13 @@ public interface WearComponentV1 extends AppComponentV1 {
 
     default void runStartCommand(
             @NonNull String command,
-            @NonNull IShellOutputReceiver receiver,
+            @NonNull DeployerIShellOutputReceiver receiver,
             @NonNull ILogger logger,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws ModelException {
         logger.info("$ adb shell " + command);
         CommandResultReceiverV1 resultReceiver = new CommandResultReceiverV1();
-        MultiReceiver multiReceiver = new MultiReceiver(resultReceiver, receiver);
+        DeployerMultiReceiver multiReceiver = new DeployerMultiReceiver(resultReceiver, receiver);
         runShellCommand(command, multiReceiver, device);
         if (resultReceiver.getResultCode() != CommandResultReceiverV1.SUCCESS_CODE) {
             throw new ModelException(

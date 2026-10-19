@@ -111,6 +111,7 @@ class BooleanOptionTest {
         BooleanOption.LINT_BASELINE_OMIT_LINE_NUMBERS,
         BooleanOption.ENABLE_NEW_TEST_DSL,
         BooleanOption.ENABLE_SCREENSHOT_TEST,
+        BooleanOption.ENABLE_BACKUP_TEST,
         BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT,
         BooleanOption.SUPPRESS_MANIFEST_PACKAGE_WARNING,
         BooleanOption.DISABLE_INLINE_SCOPES_NUMBERS,
@@ -123,7 +124,9 @@ class BooleanOptionTest {
         BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS,
         BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS,
         BooleanOption.REPORT_AGGREGATION_SUPPORT,
+        BooleanOption.TEST_SUITE_NEW_REPORT_FORMAT,
         BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS,
+        BooleanOption.R8_PLUGIN_SUPPORT,
       )
 
     checkViolatingProjectOptions(

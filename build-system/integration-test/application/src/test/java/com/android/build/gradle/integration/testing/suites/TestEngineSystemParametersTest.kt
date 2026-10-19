@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
@@ -84,7 +83,7 @@ class TestEngineSystemParametersTest {
           android {
             namespace = "com.example.app"
             defaultConfig { applicationId = "com.example.app" }
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
                 includeEngines.add("toy-junit-engine-for-system-properties")
@@ -106,13 +105,13 @@ class TestEngineSystemParametersTest {
   @Test
   fun testSystemProperties() {
     val project = rule.build
-    val result = project.executor.run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
+    val result = project.executor.run("testDebugFirstT1TestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testDebugFirstT1TestSuite")
 
     val appBuildDir = project.subProject(":app").buildDir
 
     // lookup the test engine logging file.
-    val loggingFile = File(appBuildDir.toFile(), "intermediates/debug/testFirstT1DebugTestSuite/junit_engines_logging.txt")
+    val loggingFile = File(appBuildDir.toFile(), "intermediates/debug/testDebugFirstT1TestSuite/junit_engines_logging.txt")
 
     PathSubject.assertThat(loggingFile).exists()
     PathSubject.assertThat(loggingFile).contains("token = _random_token_")

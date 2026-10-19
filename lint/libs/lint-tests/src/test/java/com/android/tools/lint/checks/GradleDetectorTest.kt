@@ -2292,7 +2292,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         gradle(
             """
             plugins {
-              id 'com.android.application' version '7.2.0'
+              id 'com.android.application' version '7.3.0'
             }
             """
           )
@@ -2315,8 +2315,8 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:2: Warning: A newer version of com.android.application than 7.2.0 is available: 8.0.2 [AndroidGradlePluginVersion]
-          id 'com.android.application' version '7.2.0'
+        build.gradle:2: Warning: A newer version of com.android.application than 7.3.0 is available: 8.0.2 [AndroidGradlePluginVersion]
+          id 'com.android.application' version '7.3.0'
                                                ~~~~~~~
         ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.3.3 is available: 7.6.4 [AndroidGradlePluginVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-7.3.3-bin.zip
@@ -3388,7 +3388,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     mavenCentral()
                   }
                   dependencies {
-                    classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
+                    classpath 'com.android.tools.build:gradle:7.4.0-alpha04'
                   }
                 }
 
@@ -3406,25 +3406,25 @@ class GradleDetectorTest : AbstractCheckTest() {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.3.0
           override fun getClientProperty(key: String): Any? {
-            return if (key == KEY_IDE_AGP_VERSION) "7.3.0" else null
+            return if (key == KEY_IDE_AGP_VERSION) "7.4.0" else null
           }
         }
       })
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.3.0-alpha04 is available: 7.3.2 [AndroidGradlePluginVersion]
-            classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.4.0-alpha04 is available: 7.4.1 [AndroidGradlePluginVersion]
+            classpath 'com.android.tools.build:gradle:7.4.0-alpha04'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
       )
       .expectFixDiffs(
         """
-        Autofix for build.gradle line 7: Replace with 7.3.2:
+        Autofix for build.gradle line 7: Replace with 7.4.1:
         @@ -7 +7 @@
-        -    classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
-        +    classpath 'com.android.tools.build:gradle:7.3.2'
+        -    classpath 'com.android.tools.build:gradle:7.4.0-alpha04'
+        +    classpath 'com.android.tools.build:gradle:7.4.1'
         """
       )
   }
@@ -3432,8 +3432,8 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testTooRecentVersionInVersionCatalog() {
     val expected =
       """
-      ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.tools.build:gradle than 7.3.0-alpha04 is available: 7.3.2 [AndroidGradlePluginVersion]
-      gradle = "  com.android.tools.build:gradle:7.3.0-alpha04  "
+      ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.tools.build:gradle than 7.4.0-alpha04 is available: 7.4.1 [AndroidGradlePluginVersion]
+      gradle = "  com.android.tools.build:gradle:7.4.0-alpha04  "
                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       0 errors, 1 warning
       """
@@ -3443,7 +3443,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         gradleToml(
             """
                 [libraries]
-                gradle = "  com.android.tools.build:gradle:7.3.0-alpha04  "
+                gradle = "  com.android.tools.build:gradle:7.4.0-alpha04  "
                 """
           )
           .indented()
@@ -3453,7 +3453,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 7.3.0
           override fun getClientProperty(key: String): Any? {
-            return if (key == KEY_IDE_AGP_VERSION) "7.3.0" else null
+            return if (key == KEY_IDE_AGP_VERSION) "7.4.0" else null
           }
         }
       }
@@ -3461,10 +3461,10 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(expected)
       .expectFixDiffs(
         """
-        Autofix for gradle/libs.versions.toml line 2: Replace with 7.3.2:
+        Autofix for gradle/libs.versions.toml line 2: Replace with 7.4.1:
         @@ -2 +2 @@
-        -gradle = "  com.android.tools.build:gradle:7.3.0-alpha04  "
-        +gradle = "  com.android.tools.build:gradle:7.3.2  "
+        -gradle = "  com.android.tools.build:gradle:7.4.0-alpha04  "
+        +gradle = "  com.android.tools.build:gradle:7.4.1  "
         """
       )
   }
@@ -3484,7 +3484,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     mavenCentral()
                   }
                   dependencies {
-                    classpath 'com.android.tools.build:gradle:7.3.0-alpha01'
+                    classpath 'com.android.tools.build:gradle:7.4.0-alpha01'
                   }
                 }
 
@@ -3502,15 +3502,15 @@ class GradleDetectorTest : AbstractCheckTest() {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.4.0
           override fun getClientProperty(key: String): Any? {
-            return if (key == KEY_IDE_AGP_VERSION) "7.4.0" else null
+            return if (key == KEY_IDE_AGP_VERSION) "7.5.0" else null
           }
         }
       }
       .run()
       .expect(
         "" +
-          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.3.0-alpha01 is available: 7.4.1. (There is also a newer version of 7.3.\uD835\uDC65 available, if upgrading to 7.4.1 is difficult: 7.3.2) [AndroidGradlePluginVersion]\n" +
-          "    classpath 'com.android.tools.build:gradle:7.3.0-alpha01'\n" +
+          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.4.0-alpha01 is available: 7.5.0. (There is also a newer version of 7.4.\uD835\uDC65 available, if upgrading to 7.5.0 is difficult: 7.4.1) [AndroidGradlePluginVersion]\n" +
+          "    classpath 'com.android.tools.build:gradle:7.4.0-alpha01'\n" +
           "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
           "0 errors, 1 warnings"
       )
@@ -3519,7 +3519,7 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testTooRecentVersion3() {
     // Regression test for https://issuetracker.google.com/119210741
     // Older Studio than Gradle:
-    // Studio 3.3, gradle: 7.0.0-alpha4: Already using Gradle 7.0: offer latest version of it
+    // Studio 3.3, gradle: 7.4.0-alpha4: Already using Gradle 7.0: offer latest version of it
     lint()
       .files(
         gradle(
@@ -3530,7 +3530,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     mavenCentral()
                   }
                   dependencies {
-                    classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
+                    classpath 'com.android.tools.build:gradle:7.4.0-alpha04'
                   }
                 }
 
@@ -3555,8 +3555,8 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.3.0-alpha04 is available: 7.3.2 [AndroidGradlePluginVersion]
-            classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.4.0-alpha04 is available: 7.4.1 [AndroidGradlePluginVersion]
+            classpath 'com.android.tools.build:gradle:7.4.0-alpha04'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
@@ -3617,7 +3617,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                 mavenCentral()
               }
               dependencies {
-                classpath 'com.android.tools.build:gradle:7.2.0'
+                classpath 'com.android.tools.build:gradle:7.3.0'
               }
             }
             """
@@ -3630,7 +3630,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         "" +
           "<?xml version='1.0' encoding='UTF-8'?>\n" +
           "<com.android.tools.build>\n" +
-          "  <gradle versions=\"7.2.0,7.4.2,8.1.0-alpha05\"/>\n" +
+          "  <gradle versions=\"7.3.0,7.4.2,8.1.0-alpha05\"/>\n" +
           "</com.android.tools.build>",
       )
       .issues(AGP_DEPENDENCY)
@@ -3644,8 +3644,8 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.2.0 is available: 7.4.2 [AndroidGradlePluginVersion]
-            classpath 'com.android.tools.build:gradle:7.2.0'
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.3.0 is available: 7.4.2 [AndroidGradlePluginVersion]
+            classpath 'com.android.tools.build:gradle:7.3.0'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
@@ -9741,11 +9741,11 @@ class GradleDetectorTest : AbstractCheckTest() {
     )
   }
 
-  // TODO(b/463283604)
-  fun disabled_testIncludedFiles_outsideApp() {
+  fun testIncludedFiles_outsideApp() {
     // Make sure we handle including files -- from kts to groovy and back.
     lint()
       .files(
+        kotlin("src/main/kotlin/test/pkg/Foo.kt", "package test.pkg\nclass Foo").indented(),
         gradle(
             "../common.gradle",
             """
@@ -9830,6 +9830,104 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(
         """
           test.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+              compileSdk = 31 // ERROR
+              ~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testIncludedFiles_withinApp_withKotlinSources() {
+    // b/561317331: like testIncludedFiles_withinApp, but the module also has real
+    // Kotlin sources, so `javaSourceFolders` is non-empty and the project directory
+    // is not used as a source root fallback.
+    lint()
+      .files(
+        kotlin("src/main/kotlin/test/pkg/Foo.kt", "package test.pkg\nclass Foo").indented(),
+        kts(
+            "test.gradle.kts",
+            """
+            android {
+                compileSdk = 31 // ERROR
+            }
+          """,
+          )
+          .indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            apply(from = "test.gradle.kts")
+          """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+          test.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+              compileSdk = 31 // ERROR
+              ~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testPlainKts_withKotlinSources() {
+    // b/561317331 control case: no apply(from = ...); the module's own build.gradle.kts
+    // should be registered as a script module even when the module has real sources.
+    lint()
+      .files(
+        kotlin("src/main/kotlin/test/pkg/Foo.kt", "package test.pkg\nclass Foo").indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            android {
+                compileSdk = 31 // ERROR
+            }
+          """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+          build.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+              compileSdk = 31 // ERROR
+              ~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testIncludedFiles_subDir_withKotlinSources() {
+    // b/561317331: included script lives in a sub directory of the module.
+    lint()
+      .files(
+        kotlin("src/main/kotlin/test/pkg/Foo.kt", "package test.pkg\nclass Foo").indented(),
+        kts(
+            "gradle/extra.gradle.kts",
+            """
+            android {
+                compileSdk = 31 // ERROR
+            }
+          """,
+          )
+          .indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            apply(from = "gradle/extra.gradle.kts")
+          """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+          gradle/extra.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk = 31 // ERROR
               ~~~~~~~~~~~~~~~
           0 errors, 1 warning

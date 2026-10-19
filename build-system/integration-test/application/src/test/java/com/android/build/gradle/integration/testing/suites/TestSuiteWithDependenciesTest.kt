@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
@@ -60,7 +59,7 @@ class TestSuiteWithDependenciesTest {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             namespace = "com.example.test"
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 includeEngines.add("toy-junit-engine-for-tests")
@@ -101,7 +100,7 @@ class TestSuiteWithDependenciesTest {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             namespace = "com.example.test2"
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 includeEngines.add("toy-junit-engine-for-tests")
@@ -181,7 +180,7 @@ class TestSuiteWithDependenciesTest {
 
   @Test
   fun testConfigurationBlockExecutes() {
-    rule.build.executor.run("app:testFirstT1DebugTestSuite")
+    rule.build.executor.run("app:testDebugFirstT1TestSuite")
   }
 
   @Test
@@ -198,7 +197,7 @@ class TestSuiteWithDependenciesTest {
     //
     // This test simulates that by using a project dependency that explicitly provides
     // a 'directory' artifact, ensuring that the resolution remains lenient.
-    rule.build.executor.run(":appWithDir:testFirstT1DebugTestSuite")
+    rule.build.executor.run(":appWithDir:testDebugFirstT1TestSuite")
   }
 }
 

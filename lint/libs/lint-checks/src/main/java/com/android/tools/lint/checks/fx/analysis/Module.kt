@@ -28,7 +28,6 @@ import com.android.tools.lint.checks.fx.result.MethodId
 import com.android.tools.lint.checks.fx.result.PsiClassAdapter
 import com.android.tools.lint.checks.fx.result.PsiTypeAdapter
 import com.android.tools.lint.checks.fx.result.Scope
-import com.android.tools.lint.checks.fx.result.TermEnv
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.Sym
 import com.android.tools.lint.checks.fx.result.TypeAdapter
@@ -38,7 +37,6 @@ import com.android.tools.lint.checks.fx.result.paramNames
 import com.android.tools.lint.checks.fx.result.returnType
 import com.android.tools.lint.checks.fx.result.showBound
 import com.android.tools.lint.checks.fx.result.translate
-import com.android.tools.lint.checks.fx.utils.assoc
 import com.android.tools.lint.checks.fx.utils.plus
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.detector.api.JavaContext
@@ -46,29 +44,34 @@ import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.psi.PsiAnonymousClass
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
-import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiTypeParameterListOwner
 import com.intellij.psi.impl.source.PsiClassReferenceType
-import java.util.IdentityHashMap
+import com.intellij.util.JavaPsiConstructorUtil
 import kotlin.time.Duration
 import kotlin.time.measureTime
+import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
-import org.jetbrains.kotlin.name.JvmStandardClassIds
+import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
+import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 import org.jetbrains.kotlin.psi.KtTypeParameterListOwner
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.UParameter
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.toUElement
@@ -150,7 +153,6 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
   class Builder<FX : Any>(private val annotationParser: AnnotationParser<FX>) {
     private val classes = LinkedHashMap<ClassId, ClassBody<FX>>()
     private var elapsed: Duration = Duration.Companion.ZERO
-    private val overloadingCache = IdentityHashMap<PsiElement, TermEnv<Nothing>>()
 
     fun build(): Module<FX> = Module(classes)
 
@@ -211,7 +213,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       classes.put(containingClassId, extendedContainingClass)
 
       val placeholderClass = classes[classId] ?: ClassBody.empty
-      classes[classId] = placeholderClass.copy(methods = placeholderClass.methods.put(fnId, fnDefn))
+      classes[classId] = placeholderClass.copy(methods = placeholderClass.methods.withMethod(fnId, fnDefn, localFun.uast.valueParameters))
     }
 
     private fun buildClass(id: ClassId, context: JavaContext, klass: UClass): ClassBody<FX> {
@@ -283,10 +285,13 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       return ClassBody<FX>(
         supers = klass.javaPsi.supers.map(ClassId::of),
         methods =
-          klass.methods.asList().assoc { method ->
+          klass.methods.fold(persistentMapOf()) { methods, method ->
             val env = if (method.javaPsi.isStatic()) Env.empty else env
             val id = MethodId(method.javaPsi)
-            id to buildMethod(id, context, method, env, classAdapter)
+            val canonical = method.canonicalOverload()
+            // A generated overload delegates to the canonical method's defaults, so it needs (and must not re-check) none of its own
+            val params = if (canonical == null) method.uastParameters else emptyList()
+            methods.withMethod(id, buildMethod(id, context, method, env, classAdapter, canonical), params)
           },
         initEnvironment = env,
       )
@@ -298,6 +303,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       method: UMethod,
       classEnv: Env<Nothing>,
       classAdapter: TypeAdapter<PsiClass>,
+      canonicalOverload: PsiMethod?,
     ): MethodBody<FX> {
       val initTypeParams: TypeBounds<Nothing> = classEnv.types + method.javaPsi.typeParams(id)
       val (moreTypeParams, domains) = generateDomain(context, initTypeParams.paramNames(), method, classAdapter)
@@ -310,17 +316,9 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           params.size + 1 -> classEnv.vars to domains.subList(1, domains.size)
           else -> throw IllegalStateException("Got domains $domains for method ${method.name} with parameters $params")
         }
-      val env =
-        when (val status = method.getOverloadingStatus()) {
-          is OverloadingStatus.None -> paramDomains.foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
-          is OverloadingStatus.Primary ->
-            paramDomains
-              .foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
-              .also { overloadingCache[status.source] = it }
-          is OverloadingStatus.Secondary -> overloadingCache[status.source]!!
-        }
-      val body = method.uastBody
+      val env = paramDomains.foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
       val methodEnv = classEnv.copy(types = typeParams, vars = env)
+      val body = canonicalOverload?.let { OverloadBody(method, it, methodEnv) } ?: method.uastBody
 
       return MethodBody(
         domains = domains,
@@ -374,6 +372,31 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           },
         source = fnUast,
       )
+    }
+
+    /** Accumulates an entry for the method, as well as a synthetic one for each of its default argument */
+    private fun PersistentMap<MethodId, MethodBody<FX>>.withMethod(
+      id: MethodId,
+      body: MethodBody<FX>,
+      defaultedParams: List<UParameter>,
+    ): PersistentMap<MethodId, MethodBody<FX>> {
+      var acc = putting(id, body)
+      for (param in defaultedParams) {
+        val init = param.uastInitializer ?: continue
+        val paramPsi = param.javaPsi as PsiParameter
+        val status =
+          when (val s = body.status) {
+            is MethodBody.Status.ForInference -> s.copy(body = init)
+            is MethodBody.Status.ForChecking -> s.copy(body = init)
+            // Kotlin forbids default values on overrides, so there are no inherited annotations to honor
+            is MethodBody.Status.Abstract,
+            is MethodBody.Status.BasicConstructor -> MethodBody.Status.ForInference(init, EffectAnnotation.None)
+          }
+        val returnType = PsiTypeAdapter.translate(body.initEnvironment.boundParamNames, paramPsi.type)
+        acc =
+          acc.putting(id.defaultArgumentOf(paramPsi.name), body.copy(returnTypeAnnotation = returnType, status = status, source = param))
+      }
+      return acc
     }
 
     private fun generateDomain(
@@ -530,22 +553,6 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
         m.put(Sym.Param(param.name!!, scope), persistentSetOf())
       }
 
-    private fun UMethod.getOverloadingStatus(): OverloadingStatus {
-      val methodSource = sourcePsi as? KtFunction ?: return OverloadingStatus.None
-      return if (
-        methodSource.annotationEntries.any { it.shortName?.asString() == JvmStandardClassIds.JVM_OVERLOADS_FQ_NAME.shortName().asString() }
-      ) {
-        val firstMethod = (uastParent as? UClass)?.uastDeclarations?.find { it.sourcePsi === methodSource } as? UMethod
-        when {
-          firstMethod == null -> OverloadingStatus.None
-          firstMethod.uastParameters.size == javaPsi.parameters.size -> OverloadingStatus.Primary(methodSource)
-          else -> OverloadingStatus.Secondary(methodSource)
-        }
-      } else {
-        OverloadingStatus.None
-      }
-    }
-
     internal fun loTechDebug() {
       println("Took $elapsed to index ${classes.size} classes and ${classes.asSequence().sumOf { (_, c) -> c.methods.size }} methods:")
 
@@ -564,14 +571,6 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
         }
       }
     }
-
-    private sealed interface OverloadingStatus {
-      class Primary(val source: KtFunction) : OverloadingStatus
-
-      class Secondary(val source: KtFunction) : OverloadingStatus
-
-      object None : OverloadingStatus
-    }
   }
 
   interface AnnotationParser<FX : Any> {
@@ -579,6 +578,8 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
     fun parseAnnotations(annotations: List<UAnnotation>): FX?
 
     fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod): FX?
+
+    fun parseClassImmediateAnnotations(evaluator: JavaEvaluator, klass: PsiClass): FX? = null
 
     /** When both the method's annotation and its supers' are present */
     fun resolveAnnotations(
@@ -593,26 +594,59 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
     companion object {
       fun <FX : Any> AnnotationParser<FX>.parseMethodAnnotations(context: JavaContext, method: UMethod): EffectAnnotation<FX> {
         val evaluator = context.evaluator
-        val bases = nearestBaseAnns(evaluator, method.javaPsi.findSuperMethods())
+        val bases =
+          nearestBaseAnns(evaluator, method.javaPsi.findSuperMethods()) { base ->
+            when (base) {
+              // A compiled base isn't in scope for inference, so overriding it takes its superclasses' default, as calling it does
+              is PsiCompiledElement -> nearestSuperclassAnns(evaluator, base)
+              else -> null
+            }
+          }
         return when (val targetAnn = parseMethodImmediateAnnotations(evaluator, method)) {
           null -> inheritAnnotations(evaluator, bases)
           else -> resolveAnnotations(context, EffectAnnotation.Explicit(targetAnn, method), bases)
         }
       }
 
+      /** The nearest annotations of each of [baseMethods], or [default] for a base without any annotation of its own or inherited */
       internal fun <FX : Any> AnnotationParser<FX>.nearestBaseAnns(
         evaluator: JavaEvaluator,
         baseMethods: Array<PsiMethod>,
-      ): List<EffectAnnotation.Explicit<FX>> =
-        baseMethods.flatMap { base ->
-          val baseMethod = base.toUElement() as UMethod
-          when (val baseAnn = parseMethodImmediateAnnotations(evaluator, baseMethod)) {
-            null -> nearestBaseAnns(evaluator, base.findSuperMethods())
-            else -> listOf(EffectAnnotation.Explicit(baseAnn, baseMethod))
-          }
+        default: (PsiMethod) -> FX? = { null },
+      ): List<EffectAnnotation.Explicit<FX>> = baseMethods.flatMap { base ->
+        val baseMethod = base.toUElement() as UMethod
+        when (val baseAnn = parseMethodImmediateAnnotations(evaluator, baseMethod)) {
+          null ->
+            nearestBaseAnns(evaluator, base.findSuperMethods(), default).ifEmpty {
+              listOfNotNull(default(base)?.let { EffectAnnotation.Explicit(it, baseMethod) })
+            }
+          else -> listOf(EffectAnnotation.Explicit(baseAnn, baseMethod))
         }
+      }
+
+      /** The class-level default from the nearest annotated superclass of [method]'s class; statics and constructors take none */
+      internal fun <FX : Any> AnnotationParser<FX>.nearestSuperclassAnns(
+        evaluator: JavaEvaluator,
+        method: PsiMethod,
+        classAnn: (PsiClass) -> FX? = { parseClassImmediateAnnotations(evaluator, it) },
+      ): FX? {
+        if (method.isConstructor || evaluator.isStatic(method)) return null
+        return generateSequence(method.containingClass?.superClass, PsiClass::getSuperClass).firstNotNullOfOrNull(classAnn)
+      }
     }
   }
+}
+
+/**
+ * If [this] method is a compiler-generated JVM overload, return the canonical method with all default parameters. Generated overloads share
+ * their [UMethod.sourcePsi] with the declaration, which is the light method with all the parameters.
+ */
+internal fun UMethod.canonicalOverload(): PsiMethod? {
+  val declaration = sourcePsi as? KtFunction ?: return null
+  val canonical =
+    javaPsi.containingClass?.methods?.filter { (it as? KtLightMethod)?.kotlinOrigin === declaration }?.maxByOrNull { it.parameters.size }
+      ?: return null
+  return canonical.takeIf { it.parameters.size > javaPsi.parameters.size }
 }
 
 internal fun UMethod.isKtProperty() =
@@ -623,6 +657,26 @@ internal fun UMethod.isKtProperty() =
   }
 
 internal data class LocalFun(val uast: ULambdaExpression, val sourcePsi: KtNamedFunction)
+
+/** The instance field initializers run directly by this constructor: none if it delegates to another */
+internal fun UMethod.fieldInitializers(): List<UExpression> {
+  if (!isConstructor) return emptyList()
+  val delegates =
+    canonicalOverload() != null ||
+      when (val ctor = sourcePsi) {
+        is KtSecondaryConstructor -> ctor.getDelegationCall().isCallToThis
+        is PsiMethod -> JavaPsiConstructorUtil.isChainedConstructorCall(JavaPsiConstructorUtil.findThisOrSuperCallInConstructor(ctor))
+        else -> false
+      }
+  if (delegates) return emptyList()
+  return getContainingUClass()?.fields.orEmpty().filter { !it.isStatic && it.sourcePsi !is KtParameter }.mapNotNull { it.uastInitializer }
+}
+
+/** The reference under which [addLocalFunction] indexed the local function [fnUast] */
+internal fun localFunctionRef(fnUast: ULambdaExpression): Type.MethodRef? {
+  val (classId, fnId) = containerChain(fnUast) ?: return null
+  return Type.MethodRef(classId, fnId)
+}
 
 internal fun containerChain(fnUast: ULambdaExpression): Pair<ClassId.Local, MethodId>? {
   val methods =

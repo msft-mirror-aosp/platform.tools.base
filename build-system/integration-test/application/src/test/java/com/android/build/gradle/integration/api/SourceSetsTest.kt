@@ -17,10 +17,12 @@
 package com.android.build.gradle.integration.api
 
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallback
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
@@ -37,16 +39,15 @@ import org.junit.Test
 
 class SourceSetsTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.api.use"
-          defaultConfig { applicationId = "com.example.api.use" }
-        }
-        pluginCallbacks += MyAppCallback::class.java
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.api.use"
+        defaultConfig { applicationId = "com.example.api.use" }
       }
+      pluginCallbacks += MyAppCallback::class.java
     }
+  }
 
   class MyAppCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
@@ -92,16 +93,15 @@ class SourceSetsTest {
 
   @Test
   fun testOldAndNewVariantApiSourcesAccess() {
-    val build =
-      rule.build {
-        androidApplication {
-          files { add("extra-assets/debug/file.txt", "some asset") }
-          // add more plugins
-          pluginCallbacks.add(AssetCallback::class.java)
-          pluginCallbacks.add(AssetViaOldApiCallback::class.java)
-        }
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    val build = rule.build {
+      androidApplication {
+        files { add("extra-assets/debug/file.txt", "some asset") }
+        // add more plugins
+        pluginCallbacks.add(AssetCallback::class.java)
+        pluginCallbacks.add(AssetViaOldApiCallback::class.java)
       }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
 
     val app = build.androidApplication()
 
@@ -133,15 +133,14 @@ class SourceSetsTest {
    */
   @Test
   fun testOldVariantApiWithEarlyTaskRealization() {
-    val build =
-      rule.build {
-        androidApplication {
-          // replace previous plugin
-          pluginCallbacks.clear()
-          pluginCallbacks += RegisterTaskViaOldApi::class.java
-        }
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    val build = rule.build {
+      androidApplication {
+        // replace previous plugin
+        pluginCallbacks.clear()
+        pluginCallbacks += RegisterTaskViaOldApi::class.java
       }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
 
     build.executor.with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false).run(":app:mapDebugSourceSetPaths")
 
@@ -157,14 +156,13 @@ class SourceSetsTest {
 
   @Test
   fun testSettingCustomOutputPath() {
-    val build =
-      rule.build {
-        androidApplication {
-          // replace previous plugin
-          pluginCallbacks.clear()
-          pluginCallbacks.add(SettingOutputPathCallback::class.java)
-        }
+    val build = rule.build {
+      androidApplication {
+        // replace previous plugin
+        pluginCallbacks.clear()
+        pluginCallbacks.add(SettingOutputPathCallback::class.java)
       }
+    }
 
     val result = build.executor.run(":app:assembleDebug")
     Truth.assertThat(result.failedTasks).isEmpty()
@@ -174,6 +172,32 @@ class SourceSetsTest {
     // check the file got packaged
     result.assertTask(":app:debugReproTask").didWork()
     build.androidApplication(":app").assertApk(ApkSelector.DEBUG) { assets().resourceAsText("some-res.bin").isEqualTo("some res") }
+  }
+
+  @Test
+  fun testLibrarySourceSetsNamedConfigure() {
+    val build = rule.build {
+      androidLibrary(":lib") {
+        files {
+          add("src/other/assets/lib_file.txt", "some library asset")
+        }
+        pluginCallbacks.add(LibraryAssetViaOldApiCallback::class.java)
+      }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
+
+    val result = build.executor.run(":lib:mergeDebugAssets")
+    Truth.assertThat(result.failedTasks).isEmpty()
+    Truth.assertThat(build.androidLibrary(":lib").intermediatesDir.resolve("assets/debug/mergeDebugAssets/lib_file.txt").toFile().exists())
+      .isTrue()
+  }
+}
+
+class LibraryAssetViaOldApiCallback : LegacyLibraryCallback {
+  override fun handleExtension(project: Project, extension: LibraryExtension) {
+    extension.sourceSets.named("main").configure {
+      it.assets.setSrcDirs(listOf("src/other/assets"))
+    }
   }
 }
 

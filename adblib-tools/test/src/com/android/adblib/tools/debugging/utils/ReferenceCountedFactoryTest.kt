@@ -134,13 +134,12 @@ class ReferenceCountedFactoryTest : AdbLibToolsTestBase() {
 
     // Act
     var actionCalled = false
-    val r =
-      kotlin.runCatching {
-        factory.withResource<Unit> {
-          actionCalled = true
-          throw MyException("foo")
-        }
+    val r = kotlin.runCatching {
+      factory.withResource<Unit> {
+        actionCalled = true
+        throw MyException("foo")
       }
+    }
 
     // Assert
     assertTrue(r.isFailure)
@@ -157,13 +156,12 @@ class ReferenceCountedFactoryTest : AdbLibToolsTestBase() {
 
     // Act
     var actionCalled = false
-    val r =
-      kotlin.runCatching {
-        factory.withResource<Unit> {
-          actionCalled = true
-          throw CancellationException("foo")
-        }
+    val r = kotlin.runCatching {
+      factory.withResource<Unit> {
+        actionCalled = true
+        throw CancellationException("foo")
       }
+    }
 
     // Assert
     assertTrue(r.isFailure)

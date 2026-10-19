@@ -24,33 +24,32 @@ import org.junit.Test
 class ShrinkLibraryAarKeepRulesTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary {
-        android { buildTypes { named("release") { it.isMinifyEnabled = true } } }
-        files {
-          add("src/main/aarKeepRules/rules.keep", "-keep class com.example.lib.UnusedClass2 { *; }")
-          add(
-            "src/main/java/com/example/lib/UnusedClass.java",
-            """
+  val rule = GradleRule.from {
+    androidLibrary {
+      android { buildTypes { named("release") { it.isMinifyEnabled = true } } }
+      files {
+        add("src/main/aarKeepRules/rules.keep", "-keep class com.example.lib.UnusedClass2 { *; }")
+        add(
+          "src/main/java/com/example/lib/UnusedClass.java",
+          """
                     package com.example.lib;
                     public class UnusedClass {
                         public void method() {}
                     }
                     """,
-          )
-          add(
-            "src/main/java/com/example/lib/UnusedClass2.java",
-            """
+        )
+        add(
+          "src/main/java/com/example/lib/UnusedClass2.java",
+          """
                     package com.example.lib;
                     public class UnusedClass2 {
                         public void method() {}
                     }
                     """,
-          )
-        }
+        )
       }
     }
+  }
 
   @Test
   fun testAarKeepRules() {

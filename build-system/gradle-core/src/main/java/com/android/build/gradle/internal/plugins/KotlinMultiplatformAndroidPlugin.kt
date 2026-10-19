@@ -364,7 +364,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
     dependencyConfigurator.configureVariantTransforms(
       variants = listOf(mainVariant),
       nestedComponents = mainVariant.nestedComponents,
-      bootClasspathConfig = global,
+      globalConfig = global,
     )
 
     updateTestComponentFriendPaths(listOfNotNull(unitTest, androidTest))

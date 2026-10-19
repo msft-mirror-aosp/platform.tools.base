@@ -15,6 +15,11 @@
  */
 package com.android.tools.deployer;
 
+import com.android.adblib.AdbSession;
+import com.android.adblib.AdbSessionKt;
+import com.android.adblib.ConnectedDevice;
+import com.android.adblib.ConnectedDevicesTracker;
+import com.android.adblib.ConnectedDevicesTrackerKt;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
@@ -22,12 +27,17 @@ import com.android.testutils.AssumeUtil;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.DeployMetric;
 import com.android.tools.deployer.common.DeployerTestConstants;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
 import com.android.utils.ILogger;
 
 import com.google.common.collect.ImmutableList;
+
+import kotlin.coroutines.EmptyCoroutineContext;
+
+import kotlinx.coroutines.BuildersKt;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,6 +51,7 @@ import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This test works in the same manner as the DeployerRunnerTest with a fake adb server to which
@@ -76,7 +87,18 @@ public class AdbInstallerTest {
         }
 
         List<DeployMetric> unusedMetric = new ArrayList<>();
-        AdbClient client = new AdbClient(getDevice(bridge), logger);
+        IDevice iDevice = getDevice(bridge);
+        AdbSession session = connection.getAdbSession();
+        ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
+        ConnectedDevice connectedDevice =
+                BuildersKt.runBlocking(
+                        EmptyCoroutineContext.INSTANCE,
+                        (scope, continuation) ->
+                                ConnectedDevicesTrackerKt.waitForDevice(
+                                        tracker, iDevice.getSerialNumber(), continuation));
+        DeviceHolder deviceHolder =
+                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
+        AdbClient client = new AdbClient(deviceHolder, logger);
 
         AdbInstaller installer =
                 new AdbInstaller(installersPath.getAbsolutePath(), client, unusedMetric, logger);
@@ -116,7 +138,18 @@ public class AdbInstallerTest {
         }
 
         List<DeployMetric> unusedMetric = new ArrayList<>();
-        AdbClient client = new AdbClient(getDevice(bridge), logger);
+        IDevice iDevice = getDevice(bridge);
+        AdbSession session = connection.getAdbSession();
+        ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
+        ConnectedDevice connectedDevice =
+                BuildersKt.runBlocking(
+                        EmptyCoroutineContext.INSTANCE,
+                        (scope, continuation) ->
+                                ConnectedDevicesTrackerKt.waitForDevice(
+                                        tracker, iDevice.getSerialNumber(), continuation));
+        DeviceHolder deviceHolder =
+                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
+        AdbClient client = new AdbClient(deviceHolder, logger);
 
         AdbInstaller installer =
                 new AdbInstaller(

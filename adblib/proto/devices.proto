@@ -67,6 +67,7 @@ message AdbServerStatus {
         NATIVE = 1;
         LIBUSB = 2;
         USB_DISABLED = 3;
+        LIBADBUSB = 4;
     }
 
     enum MdnsBackend {

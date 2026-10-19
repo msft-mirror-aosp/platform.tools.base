@@ -16,7 +16,7 @@
 
 package com.android.tools.firebase.testlab.gradle.services.testrunner
 
-import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto
+import com.google.testing.platform.proto.api.core.AndroidTestDeviceInfoProto
 import java.io.File
 import java.io.FileOutputStream
 

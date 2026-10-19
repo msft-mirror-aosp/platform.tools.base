@@ -30,12 +30,11 @@ import org.junit.Test
 class FusedLibraryDslTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      fusedLibrary(":$FUSED_LIB_PROJECT_NAME") { androidFusedLibrary { namespace = null } }
-      gradleProperties { add(BooleanOption.FUSED_LIBRARY_SUPPORT, true) }
-      settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
-    }
+  val rule = GradleRule.from {
+    fusedLibrary(":$FUSED_LIB_PROJECT_NAME") { androidFusedLibrary { namespace = null } }
+    gradleProperties { add(BooleanOption.FUSED_LIBRARY_SUPPORT, true) }
+    settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
+  }
 
   @Test
   fun addingRequiredOptionsToAssemble() {
@@ -78,23 +77,22 @@ class FusedLibraryDslTest {
   @Test
   fun checkSettingsPluginApplies() {
     val fusedLibraryCoordinates = "$FUSED_LIBRARY_GROUP:$FUSED_LIBRARY_ARTIFACT_NAME:$FUSED_LIBRARY_VERSION"
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            defaultConfig { minSdk { version = release(29) } }
-            dependencies { implementation(fusedLibraryCoordinates) }
-          }
-        }
-        fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
-          androidFusedLibrary { namespace = "com.example.fusedLib" }
-          pluginCallbacks += FusedLibPublicationCallback::class.java
-        }
-        settings {
-          android { minSdk { version = release(30) } }
-          addRepository("$FUSED_LIB_PROJECT_NAME/build/$FUSED_LIBRARY_REPO_NAME")
+    val build = rule.build {
+      androidApplication {
+        android {
+          defaultConfig { minSdk { version = release(29) } }
+          dependencies { implementation(fusedLibraryCoordinates) }
         }
       }
+      fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
+        androidFusedLibrary { namespace = "com.example.fusedLib" }
+        pluginCallbacks += FusedLibPublicationCallback::class.java
+      }
+      settings {
+        android { minSdk { version = release(30) } }
+        addRepository("$FUSED_LIB_PROJECT_NAME/build/$FUSED_LIBRARY_REPO_NAME")
+      }
+    }
 
     build.executor.run("publishReleasePublicationToMyrepoRepository")
     // Fused Library minSdk (from settings) is higher than the app, so expect a failed build
@@ -113,26 +111,25 @@ class FusedLibraryDslTest {
   @Test
   fun checkAndroidFusedLibraryOverridesSettings() {
     val fusedLibraryCoordinates = "$FUSED_LIBRARY_GROUP:$FUSED_LIBRARY_ARTIFACT_NAME:$FUSED_LIBRARY_VERSION"
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            defaultConfig { minSdk { version = release(29) } }
-            dependencies { implementation(fusedLibraryCoordinates) }
-          }
-        }
-        fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
-          androidFusedLibrary {
-            namespace = "com.example.fusedLib"
-            minSdk { version = release(31) }
-          }
-          pluginCallbacks += FusedLibPublicationCallback::class.java
-        }
-        settings {
-          android { minSdk { version = release(30) } }
-          addRepository("$FUSED_LIB_PROJECT_NAME/build/$FUSED_LIBRARY_REPO_NAME")
+    val build = rule.build {
+      androidApplication {
+        android {
+          defaultConfig { minSdk { version = release(29) } }
+          dependencies { implementation(fusedLibraryCoordinates) }
         }
       }
+      fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
+        androidFusedLibrary {
+          namespace = "com.example.fusedLib"
+          minSdk { version = release(31) }
+        }
+        pluginCallbacks += FusedLibPublicationCallback::class.java
+      }
+      settings {
+        android { minSdk { version = release(30) } }
+        addRepository("$FUSED_LIB_PROJECT_NAME/build/$FUSED_LIBRARY_REPO_NAME")
+      }
+    }
 
     // Finally, check that setting minSdk in androidFusedLibrary overrides settings minSdk
     build.executor.run("publishReleasePublicationToMyrepoRepository")
@@ -144,21 +141,20 @@ class FusedLibraryDslTest {
 
   @Test
   fun checkPackagingDsl() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
-          androidFusedLibrary {
-            namespace = "com.example.myfusedlib"
-            minSdk { version = release(34) }
-            packaging { resources { excludes += "**/LICENSE.txt" } }
-          }
-          dependencies { include(project(":lib")) }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
+        androidFusedLibrary {
+          namespace = "com.example.myfusedlib"
+          minSdk { version = release(34) }
+          packaging { resources { excludes += "**/LICENSE.txt" } }
         }
-        androidLibrary {
-          android { namespace = "com.example.lib" }
-          files { add("src/main/resources/LICENSE.txt", "This is a license file.") }
-        }
+        dependencies { include(project(":lib")) }
       }
+      androidLibrary {
+        android { namespace = "com.example.lib" }
+        files { add("src/main/resources/LICENSE.txt", "This is a license file.") }
+      }
+    }
     build.executor.run(":$FUSED_LIB_PROJECT_NAME:assemble")
 
     build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME").assertAar(AarSelector.NO_BUILD_TYPE) { javaResources { isEmpty() } }

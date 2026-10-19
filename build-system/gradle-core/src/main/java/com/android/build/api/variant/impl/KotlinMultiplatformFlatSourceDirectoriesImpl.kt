@@ -38,11 +38,10 @@ class KotlinMultiplatformFlatSourceDirectoriesImpl(name: String, variantServices
 
     val projectDir = variantServices.projectInfo.projectDirectory
     val results = variantServices.newListPropertyForInternalUse(Directory::class.java)
-    val mappedResults: Provider<List<Directory>> =
-      sources.flatMap { directoryEntries: Collection<DirectoryEntry>? ->
-        directoryEntries?.forEach { directoryEntry -> directoryEntry.addTo(projectDir, results) }
-        return@flatMap results
-      }
+    val mappedResults: Provider<List<Directory>> = sources.flatMap { directoryEntries: Collection<DirectoryEntry>? ->
+      directoryEntries?.forEach { directoryEntry -> directoryEntry.addTo(projectDir, results) }
+      return@flatMap results
+    }
 
     directories.addAll(mappedResults)
   }
@@ -66,11 +65,10 @@ class KotlinMultiplatformFlatSourceDirectoriesForJavaImpl(
 
     val projectDir = variantServices.projectInfo.projectDirectory
     val results = variantServices.newListPropertyForInternalUse(Directory::class.java)
-    val mappedResults: Provider<List<Directory>> =
-      sources.flatMap { directoryEntries: Collection<DirectoryEntry>? ->
-        directoryEntries?.forEach { directoryEntry -> directoryEntry.addTo(projectDir, results) }
-        return@flatMap results
-      }
+    val mappedResults: Provider<List<Directory>> = sources.flatMap { directoryEntries: Collection<DirectoryEntry>? ->
+      directoryEntries?.forEach { directoryEntry -> directoryEntry.addTo(projectDir, results) }
+      return@flatMap results
+    }
 
     directories.addAll(mappedResults)
   }

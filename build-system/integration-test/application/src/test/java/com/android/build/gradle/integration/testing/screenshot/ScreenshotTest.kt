@@ -19,13 +19,11 @@ package com.android.build.gradle.integration.testing.screenshot
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.options.BooleanOption
-import com.android.compose.screenshot.gradle.ScreenshotTestOptions
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -42,35 +40,6 @@ class ScreenshotTest {
 
       gradleProperties { add(BooleanOption.ENABLE_SCREENSHOT_TEST, true) }
     }
-
-  @Ignore("b/525640367")
-  @Test
-  fun runPreviewScreenshotTestWithThreshold() {
-    val build = rule.build
-    val appProject = build.androidApplication()
-
-    build.updateReferenceImage()
-    // update the preview - tests fail
-    appProject.files.update("src/main/java/com/Example.kt").searchAndReplace("Hello World", "Hello Worid")
-
-    val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-    result.assertErrorContains("There were failing tests. See the report at: ")
-
-    // set high threshold - tests pass
-    appProject.reconfigure {
-      android { testOptions { viaExtension("screenshotTests", ScreenshotTestOptions::class) { imageDifferenceThreshold = 0.5f } } }
-    }
-
-    build.sstExecutor().run(":app:validateDebugScreenshotTest")
-
-    // reduce threshold - tests fail
-    appProject.reconfigure {
-      android { testOptions { viaExtension("screenshotTests", ScreenshotTestOptions::class) { imageDifferenceThreshold = 0.001f } } }
-    }
-
-    val resultLowThreshold = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-    resultLowThreshold.assertErrorContains("There were failing tests. See the report at: ")
-  }
 
   @Test
   fun runPreviewScreenshotTest() {
@@ -140,7 +109,13 @@ class ScreenshotTest {
     }
 
     // Rerun validation task - modified tests should fail and diffs are generated
-    build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+    val failedResult = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+
+    // The image diff percentage must be reported in the console output so that CI logs are useful
+    // on their own, and it must be reported only once per failing test (b/517787525).
+    failedResult.assertOutputContains("Image does not match. (")
+    failedResult.assertOutputContains("% difference)")
+    failedResult.assertOutputDoesNotContain("Difference:")
 
     assertThat(indexHtmlReport).exists()
     assertThat(classHtmlReport).exists()

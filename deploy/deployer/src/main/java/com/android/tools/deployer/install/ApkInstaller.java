@@ -19,7 +19,6 @@ import static com.android.tools.deployer.common.InstallStatus.OK;
 import static com.android.tools.deployer.common.InstallStatus.SKIPPED_INSTALL;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.InstallReceiver;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.common.AdbClient;
@@ -123,14 +122,10 @@ public class ApkInstaller {
                     // still be errors in the output if the installation was not finished.
                     DeployMetric metric = new DeployMetric("DELTAINSTALL", deltaInstallStart);
 
-                    InstallReceiver installReceiver = new InstallReceiver();
-                    String[] lines = deltaInstallResult.packageManagerOutput.split("\\n");
-                    installReceiver.processNewLines(lines);
-                    installReceiver.done();
-                    if (installReceiver.isSuccessfullyCompleted()) {
+                    result = InstallOutputParser.parse(deltaInstallResult.packageManagerOutput);
+                    if (result.status == OK) {
                         metric.finish(DeltaInstallStatus.SUCCESS.name(), metrics);
                     } else {
-                        result = AdbClient.toInstallerResult(installReceiver);
                         metric.finish(
                                 DeltaInstallStatus.ERROR.name() + "." + result.status.name(),
                                 metrics);
@@ -283,7 +278,7 @@ public class ApkInstaller {
         }
 
         if (!plan.getApp()
-                .getBaselineProfile(adb.getDevice().getVersion().getApiLevel())
+                .getBaselineProfile(adb.getVersion().getApiLevel())
                 .isEmpty()) {
             // Supporting baseline profile install via delta-push is a significant change.
             // The gain is not worth it in the context of a release apk (we only get baseline

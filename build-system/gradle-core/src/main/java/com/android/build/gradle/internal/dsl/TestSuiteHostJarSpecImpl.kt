@@ -50,20 +50,23 @@ internal constructor(objects: ObjectFactory, name: String, projectDirectory: Dir
     set(value) = androidResourcesFlag.set(value)
 
   /** INTERNAL APIs */
+  override fun sourceSetName(isMixed: Boolean): String = if (isMixed) "${name}Test" else name
+
   override fun createTestSuiteSourceSet(
     variantServices: VariantServices,
     javaEnabled: Boolean,
     kotlinEnabled: Boolean,
     isMixed: Boolean,
   ): TestSuiteSourceSet {
-    val sourceSetName = if (isMixed) "${name}Test" else name
     return HostJarTestSuiteSourceSet(
-      sourceSetName = sourceSetName,
+      sourceSetName = sourceSetName(isMixed),
+      testSuiteName = name,
+      isMixed = isMixed,
       variantServices = variantServices,
       userAddedSourceSets = userAddedSourcesSets,
       javaEnabled = javaEnabled,
       kotlinEnabled = kotlinEnabled,
-      androidResourcesFlag,
+      includeAndroidResources = androidResourcesFlag,
       dependencies = dependencies,
     )
   }

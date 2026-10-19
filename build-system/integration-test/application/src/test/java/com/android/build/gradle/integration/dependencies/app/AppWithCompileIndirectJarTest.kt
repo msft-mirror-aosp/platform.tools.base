@@ -27,17 +27,16 @@ import org.junit.Test
 class AppWithCompileIndirectJarTest : ModelComparator() {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
-      }
-      androidLibrary {
-        android { enableKotlin = false }
-        dependencies { api("com.google.guava:guava:18.0") }
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation(project(DEFAULT_LIB_PATH)) }
     }
+    androidLibrary {
+      android { enableKotlin = false }
+      dependencies { api("com.google.guava:guava:18.0") }
+    }
+  }
 
   @Test
   fun `test VariantDependencies model`() {

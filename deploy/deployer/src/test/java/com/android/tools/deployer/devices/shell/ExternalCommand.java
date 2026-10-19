@@ -45,8 +45,10 @@ public class ExternalCommand extends ShellCommand {
         ProcessBuilder pb = new ProcessBuilder(command);
         device.putEnv(context.getUser(), pb.environment());
         Process process = pb.start();
-        PipeConnector inToProcess = new PipeConnector(stdin, process.getOutputStream());
-        PipeConnector processToOut = new PipeConnector(process.getInputStream(), stdout);
+        // process.getOutputStream() writes to the child process's stdin. We must close
+        // it after writing so that the child process receives EOF and can exit.
+        PipeConnector inToProcess = new PipeConnector(stdin, process.getOutputStream(), true);
+        PipeConnector processToOut = new PipeConnector(process.getInputStream(), stdout, false);
         inToProcess.start();
         processToOut.start();
         int code = 255;
@@ -63,10 +65,12 @@ public class ExternalCommand extends ShellCommand {
     private static class PipeConnector extends Thread {
         private final InputStream input;
         private final OutputStream output;
+        private final boolean closeOutputOnExit;
 
-        private PipeConnector(InputStream input, OutputStream output) {
+        private PipeConnector(InputStream input, OutputStream output, boolean closeOutputOnExit) {
             this.input = input;
             this.output = output;
+            this.closeOutputOnExit = closeOutputOnExit;
         }
 
         @Override
@@ -80,6 +84,14 @@ public class ExternalCommand extends ShellCommand {
                 }
             } catch (IOException e) {
                 // Ignore and exit the thread
+            } finally {
+                if (closeOutputOnExit) {
+                    try {
+                        output.close();
+                    } catch (IOException e) {
+                        // Ignore
+                    }
+                }
             }
         }
     }

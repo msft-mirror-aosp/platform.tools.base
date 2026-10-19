@@ -297,18 +297,17 @@ private class TargetDataStream(val targetId: String, file: File) : Closeable {
     return Source(sourceGroupIndex = sourceGroupIndex, compileGroupIndex = compileGroupIndex, path = path)
   }
 
-  private fun readCompileGroups(): List<TargetCompileGroupData> =
-    sequence {
-        reader.beginArray()
-        while (reader.hasNext()) {
-          when (reader.peek()) {
-            JsonToken.BEGIN_OBJECT -> yield(readCompileGroup())
-            else -> reader.skipValue()
-          }
-        }
-        reader.endArray()
+  private fun readCompileGroups(): List<TargetCompileGroupData> = sequence {
+    reader.beginArray()
+    while (reader.hasNext()) {
+      when (reader.peek()) {
+        JsonToken.BEGIN_OBJECT -> yield(readCompileGroup())
+        else -> reader.skipValue()
       }
-      .toList()
+    }
+    reader.endArray()
+  }
+    .toList()
 
   private fun readLink(): Link {
     reader.beginObject()
@@ -342,18 +341,17 @@ private class TargetDataStream(val targetId: String, file: File) : Closeable {
     return Paths(build = build, source = source)
   }
 
-  private fun readCommandFragments(): List<CommandFragmentData> =
-    sequence {
-        reader.beginArray()
-        while (reader.hasNext()) {
-          when (reader.peek()) {
-            JsonToken.BEGIN_OBJECT -> yield(readCommandFragment())
-            else -> reader.skipValue()
-          }
-        }
-        reader.endArray()
+  private fun readCommandFragments(): List<CommandFragmentData> = sequence {
+    reader.beginArray()
+    while (reader.hasNext()) {
+      when (reader.peek()) {
+        JsonToken.BEGIN_OBJECT -> yield(readCommandFragment())
+        else -> reader.skipValue()
       }
-      .toList()
+    }
+    reader.endArray()
+  }
+    .toList()
 
   private fun readCommandFragment(): CommandFragmentData {
     reader.beginObject()
@@ -404,18 +402,17 @@ private class TargetDataStream(val targetId: String, file: File) : Closeable {
     )
   }
 
-  private fun readSingleStringObjectList(expectedName: String): List<String> =
-    sequence {
-        reader.beginArray()
-        while (reader.hasNext()) {
-          when (reader.peek()) {
-            JsonToken.BEGIN_OBJECT -> yield(readSingleStringObject(expectedName))
-            else -> reader.skipValue()
-          }
-        }
-        reader.endArray()
+  private fun readSingleStringObjectList(expectedName: String): List<String> = sequence {
+    reader.beginArray()
+    while (reader.hasNext()) {
+      when (reader.peek()) {
+        JsonToken.BEGIN_OBJECT -> yield(readSingleStringObject(expectedName))
+        else -> reader.skipValue()
       }
-      .toList()
+    }
+    reader.endArray()
+  }
+    .toList()
 
   private fun readSingleStringObject(expectedName: String): String {
     reader.beginObject()

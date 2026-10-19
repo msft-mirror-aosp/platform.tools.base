@@ -7,8 +7,6 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.jdwptracer.iml"],
     jvm_target = "8",
-    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -17,6 +15,23 @@ iml_module(
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/jdwp-packet:studio.android.sdktools.jdwppacket",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.jdwptracer.tests",
+    iml_files = ["android.sdktools.jdwptracer.tests.iml"],
+    jvm_target = "8",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/jdwp-tracer:studio.android.sdktools.jdwptracer",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
+        "//tools/base/jdwp-packet:studio.android.sdktools.jdwppacket",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/jdwp-tracer:studio.android.sdktools.jdwptracer"],
+    test_srcs = ["test/src"],
+    visibility = ["//visibility:public"],
 )
 
 java_test(

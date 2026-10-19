@@ -75,8 +75,10 @@ internal class JsonSourceParser(private val reader: JsonReader) {
   }
 
   companion object {
-    private val lineNumberField: java.lang.reflect.Field? =
-      runCatching { JsonReader::class.java.getDeclaredField("lineNumber").apply { isAccessible = true } }.getOrNull()
+    private val lineNumberField: java.lang.reflect.Field? = runCatching {
+      JsonReader::class.java.getDeclaredField("lineNumber").apply { isAccessible = true }
+    }
+      .getOrNull()
 
     fun parseReader(reader: Reader): JsonSourceElement {
       return parseJsonReader(JsonReader(reader))

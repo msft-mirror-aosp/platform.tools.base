@@ -42,23 +42,22 @@ open class DeviceTestBuilderImpl(
       defaultTargetSdkVersionProvider: () -> AndroidVersion,
       enableMultiDex: Boolean?,
       debuggable: Boolean,
-    ): Map<String, DeviceTestBuilderImpl> =
-      dslDefinedDeviceTests.associate { dslDeviceTest ->
-        dslDeviceTest.type to
-          if (dslDeviceTest.type == DeviceTestBuilder.ANDROID_TEST_TYPE) {
-            DeviceTestBuilderImpl(
-              variantBuilderServices,
-              globalVariantBuilderConfig,
-              defaultTargetSdkVersionProvider,
-              ComponentTypeImpl.ANDROID_TEST,
-              enableMultiDex,
-              dslDeviceTest.codeCoverageEnabled,
-              debuggable,
-            )
-          } else {
-            throw RuntimeException("Unknown device test type : ${dslDeviceTest.type}")
-          }
-      }
+    ): Map<String, DeviceTestBuilderImpl> = dslDefinedDeviceTests.associate { dslDeviceTest ->
+      dslDeviceTest.type to
+        if (dslDeviceTest.type == DeviceTestBuilder.ANDROID_TEST_TYPE) {
+          DeviceTestBuilderImpl(
+            variantBuilderServices,
+            globalVariantBuilderConfig,
+            defaultTargetSdkVersionProvider,
+            ComponentTypeImpl.ANDROID_TEST,
+            enableMultiDex,
+            dslDeviceTest.codeCoverageEnabled,
+            debuggable,
+          )
+        } else {
+          throw RuntimeException("Unknown device test type : ${dslDeviceTest.type}")
+        }
+    }
   }
 
   // target sdk version to be used in the Variant API

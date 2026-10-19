@@ -95,7 +95,10 @@ abstract class PageRenderer<T : CompositeTestResults> : TabbedPageRenderer<T>() 
         .startElement("td")
         .attribute("class", test.statusClass)
         .startElement("a")
-        .attribute("href", String.format("%s.html#%s?title=Errors", test.classResults.getFilename(), test.name))
+        .attribute(
+          "href",
+          String.format("%s.html#%s?title=Errors", test.classResults.getFilename(), test.name),
+        )
         .characters(test.name)
         .endElement()
         .endElement()
@@ -122,7 +125,10 @@ abstract class PageRenderer<T : CompositeTestResults> : TabbedPageRenderer<T>() 
         .startElement("td")
         .attribute("class", test.statusClass)
         .startElement("a")
-        .attribute("href", String.format("%s.html%s", test.classResults.getFilename(), selectFailureTab))
+        .attribute(
+          "href",
+          String.format("%s.html%s", test.classResults.getFilename(), selectFailureTab),
+        )
         .characters(test.classResults.simpleName)
         .endElement()
         .endElement()
@@ -130,7 +136,15 @@ abstract class PageRenderer<T : CompositeTestResults> : TabbedPageRenderer<T>() 
         .startElement("td")
         .attribute("class", test.statusClass)
         .startElement("a")
-        .attribute("href", String.format("%s.html%s#%s", test.classResults.getFilename(), selectFailureTab, test.name))
+        .attribute(
+          "href",
+          String.format(
+            "%s.html%s#%s",
+            test.classResults.getFilename(),
+            selectFailureTab,
+            test.name,
+          ),
+        )
         .characters(test.name)
         .endElement()
         .endElement()
@@ -141,7 +155,11 @@ abstract class PageRenderer<T : CompositeTestResults> : TabbedPageRenderer<T>() 
   }
 
   @Throws(IOException::class)
-  protected fun renderCompositeResults(htmlWriter: SimpleHtmlWriter, map: Map<String, CompositeTestResults>, name: String) {
+  protected fun renderCompositeResults(
+    htmlWriter: SimpleHtmlWriter,
+    map: Map<String, CompositeTestResults>,
+    name: String,
+  ) {
     htmlWriter.startElement("table")
     htmlWriter.startElement("thead")
     htmlWriter.startElement("tr")
@@ -156,7 +174,9 @@ abstract class PageRenderer<T : CompositeTestResults> : TabbedPageRenderer<T>() 
     htmlWriter.endElement() // thead
     for (results: CompositeTestResults in map.values) {
       htmlWriter.startElement("tr")
-      results.name?.let { htmlWriter.startElement("td").attribute("class", results.statusClass).characters(it.toCharArray()).endElement() }
+      results.name?.let {
+        htmlWriter.startElement("td").attribute("class", results.statusClass).characters(it.toCharArray()).endElement()
+      }
       htmlWriter.startElement("td").characters(results.testCount.toString()).endElement()
       htmlWriter.startElement("td").characters(results.errorCount.toString()).endElement()
       htmlWriter.startElement("td").characters(results.failureCount.toString()).endElement()

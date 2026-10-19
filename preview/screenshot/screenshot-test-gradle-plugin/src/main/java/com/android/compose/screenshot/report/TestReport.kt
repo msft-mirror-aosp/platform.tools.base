@@ -24,15 +24,22 @@ import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.ParseException
+import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathFactory
 import org.gradle.api.GradleException
+import org.gradle.api.logging.Logging
 import org.w3c.dom.Document
 import org.w3c.dom.Element
+import org.xml.sax.ErrorHandler
 import org.xml.sax.InputSource
+import org.xml.sax.SAXException
+import org.xml.sax.SAXParseException
 
 /** Custom test reporter based on Gradle's DefaultTestReport */
 class TestReport(private val resultDir: File, private val reportDir: File) {
+
+  private val logger = Logging.getLogger(TestReport::class.java)
 
   private val htmlRenderer: HtmlReportRenderer = HtmlReportRenderer()
 
@@ -69,7 +76,15 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
       inputStream = FileInputStream(file)
       val document: Document =
         try {
-          DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(InputSource(inputStream))
+          parseXml(file, inputStream)
+        } catch (e: SAXException) {
+          logger.warn(
+            "Skipping test result file '${file.absolutePath}' because it could not be parsed. " +
+              "It is most likely incomplete because a previous run was interrupted. Delete " +
+              "'${file.parentFile.absolutePath}' and re-run the task to get a complete report.",
+            e,
+          )
+          return
         } finally {
           inputStream.close()
         }
@@ -105,33 +120,73 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
           val ref = xPath.evaluate("property[@name='PreviewScreenshot.refImagePath']/@value", image)
           val actual = xPath.evaluate("property[@name='PreviewScreenshot.newImagePath']/@value", image)
           val diff = xPath.evaluate("property[@name='PreviewScreenshot.diffImagePath']/@value", image)
-          referenceImagePathOrMessage =
-            if (isImage(ref)) {
-              ImagePathOrMessage.ImagePath(ref)
-            } else {
-              ImagePathOrMessage.ErrorMessage(ref)
-            }
+          if (ref.isNotBlank() || actual.isNotBlank() || diff.isNotBlank()) {
+            referenceImagePathOrMessage =
+              if (isImage(ref)) {
+                ImagePathOrMessage.ImagePath(ref)
+              } else {
+                ImagePathOrMessage.ErrorMessage(ref)
+              }
 
-          actualImagePathOrMessage =
-            if (isImage(actual)) {
-              ImagePathOrMessage.ImagePath(actual)
-            } else {
-              ImagePathOrMessage.ErrorMessage(actual)
-            }
+            actualImagePathOrMessage =
+              if (isImage(actual)) {
+                ImagePathOrMessage.ImagePath(actual)
+              } else {
+                ImagePathOrMessage.ErrorMessage(actual)
+              }
 
-          diffImagePathOrMessage =
-            if (isImage(diff)) {
-              ImagePathOrMessage.ImagePath(diff)
-            } else {
-              ImagePathOrMessage.ErrorMessage(diff)
-            }
+            diffImagePathOrMessage =
+              if (isImage(diff)) {
+                ImagePathOrMessage.ImagePath(diff)
+              } else {
+                ImagePathOrMessage.ErrorMessage(diff)
+              }
 
-          ssImages = ScreenshotTestImages(referenceImagePathOrMessage, actualImagePathOrMessage, diffImagePathOrMessage)
+            ssImages =
+              ScreenshotTestImages(
+                referenceImagePathOrMessage,
+                actualImagePathOrMessage,
+                diffImagePathOrMessage,
+              )
+          }
         }
-        val testResult: TestResult = model.addTest(className, testName, duration.toLong(), projectName!!, flavorName!!, ssImages)
+        if (ssImages == null || ssImages.isEmpty()) {
+          val errorMsg =
+            if (errors.length > 0) {
+              val errElement = errors.item(0) as Element
+              errElement.getAttribute("message").ifBlank { errElement.textContent.trim() }
+            } else if (failures.length > 0) {
+              val failElement = failures.item(0) as Element
+              failElement.getAttribute("message").ifBlank { failElement.textContent.trim() }
+            } else {
+              ""
+            }
+          if (errorMsg.isNotBlank()) {
+            ssImages =
+              ScreenshotTestImages(
+                ImagePathOrMessage.ErrorMessage(""),
+                ImagePathOrMessage.ErrorMessage(errorMsg),
+                ImagePathOrMessage.ErrorMessage(""),
+              )
+          }
+        }
+        val testResult: TestResult =
+          model.addTest(
+            className,
+            testName,
+            duration.toLong(),
+            projectName!!,
+            flavorName!!,
+            ssImages,
+          )
         for (j in 0 until failures.length) {
           val failure = failures.item(j) as Element
-          testResult.addFailure(failure.getAttribute("message"), failure.textContent, projectName, flavorName)
+          testResult.addFailure(
+            failure.getAttribute("message"),
+            failure.textContent,
+            projectName,
+            flavorName,
+          )
         }
         for (j in 0 until errors.length) {
           val error = errors.item(j) as Element
@@ -159,6 +214,29 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
     }
   }
 
+  private fun parseXml(file: File, inputStream: InputStream): Document {
+    val documentBuilder: DocumentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+    // Replace the default error handler, which prints parse errors to stderr without telling
+    // which file they came from, e.g. '[Fatal Error] :2:118: Element type "testsuite" must be
+    // followed by either attribute specifications, ">" or "/>".'
+    documentBuilder.setErrorHandler(
+      object : ErrorHandler {
+        override fun warning(exception: SAXParseException) {}
+
+        override fun error(exception: SAXParseException) {
+          throw exception
+        }
+
+        override fun fatalError(exception: SAXParseException) {
+          throw exception
+        }
+      }
+    )
+    val inputSource = InputSource(inputStream)
+    inputSource.systemId = file.toURI().toString()
+    return documentBuilder.parse(inputSource)
+  }
+
   private fun isImage(path: String?): Boolean {
     return path != null && path.endsWith(".png")
   }
@@ -167,9 +245,17 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
     try {
       generatePage(model, OverviewPageRenderer(), File(reportDir, "index.html"))
       for (packageResults in model.getPackages()) {
-        generatePage(packageResults, PackagePageRenderer(), File(reportDir, packageResults.getFilename() + ".html"))
+        generatePage(
+          packageResults,
+          PackagePageRenderer(),
+          File(reportDir, packageResults.getFilename() + ".html"),
+        )
         for (classResults in packageResults.getClasses()) {
-          generatePage(classResults!!, ScreenshotClassPageRenderer(), File(reportDir, classResults.getFilename() + ".html"))
+          generatePage(
+            classResults!!,
+            ScreenshotClassPageRenderer(),
+            File(reportDir, classResults.getFilename() + ".html"),
+          )
         }
       }
     } catch (e: Exception) {
@@ -178,7 +264,11 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
   }
 
   @Throws(Exception::class)
-  private fun <T : CompositeTestResults> generatePage(model: T, renderer: PageRenderer<T>, outputFile: File) {
+  private fun <T : CompositeTestResults> generatePage(
+    model: T,
+    renderer: PageRenderer<T>,
+    outputFile: File,
+  ) {
     htmlRenderer.renderer(renderer).writeTo(model, outputFile)
   }
 

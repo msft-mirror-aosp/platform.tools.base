@@ -32,14 +32,14 @@ class CrashlyticsNewDslTest {
   val project =
     GradleRule.configure().from {
       androidApplication {
-          applyPlugin(PluginType.Custom("com.google.gms.google-services", "4.4.4"))
-          applyPlugin(PluginType.Custom("com.google.firebase.crashlytics", "3.0.6"))
-          android { defaultConfig { minSdk = 24 } }
-          dependencies {
-            implementation("com.google.firebase:firebase-crashlytics:20.0.3")
-            implementation("com.google.firebase:firebase-analytics:23.0.0")
-          }
+        applyPlugin(PluginType.Custom("com.google.gms.google-services", "4.4.4"))
+        applyPlugin(PluginType.Custom("com.google.firebase.crashlytics", "3.0.6"))
+        android { defaultConfig { minSdk = 24 } }
+        dependencies {
+          implementation("com.google.firebase:firebase-crashlytics:20.0.3")
+          implementation("com.google.firebase:firebase-analytics:23.0.0")
         }
+      }
         .files { add("google-services.json", GOOGLE_SERVICES_JSON_CONTENTS) }
     }
 

@@ -133,13 +133,13 @@ class AndroidGradlePluginAttributionDataTest {
 
     fun Map<String, TaskInfo>.normalizeForOlderAgpVersions(): Map<String, TaskInfo> {
       return map {
-          it.key to
-            TaskInfo(
-              className = it.value.className,
-              // This data isn't available in older AGP versions
-              taskCategoryInfo = TaskCategoryInfo(TaskCategory.UNCATEGORIZED),
-            )
-        }
+        it.key to
+          TaskInfo(
+            className = it.value.className,
+            // This data isn't available in older AGP versions
+            taskCategoryInfo = TaskCategoryInfo(TaskCategory.UNCATEGORIZED),
+          )
+      }
         .toMap()
     }
 

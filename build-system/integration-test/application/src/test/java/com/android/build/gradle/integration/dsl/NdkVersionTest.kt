@@ -29,14 +29,13 @@ import org.junit.Test
 
 class NdkVersionTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android { ndkVersion = "1.2" }
-      }
-      androidApplication { pluginCallbacks += AppCallback::class.java }
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { ndkVersion = "1.2" }
     }
+    androidApplication { pluginCallbacks += AppCallback::class.java }
+  }
 
   class AppCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

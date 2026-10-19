@@ -26,5 +26,5 @@ interface FileMergerOutput : OpenableCloseable {
    *   when passed to this method.
    * @param compress whether the data will be compressed
    */
-  fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean)
+  fun create(path: String, inputs: List<FileMergerInput>, compress: Boolean)
 }

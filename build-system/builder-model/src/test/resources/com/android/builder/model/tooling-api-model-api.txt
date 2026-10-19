@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-92d383afc9e83378bff093a43eee588cd79b4f8c53e3a35e144ef605f32accb8
+f1a35de05488a04f9fe261c7338bbff97cdd09d2a6af6f7f5c08526fab97553c
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -348,6 +348,7 @@ com.android.builder.model.TestOptions$Execution.valueOf: com.android.builder.mod
 com.android.builder.model.TestOptions$Execution.values: com.android.builder.model.TestOptions$Execution[] ()
 com.android.builder.model.TestOptions.getAnimationsDisabled: boolean ()
 com.android.builder.model.TestOptions.getExecution: com.android.builder.model.TestOptions$Execution ()
+com.android.builder.model.TestOptions.getInstrumentInPrivateComputeCore: boolean ()
 com.android.builder.model.TestVariantBuildOutput implements com.android.builder.model.BaseBuildOutput
 com.android.builder.model.TestVariantBuildOutput$TestType extends java.lang.Enum
 com.android.builder.model.TestVariantBuildOutput$TestType.valueOf: com.android.builder.model.TestVariantBuildOutput$TestType (java.lang.String)
@@ -489,6 +490,7 @@ com.android.builder.model.v2.dsl.ProductFlavor.getVersionCode: java.lang.Integer
 com.android.builder.model.v2.dsl.ProductFlavor.getVersionName: java.lang.String ()
 com.android.builder.model.v2.dsl.ProductFlavor.getWearAppUnbundled: java.lang.Boolean ()
 com.android.builder.model.v2.dsl.SigningConfig implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.dsl.SigningConfig$DefaultImpls
 com.android.builder.model.v2.dsl.SigningConfig.getEnableV1Signing: java.lang.Boolean ()
 com.android.builder.model.v2.dsl.SigningConfig.getEnableV2Signing: java.lang.Boolean ()
 com.android.builder.model.v2.dsl.SigningConfig.getEnableV3Signing: java.lang.Boolean ()
@@ -693,11 +695,17 @@ com.android.builder.model.v2.ide.ProjectType.values: com.android.builder.model.v
 com.android.builder.model.v2.ide.SourceProvider implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.SourceProvider.getAarKeepRulesDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getAidlDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getAnnotationProcessorConfigurationName: java.lang.String ()
+com.android.builder.model.v2.ide.SourceProvider.getApiConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getAssetsDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getBaselineProfileDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getCompileOnlyApiConfigurationName: java.lang.String ()
+com.android.builder.model.v2.ide.SourceProvider.getCompileOnlyConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getCustomDirectories: java.util.Collection<com.android.builder.model.v2.CustomSourceDirectory> ()
+com.android.builder.model.v2.ide.SourceProvider.getImplementationConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getJavaDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getJniLibsDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getKaptConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getKeepRulesDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getKotlinDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getManifestFile: java.io.File ()
@@ -706,6 +714,7 @@ com.android.builder.model.v2.ide.SourceProvider.getName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getRenderscriptDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getResDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getResourcesDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getRuntimeOnlyConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getShadersDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceSetContainer implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.SourceSetContainer$DefaultImpls
@@ -732,6 +741,7 @@ com.android.builder.model.v2.ide.TestInfo$Execution.values: com.android.builder.
 com.android.builder.model.v2.ide.TestInfo.getAdditionalRuntimeApks: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.TestInfo.getAnimationsDisabled: boolean ()
 com.android.builder.model.v2.ide.TestInfo.getExecution: com.android.builder.model.v2.ide.TestInfo$Execution ()
+com.android.builder.model.v2.ide.TestInfo.getInstrumentInPrivateComputeCore: boolean ()
 com.android.builder.model.v2.ide.TestInfo.getInstrumentedTestTaskName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuite implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestSuite.getGeneratedAssets: java.util.Collection<com.android.builder.model.v2.models.AssetsTestSuiteSource> ()

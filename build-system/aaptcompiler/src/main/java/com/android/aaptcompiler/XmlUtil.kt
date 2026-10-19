@@ -1,11 +1,18 @@
 package com.android.aaptcompiler
 
 import com.android.SdkConstants
+import com.android.utils.XmlUtils
 import javax.xml.stream.XMLEventReader
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events.StartElement
 
-internal val xmlInputFactory = XMLInputFactory.newDefaultFactory()
+// StAX enables DTD processing and external entity resolution by default, which would let
+// documents dereference file: and http: URIs during resource compilation. See b/557274823.
+//
+// newDefaultFactory() pins the JDK parser, which is what this line used before hardening;
+// newFactory() resolves via ServiceLoader and can select a different implementation depending
+// on the classpath.
+internal val xmlInputFactory = XmlUtils.harden(XMLInputFactory.newDefaultFactory())
 
 const val SCHEMA_PUBLIC_PREFIX = SdkConstants.URI_PREFIX
 const val SCHEMA_PRIVATE_PREFIX = "http://schemas.android.com/apk/prv/res/"

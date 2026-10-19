@@ -32,20 +32,19 @@ import org.junit.Test
 class RenamedApkTest2 {
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.android.tests.basic"
-          defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
-        dependencies {
-          testImplementation("junit:junit:4.12")
-          androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
-          androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
-        }
+  val project = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.android.tests.basic"
+        defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+      }
+      dependencies {
+        testImplementation("junit:junit:4.12")
+        androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+        androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
       }
     }
+  }
 
   class Callback : ApplicationComponentCallback {
 

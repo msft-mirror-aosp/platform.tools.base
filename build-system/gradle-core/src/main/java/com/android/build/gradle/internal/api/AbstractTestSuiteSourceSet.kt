@@ -26,22 +26,31 @@ import org.gradle.api.file.Directory
 
 abstract class AbstractTestSuiteSourceSet(
   protected val sourceSetName: String,
+  protected val testSuiteName: String = sourceSetName,
+  protected val isMixed: Boolean = false,
   variantServices: VariantServices,
   val userAddedSourceSets: Collection<Directory>,
+  subDirectory: String,
 ) {
   abstract val java: FlatSourceDirectoriesImpl?
   abstract val kotlin: FlatSourceDirectoriesImpl?
 
   fun getName(): String = sourceSetName
 
-  val defaultTopLevelFolder = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName")
+  /** The root-level directory for this test suite source set. */
+  val rootFolder =
+    if (isMixed) {
+      File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName/$subDirectory")
+    } else {
+      File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName")
+    }
 
   protected fun createJavaSources(variantServices: VariantServices) =
     FlatSourceDirectoriesForJavaImpl(sourceSetName, variantServices, null).also {
       it.addSource(
         FileBasedDirectoryEntryImpl(
           name = sourceSetName,
-          directory = File(defaultTopLevelFolder, "java"),
+          directory = File(rootFolder, "java"),
           filter = null,
           isUserAdded = false,
           shouldBeAddedToIdeModel = true,
@@ -65,7 +74,7 @@ abstract class AbstractTestSuiteSourceSet(
       it.addSource(
         FileBasedDirectoryEntryImpl(
           name = sourceSetName,
-          directory = File(defaultTopLevelFolder, "kotlin"),
+          directory = File(rootFolder, "kotlin"),
           filter = null,
           isUserAdded = false,
           shouldBeAddedToIdeModel = true,
@@ -89,7 +98,7 @@ abstract class AbstractTestSuiteSourceSet(
       it.addSource(
         FileBasedDirectoryEntryImpl(
           name = sourceSetName,
-          directory = File(defaultTopLevelFolder, "resources"),
+          directory = File(rootFolder, "resources"),
           filter = null,
           isUserAdded = false,
           shouldBeAddedToIdeModel = true,

@@ -59,6 +59,7 @@ class NoOpIncrementalBuildTaskStatesTest {
               ":app:createDebugCompatibleScreenManifests",
               ":app:desugarDebugFileDependencies",
               ":app:dexBuilderDebug",
+              ":app:extractDebugUnitTestJavaRes",
               ":app:extractDeepLinksDebug",
               ":app:generateDebugResources",
               ":app:generateDebugResValues",
@@ -96,10 +97,10 @@ class NoOpIncrementalBuildTaskStatesTest {
           setOf(
             ":app:compileDebugKotlin",
             ":app:compileDebugUnitTestKotlin",
+            ":app:compressDebugJavaRes",
+            ":app:compressDebugUnitTestJavaRes",
             ":app:mergeDebugNativeDebugMetadata",
             ":app:mergeDebugNativeLibs",
-            ":app:processDebugJavaRes",
-            ":app:processDebugUnitTestJavaRes",
             ":app:stripDebugDebugSymbols",
           ),
       )

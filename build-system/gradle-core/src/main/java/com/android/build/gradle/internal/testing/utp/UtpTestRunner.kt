@@ -30,6 +30,7 @@ import com.android.utils.ILogger
 import com.google.common.collect.ImmutableList
 import java.io.File
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkerExecutor
 
 /** Runs Android Instrumentation tests using UTP (Unified Test Platform). */
@@ -47,6 +48,8 @@ class UtpTestRunner(
   private val installApkTimeout: Int?,
   private val targetIsSplitApk: Boolean,
   private val uninstallApksAfterTest: Boolean,
+  private val privateComputeCoreInstrumentation: Boolean,
+  private val provider: ProviderFactory,
 ) : BaseTestRunner(processExecutor, executor) {
 
   override fun scheduleTests(
@@ -68,6 +71,13 @@ class UtpTestRunner(
       apksForDevice
         .filter { (device, _) -> !versionedSdkLoader.adbHelper.get().isManagedDevice(device.getSerialNumber(), logger) }
         .map { (deviceConnector, apks) ->
+          val usePcc = privateComputeCoreInstrumentation && deviceConnector.apiLevel >= 37
+          if (privateComputeCoreInstrumentation && deviceConnector.apiLevel < 37) {
+            logger.warning(
+              "Private Compute Core instrumentation is enabled but device ${deviceConnector.name} " +
+                "(API ${deviceConnector.apiLevel}) does not support it. Private Compute Core instrumentation requires API 37+."
+            )
+          }
           val safeDeviceName =
             FileUtils.sanitizeFileName(deviceConnector.name).let { if (it.isBlank() || it.all { c -> c == '.' }) "device" else it }
           val utpOutputDir =
@@ -109,10 +119,20 @@ class UtpTestRunner(
             uninstallApksAfterTest,
             reinstallIncompatibleApksBeforeTest = false,
             shardConfig = null,
+            usePcc,
           )
         }
         .toList()
 
-    return runUtpTestSuiteAndWait(runnerConfigs, workerExecutor, projectName, variantName, resultsDir, utpDependencies, versionedSdkLoader)
+    return runUtpTestSuiteAndWait(
+      runnerConfigs,
+      workerExecutor,
+      projectName,
+      variantName,
+      resultsDir,
+      utpDependencies,
+      versionedSdkLoader,
+      provider,
+    )
   }
 }

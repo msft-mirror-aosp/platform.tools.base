@@ -21,7 +21,7 @@
 #include <string>
 #include <thread>
 
-#include "protos/perfetto/config/perfetto_config.grpc.pb.h"
+#include "protos/perfetto/config/perfetto_config.pb.h"
 #include "utils/clock.h"
 #include "utils/nonblocking_command_runner.h"
 

@@ -65,6 +65,8 @@ interface TestData {
 
   @get:Input val animationsDisabled: Provider<Boolean>
 
+  @get:Input val privateComputeCoreInstrumentation: Provider<Boolean>
+
   /** Returns whether the tested app is enabled for code coverage */
   @get:Input val testCoverageEnabled: Provider<Boolean>
 

@@ -19,6 +19,7 @@ import com.android.adblib.AdbInputChannel
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.SyncProgress
 import com.android.adblib.adbLogger
+import com.android.adblib.impl.SyncConnection.Constants.DATA_HEADER_SIZE
 import com.android.adblib.read
 import com.android.adblib.utils.AdbProtocolUtils
 import com.android.adblib.withPrefix
@@ -81,9 +82,10 @@ internal class SyncSendHandler(private val connection: SyncConnection) {
       // [https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=498;drc=fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f;bpv=0;bpt=1]
       logger.info { "$sourceChannel -> \"$remoteFilePath\"" }
 
-      if (remoteFilePath.length > REMOTE_PATH_MAX_LENGTH) {
-        throw IllegalArgumentException("Remote paths are limited to $REMOTE_PATH_MAX_LENGTH characters")
+      require(remoteFilePath.length <= REMOTE_PATH_MAX_LENGTH) {
+        "Remote paths are limited to $REMOTE_PATH_MAX_LENGTH characters"
       }
+      require(bufferSize > DATA_HEADER_SIZE) { "Buffer size ($bufferSize) must be greater than $DATA_HEADER_SIZE bytes" }
       val remoteFileEpoch =
         AdbProtocolUtils.convertFileTimeToEpochSeconds(remoteFileTime ?: FileTime.from(connection.session.host.utcNow()))
 

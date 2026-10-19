@@ -566,7 +566,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       // The contiguous region expectation only applies to platform extension back-ports;
       // those have id's less than 1000000.
       levels.removeIf { it.second >= MAX_PLATFORM_SDK_ID }
-      levels.sortedWith(compareBy({ -it.second }, { it.first.qualifiedName }))
+      levels.sortWith(compareBy({ -it.second }, { it.first.qualifiedName }))
 
       var prev: Triple<UAnnotation, Int, Int>? = null
       for (triple in levels) {

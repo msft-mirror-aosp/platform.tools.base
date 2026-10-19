@@ -46,17 +46,16 @@ import org.junit.Test
 class InjectedAbiTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidJavaApplication {
-        files {
-          createOriginalSoFile("x86", "libapp.so", "app:abcd")
-          createOriginalSoFile("arm64-v8a", "libapp.so", "app:abcd")
-          createOriginalSoFile("armeabi-v7a", "libapp.so", "app:abcd")
-          createOriginalSoFile("x86_64", "libapp.so", "app:abcd")
-        }
+  val rule = GradleRule.from {
+    androidJavaApplication {
+      files {
+        createOriginalSoFile("x86", "libapp.so", "app:abcd")
+        createOriginalSoFile("arm64-v8a", "libapp.so", "app:abcd")
+        createOriginalSoFile("armeabi-v7a", "libapp.so", "app:abcd")
+        createOriginalSoFile("x86_64", "libapp.so", "app:abcd")
       }
     }
+  }
 
   private val x86Selection = DEBUG.withFilter("x86")
   private val armV7aSelection = DEBUG.withFilter("armeabi-v7a")

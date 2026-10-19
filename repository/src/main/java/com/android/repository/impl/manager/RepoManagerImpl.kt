@@ -75,6 +75,8 @@ internal constructor(
    *   for them.
    * @param fallbackRemoteRepoLoader the [FallbackRemoteRepoLoader] to use if the normal [RemoteRepoLoaderImpl] can't understand a
    *   downloaded repository xml file. (This is currently used for parsing the old repository XML format.)
+   * @param knownTopLevelPackageDirs names of top-level directories under [localPath] where packages are normally installed. If non-empty,
+   *   and no packages are found in any of them, other directories under [localPath] will not be scanned for packages.
    */
   constructor(
     localPath: Path?,
@@ -82,10 +84,18 @@ internal constructor(
     additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
     fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null,
     fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null,
+    knownTopLevelPackageDirs: Set<String> = emptySet(),
   ) : this(
     localPath = localPath,
     localRepoLoader =
-      localPath?.let { LocalRepoLoaderImpl(it, setOf(commonModule, genericModule) + additionalSchemaModules, fallbackLocalRepoLoader) },
+      localPath?.let {
+        LocalRepoLoaderImpl(
+          it,
+          setOf(commonModule, genericModule) + additionalSchemaModules,
+          fallbackLocalRepoLoader,
+          knownTopLevelPackageDirs,
+        )
+      },
     remoteRepoLoader = RemoteRepoLoaderImpl(sourceProviders, fallbackRemoteRepoLoader),
     additionalSchemaModules = additionalSchemaModules,
   )
@@ -129,7 +139,9 @@ internal constructor(
   private val inProgressInstalls = mutableMapOf<RepoPackage, PackageOperation>()
 
   override fun getSources(downloader: Downloader?, progress: ProgressIndicator, forceRefresh: Boolean): List<RepositorySource> =
-    sourceProviders.flatMap { it.getSources(downloader, progress, forceRefresh) }
+    sourceProviders.flatMap {
+      it.getSources(downloader, progress, forceRefresh)
+    }
 
   override fun markInvalid() {
     lastRemoteRefreshMs = 0
@@ -306,11 +318,15 @@ internal constructor(
 
     private val result = CompletableDeferred<List<T>>()
 
+    val isCompleted: Boolean
+      get() = result.isCompleted
+
     override suspend fun load(indicator: ProgressIndicator): List<T> {
       try {
         val wasIndeterminate = indicator.isIndeterminate()
         indicator.setIndeterminate(false)
         val result = runCatching { doLoad(indicator) }
+        cleanUp()
         this.result.completeWith(result)
         indicator.setIndeterminate(wasIndeterminate)
         return result.getOrThrow()
@@ -345,7 +361,7 @@ internal constructor(
   }
 
   private fun <T : AbstractLoadTask<*>> T.takeIfNotTimedOut(): T? = takeIf {
-    Clock.systemUTC().instant() < it.taskCreateTime + TASK_TIMEOUT
+    !it.isCompleted && Clock.systemUTC().instant() < it.taskCreateTime + TASK_TIMEOUT
   }
 
   /** Produces a ProgressRunnable that invokes this LoadTask and then performs the given callbacks when finished. */
@@ -365,7 +381,9 @@ internal constructor(
       val result: List<LocalPackage>
       if (
         localRepoLoader != null &&
-          (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() || localRepoLoader.needsUpdate(lastLocalRefreshMs, false))
+          (cacheExpirationMs == 0L ||
+            lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() ||
+            localRepoLoader.needsUpdate(lastLocalRefreshMs, false))
       ) {
         indicator.setText("Loading local repository...")
         val newLocals = localRepoLoader.getPackages(indicator)
@@ -386,7 +404,11 @@ internal constructor(
     }
 
     override fun cleanUp() {
-      synchronized(taskLock) { task = null }
+      synchronized(taskLock) {
+        if (task === this) {
+          task = null
+        }
+      }
     }
   }
 
@@ -431,7 +453,12 @@ internal constructor(
     }
 
     override fun cleanUp() {
-      synchronized(taskLock) { remoteTasks.remove(RemoteLoadTaskKey(downloader, settings)) }
+      synchronized(taskLock) {
+        val key = RemoteLoadTaskKey(downloader, settings)
+        if (remoteTasks[key] === this) {
+          remoteTasks.remove(key)
+        }
+      }
     }
   }
 

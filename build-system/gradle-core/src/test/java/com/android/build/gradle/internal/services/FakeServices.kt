@@ -69,6 +69,11 @@ fun createProjectServices(
     project.extensions.extraProperties,
     project.tasks::register,
     project.pluginManager,
+    r8FromMaven =
+      com.android.build.gradle.internal.r8.R8FromMaven(
+        objectFactory.fileCollection(),
+        com.android.builder.dexing.R8Version.VERSION_AGP_WAS_SHIPPED_WITH,
+      ),
   )
 
 @JvmOverloads

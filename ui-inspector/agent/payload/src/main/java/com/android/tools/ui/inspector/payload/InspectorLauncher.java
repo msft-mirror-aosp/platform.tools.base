@@ -17,34 +17,68 @@
 package com.android.tools.ui.inspector.payload;
 
 import android.util.Log;
+
+import androidx.annotation.VisibleForTesting;
+
+import com.android.tools.arttooling.Agent;
 import com.android.tools.ui.inspector.common.ProtocolConstants;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
-/** Entry point for the UI Inspector payload. Starts a Unix domain socket server to listen for commands from the host. */
-public final class InspectorLauncher {
-  private static final String TAG = ProtocolConstants.LOG_TAG_PREFIX + ".InspectorLauncher";
-  private static Thread serverThread = null;
+/**
+ * Entry point for the UI Inspector payload, loaded by ART Tooling as its {@link Agent}. Starts a
+ * Unix domain socket server to listen for commands from the host.
+ */
+public final class InspectorLauncher implements Agent {
+    private static final String TAG = ProtocolConstants.LOG_TAG_PREFIX + ".InspectorLauncher";
 
-  private InspectorLauncher() {}
+    /**
+     * The thread of each server, by server token. ART Tooling reuses the payload's classes when the
+     * host attaches again, so this map keeps its entries across attaches. Keying the map by token
+     * means that a new token still gets its own server.
+     */
+    @VisibleForTesting static final Map<String, Thread> serverThreads = new HashMap<>();
 
-  public static synchronized void start(String pid) {
-    start(pid, Server::startServer);
-  }
+    public InspectorLauncher() {}
 
-  public static synchronized void start(String pid, Consumer<String> serverStarter) {
-    if (serverThread != null && serverThread.isAlive()) {
-      Log.i(TAG, "Inspector server is already running.");
-      return;
+    /**
+     * @param options the server token chosen by the host
+     */
+    @Override
+    public void onAttach(String options) {
+        onAttach(options, Server::startServer);
     }
-    serverThread = new Thread(() -> {
-      try {
-        serverStarter.accept(pid);
-      } catch (Throwable t) {
-        // Catching Throwable prevents any unhandled exception or error in the agent
-        // from bringing down the entire application process.
-        Log.e(TAG, "Uncaught exception in inspector", t);
-      }
-    }, "ui-inspector-server");
-    serverThread.start();
-  }
+
+    @VisibleForTesting
+    void onAttach(String options, Consumer<String> serverStarter) {
+        start(options, serverStarter);
+    }
+
+    public static synchronized void start(String serverToken) {
+        start(serverToken, Server::startServer);
+    }
+
+    public static synchronized void start(String serverToken, Consumer<String> serverStarter) {
+        Thread runningThread = serverThreads.get(serverToken);
+        if (runningThread != null && runningThread.isAlive()) {
+            Log.i(TAG, "Inspector server is already running.");
+            return;
+        }
+        Thread serverThread =
+                new Thread(
+                        () -> {
+                            try {
+                                serverStarter.accept(serverToken);
+                            } catch (Throwable t) {
+                                // Catching Throwable prevents any unhandled exception or error in
+                                // the agent from bringing down the entire application process.
+                                Log.e(TAG, "Uncaught exception in inspector", t);
+                            }
+                        },
+                        "ui-inspector-server");
+        serverThreads.put(serverToken, serverThread);
+        serverThread.start();
+    }
 }

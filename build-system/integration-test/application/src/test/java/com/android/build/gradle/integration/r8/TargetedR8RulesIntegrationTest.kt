@@ -32,76 +32,75 @@ import org.junit.Test
 class TargetedR8RulesIntegrationTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        android {
-          defaultConfig.minSdk = 24
-          buildTypes { named("release") { it.isMinifyEnabled = true } }
-        }
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
-        dependencies {
-          implementation(project(":androidLib"))
-          implementation(project(":javaLib"))
-          implementation(getExternalAndroidLib())
-          implementation(getExternalJavaLib())
+  val rule = GradleRule.from {
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      android {
+        defaultConfig.minSdk = 24
+        buildTypes { named("release") { it.isMinifyEnabled = true } }
+      }
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
+      dependencies {
+        implementation(project(":androidLib"))
+        implementation(project(":javaLib"))
+        implementation(getExternalAndroidLib())
+        implementation(getExternalJavaLib())
+      }
+    }
+    androidLibrary(":androidLib") {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      android {
+        defaultConfig {
+          minSdk = 24
+          consumerProguardFiles("consumer-rules.pro")
         }
       }
-      androidLibrary(":androidLib") {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        android {
-          defaultConfig {
-            minSdk = 24
-            consumerProguardFiles("consumer-rules.pro")
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
+      files {
+        add(
+          "src/main/java/com/example/androidlib/ClassInAndroidLib.kt",
+          // language=kotlin
+          """
+          package com.example.androidlib
+          class ClassInAndroidLib {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
           }
-        }
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
-        files {
-          add(
-            "src/main/java/com/example/androidlib/ClassInAndroidLib.kt",
-            // language=kotlin
-            """
-            package com.example.androidlib
-            class ClassInAndroidLib {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-          add(
-            "consumer-rules.pro",
-            """
-            -keep class **.ClassInAndroidLib { void methodToKeep(); }
-            """
-              .trimIndent(),
-          )
-        }
+          """
+            .trimIndent(),
+        )
+        add(
+          "consumer-rules.pro",
+          """
+          -keep class **.ClassInAndroidLib { void methodToKeep(); }
+          """
+            .trimIndent(),
+        )
       }
-      genericProject(":javaLib") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        applyPlugin(PluginType.KOTLIN_JVM)
-        files {
-          add(
-            "src/main/java/com/example/javalib/ClassInJavaLib.kt",
-            // language=kotlin
-            """
-            package com.example.javalib
-            class ClassInJavaLib {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
+    }
+    genericProject(":javaLib") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      applyPlugin(PluginType.KOTLIN_JVM)
+      files {
+        add(
+          "src/main/java/com/example/javalib/ClassInJavaLib.kt",
+          // language=kotlin
+          """
+          package com.example.javalib
+          class ClassInJavaLib {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
 
-          createTargetedR8RulesForTest("-keep class **.ClassInJavaLib { void methodToKeep(); }", forJar = true).apply {
-            (r8Rules + legacyProguardRules).forEach { (path, contents) -> add("src/main/resources/$path", contents) }
-          }
+        createTargetedR8RulesForTest("-keep class **.ClassInJavaLib { void methodToKeep(); }", forJar = true).apply {
+          (r8Rules + legacyProguardRules).forEach { (path, contents) -> add("src/main/resources/$path", contents) }
         }
       }
     }
+  }
 
   private fun getExternalAndroidLib(): MavenRepoGenerator.Library {
     val aar =

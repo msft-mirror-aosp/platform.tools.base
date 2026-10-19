@@ -35,6 +35,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.zip.ZipFile;
 
 /** Test published intermediate artifacts. */
 public class LibraryIntermediateArtifactPublishingTest {
@@ -120,12 +121,17 @@ public class LibraryIntermediateArtifactPublishingTest {
 
         File resDir =
                 project.getSubproject(":lib")
-                        .getIntermediateFile("java_res/debug/processDebugJavaRes/out");
+                        .getIntermediateFile(
+                                "java_res_compressed_jar/debug/compressDebugJavaRes/java_res.jar");
         Truth.assertThat(
                         FileUtils.join(resDir, "com", "example", "helloworld", "HelloWorld.class")
                                 .exists())
                 .isFalse();
-        Truth.assertThat(FileUtils.join(resDir, "foo.txt").exists()).isTrue();
+        try (ZipFile jarResJarZip = new ZipFile(resDir)) {
+            Truth.assertThat(jarResJarZip.getEntry("com/example/helloworld/HelloWorld.class"))
+                    .isNull();
+            Truth.assertThat(jarResJarZip.getEntry("foo.txt")).isNotNull();
+        }
     }
 
     private File getJar(String fileName) {

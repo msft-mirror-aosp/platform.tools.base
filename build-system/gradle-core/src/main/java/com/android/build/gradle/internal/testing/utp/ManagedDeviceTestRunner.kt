@@ -36,6 +36,7 @@ import com.google.common.base.Preconditions
 import java.io.File
 import org.gradle.api.logging.Logger
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkerExecutor
 
 class ManagedDeviceTestRunner(
@@ -51,6 +52,7 @@ class ManagedDeviceTestRunner(
   private val installApkTimeout: Int?,
   private val enableEmulatorDisplay: Boolean,
   private val targetIsSplitApk: Boolean,
+  private val provider: ProviderFactory,
 ) {
 
   /** @param additionalTestOutputDir output directory for additional test output, or null if disabled */
@@ -99,52 +101,61 @@ class ManagedDeviceTestRunner(
         )
       }
 
-      val runnerConfigs =
-        deviceSerials.mapIndexed { currentShard, deviceSerial ->
-          val shardConfig = numShards?.let { ShardConfig(totalCount = devicesAcquired, index = currentShard) }
-          val utpOutputDir =
-            if (shardConfig == null) {
-                outputDirectory
-              } else {
-                File(outputDirectory, "shard_$currentShard")
-              }
-              .apply {
-                if (!exists()) {
-                  mkdirs()
-                }
-              }
-          val shardedManagedDevice =
-            if (numShards == null) {
-              utpManagedDevice
+      val runnerConfigs = deviceSerials.mapIndexed { currentShard, deviceSerial ->
+        val shardConfig = numShards?.let { ShardConfig(totalCount = devicesAcquired, index = currentShard) }
+        val utpOutputDir =
+          if (shardConfig == null) {
+              outputDirectory
             } else {
-              utpManagedDevice.forShard(currentShard)
+              File(outputDirectory, "shard_$currentShard")
             }
+            .apply {
+              if (!exists()) {
+                mkdirs()
+              }
+            }
+        val shardedManagedDevice =
+          if (numShards == null) {
+            utpManagedDevice
+          } else {
+            utpManagedDevice.forShard(currentShard)
+          }
 
-          createUtpRunConfig(
-            objectFactory,
-            shardedManagedDevice.id,
-            shardedManagedDevice.deviceName,
-            deviceSerial,
-            testData,
-            TargetApkConfigBundle(testedApks, targetIsSplitApk),
-            additionalInstallOptions,
-            helperApks,
-            uninstallIncompatibleApks = true,
-            utpOutputDir,
-            emulatorControlConfig,
-            coverageOutputDirectory,
-            useOrchestrator,
-            forceCompilation,
-            additionalTestOutputDir,
-            findAdditionalTestOutputDirectoryOnManagedDevice(utpManagedDevice, testData),
-            installApkTimeout,
-            uninstallApksAfterTest = false,
-            reinstallIncompatibleApksBeforeTest = true,
-            shardConfig,
-          )
-        }
+        createUtpRunConfig(
+          objectFactory,
+          shardedManagedDevice.id,
+          shardedManagedDevice.deviceName,
+          deviceSerial,
+          testData,
+          TargetApkConfigBundle(testedApks, targetIsSplitApk),
+          additionalInstallOptions,
+          helperApks,
+          uninstallIncompatibleApks = true,
+          utpOutputDir,
+          emulatorControlConfig,
+          coverageOutputDirectory,
+          useOrchestrator,
+          forceCompilation,
+          additionalTestOutputDir,
+          findAdditionalTestOutputDirectoryOnManagedDevice(utpManagedDevice, testData),
+          installApkTimeout,
+          uninstallApksAfterTest = false,
+          reinstallIncompatibleApksBeforeTest = true,
+          shardConfig,
+          false,
+        )
+      }
 
-      runUtpTestSuiteAndWait(runnerConfigs, workerExecutor, projectPath, variantName, outputDirectory, utpDependencies, versionedSdkLoader)
+      runUtpTestSuiteAndWait(
+        runnerConfigs,
+        workerExecutor,
+        projectPath,
+        variantName,
+        outputDirectory,
+        utpDependencies,
+        versionedSdkLoader,
+        provider,
+      )
     }
   }
 

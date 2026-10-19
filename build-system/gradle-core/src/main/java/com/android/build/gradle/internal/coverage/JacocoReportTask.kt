@@ -44,10 +44,12 @@ import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -73,6 +75,17 @@ abstract class JacocoReportTask : NonIncrementalTask() {
 
   @get:Classpath abstract val jacocoClasspath: ConfigurableFileCollection
 
+  /**
+   * The source directories to be used for matching with coverage files when generating reports.
+   *
+   * We use [ListProperty] of [Provider] of [List] of [ConfigurableFileTree] because:
+   * 1. [ListProperty] allows lazy collection of multiple independent source sets (e.g., separate registrations for Java and Kotlin source
+   *    directories) without evaluating them during configuration.
+   * 2. [Provider] and [List] handle the lazy resolution of directories that might not exist or are not fully configured yet.
+   * 3. [ConfigurableFileTree] preserves the root directory (via [ConfigurableFileTree.getDir]) of each source tree. This is critical for
+   *    Jacoco report generation to correctly resolve package structures and locate source files, which would be lost if using a flat
+   *    [FileCollection].
+   */
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sources: ListProperty<Provider<List<ConfigurableFileTree>>>
 
   @get:Internal abstract val tabWidth: Property<Int>
@@ -80,6 +93,8 @@ abstract class JacocoReportTask : NonIncrementalTask() {
   @get:OutputDirectory abstract val outputReportDir: DirectoryProperty
 
   @get:Input abstract val reportAggregation: Property<Boolean>
+
+  @get:Input abstract val onTheFlyCoverageEnabled: Property<Boolean>
 
   @get:Input abstract val modulePath: Property<String>
 
@@ -91,34 +106,42 @@ abstract class JacocoReportTask : NonIncrementalTask() {
 
   @get:Internal abstract val rootProjectDir: Property<File>
 
+  @get:Input @get:Optional abstract val testPackageId: Property<String>
+
+  @get:InputFiles
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val testClassFileCollection: ConfigurableFileCollection
+
   override fun doTaskAction() {
-    val jacocoCoverageFiles = coverageFiles.asFileTree.files.filter { it.isFile && (it.extension == "ec" || it.extension == "exec") }
-    if (jacocoCoverageFiles.none()) {
+    if (coverageFiles.asFileTree.filter { it.isFile && (it.extension == "ec" || it.extension == "exec" || it.extension == "pb") }.isEmpty) {
       throw IOException(
         "Test coverage report requested, but no tests were run. " + "Task '${name}' failed because no coverage data was found."
       )
     }
 
-    // Jacoco requires source set directory roots rather than source files to produce
-    // source code highlighting in reports.
     val sourceFolders: List<File> =
       sources.get().map { it.get().map(ConfigurableFileTree::getDir) }.flatten().distinctBy { it.absolutePath }
 
     workerExecutor
       .classLoaderIsolation { classpath: ClassLoaderWorkerSpec -> classpath.classpath.from(jacocoClasspath.files) }
       .submit(JacocoReportWorkerAction::class.java) {
-        it.coverageFiles.setFrom(jacocoCoverageFiles)
+        it.taskName.set(name)
+        it.coverageFiles.setFrom(coverageFiles)
         it.reportDir.set(outputReportDir)
         it.classFolders.setFrom(classFileCollection)
         it.sourceFolders.setFrom(sourceFolders)
         it.tabWidth.set(tabWidth)
         it.reportName.set(reportName)
         it.reportAggregation.set(reportAggregation)
+        it.onTheFlyCoverageEnabled.set(onTheFlyCoverageEnabled)
         it.modulePath.set(modulePath)
         it.testedVariantName.set(testedVariantName)
         it.testSuiteName.set(testSuiteName)
         it.rootProjectName.set(rootProjectName)
         it.rootProjectDir.set(rootProjectDir)
+        it.testPackageId.set(testPackageId)
+        it.exclusions.set(computeAutomatedExclusions(testClassFileCollection.files))
       }
   }
 
@@ -133,6 +156,13 @@ abstract class JacocoReportTask : NonIncrementalTask() {
 
     override val type: Class<JacocoReportTask>
       get() = JacocoReportTask::class.java
+
+    /**
+     * Whether the tests behind this report run on a device. Only those use the on-device coverage agent when
+     * [BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE] is set; host tests keep running with the JaCoCo agent on the JVM.
+     */
+    protected open val testsRunOnDevice: Boolean
+      get() = true
 
     override fun handleProvider(taskProvider: TaskProvider<JacocoReportTask>) {
       super.handleProvider(taskProvider)
@@ -151,6 +181,9 @@ abstract class JacocoReportTask : NonIncrementalTask() {
       task.reportName.setDisallowChanges(creationConfig.mainVariant.name)
       task.tabWidth.setDisallowChanges(4)
       task.reportAggregation.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.REPORT_AGGREGATION_SUPPORT])
+      task.onTheFlyCoverageEnabled.setDisallowChanges(
+        testsRunOnDevice && creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]
+      )
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
       task.testedVariantName.setDisallowChanges(creationConfig.mainVariant.name)
       task.rootProjectName.setDisallowChanges(creationConfig.services.projectInfo.rootProjectName)
@@ -173,6 +206,10 @@ abstract class JacocoReportTask : NonIncrementalTask() {
     private val testTaskName: String,
     private val internalArtifactType: InternalArtifactType<RegularFile>,
   ) : BaseCreationAction(testComponentProperties, jacocoAntConfiguration) {
+
+    // Unit and screenshot tests run on the JVM, so their coverage always comes from the JaCoCo agent.
+    override val testsRunOnDevice: Boolean
+      get() = false
 
     override fun configure(task: JacocoReportTask) {
       super.configure(task)
@@ -197,6 +234,14 @@ abstract class JacocoReportTask : NonIncrementalTask() {
       task.description = "Creates JaCoCo test coverage report from data gathered on the device."
       task.coverageFiles.from(creationConfig.artifacts.get(InternalArtifactType.CODE_COVERAGE))
       task.coverageFiles.disallowChanges()
+
+      task.testPackageId.setDisallowChanges(creationConfig.namespace)
+      task.testClassFileCollection.fromDisallowChanges(
+        creationConfig.artifacts
+          .forScope(ScopedArtifacts.Scope.PROJECT)
+          .getScopedArtifactsContainer(ScopedArtifact.CLASSES)
+          .finalScopedContent
+      )
     }
   }
 
@@ -214,10 +259,19 @@ abstract class JacocoReportTask : NonIncrementalTask() {
       task.description = "Creates JaCoCo test coverage report from data gathered on the Gradle managed device."
       task.coverageFiles.from(creationConfig.artifacts.get(InternalArtifactType.MANAGED_DEVICE_CODE_COVERAGE))
       task.coverageFiles.disallowChanges()
+
+      task.testPackageId.setDisallowChanges(creationConfig.namespace)
+      task.testClassFileCollection.fromDisallowChanges(
+        creationConfig.artifacts
+          .forScope(ScopedArtifacts.Scope.PROJECT)
+          .getScopedArtifactsContainer(ScopedArtifact.CLASSES)
+          .finalScopedContent
+      )
     }
   }
 
   interface JacocoWorkParameters : WorkParameters {
+    val taskName: Property<String>
     val coverageFiles: ConfigurableFileCollection
     val reportDir: DirectoryProperty
     val classFolders: ConfigurableFileCollection
@@ -225,28 +279,55 @@ abstract class JacocoReportTask : NonIncrementalTask() {
     val tabWidth: Property<Int>
     val reportName: Property<String>
     val reportAggregation: Property<Boolean>
+    val onTheFlyCoverageEnabled: Property<Boolean>
     val modulePath: Property<String>
     val testedVariantName: Property<String>
     val testSuiteName: Property<String>
     val rootProjectName: Property<String>
     val rootProjectDir: Property<File>
+    val testPackageId: Property<String>
+    val exclusions: SetProperty<String>
   }
 
   abstract class JacocoReportWorkerAction : WorkAction<JacocoWorkParameters> {
 
     override fun execute() {
       try {
+        val allFiles = parameters.coverageFiles.asFileTree.files
+        val pbFiles = allFiles.filter { it.isFile && it.extension == "pb" }
+        val metadata = pbFiles.find { it.name == "coverage_metadata.pb" }
+        val hits = pbFiles.find { it.name == "coverage_hits.pb" } ?: pbFiles.find { it.name.startsWith("coverage_hits") }
+        val jacocoFiles = allFiles.filter { it.isFile && (it.extension == "ec" || it.extension == "exec") }
+
         if (parameters.reportAggregation.get()) {
-          generateReport(
-            parameters.coverageFiles.files,
-            parameters.reportDir.asFile.get(),
-            parameters.classFolders.files,
-            parameters.sourceFolders.files,
-            parameters.tabWidth.get(),
-            parameters.reportName.get(),
-            logger,
-            listOf(ReportType.XML),
-          )
+          if (parameters.onTheFlyCoverageEnabled.get()) {
+            val xmlFile = parameters.reportDir.file("report.xml").get().asFile
+            generateOnTheFlyXml(
+              metadata,
+              hits,
+              xmlFile,
+              parameters.reportName.get(),
+              parameters.testPackageId.orNull,
+              parameters.exclusions.get(),
+              parameters.sourceFolders.files,
+            )
+          } else if (jacocoFiles.isNotEmpty()) {
+            generateReport(
+              jacocoFiles,
+              parameters.reportDir.asFile.get(),
+              parameters.classFolders.files,
+              parameters.sourceFolders.files,
+              parameters.tabWidth.get(),
+              parameters.reportName.get(),
+              logger,
+              listOf(ReportType.XML),
+            )
+          } else {
+            throw IOException(
+              "Test coverage report requested, but no tests were run. " +
+                "Task '${parameters.taskName.get()}' failed because no coverage data was found."
+            )
+          }
           val relativeSourcePaths = parameters.sourceFolders.files.map { folder -> folder.relativeTo(parameters.rootProjectDir.get()).path }
           CodeCoverageReportOrchestrator.orchestrate(
             listOf(parameters.reportDir.asFile.get()),
@@ -259,18 +340,27 @@ abstract class JacocoReportTask : NonIncrementalTask() {
             relativeSourcePaths,
           )
         } else {
-          generateReport(
-            parameters.coverageFiles.files,
-            parameters.reportDir.asFile.get(),
-            parameters.classFolders.files,
-            parameters.sourceFolders.files,
-            parameters.tabWidth.get(),
-            parameters.reportName.get(),
-            logger,
-          )
+          if (parameters.onTheFlyCoverageEnabled.get()) {
+            throw IOException("On-the-fly coverage requires 'android.experimental.reportAggregationSupport' to be enabled.")
+          } else if (jacocoFiles.isNotEmpty()) {
+            generateReport(
+              jacocoFiles,
+              parameters.reportDir.asFile.get(),
+              parameters.classFolders.files,
+              parameters.sourceFolders.files,
+              parameters.tabWidth.get(),
+              parameters.reportName.get(),
+              logger,
+            )
+          } else {
+            throw IOException(
+              "Test coverage report requested, but no tests were run. " +
+                "Task '${parameters.taskName.get()}' failed because no coverage data was found."
+            )
+          }
         }
       } catch (e: IOException) {
-        throw UncheckedIOException("Unable to generate Jacoco report", e)
+        throw UncheckedIOException("Unable to generate coverage report", e)
       }
       val reportLocation = parameters.reportDir.locationOnly.get().file("index.html").asFile.toURI()
       logger.lifecycle("View coverage report at $reportLocation")
@@ -279,5 +369,9 @@ abstract class JacocoReportTask : NonIncrementalTask() {
     companion object {
       val logger = Logging.getLogger(JacocoReportWorkerAction::class.java)
     }
+  }
+
+  companion object {
+    private val logger = Logging.getLogger(JacocoReportTask::class.java)
   }
 }

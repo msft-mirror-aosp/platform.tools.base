@@ -134,6 +134,8 @@ public class ResourceItemResolverTest extends TestCase {
                                     + "    <string name=\"placeholder\" translatable=\"false\">Ignore Me</string>\n"
                                     + "    <string name=\"wallpaper_instructions\">Tap picture to set portrait wallpaper</string>\n"
                                     + "    <string name=\"xliff_string\">First: <xliff:g id=\"firstName\">%1$s</xliff:g> Last: <xliff:g id=\"lastName\">%2$s</xliff:g></string>\n"
+                                    + "    <string name=\"styled_xliff_string\">First: <b><xliff:g id=\"firstName\" example=\"John\">%1$s</xliff:g></b></string>\n"
+                                    + "    <string name=\"styled_string\">Hello <b>world</b></string>\n"
                                     + "    <array name=\"my_array\">\"\n"
                                     + "        <item>@string/home_title</item>\n"
                                     + "        <item>value2\n</item>\n"
@@ -308,6 +310,18 @@ public class ResourceItemResolverTest extends TestCase {
                 resolver.findResValue("@string/xliff_string", false).getRawXmlValue());
         assertEquals("First: %1$s Last: %2$s",
                  resolver.findResValue("@string/xliff_string", false).getRenderingValue());
+        assertEquals("First: (John)",
+                resolver.findResValue("@string/styled_xliff_string", false).getValue());
+        assertEquals("First: <b><xliff:g example=\"John\" id=\"firstName\">%1$s</xliff:g></b>",
+                resolver.findResValue("@string/styled_xliff_string", false).getRawXmlValue());
+        assertEquals("First: <b>%1$s</b>",
+                resolver.findResValue("@string/styled_xliff_string", false).getRenderingValue());
+        assertEquals("Hello world",
+                resolver.findResValue("@string/styled_string", false).getValue());
+        assertEquals("Hello <b>world</b>",
+                resolver.findResValue("@string/styled_string", false).getRawXmlValue());
+        assertEquals("Hello <b>world</b>",
+                resolver.findResValue("@string/styled_string", false).getRenderingValue());
 
         chain.clear();
         assertEquals("#ffffffff", resolver.resolveResValue(v).getValue());

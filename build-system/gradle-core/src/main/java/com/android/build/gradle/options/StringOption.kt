@@ -117,6 +117,9 @@ enum class StringOption(override val propertyName: String, stage: ApiStage) : Op
   // 30.0.0-beta02
   LINT_VERSION_OVERRIDE("android.experimental.lint.version", ApiStage.Experimental),
 
+  // R8: Allow override of the compiler version.
+  R8_VERSION_OVERRIDE("android.r8.versionOverride", ApiStage.Experimental),
+
   // User-specified flag to override the emulator gpu mode for Gradle Managed Devices,
   // If the flag is not set, the emulator gpu mode will default to auto-no-window.
   // Supported values are "auto", "auto-no-window", "host", "swiftshader_indirect",
@@ -142,6 +145,15 @@ enum class StringOption(override val propertyName: String, stage: ApiStage) : Op
   // An override for the Jacoco version to be set per module
   JACOCO_TOOL_VERSION("com.android.test.jacocoVersion", ApiStage.Experimental),
 
+  /**
+   * Overrides the version of the on-device coverage agent (com.android.tools.test:coverage-agent) used when
+   * [BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE] is enabled.
+   *
+   * The agent is released in lockstep with the Android Gradle plugin and defaults to the plugin's version. Set this to pick up the agent
+   * from a different release without changing the plugin version.
+   */
+  COVERAGE_AGENT_VERSION_OVERRIDE("android.experimental.androidTest.coverage.onDeviceAgentVersion", ApiStage.Experimental),
+
   /** If a value is set, all version-gated [Option] with a minimum AGP version less than or equal to this value will be enabled. */
   SIMULATE_AGP_VERSION_BEHAVIOR("android.simulateAgpVersionBehavior", ApiStage.Experimental),
 
@@ -161,6 +173,9 @@ enum class StringOption(override val propertyName: String, stage: ApiStage) : Op
    * is enabled globally.
    */
   NEW_DSL_OPT_OUT("android.newDsl.optOut", ApiStage.Experimental),
+
+  /** To identify tool (e.g. Lightbuild) that the project is created by */
+  PROJECT_CREATOR_TOOL("android.project.createdBy", ApiStage.Experimental),
 
   /* ---------------
    * DEPRECATED APIs

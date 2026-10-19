@@ -53,26 +53,25 @@ class ScreenshotMultiModuleTest {
 
   @Test
   fun runPreviewScreenshotTestsOnMultipleFlavors() {
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            flavorDimensions += "new"
-            productFlavors {
-              create("flavor1") { it.dimension = "new" }
-              create("flavor2") { it.dimension = "new" }
-            }
+    val build = rule.build {
+      androidApplication {
+        android {
+          flavorDimensions += "new"
+          productFlavors {
+            create("flavor1") { it.dimension = "new" }
+            create("flavor2") { it.dimension = "new" }
           }
-          files.update("src/screenshotTest/java/com/ExampleTest.kt").transform {
-            """
+        }
+        files.update("src/screenshotTest/java/com/ExampleTest.kt").transform {
+          """
                         /*
                         $it
                         */
                     """
-              .trimIndent()
-          }
+            .trimIndent()
         }
       }
+    }
     val appProject = build.androidApplication()
 
     build.updateReferenceImage("debug", "flavor1")
@@ -113,65 +112,64 @@ class ScreenshotMultiModuleTest {
 
   @Test
   fun runPreviewScreenshotTestWithCrossModuleResources() {
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies { screenshotTestImplementation(project(":lib")) }
-          files {
-            add(
-              "src/screenshotTest/java/com/CrossModuleTest.kt",
-              // language=kotlin
-              """
-              package pkg.name
+    val build = rule.build {
+      androidApplication {
+        dependencies { screenshotTestImplementation(project(":lib")) }
+        files {
+          add(
+            "src/screenshotTest/java/com/CrossModuleTest.kt",
+            // language=kotlin
+            """
+            package pkg.name
 
-              import androidx.compose.ui.tooling.preview.Preview
-              import androidx.compose.runtime.Composable
-              import com.android.tools.screenshot.PreviewTest
+            import androidx.compose.ui.tooling.preview.Preview
+            import androidx.compose.runtime.Composable
+            import com.android.tools.screenshot.PreviewTest
 
-              class CrossModuleTest {
-                  @PreviewTest
-                  @Preview(showBackground = true)
-                  @Composable
-                  fun crossModuleComposableTest() {
-                      LibComposable()
-                  }
-              }
-              """
-                .trimIndent(),
-            )
-          }
-        }
-        androidLibrary {
-          files {
-            add("src/main/res/values/strings.xml", "<resources><string name=\"lib_string\">Library String</string></resources>")
-            add("src/main/res/values/colors.xml", "<resources><color name=\"lib_color\">#FF0000</color></resources>")
-            add(
-              "src/main/java/com/LibComposable.kt",
-              // language=kotlin
-              """
-              package pkg.name
-
-              import androidx.compose.material.Text
-              import androidx.compose.runtime.Composable
-              import androidx.compose.ui.res.stringResource
-              import androidx.compose.ui.res.colorResource
-              import androidx.compose.ui.Modifier
-              import androidx.compose.foundation.background
-              import pkg.name.lib.R
-
-              @Composable
-              fun LibComposable() {
-                  Text(
-                      text = stringResource(R.string.lib_string),
-                      modifier = Modifier.background(colorResource(R.color.lib_color))
-                  )
-              }
-              """
-                .trimIndent(),
-            )
-          }
+            class CrossModuleTest {
+                @PreviewTest
+                @Preview(showBackground = true)
+                @Composable
+                fun crossModuleComposableTest() {
+                    LibComposable()
+                }
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+      androidLibrary {
+        files {
+          add("src/main/res/values/strings.xml", "<resources><string name=\"lib_string\">Library String</string></resources>")
+          add("src/main/res/values/colors.xml", "<resources><color name=\"lib_color\">#FF0000</color></resources>")
+          add(
+            "src/main/java/com/LibComposable.kt",
+            // language=kotlin
+            """
+            package pkg.name
+
+            import androidx.compose.material.Text
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.res.stringResource
+            import androidx.compose.ui.res.colorResource
+            import androidx.compose.ui.Modifier
+            import androidx.compose.foundation.background
+            import pkg.name.lib.R
+
+            @Composable
+            fun LibComposable() {
+                Text(
+                    text = stringResource(R.string.lib_string),
+                    modifier = Modifier.background(colorResource(R.color.lib_color))
+                )
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
 
     val appProject = build.androidApplication()
 

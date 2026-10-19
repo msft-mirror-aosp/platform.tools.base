@@ -89,6 +89,9 @@ abstract class AnalyticsEnabledVariantBuilder(override val delegate: VariantBuil
       delegate.enableLint = value
     }
 
+  override val lint: AnalyticsEnabledLintBuilder
+    get() = AnalyticsEnabledLintBuilder(delegate.lint, stats)
+
   override fun <T : Any> registerExtension(type: Class<out T>, instance: T) {
     stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.REGISTER_EXTENSION_VALUE
     delegate.registerExtension(type, instance)

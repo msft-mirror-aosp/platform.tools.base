@@ -53,7 +53,6 @@ fun getPrefabFromMaven(projectOptions: ProjectOptions, services: TaskCreationSer
 
   val config =
     services.configurations.register(PREFAB_CONFIG_NAME) {
-      it.isVisible = false
       it.isTransitive = false
       it.isCanBeConsumed = false
       it.description = "The Prefab tool to use for generating native build system bindings."

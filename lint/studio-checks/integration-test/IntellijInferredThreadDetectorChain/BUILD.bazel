@@ -1,0 +1,51 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+
+licenses(["notice"])
+
+kotlin_library(
+    name = "m1",
+    srcs = ["m1/test/chain/m1/M1.kt"],
+    deps = ["//tools/base/annotations"],
+)
+
+kotlin_library(
+    name = "m2",
+    srcs = ["m2/test/chain/m2/M2.kt"],
+    deps = [":m1"],
+)
+
+kotlin_library(
+    name = "m3",
+    srcs = ["m3/test/chain/m3/M3.kt"],
+    deps = [":m2"],
+)
+
+# Linted with partial analysis across a multi-level module dependency chain:
+# m1 defines f1() (@WorkerThread) -> m2 defines f2() calling f1() ->
+# m3 defines f3() calling f2() -> top defines top() (@UiThread) calling f3().
+# IntellijInferredThreadDetector must report that top makes a violating call to f3(),
+# which is indirectly inferred to require @WorkerThread.
+kotlin_library(
+    name = "top",
+    srcs = ["top/test/chain/top/Top.kt"],
+    lint_baseline = "TopBaseline.xml",
+    lint_partial_analysis = True,
+    deps = [
+        ":m3",
+        "//tools/base/annotations",
+    ],
+)

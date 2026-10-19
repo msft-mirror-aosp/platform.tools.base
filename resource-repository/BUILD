@@ -7,26 +7,6 @@ iml_module(
     name = "studio.android.sdktools.resource-repository",
     srcs = ["main/java"],
     iml_files = ["android.sdktools.resource-repository.iml"],
-    test_data = [
-        "//prebuilts/studio/layoutlib/data:framework_res.jar",
-        "//prebuilts/studio/layoutlib/data/overlays",
-        "//prebuilts/studio/layoutlib/data/res",
-        "//prebuilts/studio/sdk:platforms/latest",
-        "//tools/base/resource-repository/test/resources",
-    ],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:truth",
-    ],
-    test_srcs = ["test/java"],
-    test_tags = [
-        "block-network",
-        "cpu:3",
-        "noci:studio-win",
-    ],
-    test_timeout = "long",  # "medium" is not sufficient on Mac b/155999536
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = [
@@ -45,6 +25,37 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/environment-services:studio.intellij.android.environment-services",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.resource-repository.tests",
+    iml_files = ["android.sdktools.resource-repository.tests.iml"],
+    test_data = [
+        "//prebuilts/studio/layoutlib/data:framework_res.jar",
+        "//prebuilts/studio/layoutlib/data/overlays",
+        "//prebuilts/studio/layoutlib/data/res",
+        "//prebuilts/studio/sdk:platforms/latest",
+        "//tools/base/resource-repository/test/resources",
+    ],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/resource-repository:studio.android.sdktools.resource-repository",
+        "//tools/adt/idea/.idea/libraries:aapt-proto",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
+    test_friends = ["//tools/base/resource-repository:studio.android.sdktools.resource-repository"],
+    test_srcs = ["test/java"],
+    test_tags = [
+        "block-network",
+        "cpu:3",
+        "noci:studio-win",
+    ],
+    test_timeout = "long",  # "medium" is not sufficient on Mac b/155999536
+    visibility = ["//visibility:public"],
 )
 
 # buildifier: disable=native-java-binary

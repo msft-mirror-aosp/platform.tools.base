@@ -20,6 +20,9 @@ import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.google.common.truth.Truth.assertThat
 import java.util.Properties
+import java.util.concurrent.ExecutionException
+import kotlin.test.assertFailsWith
+import org.gradle.api.tasks.VerificationException
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -83,5 +86,37 @@ class TestSuiteTestTaskTest {
     val serializedInputs = Properties().also { it.load(outputFile.reader(Charsets.UTF_8)) }
     assertThat(serializedInputs).hasSize(1)
     assertThat(serializedInputs.getProperty("com.android.agp.test.COVERAGE_TYPE")).isEqualTo("ON_THE_FLY")
+  }
+
+  @Test
+  fun runUnwrappingVerificationFailures_connectedDeviceTestFailure_rethrowsVerificationException() {
+    val testFailure = VerificationException("There were failing tests.")
+
+    // DeviceProvider.use wraps the failure once.
+    val thrown = assertFailsWith<VerificationException> { runUnwrappingVerificationFailures { throw ExecutionException(testFailure) } }
+
+    assertThat(thrown).isSameInstanceAs(testFailure)
+  }
+
+  @Test
+  fun runUnwrappingVerificationFailures_managedDeviceTestFailure_rethrowsVerificationException() {
+    val testFailure = VerificationException("There were failing tests.")
+
+    // The managed device lock and DeviceProvider.use each wrap the failure.
+    val thrown =
+      assertFailsWith<VerificationException> {
+        runUnwrappingVerificationFailures { throw ExecutionException(ExecutionException(testFailure)) }
+      }
+
+    assertThat(thrown).isSameInstanceAs(testFailure)
+  }
+
+  @Test
+  fun runUnwrappingVerificationFailures_otherFailure_rethrowsUnchanged() {
+    val otherFailure = ExecutionException(IllegalStateException("Device went offline."))
+
+    val thrown = assertFailsWith<ExecutionException> { runUnwrappingVerificationFailures { throw otherFailure } }
+
+    assertThat(thrown).isSameInstanceAs(otherFailure)
   }
 }

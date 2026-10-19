@@ -54,7 +54,10 @@ class XmlReportGeneratingListener : TestExecutionListener {
     delegate.executionStarted(testIdentifier)
   }
 
-  override fun executionFinished(testIdentifier: TestIdentifier, testExecutionResult: TestExecutionResult) {
+  override fun executionFinished(
+    testIdentifier: TestIdentifier,
+    testExecutionResult: TestExecutionResult,
+  ) {
     delegate.executionFinished(testIdentifier, testExecutionResult)
   }
 

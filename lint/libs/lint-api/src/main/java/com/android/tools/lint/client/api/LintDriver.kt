@@ -1691,7 +1691,7 @@ class LintDriver(
         if (peek == null) {
           break
         }
-        if (classNode.name.startsWith(peek.name)) {
+        if (classNode.name.length > peek.name.length && classNode.name[peek.name.length] == '$' && classNode.name.startsWith(peek.name)) {
           break
         } else {
           outerClasses?.pop()
@@ -2239,7 +2239,7 @@ class LintDriver(
               resourceFileCount++
             }
           )
-        } else if (binaryChecks != null && (isBitmapFile(file) || type == ResourceFolderType.RAW)) {
+        } else if (binaryChecks != null && (isBitmapFile(file) || type == ResourceFolderType.RAW || type == ResourceFolderType.FONT)) {
           val context =
             object : ResourceContext(this@LintDriver, project, main, file, type, "") {
               override val resourceFolder: File?
@@ -2269,6 +2269,33 @@ class LintDriver(
     return XmlContext(this, project, main, file, type, contents, document)
   }
 
+  /** Resolves [file] relative to [project]'s root directory and returns its canonical file. */
+  private fun toCanonical(project: Project, file: File?): File? {
+    if (file == null) return null
+    val resolved = if (file.isAbsolute) file else File(project.dir, file.path)
+    return try {
+      resolved.canonicalFile
+    } catch (ioe: IOException) {
+      resolved.absoluteFile
+    }
+  }
+
+  /**
+   * Returns true if [canonical] points to a known resource folder in [resourceFolders], or falls back to checking if it is an existing
+   * directory named "res" when no resource folders are configured.
+   */
+  private fun isCanonicalResourceFolder(resourceFolders: Set<File>, canonical: File?): Boolean {
+    canonical ?: return false
+    return canonical in resourceFolders || (resourceFolders.isEmpty() && canonical.name == RES_FOLDER && canonical.exists())
+  }
+
+  /** Canonicalizes [dir] against [project] and checks whether it is a valid resource folder via [isCanonicalResourceFolder]. */
+  private fun isResourceFolder(project: Project, resourceFolders: Set<File>, dir: File?): Boolean {
+    if (dir == null) return false
+    val canonical = toCanonical(project, dir) ?: return false
+    return isCanonicalResourceFolder(resourceFolders, canonical)
+  }
+
   /** Checks individual resources. */
   private fun checkIndividualResources(
     project: Project,
@@ -2279,22 +2306,28 @@ class LintDriver(
     files: List<File>,
     manifestFiles: List<File>,
   ) {
-    for (file in files) {
+    val resourceFolders by
+      lazy(LazyThreadSafetyMode.NONE) {
+        (project.resourceFolders + project.generatedResourceFolders).mapNotNull { toCanonical(project, it) }.toSet()
+      }
+
+    for (rawFile in files) {
+      val file = toCanonical(project, rawFile) ?: continue
       if (file.isDirectory) {
         // Is it a resource folder?
         val type = ResourceFolderType.getFolderType(file.name)
-        if (type != null && File(file.parentFile, RES_FOLDER).exists()) {
+        if (type != null && isResourceFolder(project, resourceFolders, file.parentFile)) {
           // Yes.
           checkResourceFolder(project, main, file, type, xmlDetectors, dirChecks, binaryChecks)
-        } else if (file.name == RES_FOLDER) { // Is it the res folder?
+        } else if (isResourceFolder(project, resourceFolders, file)) { // Is it the res folder?
           // Yes
           checkResFolder(project, main, file, xmlDetectors, dirChecks, binaryChecks)
         }
       } else if (file.isFile && isXmlFile(file) && file.name != ANDROID_MANIFEST_XML && !manifestFiles.contains(file)) {
-        // Yes, find out its resource type
-        val folderName = file.parentFile.name
-        val type = ResourceFolderType.getFolderType(folderName)
-        if (type != null) {
+        val parent = file.parentFile ?: continue
+        val type = ResourceFolderType.getFolderType(parent.name) ?: continue
+        val canonicalTypeFolder = toCanonical(project, parent) ?: continue
+        if (isCanonicalResourceFolder(resourceFolders, canonicalTypeFolder.parentFile)) {
           val visitor = getVisitor(type, xmlDetectors, binaryChecks)
           if (visitor != null) {
             client.runReadAction(
@@ -2308,11 +2341,14 @@ class LintDriver(
             )
           }
         }
-      } else if (binaryChecks != null && file.isFile && isBitmapFile(file)) {
-        // Yes, find out its resource type
-        val folderName = file.parentFile.name
-        val type = ResourceFolderType.getFolderType(folderName)
-        if (type != null) {
+      } else if (binaryChecks != null && file.isFile) {
+        val parent = file.parentFile ?: continue
+        val type = ResourceFolderType.getFolderType(parent.name) ?: continue
+        val canonicalTypeFolder = toCanonical(project, parent) ?: continue
+        if (
+          isCanonicalResourceFolder(resourceFolders, canonicalTypeFolder.parentFile) &&
+            (isBitmapFile(file) || type == ResourceFolderType.RAW || type == ResourceFolderType.FONT)
+        ) {
           val visitor = getVisitor(type, xmlDetectors, binaryChecks)
           if (visitor != null) {
             val context = ResourceContext(this, project, main, file, type, "")
@@ -2539,8 +2575,9 @@ class LintDriver(
       ) {
         val filtered = baseline.findAndMark(incident)
         if (filtered) {
-          if (!allowBaselineSuppress && !allowSuppress && issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, Location.create(baseline.file), null, issue.suppressNames)
+          val suppressNames = getSuppressNames(issue, context)
+          if (!allowBaselineSuppress && suppressNames != null && !suppressNames.contains(issue.id)) {
+            flagInvalidSuppress(context, issue, Location.create(baseline.file), null, suppressNames)
           } else {
             return true
           }
@@ -2923,8 +2960,16 @@ class LintDriver(
    * an issue category.
    */
   private fun requiresExactMatch(issue: Issue?): Boolean {
-    val customSuppressNames = if (!allowSuppress) issue?.suppressNames else null
-    return customSuppressNames != null
+    return issue != null && getSuppressNames(issue) != null
+  }
+
+  /** Returns [Configuration.getSuppressNames] for the given [context] (or the current project), unless [allowSuppress] is set. */
+  private fun getSuppressNames(issue: Issue, context: Context? = null): Collection<String>? {
+    if (allowSuppress) {
+      return null
+    }
+    val configuration = context?.configuration ?: currentProject?.getConfiguration(this) ?: return issue.suppressNames
+    return configuration.getSuppressNames(issue)
   }
 
   // Unfortunately, ASMs nodes do not extend a common DOM node type with parent
@@ -3107,12 +3152,7 @@ class LintDriver(
       return isSuppressed(context, issue, scope.sourcePsi)
     }
 
-    val customSuppressNames =
-      if (!allowSuppress) {
-        issue.suppressNames?.toSet()
-      } else {
-        null
-      }
+    val customSuppressNames = getSuppressNames(issue, context)?.toSet()
 
     if (scope?.sourcePsi is PsiCompiledElement) {
       return false
@@ -3125,7 +3165,7 @@ class LintDriver(
       if (currentScope is UAnnotated) {
         if (isSuppressed(issue, currentScope, requireExactMatch)) {
           if (customSuppressNames != null && context != null && !customSuppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
             return false
           }
           return true
@@ -3138,7 +3178,7 @@ class LintDriver(
 
       if (checkComments && context != null && context.isSuppressedWithComment(currentScope, issue)) {
         if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
-          flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+          flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
           return false
         }
         return true
@@ -3207,12 +3247,7 @@ class LintDriver(
   fun isSuppressed(context: JavaContext?, issue: Issue, scope: PsiElement?): Boolean {
     scope ?: return false
 
-    val customSuppressNames =
-      if (!allowSuppress) {
-        issue.suppressNames?.toSet()
-      } else {
-        null
-      }
+    val customSuppressNames = getSuppressNames(issue, context)?.toSet()
     val requireExactMatch = customSuppressNames != null
 
     if (scope is PsiCompiledElement) {
@@ -3226,7 +3261,7 @@ class LintDriver(
       if (currentScope is PsiModifierListOwner) {
         if (isAnnotatedWithSuppress(context, issue, currentScope, requireExactMatch)) {
           if (customSuppressNames != null && context != null && !customSuppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
             return false
           }
           return true
@@ -3242,7 +3277,7 @@ class LintDriver(
         val annotations = currentScope.annotationEntries
         if (isSuppressedKt(issue, annotations, requireExactMatch = requireExactMatch)) {
           if (customSuppressNames != null && context != null && !customSuppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
             return false
           }
           return true
@@ -3255,7 +3290,7 @@ class LintDriver(
 
       if (checkComments && context!!.isSuppressedWithComment(currentScope, issue)) {
         if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
-          flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+          flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
           return false
         }
         return true
@@ -3343,12 +3378,7 @@ class LintDriver(
       }
     }
 
-    val customSuppressNames =
-      if (!allowSuppress) {
-        issue.suppressNames?.toSet()
-      } else {
-        null
-      }
+    val customSuppressNames = getSuppressNames(issue, context)?.toSet()
 
     val requireExactMatch = customSuppressNames != null
     var currentNode = node
@@ -3369,7 +3399,7 @@ class LintDriver(
           val ignore = element.getAttributeNS(TOOLS_URI, ATTR_IGNORE)
           if (isSuppressed(issue, ignore, requireExactMatch)) {
             if (customSuppressNames != null && context != null && !customSuppressNames.contains(issue.id)) {
-              flagInvalidSuppress(context, issue, context.getLocation(currentNode), currentNode, issue.suppressNames)
+              flagInvalidSuppress(context, issue, context.getLocation(currentNode), currentNode, customSuppressNames)
               return false
             }
             return true
@@ -3381,7 +3411,7 @@ class LintDriver(
 
         if (checkComments && context != null && context.isSuppressedWithComment(currentNode, issue)) {
           if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, context.getLocation(currentNode), currentNode, issue.suppressNames)
+            flagInvalidSuppress(context, issue, context.getLocation(currentNode), currentNode, customSuppressNames)
             return false
           }
 

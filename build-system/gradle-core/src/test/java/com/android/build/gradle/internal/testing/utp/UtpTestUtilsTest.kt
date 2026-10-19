@@ -17,11 +17,15 @@
 package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.gradle.internal.SdkComponentsBuildService
+import com.android.build.gradle.internal.testing.INSTRUMENTATION_ARGS_KEY
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
+import com.android.tools.utp.gradle.api.ShardConfig
 import com.android.tools.utp.gradle.api.UtpDependencies
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -45,19 +49,138 @@ class UtpTestUtilsTest {
   private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
   private val mockWorkQueue: WorkQueue = mock()
 
+  private val testData =
+    com.android.tools.utp.gradle.api.TestData(
+      applicationId = "com.example.application.test",
+      testedApplicationId = "com.example.application",
+      instrumentationTargetPackageId = "com.example.application",
+      instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner",
+      instrumentationRunnerArguments = emptyMap(),
+      animationsDisabled = false,
+      isTestCoverageEnabled = false,
+      testApk = File("testApk.apk"),
+    )
+
+  private val targetApkConfigBundle = com.android.tools.utp.gradle.api.TargetApkConfigBundle(appApks = emptyList(), isSplitApk = false)
+
+  private fun <T : Any> mockProperty(value: T): org.gradle.api.provider.Property<T> {
+    val mock = mock<org.gradle.api.provider.Property<T>>()
+    whenever(mock.get()).thenReturn(value)
+    whenever(mock.orNull).thenReturn(value)
+    return mock
+  }
+
+  private fun <T : Any> mockListProperty(value: List<T>): org.gradle.api.provider.ListProperty<T> {
+    val mock = mock<org.gradle.api.provider.ListProperty<T>>()
+    whenever(mock.get()).thenReturn(value)
+    whenever(mock.orNull).thenReturn(value)
+    return mock
+  }
+
+  private fun mockRegularFileProperty(file: File): org.gradle.api.file.RegularFileProperty {
+    val mock = mock<org.gradle.api.file.RegularFileProperty>()
+    val mockRegularFile = mock<org.gradle.api.file.RegularFile>()
+    whenever(mock.get()).thenReturn(mockRegularFile)
+    whenever(mockRegularFile.asFile).thenReturn(file)
+    return mock
+  }
+
+  private fun mockDirectoryProperty(dir: File): org.gradle.api.file.DirectoryProperty {
+    val mock = mock<org.gradle.api.file.DirectoryProperty>()
+    val mockDirectory = mock<org.gradle.api.file.Directory>()
+    whenever(mock.get()).thenReturn(mockDirectory)
+    whenever(mockDirectory.asFile).thenReturn(dir)
+    whenever(mock.isPresent).thenReturn(true)
+    return mock
+  }
+
+  private fun configureMockConfig(
+    config: RunUtpWorkParameters.UtpRunConfig,
+    deviceId: String,
+    serial: String,
+    outputDir: File,
+    utpResultFile: File,
+    useOrchestrator: Boolean = false,
+  ) {
+    val deviceIdProp = mockProperty(deviceId)
+    val deviceSerialProp = mockProperty(serial)
+    val installTimeoutProp = mockProperty(30)
+    val targetApkBundleProp = mockProperty(targetApkConfigBundle)
+    val testDataProp = mockProperty(testData)
+
+    val mockHelperApks = mock<org.gradle.api.file.ConfigurableFileCollection>()
+    whenever(mockHelperApks.files).thenReturn(emptySet())
+
+    val installOptionsProp = mockListProperty(emptyList<String>())
+    val uninstallApksProp = mockProperty(false)
+    val useOrchestratorProp = mockProperty(useOrchestrator)
+    val outputDirProp = mockDirectoryProperty(outputDir)
+    val utpResultProp = mockRegularFileProperty(utpResultFile)
+
+    whenever(config.deviceId).thenReturn(deviceIdProp)
+    whenever(config.deviceSerialNumber).thenReturn(deviceSerialProp)
+    whenever(config.installApkTimeout).thenReturn(installTimeoutProp)
+    whenever(config.targetApkConfigBundle).thenReturn(targetApkBundleProp)
+    whenever(config.testData).thenReturn(testDataProp)
+    whenever(config.helperApks).thenReturn(mockHelperApks)
+    whenever(config.additionalInstallOptions).thenReturn(installOptionsProp)
+    whenever(config.uninstallApksAfterTest).thenReturn(uninstallApksProp)
+    whenever(config.useOrchestrator).thenReturn(useOrchestratorProp)
+    whenever(config.outputDir).thenReturn(outputDirProp)
+    whenever(config.utpResultProtoOutputFile).thenReturn(utpResultProp)
+  }
+
   @Before
   fun setupMocks() {
-    whenever(mockWorkerExecutor.classLoaderIsolation(any())).thenReturn(mockWorkQueue)
+    whenever(mockWorkerExecutor.processIsolation(any())).thenReturn(mockWorkQueue)
+
+    val mockAdbProvider: org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile> = mock()
+    val mockAdbFile: org.gradle.api.file.RegularFile = mock()
+    whenever(mockVersionedSdkLoader.adbExecutableProvider).thenReturn(mockAdbProvider)
+    whenever(mockAdbProvider.get()).thenReturn(mockAdbFile)
+    whenever(mockAdbFile.asFile).thenReturn(File("mock-adb"))
+
+    val mockBuildToolInfoProvider: org.gradle.api.provider.Provider<com.android.sdklib.BuildToolInfo> = mock()
+    val mockBuildToolInfo: com.android.sdklib.BuildToolInfo = mock()
+    whenever(mockVersionedSdkLoader.buildToolInfoProvider).thenReturn(mockBuildToolInfoProvider)
+    whenever(mockBuildToolInfoProvider.get()).thenReturn(mockBuildToolInfo)
+    whenever(mockBuildToolInfo.getPath(com.android.sdklib.BuildToolInfo.PathId.AAPT)).thenReturn("mock-aapt2")
+    whenever(mockBuildToolInfo.getPath(com.android.sdklib.BuildToolInfo.PathId.DEXDUMP)).thenReturn("mock-dexdump")
+
+    val mockSdkDirectoryProvider: org.gradle.api.provider.Provider<org.gradle.api.file.Directory> = mock()
+    whenever(mockVersionedSdkLoader.sdkDirectoryProvider).thenReturn(mockSdkDirectoryProvider)
   }
 
   private fun runUtp(expectedResultCode: Int = 0): Boolean {
     val utpResultDir = temporaryFolderRule.newFolder()
 
-    val config: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
-    whenever(config.utpResultProtoOutputFile.asFile.get()).thenReturn(File(utpResultDir, TEST_RESULT_EXIT_CODE_FILE_NAME))
+    val mockProvider: Provider<String> = mock()
+    whenever(mockProvider.orNull).thenReturn(null)
+    val mockProviderFactory: ProviderFactory = mock()
+    whenever(mockProviderFactory.gradleProperty(any<String>())).thenReturn(mockProvider)
 
-    whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then {
-      File(utpResultDir, TEST_RESULT_EXIT_CODE_FILE_NAME).writeBytes(expectedResultCode.toString().toByteArray())
+    val config: RunUtpWorkParameters.UtpRunConfig = mock()
+    configureMockConfig(config, "device1", "serial1", utpResultDir, File(utpResultDir, "utp-result.pb"))
+
+    whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then { invocation ->
+      val action = invocation.getArgument<org.gradle.api.Action<RunUtpWorkParameters>>(1)
+      val mockParams = mock<RunUtpWorkParameters>(defaultAnswer = RETURNS_DEEP_STUBS)
+
+      val mockExitCodeFileProperty = mock<org.gradle.api.file.RegularFileProperty>()
+      whenever(mockParams.testResultExitCodeFile).thenReturn(mockExitCodeFileProperty)
+
+      var targetFile: File? = null
+      whenever(mockExitCodeFileProperty.fileValue(any<File>())).then { inv ->
+        targetFile = inv.getArgument<File>(0)
+        mockExitCodeFileProperty
+      }
+
+      action.execute(mockParams)
+
+      if (targetFile != null) {
+        targetFile!!.parentFile?.mkdirs()
+        targetFile!!.writeText(expectedResultCode.toString())
+      }
     }
 
     return runUtpTestSuiteAndWait(
@@ -68,6 +191,7 @@ class UtpTestUtilsTest {
       utpResultDir,
       mockUtpDependencies,
       mockVersionedSdkLoader,
+      mockProviderFactory,
     )
   }
 
@@ -83,5 +207,80 @@ class UtpTestUtilsTest {
     val results = runUtp(expectedResultCode = 1)
 
     assertThat(results).isFalse()
+  }
+
+  private fun captureWorkerSystemProperties(
+    instrumentationArgs: Map<String, String>,
+    shardConfig: ShardConfig? = null,
+  ): Map<String, Any?> {
+    val utpResultDir = temporaryFolderRule.newFolder()
+
+    val mockProvider: Provider<String> = mock()
+    whenever(mockProvider.orNull).thenReturn(null)
+    val mockProviderFactory: ProviderFactory = mock()
+    whenever(mockProviderFactory.gradleProperty(any<String>())).thenReturn(mockProvider)
+
+    val config: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+    configureMockConfig(config, "device1", "serial1", utpResultDir, File(utpResultDir, "utp-result.pb"))
+    val testDataProp = mockProperty(testData.copy(instrumentationRunnerArguments = instrumentationArgs))
+    val forceCompilationProp = mockProperty(false)
+    val pccProp = mockProperty(false)
+    val coverageOutputDirProp = mockDirectoryProperty(utpResultDir)
+    whenever(config.testData).thenReturn(testDataProp)
+    whenever(config.forceCompilation).thenReturn(forceCompilationProp)
+    whenever(config.privateComputeCoreInstrumentationEnabled).thenReturn(pccProp)
+    whenever(config.coverageOutputDir).thenReturn(coverageOutputDirProp)
+    whenever(config.additionalTestOutputOnDeviceDir.isPresent).thenReturn(false)
+    whenever(config.additionalTestOutputDir.isPresent).thenReturn(false)
+    if (shardConfig != null) {
+      val shardConfigProp = mockProperty(shardConfig)
+      whenever(config.shardConfig).thenReturn(shardConfigProp)
+    } else {
+      whenever(config.shardConfig.orNull).thenReturn(null)
+    }
+
+    val systemProperties = mutableMapOf<String, Any?>()
+    whenever(mockWorkerExecutor.processIsolation(any())).then { invocation ->
+      val specAction = invocation.getArgument<org.gradle.api.Action<org.gradle.workers.ProcessWorkerSpec>>(0)
+      val mockSpec = mock<org.gradle.workers.ProcessWorkerSpec>(defaultAnswer = RETURNS_DEEP_STUBS)
+      whenever(mockSpec.forkOptions(any())).then { forkInvocation ->
+        val forkAction = forkInvocation.getArgument<org.gradle.api.Action<org.gradle.process.JavaForkOptions>>(0)
+        val mockFork = mock<org.gradle.process.JavaForkOptions>()
+        whenever(mockFork.systemProperty(any(), any())).then { propInvocation ->
+          systemProperties[propInvocation.getArgument(0)] = propInvocation.getArgument(1)
+          mockFork
+        }
+        forkAction.execute(mockFork)
+      }
+      specAction.execute(mockSpec)
+      mockWorkQueue
+    }
+
+    runUtpTestSuiteAndWait(
+      listOf(config),
+      mockWorkerExecutor,
+      "projectName",
+      "variantName",
+      utpResultDir,
+      mockUtpDependencies,
+      mockVersionedSdkLoader,
+      mockProviderFactory,
+    )
+    return systemProperties
+  }
+
+  @Test
+  fun escapesCommaSeparatedInstrumentationArgs() {
+    val systemProperties = captureWorkerSystemProperties(mapOf("class" to "com.example.ATest,com.example.BTest", "trailing" to "foo\\"))
+
+    assertThat(systemProperties[INSTRUMENTATION_ARGS_KEY]).isEqualTo("class=com.example.ATest\\,com.example.BTest,trailing=foo\\\\")
+  }
+
+  @Test
+  fun passesShardConfigToWorkerSystemProperties() {
+    val systemProperties = captureWorkerSystemProperties(emptyMap(), ShardConfig(totalCount = 10, index = 4))
+
+    assertThat(systemProperties["android-test.num-shards[serial1]"]).isEqualTo("10")
+    assertThat(systemProperties["android-test.shard-index[serial1]"]).isEqualTo("4")
   }
 }

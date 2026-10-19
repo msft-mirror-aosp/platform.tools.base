@@ -638,6 +638,38 @@ public class IconDetectorTest extends AbstractCheckTest {
                 .expectClean();
     }
 
+    public void testWatchFaceFormatDensitylessDrawable() {
+        // WFF apps place bitmaps in res/drawable/; verify that IconLocation
+        // does not flag them as being in a densityless folder.
+        lint().files(
+                        xml("res/raw/watchface.xml", "<WatchFace width=\"450\" height=\"450\" />"),
+                        image("res/drawable/my_image.png", 48, 48))
+                .issues(ICON_LOCATION)
+                .run()
+                .expectClean();
+    }
+
+    public void testWatchFaceFormatManifestPropertyDensitylessDrawable() {
+        // WFF apps place bitmaps in res/drawable/; verify that IconLocation
+        // does not flag them as being in a densityless folder.
+        lint().files(
+                        manifest(
+                                ""
+                                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                        + "    package=\"com.example.watchface\">\n"
+                                        + "    <application android:hasCode=\"false\">\n"
+                                        + "        <property\n"
+                                        + "            android:name=\"com.google.wear.watchface.format.version\"\n"
+                                        + "            android:value=\"1\" />\n"
+                                        + "    </application>\n"
+                                        + "</manifest>"),
+                        image("res/drawable/my_image.png", 48, 48))
+                .issues(ICON_LOCATION)
+                .run()
+                .expectClean();
+    }
+
     public void testAbbreviate() {
         String expected =
                 ""

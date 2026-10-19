@@ -30,6 +30,9 @@ import org.jetbrains.uast.UImportStatement
 class WearMaterialThemeDetector : WearDetector(), SourceCodeScanner {
 
   companion object {
+    private const val ANDROIDX_MATERIAL3_PKG = "androidx.compose.material3."
+    private const val MATERIAL_THEME = "MaterialTheme"
+
     val IMPLEMENTATION = Implementation(WearMaterialThemeDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     val ISSUE =
@@ -38,7 +41,7 @@ class WearMaterialThemeDetector : WearDetector(), SourceCodeScanner {
         briefDescription = "Using not non-Wear `MaterialTheme` in a Wear OS project",
         explanation =
           """
-        Wear projects should use `androidx.wear.compose.material.MaterialTheme` instead of `androidx.compose.material.MaterialTheme`
+        Wear projects should use `androidx.wear.compose.material3.MaterialTheme` instead of `androidx.compose.material.MaterialTheme` or `androidx.compose.material3.MaterialTheme`.
       """,
         category = Category.CORRECTNESS,
         priority = 6,
@@ -60,14 +63,14 @@ class WearMaterialThemeDetector : WearDetector(), SourceCodeScanner {
   private class ImportVisitor(private val context: JavaContext) : UElementHandler() {
     override fun visitImportStatement(statement: UImportStatement) {
       val importedClass = statement.importReference?.sourcePsi?.text ?: return
-      if (importedClass == ANDROIDX_MATERIAL_PKG + "MaterialTheme") {
+      if (importedClass == ANDROIDX_MATERIAL_PKG + MATERIAL_THEME || importedClass == ANDROIDX_MATERIAL3_PKG + MATERIAL_THEME) {
 
         val location = context.getLocation(statement)
         context.report(
           ISSUE,
           statement,
           location,
-          "Don't use `androidx.compose.material.MaterialTheme` in a Wear OS project; use `androidx.wear.compose.material.MaterialTheme` instead",
+          "Don't use `$importedClass` in a Wear OS project; use `androidx.wear.compose.material3.MaterialTheme` instead",
         )
       }
     }

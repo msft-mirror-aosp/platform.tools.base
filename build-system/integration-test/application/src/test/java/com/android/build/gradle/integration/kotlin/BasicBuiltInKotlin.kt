@@ -24,19 +24,18 @@ import org.junit.Test
 class BasicBuiltInKotlin {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidKotlinApplication {
-        android { namespace = "com.foo.application" }
+  val rule = GradleRule.from {
+    androidKotlinApplication {
+      android { namespace = "com.foo.application" }
 
-        kotlin {
-          compilerOptions {
-            moduleName.set("foo")
-            languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
-          }
+      kotlin {
+        compilerOptions {
+          moduleName.set("foo")
+          languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
         }
       }
     }
+  }
 
   @Test
   fun basicTest() {

@@ -21,17 +21,22 @@ import com.android.build.api.attributes.AgpVersionAttr
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.dsl.AgpTestSuiteDependencies
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.variant.TestSuiteSourceType
-import com.android.build.api.variant.impl.toCamelCase
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
+import com.android.build.gradle.internal.dependency.LayoutlibExtractor
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
 import com.google.common.collect.Maps
+import java.util.concurrent.Callable
+import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.ResolutionStrategy
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
@@ -56,6 +61,7 @@ internal constructor(
   private val flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>,
   private val dslInfo: MultiVariantComponentDslInfo,
   private val sourceType: TestSuiteSourceType,
+  private val sourceSetName: String = testSuiteBuilder.name,
 ) {
 
   private val jvmEnvironment = project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.ANDROID)
@@ -78,12 +84,11 @@ internal constructor(
     val configurations = project.configurations
     val testedVariantName = testedVariant.name
 
-    val identifier = "$testSuiteName${sourceType.toCamelCase()}${testedVariantName.capitalized()}"
+    val identifier = "${testedVariantName}${sourceSetName.capitalized()}"
 
     // ----------- COMPILE CLASSPATH
     val compileClasspathName: String = identifier + "CompileClasspath"
     val compileClasspath: Configuration = configurations.maybeCreate(compileClasspathName)
-    compileClasspath.isVisible = false
     compileClasspath.description = "Resolved configuration for compilation for test suite: $testSuiteName in $testedVariantName"
     populateClasspath(compileClasspath, gatherCollectors { listOf(it.compileOnly, it.implementation) })
     addAttributes(compileClasspath, factory.named(Usage::class.java, Usage.JAVA_API))
@@ -109,6 +114,22 @@ internal constructor(
     populateClasspath(hostRuntimeClasspath, listOf(enginesDependencies))
     addAttributesForHost(hostRuntimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
 
+    // -------------- ENGINES CLASSPATH
+    val enginesClasspathName: String = identifier + "EnginesClasspath"
+    val enginesClasspath =
+      configurations.maybeRegister(enginesClasspathName) {
+        it.description = "Resolved configuration for test engines for test suite: $testSuiteName in $testedVariantName"
+        populateClasspath(it, listOf(enginesDependencies))
+        addAttributesForHost(it, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
+      }
+
+    if (
+      sourceType == TestSuiteSourceType.HOST_JAR &&
+        testSuiteBuilder.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR)
+    ) {
+      registerLayoutlibExtractor(identifier, enginesClasspath)
+    }
+
     if (testedVariant.componentType.isAar) {
       // If the tested variant is a library, we can use standard project dependencies.
       compileClasspath.extendsFrom(testedVariant.variantDependencies.compileClasspath)
@@ -116,18 +137,50 @@ internal constructor(
     } else {
       // If the tested variant is an application, we cannot use 'extendsFrom' because that
       // would inherit the 'category=library' attribute and cause a resolution failure.
-      // Instead, we manually carry over the dependencies.
+      // Instead, we manually carry over the compile dependencies, and the runtime dependencies for non-test APKs.
       compileClasspath.dependencies.addAll(testedVariant.variantDependencies.compileClasspath.allDependencies)
-      runtimeClasspath.dependencies.addAll(testedVariant.variantDependencies.runtimeClasspath.allDependencies)
+      if (sourceType != TestSuiteSourceType.TEST_APK) {
+        runtimeClasspath.dependencies.addAll(testedVariant.variantDependencies.runtimeClasspath.allDependencies)
+      }
     }
 
     return TestSuiteSourceClasspath(
       compileClasspath = compileClasspath,
       runtimeClasspath = runtimeClasspath,
       hostRuntimeClasspath = hostRuntimeClasspath,
+      enginesClasspath = enginesClasspath,
+      layoutlibConsumerId = identifier,
       objectFactory = project.objects,
     )
   }
+
+  /** Registers the [LayoutlibExtractor] that extracts the layoutlib runtime distribution for this test suite. */
+  private fun registerLayoutlibExtractor(identifier: String, enginesClasspath: NamedDomainObjectProvider<Configuration>) {
+    // Callable, so that the engines classpath is only resolved if the transform actually runs.
+    val frameworkResources =
+      project.files(
+        Callable {
+          enginesClasspath
+            .get()
+            .incoming
+            .artifactView { config ->
+              config.componentFilter { id ->
+                id is ModuleComponentIdentifier &&
+                  id.group == LayoutlibExtractor.LAYOUTLIB_GROUP &&
+                  id.module == LayoutlibExtractor.LAYOUTLIB_RESOURCES_MODULE
+              }
+            }
+            .files
+        }
+      )
+    LayoutlibExtractor.registerTransform(project, identifier, frameworkResources)
+  }
+
+  /** Lazily registers the configuration named [name], or returns the existing one if it has already been registered. */
+  private fun ConfigurationContainer.maybeRegister(
+    name: String,
+    action: (Configuration) -> Unit,
+  ): NamedDomainObjectProvider<Configuration> = if (names.contains(name)) named(name) else register(name, action)
 
   private fun populateClasspath(classpath: Configuration, from: Collection<DependencyCollector>) {
     for (collector in from) {
@@ -138,7 +191,6 @@ internal constructor(
 
   private fun addAttributes(configuration: Configuration, usage: Usage) {
     configuration.isCanBeConsumed = false
-    configuration.isVisible = false
     configuration.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
     val attributes = configuration.attributes
     attributes.attribute(Usage.USAGE_ATTRIBUTE, usage)
@@ -151,7 +203,6 @@ internal constructor(
 
   private fun addAttributesForHost(configuration: Configuration, usage: Usage) {
     configuration.isCanBeConsumed = false
-    configuration.isVisible = false
     configuration.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
     val attributes = configuration.attributes
     attributes.attribute(Usage.USAGE_ATTRIBUTE, usage)

@@ -2826,6 +2826,30 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testAutoVerifySelfClosingIntentFilter() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+
+              <application>
+                  <activity android:name=".FullscreenActivity" android:exported="true">
+                      <intent-filter android:autoVerify='true' />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .allowManifestMergerErrors(true)
+      .run()
+      .expectClean()
+  }
+
   fun testAutoVerifyFixesForEmptyIntentFilter_customNs() {
     lint()
       .files(

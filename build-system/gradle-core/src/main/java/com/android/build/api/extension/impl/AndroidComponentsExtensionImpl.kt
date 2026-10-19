@@ -163,8 +163,12 @@ abstract class AndroidComponentsExtensionImpl<DslExtensionT : Any, VariantBuilde
         customResolvableConfigurationNameMapper != null -> {
           customResolvableConfigurationNameMapper
         }
-        useLegacyPrefix -> { componentName -> "${lowercaseAffix.appendCapitalized(componentName)}_resolved" }
-        else -> { componentName -> "${componentName.appendCapitalized(lowercaseAffix)}_resolved" }
+        useLegacyPrefix -> { componentName ->
+          "${lowercaseAffix.appendCapitalized(componentName)}_resolved"
+        }
+        else -> { componentName ->
+          "${componentName.appendCapitalized(lowercaseAffix)}_resolved"
+        }
       }
 
     if (variantApiOperations.sourceSetConfigurationsMap.put(lowercaseAffix, resolvableConfigurationNameMapper) != null) {

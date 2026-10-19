@@ -315,17 +315,16 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
     val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
 
     // Act
-    val reply =
-      delegatingProcess.withJdwpSession {
-        val versionCommand =
-          MutableJdwpPacket.createCommandPacket(
-            nextPacketId(),
-            JdwpCommands.CmdSet.SET_VM.value,
-            JdwpCommands.VmCmd.CMD_VM_VERSION.value,
-            ByteBuffer.allocate(0),
-          )
-        newPacketReceiver().withActivation { sendPacket(versionCommand) }.flow().first { reply -> reply.id == versionCommand.id }
-      }
+    val reply = delegatingProcess.withJdwpSession {
+      val versionCommand =
+        MutableJdwpPacket.createCommandPacket(
+          nextPacketId(),
+          JdwpCommands.CmdSet.SET_VM.value,
+          JdwpCommands.VmCmd.CMD_VM_VERSION.value,
+          ByteBuffer.allocate(0),
+        )
+      newPacketReceiver().withActivation { sendPacket(versionCommand) }.flow().first { reply -> reply.id == versionCommand.id }
+    }
 
     // Assert
     assertEquals(true, reply.isReply)

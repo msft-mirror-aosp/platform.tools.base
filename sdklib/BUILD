@@ -19,24 +19,9 @@ iml_module(
     name = "studio.android.sdktools.sdklib",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.sdklib.iml"],
-    jvm_target = "8",
+    jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
-    test_data = ["//prebuilts/studio/sdk:platforms/latest"],
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:guava-testlib",
-        "//tools/adt/idea/.idea/libraries:jimfs",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-    ],
-    test_resources = ["src/test/resources"],
-    test_srcs = [
-        "src/integrationTest/java",
-        "src/test/java",
-    ],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = [
@@ -57,6 +42,34 @@ iml_module(
         "//tools/base/repository:studio.android.sdktools.repository",
         "//tools/base/sdklib:schema-generated",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.sdklib.tests",
+    iml_files = ["android.sdktools.sdklib.tests.iml"],
+    jvm_target = "11",
+    test_data = ["//prebuilts/studio/sdk:platforms/latest"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:agp-version",
+        "@intellij//:intellij-sdk",
+        "//tools/base/sdklib:studio.android.sdktools.sdklib",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:guava-testlib",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/base/repository:studio.android.sdktools.repository.tests",
+    ],
+    test_friends = ["//tools/base/sdklib:studio.android.sdktools.sdklib"],
+    test_resources = ["src/test/resources"],
+    test_srcs = [
+        "src/integrationTest/java",
+        "src/test/java",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 kotlin_library(
@@ -86,6 +99,16 @@ kotlin_library(
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
+)
+
+java_library(
+    name = "sdk_version_info",
+    srcs = ["src/main/java/com/android/sdklib/SdkVersionInfo.java"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/base/annotations",
+        "//tools/base/common:tools.common",
     ],
 )
 
@@ -174,6 +197,7 @@ kotlin_test(
         "@maven//:junit.junit",
         "@maven//:org.apache.httpcomponents.httpcore",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.mockito-core",
     ],
 )
@@ -236,19 +260,19 @@ sdk_java_binary(
 sdk_java_binary(
     name = "d8",
     main_class = "com.android.tools.r8.D8",
-    runtime_deps = ["//prebuilts/r8"],
+    runtime_deps = ["@maven//:com.android.tools.r8"],
 )
 
 sdk_java_binary(
     name = "r8",
     main_class = "com.android.tools.r8.R8",
-    runtime_deps = ["//prebuilts/r8"],
+    runtime_deps = ["@maven//:com.android.tools.r8"],
 )
 
 sdk_java_binary(
     name = "retrace",
     main_class = "com.android.tools.r8.retrace.Retrace",
-    runtime_deps = ["//prebuilts/r8"],
+    runtime_deps = ["@maven//:com.android.tools.r8"],
 )
 
 expand_template(
@@ -269,7 +293,6 @@ sdk_package(
     name = "commandlinetools",
     binaries = [
         ":avdmanager",
-        ":sdkmanager",
         ":d8",
         ":r8",
         ":retrace",
@@ -282,15 +305,19 @@ sdk_package(
     platform_others = {
         "linux": {
             "@android_cli_linux//file": "cmdline-tools/bin/android",
+            "//tools/vendor/google/android-cli/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "mac_x86_64": {
             "@android_cli_mac_x86_64//file": "cmdline-tools/bin/android",
+            "//tools/vendor/google/android-cli/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "mac_arm64": {
             "@android_cli_mac_arm64//file": "cmdline-tools/bin/android",
+            "//tools/vendor/google/android-cli/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "win": {
             "@android_cli_win//file": "cmdline-tools/bin/android.exe",
+            "//tools/vendor/google/android-cli/legacy:sdkmanager.bat": "cmdline-tools/bin/sdkmanager.bat",
         },
     },
     sourceprops = ":source.properties",

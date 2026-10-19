@@ -82,8 +82,9 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val templateFileLoader =
-      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val templateFileLoader = TemplateFileLoader.forFunction { entry: TemplateFileEntry ->
+      files.first { it.relativePath == entry.relativePath }
+    }
     val template =
       TemplateDefinition(
         metadata = metadata!!,
@@ -165,8 +166,9 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val templateFileLoader =
-      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val templateFileLoader = TemplateFileLoader.forFunction { entry: TemplateFileEntry ->
+      files.first { it.relativePath == entry.relativePath }
+    }
     val template =
       TemplateDefinition(
         metadata = metadata!!,
@@ -219,8 +221,9 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val templateFileLoader =
-      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val templateFileLoader = TemplateFileLoader.forFunction { entry: TemplateFileEntry ->
+      files.first { it.relativePath == entry.relativePath }
+    }
     val template =
       TemplateDefinition(
         metadata = metadata!!,
@@ -289,8 +292,9 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val templateFileLoader =
-      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val templateFileLoader = TemplateFileLoader.forFunction { entry: TemplateFileEntry ->
+      files.first { it.relativePath == entry.relativePath }
+    }
     val template =
       TemplateDefinition(
         metadata = metadata!!,
@@ -318,6 +322,129 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val bytes = java.nio.file.Files.readAllBytes(savedFile)
     val expectedContent = "line1: My Template Name\r\nline2: My Template Name\r\n"
     assertThat(bytes).isEqualTo(expectedContent.toByteArray(Charsets.UTF_8))
+  }
+
+  @Test
+  fun `verifies non-empty destination directory produces an error by default`() {
+    val messageSink =
+      object : DefaultTemplateMessageSink(Severity.Info) {
+        override fun onMessage(entry: MessageEntry) {
+          // Nothing to do, we capture in memory only
+        }
+      }
+    val factory = TemplateEngineFactory.createDefault()
+    val template = createSimpleTemplate(factory, messageSink, listOf(createTemplateFile("file1.txt", "new content")))
+    val testRootPath = getTestRootPath()
+    java.nio.file.Files.createDirectories(testRootPath)
+    java.nio.file.Files.write(testRootPath.resolve("file1.txt"), "old content".toByteArray(Charsets.UTF_8))
+
+    val engine = factory.createDefaultEngine(messageSink, NoopDependencyInstaller, destinationPathProvider = { testRootPath })
+    engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
+
+    assertThat(messageSink.messages.map { it.severity }).contains(Severity.Error)
+    assertThat(messageSink.messages.map { it.message }.any { it.contains("is not empty") }).isTrue()
+    assertThat(messageSink.messages.map { it.message }).contains("Failed to create project 'Template Name' due to previous error(s)")
+    // Existing file must be left untouched
+    assertThat(String(java.nio.file.Files.readAllBytes(testRootPath.resolve("file1.txt")), Charsets.UTF_8)).isEqualTo("old content")
+  }
+
+  @Test
+  fun `verifies non-empty destination directory is accepted and files are overwritten when overwrite is enabled`() {
+    val messageSink =
+      object : DefaultTemplateMessageSink(Severity.Info) {
+        override fun onMessage(entry: MessageEntry) {
+          // Nothing to do, we capture in memory only
+        }
+      }
+    val factory = TemplateEngineFactory.createDefault()
+    val template =
+      createSimpleTemplate(
+        factory,
+        messageSink,
+        listOf(createTemplateFile("file1.txt", "new content"), createTemplateFile("dir/file2.txt", "file2 content")),
+      )
+    val testRootPath = getTestRootPath()
+    java.nio.file.Files.createDirectories(testRootPath)
+    java.nio.file.Files.write(testRootPath.resolve("file1.txt"), "old content".toByteArray(Charsets.UTF_8))
+    java.nio.file.Files.write(testRootPath.resolve("unrelated.txt"), "unrelated content".toByteArray(Charsets.UTF_8))
+
+    val engine =
+      factory.createDefaultEngine(
+        messageSink,
+        NoopDependencyInstaller,
+        destinationPathProvider = { testRootPath },
+        overwriteExistingFiles = true,
+      )
+    engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
+
+    assertThat(messageSink.messages.map { it.severity }).doesNotContain(Severity.Error)
+    assertThat(messageSink.messages.map { it.message }).contains("Overwriting existing file '${testRootPath.resolve("file1.txt")}'")
+    // Only the conflicting file is reported as overwritten
+    assertThat(messageSink.messages.count { it.message.startsWith("Overwriting existing file") }).isEqualTo(1)
+    assertThat(messageSink.messages.map { it.message }).contains("Successfully created project 'Template Name' at '$testRootPath'")
+    assertThat(String(java.nio.file.Files.readAllBytes(testRootPath.resolve("file1.txt")), Charsets.UTF_8)).isEqualTo("new content")
+    assertThat(String(java.nio.file.Files.readAllBytes(testRootPath.resolve("dir/file2.txt")), Charsets.UTF_8)).isEqualTo("file2 content")
+    assertThat(String(java.nio.file.Files.readAllBytes(testRootPath.resolve("unrelated.txt")), Charsets.UTF_8))
+      .isEqualTo("unrelated content")
+  }
+
+  @Test
+  fun `verifies destination path that is a file produces an error even when overwrite is enabled`() {
+    val messageSink =
+      object : DefaultTemplateMessageSink(Severity.Info) {
+        override fun onMessage(entry: MessageEntry) {
+          // Nothing to do, we capture in memory only
+        }
+      }
+    val factory = TemplateEngineFactory.createDefault()
+    val template = createSimpleTemplate(factory, messageSink, listOf(createTemplateFile("file1.txt", "new content")))
+    val testRootPath = getTestRootPath()
+    java.nio.file.Files.createDirectories(testRootPath.parent)
+    java.nio.file.Files.write(testRootPath, "I am a file".toByteArray(Charsets.UTF_8))
+
+    val engine =
+      factory.createDefaultEngine(
+        messageSink,
+        NoopDependencyInstaller,
+        destinationPathProvider = { testRootPath },
+        overwriteExistingFiles = true,
+      )
+    engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
+
+    assertThat(messageSink.messages.map { it.severity }).contains(Severity.Error)
+    assertThat(messageSink.messages.map { it.message }.any { it.contains("exists but is not a directory") }).isTrue()
+    assertThat(String(java.nio.file.Files.readAllBytes(testRootPath), Charsets.UTF_8)).isEqualTo("I am a file")
+  }
+
+  private fun createSimpleTemplate(
+    factory: TemplateEngineFactory,
+    messageSink: TemplateMessageSink,
+    files: List<TemplateFile>,
+  ): TemplateDefinition {
+    @Language("json")
+    val jsonFile =
+      """
+      {
+        "name": "Template Name",
+        "short-name": "template-name",
+        "tags": ["tag1"]
+      }
+      """
+        .trimIndent()
+    val metadata = factory.createTemplateListBuilder(messageSink).parseTemplateMetadata("template.json", jsonFile)
+    assertThat(metadata).isNotNull()
+    return TemplateDefinition(
+      metadata = metadata!!,
+      files = files.map { TemplateFileEntry(it.relativePath) },
+      extraFiles = emptyList(),
+      loader = TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } },
+    )
+  }
+
+  private object NoopDependencyInstaller : DependencyInstaller {
+    override fun installAndroidSdkPackage(packagePath: String) {
+      // Nothing to do
+    }
   }
 
   private fun createTemplateFile(relativePath: String, content: String): TemplateFile {

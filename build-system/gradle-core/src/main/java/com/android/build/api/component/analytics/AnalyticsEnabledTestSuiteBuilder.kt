@@ -34,6 +34,11 @@ open class AnalyticsEnabledTestSuiteBuilder(
       delegate.enable = value
     }
 
+  override fun setEnabledCodeCoverage(value: Boolean) {
+    stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE
+    delegate.setEnabledCodeCoverage(value)
+  }
+
   override val junitEngineSpec: JUnitEngineSpecBuilder
     get() {
       stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.JUNIT_ENGINE_SPEC_BUILDER_VALUE

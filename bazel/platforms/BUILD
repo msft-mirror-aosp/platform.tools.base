@@ -63,6 +63,15 @@ platform(
 )
 
 platform(
+    name = "linux-arm64",
+    constraint_values = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+        "@bazel_tools//tools/cpp:clang",
+    ],
+)
+
+platform(
     name = "windows",
     constraint_values = [
         "@platforms//cpu:x86_64",
@@ -109,6 +118,11 @@ platform(
         "@platforms//os:macos",
         "@bazel_tools//tools/cpp:clang",
     ],
+    exec_properties = {
+        # cache-silo-key: this is essentially a "salt" added to the remote cache key.
+        # Change it to a new value when we want to create a new cache from scratch.
+        "cache-silo-key": "20260930",
+    },
     # N.B. we pick the CPU based on the host (x86_64 or arm64).
-    parents = ["@local_config_platform//:host"],
+    parents = ["@platforms//host"],
 )

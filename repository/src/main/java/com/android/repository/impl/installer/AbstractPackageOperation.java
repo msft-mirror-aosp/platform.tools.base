@@ -27,8 +27,10 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.api.Uninstaller;
 import com.android.repository.util.InstallerUtil;
 import com.android.utils.PathUtils;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -114,8 +116,6 @@ public abstract class AbstractPackageOperation implements PackageOperation {
      */
     private Properties mInstallProperties;
 
-    private PackageOperation mFallbackOperation;
-
     private final Object mStateChangeLock = new Object();
 
     private enum StartTaskStatus {STARTED, ALREADY_DONE, FAILED}
@@ -168,56 +168,68 @@ public abstract class AbstractPackageOperation implements PackageOperation {
         synchronized (mProgressLock) {
             mCompleteProgress = addProgress(progress, mCompleteProgress);
         }
-        StartTaskStatus startResult = startTask(InstallStatus.RUNNING, mCompleteProgress);
-        if (startResult != StartTaskStatus.STARTED) {
-            return startResult == StartTaskStatus.ALREADY_DONE;
-        }
-        if (mInstallProperties == null) {
-            try {
-                mInstallProperties = readInstallProperties(getLocation(mCompleteProgress));
-            } catch (IOException e) {
-                // We won't have a temp path, but try to continue anyway
-            }
-        }
-        boolean result = false;
-        String installTempPath = null;
-        if (mInstallProperties != null) {
-            installTempPath = mInstallProperties.getProperty(PATH_KEY);
-        }
-        Path installTemp =
-                installTempPath == null ? null : getLocation(progress).resolve(installTempPath);
-        try {
-            // Re-validate the install path, in case something was changed since prepare.
-            if (!InstallerUtil.checkValidPath(
-                    getLocation(mCompleteProgress), getRepoManager(), mCompleteProgress)) {
+        switch (startTask(InstallStatus.RUNNING, mCompleteProgress)) {
+            case STARTED:
+                // We are the first thread; proceed to complete installation
+                break;
+            case ALREADY_DONE:
+                // Another thread beat us to startTask(); we waited there until it finished
+                return true;
+            case FAILED:
                 return false;
-            }
-
-            result = doComplete(installTemp, mCompleteProgress);
-            mCompleteProgress.logInfo(String.format("\"%1$s\" complete.", getName()));
-        } finally {
-            if (!result && mCompleteProgress.isCanceled()) {
-                cleanup(mCompleteProgress);
-            }
-            result &=
-                    updateStatus(
-                            result ? InstallStatus.COMPLETE : InstallStatus.FAILED,
-                            mCompleteProgress);
-            if (result && installTemp != null) {
+        }
+        try {
+            if (mInstallProperties == null) {
                 try {
-                    PathUtils.deleteRecursivelyIfExists(installTemp);
-                } catch (IOException ignore) {
+                    mInstallProperties = readInstallProperties(getLocation(mCompleteProgress));
+                } catch (IOException e) {
+                    // We won't have a temp path, but try to continue anyway
                 }
             }
-            getRepoManager().installEnded(getPackage());
-            getRepoManager().markLocalCacheInvalid();
-        }
+            boolean result = false;
+            String installTempPath = null;
+            if (mInstallProperties != null) {
+                installTempPath = mInstallProperties.getProperty(PATH_KEY);
+            }
+            Path installTemp =
+                    installTempPath == null ? null : getLocation(progress).resolve(installTempPath);
+            try {
+                // Re-validate the install path, in case something was changed since prepare.
+                if (!InstallerUtil.checkValidPath(
+                        getLocation(mCompleteProgress), getRepoManager(), mCompleteProgress)) {
+                    return false;
+                }
 
-        mCompleteProgress.setFraction(1);
-        mCompleteProgress.setIndeterminate(false);
-        mCompleteProgress.logInfo(
-                String.format("\"%1$s\" %2$s.", getName(), result ? "finished" : "failed"));
-        return result;
+                result = doComplete(installTemp, mCompleteProgress);
+                mCompleteProgress.logInfo(String.format("\"%1$s\" complete.", getName()));
+            } finally {
+                if (!result && mCompleteProgress.isCanceled()) {
+                    cleanup(mCompleteProgress);
+                }
+                result &=
+                        updateStatus(
+                                result ? InstallStatus.COMPLETE : InstallStatus.FAILED,
+                                mCompleteProgress);
+                if (result && installTemp != null) {
+                    try {
+                        PathUtils.deleteRecursivelyIfExists(installTemp);
+                    } catch (IOException ignore) {
+                    }
+                }
+                getRepoManager().installEnded(getPackage());
+                getRepoManager().markLocalCacheInvalid();
+            }
+
+            mCompleteProgress.setFraction(1);
+            mCompleteProgress.setIndeterminate(false);
+            mCompleteProgress.logInfo(
+                    String.format("\"%1$s\" %2$s.", getName(), result ? "finished" : "failed"));
+            return result;
+        } finally {
+            synchronized (mProgressLock) {
+                mCompleteProgress = null;
+            }
+        }
     }
 
     @NonNull
@@ -308,57 +320,69 @@ public abstract class AbstractPackageOperation implements PackageOperation {
         synchronized (mProgressLock) {
             mPrepareProgress = addProgress(progress, mPrepareProgress);
         }
-        StartTaskStatus startResult = startTask(InstallStatus.PREPARING, mPrepareProgress);
-        if (startResult != StartTaskStatus.STARTED) {
-            return startResult == StartTaskStatus.ALREADY_DONE;
+        switch (startTask(InstallStatus.PREPARING, mPrepareProgress)) {
+            case STARTED:
+                // We are the first thread; proceed to prepare
+                break;
+            case ALREADY_DONE:
+                // Another thread beat us to startTask(); we waited there until it finished
+                return true;
+            case FAILED:
+                return false;
         }
-
-        mPrepareProgress.logInfo(String.format("Preparing \"%1$s\".", getName()));
         try {
-            Path dest = getLocation(mPrepareProgress);
+            mPrepareProgress.logInfo(String.format("Preparing \"%1$s\".", getName()));
+            try {
+                Path dest = getLocation(mPrepareProgress);
 
-            mInstallProperties = readOrCreateInstallProperties(dest, mPrepareProgress);
-        } catch (IOException e) {
-            mPrepareProgress.logWarning("Failed to read or create install properties file.");
-            return false;
-        }
-        getRepoManager().installBeginning(getPackage(), this);
-        boolean result = false;
-        try {
-            if (!InstallerUtil.checkValidPath(
-                    getLocation(mPrepareProgress), getRepoManager(), mPrepareProgress)) {
+                mInstallProperties = readOrCreateInstallProperties(dest, mPrepareProgress);
+            } catch (IOException e) {
+                mPrepareProgress.logWarning("Failed to read or create install properties file.");
                 return false;
             }
-
-            Path installTempPath = writeInstallerMetadata(mPrepareProgress);
-            if (installTempPath == null) {
-                mPrepareProgress.logInfo(String.format("\"%1$s\" failed.", getName()));
-                return false;
-            }
-            Path prepareCompleteMarker = installTempPath.resolve(PREPARE_COMPLETE_FN);
-            if (!CancellableFileIo.exists(prepareCompleteMarker)) {
-                if (doPrepare(installTempPath, mPrepareProgress)) {
-                    Files.createFile(prepareCompleteMarker);
-                    result = updateStatus(InstallStatus.PREPARED, mPrepareProgress);
+            getRepoManager().installBeginning(getPackage(), this);
+            boolean result = false;
+            try {
+                if (!InstallerUtil.checkValidPath(
+                        getLocation(mPrepareProgress), getRepoManager(), mPrepareProgress)) {
+                    return false;
                 }
-            } else {
-                mPrepareProgress.logInfo("Found existing prepared package.");
-                result = true;
+
+                Path installTempPath = writeInstallerMetadata(mPrepareProgress);
+                if (installTempPath == null) {
+                    mPrepareProgress.logInfo(String.format("\"%1$s\" failed.", getName()));
+                    return false;
+                }
+                Path prepareCompleteMarker = installTempPath.resolve(PREPARE_COMPLETE_FN);
+                if (!CancellableFileIo.exists(prepareCompleteMarker)) {
+                    if (doPrepare(installTempPath, mPrepareProgress)) {
+                        Files.createFile(prepareCompleteMarker);
+                        result = updateStatus(InstallStatus.PREPARED, mPrepareProgress);
+                    }
+                } else {
+                    mPrepareProgress.logInfo("Found existing prepared package.");
+                    result = true;
+                }
+            } catch (IOException ignore) {
+            } finally {
+                if (!result) {
+                    getRepoManager().installEnded(getPackage());
+                    updateStatus(InstallStatus.FAILED, mPrepareProgress);
+                    // If there was a failure don't clean up the files, so we can continue if
+                    // requested
+                    if (mPrepareProgress.isCanceled()) {
+                        cleanup(mPrepareProgress);
+                    }
+                }
             }
-        } catch (IOException ignore) {
+            mPrepareProgress.logInfo(
+                    String.format("\"%1$s\" %2$s.", getName(), result ? "ready" : "failed"));
+            return result;
         } finally {
-            if (!result) {
-                getRepoManager().installEnded(getPackage());
-                updateStatus(InstallStatus.FAILED, mPrepareProgress);
-                // If there was a failure don't clean up the files, so we can continue if requested
-                if (mPrepareProgress.isCanceled()) {
-                    cleanup(mPrepareProgress);
-                }
+            synchronized (mProgressLock) {
+                mPrepareProgress = null;
             }
         }
-        mPrepareProgress.logInfo(
-                String.format("\"%1$s\" %2$s.", getName(), result ? "ready" : "failed"));
-        return result;
     }
 
     /**
@@ -505,6 +529,20 @@ public abstract class AbstractPackageOperation implements PackageOperation {
         return mInstallStatus;
     }
 
+    @Override
+    public void abandon(@NonNull ProgressIndicator progress) {
+        synchronized (mStateChangeLock) {
+            if (mInstallStatus == InstallStatus.COMPLETE
+                    || mInstallStatus == InstallStatus.FAILED) {
+                return;
+            }
+        }
+        progress.logInfo(String.format("\"%1$s\" abandoned.", getName()));
+        // The prepared files are deliberately left in place, so that a new operation on this package can continue from here.
+        updateStatus(InstallStatus.FAILED, progress);
+        getRepoManager().installEnded(getPackage());
+    }
+
     /**
      * Sets our status to {@code status} and notifies our listeners. If any listener throws an
      * exception we will stop processing listeners and update our status to {@code
@@ -534,18 +572,6 @@ public abstract class AbstractPackageOperation implements PackageOperation {
             return false;
         }
         return true;
-    }
-
-
-    @Override
-    @Nullable
-    public PackageOperation getFallbackOperation() {
-        return mFallbackOperation;
-    }
-
-    @Override
-    public void setFallbackOperation(@Nullable PackageOperation mFallbackOperation) {
-        this.mFallbackOperation = mFallbackOperation;
     }
 
     private final Object mProgressLock = new Object();

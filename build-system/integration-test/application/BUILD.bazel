@@ -1,5 +1,6 @@
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
+load("//tools/base/bazel:repo_map.bzl", "repo_map_properties")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "BUILT_IN_KOTLIN_VERSION", "KGP_1_8_10", "KGP_1_9_22", "KGP_VERSION_FOR_TESTS")
 load("//tools/base/build-system/integration-test:integration-test.bzl", "gradle_integration_test", "single_gradle_integration_test", "single_gradle_integration_test_per_source")
 load("//tools/base/build-system/integration-test/connected:connected-test.bzl", "gradle_connected_test")
@@ -108,7 +109,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/genFolderApiOld",
     "//tools/base/build-system/integration-test:test-projects/gradleDeclarative",
     "//tools/base/build-system/integration-test:test-projects/jacocoOnlySubprojectBuildScriptDependency",
-    "//tools/base/build-system/integration-test:test-projects/jacocoWithButterKnife",
     "//tools/base/build-system/integration-test:test-projects/jarjarIntegration",
     "//tools/base/build-system/integration-test:test-projects/jetifier",
     "//tools/base/build-system/integration-test:test-projects/kotlinApp",
@@ -245,6 +245,12 @@ CONNECTED_TESTS = [
 
 CHECK_ALL_SOURCES = ["src/automaticTest/java/**/CheckAll.java"]
 
+repo_map_properties(
+    name = "repo_map",
+    filename = "src/test/resources/repo_map.properties",
+    repos = ["maven"],
+)
+
 # Creates separate target for each source
 single_gradle_integration_test_per_source(
     name = "tests",
@@ -294,7 +300,7 @@ single_gradle_integration_test_per_source(
         "//tools/base/build-system/integration-test/application:prebuilts",
         "//tools/base/build-system/previous-versions:3.5.0",
     ],
-    resources = glob(["src/test/resources/**"]),
+    resources = [":repo_map"] + glob(["src/test/resources/**"]),
     deps = TEST_DEPS,
 )
 
@@ -334,7 +340,6 @@ gradle_integration_test(
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",
         "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
-        "//prebuilts/studio/jdk/jdk8:jdk_runtime_files",
     ],
     maven_repo_zips = [
         "//tools/base/build-system:android_gradle_plugin",
@@ -364,7 +369,6 @@ gradle_integration_test(
     ),
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
-        "//prebuilts/studio/jdk/jdk8:jdk_runtime_files",
     ],
     jvm_flags = ["-Dgradle.java.version=17"],
     maven_repo_zips = [
@@ -664,6 +668,7 @@ single_gradle_integration_test_per_source(
         "//tools/base/build-system/integration-test:support_library_latest",
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
         "//tools/base/build-system/integration-test/application:prebuilts",
+        "//tools/base/build-system/integration-test/application:older_version_of_r8",
     ],
     resources = glob(["src/test/resources/**"]),
     deps = TEST_DEPS,
@@ -769,7 +774,10 @@ single_gradle_integration_test_per_source(
 
 kotlin_library(
     name = "screenshot_fixture",
-    srcs = ["src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestFixture.kt"],
+    srcs = [
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestFixture.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestSuiteTestFixture.kt",
+    ],
     deps = TEST_DEPS,
 )
 
@@ -779,11 +787,17 @@ single_gradle_integration_test_per_source(
     timeout = "long",
     srcs = [
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotPerformanceTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotPerformanceTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTestSuiteTest.kt",
     ],
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",
@@ -1066,6 +1080,9 @@ single_gradle_integration_test_per_source(
         [
             "src/test/java/com/android/build/gradle/integration/multiplatform/v2/**/*.kt",
         ],
+        exclude = [
+            "src/test/java/com/android/build/gradle/integration/multiplatform/v2/KotlinMultiplatformAndroidPluginTest.kt",
+        ],
     ),
     data = TEST_DATA,
     friends = [":kmp_fixture"],
@@ -1084,6 +1101,36 @@ single_gradle_integration_test_per_source(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
+    deps = TEST_DEPS + [
+        ":kmp_fixture",
+    ],
+)
+
+# Test for KotlinMultiplatformAndroidPluginTest specifically
+gradle_integration_test(
+    name = "kmp-android-plugin-tests",
+    timeout = "long",
+    srcs = [
+        "src/test/java/com/android/build/gradle/integration/multiplatform/v2/KotlinMultiplatformAndroidPluginTest.kt",
+    ],
+    data = TEST_DATA,
+    friends = [":kmp_fixture"],
+    lint_baseline = "lint_baseline_kotlin_multiplatform_android_tests.xml",
+    #keep sorted
+    maven_repo_zips = [
+        "//tools/base/build-system:android_gradle_plugin",
+    ],
+    maven_repos = [
+        "//tools/base/build-system:gradle-runtime-maven",
+        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
+        "//tools/base/build-system/integration-test:androidx_test_latest",
+        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
+        "//tools/base/build-system/integration-test:ksp_gradle_plugin",
+        "//tools/base/build-system/integration-test:support_library_latest",
+        "//tools/base/build-system/integration-test/application:prebuilts",
+    ],
+    resources = glob(["src/test/resources/**"]),
+    shard_count = 7,
     deps = TEST_DEPS + [
         ":kmp_fixture",
     ],
@@ -1217,19 +1264,19 @@ maven_repository(
         "@maven//:com.google.gms.google-services.com.google.gms.google-services.gradle.plugin_4.4.4",
         "@maven//:com.google.guava.guava_20.0",
         "@maven//:com.google.guava.listenablefuture_1.0",
-        "@maven//:com.google.protobuf.protobuf-java-util_3.25.5",
-        "@maven//:com.google.protobuf.protobuf-java_3.25.5",
+        "@maven//:com.google.protobuf.protobuf-java-util_4.28.3",
+        "@maven//:com.google.protobuf.protobuf-java_4.28.3",
         "@maven//:com.google.testing.platform.core-proto_0.0.9-alpha02",
         "@maven//:com.google.truth.truth_0.44",
         "@maven//:com.googlecode.jarjar.jarjar_1.3",
         "@maven//:com.jakewharton.butterknife-gradle-plugin_9.0.0-rc1",
         "@maven//:com.jakewharton.butterknife-gradle-plugin_9.0.0-rc2",
-        "@maven//:com.jakewharton.butterknife_7.0.1",
         "@maven//:com.squareup.dagger.dagger-compiler_1.2.2",
         "@maven//:com.squareup.kotlinpoet_2.1.0",
         "@maven//:javax.annotation.jsr250-api_1.0",
         "@maven//:org.apache.commons.commons-lang3_3.13.0",
         "@maven//:org.bouncycastle.bcprov-jdk16_1.46",
+        "@maven//:org.bouncycastle.bcutil-jdk18on",
         "@maven//:org.codehaus.mojo.animal-sniffer-annotations_1.19",
         "@maven//:org.jacoco.org.jacoco.agent_0.7.4.201502262128",
         "@maven//:org.jacoco.org.jacoco.agent_0.8.12",

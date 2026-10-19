@@ -20,7 +20,9 @@ import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.case
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.zeroOrMore
 import com.android.tools.lint.checks.fx.utils.InterningPool
+import com.android.tools.lint.detector.api.getInternalName
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiDocumentManager
 import java.io.File
@@ -67,6 +69,9 @@ sealed interface ClassId : Scope {
     }
   }
 
+  // Not all anonymous classes are mapped to `Anon`. Most of them are internally represented the same as named classes,
+  // with the conventional Java pretty-printed name. This class only exists to (1) provide unique identifiers for special cases of
+  // anonymous classes and (2) provide some pretty-printing for internal debugging.
   private sealed class Anon : ClassId {
     abstract val path: String
 
@@ -90,15 +95,17 @@ sealed interface ClassId : Scope {
     companion object {
       operator fun invoke(elem: PsiClass): Anon {
         val file = elem.containingFile
+        val pkgName = (file as? PsiClassOwner)?.packageName ?: ""
+        val path = if (pkgName.isEmpty()) file.name else "$pkgName/${file.name}"
         return when (val textRange = elem.textRange) {
-          null -> Imprecise(file.virtualFile.path, elem.textOffset)
+          null -> Imprecise(path, elem.textOffset)
           else -> {
             val doc = PsiDocumentManager.getInstance(elem.project).getDocument(file)!!
             val startOffset = textRange.startOffset
             val l = if (startOffset == -1) -1 else doc.getLineNumber(startOffset) + 1
             val c1 = startOffset - doc.getLineStartOffset(doc.getLineNumber(startOffset)) + 1
             val c2 = c1 + textRange.endOffset - startOffset
-            Precise(file.virtualFile.path, l, c1, c2)
+            Precise(path, l, c1, c2)
           }
         }
       }
@@ -150,7 +157,7 @@ sealed interface ClassId : Scope {
   companion object {
 
     fun of(ref: PsiClass): ClassId =
-      when (val fqn = ref.qualifiedName) {
+      when (val fqn = ref.qualifiedName ?: getInternalName(ref)) {
         null -> Anon(ref)
         else -> of(fqn)
       }
@@ -176,19 +183,18 @@ sealed interface ClassId : Scope {
 
     val Array: ClassId = Common.Array
 
-    fun encoder(guardEncoder: Encoder<Any>, methodIdEncoder: Encoder<MethodId>): Encoder<ClassId> =
-      Encoder.fix { self ->
-        val int = Encoder.int
-        val str = Encoder.internedString
-        Encoder.sum(
-          case<_, Named>(str.adapt(Named::fqn, ::Named)),
-          case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
-          case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
-          case<_, Common>(Encoder.enum()),
-          case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
-          case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
-        )
-      }
+    fun encoder(guardEncoder: Encoder<Any>, methodIdEncoder: Encoder<MethodId>): Encoder<ClassId> = Encoder.fix { self ->
+      val int = Encoder.int
+      val str = Encoder.internedString
+      Encoder.sum(
+        case<_, Named>(str.adapt(Named::fqn, ::Named)),
+        case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
+        case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
+        case<_, Common>(Encoder.enum()),
+        case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
+        case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
+      )
+    }
   }
 }
 
@@ -199,7 +205,6 @@ sealed interface ClassId : Scope {
  * accumulates all from that class's lexical scope.
  *
  * In the following example:
- *
  *  ```
  *  class A<X> {
  *    val a: X

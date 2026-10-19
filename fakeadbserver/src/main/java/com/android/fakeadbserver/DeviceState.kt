@@ -75,6 +75,9 @@ internal constructor(
   // Keep track of all ABB/ABB_EXEC commands invocation
   private val mAbbLogs = Vector<String>()
 
+  // Keep track of all "sync" SEND/SND2 requests
+  private val mSyncSendRequests = Vector<SyncSendRequest>()
+
   // Keep track of all track-app commands invocation
   var trackAppInvocations: Int = 0
     private set
@@ -420,6 +423,14 @@ internal constructor(
   val abbLogs: List<String>
     get() = mAbbLogs.clone() as List<String>
 
+  fun addSyncSendRequest(request: SyncSendRequest) {
+    mSyncSendRequests.add(request)
+  }
+
+  /** The list of `SEND` and `SND2` requests of the `sync` service that were fully received, i.e. up to the `DONE` packet */
+  val syncSendRequests: List<SyncSendRequest>
+    get() = ArrayList(mSyncSendRequests)
+
   fun addTrackAppInvocation() {
     trackAppInvocations++
   }
@@ -583,9 +594,12 @@ internal constructor(
         features.add("abb")
         features.add("abb_exec")
         features.add("ls_v2")
+        features.add("sendrecv_v2")
       }
       if (api >= 31) {
         features.add("track_app")
+        // Note: We only list the "sync v2" compression features implemented by `SyncCommandHandler`
+        features.add("sendrecv_v2_lz4")
       }
       if (api >= 34) {
         features.add("support_boot_stages")

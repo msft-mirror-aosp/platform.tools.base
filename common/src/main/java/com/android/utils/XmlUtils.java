@@ -42,8 +42,6 @@ import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 
-import javax.xml.XMLConstants;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
@@ -73,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -904,15 +903,47 @@ public class XmlUtils {
     }
 
     /**
+     * Disables DTD processing and external entity resolution on the given {@link XMLInputFactory}
+     * and returns it.
+     *
+     * <p>This is the single hardening implementation for StAX parsing across the build tools. The
+     * JDK defaults for both {@code supportDTD} and {@code isSupportingExternalEntities} are {@code
+     * true}, which would let a parsed document dereference arbitrary {@code file:} and {@code
+     * http:} URIs.
+     *
+     * <p>Prefer {@link #createXmlInputFactory()}. Use this overload only when the caller needs
+     * control over which implementation is constructed -- for example when pinning the JDK parser
+     * via {@code XMLInputFactory.newDefaultFactory()} for deterministic behaviour. (That method is
+     * Java 9+, and this module still targets Java 8, which is why it is not used below.)
+     *
+     * <p>Property rejection is deliberately not caught. These properties are part of the StAX
+     * specification and are supported by the JDK implementation, so a failure here means the
+     * security control is not in effect and should be loud rather than silent.
+     */
+    @NonNull
+    public static XMLInputFactory harden(@NonNull XMLInputFactory factory) {
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        return factory;
+    }
+
+    /**
+     * Creates an {@link XMLInputFactory} with DTD processing and external entity resolution
+     * disabled. Prefer this over constructing an {@link XMLInputFactory} directly.
+     */
+    @NonNull
+    public static XMLInputFactory createXmlInputFactory() {
+        return harden(XMLInputFactory.newFactory());
+    }
+
+    /**
      * Returns the name of the root element tag stored in the given file, or null if it can't be
      * determined.
      */
     @Nullable
     public static String getRootTagName(@NonNull File xmlFile) {
         try (InputStream stream = new BufferedInputStream(new FileInputStream(xmlFile))) {
-            XMLInputFactory factory = XMLInputFactory.newFactory();
-            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            XMLInputFactory factory = createXmlInputFactory();
             XMLStreamReader xmlStreamReader = factory.createXMLStreamReader(stream);
 
             while (xmlStreamReader.hasNext()) {
@@ -934,9 +965,7 @@ public class XmlUtils {
      */
     @Nullable
     public static String getRootTagName(@NonNull String xmlText) {
-        XMLInputFactory factory = XMLInputFactory.newFactory();
-        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        XMLInputFactory factory = createXmlInputFactory();
         try (Reader reader = new StringReader(xmlText)) {
             XMLStreamReader xmlStreamReader = factory.createXMLStreamReader(reader);
 

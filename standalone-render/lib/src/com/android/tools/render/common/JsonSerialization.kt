@@ -36,12 +36,16 @@ private const val METHOD_FQN = "methodFQN"
 private const val METHOD_PARAMS = "methodParams"
 private const val PREVIEW_PARAMS = "previewParams"
 private const val RESULTS_FILE_PATH = "resultsFilePath"
+private const val RESOURCE_DIRS = "resourceDirs"
+private const val R_CLASS_JARS = "rClassJars"
 private const val PREVIEW_TYPE = "previewType"
 
 private const val PREVIEW_ID = "previewId"
 private const val GLOBAL_ERROR = "globalError"
 private const val SCREENSHOT_RESULTS = "screenshotResults"
 private const val IMAGE_PATH = "imagePath"
+private const val DISPLAY_NAME = "displayName"
+private const val COMPONENT_TREE_PATH = "componentTreePath"
 private const val SCREENSHOT_ERROR = "error"
 private const val STATUS = "status"
 private const val MESSAGE = "message"
@@ -65,6 +69,8 @@ fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
   var metaDataFolder: String? = null
   val classPath = mutableListOf<String>()
   val projectClassPath = mutableListOf<String>()
+  val resourceDirs = mutableListOf<String>()
+  val rClassJars = mutableListOf<String>()
   var namespace: String? = null
   var resourceApkPath: String? = null
   var screenshots: List<PreviewScreenshot>? = null
@@ -96,6 +102,20 @@ fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
           reader.beginArray()
           while (reader.hasNext()) {
             projectClassPath.add(reader.nextString())
+          }
+          reader.endArray()
+        }
+        RESOURCE_DIRS -> {
+          reader.beginArray()
+          while (reader.hasNext()) {
+            resourceDirs.add(reader.nextString())
+          }
+          reader.endArray()
+        }
+        R_CLASS_JARS -> {
+          reader.beginArray()
+          while (reader.hasNext()) {
+            rClassJars.add(reader.nextString())
           }
           reader.endArray()
         }
@@ -132,6 +152,8 @@ fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
     resourceApkPath ?: throw IllegalArgumentException("Resource APK path is missing"),
     screenshots ?: emptyList(),
     resultsFilePath ?: throw IllegalArgumentException("Results file path is missing"),
+    resourceDirs,
+    rClassJars,
   )
 }
 
@@ -178,6 +200,7 @@ private fun readPreviewScreenshot(reader: JsonReader): PreviewScreenshot {
         val rawPreviewType = reader.nextString()
         previewType = PreviewType.valueOf(rawPreviewType)
       }
+      else -> reader.skipValue()
     }
   }
   reader.endObject()
@@ -245,6 +268,18 @@ fun writePreviewRenderingToJson(jsonWriter: Writer, previewRendering: PreviewRen
     writer.name(SCREENSHOTS)
     writePreviewScreenshots(writer, previewRendering.screenshots)
     writer.name(RESULTS_FILE_PATH).value(previewRendering.resultsFilePath)
+    if (previewRendering.resourceDirs.isNotEmpty()) {
+      writer.name(RESOURCE_DIRS)
+      writer.beginArray()
+      previewRendering.resourceDirs.forEach { writer.value(it) }
+      writer.endArray()
+    }
+    if (previewRendering.rClassJars.isNotEmpty()) {
+      writer.name(R_CLASS_JARS)
+      writer.beginArray()
+      previewRendering.rClassJars.forEach { writer.value(it) }
+      writer.endArray()
+    }
     writer.endObject()
   }
 }
@@ -337,6 +372,7 @@ private fun readScreenshotError(reader: JsonReader): ScreenshotError {
               STACKTRACE -> {
                 problemStackTrace = reader.nextString()
               }
+              else -> reader.skipValue()
             }
           }
           reader.endObject()
@@ -358,6 +394,7 @@ private fun readScreenshotError(reader: JsonReader): ScreenshotError {
               STACKTRACE -> {
                 classStackTrace = reader.nextString()
               }
+              else -> reader.skipValue()
             }
           }
           brokenClasses.add(
@@ -377,6 +414,7 @@ private fun readScreenshotError(reader: JsonReader): ScreenshotError {
         }
         reader.endArray()
       }
+      else -> reader.skipValue()
     }
   }
   reader.endObject()
@@ -395,6 +433,8 @@ private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotRe
   var previewId: String? = null
   var methodFQN: String? = null
   var imagePath: String? = null
+  var displayName: String? = null
+  var componentTreePath: String? = null
   reader.beginObject()
   while (reader.hasNext()) {
     when (reader.nextName()) {
@@ -407,17 +447,26 @@ private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotRe
       IMAGE_PATH -> {
         imagePath = reader.nextString()
       }
+      DISPLAY_NAME -> {
+        displayName = reader.nextString()
+      }
+      COMPONENT_TREE_PATH -> {
+        componentTreePath = reader.nextString()
+      }
       SCREENSHOT_ERROR -> {
         screenshotError = readScreenshotError(reader)
       }
+      else -> reader.skipValue()
     }
   }
   reader.endObject()
   return PreviewScreenshotResult(
-    previewId ?: throw IllegalArgumentException("Preview Id is missing"),
-    methodFQN ?: throw IllegalArgumentException("Method FQN is missing"),
-    imagePath ?: throw IllegalArgumentException("Image path missing"),
-    screenshotError,
+    previewId = previewId ?: throw IllegalArgumentException("Preview Id is missing"),
+    methodFQN = methodFQN ?: throw IllegalArgumentException("Method FQN is missing"),
+    imagePath = imagePath ?: throw IllegalArgumentException("Image path missing"),
+    error = screenshotError,
+    displayName = displayName,
+    componentTreePath = componentTreePath,
   )
 }
 
@@ -428,7 +477,7 @@ fun readPreviewRenderingResultJson(jsonReader: Reader): PreviewRenderingResult {
   JsonReader(jsonReader).use { reader ->
     reader.beginObject()
     while (reader.hasNext()) {
-      when (reader.nextName()) {
+      when (val nextName = reader.nextName()) {
         GLOBAL_ERROR -> {
           globalError = reader.nextString()
         }
@@ -439,6 +488,9 @@ fun readPreviewRenderingResultJson(jsonReader: Reader): PreviewRenderingResult {
             screenshotResults.add(readPreviewScreenshotResult(reader))
           }
           reader.endArray()
+        }
+        else -> {
+          reader.skipValue()
         }
       }
     }
@@ -452,6 +504,8 @@ private fun writePreviewScreenshotResultToJson(writer: JsonWriter, screenshotRes
   writer.name(PREVIEW_ID).value(screenshotResult.previewId)
   writer.name(METHOD_FQN).value(screenshotResult.methodFQN)
   writer.name(IMAGE_PATH).value(screenshotResult.imagePath)
+  screenshotResult.displayName?.let { writer.name(DISPLAY_NAME).value(it) }
+  screenshotResult.componentTreePath?.let { writer.name(COMPONENT_TREE_PATH).value(it) }
   screenshotResult.error?.let { screenshotError ->
     writer.name(SCREENSHOT_ERROR)
     writer.beginObject()

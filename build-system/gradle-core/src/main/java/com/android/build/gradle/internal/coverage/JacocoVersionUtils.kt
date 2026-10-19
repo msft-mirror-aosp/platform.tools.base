@@ -16,7 +16,10 @@
 
 package com.android.build.gradle.internal.coverage
 
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.options.StringOption
 import kotlin.text.isNullOrEmpty
 import org.gradle.api.Project
@@ -44,4 +47,28 @@ fun getUnitTestJacocoVersion(project: Project, creationConfig: ComponentCreation
     return pluginExtension.toolVersion
   }
   return JacocoOptions.DEFAULT_VERSION
+}
+
+/**
+ * Resolves the Jacoco version for a Test Suite, ensuring that mixed suites containing both host jar and device specific targets have
+ * aligned versions to prevent serialization issues when merging execution data. Returns null if mixed suites contain host and device
+ * targets with mismatched versions.
+ */
+fun getTestSuiteJacocoVersion(project: Project, creationConfig: TestSuiteCreationConfig): String? {
+  val hasHostJar = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }
+  val hasDeviceSpecific = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.TestApk }
+
+  return if (hasHostJar && hasDeviceSpecific) {
+    val hostVersion = getUnitTestJacocoVersion(project, creationConfig.testedVariant)
+    val deviceVersion = JacocoTask.getAndroidTestJacocoVersion(creationConfig.testedVariant)
+    if (hostVersion != deviceVersion) {
+      null
+    } else {
+      hostVersion
+    }
+  } else if (hasHostJar) {
+    getUnitTestJacocoVersion(project, creationConfig.testedVariant)
+  } else {
+    JacocoTask.getAndroidTestJacocoVersion(creationConfig.testedVariant)
+  }
 }

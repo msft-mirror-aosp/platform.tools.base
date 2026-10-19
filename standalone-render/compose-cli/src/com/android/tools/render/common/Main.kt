@@ -22,6 +22,66 @@ import com.intellij.openapi.util.Disposer
 import java.io.File
 import kotlin.system.exitProcess
 
+/** Renders [PreviewScreenshot]s (e.g. Compose previews or Wear Tiles previews) outside of Android Studio. */
+class StandalonePreviewRenderer(
+  private val fontsPath: String?,
+  private val resourceApkPath: String,
+  private val namespace: String,
+  private val classPath: List<String>,
+  private val projectClassPath: List<String>,
+  private val layoutlibPath: String,
+  private val resourceDirs: List<String> = emptyList(),
+  private val rClassJars: List<String> = emptyList(),
+) {
+
+  @JvmOverloads
+  fun render(
+    screenshots: List<PreviewScreenshot>,
+    outputFolder: String,
+    includeComponentTree: Boolean = false,
+    renderImage: Boolean = true,
+  ): PreviewRenderingResult {
+    return try {
+      val resolvedRClassJars = rClassJars.ifEmpty {
+        classPath.filter { it.endsWith("/R.jar") || it.endsWith("\\R.jar") || it.endsWith("-R.jar") }
+      }
+      val bootstrapper =
+        RenderEnvironmentBootstrapper(
+          fontsPath = fontsPath,
+          resourceApkPath = resourceApkPath,
+          namespace = namespace,
+          classPath = classPath,
+          projectClassPath = projectClassPath,
+          layoutlibPath = layoutlibPath,
+          resourceDirs = resourceDirs,
+          rClassJars = resolvedRClassJars,
+        )
+      bootstrapper.bootstrap().use { renderer ->
+        val results =
+          screenshots
+            .flatMap { renderer.render(it, outputFolder, includeComponentTree, renderImage) }
+            .sortedWith(
+              compareBy(
+                { it.imagePath.ifEmpty { null } ?: it.componentTreePath.orEmpty() },
+                { it.methodFQN },
+                { it.previewId },
+                { it.displayName.orEmpty() },
+              )
+            )
+        PreviewRenderingResult(globalError = null, results)
+      }
+    } catch (t: Throwable) {
+      PreviewRenderingResult(t.stackTraceToString(), emptyList())
+    }
+  }
+
+  companion object {
+    fun disposeFramework() {
+      Disposer.dispose(IJFramework)
+    }
+  }
+}
+
 fun main(args: Array<String>) {
   if (args.isEmpty() || args.contains("--help") || args.contains("-h")) {
     printUsage()
@@ -34,7 +94,7 @@ fun main(args: Array<String>) {
     System.err.println("Error: ${t.message}")
     exitCode = 1
   } finally {
-    Disposer.dispose(IJFramework)
+    StandalonePreviewRenderer.disposeFramework()
   }
   exitProcess(exitCode)
 }
@@ -88,25 +148,18 @@ private fun printUsage() {
 
 private fun renderPreview(previewRenderingJson: File) {
   val previewRendering = readPreviewRenderingJson(previewRenderingJson.reader())
-  val previewRenderingResult =
-    try {
-      val bootstrapper =
-        RenderEnvironmentBootstrapper(
-          previewRendering.fontsPath,
-          previewRendering.resourceApkPath,
-          previewRendering.namespace,
-          previewRendering.classPath,
-          previewRendering.projectClassPath,
-          previewRendering.layoutlibPath,
-        )
-      bootstrapper.bootstrap().use { renderer ->
-        val screenshotResults =
-          previewRendering.screenshots.flatMap { renderer.render(it, previewRendering.outputFolder) }.sortedBy { it.imagePath }
-        PreviewRenderingResult(globalError = null, screenshotResults)
-      }
-    } catch (t: Throwable) {
-      PreviewRenderingResult(t.stackTraceToString(), emptyList())
-    }
+  val renderer =
+    StandalonePreviewRenderer(
+      fontsPath = previewRendering.fontsPath,
+      resourceApkPath = previewRendering.resourceApkPath,
+      namespace = previewRendering.namespace,
+      classPath = previewRendering.classPath,
+      projectClassPath = previewRendering.projectClassPath,
+      layoutlibPath = previewRendering.layoutlibPath,
+      resourceDirs = previewRendering.resourceDirs,
+      rClassJars = previewRendering.rClassJars,
+    )
+  val previewRenderingResult = renderer.render(previewRendering.screenshots, previewRendering.outputFolder)
 
   writePreviewRenderingResult(File(previewRendering.resultsFilePath).writer(), previewRenderingResult)
 

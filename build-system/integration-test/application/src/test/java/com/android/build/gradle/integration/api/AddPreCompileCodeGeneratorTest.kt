@@ -68,24 +68,23 @@ class AddPreCompileCodeGeneratorTest {
   }
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        files {
-          add("src/main/kotlin/com/foo/bar/app/MyClass.kt", generateKotlinFunction("com.foo.utils.app"))
-          add("src/main/java/com/foo/bar/app/MyClass.java", generateJavaFunction("com.foo.utils.app"))
-        }
-        pluginCallbacks += MyAppCallback::class.java
+  val project = GradleRule.from {
+    androidApplication {
+      files {
+        add("src/main/kotlin/com/foo/bar/app/MyClass.kt", generateKotlinFunction("com.foo.utils.app"))
+        add("src/main/java/com/foo/bar/app/MyClass.java", generateJavaFunction("com.foo.utils.app"))
       }
-      androidLibrary {
-        files { add("src/main/kotlin/com/foo/bar/MyClass.kt", generateKotlinFunction("com.foo.utils")) }
-        pluginCallbacks += MyLibraryCallback::class.java
-      }
-      androidLibrary(path = ":javaLib") {
-        files { add("src/main/java/com/foo/bar/MyClass.java", generateJavaFunction("com.foo.utils")) }
-        pluginCallbacks += MyLibraryCallback::class.java
-      }
+      pluginCallbacks += MyAppCallback::class.java
     }
+    androidLibrary {
+      files { add("src/main/kotlin/com/foo/bar/MyClass.kt", generateKotlinFunction("com.foo.utils")) }
+      pluginCallbacks += MyLibraryCallback::class.java
+    }
+    androidLibrary(path = ":javaLib") {
+      files { add("src/main/java/com/foo/bar/MyClass.java", generateJavaFunction("com.foo.utils")) }
+      pluginCallbacks += MyLibraryCallback::class.java
+    }
+  }
 
   open class AbstractCallBack {
 

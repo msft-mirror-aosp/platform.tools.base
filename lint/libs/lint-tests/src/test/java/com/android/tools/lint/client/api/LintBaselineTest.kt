@@ -73,7 +73,6 @@ import com.google.common.truth.Truth.assertThat
 import java.io.File
 import junit.framework.TestCase.assertEquals
 import org.intellij.lang.annotations.Language
-import org.jetbrains.kotlin.incremental.createDirectory
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -268,6 +267,9 @@ class LintBaselineTest {
     assertTrue(isSamePathSuffix("abc\\def\\foo", "..\\..\\abc\\def\\foo"))
     assertTrue(isSamePathSuffix("abc\\def\\foo", "def\\foo"))
     assertFalse(isSamePathSuffix("foo", "bar"))
+    assertFalse(isSamePathSuffix("/a/b/Bar.kt", "Car.kt"))
+    assertFalse(isSamePathSuffix("src/main/Foo.java", "Goo.java"))
+    assertFalse(isSamePathSuffix("a/b/xyz", "ayz"))
   }
 
   @Test
@@ -2001,7 +2003,7 @@ class LintBaselineTest {
 
     val gradleHome = System.getProperty("user.home") + "/.gradle"
     val cacheDir = File("$gradleHome/caches/transforms-3/cba987654321/transformed/leakcanary-android-core-2.8.1/jars")
-    cacheDir.createDirectory()
+    cacheDir.mkdirs()
     val gradleCacheFile = File("${cacheDir.path}/classes.jar")
     gradleCacheFile.createNewFile()
 
@@ -2655,7 +2657,7 @@ class LintBaselineTest {
     baseline.writeOnClose = true
 
     val gradleDir = System.getProperty("user.home") + "/.gradle/some/gradle/dir"
-    File(gradleDir).createDirectory()
+    File(gradleDir).mkdirs()
     val gradleFile = File("$gradleDir/file.txt")
     gradleFile.createNewFile()
 

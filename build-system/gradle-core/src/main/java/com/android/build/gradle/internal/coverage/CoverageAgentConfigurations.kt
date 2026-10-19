@@ -16,16 +16,70 @@
 
 package com.android.build.gradle.internal.coverage
 
-import com.android.build.gradle.internal.services.BaseServices
+import com.android.Version
+import com.android.build.gradle.options.StringOption
+import com.android.builder.errors.IssueReporter
+import com.android.ide.common.repository.AgpVersion
 
-/** Configurations for the on-the-fly coverage agent. */
+/** Configurations for the on-device coverage agent. */
 object CoverageAgentConfigurations {
   private const val AGENT_DEPENDENCY_GROUP = "com.android.tools.test"
   private const val AGENT_DEPENDENCY_NAME = "coverage-agent"
-  private const val DEFAULT_AGENT_VERSION = "1.0.0"
 
+  /**
+   * Returns the Maven coordinate of the on-device coverage agent.
+   *
+   * The agent is built and released in lockstep with the Android Gradle plugin (same version, same gmaven release), so by default it
+   * resolves to the exact AGP version. A project can pin a different release of the agent with the
+   * [StringOption.COVERAGE_AGENT_VERSION_OVERRIDE] gradle property ([versionOverride]), e.g. to pick up an agent fix without changing its
+   * AGP version.
+   *
+   * Either way, the coordinate is added to the androidTest runtime classpath and forced on both the compile and runtime classpaths of the
+   * test component (see `TaskManager.handleOnTheFlyCoverageDependencies`), so a different version declared by the build author cannot win
+   * conflict resolution.
+   */
   @JvmStatic
-  fun getAgentRuntimeDependency(services: BaseServices): String {
-    return "$AGENT_DEPENDENCY_GROUP:$AGENT_DEPENDENCY_NAME:$DEFAULT_AGENT_VERSION"
+  fun getAgentRuntimeDependency(versionOverride: String?, issueReporter: IssueReporter?): String {
+    return "$AGENT_DEPENDENCY_GROUP:$AGENT_DEPENDENCY_NAME:${getAgentVersion(versionOverride, issueReporter)}"
+  }
+
+  /**
+   * Returns the version of the on-device coverage agent to use: [versionOverride] if it is set and valid, otherwise [agpVersion]. Problems
+   * with the override are reported to [issueReporter] as a side effect.
+   */
+  @JvmStatic
+  @JvmOverloads
+  fun getAgentVersion(
+    versionOverride: String?,
+    issueReporter: IssueReporter?,
+    agpVersion: String = Version.ANDROID_GRADLE_PLUGIN_VERSION,
+  ): String {
+    val override = versionOverride?.trim()
+    if (override.isNullOrEmpty()) {
+      return agpVersion
+    }
+    val parsedOverride = AgpVersion.tryParse(override)
+    if (parsedOverride == null) {
+      issueReporter?.reportError(
+        IssueReporter.Type.GENERIC,
+        """
+        Could not parse on-device coverage agent version override '$override'.
+        Recommendation: Remove or fix the gradle property ${StringOption.COVERAGE_AGENT_VERSION_OVERRIDE.propertyName}; without it the agent version defaults to the Android Gradle plugin version ($agpVersion).
+        """
+          .trimIndent(),
+      )
+      return agpVersion
+    }
+    if (parsedOverride < AgpVersion.parse(agpVersion)) {
+      issueReporter?.reportWarning(
+        IssueReporter.Type.GENERIC,
+        """
+        The on-device coverage agent version override '$override' is older than the Android Gradle plugin version ($agpVersion).
+        Remove the gradle property ${StringOption.COVERAGE_AGENT_VERSION_OVERRIDE.propertyName} to use the agent released with the plugin.
+        """
+          .trimIndent(),
+      )
+    }
+    return override
   }
 }

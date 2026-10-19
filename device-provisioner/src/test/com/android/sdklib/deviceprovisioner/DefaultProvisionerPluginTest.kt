@@ -40,11 +40,10 @@ class DefaultProvisionerPluginTest : DeviceProvisionerTestFixture() {
       setDevices(SerialNumbers.PHYSICAL1_USB, SerialNumbers.PHYSICAL2_WIFI)
 
       // The plugin adds the devices one at a time, so there are two events here
-      val handles =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(2)
-          handles
-        }
+      val handles = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(2)
+        handles
+      }
 
       val handlesByType = handles.associateBy { it.state.properties.connectionType }
 
@@ -89,15 +88,14 @@ class DefaultProvisionerPluginTest : DeviceProvisionerTestFixture() {
     runBlockingWithTimeout {
       setDevices(SerialNumbers.EMULATOR)
 
-      val originalHandle =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(1)
+      val originalHandle = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
 
-          val handle = handles[0]
-          assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        val handle = handles[0]
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
 
-          handle
-        }
+        handle
+      }
       originalHandle.state.properties.apply {
         assertThat(wearPairingId).isEqualTo(SerialNumbers.EMULATOR)
         assertThat(disambiguator).isEqualTo(SerialNumbers.EMULATOR)
@@ -140,15 +138,14 @@ class DefaultProvisionerPluginTest : DeviceProvisionerTestFixture() {
     runBlockingWithTimeout {
       setDevices(SerialNumbers.EMULATOR)
 
-      val handle =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(1)
+      val handle = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
 
-          val handle = handles[0]
-          assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        val handle = handles[0]
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
 
-          handle
-        }
+        handle
+      }
 
       assertThat(handle.state.isReady).isFalse()
 

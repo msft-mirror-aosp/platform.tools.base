@@ -13,15 +13,16 @@ maven_repository(
         "@maven//:com.android.tools.build.bundletool",
         "@maven//:com.android.tools.build.jetifier.jetifier-processor",
         "@maven//:com.android.tools.build.transform-api",
+        "@maven//:com.android.tools.r8",
         "@maven//:com.github.javaparser.javaparser-core",
         "@maven//:com.google.apis.google-api-services-storage_v1-rev82-1.22.0",
         "@maven//:com.google.crypto.tink.tink",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.guava.guava-testlib",
         "@maven//:com.google.jimfs.jimfs",
-        "@maven//:com.google.protobuf.protobuf-bom_3.17.2",
+        "@maven//:com.google.protobuf.protobuf-bom_3.25.5",
         "@maven//:com.google.protobuf.protobuf-gradle-plugin",
-        "@maven//:com.google.protobuf.protoc_3.22.3",
+        "@maven//:com.google.protobuf.protoc_3.25.5",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.googlecode.jarjar.jarjar",
         "@maven//:com.googlecode.juniversalchardet.juniversalchardet",
@@ -43,6 +44,7 @@ maven_repository(
         "@maven//:org.apache.groovy.groovy-all",
         "@maven//:org.apache.httpcomponents.httpmime",
         "@maven//:org.apache.maven.maven-aether-provider",
+        "@maven//:org.bouncycastle.bc-jdk18on-bom",
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
         "@maven//:org.bouncycastle.bcprov-jdk18on",
         "@maven//:org.eclipse.aether.aether-connector-basic",
@@ -55,14 +57,21 @@ maven_repository(
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.dokka.dokka-core",
         "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin",
+        "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.3.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
+        "@maven//:org.jetbrains.kotlin.kotlin-compiler_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlin.kotlin-test-junit",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android_1.6.4",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.4.1",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.8.0",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
         "@maven//:org.jetbrains.markdown",
@@ -113,13 +122,6 @@ AGP_ARTIFACTS = [
     "//tools/base/sdk-common:tools.sdk-common",
     "//tools/base/sdklib:tools.sdklib",
     "//tools/base/signflinger",
-    "//tools/base/utp/android-device-provider-ddmlib-proto",
-    "//tools/base/utp/android-test-plugin-host-additional-test-output-proto",
-    "//tools/base/utp/android-test-plugin-host-apk-installer-proto",
-    "//tools/base/utp/android-test-plugin-host-coverage-proto",
-    "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
-    "//tools/base/utp/android-test-plugin-host-logcat-proto",
-    "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
     "//tools/base/zipflinger",
     "//tools/data-binding:tools.baseLibrary",
     "//tools/data-binding:tools.baseLibrarySupport",
@@ -154,8 +156,8 @@ AGP_TEST_ARTIFACTS = [
     "//tools/base/lint/cli",  # TODO(b/143864616): Only used for tests
     "//tools/base/lint:tools.lint-api",  # TODO(b/143864616): Only used for tests
     "//tools/base/lint:tools.lint-checks",  # TODO(b/143864616): Only used for tests
+    "//tools/base/preview/screenshot/screenshot-validation-junit-engine",  # Used for preview screenshot testing
     "//tools/base/standalone-render/compose-cli:compose-preview-renderer",  # Used for preview screenshot testing
-    "//tools/base/utp/android-test-plugin-host-device-info-proto",  # Used for UTP
     "//prebuilts/tools/common/lint-psi/intellij-core",  # TODO(b/143864616): Only used for tests
     "//prebuilts/tools/common/lint-psi/kotlin-compiler",  # TODO(b/143864616): Only used for tests
     "//prebuilts/tools/common/lint-psi/uast",  # TODO(b/143864616): Only used for tests
@@ -163,6 +165,7 @@ AGP_TEST_ARTIFACTS = [
     "//tools/data-binding:tools.compiler",  # TODO(b/143864616): Only used for data binding runtime & tests
     "//tools/base/fakeadbserver:tools.fakeadbserver",  # TODO(b/143864616): Only used for tests
     "//tools/base/testutils:tools.testutils",  # TODO(b/143864616): Only used for tests
+    "//tools/base/utp/gradle-work-action",  # For android test with legacy utp gradle work action
     "//tools/base/ddmlib:tools.ddmlib.test",  # TODO(b/143864616): Only used for tests
 ]
 

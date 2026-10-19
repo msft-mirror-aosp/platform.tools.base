@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.testing.suites
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasTestSuites
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -39,7 +38,7 @@ class TestTaskCustomConfigurationBlock {
             create("red") { it.dimension = "color" }
             create("blue") { it.dimension = "color" }
           }
-          testOptions.suites.create("first", AgpTestSuite::class.java) {
+          testOptions.customSuites.create("first") {
             it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
             it.assets {}
             it.targetVariants.add("redDebug")
@@ -57,12 +56,12 @@ class TestTaskCustomConfigurationBlock {
   fun testConfigurationBlockExecutes() {
     // no need to run the task, we just want to check which ones are configured and which ones
     // are not.
-    val result = rule.build.executor.withArgument("--dry-run").run("app:testFirstT1BlueDebugTestSuite")
-    result.assertOutputContains("Task testFirstT1BlueDebugTestSuite configured with")
-    result.assertOutputContains("Task testFirstT1BlueDebugTestSuite configured from variant block")
-    result.assertOutputDoesNotContain("Task testFirstT1RedDebugTestSuite configured with")
-    result.assertOutputDoesNotContain("Task testFirstT2BlueDebugTestSuite configured with")
-    result.assertOutputDoesNotContain("Task testFirstT2RedDebugTestSuite configured with")
+    val result = rule.build.executor.withArgument("--dry-run").run("app:testBlueDebugFirstT1TestSuite")
+    result.assertOutputContains("Task testBlueDebugFirstT1TestSuite configured with")
+    result.assertOutputContains("Task testBlueDebugFirstT1TestSuite configured from variant block")
+    result.assertOutputDoesNotContain("Task testRedDebugFirstT1TestSuite configured with")
+    result.assertOutputDoesNotContain("Task testBlueDebugFirstT2TestSuite configured with")
+    result.assertOutputDoesNotContain("Task testRedDebugFirstT2TestSuite configured with")
   }
 }
 
@@ -70,7 +69,7 @@ class TestTaskCustomConfigurationBlockAppCallback : ApplicationComponentCallback
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
     // Register a configuration block at the DSL level.
     androidComponents.finalizeDsl { android ->
-      android.testOptions.suites.getByName("first").configureTestTasks { context -> println("Task $name configured with $context") }
+      android.testOptions.customSuites.getByName("first").configureTestTasks { context -> println("Task $name configured with $context") }
     }
 
     // Register another configuration block at the variant level

@@ -147,13 +147,13 @@ void HeapDumpManager::HeapDumpMain(int32_t pid, std::shared_ptr<File> file,
     }
   }
 
-  callback(result);
   {
     std::lock_guard<std::mutex> lock(dump_mutex_);
     auto itr = dump_map_.find(pid);
     assert(itr != dump_map_.end());
     itr->second.is_running_.exchange(false);
   }
+  callback(result);
 }
 
 }  // namespace profiler

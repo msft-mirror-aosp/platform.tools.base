@@ -77,7 +77,8 @@ private constructor(
 
   /**
    * If non-null, this issue can **only** be suppressed with one of the given annotations: not with @Suppress, not with @SuppressLint, not
-   * with lint.xml, not with lintOptions{} and not with baselines.
+   * with lint.xml, not with lintOptions{} and not with baselines. Only an overriding configuration can replace these names; see
+   * [Configuration.getSuppressNames].
    *
    * These suppress names can take various forms:
    * * Valid qualified names in Kotlin and Java (identifier characters and dots). Represents suppress annotation. Examples include

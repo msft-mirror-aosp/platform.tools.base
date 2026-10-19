@@ -19,19 +19,27 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.localRepositories
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import java.nio.file.Files
 import java.nio.file.Path
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class KotlinMultiplatformHostTestIncludesAndroidResourcesTest {
+@RunWith(Parameterized::class)
+class KotlinMultiplatformHostTestIncludesAndroidResourcesTest(private val enableJavaResourceOptimizations: Boolean) {
 
   companion object {
     const val SDK_VERSION: String = "9-robolectric-4913185-2-i4"
     val PLATFORM_JAR_NAME: String = String.format("android-all-instrumented-%s.jar", SDK_VERSION)
     val PLATFORM_JAR_RELATIVE_PATH: String = String.format("org/robolectric/android-all-instrumented/%s/%s", SDK_VERSION, PLATFORM_JAR_NAME)
+
+    @JvmStatic
+    @Parameterized.Parameters(name = "enableJavaResourceOptimizations={0}")
+    fun enableJavaResOptimizations() = listOf(true, false)
   }
 
   @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
@@ -71,10 +79,7 @@ class KotlinMultiplatformHostTestIncludesAndroidResourcesTest {
 
   @Test
   fun testAndroidHostTestRuns() {
-    project
-      .executor()
-      .withFailOnWarning(false) // b/455891987
-      .run(":kmpHostTestOnlyLib:testAndroidHostTest")
+    executor().run(":kmpHostTestOnlyLib:testAndroidHostTest")
   }
 
   @Test
@@ -90,10 +95,7 @@ class KotlinMultiplatformHostTestIncludesAndroidResourcesTest {
       """
         .trimIndent(),
     )
-    project
-      .executor()
-      .withFailOnWarning(false) // b/455891987
-      .run(":kmpHostTestOnlyLib:testAndroidHostTest")
+    executor().run(":kmpHostTestOnlyLib:testAndroidHostTest")
   }
 
   @Test
@@ -107,9 +109,12 @@ class KotlinMultiplatformHostTestIncludesAndroidResourcesTest {
       """
         .trimIndent(),
     )
+    executor().run(":kmpHostTestOnlyLib:testAndroidHostTest")
+  }
+
+  private fun executor() =
     project
       .executor()
+      .with(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableJavaResourceOptimizations)
       .withFailOnWarning(false) // b/455891987
-      .run(":kmpHostTestOnlyLib:testAndroidHostTest")
-  }
 }

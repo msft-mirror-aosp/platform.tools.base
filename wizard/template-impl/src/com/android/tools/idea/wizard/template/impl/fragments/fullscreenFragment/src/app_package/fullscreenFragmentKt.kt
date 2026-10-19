@@ -18,7 +18,6 @@ package com.android.tools.idea.wizard.template.impl.fragments.fullscreenFragment
 
 import com.android.tools.idea.wizard.template.Language
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -29,7 +28,6 @@ fun fullscreenFragmentKt(
   layoutName: String,
   packageName: String,
   applicationPackage: String?,
-  useAndroidX: Boolean,
   isViewBindingSupported: Boolean,
 ): String {
 
@@ -50,13 +48,12 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.Button
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)}
-import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Kotlin)}
 
 /**
@@ -159,8 +156,6 @@ ${renderIf(isViewBindingSupported) {"""
         activity?.window?.let { window ->
             WindowCompat.setDecorFitsSystemWindows(window, true)
         }
-
-        // Clear the systemUiVisibility flag
         show()
     }
 

@@ -28,4 +28,6 @@ data class PreviewRendering(
   val resourceApkPath: String,
   val screenshots: List<PreviewScreenshot>,
   val resultsFilePath: String,
+  val resourceDirs: List<String> = emptyList(),
+  val rClassJars: List<String> = emptyList(),
 )

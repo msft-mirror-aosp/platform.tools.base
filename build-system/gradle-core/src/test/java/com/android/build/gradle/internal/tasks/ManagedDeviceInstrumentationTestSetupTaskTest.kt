@@ -121,7 +121,8 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
     return task
   }
 
-  private inline fun <reified ValueClass : Any> realEmptyPropertyFor(): Property<ValueClass> = project.objects.property(ValueClass::class.java)
+  private inline fun <reified ValueClass : Any> realEmptyPropertyFor(): Property<ValueClass> =
+    project.objects.property(ValueClass::class.java)
 
   private inline fun <reified ValueClass : Any> realPropertyFor(providedValue: ValueClass): Property<ValueClass> {
 

@@ -17,8 +17,8 @@
 package com.android.tools.preview.multipreview
 
 import java.io.File
-import java.util.zip.ZipFile
 import java.util.logging.Logger
+import java.util.zip.ZipFile
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
@@ -100,21 +100,21 @@ class PreviewMethodFinder(
     MultipreviewAnnotationResolver(
       COMPOSE_PREVIEW_ANNOTATION,
       COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
-      ::resolveClassReader
+      ::resolveClassReader,
     )
 
   private val wearTileAnnotationResolver =
     MultipreviewAnnotationResolver(
       WEAR_TILE_PREVIEW_ANNOTATION,
       WEAR_TILE_PREVIEW_ANNOTATION_CONTAINER,
-      ::resolveClassReader
+      ::resolveClassReader,
     )
 
   private val previewWrapperAnnotationResolver =
     MultipreviewAnnotationResolver(
       PREVIEW_WRAPPER_ANNOTATION,
       PREVIEW_WRAPPER_ANNOTATION_CONTAINER,
-      ::resolveClassReader
+      ::resolveClassReader,
     )
 
   /** Finds all methods with Preview annotations. */
@@ -200,7 +200,9 @@ class PreviewMethodFinder(
 
     val methodPreviewParameters = findAllPreviewParameters(methodNodeToProcess)
     val previewWrapperFqn = findPreviewWrapperFqn(methodNodeToProcess, methodFqn)
-    onPreviewMethodFound(ComposePreviewMethod(MethodRepresentation(methodFqn, methodPreviewParameters, previewWrapperFqn), previewAnnotations))
+    onPreviewMethodFound(
+      ComposePreviewMethod(MethodRepresentation(methodFqn, methodPreviewParameters, previewWrapperFqn), previewAnnotations)
+    )
   }
 
   private fun processWearTileMethod(methodNodeToProcess: MethodNode, methodFqn: String, onPreviewMethodFound: (PreviewMethod) -> Unit) {

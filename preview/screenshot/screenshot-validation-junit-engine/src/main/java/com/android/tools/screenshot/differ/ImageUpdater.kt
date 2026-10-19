@@ -16,15 +16,16 @@
 
 package com.android.tools.screenshot.differ
 
+import com.android.tools.screenshot.ScreenshotImageInvalidException
+import com.android.tools.screenshot.ScreenshotImageNotFoundException
 import java.io.File
-import java.io.FileNotFoundException
 import javax.imageio.ImageIO
 
 /** Update reference image if there is difference. */
 class ImageUpdater(private val imageDiffer: ImageDiffer) {
   fun updateIfDifferent(newImageFile: File, referenceImageFile: File, projectRoot: File) {
     if (!newImageFile.exists()) {
-      throw FileNotFoundException("Preview image file does not exist (${newImageFile.relativeTo(projectRoot).path}).")
+      throw ScreenshotImageNotFoundException("Preview image file does not exist (${newImageFile.relativeTo(projectRoot).path}).")
     }
 
     if (!referenceImageFile.exists()) {
@@ -32,8 +33,12 @@ class ImageUpdater(private val imageDiffer: ImageDiffer) {
       return
     }
 
-    val actual = ImageIO.read(newImageFile)
-    val reference = ImageIO.read(referenceImageFile)
+    val actual =
+      ImageIO.read(newImageFile)
+        ?: throw ScreenshotImageInvalidException("Cannot read preview image file (${newImageFile.relativeTo(projectRoot).path}).")
+    val reference =
+      ImageIO.read(referenceImageFile)
+        ?: throw ScreenshotImageInvalidException("Cannot read reference image file (${referenceImageFile.relativeTo(projectRoot).path}).")
 
     if (actual.width != reference.width || actual.height != reference.height) {
       newImageFile.copyTo(referenceImageFile, overwrite = true)

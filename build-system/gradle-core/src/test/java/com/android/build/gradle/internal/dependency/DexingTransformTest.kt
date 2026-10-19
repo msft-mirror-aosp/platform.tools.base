@@ -74,6 +74,22 @@ class DexingTransformTest {
   }
 
   @Test
+  fun testDexingWithNoOpGlobalSyntheticsConsumer() {
+    val input = tmp.newFile("classes.jar")
+    val dexingTransform =
+      TestDexingTransform(
+        FakeGradleProvider(FakeGradleRegularFile(input)),
+        parameters = TestDexingTransform.TestParameters(enableGlobalSynthetics = true, useNoOpGlobalSyntheticsConsumer = true),
+      )
+    val outputs = FakeTransformOutputs(tmp)
+    TestInputsGenerator.jarWithEmptyClasses(input.toPath(), listOf("test/A"))
+    dexingTransform.transform(outputs)
+
+    // The output should be directly in the root directory (classes.dex), NOT under "dex/classes.dex"
+    assertThatDex(outputs.outputDirectory.resolve("classes.dex")).containsExactlyClassesIn(listOf("Ltest/A;"))
+  }
+
+  @Test
   fun testDexingDir() {
     val input = tmp.newFolder("classes")
     val dexingTransform =
@@ -258,6 +274,7 @@ class DexingTransformTest {
       desugaring: Boolean = false,
       errorFormat: SyncOptions.ErrorFormatMode = SyncOptions.ErrorFormatMode.MACHINE_PARSABLE,
       enableGlobalSynthetics: Boolean = true,
+      useNoOpGlobalSyntheticsConsumer: Boolean = false,
     ) : Parameters {
       override var projectName = FakeGradleProperty(":test")
       override var debuggable = FakeGradleProperty(debuggable)
@@ -267,7 +284,7 @@ class DexingTransformTest {
       override val enableDesugaring = FakeGradleProperty(desugaring)
       override val desugarLibConfigFiles = FakeConfigurableFileCollection()
       override val enableGlobalSynthetics = FakeGradleProperty(enableGlobalSynthetics)
-      override val useNoOpGlobalSyntheticsConsumer = FakeGradleProperty(false)
+      override val useNoOpGlobalSyntheticsConsumer = FakeGradleProperty(useNoOpGlobalSyntheticsConsumer)
       override val enableApiModeling = FakeGradleProperty(enableGlobalSynthetics)
     }
 

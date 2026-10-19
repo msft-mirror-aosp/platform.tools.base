@@ -13,10 +13,10 @@ kotlin_library(
     srcs = glob(["src/**/*.kt"]),
     tags = tags,
     deps = [
-        "@intellij//:intellij-sdk",
-        "@intellij//:org.jetbrains.kotlin",
         "@intellij//:intellij.java.debugger",
         "@intellij//:intellij.java.debugger.impl",
+        "@intellij//:intellij-sdk",
+        "@intellij//:org.jetbrains.kotlin",
         "@maven//:org.jetbrains.kotlinx.kotlinx-cli-jvm",
     ],
 )
@@ -126,19 +126,6 @@ iml_module(
     srcs = ["src"],
     iml_files = ["debugger-tests.iml"],
     tags = tags,
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/as-driver:as-driver.utils",
-        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/adt/idea/.idea/libraries:truth",
-    ],
-    test_srcs = [
-        "resources/src",
-        "testSrc",
-    ],
-    test_tags = ["manual"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
@@ -149,4 +136,28 @@ iml_module(
         "@intellij//:intellij.java.debugger.impl",
         "//prebuilts/tools/common/m2:kotlinx-cli-jvm-0.3.1",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.debugger-tests.tests",
+    iml_files = ["debugger-tests.tests.iml"],
+    tags = tags,
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/debugger-tests:studio.debugger-tests",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/as-driver:as-driver.utils",
+        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
+    test_friends = ["//tools/base/debugger-tests:studio.debugger-tests"],
+    test_srcs = [
+        "resources/src",
+        "testSrc",
+    ],
+    test_tags = ["manual"],
+    visibility = ["//visibility:public"],
 )

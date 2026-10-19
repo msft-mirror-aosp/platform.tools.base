@@ -388,14 +388,13 @@ class JavaResPackagingAppTest {
         isEmpty()
       } else {
         val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
-        val itemNames =
-          itemList.map {
-            when (it) {
-              is StringWithContent -> it.name
-              is String -> it
-              else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
-            }
+        val itemNames = itemList.map {
+          when (it) {
+            is StringWithContent -> it.name
+            is String -> it
+            else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
           }
+        }
 
         // check the list
         containsExactly(itemNames)

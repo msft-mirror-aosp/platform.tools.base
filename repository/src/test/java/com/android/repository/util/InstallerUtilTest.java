@@ -728,4 +728,117 @@ public class InstallerUtilTest extends TestCase {
         assertTrue(Files.isSameFile(resultLink, resultFile));
         assertEquals("content", new String(Files.readAllBytes(resultLink)));
     }
+
+    private static void createZipWithEntry(
+            Path outZip, String entryName, byte[] content, boolean isSymlink) throws IOException {
+        try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(outZip.toFile())) {
+            ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
+            if (isSymlink) {
+                entry.setUnixMode(UnixStat.LINK_FLAG | entry.getUnixMode());
+            }
+            out.putArchiveEntry(entry);
+            out.write(content);
+            out.closeArchiveEntry();
+        }
+    }
+
+    public void testUnzipZipSlip() throws Exception {
+        Path tmp = Files.createTempDirectory("InstallerUtilTest_zipSlip");
+        try {
+            Path outZip = tmp.resolve("slip.zip");
+            createZipWithEntry(outZip, "../escaped.txt", "evil".getBytes(), false);
+            Path unzipped = tmp.resolve("unzipped");
+            Files.createDirectory(unzipped);
+            try {
+                InstallerUtil.unzip(outZip, unzipped, 0, new FakeProgressIndicator(true));
+                fail("Expected IOException");
+            } catch (IOException expected) {
+                assertTrue(expected.getMessage().contains("would escape the output directory"));
+            }
+            assertFalse(Files.exists(tmp.resolve("escaped.txt")));
+        } finally {
+            PathUtils.deleteRecursivelyIfExists(tmp);
+        }
+    }
+
+    public void testUnzipZipSlipAbsolute() throws Exception {
+        Path tmp = Files.createTempDirectory("InstallerUtilTest_zipSlipAbs");
+        try {
+            Path outZip = tmp.resolve("slip_abs.zip");
+            createZipWithEntry(outZip, "/tmp/escaped.txt", "evil".getBytes(), false);
+            Path unzipped = tmp.resolve("unzipped");
+            Files.createDirectory(unzipped);
+            try {
+                InstallerUtil.unzip(outZip, unzipped, 0, new FakeProgressIndicator(true));
+                fail("Expected IOException");
+            } catch (IOException expected) {
+                assertTrue(expected.getMessage().contains("would escape the output directory"));
+            }
+        } finally {
+            PathUtils.deleteRecursivelyIfExists(tmp);
+        }
+    }
+
+    public void testUnzipSymlinkEscapes() throws Exception {
+        Path tmp = Files.createTempDirectory("InstallerUtilTest_symlinkEscapes");
+        try {
+            Path outZip = tmp.resolve("symlink_escape.zip");
+            createZipWithEntry(outZip, "evil_link", "../../outside".getBytes(), true);
+            Path unzipped = tmp.resolve("unzipped");
+            Files.createDirectory(unzipped);
+            try {
+                InstallerUtil.unzip(outZip, unzipped, 0, new FakeProgressIndicator(true));
+                fail("Expected IOException");
+            } catch (IOException expected) {
+            }
+        } finally {
+            PathUtils.deleteRecursivelyIfExists(tmp);
+        }
+    }
+
+    public void testUnzipSymlinkChainingZipSlip() throws Exception {
+        Path tmp = Files.createTempDirectory("InstallerUtilTest_symlinkChaining");
+        try {
+            Path outZip = tmp.resolve("chain.zip");
+            try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(outZip.toFile())) {
+                ZipArchiveEntry entry1 = new ZipArchiveEntry("dir/");
+                out.putArchiveEntry(entry1);
+                out.closeArchiveEntry();
+
+                // dir/d1 points to "..", which logically resolves to the output directory
+                ZipArchiveEntry entry2 = new ZipArchiveEntry("dir/d1");
+                entry2.setUnixMode(UnixStat.LINK_FLAG | entry2.getUnixMode());
+                out.putArchiveEntry(entry2);
+                out.write("..".getBytes());
+                out.closeArchiveEntry();
+
+                // dir/d1/d2 points to "..". Path.normalize() evaluates dir/d1/.. to dir/,
+                // but the filesystem resolves dir/d1 to output dir, creating d2 in output dir
+                // pointing to "..".
+                ZipArchiveEntry entry3 = new ZipArchiveEntry("dir/d1/d2");
+                entry3.setUnixMode(UnixStat.LINK_FLAG | entry3.getUnixMode());
+                out.putArchiveEntry(entry3);
+                out.write("..".getBytes());
+                out.closeArchiveEntry();
+
+                // Writing to d2/escaped.txt traverses the d2 symlink to write outside the output
+                // directory.
+                ZipArchiveEntry entry4 = new ZipArchiveEntry("d2/escaped.txt");
+                out.putArchiveEntry(entry4);
+                out.write("evil".getBytes());
+                out.closeArchiveEntry();
+            }
+            Path unzipped = tmp.resolve("unzipped");
+            Files.createDirectory(unzipped);
+            try {
+                InstallerUtil.unzip(outZip, unzipped, 0, new FakeProgressIndicator(true));
+                fail("Expected IOException due to Zip Slip escape");
+            } catch (IOException expected) {
+                assertTrue(expected.getMessage().contains("would escape the output directory"));
+            }
+            assertFalse(Files.exists(tmp.resolve("escaped.txt")));
+        } finally {
+            PathUtils.deleteRecursivelyIfExists(tmp);
+        }
+    }
 }

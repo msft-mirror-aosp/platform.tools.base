@@ -128,6 +128,7 @@ import com.android.builder.model.v2.models.VariantDependencies
 import com.android.builder.model.v2.models.VariantDependenciesAdjacencyList
 import com.android.builder.model.v2.models.VariantDependenciesFlatList
 import com.android.builder.model.v2.models.Versions
+import com.android.utils.XmlUtils
 import com.android.utils.associateNotNull
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
@@ -137,7 +138,6 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.Serializable
 import javax.xml.namespace.QName
-import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamException
 import javax.xml.stream.events.EndElement
 import kotlin.collections.map
@@ -271,7 +271,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
      * change, such as removing an older model method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must be
      * increased to exclude all older versions of Studio that called that method.
      */
-    val modelProducer = VersionImpl(23, 0, humanReadable = "Android Gradle Plugin 9.1")
+    val modelProducer = VersionImpl(24, 0, humanReadable = "Android Gradle Plugin 9.1")
     /**
      * The minimum required model consumer version, to allow AGP to control support for older versions of Android Studio.
      *
@@ -360,27 +360,26 @@ class ModelBuilder<ExtensionT : CommonExtension>(
     val testSuiteBuilders = gatherTestSuites(variantModel.testSuites)
 
     // gather test suites
-    val testSuites: List<BasicTestSuiteImpl> =
-      testSuiteBuilders.map { testSuiteBuilder ->
-        val testSuiteSourcesModel = getTestSuiteSources(sourceSets = testSuiteBuilder.suite.sources, isGenerated = false)
+    val testSuites: List<BasicTestSuiteImpl> = testSuiteBuilders.map { testSuiteBuilder ->
+      val testSuiteSourcesModel = getTestSuiteSources(sourceSets = testSuiteBuilder.suite.sources, isGenerated = false)
 
-        BasicTestSuiteImpl(
-          name = testSuiteBuilder.suite.name,
-          assets = testSuiteSourcesModel.assets,
-          hostJars = testSuiteSourcesModel.hostJar,
-          testApks = testSuiteSourcesModel.testApk,
-          targetsByVariant =
-            testSuiteBuilder.variantsTargets.map { testSuiteVariantBuilder ->
-              TestSuiteVariantTargetImpl(
-                testSuiteVariantBuilder.targetedVariant,
-                testSuiteVariantBuilder.targets.map { mapEntry ->
-                  val variantSpecificTarget = mapEntry.value
-                  TestSuiteTargetImpl(variantSpecificTarget.name, variantSpecificTarget.testTaskName, variantSpecificTarget.targetDevices)
-                },
-              )
-            },
-        )
-      }
+      BasicTestSuiteImpl(
+        name = testSuiteBuilder.suite.name,
+        assets = testSuiteSourcesModel.assets,
+        hostJars = testSuiteSourcesModel.hostJar,
+        testApks = testSuiteSourcesModel.testApk,
+        targetsByVariant =
+          testSuiteBuilder.variantsTargets.map { testSuiteVariantBuilder ->
+            TestSuiteVariantTargetImpl(
+              testSuiteVariantBuilder.targetedVariant,
+              testSuiteVariantBuilder.targets.map { mapEntry ->
+                val variantSpecificTarget = mapEntry.value
+                TestSuiteTargetImpl(variantSpecificTarget.name, variantSpecificTarget.testTaskName, variantSpecificTarget.targetDevices)
+              },
+            )
+          },
+      )
+    }
 
     // gather variants
     val variantList = variants.map { createBasicVariant(it, buildFeatures) }
@@ -422,7 +421,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
   private fun HostJarTestSuiteSourceSet.toModel(isGenerated: Boolean) =
     HostJarTestSuiteSourceImpl(
       name = name,
-      defaultTopLevel = defaultTopLevelFolder,
+      defaultTopLevel = rootFolder,
       java = variantSourcesForModel(java, isGenerated),
       kotlin = variantSourcesForModel(kotlin, isGenerated),
       resources = variantSourcesForModel(resources, isGenerated),
@@ -452,6 +451,13 @@ class ModelBuilder<ExtensionT : CommonExtension>(
           shadersDirectories = null,
           mlModelsDirectories = null,
           customDirectories = null,
+          apiConfigurationName = null,
+          compileOnlyConfigurationName = null,
+          compileOnlyApiConfigurationName = null,
+          implementationConfigurationName = null,
+          runtimeOnlyConfigurationName = null,
+          annotationProcessorConfigurationName = null,
+          kaptConfigurationName = null,
         ),
     )
 
@@ -659,36 +665,34 @@ class ModelBuilder<ExtensionT : CommonExtension>(
     var namespace: String? = null
     var androidTestNamespace: String? = null
     var testFixturesNamespace: String? = null
-    val variantList =
-      variants.map {
-        namespace = it.namespace.get()
-        if (androidTestNamespace == null && it is HasDeviceTestsCreationConfig) {
-          it.defaultDeviceTest?.let { androidTest -> androidTestNamespace = androidTest.namespace.get() }
-        }
-        if (testFixturesNamespace == null && it is HasTestFixtures) {
-          testFixturesNamespace = it.testFixtures?.namespace?.get()
-        }
-
-        checkProguardFiles(it)
-
-        createVariant(it, instantAppResultMap)
+    val variantList = variants.map {
+      namespace = it.namespace.get()
+      if (androidTestNamespace == null && it is HasDeviceTestsCreationConfig) {
+        it.defaultDeviceTest?.let { androidTest -> androidTestNamespace = androidTest.namespace.get() }
       }
+      if (testFixturesNamespace == null && it is HasTestFixtures) {
+        testFixturesNamespace = it.testFixtures?.namespace?.get()
+      }
+
+      checkProguardFiles(it)
+
+      createVariant(it, instantAppResultMap)
+    }
 
     val desugarLibConfig = if (extension.compileOptions.isCoreLibraryDesugaringEnabled) getDesugarLibConfigFile(project) else listOf()
 
     val testSuiteBuilders: Collection<TestSuiteModelBuilder> = gatherTestSuites(variantModel.testSuites)
 
-    val suites =
-      testSuiteBuilders.map { testSuiteBuilder ->
-        val testSuiteSourcesModel = getTestSuiteSources(sourceSets = testSuiteBuilder.suite.sources, isGenerated = true)
-        TestSuiteImpl(
-          name = testSuiteBuilder.suite.name,
-          junitEngineInfo = JUnitEngineInfoImpl(testSuiteBuilder.suite.junitEngineSpec.includeEngines),
-          generatedAssets = testSuiteSourcesModel.assets,
-          generatedHostJars = testSuiteSourcesModel.hostJar,
-          generatedTestApks = testSuiteSourcesModel.testApk,
-        )
-      }
+    val suites = testSuiteBuilders.map { testSuiteBuilder ->
+      val testSuiteSourcesModel = getTestSuiteSources(sourceSets = testSuiteBuilder.suite.sources, isGenerated = true)
+      TestSuiteImpl(
+        name = testSuiteBuilder.suite.name,
+        junitEngineInfo = JUnitEngineInfoImpl(testSuiteBuilder.suite.junitEngineSpec.includeEngines),
+        generatedAssets = testSuiteSourcesModel.assets,
+        generatedHostJars = testSuiteSourcesModel.hostJar,
+        generatedTestApks = testSuiteSourcesModel.testApk,
+      )
+    }
     //        val suites = variantModel.testSuites.map { testSuite ->
     //            val testSuiteSourcesModel = getTestSuiteSources(
     //                sourceSets = testSuite.sources,
@@ -827,36 +831,33 @@ class ModelBuilder<ExtensionT : CommonExtension>(
           listOf(RUNTIME_CLASSPATH)
         }
 
-    val results =
-      components.associateWith { component ->
-        val failures = mutableListOf<Throwable>()
-        val graphs =
-          configTypes.associateWith { configType ->
-            fun getAdditionalArtifacts(type: AdditionalArtifactType) =
-              if (parameter.additionalArtifactsInModel)
-                variant.variantDependencies.getAdditionalArtifacts(configType, type).artifactFiles.files
-              else null
+    val results = components.associateWith { component ->
+      val failures = mutableListOf<Throwable>()
+      val graphs = configTypes.associateWith { configType ->
+        fun getAdditionalArtifacts(type: AdditionalArtifactType) =
+          if (parameter.additionalArtifactsInModel) variant.variantDependencies.getAdditionalArtifacts(configType, type).artifactFiles.files
+          else null
 
-            val artifacts = getArtifactsForModelBuilder(component, configType) { failures.addAll(it) }
+        val artifacts = getArtifactsForModelBuilder(component, configType) { failures.addAll(it) }
 
-            artifacts.map {
-              val javadoc = getAdditionalArtifacts(AdditionalArtifactType.JAVADOC)?.single()
-              val source = getAdditionalArtifacts(AdditionalArtifactType.SOURCE)?.toList() ?: listOf()
-              val additionalArtifacts = AdditionalArtifacts(javadoc, source)
-              libraryService.getLibrary(it, additionalArtifacts).key
-            }
-          }
-
-        ArtifactDependenciesFlatListImpl(
-          graphs[COMPILE_CLASSPATH]!!,
-          graphs[RUNTIME_CLASSPATH],
-          failures.map {
-            // Try and extract the failed component. Unfortunately this is not provided
-            // by gradle when requesting artifacts.
-            UnresolvedDependencyImpl((it as? ModuleVersionResolveException)?.selector?.toString() ?: "", it.message)
-          },
-        )
+        artifacts.map {
+          val javadoc = getAdditionalArtifacts(AdditionalArtifactType.JAVADOC)?.single()
+          val source = getAdditionalArtifacts(AdditionalArtifactType.SOURCE)?.toList() ?: listOf()
+          val additionalArtifacts = AdditionalArtifacts(javadoc, source)
+          libraryService.getLibrary(it, additionalArtifacts).key
+        }
       }
+
+      ArtifactDependenciesFlatListImpl(
+        graphs[COMPILE_CLASSPATH]!!,
+        graphs[RUNTIME_CLASSPATH],
+        failures.map {
+          // Try and extract the failed component. Unfortunately this is not provided
+          // by gradle when requesting artifacts.
+          UnresolvedDependencyImpl((it as? ModuleVersionResolveException)?.selector?.toString() ?: "", it.message)
+        },
+      )
+    }
 
     return VariantDependenciesFlatListImpl(
       name = variantName,
@@ -1110,6 +1111,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
 
           TestInfoImpl(
             animationsDisabled = testOptionsDsl.animationsDisabled,
+            instrumentInPrivateComputeCore = testOptionsDsl.instrumentInPrivateComputeCore,
             execution = testOptionsDsl.execution.convertToExecution(),
             additionalRuntimeApks = runtimeApks,
             instrumentedTestTaskName = testTaskName,
@@ -1383,7 +1385,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
 
       try {
         FileInputStream(manifest).use { inputStream ->
-          val factory = XMLInputFactory.newInstance()
+          val factory = XmlUtils.createXmlInputFactory()
           val eventReader = factory.createXMLEventReader(inputStream)
           while (eventReader.hasNext() && !eventReader.peek().isEndDocument) {
             val event = eventReader.nextTag()
@@ -1405,30 +1407,36 @@ class ModelBuilder<ExtensionT : CommonExtension>(
           }
           eventReader.close()
         }
-      } catch (e: XMLStreamException) {
-        variantModel.syncIssueReporter.reportError(
-          IssueReporter.Type.MANIFEST_PARSE_FAILED,
-          """
-                        Failed to parse XML in ${manifest.path}
-                        ${e.message}
-                        """
-            .trimIndent(),
-        )
-      } catch (e: IOException) {
-        variantModel.syncIssueReporter.reportError(
-          IssueReporter.Type.MANIFEST_PARSE_FAILED,
-          """
-                        Failed to parse XML in ${manifest.path}
-                        ${e.message}
-                        """
-            .trimIndent(),
-        )
+      } catch (e: Exception) {
+        when (e) {
+          is XMLStreamException,
+          is IOException -> reportManifestParseFailure(manifest, e)
+          else -> throw e
+        }
       } finally {
         // check that we have not yet put a true in there
         instantAppResultMap.putIfAbsent(manifest, false)
       }
     }
     return false
+  }
+
+  /**
+   * Reports a manifest parse failure as a sync issue.
+   *
+   * The exception detail is included deliberately: it carries the line/column and reason that make an ordinary malformed manifest
+   * diagnosable. It cannot leak host files, because the parser is built by [XmlUtils.createXmlInputFactory], which disables DTD processing
+   * and external entity resolution -- so no `file:`/`http:` URI can be dereferenced and the message can only describe content already
+   * present in the project's own manifest.
+   */
+  private fun reportManifestParseFailure(manifest: File, e: Exception) {
+    // Plain concatenation rather than a trimIndent() raw string: e.message is frequently
+    // multi-line, and interpolating it defeats trimIndent's common-indent calculation, which
+    // leaves the first lines ragged.
+    variantModel.syncIssueReporter.reportError(
+      IssueReporter.Type.MANIFEST_PARSE_FAILED,
+      "Failed to parse XML in ${manifest.path}\n${e.message}",
+    )
   }
 
   private fun getTestTargetVariant(component: ComponentCreationConfig): TestedTargetVariant? {

@@ -20,260 +20,473 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
+import androidx.inspection.InspectorEnvironment;
 
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
-import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @RunWith(RobolectricTestRunner.class)
 public final class InspectorBridgeTest {
 
-  private final Connection mockConnection = new Connection() {
-    @Override
-    public void sendEvent(byte[] data) {}
-  };
+    private final Connection mockConnection =
+            new Connection() {
+                @Override
+                public void sendEvent(byte[] data) {}
+            };
 
-  private HandlerThreadExecutor primaryExecutor;
+    /** The bridges created by the test, disposed after it. */
+    private final List<InspectorBridge> bridges = new ArrayList<>();
 
-  @Before
-  public void setUp() {
-    primaryExecutor = new HandlerThreadExecutor("test_bridge_thread", t -> {
-      throw new RuntimeException(t);
-    });
-  }
+    @After
+    public void tearDown() {
+        for (InspectorBridge bridge : bridges) {
+            bridge.dispose();
+        }
+    }
 
-  @After
-  public void tearDown() {
-    primaryExecutor.quitSafely();
-  }
+    @Test
+    public void testSendCommand_sequentialProcessing() throws Exception {
+        AtomicBoolean inProgress = new AtomicBoolean(false);
+        Inspector mockInspectorSeq =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        assertThat(inProgress.get()).isFalse();
+                        inProgress.set(true);
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        inProgress.set(false);
+                        callback.reply(data);
+                    }
 
-  @Test
-  public void testSendCommand_sequentialProcessing() throws Exception {
-    AtomicBoolean inProgress = new AtomicBoolean(false);
-    Inspector mockInspectorSeq = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {
-        assertThat(inProgress.get()).isFalse();
-        inProgress.set(true);
+                    @Override
+                    public void onDispose() {}
+                };
+
+        InspectorBridge bridgeSeq = createBridge(mockInspectorSeq);
+
+        CountDownLatch latch = new CountDownLatch(2);
+        List<Throwable> errors = new CopyOnWriteArrayList<>();
+
+        new Thread(
+                        () -> {
+                            try {
+                                bridgeSeq.sendCommand(new byte[] {1});
+                            } catch (Throwable t) {
+                                errors.add(t);
+                            } finally {
+                                latch.countDown();
+                            }
+                        })
+                .start();
+
+        new Thread(
+                        () -> {
+                            try {
+                                bridgeSeq.sendCommand(new byte[] {2});
+                            } catch (Throwable t) {
+                                errors.add(t);
+                            } finally {
+                                latch.countDown();
+                            }
+                        })
+                .start();
+
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(errors).isEmpty();
+    }
+
+    @Test
+    public void testSendCommand_executesOnPrimaryExecutorThread() throws Exception {
+        AtomicReference<String> executionThreadName = new AtomicReference<>();
+        Inspector mockInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        executionThreadName.set(Thread.currentThread().getName());
+                        callback.reply(data);
+                    }
+
+                    @Override
+                    public void onDispose() {}
+                };
+
+        InspectorBridge bridge = createBridge(mockInspector);
+
+        bridge.sendCommand(new byte[] {1});
+
+        assertThat(executionThreadName.get()).isEqualTo("ui_inspector_test_inspector");
+    }
+
+    @Test
+    public void testSendCommand_errorPropagation() throws Exception {
+        Inspector mockInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        throw new RuntimeException("Test exception");
+                    }
+
+                    @Override
+                    public void onDispose() {}
+                };
+
+        InspectorBridge bridge = createBridge(mockInspector);
+
+        boolean exceptionThrown = false;
         try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
+            bridge.sendCommand(new byte[] {1});
+        } catch (Exception e) {
+            exceptionThrown = true;
+            assertThat(e.getMessage()).contains("Test exception");
         }
-        inProgress.set(false);
-        callback.reply(data);
-      }
-
-      @Override
-      public void onDispose() {}
-    };
-
-        InspectorBridge bridgeSeq =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspectorSeq,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
-
-    CountDownLatch latch = new CountDownLatch(2);
-    List<Throwable> errors = new CopyOnWriteArrayList<>();
-
-    new Thread(() -> {
-      try {
-        bridgeSeq.sendCommand(new byte[]{1});
-      } catch (Throwable t) {
-        errors.add(t);
-      } finally {
-        latch.countDown();
-      }
-    }).start();
-
-    new Thread(() -> {
-      try {
-        bridgeSeq.sendCommand(new byte[]{2});
-      } catch (Throwable t) {
-        errors.add(t);
-      } finally {
-        latch.countDown();
-      }
-    }).start();
-
-    latch.await(5, TimeUnit.SECONDS);
-    assertThat(errors).isEmpty();
-  }
-
-  @Test
-  public void testSendCommand_executesOnPrimaryExecutorThread() throws Exception {
-    AtomicReference<String> executionThreadName = new AtomicReference<>();
-    Inspector mockInspector = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {
-        executionThreadName.set(Thread.currentThread().getName());
-        callback.reply(data);
-      }
-
-      @Override
-      public void onDispose() {}
-    };
-
-        InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
-
-    bridge.sendCommand(new byte[]{1});
-
-    assertThat(executionThreadName.get()).startsWith("test_bridge_thread");
-  }
-
-  @Test
-  public void testSendCommand_errorPropagation() {
-    Inspector mockInspector = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {
-        throw new RuntimeException("Test exception");
-      }
-
-      @Override
-      public void onDispose() {}
-    };
-
-        InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
-
-    boolean exceptionThrown = false;
-    try {
-      bridge.sendCommand(new byte[]{1});
-    } catch (Exception e) {
-      exceptionThrown = true;
-      assertThat(e.getMessage()).contains("Test exception");
+        assertThat(exceptionThrown).isTrue();
     }
-    assertThat(exceptionThrown).isTrue();
-  }
 
-  @Test
-  public void testUpdateConnection_updatesDelegatingConnection() {
-    AppInspectionUtils.DelegatingConnection delegatingConnection = new AppInspectionUtils.DelegatingConnection();
-    Inspector mockInspector = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {}
-
-      @Override
-      public void onDispose() {}
-    };
-
+    @Test
+    public void testSendCommand_throwFromOnReceiveCommand_disposesBridge() throws Exception {
+        IllegalStateException failure = new IllegalStateException("Thrown by onReceiveCommand");
+        CountDownLatch disposed = new CountDownLatch(1);
         InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector", mockInspector, delegatingConnection, primaryExecutor);
+                createBridge(
+                        new Inspector(mockConnection) {
+                            @Override
+                            public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                                throw failure;
+                            }
 
-    Connection newConnection = new Connection() {
-      @Override
-      public void sendEvent(byte[] data) {}
-    };
-
-    bridge.updateConnection(newConnection);
-
-    assertThat(delegatingConnection.activeConnection).isSameAs(newConnection);
-  }
-
-  @Test
-  public void testDispose_callsOnDisposeAndQuitsExecutor() throws Exception {
-    AtomicBoolean disposed = new AtomicBoolean(false);
-    Inspector mockInspector = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {}
-
-      @Override
-      public void onDispose() {
-        disposed.set(true);
-      }
-    };
-
-        InspectorBridge bridge =
-                InspectorBridge.createForTesting(
-                        "test_inspector",
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor);
-
-    bridge.dispose();
-
-    primaryExecutor.awaitTermination(5, TimeUnit.SECONDS);
-
-    assertThat(disposed.get()).isTrue();
-
-    boolean exceptionThrown = false;
-    try {
-      bridge.sendCommand(new byte[]{1});
-    } catch (Exception e) {
-      exceptionThrown = true;
-    }
-    assertThat(exceptionThrown).isTrue();
-  }
-
-  @Test
-  public void testDispose_preventsCommandRaceCondition() throws Exception {
-    AtomicBoolean disposed = new AtomicBoolean(false);
-    AtomicBoolean commandExecutedAfterDispose = new AtomicBoolean(false);
-
-    Inspector mockInspector = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {
-        if (disposed.get()) {
-          commandExecutedAfterDispose.set(true);
+                            @Override
+                            public void onDispose() {
+                                disposed.countDown();
+                            }
+                        });
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try {
+            assertThat(sendCommandForThrowable(caller, bridge)).isSameAs(failure);
+            assertThat(bridge.isDisposed()).isTrue();
+            assertThat(disposed.await(5, TimeUnit.SECONDS)).isTrue();
+        } finally {
+            caller.shutdownNow();
         }
-        callback.reply(data);
-      }
-
-      @Override
-      public void onDispose() {
-        disposed.set(true);
-      }
-    };
-
-    InspectorBridge bridge =
-        InspectorBridge.createForTesting(
-            "test_inspector",
-            mockInspector,
-            new AppInspectionUtils.DelegatingConnection(),
-            primaryExecutor);
-
-    // Call dispose
-    bridge.dispose();
-
-    // Immediately try to send a command.
-    // Under the race condition (current code), this succeeds to queue and executes after disposal.
-    // Under the fixed code, this should fail immediately with a RejectedExecutionException.
-    boolean rejected = false;
-    try {
-      bridge.sendCommand(new byte[]{1});
-    } catch (RejectedExecutionException e) {
-      rejected = true;
     }
 
-    primaryExecutor.awaitTermination(5, TimeUnit.SECONDS);
+    @Test
+    public void testSendCommand_crashOnPrimaryExecutorBeforeReplying_failsCommand()
+            throws Exception {
+        assertCrashBeforeReplyingFailsCommand(environment -> environment.executors().primary());
+    }
 
-    assertThat(rejected).isTrue();
-    assertThat(commandExecutedAfterDispose.get()).isFalse();
-  }
+    @Test
+    public void testSendCommand_crashOnIoExecutorBeforeReplying_failsCommand() throws Exception {
+        assertCrashBeforeReplyingFailsCommand(environment -> environment.executors().io());
+    }
+
+    /**
+     * Asserts that a command fails with the crash of the task that would have replied to it, when
+     * that task runs on the executor returned by {@code executorOf}.
+     */
+    private void assertCrashBeforeReplyingFailsCommand(
+            Function<InspectorEnvironment, Executor> executorOf) throws Exception {
+        List<Throwable> crashes = new CopyOnWriteArrayList<>();
+        IllegalStateException failure = new IllegalStateException("Failure before replying");
+        InspectorBridge bridge =
+                InspectorBridge.create(
+                        "test_inspector",
+                        environment ->
+                                new Inspector(mockConnection) {
+                                    @Override
+                                    public void onReceiveCommand(
+                                            byte[] data, CommandCallback callback) {
+                                        // Replies from a later task, which fails before replying.
+                                        executorOf
+                                                .apply(environment)
+                                                .execute(
+                                                        () -> {
+                                                            throw failure;
+                                                        });
+                                    }
+
+                                    @Override
+                                    public void onDispose() {}
+                                },
+                        new AppInspectionUtils.DelegatingConnection(),
+                        crashes::add,
+                        hookOwnerId -> {});
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try {
+            Future<Throwable> thrown =
+                    caller.submit(
+                            () -> {
+                                try {
+                                    bridge.sendCommand(new byte[] {1});
+                                    return null;
+                                } catch (Throwable t) {
+                                    return t;
+                                }
+                            });
+
+            assertThat(thrown.get(5, TimeUnit.SECONDS)).isSameAs(failure);
+            // No need to wait for the crash report: the bridge reports a crash before failing the
+            // commands.
+            assertThat(crashes).containsExactly(failure);
+        } finally {
+            // Interrupts the command if it is still waiting, so that a failure does not leak a
+            // blocked thread.
+            caller.shutdownNow();
+            bridge.dispose();
+        }
+    }
+
+    @Test
+    public void testCrash_disposesBridge() throws Exception {
+        IllegalStateException crash = new IllegalStateException("Crash");
+        CountDownLatch disposed = new CountDownLatch(1);
+        List<String> clearedOwnerIds = new CopyOnWriteArrayList<>();
+        CountDownLatch hooksCleared = new CountDownLatch(1);
+        InspectorBridge bridge =
+                InspectorBridge.create(
+                        "test_inspector",
+                        environment ->
+                                new Inspector(mockConnection) {
+                                    @Override
+                                    public void onReceiveCommand(
+                                            byte[] data, CommandCallback callback) {
+                                        environment
+                                                .executors()
+                                                .primary()
+                                                .execute(
+                                                        () -> {
+                                                            throw crash;
+                                                        });
+                                    }
+
+                                    @Override
+                                    public void onDispose() {
+                                        disposed.countDown();
+                                    }
+                                },
+                        new AppInspectionUtils.DelegatingConnection(),
+                        t -> {},
+                        hookOwnerId -> {
+                            clearedOwnerIds.add(hookOwnerId);
+                            hooksCleared.countDown();
+                        });
+        assertThat(bridge.isDisposed()).isFalse();
+        ExecutorService caller = Executors.newSingleThreadExecutor();
+        try {
+            assertThat(sendCommandForThrowable(caller, bridge)).isSameAs(crash);
+            assertThat(bridge.isDisposed()).isTrue();
+            assertThat(disposed.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(hooksCleared.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(clearedOwnerIds).hasSize(1);
+            assertThat(sendCommandForThrowable(caller, bridge))
+                    .isInstanceOf(RejectedExecutionException.class);
+        } finally {
+            caller.shutdownNow();
+            bridge.dispose();
+        }
+        // Disposing again does nothing.
+        assertThat(clearedOwnerIds).hasSize(1);
+    }
+
+    /** Sends a command to {@code bridge} from {@code caller}, and returns what it throws. */
+    private static Throwable sendCommandForThrowable(ExecutorService caller, InspectorBridge bridge)
+            throws Exception {
+        return caller.submit(
+                        () -> {
+                            try {
+                                bridge.sendCommand(new byte[] {1});
+                                return null;
+                            } catch (Throwable t) {
+                                return t;
+                            }
+                        })
+                .get(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testUpdateConnection_updatesDelegatingConnection() throws Exception {
+        AppInspectionUtils.DelegatingConnection delegatingConnection =
+                new AppInspectionUtils.DelegatingConnection();
+        Inspector mockInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {}
+
+                    @Override
+                    public void onDispose() {}
+                };
+
+        InspectorBridge bridge =
+                createBridge(mockInspector, delegatingConnection, hookOwnerId -> {});
+
+        Connection newConnection =
+                new Connection() {
+                    @Override
+                    public void sendEvent(byte[] data) {}
+                };
+
+        bridge.updateConnection(newConnection);
+
+        assertThat(delegatingConnection.activeConnection).isSameAs(newConnection);
+    }
+
+    @Test
+    public void testDispose_callsOnDisposeAndQuitsExecutor() throws Exception {
+        AtomicBoolean disposed = new AtomicBoolean(false);
+        Inspector mockInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {}
+
+                    @Override
+                    public void onDispose() {
+                        disposed.set(true);
+                    }
+                };
+
+        InspectorBridge bridge = createBridge(mockInspector);
+
+        bridge.dispose();
+
+        assertThat(bridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(disposed.get()).isTrue();
+
+        boolean exceptionThrown = false;
+        try {
+            bridge.sendCommand(new byte[] {1});
+        } catch (Exception e) {
+            exceptionThrown = true;
+        }
+        assertThat(exceptionThrown).isTrue();
+    }
+
+    @Test
+    public void testDispose_preventsCommandRaceCondition() throws Exception {
+        AtomicBoolean disposed = new AtomicBoolean(false);
+        AtomicBoolean commandExecutedAfterDispose = new AtomicBoolean(false);
+
+        Inspector mockInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        if (disposed.get()) {
+                            commandExecutedAfterDispose.set(true);
+                        }
+                        callback.reply(data);
+                    }
+
+                    @Override
+                    public void onDispose() {
+                        disposed.set(true);
+                    }
+                };
+
+        InspectorBridge bridge = createBridge(mockInspector);
+
+        // Call dispose
+        bridge.dispose();
+
+        // Immediately try to send a command.
+        // Under the race condition (current code), this succeeds to queue and executes after
+        // disposal.
+        // Under the fixed code, this should fail immediately with a RejectedExecutionException.
+        boolean rejected = false;
+        try {
+            bridge.sendCommand(new byte[] {1});
+        } catch (RejectedExecutionException e) {
+            rejected = true;
+        }
+
+        assertThat(bridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(rejected).isTrue();
+        assertThat(commandExecutedAfterDispose.get()).isFalse();
+    }
+
+    @Test
+    public void testDispose_clearsOnlyTheHooksOfItsOwnBridge() throws Exception {
+        List<String> clearedOwnerIds = new CopyOnWriteArrayList<>();
+        // Two servers in one process can each hold an inspector with the same inspector ID.
+        InspectorBridge firstBridge =
+                createBridge(
+                        createIdleInspector(),
+                        new AppInspectionUtils.DelegatingConnection(),
+                        clearedOwnerIds::add);
+        InspectorBridge secondBridge =
+                createBridge(
+                        createIdleInspector(),
+                        new AppInspectionUtils.DelegatingConnection(),
+                        clearedOwnerIds::add);
+
+        firstBridge.dispose();
+        assertThat(firstBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+        secondBridge.dispose();
+        assertThat(secondBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(clearedOwnerIds).hasSize(2);
+        assertThat(clearedOwnerIds.get(0)).isNotEqualTo(clearedOwnerIds.get(1));
+        assertThat(clearedOwnerIds.get(0)).startsWith("test_inspector/");
+        assertThat(clearedOwnerIds.get(1)).startsWith("test_inspector/");
+    }
+
+    /** Creates a bridge for {@code inspector}, wired like the bridges of the server. */
+    private InspectorBridge createBridge(Inspector inspector) throws Exception {
+        return createBridge(
+                inspector, new AppInspectionUtils.DelegatingConnection(), hookOwnerId -> {});
+    }
+
+    /**
+     * Creates a bridge for {@code inspector}, wired like the bridges of the server.
+     *
+     * @param clearHooks removes the hooks of the given owner ID when the bridge is disposed
+     */
+    private InspectorBridge createBridge(
+            Inspector inspector,
+            AppInspectionUtils.DelegatingConnection connection,
+            Consumer<String> clearHooks)
+            throws Exception {
+        InspectorBridge bridge =
+                InspectorBridge.create(
+                        "test_inspector",
+                        environment -> inspector,
+                        connection,
+                        t -> {},
+                        clearHooks);
+        bridges.add(bridge);
+        return bridge;
+    }
+
+    private Inspector createIdleInspector() {
+        return new Inspector(mockConnection) {
+            @Override
+            public void onReceiveCommand(byte[] data, CommandCallback callback) {}
+
+            @Override
+            public void onDispose() {}
+        };
+    }
 }
-

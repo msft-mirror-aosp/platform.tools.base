@@ -63,7 +63,6 @@ def make_fake_build_env(**kwargs) -> Iterator[bazel.BuildEnv]:
         tmp_dir=str(tmp_path),
         tmp_path=tmp_path,
         bazel_path='',
-        bazel_version='7.0.0',
         user='user',
         branch='',
         startup_options=[],

@@ -1,0 +1,339 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "heap_dump_request_handler.h"
+
+#include <gtest/gtest.h>
+
+#include <set>
+#include <string>
+#include <unordered_map>
+
+#include "perfetto/trace_processor/basic_types.h"
+#include "perfetto/trace_processor/read_trace.h"
+#include "perfetto/trace_processor/trace_processor.h"
+
+namespace profiler {
+namespace perfetto {
+namespace {
+
+using ::perfetto::trace_processor::Config;
+using ::perfetto::trace_processor::ReadTrace;
+using ::perfetto::trace_processor::TraceProcessor;
+
+const std::string HPROF_PATH(
+    "tools/base/profiler/native/trace_processor_daemon/testdata/"
+    "bitmap-duplicates.hprof");
+
+const std::string PERFETTO_JAVA_HEAP_DUMP_PATH(
+    "tools/base/profiler/native/trace_processor_daemon/testdata/"
+    "profilertester.perfetto-java-heap-dump");
+
+std::unique_ptr<TraceProcessor> LoadTrace(const std::string& trace_path) {
+  Config config;
+  config.ingest_ftrace_in_raw_table = false;
+  auto tp = TraceProcessor::CreateInstance(config);
+  auto read_status = ReadTrace(tp.get(), trace_path.c_str(), [](uint64_t) {});
+  EXPECT_TRUE(read_status.ok());
+  return tp;
+}
+
+// Validates that heap dump events and aggregated class overviews are populated
+// correctly from an HPROF file.
+TEST(HeapDumpRequestHandlerTest, TestPopulateEvents) {
+  auto tp = LoadTrace(HPROF_PATH);
+  HeapDumpRequestHandler handler{tp.get()};
+  proto::HeapDumpResult result;
+  handler.PopulateEvents(&result);
+
+  EXPECT_GT(result.class_overview_size(), 0);
+
+  bool found_bitmap = false;
+  for (const auto& class_overview : result.class_overview()) {
+    if (class_overview.class_name() == "android.graphics.Bitmap" &&
+        class_overview.heap_name() == "app") {
+      found_bitmap = true;
+      EXPECT_EQ(class_overview.instance_count(), 4);
+      EXPECT_GT(class_overview.shallow_size(), 0);
+      EXPECT_GT(class_overview.retained_size(), 0);
+      break;
+    }
+  }
+  EXPECT_TRUE(found_bitmap);
+
+  EXPECT_GT(result.heap_overview_size(), 0);
+  bool found_app_heap = false;
+  for (const auto& heap_overview : result.heap_overview()) {
+    if (heap_overview.heap_name() == "app") {
+      found_app_heap = true;
+      EXPECT_GT(heap_overview.retained_native_size(), 0);
+      EXPECT_GT(heap_overview.retained_size(), 0);
+      break;
+    }
+  }
+  EXPECT_TRUE(found_app_heap);
+}
+
+// Validates that instance querying with sorting and pagination works correctly.
+TEST(HeapDumpRequestHandlerTest, TestPopulateInstances) {
+  auto tp = LoadTrace(HPROF_PATH);
+  HeapDumpRequestHandler handler{tp.get()};
+
+  proto::HeapDumpResult events_result;
+  handler.PopulateEvents(&events_result);
+
+  proto::QueryParameters::HeapDumpInstancesParameters request;
+  request.add_class_names("android.graphics.Bitmap");
+  request.set_heap_name("app");
+  request.set_sort_attribute(proto::QueryParameters::SORT_RETAINED_SIZE);
+  request.set_sort_descending(true);
+
+  proto::HeapDumpInstancesResult result;
+  handler.PopulateInstances(request, &result);
+
+  EXPECT_EQ(result.instance_size(), 4);
+
+  // Verify descending sort order by retained size
+  for (int i = 0; i < result.instance_size() - 1; ++i) {
+    EXPECT_GE(result.instance(i).retained_size(),
+              result.instance(i + 1).retained_size());
+  }
+}
+
+// Validates primitive scalar fields resolution for an instance.
+TEST(HeapDumpRequestHandlerTest, TestPopulatePrimitiveFields) {
+  auto tp = LoadTrace(HPROF_PATH);
+  HeapDumpRequestHandler handler{tp.get()};
+
+  proto::HeapDumpResult events_result;
+  handler.PopulateEvents(&events_result);
+
+  // First fetch an instance ID for android.graphics.Bitmap (largest by retained
+  // size is 800x800)
+  proto::QueryParameters::HeapDumpInstancesParameters instances_request;
+  instances_request.add_class_names("android.graphics.Bitmap");
+  instances_request.set_heap_name("app");
+  instances_request.set_sort_attribute(
+      proto::QueryParameters::SORT_RETAINED_NATIVE_SIZE);
+  instances_request.set_sort_descending(true);
+
+  proto::HeapDumpInstancesResult instances_result;
+  handler.PopulateInstances(instances_request, &instances_result);
+  ASSERT_GT(instances_result.instance_size(), 0);
+
+  int64_t bitmap_id = instances_result.instance(0).id();
+
+  // Query primitive fields for the bitmap instance
+  proto::QueryParameters::GetPrimitiveFieldsParameters fields_request;
+  fields_request.add_instance_ids(bitmap_id);
+
+  proto::GetPrimitiveFieldsResult fields_result;
+  handler.PopulatePrimitiveFields(fields_request, &fields_result);
+
+  ASSERT_EQ(fields_result.instances_size(), 1);
+  const auto& instance_fields = fields_result.instances(0);
+  EXPECT_EQ(instance_fields.instance_id(), bitmap_id);
+  EXPECT_GT(instance_fields.field_size(), 0);
+
+  bool found_height = false;
+  bool found_width = false;
+  for (const auto& field : instance_fields.field()) {
+    if (field.name().find(".mHeight") != std::string::npos) {
+      found_height = true;
+      EXPECT_EQ(field.value(), "800");
+    } else if (field.name().find(".mWidth") != std::string::npos) {
+      found_width = true;
+      EXPECT_EQ(field.value(), "800");
+    }
+  }
+  EXPECT_TRUE(found_height);
+  EXPECT_TRUE(found_width);
+}
+
+// Validates reference tree chain querying (forward and reverse references).
+TEST(HeapDumpRequestHandlerTest, TestPopulateReferences) {
+  auto tp = LoadTrace(HPROF_PATH);
+  HeapDumpRequestHandler handler{tp.get()};
+
+  proto::HeapDumpResult events_result;
+  handler.PopulateEvents(&events_result);
+
+  // Fetch an instance ID for android.graphics.Bitmap
+  proto::QueryParameters::HeapDumpInstancesParameters instances_request;
+  instances_request.add_class_names("android.graphics.Bitmap");
+  instances_request.set_heap_name("app");
+
+  proto::HeapDumpInstancesResult instances_result;
+  handler.PopulateInstances(instances_request, &instances_result);
+  ASSERT_GT(instances_result.instance_size(), 0);
+
+  int64_t bitmap_id = instances_result.instance(0).id();
+
+  // Query references for the bitmap instance
+  proto::QueryParameters::GetReferencesParameters refs_request;
+  refs_request.add_instance_ids(bitmap_id);
+  refs_request.set_fetch_forward(true);
+  refs_request.set_fetch_reverse(true);
+
+  proto::GetReferencesResult refs_result;
+  handler.PopulateReferences(refs_request, &refs_result);
+
+  EXPECT_GT(refs_result.reference_size(), 0);
+
+  bool found_klass_ref = false;
+  bool found_drawcanvas_ref = false;
+  for (const auto& ref : refs_result.reference()) {
+    if (ref.owner_id() == bitmap_id &&
+        ref.field_name().find("shadow$_klass_") != std::string::npos) {
+      found_klass_ref = true;
+      EXPECT_GT(ref.owned_id(), 0);
+    }
+    if (ref.owned_id() == bitmap_id &&
+        ref.field_name().find("testBitmap1") != std::string::npos) {
+      found_drawcanvas_ref = true;
+      EXPECT_GT(ref.owner_id(), 0);
+    }
+  }
+  EXPECT_TRUE(found_klass_ref);
+  EXPECT_TRUE(found_drawcanvas_ref);
+}
+
+// Capture format under test, and whether that format is expected to contain
+// edges the importer leaves unnamed.
+struct ReferenceFormatParam {
+  std::string trace_path;
+  std::string name;
+  bool has_unnamed_edges;
+};
+
+class HeapDumpReferenceFormatTest
+    : public testing::TestWithParam<ReferenceFormatParam> {};
+
+// Validates that array_index identifies unnamed array elements and is -1 for
+// named fields, in every supported capture format, and that both query
+// directions agree on an element's slot.
+TEST_P(HeapDumpReferenceFormatTest,
+       TestArrayIndexAccompaniesUnnamedReferences) {
+  const ReferenceFormatParam& param = GetParam();
+  auto tp = LoadTrace(param.trace_path);
+  HeapDumpRequestHandler handler{tp.get()};
+
+  proto::HeapDumpResult events_result;
+  handler.PopulateEvents(&events_result);
+
+  // Sample the largest instances, which is enough to cover arrays in both
+  // formats.
+  proto::QueryParameters::HeapDumpInstancesParameters instances_request;
+  instances_request.set_limit(2000);
+  instances_request.set_sort_descending(true);
+
+  proto::HeapDumpInstancesResult instances_result;
+  handler.PopulateInstances(instances_request, &instances_result);
+  ASSERT_GT(instances_result.instance_size(), 0);
+
+  proto::QueryParameters::GetReferencesParameters refs_request;
+  for (const auto& instance : instances_result.instance()) {
+    refs_request.add_instance_ids(instance.id());
+  }
+  refs_request.set_fetch_forward(true);
+
+  proto::GetReferencesResult refs_result;
+  handler.PopulateReferences(refs_request, &refs_result);
+  ASSERT_GT(refs_result.reference_size(), 0);
+
+  int unnamed_edge_count = 0;
+  std::unordered_map<int64_t, std::set<int64_t>> indices_by_owner;
+  for (const auto& ref : refs_result.reference()) {
+    if (ref.field_name().empty()) {
+      unnamed_edge_count++;
+      EXPECT_GE(ref.array_index(), 0)
+          << "unnamed edge owned by " << ref.owner_id() << " has no index";
+      // Two elements of the same array must never claim the same slot.
+      EXPECT_TRUE(
+          indices_by_owner[ref.owner_id()].insert(ref.array_index()).second)
+          << "index " << ref.array_index() << " repeats for owner "
+          << ref.owner_id();
+    } else {
+      EXPECT_EQ(ref.array_index(), -1)
+          << "named edge '" << ref.field_name() << "' reports an array index";
+    }
+  }
+
+  if (param.has_unnamed_edges) {
+    EXPECT_GT(unnamed_edge_count, 0);
+  }
+
+  // The reverse query selects on the owned object rather than the owner, so it
+  // returns a subset of each owner's edges. Every slot it reports must still
+  // be one the forward query reported for that owner.
+  refs_request.set_fetch_forward(false);
+  refs_request.set_fetch_reverse(true);
+
+  proto::GetReferencesResult reverse_result;
+  handler.PopulateReferences(refs_request, &reverse_result);
+  ASSERT_GT(reverse_result.reference_size(), 0);
+
+  int cross_checked_count = 0;
+  for (const auto& ref : reverse_result.reference()) {
+    if (!ref.field_name().empty()) {
+      EXPECT_EQ(ref.array_index(), -1)
+          << "named edge '" << ref.field_name() << "' reports an array index";
+      continue;
+    }
+    EXPECT_GE(ref.array_index(), 0)
+        << "unnamed edge owned by " << ref.owner_id() << " has no index";
+    auto owner = indices_by_owner.find(ref.owner_id());
+    if (owner == indices_by_owner.end()) continue;
+    EXPECT_GT(owner->second.count(ref.array_index()), 0u)
+        << "reverse query reports slot " << ref.array_index() << " for owner "
+        << ref.owner_id() << ", which the forward query never reported";
+    cross_checked_count++;
+  }
+
+  if (param.has_unnamed_edges) {
+    EXPECT_GT(cross_checked_count, 0);
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    CaptureFormats, HeapDumpReferenceFormatTest,
+    testing::Values(ReferenceFormatParam{HPROF_PATH, "ArtHprof", false},
+                    ReferenceFormatParam{PERFETTO_JAVA_HEAP_DUMP_PATH,
+                                         "PerfettoJavaHeapDump", true}),
+    [](const testing::TestParamInfo<ReferenceFormatParam>& info) {
+      return info.param.name;
+    });
+
+TEST(HeapDumpRequestHandlerTest, TestEscapeSqlString) {
+  // 1. Happy case: clean strings pass through with identical contents and size
+  std::string clean = "android.graphics.Bitmap";
+  EXPECT_EQ(EscapeSqlString(clean), "android.graphics.Bitmap");
+  EXPECT_EQ(EscapeSqlString("app"), "app");
+
+  // 2. Single quote escaping: ' -> ''
+  EXPECT_EQ(EscapeSqlString("foo'bar"), "foo''bar");
+  EXPECT_EQ(EscapeSqlString("'start"), "''start");
+  EXPECT_EQ(EscapeSqlString("end'"), "end''");
+
+  // 3. Null byte stripping: embedded '\0' bytes are removed
+  std::string with_null("foo\0bar", 7);
+  EXPECT_EQ(EscapeSqlString(with_null), "foobar");
+  EXPECT_EQ(EscapeSqlString(with_null).size(), 6);
+}
+
+}  // namespace
+}  // namespace perfetto
+}  // namespace profiler

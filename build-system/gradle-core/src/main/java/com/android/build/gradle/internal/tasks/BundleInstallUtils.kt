@@ -53,16 +53,15 @@ internal fun getApkFiles(apkBundles: Collection<Path>, deviceSpec: Devices.Devic
   // get the device info to create the APKs
   val tempFolder: Path = Files.createTempDirectory("apkSelect")
 
-  val apkPaths =
-    apkBundles.flatMap { apkBundle ->
-      val command = ExtractApksCommand.builder().setApksArchivePath(apkBundle).setDeviceSpec(deviceSpec)
-      // Only set output directory if the archive path is not a directory.
-      if (!Files.isDirectory(apkBundle)) {
-        command.setOutputDirectory(tempFolder)
-      }
-      moduleName?.let { command.setModules(ImmutableSet.of(it)) }
-      command.build().execute()
+  val apkPaths = apkBundles.flatMap { apkBundle ->
+    val command = ExtractApksCommand.builder().setApksArchivePath(apkBundle).setDeviceSpec(deviceSpec)
+    // Only set output directory if the archive path is not a directory.
+    if (!Files.isDirectory(apkBundle)) {
+      command.setOutputDirectory(tempFolder)
     }
+    moduleName?.let { command.setModules(ImmutableSet.of(it)) }
+    command.build().execute()
+  }
   return apkPaths
 }
 

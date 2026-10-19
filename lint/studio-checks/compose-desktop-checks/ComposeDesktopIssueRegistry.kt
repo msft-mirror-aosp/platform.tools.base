@@ -24,22 +24,21 @@ class ComposeDesktopIssueRegistry : IssueRegistry() {
 
   override val api: Int = com.android.tools.lint.detector.api.CURRENT_API
 
-  override val issues: List<Issue> =
-    buildList {
-        addAll(androidx.compose.animation.core.lint.AnimationCoreIssueRegistry().issues)
-        addAll(androidx.compose.animation.lint.AnimationIssueRegistry().issues)
-        addAll(androidx.compose.foundation.lint.FoundationIssueRegistry().issues)
-        addAll(androidx.compose.material.lint.MaterialIssueRegistry().issues)
-        addAll(androidx.compose.material3.lint.Material3IssueRegistry().issues)
-        addAll(androidx.compose.runtime.lint.RuntimeIssueRegistry().issues)
-        addAll(androidx.compose.runtime.retain.lint.RetainIssueRegistry().issues)
-        addAll(androidx.compose.runtime.saveable.lint.RuntimeSaveableIssueRegistry().issues)
-        addAll(androidx.compose.ui.graphics.lint.UiGraphicsIssueRegistry().issues)
-        addAll(androidx.compose.ui.lint.UiIssueRegistry().issues)
-        addAll(androidx.compose.ui.test.manifest.lint.TestManifestIssueRegistry().issues)
-        addAll(androidx.compose.ui.text.lint.UiTextIssueRegistry().issues)
-      }
-      .filter { !it.isAndroidSpecific() }
+  override val issues: List<Issue> = buildList {
+    addAll(androidx.compose.animation.core.lint.AnimationCoreIssueRegistry().issues)
+    addAll(androidx.compose.animation.lint.AnimationIssueRegistry().issues)
+    addAll(androidx.compose.foundation.lint.FoundationIssueRegistry().issues)
+    addAll(androidx.compose.material.lint.MaterialIssueRegistry().issues)
+    addAll(androidx.compose.material3.lint.Material3IssueRegistry().issues)
+    addAll(androidx.compose.runtime.lint.RuntimeIssueRegistry().issues)
+    addAll(androidx.compose.runtime.retain.lint.RetainIssueRegistry().issues)
+    addAll(androidx.compose.runtime.saveable.lint.RuntimeSaveableIssueRegistry().issues)
+    addAll(androidx.compose.ui.graphics.lint.UiGraphicsIssueRegistry().issues)
+    addAll(androidx.compose.ui.lint.UiIssueRegistry().issues)
+    addAll(androidx.compose.ui.test.manifest.lint.TestManifestIssueRegistry().issues)
+    addAll(androidx.compose.ui.text.lint.UiTextIssueRegistry().issues)
+  }
+    .filter { !it.isAndroidSpecific() }
 }
 
 fun main() {

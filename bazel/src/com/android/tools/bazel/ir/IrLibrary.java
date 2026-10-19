@@ -26,11 +26,13 @@ public class IrLibrary extends IrNode {
     public String name;
     public IrModule owner;
     private List<File> files;
+    private final List<File> sourceFiles;
 
     public IrLibrary(String name, IrModule owner) {
         this.name = name;
         this.owner = owner;
         this.files = new ArrayList<>();
+        this.sourceFiles = new ArrayList<>();
     }
 
     public void addFile(File file) {
@@ -48,6 +50,14 @@ public class IrLibrary extends IrNode {
 
     public List<File> getFiles() {
         return files;
+    }
+
+    public void addSourceFile(File file) {
+        sourceFiles.add(file);
+    }
+
+    public List<File> getSourceFiles() {
+        return sourceFiles;
     }
 
     public String getName() {

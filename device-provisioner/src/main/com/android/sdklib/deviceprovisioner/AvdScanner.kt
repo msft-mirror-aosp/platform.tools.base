@@ -65,26 +65,25 @@ abstract class AbstractAvdScanner(val coroutineScope: CoroutineScope, val rescan
 
   private suspend fun doRescan(): List<AvdInfo> = mutex.withLock { scanAvds() }
 
-  override val avdFlow: SharedFlow<List<AvdInfo>> =
-    flow {
-        while (true) {
-          try {
-            emit(doRescan())
-          } catch (e: Exception) {
-            if (e is CancellationException) throw e
-            logError("Exception scanning AVDs", e)
-          }
+  override val avdFlow: SharedFlow<List<AvdInfo>> = flow {
+    while (true) {
+      try {
+        emit(doRescan())
+      } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        logError("Exception scanning AVDs", e)
+      }
 
-          while (true) {
-            when (val result = withTimeoutOrNull(rescanPeriod) { triggerChannel.receive() }) {
-              null -> break
-              else -> emit(result)
-            }
-          }
+      while (true) {
+        when (val result = withTimeoutOrNull(rescanPeriod) { triggerChannel.receive() }) {
+          null -> break
+          else -> emit(result)
         }
       }
-      .flowOn(Dispatchers.IO)
-      .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
+    }
+  }
+    .flowOn(Dispatchers.IO)
+    .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
 
   abstract fun scanAvds(): List<AvdInfo>
 

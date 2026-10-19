@@ -41,19 +41,24 @@ internal class TemplateEngineFactoryImpl(
     messageSink: TemplateMessageSink,
     dependencyInstaller: DependencyInstaller,
     destinationPathProvider: () -> Path,
+    overwriteExistingFiles: Boolean,
   ): TemplateEngine {
-    val fileStorage = DefaultFileStorage(messageSink, destinationPathProvider)
+    val fileStorage = DefaultFileStorage(messageSink, destinationPathProvider, overwriteExistingFiles)
     return TemplateEngineImpl(messageSink, registry, fileStorage, dependencyInstaller)
   }
 
-  override fun createDryRunEngine(messageSink: TemplateMessageSink, destinationPathProvider: () -> Path): TemplateEngine {
+  override fun createDryRunEngine(
+    messageSink: TemplateMessageSink,
+    destinationPathProvider: () -> Path,
+    overwriteExistingFiles: Boolean,
+  ): TemplateEngine {
     val dryRunInstaller =
       object : DependencyInstaller {
         override fun installAndroidSdkPackage(packagePath: String) {
           messageSink.message(Severity.Info) { "Dry run: Would install Android SDK package '$packagePath'" }
         }
       }
-    val fileStorage = DryRunFileStorage(messageSink, destinationPathProvider)
+    val fileStorage = DryRunFileStorage(messageSink, destinationPathProvider, overwriteExistingFiles)
     return TemplateEngineImpl(messageSink, registry, fileStorage, dryRunInstaller)
   }
 }

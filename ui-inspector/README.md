@@ -43,10 +43,38 @@ number and app package, dumps the UI tree including views and
 composables.
 
 ```bash
-ui-inspector dump-ui --serial 123 --package com.my.app
+ui-inspector dump-ui --device 123 --package com.my.app
 ```
 
-> TODO: add json output example
+Both options are optional: `--device` defaults to the only online
+device and `--package` defaults to the app currently in the foreground.
+
+Example JSON output:
+
+```json
+{
+  "roots": [
+    {
+      "type": "ViewNode",
+      "id": 1,
+      "className": "android.widget.FrameLayout",
+      "bounds": { "x": 0, "y": 0, "width": 1080, "height": 2400 },
+      "children": [
+        {
+          "type": "ComposeNode",
+          "id": 2,
+          "className": "androidx.compose.material3.Text",
+          "bounds": { "x": 48, "y": 96, "width": 200, "height": 48 },
+          "sourceLocation": { "filename": "MainActivity.kt", "lineNumber": 18 },
+          "parameters": [
+            { "name": "text", "value": "Hello World" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
 
 Developing an MVP first will enable us to establish the tool's core
 architecture and identify any unexpected challenges. Should this initial
@@ -63,13 +91,53 @@ host is running on the user’s machine and the agent on the device.
 ### Host-agent communication
 
 The agent acts as the server, when it launches it creates a socket bound
-to `localabstract:ui_inspector_<pid>`.
+to `localabstract:ui_inspector_<pid>_<digest>`, where `<digest>` is a
+12-hex-character SHA-256 fingerprint the host computes over the artifacts
+it ships (in order: the ABI-selected native agent, the ART Tooling
+library dex, the payload jar, the view inspector jar; each hashed as its
+64-bit big-endian
+length followed by its bytes). The compose inspector jar is excluded: it
+is selected by the app's compose version, which cannot change within a
+process's lifetime. The exception is a local override jar supplied via
+`--compose-inspector` — exactly the case where the inspector code can
+change while the app process lives — whose bytes then join the digest,
+so a changed override yields a fresh server instead of reconnecting to
+one that already loaded different inspector code. The digest identifies the host's intended artifact
+set, so a host only connects to a server started with the same intended
+artifacts: a resident server from the same build wins the bind race and
+is reused, while after a host rebuild the freshly attached agent binds
+its own name and the stale server expires through the inactivity
+timeout. The socket name minus the `ui_inspector_` prefix is the "server
+token": the host passes it as the agent options in the attach command,
+and the native, library, and payload layers treat it as an opaque string
+(the native library and ART Tooling library classes of a resident process
+cannot be reloaded, so they must accept tokens from hosts of any build).
+
+One thing the digest cannot do is refresh the two bottom layers of an
+agent already resident in the process — the platform pins them there:
+
+* The native library is loaded by path, and `dlopen` caches it: a
+  re-attach at the same path re-runs the *already loaded* library's
+  entry point, regardless of what bytes now sit on disk.
+* The ART Tooling library dex is appended to the bootstrap classloader's
+  search path on first attach, and a classloader never redefines a class
+  it has already loaded: later attaches keep resolving the original
+  `AgentLoader`.
+
+So in a resident process the native and library layers stay at their
+first-attach build until the app process restarts. The payload is the
+exception: every attach loads it through a fresh `DexClassLoader`, so
+the server, the protocol, and the inspectors — everything the host
+actually talks to over the socket — always come from the build that
+attached last. A native or library change still flips the digest and
+yields a fresh server; only those two thin pass-through layers keep
+running their old code.
 
 The host runs the following command to map a local port on the user’s
 machine to the device’s socket:
 
 ```bash
-adb -s <device> forward tcp:<localHostPort> localabstract:ui_inspector_<pid>
+adb -s <device> forward tcp:<localHostPort> localabstract:ui_inspector_<pid>_<digest>
 ```
 
 Then connects to `<localHostPort>`.
@@ -78,56 +146,43 @@ The data exchanged over the socket is serialized using protocol buffers.
 
 ### Agent
 
-The agent is structured into three distinct layers to bypass Android's
-class loader restrictions. The design principle is a replica of what App
-Inspection already does, slightly adapted to our use case.
+The agent is structured into distinct layers to bypass Android's class
+loader restrictions. The JVMTI machinery and the bootstrap-classloader
+loading live in the reusable [ART Tooling](art-tooling/README.md) library;
+the UI Inspector supplies only its own payload on top of it.
 
-#### JVMTI entry point (agent/native)
+#### ART Tooling native agent + library (art-tooling)
 
-The agent uses JVMTI to inject all the other inspector classes into the
-app. This is done by using `AddToBootstrapClassLoaderSearch()` to load
-`lib_ui_inspector_service.jar` directly into the JVM. By doing this the
-contents of `lib_ui_inspector_service.jar` will be available to the
-bootstrap classloader.
+The `libarttooling_agent.so` native agent uses JVMTI to bootstrap the
+tool into the app. On attach it calls `AddToBootstrapClassLoaderSearch()`
+to load the ART Tooling library dex (`libarttooling.jar`) into the
+bootstrap classloader, then, using JNI, invokes the library's
+`AgentLoader`. The attach options carry the paths and the tool's agent
+class: `library_dex;agent_dex;agent_class;agent_options`, where the UI
+Inspector passes the server token as its agent options.
 
-Finally, using JNI, the native code locates the injected
-`InspectorService.java` (which is part of `lib_ui_inspector_service.jar`)
-and calls its static `initialize` method.
+`AgentLoader` finds the app class loader, creates a `DexClassLoader` (as a
+child of it) to load the payload JAR (`lib_ui_inspector_payload.jar`),
+instantiates the named agent class, and calls its `onAttach`. The payload
+is loaded app-parented, rather than on the bootstrap classloader, so that
+the application's own classes remain visible to it and interfaces like
+`androidx.inspection` are not forced into the bootstrap classloader
+(avoiding version conflicts if the app or other tools use them in the same
+process).
 
-#### Service loader (agent/service)
-
-The contents of `lib_ui_inspector_service.jar` act as a bridge between the
-bootstrap
-classloader and the app classloader. The bridge is necessary because in
-order to have access to the application classes `view-inspector.jar` and
-`compose-inspector.jar` need to be loaded with a class loader that
-descends from the app class loader.
-
-The main class of `lib_ui_inspector_service.jar` is `InspectorService`,
-which:
-
-* Receives the path to
-  the payload JAR (passed from C++).
-* Finds the app class loader.
-* Creates a new `DexClassLoader` (as a child of the app class loader) to
-  load the payload JAR (`lib_ui_inspector_payload.jar`).
-* Finds `InspectorLauncher` in the new class loader, and invokes its
-  entry point.
+Inspectors interact with the runtime — finding instances, hooking methods —
+through the library's `ArtTooling` facade.
 
 #### InspectorLauncher (agent/payload)
 
-This class is the entry point of the payload. Loading this class and its
-dependencies via a separate `DexClassLoader` is necessary to avoid
-loading interfaces like `androidx.appinspection` into the Bootstrap
-ClassLoader, preventing potential version conflicts if the app or other
-tools (like Android Studio's App Inspection) also use those libraries in
-the same process.
+This class is the entry point of the payload and the ART Tooling `Agent`
+that `AgentLoader` instantiates.
 
 It is responsible for:
 
 * Spawning a background coroutine/thread.
 * Creating a `LocalServerSocket` bound to
-  `localabstract:ui_inspector_<pid>`.
+  `localabstract:ui_inspector_<pid>_<digest>`.
 * Entering a loop to accept connections from the
   Host CLI.
 * Processing commands and interacting with the app's UI hierarchy.
@@ -136,8 +191,11 @@ It is responsible for:
 
 #### ViewInspector (agent/inspectors/view)
 
-This is the actual view inspector. It’s part of the dex that was loaded
-by `InspectorService`.
+This is the actual view inspector. It is built as its own jar
+(`view-inspector.jar`), staged on the device by the host alongside the
+payload, and loaded by the payload through a `DexClassLoader` whose
+parent is the payload's own class loader, so its class-loader chain
+descends from the app class loader.
 
 ### Host
 
@@ -146,26 +204,66 @@ invocation.
 It runs `adb devices` and `adb shell getprop` to find the device and
 hardware characteristics of the device.
 
-Selects the appropriate `.so` and payload `.jar` files matching the
-target devices and pushes them directly to the Android staging directory
-on the device (`/data/local/tmp`).
+Selects the appropriate `.so`, the ART Tooling library dex, and the
+payload `.jar` matching the target device and pushes them to the
+staging directory on the device
+(`/data/local/tmp/ui-inspector`). Every staged file — agent binary,
+library dex, payload jar, and inspector jars — is named by its own
+content hash (`<base>.<hash12>.<ext>`, 12 hex characters of the file's
+SHA-256), so a file's staging path is determined by its base name and
+content. Concurrent pushes of the same content race only on
+byte-identical files (harmless, pushes are atomic renames), and runs
+shipping different content write different paths, so a file's content
+is never overwritten in place — though a push's sweep (below) can
+delete another build's staged file.
+The hash covers the whole file but is shortened to 12 hex characters
+for the name, so a name collision between different contents is
+astronomically unlikely rather than impossible, and build artifacts
+are treated as immutable for the lifetime of a run. Before pushing, one
+`stat` probe checks each expected staging path: a path already holding
+a read-only regular file is byte-identical by construction of the name
+and is not re-transferred; the check is advisory, so anything the
+probe cannot positively confirm is simply pushed. Each push also
+sweeps the other staged versions of the same artifact (same base name,
+any other digest-shaped segment), so a push resets its artifact to a
+single staged version; residue from concurrent or interrupted runs
+persists only until that artifact's next push. The install step
+sweeps the app-side jar copies the same way. For the
+Compose inspector jar the base name embeds the maven version, so the
+sweep only ever removes a same-version rebuild (snapshots) while jars
+for different Compose versions coexist. Probe-hit runs stay read-only:
+sweeping happens only when an actual push occurs. A concurrent
+run of a different build can lose its staged file to the sweep between
+its probe and its use; that surfaces as a loud command failure there,
+and a retry re-stages.
 
 It then starts the injection sequence:
 
 * Queries the app private data directory dynamically using `run-as <package> pwd`
   to support custom multi-user environments (e.g. `/data/user/10/`).
-* Automatically enables global view debugging by running
-  `settings put global debug_view_attributes 1` (allowing the platform to expose
-  attribute resolution stacks).
-* Runs `adb shell run-as <package> cp` to move files from
-  `/data/local/tmp` to the app memory space.
-* Uses `run-as <package>` to `chmod` all binary and jar files to read-only (`444`),
-  since the Dalvik classloader prevents loading dynamic dalvik bytecode `.dex`
-  extensions from a writable app-data location.
+* When the `resolution-stack` facet is requested, enables view debugging for the
+  inspected app via `settings put global debug_view_attributes_application_package
+  <package>` (allowing the platform to expose attribute resolution stacks). The
+  setting is read first and skipped if it already names the package or the global
+  `debug_view_attributes` is already enabled; when actually flipped it is left set
+  (changing it in either direction restarts the app's activities) and a stderr
+  notice explains how to clear it.
+* Copies the staged files into the app's data directory with `run-as <package>`:
+  each file is written to a run-unique temporary name, `chmod`-ed to read-only
+  (`444`, required because the Dalvik classloader refuses dynamic bytecode from
+  a writable app-data location), and renamed onto its final name. All three
+  final names are content-hashed. Other installed versions are swept.
+  The agent binary `libarttooling_agent.<hash12>.so` is only copied when it is
+  absent. The dynamic linker recognizes an already-loaded library by its
+  inode, not by its path. Replacing the file would give it a new inode. The
+  next attach would then load a second copy of the agent into the process,
+  with its own globals and JVMTI environment. Keeping the file lets a
+  re-injection of the same build reuse the loaded copy.
+* Triggers payload injection via
+  `adb shell cmd activity attach-agent <pid> <app-data-dir>/libarttooling_agent.<hash12>.so=<app-data-dir>/libarttooling.<hash12>.jar;<app-data-dir>/lib_ui_inspector_payload.<hash12>.jar;com.android.tools.ui.inspector.payload.InspectorLauncher;<pid>_<digest>`.
 * Periodically polls `/proc/net/unix` on the device using a retry loop until the
   agent's abstract Unix socket appears, preventing host connection race conditions.
-* Creates the adb tunnel and triggers payload injection via
-  `adb shell cmd activity attach-agent <package> /data/data/<package>/lib_ui_inspector_agent.so=/data/data/<package>/lib_ui_inspector_service.jar;/data/data/<package>/lib_ui_inspector_payload.jar;<pid>`.
+* Creates the adb tunnel to the agent's socket.
 
 ## Compose Inspector
 
@@ -215,56 +313,114 @@ cache) and have its own cache where it can store the downloaded jars.
 
 ## UI Inspector daemon
 
-This CLI tool could be invoked many times for the same instance of an
-app. It would be a waste to re-inject the agent every time. For this
-reason we should inject the agent once and keep it running, so future
-commands can just re-connect to it.
+This CLI tool is typically invoked many times for the same instance of
+an app. It would be a waste to re-inject the agent every time, so the
+agent is injected once and kept running, and later commands reconnect
+to it.
 
-Before running a command the host would:
+Before injecting, the host:
 
-* Discover the PID of the app.
-* Run `adb forward tcp:<host_port> localabstract:ui_inspector_<PID>`.
-* Attempt connection to `tcp:<host_port>`.
-* Send `PING`.
-* If `PONG`: warm hit.
-* If connection failed or no `PONG`: run `attach-agent` from scratch.
+* Discovers the PID of the app and computes the artifact digest.
+* Checks `/proc/net/unix` on the device for a socket named exactly
+  `ui_inspector_<PID>_<digest>`. Such a socket means a server started
+  from the same intended artifact set is already running in the target
+  process.
+* If the socket is present, the host skips the whole injection
+  sequence (staging, install, attach, socket wait) and just creates
+  the adb forward and connects. Only the first command round trip
+  proves the reused server is alive — it may have expired between the
+  check and the connection, and an adb forward's device side is only
+  established lazily — so if the connection or that first round trip
+  fails, the host falls back to one full injection and retries.
+* If the socket is absent, the host runs the full injection sequence.
 
 To prevent resource leaks if a device is unplugged, the agent implements a
 5-minute inactivity timeout. If no message is received within the timeout,
-the agent is terminated and resources are cleaned up.
-
-***
-
-**⚠️ Implementation Note:** The host-side connection reuse and `PING`/`PONG`
-warm-hit detection are **not yet implemented in the CLI host**. Currently, the
-host runs the full file-push and `attach-agent` injection sequence on every
-command execution.
-
-However, the agent (device) side **fully supports persistence**: the server socket
-runs in a persistent loop, caches active inspector instances, and handles
-subsequent `attach-agent` calls gracefully (duplicate server threads exit cleanly after detecting socket collision via `"Address already in use"` checks).
-***
+the agent is terminated and resources are cleaned up. The agent side also
+handles repeated `attach-agent` calls gracefully: the server socket runs in
+a persistent loop, caches active inspector instances (replacing an inspector
+after an exception escapes it), and duplicate server threads exit cleanly
+after detecting the socket collision via
+`"Address already in use"` checks.
 
 ## Retrieving view attributes and composables parameters
 
-Attributes and parameters are fetched inline during the single-shot dump commands
-by passing command-line flags:
+The dump is lean by default. Additional data is selected with `--include`,
+taking one or more comma-separated facets (the option is also repeatable):
 
-* `--include-attributes`: Includes view attributes and parameters in the dump.
-* `--include-resolution-stack`: Exposes attribute style/theme resolution traces.
-* `--include-semantics`: Includes Compose accessibility and semantics properties.
+* `attributes`: view attributes and composable parameters.
+* `resolution-stack`: attribute style/theme resolution traces (implies `attributes`).
+* `semantics`: Compose accessibility and semantics properties.
+* `system-composables`: system/framework Composable nodes.
+* `all`: everything above.
 
-*Note: The separate `get-params` command proposed in early designs is not implemented.*
+### Truncated parameter values
 
-## Periodic Sampling of UI Changes
+Composable parameter and semantics values are not sent in full: the dump expands
+each value 2 levels deep, and includes the first 5 elements of each collection.
+A value with content left out has `"isTruncated": true` and a
+`"continuationToken"`:
 
-In addition to `dump-ui`, the CLI supports a `track-changes` command. This command
-samples the UI tree structure periodically over a specified duration and interval,
-printing a diff representation of structural and attribute changes:
-
-```bash
-ui-inspector track-changes --serial 123 --package com.my.app --interval 100 --duration 5
+```json
+{
+  "name": "sevenItems",
+  "value": "List[7]",
+  "isTruncated": true,
+  "continuationToken": "1:-2038048216:p:1::5:ybkj5j",
+  "isCollection": true,
+  "elements": [
+    {"name": "[0]", "value": "one"}, {"name": "[1]", "value": "two"}, {"name": "[2]", "value": "three"},
+    {"name": "[3]", "value": "four"}, {"name": "[4]", "value": "five"}
+  ]
+}
 ```
+
+`get-parameter` takes the token and prints that value as JSON, in the same
+format as in the dump:
+
+```
+$ ui-inspector get-parameter --package com.example.stresstest --continuation-token '1:-2038048216:p:1::5:ybkj5j'
+{"name":"sevenItems","value":"List[7]","isCollection":true,"elements":[{"name":"[5]","value":"six"},{"name":"[6]","value":"seven"}]}
+```
+
+One call returns:
+
+* For a collection, all its elements from the token's position to its end. Its
+  `"value"`, e.g. `"List[100000]"`, tells its size before fetching it, except
+  for `"Iterable"` and `"Sequence"`; write large ones to a file with `--output`.
+* For an object, its content.
+* In both cases, the values inside are expanded as in the dump: 2 levels deep
+  from the requested value, and 5 elements per nested collection. The values
+  cut there have `"isTruncated": true` and a `"continuationToken"` of their own.
+  `get-parameter` does not follow them: each one takes a call of its own.
+
+Nested tokens are not followed because a value can lead back to itself, or to a
+large part of the app's state. An object that references itself, e.g.
+`class Cyclic(val name: String) { var other: Cyclic? = null }` with
+`self.other = self`, shows `self.other.other` with a token in the dump. Fetching
+that token returns `other.other.other` with a new token, and so on: each call
+returns a finite answer, and going deeper is up to the caller.
+
+A collection too large for one call, e.g. an endless `Sequence` built with
+`generateSequence`, is cut off after about 10 MB, again with
+`"isTruncated": true` and a `"continuationToken"` to continue from there.
+
+Tokens are opaque, and resolved against the UI on screen. After the UI changed,
+run `dump-ui` again: `get-parameter` fails when the value is gone, has another
+name or `"value"` (e.g. a list with another size), or is no longer a collection
+when continuing one. A value at the same place with the same name and
+`"value"` is returned as is, e.g. a list of the same size with other elements,
+or a `Sequence` or `Iterable`, whose `"value"` has no size.
+
+## Change detection
+
+The standalone CLI deliberately ships no change-detection mode. An
+earlier `dump-ui --record` sampling mode (bounded-window recording with
+per-frame diffs) was removed before the CLI-team pitch: the
+change-record schema was the least settled part of the interface, and
+`android layout` already has `--diff` semantics that any change
+detection should be designed against, together with the CLI team, at
+integration time.
 
 ## Retrieving recomposition counts and state reads
 
@@ -282,8 +438,7 @@ remain unimplemented in the current version.
   device. The obvious downside is that an extra round trip to the device
   would be necessary.
 * Where should the code for the agent package live? Moving it to
-  `androidx` has the advantage of having testing infrastructure. TODO:
-  verify what we can realistically test.
+  `androidx` has the advantage of having testing infrastructure.
 
 ## Future of Layout Inspector - integrating CLI code into Android Studio
 

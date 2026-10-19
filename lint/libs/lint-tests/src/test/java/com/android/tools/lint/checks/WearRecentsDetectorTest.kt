@@ -309,4 +309,110 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun testFlagActivityNewTaskInServiceAndReceiverAndApp() {
+    lint()
+      .files(
+        java(
+          """
+          package test.pkg;
+
+          import android.app.Service;
+          import android.content.BroadcastReceiver;
+          import android.app.Application;
+          import android.content.Context;
+          import android.content.Intent;
+
+          public class MyService extends Service {
+            void start(Context context) {
+              context.startActivity(new Intent("TEST").setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+          }
+
+          class MyReceiver extends BroadcastReceiver {
+            void onReceive(Context context, Intent intent) {
+              Intent i = new Intent("TEST");
+              i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+              context.startActivity(i);
+            }
+          }
+
+          class MyApp extends Application {
+            void start(Context context) {
+              context.startActivity(new Intent("TEST").setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+          }
+          """
+        ),
+        manifest(
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                package="test.pkg">
+              <uses-sdk android:minSdkVersion="30" />
+              <uses-feature android:name="android.hardware.type.watch" />
+              <application android:icon="@drawable/icon" android:label="@string/app_name" />
+          </manifest>
+          """
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testFlagActivityNewTaskEnclosingClassHierarchy() {
+    lint()
+      .files(
+        java(
+          """
+          package test.pkg;
+
+          import android.app.Activity;
+          import android.app.Service;
+          import android.content.Context;
+          import android.content.Intent;
+
+          public class MyService extends Service {
+            void start(Context context) {
+              new Runnable() {
+                public void run() {
+                  context.startActivity(new Intent("TEST").setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                }
+              }.run();
+            }
+          }
+
+          class ActivityEntryPoint extends Activity {
+            void start(Context context) {
+              new Runnable() {
+                public void run() {
+                  context.startActivity(new Intent("TEST").setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                }
+              }.run();
+            }
+          }
+          """
+        ),
+        manifest(
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                package="test.pkg">
+              <uses-sdk android:minSdkVersion="30" />
+              <uses-feature android:name="android.hardware.type.watch" />
+              <application android:icon="@drawable/icon" android:label="@string/app_name" />
+          </manifest>
+          """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/MyService.java:23: Warning: Avoid using FLAG_ACTIVITY_NEW_TASK and FLAG_ACTIVITY_CLEAR_TOP [WearRecents]
+                          context.startActivity(new Intent("TEST").setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                                                                                   ~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
+      )
+  }
 }

@@ -45,24 +45,23 @@ class JourneysFileSelectorResolver : SelectorResolver {
   private fun resolve(selector: DeviceSpecificDirectorySelector, context: SelectorResolver.Context): Resolution {
     val journeyFiles = findJourneyFiles(selector.directory.toPath(), JourneysTestEngineInput.journeysFilter)
 
-    val matches =
-      journeyFiles.mapNotNull { file ->
-        // We resolve files directly using `context.addToParent` to ensure they are
-        // correctly nested under their device-specific parent descriptor.
-        // Creating and resolving a new `FileSelector` here would cause the parent
-        // to revert to the root test descriptor. This is explained by
-        // JUnit 5's `context.addToParent` documentation, the parent is reset to the
-        // engine descriptor unless the selector being resolved is the result of
-        // expanding a `SelectorResolver.Match`. A new `FileSelector` would not
-        // satisfy this condition.
-        context
-          .addToParent { parent ->
-            val relativePath = file.relativeTo(selector.directory).toString()
-            Optional.of(JourneyFileDescriptor(parent.uniqueId, file, relativePath))
-          }
-          .map { Match.exact(it) }
-          .orElse(null)
-      }
+    val matches = journeyFiles.mapNotNull { file ->
+      // We resolve files directly using `context.addToParent` to ensure they are
+      // correctly nested under their device-specific parent descriptor.
+      // Creating and resolving a new `FileSelector` here would cause the parent
+      // to revert to the root test descriptor. This is explained by
+      // JUnit 5's `context.addToParent` documentation, the parent is reset to the
+      // engine descriptor unless the selector being resolved is the result of
+      // expanding a `SelectorResolver.Match`. A new `FileSelector` would not
+      // satisfy this condition.
+      context
+        .addToParent { parent ->
+          val relativePath = file.relativeTo(selector.directory).toString()
+          Optional.of(JourneyFileDescriptor(parent.uniqueId, file, relativePath))
+        }
+        .map { Match.exact(it) }
+        .orElse(null)
+    }
 
     return if (matches.isNotEmpty()) {
       Resolution.matches(matches.toSet())
@@ -90,16 +89,15 @@ class JourneysFileSelectorResolver : SelectorResolver {
       return allJourneyFiles
     }
 
-    val matchers =
-      filterList.map { filter ->
-        // Keep as is if users have provided wildcards or path to a journey file.
-        if (containsWildcard(filter) || filter.endsWith(".journey.xml", ignoreCase = true)) {
-          FileSystems.getDefault().getPathMatcher("glob:$filter")
-        } else {
-          // Append /** for directory matching when users did not provide that.
-          FileSystems.getDefault().getPathMatcher("glob:$filter/**")
-        }
+    val matchers = filterList.map { filter ->
+      // Keep as is if users have provided wildcards or path to a journey file.
+      if (containsWildcard(filter) || filter.endsWith(".journey.xml", ignoreCase = true)) {
+        FileSystems.getDefault().getPathMatcher("glob:$filter")
+      } else {
+        // Append /** for directory matching when users did not provide that.
+        FileSystems.getDefault().getPathMatcher("glob:$filter/**")
       }
+    }
 
     return allJourneyFiles.filter { file ->
       val relativePath = baseDir.relativize(file.toPath())

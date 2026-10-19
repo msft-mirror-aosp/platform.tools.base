@@ -16,19 +16,24 @@
 
 package com.android.builder.packaging
 
-import com.android.SdkConstants.FN_APK_CLASSES_DEX
 import com.android.builder.files.RelativeFile
 import java.io.File
 
-/** Comparator that compares dex file paths, placing classes.dex always in front. */
+private val CLASSES_DEX_PATTERN = Regex("^classes([0-9]*)\\.dex$")
+
+private fun getClassesDexNumber(name: String): Int {
+  val match = CLASSES_DEX_PATTERN.matchEntire(name) ?: return Int.MAX_VALUE
+  val numberStr = match.groupValues[1]
+  return if (numberStr.isEmpty()) 1 else numberStr.toIntOrNull() ?: Int.MAX_VALUE
+}
+
+/** Comparator that compares dex file paths, placing classesN.dex files first sorted by N. */
 object DexFileComparator : Comparator<File> {
 
   override fun compare(file1: File, file2: File): Int {
-    return when {
-      file1.name == FN_APK_CLASSES_DEX && file2.name != FN_APK_CLASSES_DEX -> -1
-      file1.name != FN_APK_CLASSES_DEX && file2.name == FN_APK_CLASSES_DEX -> 1
-      else -> file1.absolutePath.compareTo(file2.absolutePath)
-    }
+    val n1 = getClassesDexNumber(file1.name)
+    val n2 = getClassesDexNumber(file2.name)
+    return if (n1 != n2) n1.compareTo(n2) else file1.absolutePath.compareTo(file2.absolutePath)
   }
 }
 

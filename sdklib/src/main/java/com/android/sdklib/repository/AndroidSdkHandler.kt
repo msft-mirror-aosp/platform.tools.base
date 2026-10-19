@@ -75,9 +75,6 @@ constructor(
   /** Lock for synchronizing changes to our [RepoManager]. */
   private val lock = Any()
 
-  /**  */
-  // @GuardedBy("lock") private var repoManager: RepoManager? = customRepoManager
-
   /** Finds all [SystemImageManager]s in packages known to [repoManager]; */
   @GuardedBy("lock") private var systemImageManager: SystemImageManager? = null
 
@@ -122,11 +119,9 @@ constructor(
       latestBuildTool = null
 
       val newRepoManager = getRepoConfig(progress).createRepoManager(location, getUserSourceProvider(progress))
-      // Invalidate system images, targets, the latest build tool, and the legacy local
-      // package manager when local packages change
+      // Invalidate targets and the latest build tool when local packages change.
       newRepoManager.addLocalChangeListener {
         synchronized(lock) {
-          systemImageManager = null
           androidTargetManager = null
           latestBuildTool = null
         }
@@ -148,13 +143,8 @@ constructor(
     val rm = getRepoManagerAndLoadSynchronously(progress)
 
     synchronized(lock) {
-      return systemImageManager ?: SystemImageManager(rm, sysImgModule.createLatestFactory()).also { systemImageManager = it }
+      return systemImageManager ?: SystemImageManager(rm).also { systemImageManager = it }
     }
-  }
-
-  /** Clears cache of the [SystemImageManager]. */
-  fun clearSystemImageManagerCache() {
-    synchronized(lock) { systemImageManager?.clearCache() }
   }
 
   /** Gets (and creates if necessary) an [AndroidTargetManager] based on our local sdk packages. */
@@ -300,11 +290,10 @@ constructor(
           localLocation,
           getAllModules(),
           sourceProviders,
-          // If we have a local sdk path set, set up the old-style loader so we can parse any
-          // legacy
-          // packages.
+          // If we have a local sdk path set, set up the old-style loader so we can parse any legacy packages.
           localLocation?.let { LegacyLocalRepoLoader(it) },
           LegacyRemoteRepoLoader(),
+          KNOWN_TOP_LEVEL_PACKAGE_DIRS,
         )
 
       userProvider?.setRepoManager(result)
@@ -483,6 +472,27 @@ constructor(
 
     /** The name of the file containing user-specified remote repositories. */
     @VisibleForTesting const val LOCAL_ADDONS_FILENAME = "repositories.cfg"
+
+    /**
+     * Top-level directories of the SDK where packages are normally installed. If none of these contain a package, the rest of the SDK
+     * directory is not scanned, since it's probably not really an SDK (for example, the SDK location was set to a home directory).
+     */
+    private val KNOWN_TOP_LEVEL_PACKAGE_DIRS: Set<String> =
+      setOf(
+        SdkConstants.FD_PLATFORMS,
+        SdkConstants.FD_PLATFORM_TOOLS,
+        SdkConstants.FD_BUILD_TOOLS,
+        SdkConstants.FD_SYSTEM_IMAGES,
+        SdkConstants.FD_EMULATOR,
+        SdkConstants.FD_CMDLINE_TOOLS,
+        SdkConstants.FD_TOOLS,
+        SdkConstants.FD_ANDROID_SOURCES,
+        SdkConstants.FD_NDK,
+        SdkConstants.FD_NDK_SIDE_BY_SIDE,
+        SdkConstants.FD_CMAKE,
+        SdkConstants.FD_EXTRAS,
+        SdkConstants.FD_ADDONS,
+      )
 
     /**
      * Pattern for the name of a (remote) file containing a list of urls to check for repositories.

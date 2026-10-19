@@ -14,28 +14,6 @@ iml_module(
     iml_files = ["android.sdktools.deployer.iml"],
     lint_baseline = "lint_baseline.xml",
     tags = ["noci:studio-win"],
-    test_class = "com.android.tools.deployer.deployerrunner.DeployerTestSuite",
-    test_data = glob(["src/test/resource/**"]) + select({
-        "@platforms//os:windows": [],
-        "//conditions:default": [
-            "//tools/base/deploy/installer:test-installer",
-            "//tools/base/deploy/installer/tests:artifacts",
-        ],
-    }),
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/base/perf-logger:studio.perf-logger",
-        "//tools/base/deploy/deployer:fake_device_proto",
-        "//tools/adt/idea/.idea/libraries:studio-grpc",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/adblib-ddmlibcompatibility:studio.android.sdktools.adblib.ddmlibcompatibility",
-    ],
-    test_resources = ["src/test/resource"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = ["//tools/base/deploy/deployer:deploy_java_proto"],
@@ -47,7 +25,7 @@ iml_module(
         "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
         "//tools/adt/idea/.idea/libraries:libbinary-resources",
         "//tools/base/deploy/deployer:deploy_java_proto",
-        "//prebuilts/r8",
+        "//tools/adt/idea/.idea/libraries:r8",
         "//tools/base/deploy/deployer:libjava_version",
         "//tools/adt/idea/.idea/libraries:sqlite",
         "//tools/base/tracer:studio.android.sdktools.tracer",
@@ -59,6 +37,50 @@ iml_module(
         "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.deployer.tests",
+    iml_files = ["android.sdktools.deployer.tests.iml"],
+    tags = ["noci:studio-win"],
+    test_data = glob(["src/test/resource/**"]) + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "//tools/base/deploy/installer:test-installer",
+            "//tools/base/deploy/installer/tests:artifacts",
+        ],
+    }),
+    # do not sort: must match IML order
+    test_deps = [
+        "@intellij//:intellij-sdk",
+        "//tools/base/deploy/deployer:studio.android.sdktools.deployer",
+        "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
+        "//tools/adt/idea/.idea/libraries:r8",
+        "//tools/base/deploy/deployer:libjava_version",
+        "//tools/base/tracer:studio.android.sdktools.tracer",
+        "//tools/adt/idea/.idea/libraries:studio-proto",
+        "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
+        "//tools/base/deploy/deployer:libjava_sites",
+        "//tools/base/manifest-parser:studio.android.sdktools.manifest-parser",
+        "//tools/base/adblib:studio.android.sdktools.adblib",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
+        "//tools/base/perf-logger:studio.perf-logger",
+        "//tools/base/deploy/deployer:fake_device_proto",
+        "//tools/adt/idea/.idea/libraries:studio-grpc",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/adblib-ddmlibcompatibility:studio.android.sdktools.adblib.ddmlibcompatibility",
+        "//tools/base/adblib-ddmlibcompatibility:studio.android.sdktools.adblib.ddmlibcompatibility.tests",
+        "//tools/base/adblib:studio.android.sdktools.adblib.tests",
+    ],
+    test_friends = ["//tools/base/deploy/deployer:studio.android.sdktools.deployer"],
+    test_resources = ["src/test/resource"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
 )
 
 java_library(
@@ -90,6 +112,20 @@ kotlin_library(
 )
 
 kotlin_library(
+    name = "tools.deployer.apktestutils",
+    srcs = glob(
+        ["src/test/java/com/android/tools/deployer/apktestutils/**/*.kt"],
+        exclude = ["**/*Test.kt"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tools.deployer.model",
+        "//tools/base/manifest-parser:tools.manifest-parser",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+)
+
+kotlin_library(
     name = "tools.deployer.common",
     srcs = [
         "src/main/java/com/android/tools/deployer/common/AdbClient.java",
@@ -100,9 +136,17 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/Canceller.java",
         "src/main/java/com/android/tools/deployer/common/ChangeType.java",
         "src/main/java/com/android/tools/deployer/common/DeployMetric.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerConnectedSocket.java",
         "src/main/java/com/android/tools/deployer/common/DeployerException.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerIShellOutputReceiver.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerMultiLineReceiver.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerMultiReceiver.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerNullOutputReceiver.java",
         "src/main/java/com/android/tools/deployer/common/DeployerOption.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerProperties.kt",
         "src/main/java/com/android/tools/deployer/common/DeploymentCacheDatabase.java",
+        "src/main/java/com/android/tools/deployer/common/DeviceHolder.kt",
+        "src/main/java/com/android/tools/deployer/common/InstallMetrics.java",
         "src/main/java/com/android/tools/deployer/common/InstallOptions.java",
         "src/main/java/com/android/tools/deployer/common/InstallStatus.java",
         "src/main/java/com/android/tools/deployer/common/Installer.java",
@@ -113,6 +157,7 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/PatchSetGenerator.java",
         "src/main/java/com/android/tools/deployer/common/Timeouts.java",
         "src/main/java/com/android/tools/deployer/common/UIService.java",
+        "src/main/java/com/android/tools/deployer/common/UnsupportedIDevice.kt",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -127,6 +172,7 @@ kotlin_library(
         "//tools/base/tracer:tools.tracer",
         "@maven//:com.google.guava.guava",
         "@maven//:org.jetbrains.annotations",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
@@ -135,6 +181,7 @@ kotlin_library(
     srcs = [
         "src/main/java/com/android/tools/deployer/install/ApkInstaller.java",
         "src/main/java/com/android/tools/deployer/install/InstallMode.java",
+        "src/main/java/com/android/tools/deployer/install/InstallOutputParser.java",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -156,6 +203,7 @@ kotlin_library(
     ]),
     visibility = ["//visibility:public"],
     deps = [
+        ":tools.deployer.common",
         ":tools.deployer.model",
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
@@ -187,12 +235,10 @@ kotlin_library(
         ":tools.deployer.install",
         ":tools.deployer.model",
         ":tools.deployer.modelv1",
-        "//prebuilts/r8",
         "//tools/base/adblib",
         "//tools/base/adblib-tools:adblib.tools",
         "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
-        "//tools/base/bazel:langtools",
         "//tools/base/bazel:studio-proto",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
@@ -202,38 +248,12 @@ kotlin_library(
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/tracer:tools.tracer",
         "//tools/base/zipflinger",
+        "@maven//:com.android.tools.r8",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.annotations",
-        "@maven//:org.xerial.sqlite-jdbc",
-    ],
-)
-
-# TODO:
-#
-# The run.cli related rules are just going to be temporary. It represent how we *might* integrate
-# into other headless caller of deployer. It will be remove shorty when the integration actually
-# happen.
-kotlin_library(
-    name = "run.cli-lib",
-    srcs = ["src/main/java/com/android/tools/deployer/cli/CliActivator.kt"],
-    deps = [
-        ":tools.deployer.model",
-        "//tools/base/adblib",
-        "//tools/base/adblib-tools:adblib.tools",
-        "//tools/base/common:tools.common",
-        "//tools/base/manifest-parser:tools.manifest-parser",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
-    ],
-)
-
-java_binary(
-    name = "run.cli",
-    data = glob(["src/test/resource/**"]),
-    main_class = "com.android.tools.deployer.cli.CliActivator",
-    runtime_deps = [
-        ":run.cli-lib",
+        "@maven//:org.xerial.sqlite-jdbc",
     ],
 )
 
@@ -371,12 +391,13 @@ java_library(
     ],
 )
 
-coverage_java_test(
+kotlin_test(
     name = "tools.deployer.model.tests",
     size = "medium",
     srcs = glob(
         [
             "src/test/java/com/android/tools/deployer/model/*.java",
+            "src/test/java/com/android/tools/deployer/model/*.kt",
             "src/test/java/com/android/tools/deployer/model/component/*.java",
         ],
     ),
@@ -384,8 +405,11 @@ coverage_java_test(
     jvm_flags = ["-Dtest.suite.jar=tools.deployer.model.tests.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
+        ":tools.deployer.apktestutils",
+        ":tools.deployer.common",
         ":tools.deployer.model",
         ":tools.deployer.modelv1",
+        "//tools/base/adblib",
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
@@ -410,6 +434,7 @@ coverage_java_test(
             "src/test/java/com/android/tools/deployer/devices/*.java",
             "src/test/java/com/android/tools/deployer/devices/shell/*.java",
             "src/test/java/com/android/tools/deployer/devices/shell/interpreter/*.java",
+            "src/test/java/com/android/tools/deployer/install/*.java",
             "src/test/java/com/android/tools/deployer/rules/*.java",
             "src/test/java/com/android/tools/deployer/tasks/*.java",
         ],
@@ -439,7 +464,6 @@ coverage_java_test(
         ":tools.deployer.common",
         ":tools.deployer.install",
         ":tools.deployer.model",
-        "//prebuilts/r8",
         "//tools/base/adblib",
         "//tools/base/adblib:adblib.tests.testlib",
         "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility.tests.testlib",
@@ -456,6 +480,7 @@ coverage_java_test(
         "//tools/base/testutils:tools.testutils",
         "//tools/base/tracer:tools.tracer",
         "//tools/base/zipflinger",
+        "@maven//:com.android.tools.r8",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.truth.truth",
@@ -474,7 +499,6 @@ kotlin_test(
             "src/test/java/com/android/tools/deployer/deployerrunner/*.java",
             "src/test/java/com/android/tools/deployer/deployerrunner/*.kt",
         ],
-        exclude = ["src/test/java/com/android/tools/deployer/deployerrunner/DeployerTestSuite.java"],
     ),
     data = glob(["src/test/resource/**"]) + select({
         "@platforms//os:windows": [],
@@ -499,6 +523,9 @@ kotlin_test(
         ":tools.deployer",
         ":tools.deployer.common",
         ":tools.deployer.install",
+        "//tools/base/adblib",
+        "//tools/base/adblib:adblib.tests.testlib",
+        "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility.tests.testlib",
         "//tools/base/bazel:studio-proto",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
@@ -507,6 +534,7 @@ kotlin_test(
         "//tools/base/perf-logger:studio.perf-logger_testlib",
         "//tools/base/testutils:tools.testutils",
         "//tools/base/tracer:tools.tracer",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.mockito-core",
     ],
 )
@@ -515,21 +543,41 @@ kotlin_test(
     name = "deployer.kotlin_tests",
     srcs = [
         "src/test/java/com/android/tools/deployer/DeployStrategyReaderTest.kt",
+        "src/test/java/com/android/tools/deployer/DeployerRunnerUtilsTest.kt",
         "src/test/java/com/android/tools/deployer/TestLogger.java",
+        "src/test/java/com/android/tools/deployer/apktestutils/BinaryXmlEncoderTest.kt",
+        "src/test/java/com/android/tools/deployer/common/DeviceHolderMigrationTest.kt",
+        "src/test/java/com/android/tools/deployer/common/DeviceHolderTest.kt",
+        "src/test/java/com/android/tools/deployer/model/AppTest.kt",
         "src/test/java/com/android/tools/deployer/model/component/DeclarativeWatchFaceTest.kt",
     ],
     data = glob(["src/test/resource/**"]),
+    friends = [":tools.deployer"],
     jvm_flags = ["-Dtest.suite.jar=deployer.kotlin_tests.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
+        ":deployer.runner.testlib",
         ":tools.deployer",
+        ":tools.deployer.apktestutils",
         ":tools.deployer.common",
         ":tools.deployer.install",
         ":tools.deployer.model",
+        "//tools/base/adblib",
+        "//tools/base/adblib:adblib.tests.testlib",
+        "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility.tests.testlib",
+        "//tools/base/adblib-tools:adblib.tools",
+        "//tools/base/bazel:studio-proto",
         "//tools/base/common:tools.common",
+        "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/deploy/proto:deploy_java_proto",
+        "//tools/base/fakeadbserver:tools.fakeadbserver",
+        "//tools/base/manifest-parser:tools.manifest-parser",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.guava.guava",
         "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.mockito.kotlin.mockito-kotlin",
+        "@maven//:org.mockito.mockito-core",
     ],
 )
 

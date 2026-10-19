@@ -31,25 +31,40 @@ import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
+import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
+import com.android.build.gradle.internal.component.features.InstrumentationCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
+import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.Option
 import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.build.gradle.options.getOption
+import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.utils.appendCapitalized
 import java.io.File
 import org.gradle.api.JavaVersion
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 
 class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sourceContainer: TestSuiteSourceContainer) :
   ApkCreationConfig,
+  NestedComponentCreationConfig,
   ConsumableCreationConfig by testSuite.testedVariant,
   TargetSdkAwareConfig by (testSuite.testedVariant as TargetSdkAwareConfig) {
+
+  override val componentType: ComponentType
+    get() = ComponentTypeImpl.TEST_APK
+
+  override val mainVariant: VariantCreationConfig
+    get() = testSuite.testedVariant
 
   override val name: String
     get() = sourceContainer.identifier
@@ -60,8 +75,25 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
   override val artifacts: ArtifactsImpl
     get() = sourceContainer.artifacts
 
+  override val builtInKaptSupportMode: BuiltInKaptSupportMode
+    get() = BuiltInKaptSupportMode.NotSupported
+
+  override val useBuiltInKaptSupport: Boolean
+    get() = false
+
+  override fun getBuiltInKotlincOutput(): Provider<Directory>? =
+    artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC).takeIf { useBuiltInKotlinSupport }
+
+  override fun getBuiltInKaptArtifact(internalArtifactType: InternalArtifactType<Directory>): Provider<Directory>? = null
+
   override val testOnlyApk: Boolean
     get() = true
+
+  override val requiresJacocoTransformation: Boolean
+    get() = false
+
+  override val instrumentationCreationConfig: InstrumentationCreationConfig?
+    get() = null
 
   override val shouldPackageProfilerDependencies: Boolean
     get() = false
@@ -170,6 +202,12 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
 }
 
 class TestSuiteSources(val delegate: InternalSources, val sourceContainer: TestSuiteSourceContainer) : InternalSources by delegate {
+  override val java: FlatSourceDirectoriesImpl?
+    get() = (sourceContainer.source as? TestApkTestSuiteSourceSet)?.java
+
+  override val kotlin: FlatSourceDirectoriesImpl?
+    get() = (sourceContainer.source as? TestApkTestSuiteSourceSet)?.kotlin
+
   override val assets: LayeredSourceDirectoriesImpl?
     get() = null
 
@@ -181,6 +219,30 @@ class TestSuiteSources(val delegate: InternalSources, val sourceContainer: TestS
 
   override val resources: FlatSourceDirectoriesImpl?
     get() = (sourceContainer.source as? TestApkTestSuiteSourceSet)?.resources
+
+  override fun java(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    java?.let(action)
+  }
+
+  override fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    kotlin?.let(action)
+  }
+
+  override fun res(action: (LayeredSourceDirectoriesImpl) -> Unit) {
+    res?.let(action)
+  }
+
+  override fun assets(action: (LayeredSourceDirectoriesImpl) -> Unit) {
+    assets?.let(action)
+  }
+
+  override fun jniLibs(action: (LayeredSourceDirectoriesImpl) -> Unit) {
+    jniLibs?.let(action)
+  }
+
+  override fun resources(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    resources?.let(action)
+  }
 }
 
 class TestSuitePathHelper(

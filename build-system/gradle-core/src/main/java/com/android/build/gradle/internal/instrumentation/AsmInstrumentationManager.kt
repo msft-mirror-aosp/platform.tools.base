@@ -71,13 +71,12 @@ class AsmInstrumentationManager(
   private val profilingTransformsClassLoaders = mutableListOf<URLClassLoader>()
   private val excludesMatchers = excludes.map { GlobPathMatcherFactory.create(FileUtils.toSystemIndependentPath(it)) }
 
-  private val profilingTransforms =
-    profilingTransforms.map {
-      val jarFile = File(it)
-      val classLoader = URLClassLoader(arrayOf(jarFile.toURI().toURL()))
-      profilingTransformsClassLoaders.add(classLoader)
-      loadTransformFunction(jarFile, classLoader)
-    }
+  private val profilingTransforms = profilingTransforms.map {
+    val jarFile = File(it)
+    val classLoader = URLClassLoader(arrayOf(jarFile.toURI().toURL()))
+    profilingTransformsClassLoaders.add(classLoader)
+    loadTransformFunction(jarFile, classLoader)
+  }
 
   private fun getClassWriterFlags(containsJsrOrRetInstruction: Boolean): Int =
     when (framesComputationMode) {

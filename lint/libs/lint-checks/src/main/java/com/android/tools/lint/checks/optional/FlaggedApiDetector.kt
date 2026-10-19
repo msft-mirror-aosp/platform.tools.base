@@ -25,7 +25,6 @@ import com.android.tools.lint.checks.TypedefDetector
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.detector.api.AnnotationInfo
-import com.android.tools.lint.detector.api.AnnotationOrigin
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
 import com.android.tools.lint.detector.api.ApiConstraint
@@ -45,13 +44,16 @@ import com.android.tools.lint.detector.api.isUnconditionalReturn
 import com.android.utils.SdkUtils.constantNameToCamelCase
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiNamedElement
+import com.intellij.psi.PsiVariable
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBlockExpression
@@ -103,6 +105,25 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         implementation = IMPLEMENTATION,
       )
 
+    /** Specifying flag as a raw string literal instead of a constant. */
+    @JvmField
+    val FLAG_AS_RAW_STRING =
+      Issue.create(
+        id = "FlagAsRawString",
+        explanation =
+          """
+          This lint check looks for `@FlaggedApi` or `@RequiresFlag` annotations \
+          that specify raw string literals instead of flag constants. Raw string literals \
+          are discouraged and not enforced.
+          """,
+        briefDescription = "Flag specified as raw string literal",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
+
     private val FLAGGED_API_ANNOTATION = AndroidxName("android.annotation.FlaggedApi", "androidx.annotation.FlaggedApi")
     private val REQUIRES_FLAG_ANNOTATION = AndroidxName("android.annotation.RequiresFlag", "androidx.annotation.RequiresFlag")
 
@@ -110,17 +131,16 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
       return FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)
     }
 
-    /** Is the given [element] referencing an annotated element */
-    fun isAlreadyAnnotated(evaluator: JavaEvaluator, element: UElement?): Boolean {
-      val resolved = element?.tryResolve() ?: return false
-      return isAlreadyAnnotated(evaluator, resolved)
-    }
-
     /** Is the given [resolved] class/method/field annotated with a `@FlaggedApi` or `@RequiresFlag` annotation? */
     fun isAlreadyAnnotated(evaluator: JavaEvaluator, resolved: PsiElement?): Boolean {
-      if (resolved !is PsiMember) return false
+      if (resolved !is PsiModifierListOwner) return false
+      val typeClass = (resolved as? PsiVariable)?.let { (it.type.deepComponentType as? PsiClassType)?.resolve() }
+      if (typeClass != null && isAlreadyAnnotated(evaluator, typeClass)) {
+        return true
+      }
+      val containingClass = (resolved as? PsiMember)?.containingClass
       // Check both the annotation on the member itself and its surrounding class.
-      return listOfNotNull(resolved, resolved.containingClass).any { owner ->
+      return listOfNotNull(resolved, containingClass).any { owner ->
         evaluator.getAnnotations(owner).any { isFlagAnnotation(it.qualifiedName) }
       }
     }
@@ -153,7 +173,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
   }
 
   override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
-    if (issue !== ISSUE) return super.sameMessage(issue, new, old)
+    if (issue !== ISSUE && issue !== FLAG_AS_RAW_STRING) return super.sameMessage(issue, new, old)
     if (new == old) return true
     val normalizedNew = new.replace("FlaggedApi", "RequiresFlag")
     val normalizedOld = old.replace("FlaggedApi", "RequiresFlag")
@@ -178,12 +198,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkFlagApiUsage(
-    context: JavaContext,
-    element: UElement,
-    annotationInfo: AnnotationInfo,
-    usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkFlagApiUsage(context: JavaContext, element: UElement, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo) {
     val annotation = annotationInfo.annotation
     val compiled = usageInfo.referenced is PsiCompiledElement
     val evaluator = context.evaluator
@@ -292,12 +307,11 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         } else {
           val incident =
             Incident(
-              ISSUE,
+              FLAG_AS_RAW_STRING,
               expression,
               context.getLocation(expression),
-              "@$label should specify an actual flag constant; " + "raw strings are discouraged (and more importantly, **not enforced**)",
+              "@$label should specify an actual flag constant; " + "raw strings are discouraged",
             )
-          incident.overrideSeverity(Severity.WARNING)
           context.report(incident)
         }
       }
@@ -464,7 +478,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         }
       } else if (curr is UPolyadicExpression && curr.operator == UastBinaryOperator.LOGICAL_AND) {
         for (operand in curr.operands) {
-          if (operand === curr) {
+          if (operand === prev) {
             break
           } else if (isFlagExpression(operand, flagClass1, flagClass2, flagMethodName)) {
             return true

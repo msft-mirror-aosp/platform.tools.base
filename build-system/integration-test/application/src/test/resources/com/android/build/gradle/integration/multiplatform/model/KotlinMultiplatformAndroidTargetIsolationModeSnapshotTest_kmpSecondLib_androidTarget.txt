@@ -12,7 +12,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpSecondLib/src/androidMain/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }
@@ -72,7 +74,8 @@
       "testInfo": {
         "animationsDisabled": false,
         "additionalRuntimeApks": [],
-        "instrumentedTestTaskName": ""
+        "instrumentedTestTaskName": "",
+        "instrumentInPrivateComputeCore": false
       },
       "flags": {
         "booleanFlagValues": [

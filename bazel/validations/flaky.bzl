@@ -5,7 +5,7 @@ the allowlisted targets below can set "flaky" to true.
 """
 
 APPROVED_FLAKY_TESTS = [
-    "//tools/adt/idea/adt-ui:intellij.android.adt.ui_tests",  # b/172521726
+    "//tools/adt/idea/adt-ui:intellij.android.adt.ui.tests_tests",  # b/172521726
     "//tools/adt/idea/android-uitests:DeploymentTest",  # b/200082548
     "//tools/adt/idea/android-uitests:CreateCppKotlinProjectTest",  # b/185998794
     "//tools/adt/idea/android-uitests:BasicLayoutEditTest",  # b/186225187

@@ -275,15 +275,14 @@ fun List<CommandLineArgument>.getMSBuildProperty(property: MSBuildProperty) = ge
 
 /** Returns the value of the property. Null if not present. If the value is present more than once then the last value is taken. */
 @VisibleForTesting
-fun List<CommandLineArgument>.getProperty(property: String) =
-  mapNotNull {
-      when (it) {
-        is DefineProperty -> if (it.propertyName == property) it.propertyValue else null
-        is DefineMultiProperty -> it.properties[property]
-        else -> null
-      }
-    }
-    .lastOrNull()
+fun List<CommandLineArgument>.getProperty(property: String) = mapNotNull {
+  when (it) {
+    is DefineProperty -> if (it.propertyName == property) it.propertyValue else null
+    is DefineMultiProperty -> it.properties[property]
+    else -> null
+  }
+}
+  .lastOrNull()
 
 /** Returns the generator. Null if none present */
 fun List<CommandLineArgument>.getCmakeGenerator() = filterType<CmakeGeneratorName>()?.generator

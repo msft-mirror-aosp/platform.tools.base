@@ -69,13 +69,13 @@ internal constructor(
     }
     scope.launch {
       runCatching {
-          deviceTracker.trackDevices().collect {
-            when (it) {
-              is DeviceOnline -> addDevice(it.device)
-              is DeviceDisconnected -> removeDevice(it.serialNumber)
-            }
+        deviceTracker.trackDevices().collect {
+          when (it) {
+            is DeviceOnline -> addDevice(it.device)
+            is DeviceDisconnected -> removeDevice(it.serialNumber)
           }
         }
+      }
         .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
     }
   }
@@ -100,7 +100,7 @@ internal constructor(
   private suspend fun addDevice(device: T) {
     val serialNumber = deviceTracker.getDeviceSerialNumber(device)
     logger.debug { "Adding $serialNumber" }
-    val processTracker = SharedProcessTracker(scope, processTrackerFactory.createProcessTracker(device), logger)
+    val processTracker = processTrackerFactory.createProcessTracker(device)
     val logger = logger.withPrefix("PerDeviceMonitor: $serialNumber: ")
     devices[serialNumber] = PerDeviceMonitor(scope, logger, maxProcessRetention, processTracker).apply { start() }
   }

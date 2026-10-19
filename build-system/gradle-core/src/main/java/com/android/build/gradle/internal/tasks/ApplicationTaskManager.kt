@@ -26,9 +26,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
+import com.android.build.gradle.internal.coverage.tasks.TestReportCreationConfigImpl
 import com.android.build.gradle.internal.dsl.AbstractPublishing
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType
@@ -45,8 +43,10 @@ import com.android.build.gradle.internal.test.tasks.TestReportTask
 import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.tasks.ExtractSupportedLocalesTask
 import com.android.build.gradle.tasks.GenerateLocaleConfigTask
+import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
@@ -54,7 +54,7 @@ import org.gradle.api.tasks.TaskProvider
 class ApplicationTaskManager(
   project: Project,
   private val variants: Collection<ComponentInfo<ApplicationVariantBuilder, ApplicationCreationConfig>>,
-  private val testComponents: Collection<TestComponentCreationConfig>,
+  testComponents: Collection<TestComponentCreationConfig>,
   testFixturesComponents: Collection<TestFixturesCreationConfig>,
   globalConfig: GlobalTaskCreationConfig,
   localConfig: TaskManagerConfig,
@@ -143,29 +143,19 @@ class ApplicationTaskManager(
   }
 
   override fun registerTestAndCodeCoverageCollectionTasks(
-    variantInfo: ComponentInfo<ApplicationVariantBuilder, ApplicationCreationConfig>,
-    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
+    variantInfo: ComponentInfo<ApplicationVariantBuilder, ApplicationCreationConfig>
   ) {
-    super.registerTestAndCodeCoverageCollectionTasks(variantInfo, testResultsCollectionTasks)
+    super.registerTestAndCodeCoverageCollectionTasks(variantInfo)
 
     if (isReportAggregationEnabled) {
-      testResultsCollectionTasks.add(
-        taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
-      )
-
-      taskFactory.register(
-        CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
-          CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
-          CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
-        )
-      )
+      val testReportCreationConfig = TestReportCreationConfigImpl(variantInfo.variant, testComponents)
+      taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(testReportCreationConfig))
     }
   }
 
   override fun registerTestAndCodeCoverageReportTasks() {
     super.registerTestAndCodeCoverageReportTasks()
     if (isReportAggregationEnabled) {
-      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
       taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig))
     }
   }
@@ -239,6 +229,16 @@ class ApplicationTaskManager(
         }
       }
       taskFactory.register(FinalizeBundleTask.CreationAction(variant))
+      val apkLocationOverride = variant.services.projectOptions.get(StringOption.IDE_APK_LOCATION)
+      if (apkLocationOverride != null) {
+        val targetDir = File(variant.services.file(apkLocationOverride), variant.dirName)
+        val redirectBundleTask = taskFactory.register(RedirectIdeBundleOutputsTask.CreationAction(variant, targetDir))
+        variant.taskContainer.redirectIdeBundleOutputsTask = redirectBundleTask
+        variant.taskContainer.bundleTask?.configure { task -> task.dependsOn(redirectBundleTask) }
+        variant.taskContainer.redirectIdeApkOutputsTask?.let { redirectApkTask ->
+          redirectBundleTask.configure { it.mustRunAfter(redirectApkTask) }
+        }
+      }
       taskFactory.register(BundleIdeModelProducerTask.CreationAction(variant))
       taskFactory.register(
         ListingFileRedirectTask.CreationAction(

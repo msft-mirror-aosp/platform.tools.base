@@ -1,0 +1,113 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+
+licenses(["notice"])
+
+# lint_partial_aspect analyzes every module once, with the default lint configuration, and
+# that analysis is shared by all lint tests. A lint test configured differently (custom
+# rules, extra arguments, is_test_sources) must report on an analysis of its own module
+# that uses its configuration, while still merging its dependencies' shared results.
+#
+# Consumer.kt has two production-only findings: a WrongThread call whose @UiThread is
+# inferred from :lib (so it needs the dependency's partial results), and a VisibleForTests
+# call (reported by analysis of production sources only, never of test sources).
+
+CONSUMER_SRCS = [
+    "consumer/test/config/consumer/Consumer.kt",
+    "consumer/test/config/helper/Helper.kt",
+]
+
+CONSUMER_DEPS = [
+    ":lib",
+    "//tools/base/annotations",
+    "@maven//:org.jetbrains.annotations",
+]
+
+kotlin_library(
+    name = "lib",
+    srcs = ["lib/test/config/lib/Lib.kt"],
+    deps = ["//tools/base/annotations"],
+)
+
+# Default configuration: reports on the aspect's analysis of production sources.
+kotlin_library(
+    name = "consumer_default",
+    srcs = CONSUMER_SRCS,
+    lint_baseline = "consumer/BothFindings.xml",
+    lint_partial_analysis = True,
+    deps = CONSUMER_DEPS,
+)
+
+# Test sources (as kotlin_test declares them): the aspect's analysis of a testonly module
+# is of test sources, so it is used, and VisibleForTests is not reported.
+kotlin_library(
+    name = "consumer_test_sources",
+    testonly = True,
+    srcs = CONSUMER_SRCS,
+    lint_baseline = "consumer/WrongThreadOnly.xml",
+    lint_is_test_sources = True,
+    lint_partial_analysis = True,
+    deps = CONSUMER_DEPS,
+)
+
+# testonly module whose lint test does not treat its sources as test sources: the aspect's
+# analysis does, so the test analyzes the module itself and VisibleForTests is reported.
+kotlin_library(
+    name = "consumer_testonly_production",
+    testonly = True,
+    srcs = CONSUMER_SRCS,
+    lint_baseline = "consumer/BothFindingsTestonly.xml",
+    lint_partial_analysis = True,
+    deps = CONSUMER_DEPS,
+)
+
+# Extra custom rules: the test analyzes the module itself with them (the aspect's analysis
+# never ran lint-gradle, so EagerGradleConfiguration is only found this way), and still
+# sees :lib's inferred @UiThread.
+kotlin_library(
+    name = "consumer_custom_rules",
+    srcs = CONSUMER_SRCS + ["consumer/test/config/gradle/Eager.kt"],
+    lint_baseline = "consumer/WithLintGradle.xml",
+    lint_custom_rules = ["@maven//:androidx.lint.lint-gradle"],
+    lint_partial_analysis = True,
+    deps = CONSUMER_DEPS + ["//tools/base/build-system:gradle-api"],
+)
+
+# Extra custom rules on test sources: the module's own analysis is of test sources
+# (VisibleForTests is not reported, EagerGradleConfiguration is).
+kotlin_library(
+    name = "consumer_custom_rules_test_sources",
+    testonly = True,
+    srcs = CONSUMER_SRCS + ["consumer/test/config/gradle/Eager.kt"],
+    lint_baseline = "consumer/WithLintGradleTestSources.xml",
+    lint_custom_rules = ["@maven//:androidx.lint.lint-gradle"],
+    lint_is_test_sources = True,
+    lint_partial_analysis = True,
+    deps = CONSUMER_DEPS + ["//tools/base/build-system:gradle-api"],
+)
+
+# Extra lint arguments apply to the module's own analysis and to reporting.
+kotlin_library(
+    name = "consumer_extra_args",
+    srcs = CONSUMER_SRCS,
+    lint_baseline = "consumer/DisabledVisibleForTests.xml",
+    lint_extra_args = [
+        "--disable",
+        "VisibleForTests",
+    ],
+    lint_partial_analysis = True,
+    deps = CONSUMER_DEPS,
+)

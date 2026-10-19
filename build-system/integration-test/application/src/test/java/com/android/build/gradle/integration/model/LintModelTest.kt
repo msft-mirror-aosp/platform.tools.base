@@ -34,10 +34,9 @@ import org.junit.Test
 
 class PrebuiltLintChecksModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary { dependencies { lintChecks(localJar("lint-check.jar") { addEmptyClasses("com/example/MainClass") }) } }
-    }
+  val rule = GradleRule.from {
+    androidLibrary { dependencies { lintChecks(localJar("lint-check.jar") { addEmptyClasses("com/example/MainClass") }) } }
+  }
 
   @Test
   fun `test lintChecksJars in Lib model`() {
@@ -53,18 +52,17 @@ class PrebuiltLintChecksModelTest {
 
 class SubProjectLintChecksModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary { dependencies { lintChecks(project(":lint-check")) } }
-      genericProject(":lint-check") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        dependencies {
-          implementation(localJar("local-lint.jar") { addEmptyClasses("com/example/MainClass") })
-          implementation(project(":lint-check-dependency"))
-        }
+  val rule = GradleRule.from {
+    androidLibrary { dependencies { lintChecks(project(":lint-check")) } }
+    genericProject(":lint-check") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      dependencies {
+        implementation(localJar("local-lint.jar") { addEmptyClasses("com/example/MainClass") })
+        implementation(project(":lint-check-dependency"))
       }
-      genericProject(":lint-check-dependency") { applyPlugin(PluginType.JAVA_LIBRARY) }
     }
+    genericProject(":lint-check-dependency") { applyPlugin(PluginType.JAVA_LIBRARY) }
+  }
 
   @Test
   fun `test lintChecksJars in Lib model`() {
@@ -84,11 +82,10 @@ class SubProjectLintChecksModelTest {
 
 class AppAndLibWithLintPublishModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { dependencies { implementation(project(DEFAULT_LIB_PATH)) } }
-      androidLibrary { dependencies { lintPublish(localJar("lint-publish.jar") { addEmptyClasses("com/example/MainClass") }) } }
-    }
+  val rule = GradleRule.from {
+    androidApplication { dependencies { implementation(project(DEFAULT_LIB_PATH)) } }
+    androidLibrary { dependencies { lintPublish(localJar("lint-publish.jar") { addEmptyClasses("com/example/MainClass") }) } }
+  }
 
   private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
@@ -116,27 +113,26 @@ class AppAndLibWithLintPublishModelTest {
 
 class AppWithExternalLibraryWithLintJarModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        dependencies {
-          implementation(
-            MavenRepoGenerator.Library(
-              mavenCoordinate = "com.example:example-aar:4.2",
-              packaging = "aar",
-              artifact =
-                generateAarWithContent(
-                  packageName = "com.example.aar",
-                  mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
-                  resources =
-                    mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()),
-                  lintJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/LintChecks")),
-                ),
-            )
+  val rule = GradleRule.from {
+    androidApplication {
+      dependencies {
+        implementation(
+          MavenRepoGenerator.Library(
+            mavenCoordinate = "com.example:example-aar:4.2",
+            packaging = "aar",
+            artifact =
+              generateAarWithContent(
+                packageName = "com.example.aar",
+                mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
+                resources =
+                  mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()),
+                lintJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/LintChecks")),
+              ),
           )
-        }
+        )
       }
     }
+  }
 
   @Test
   fun `test lint model in app dependency`() {

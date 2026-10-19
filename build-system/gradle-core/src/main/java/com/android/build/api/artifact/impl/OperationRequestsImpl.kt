@@ -28,7 +28,6 @@ import com.android.build.api.artifact.OutOperationRequest
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
@@ -164,7 +163,8 @@ class InAndOutDirectoryOperationRequestImpl<TaskT : Task>(
     initializeInput(type, type, taskProvider, from, currentProvider, into, builtArtifactsReference)
 
     // set the output location, so public uses of the API do not have to do it.
-    taskProvider.configure { task -> into(task).set(artifacts.calculateOutputPath(type, task)) }
+    // Lazy, so the location reflects the final producer chain and naming context (b/532206373).
+    taskProvider.configure { task -> into(task).fileProvider(artifacts.outputLocation(type, task.name)) }
 
     // if this is a public type with an associated listing file used by studio, automatically
     // adjust the listing file provider to be the new task. In order for Studio to use this
@@ -371,8 +371,8 @@ private fun <TaskT : Task, FileTypeT : FileSystemLocation, ArtifactTypeT> toTran
   taskProvider.configure { it ->
     from(it).set(currentProvider)
     // since the task will now execute, resolve its output path.
-    val outputAbsolutePath: File = artifacts.calculateOutputPath(type, it, outputFileSystemLocationName)
-    into(it).set(outputAbsolutePath)
+    // Lazy, so the location reflects the final producer chain and naming context (b/532206373).
+    into(it).fileProvider(artifacts.outputLocation(type, it.name, outputFileSystemLocationName))
   }
 }
 

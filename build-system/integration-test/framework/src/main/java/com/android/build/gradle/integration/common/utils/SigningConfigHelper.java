@@ -16,15 +16,16 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import com.android.annotations.NonNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.util.Locale;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public final class SigningConfigHelper {
 
@@ -81,16 +82,18 @@ public final class SigningConfigHelper {
                 storeFile.getCanonicalFile(),
                 storeFile.getCanonicalFile());
 
-        assertEquals(String.format("SigningConfig '%s' storePassword", name),
-                storePassword, signingConfig.getStorePassword());
+        assertNull(
+                String.format("SigningConfig '%s' storePassword", name),
+                signingConfig.getStorePassword());
 
         String scAlias = signingConfig.getKeyAlias();
         assertEquals(String.format("SigningConfig '%s' keyAlias", name),
                 keyAlias != null ? keyAlias.toLowerCase(Locale.getDefault()) : keyAlias,
                 scAlias != null ? scAlias.toLowerCase(Locale.getDefault()) : scAlias);
 
-        assertEquals(String.format("SigningConfig '%s' keyPassword", name),
-                keyPassword, signingConfig.getKeyPassword());
+        assertNull(
+                String.format("SigningConfig '%s' keyPassword", name),
+                signingConfig.getKeyPassword());
 
         assertEquals(String.format("SigningConfig '%s' isSigningReady", name),
                 isSigningReady, signingConfig.isSigningReady());

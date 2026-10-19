@@ -18,6 +18,8 @@ package com.android.repository.impl.installer;
 
 import static com.android.repository.api.PackageOperation.InstallStatus;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
@@ -107,6 +109,53 @@ public class AbstractPackageOperationTest {
 
         assertEquals(InstallStatus.COMPLETE, status.get());
 
+    }
+
+    /** An operation nobody is working on any more ends up failed, and stops being in progress. */
+    @Test
+    public void abandonPreparedOperation() throws Exception {
+        Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
+        FakePackage.FakeRemotePackage remotePackage = new FakePackage.FakeRemotePackage("foo");
+        RepoManager mgr = new FakeRepoManager(sdkRoot, new RepositoryPackages());
+        TestOperation op =
+                new TestOperation(
+                        remotePackage,
+                        mgr,
+                        new FakeDownloader(sdkRoot.getRoot().resolve("tmp")),
+                        new AtomicReference<>(InstallStatus.NOT_STARTED));
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        assertTrue(op.prepare(progress));
+        assertEquals(InstallStatus.PREPARED, op.getInstallStatus());
+        assertSame(op, mgr.getInProgressInstallOperation(remotePackage));
+
+        op.abandon(progress);
+
+        assertEquals(InstallStatus.FAILED, op.getInstallStatus());
+        assertNull(mgr.getInProgressInstallOperation(remotePackage));
+    }
+
+    /** Abandoning an operation that already finished doesn't undo it. */
+    @Test
+    public void abandonCompletedOperation() throws Exception {
+        Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
+        FakePackage.FakeRemotePackage remotePackage = new FakePackage.FakeRemotePackage("foo");
+        RepoManager mgr = new FakeRepoManager(sdkRoot, new RepositoryPackages());
+        AtomicReference<InstallStatus> status = new AtomicReference<>(InstallStatus.NOT_STARTED);
+        TestOperation op =
+                new TestOperation(
+                        remotePackage,
+                        mgr,
+                        new FakeDownloader(sdkRoot.getRoot().resolve("tmp")),
+                        status);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        assertTrue(op.prepare(progress));
+        // TestOperation checks this itself; the real status is what getInstallStatus() returns.
+        status.set(InstallStatus.PREPARED);
+        assertTrue(op.complete(progress));
+
+        op.abandon(progress);
+
+        assertEquals(InstallStatus.COMPLETE, op.getInstallStatus());
     }
 
     private static class TestOperation extends AbstractInstaller {

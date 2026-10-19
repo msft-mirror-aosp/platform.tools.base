@@ -27,11 +27,10 @@ import org.junit.Test
 
 class LibraryConstraintsSyncIssueTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {}
-      androidLibrary(":lib") {}
-    }
+  val rule = GradleRule.from {
+    androidApplication(":app") {}
+    androidLibrary(":lib") {}
+  }
 
   @Test
   fun testWithWarningEnabledAndAllConstraintsApplied() {

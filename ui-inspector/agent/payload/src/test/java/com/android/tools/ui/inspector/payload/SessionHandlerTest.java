@@ -24,470 +24,905 @@ import androidx.inspection.Inspector;
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.common.ProtocolConstants;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
-import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunWith(RobolectricTestRunner.class)
 public final class SessionHandlerTest {
 
-  private final Connection mockConnection = new Connection() {
-    @Override
-    public void sendEvent(byte[] data) {}
-  };
+    private final Connection mockConnection =
+            new Connection() {
+                @Override
+                public void sendEvent(byte[] data) {}
+            };
 
-  @Test
-  public void testHandle_shutdown_disposesInspector() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    /** The bridges created by the test, disposed after it. */
+    private final List<InspectorBridge> createdBridges = new ArrayList<>();
 
-    UiInspectorProtocol.Command command = UiInspectorProtocol.Command.newBuilder()
-        .setCommandId(1)
-        .setShutdown(UiInspectorProtocol.ShutdownCommand.getDefaultInstance())
-        .build();
-
-    ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
-    FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
-
-    AtomicBoolean disposed = new AtomicBoolean(false);
-    Inspector mockInspector = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {}
-
-      @Override
-      public void onDispose() {
-        disposed.set(true);
-      }
-    };
-
-    CountDownLatch shutdownLatch = new CountDownLatch(1);
-    Map<String, InspectorBridge> bridges = new HashMap<>();
-    HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test_thread_shutdown", t -> {
-      throw new RuntimeException(t);
-    });
-
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor));
-
-    SessionHandler sessionHandler = new SessionHandler(
-        inputStream,
-        outputStream,
-        t -> {
-          throw new RuntimeException(t);
-        },
-        shutdownLatch,
-        bridges
-    );
-
-    sessionHandler.processCommands();
-    if (shutdownLatch.getCount() == 0) {
-      for (InspectorBridge bridge : bridges.values()) {
-        bridge.dispose();
-      }
+    @After
+    public void tearDown() {
+        for (InspectorBridge bridge : createdBridges) {
+            bridge.dispose();
+        }
     }
 
-    primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+    @Test
+    public void testHandle_shutdown_disposesInspector() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    assertThat(disposed.get()).isTrue();
-    assertThat(shutdownLatch.getCount()).isEqualTo(0);
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setShutdown(UiInspectorProtocol.ShutdownCommand.getDefaultInstance())
+                        .build();
 
-    byte[] writtenBytes = outputStream.toByteArray();
-    byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+        AtomicBoolean disposed = new AtomicBoolean(false);
+        Inspector mockInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {}
+
+                    @Override
+                    public void onDispose() {
+                        disposed.set(true);
+                    }
+                };
+
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, mockInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
+
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        bridges);
+
+        sessionHandler.processCommands();
+        if (shutdownLatch.getCount() == 0) {
+            for (InspectorBridge bridge : bridges.values()) {
+                bridge.dispose();
+            }
+        }
+
+        assertThat(viewBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(disposed.get()).isTrue();
+        assertThat(shutdownLatch.getCount()).isEqualTo(0);
+
+        byte[] writtenBytes = outputStream.toByteArray();
+        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
         UiInspectorProtocol.AgentMessage agentMessage =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
         assertThat(agentMessage.hasResponse()).isTrue();
         UiInspectorProtocol.Response response = agentMessage.getResponse();
 
-    assertThat(response.getCommandId()).isEqualTo(1);
-    assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
-    assertThat(response.getSpecializedCase()).isEqualTo(UiInspectorProtocol.Response.SpecializedCase.SHUTDOWN);
-  }
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
+        assertThat(response.getSpecializedCase())
+                .isEqualTo(UiInspectorProtocol.Response.SpecializedCase.SHUTDOWN);
+    }
 
-  @Test
-  public void testHandle_eof_doesNotDisposeInspector() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(new byte[0]);
+    @Test
+    public void testHandle_eof_doesNotDisposeInspector() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(new byte[0]);
 
-    AtomicBoolean disposed = new AtomicBoolean(false);
-    Inspector mockInspector = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {}
+        AtomicBoolean disposed = new AtomicBoolean(false);
+        Inspector mockInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {}
 
-      @Override
-      public void onDispose() {
-        disposed.set(true);
-      }
-    };
+                    @Override
+                    public void onDispose() {
+                        disposed.set(true);
+                    }
+                };
 
-    CountDownLatch shutdownLatch = new CountDownLatch(1);
-    Map<String, InspectorBridge> bridges = new HashMap<>();
-    HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test_thread_eof", t -> {
-      throw new RuntimeException(t);
-    });
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor));
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, mockInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
 
-    SessionHandler sessionHandler = new SessionHandler(
-        inputStream,
-        outputStream,
-        t -> {
-          throw new RuntimeException(t);
-        },
-        shutdownLatch,
-        bridges
-    );
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        bridges);
 
-    sessionHandler.processCommands();
-    primaryExecutor.quitSafely();
+        sessionHandler.processCommands();
 
-    assertThat(disposed.get()).isFalse();
-    assertThat(shutdownLatch.getCount()).isEqualTo(1);
-  }
+        assertThat(disposed.get()).isFalse();
+        assertThat(shutdownLatch.getCount()).isEqualTo(1);
+    }
 
-  @Test
-  public void testHandle_createInspector_failsWithInvalidPath() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    @Test
+    public void testHandle_createInspector_failsWithInvalidPath() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    UiInspectorProtocol.Command command = UiInspectorProtocol.Command.newBuilder()
-        .setCommandId(1)
-        .setCreateInspector(UiInspectorProtocol.CreateInspectorCommand.newBuilder()
-            .setInspectorId("test_inspector")
-            .setDexPath("/path/to/test.dex")
-            .build())
-        .build();
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setCreateInspector(
+                                UiInspectorProtocol.CreateInspectorCommand.newBuilder()
+                                        .setInspectorId("test_inspector")
+                                        .setDexPath("/path/to/test.dex")
+                                        .build())
+                        .build();
 
-    ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
-    FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
 
-    CountDownLatch shutdownLatch = new CountDownLatch(1);
-    SessionHandler sessionHandler = new SessionHandler(
-        inputStream,
-        outputStream,
-        t -> {
-          throw new RuntimeException(t);
-        },
-        shutdownLatch,
-        new HashMap<>()
-    );
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        new HashMap<>());
 
-    sessionHandler.processCommands();
+        sessionHandler.processCommands();
 
-    byte[] writtenBytes = outputStream.toByteArray();
-    byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
+        byte[] writtenBytes = outputStream.toByteArray();
+        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
         UiInspectorProtocol.AgentMessage agentMessage =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
         assertThat(agentMessage.hasResponse()).isTrue();
         UiInspectorProtocol.Response response = agentMessage.getResponse();
 
-    assertThat(response.getCommandId()).isEqualTo(1);
-    assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
-    assertThat(response.getErrorMessage()).contains("Failed to find InspectorFactory");
-  }
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response.getErrorMessage())
+                .contains("Failed to prepare native libraries of /path/to/test.dex");
+    }
 
-  @Test
-  public void testHandle_unknownInspector_fails() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    @Test
+    public void testHandle_createInspector_replacesDisposedBridge() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    UiInspectorProtocol.Command command = UiInspectorProtocol.Command.newBuilder()
-        .setCommandId(1)
-        .setInspectorMessage(UiInspectorProtocol.InspectorMessageCommand.newBuilder()
-            .setInspectorId("unknown_inspector")
-            .setPayload(com.android.tools.idea.protobuf.ByteString.copyFrom(new byte[0]))
-            .build())
-        .build();
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setCreateInspector(
+                                UiInspectorProtocol.CreateInspectorCommand.newBuilder()
+                                        .setInspectorId("test_inspector")
+                                        .setDexPath("/path/to/test.dex")
+                                        .build())
+                        .build();
 
-    ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
-    FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
 
-    CountDownLatch shutdownLatch = new CountDownLatch(1);
-    SessionHandler sessionHandler = new SessionHandler(
-        inputStream,
-        outputStream,
-        t -> {
-          throw new RuntimeException(t);
-        },
-        shutdownLatch,
-        new HashMap<>()
-    );
+        InspectorBridge disposedBridge =
+                createBridge(
+                        "test_inspector",
+                        new Inspector(mockConnection) {
+                            @Override
+                            public void onReceiveCommand(byte[] data, CommandCallback callback) {}
 
-    sessionHandler.processCommands();
+                            @Override
+                            public void onDispose() {}
+                        });
+        disposedBridge.dispose();
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        bridges.put("test_inspector", disposedBridge);
 
-    byte[] writtenBytes = outputStream.toByteArray();
-    byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        new CountDownLatch(1),
+                        bridges);
+
+        sessionHandler.processCommands();
+        assertThat(disposedBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+        UiInspectorProtocol.Response response =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(
+                                        new ByteArrayInputStream(outputStream.toByteArray())))
+                        .getResponse();
+        // Loading the inspector from the invalid dex path was attempted, instead of rebinding
+        // the disposed bridge.
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response.getErrorMessage())
+                .contains("Failed to prepare native libraries of /path/to/test.dex");
+        assertThat(bridges).doesNotContainKey("test_inspector");
+    }
+
+    @Test
+    public void testHandle_inspectorMessageToDisposedBridge_fails() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setInspectorMessage(
+                                UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                        .setInspectorId("test_inspector")
+                                        .setPayload(
+                                                com.android.tools.idea.protobuf.ByteString.copyFrom(
+                                                        new byte[] {1}))
+                                        .build())
+                        .build();
+
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+        InspectorBridge disposedBridge =
+                createBridge(
+                        "test_inspector",
+                        new Inspector(mockConnection) {
+                            @Override
+                            public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                                callback.reply(data);
+                            }
+
+                            @Override
+                            public void onDispose() {}
+                        });
+        disposedBridge.dispose();
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        bridges.put("test_inspector", disposedBridge);
+
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        new CountDownLatch(1),
+                        bridges);
+
+        sessionHandler.processCommands();
+        assertThat(disposedBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+        UiInspectorProtocol.Response response =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(
+                                        new ByteArrayInputStream(outputStream.toByteArray())))
+                        .getResponse();
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response.getErrorMessage())
+                .contains("Inspector test_inspector crashed and was disposed");
+    }
+
+    @Test
+    public void testHandle_unknownInspector_fails() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setInspectorMessage(
+                                UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                        .setInspectorId("unknown_inspector")
+                                        .setPayload(
+                                                com.android.tools.idea.protobuf.ByteString.copyFrom(
+                                                        new byte[0]))
+                                        .build())
+                        .build();
+
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        new HashMap<>());
+
+        sessionHandler.processCommands();
+
+        byte[] writtenBytes = outputStream.toByteArray();
+        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
         UiInspectorProtocol.AgentMessage agentMessage =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
         assertThat(agentMessage.hasResponse()).isTrue();
         UiInspectorProtocol.Response response = agentMessage.getResponse();
 
-    assertThat(response.getCommandId()).isEqualTo(1);
-    assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
-    assertThat(response.getErrorMessage()).contains("Unknown inspector ID");
-  }
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response.getErrorMessage()).contains("Unknown inspector ID");
+    }
 
-  @Test
-  public void testHandle_multipleCommands_processesAll() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    @Test
+    public void testHandle_multipleCommands_processesAll() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    UiInspectorProtocol.Command command1 = UiInspectorProtocol.Command.newBuilder()
-        .setCommandId(1)
-        .setInspectorMessage(UiInspectorProtocol.InspectorMessageCommand.newBuilder()
-            .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
-            .setPayload(com.android.tools.idea.protobuf.ByteString.copyFrom(new byte[]{10}))
-            .build())
-        .build();
+        UiInspectorProtocol.Command command1 =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setInspectorMessage(
+                                UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                        .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                                        .setPayload(
+                                                com.android.tools.idea.protobuf.ByteString.copyFrom(
+                                                        new byte[] {10}))
+                                        .build())
+                        .build();
 
-    UiInspectorProtocol.Command command2 = UiInspectorProtocol.Command.newBuilder()
-        .setCommandId(2)
-        .setInspectorMessage(UiInspectorProtocol.InspectorMessageCommand.newBuilder()
-            .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
-            .setPayload(com.android.tools.idea.protobuf.ByteString.copyFrom(new byte[]{20}))
-            .build())
-        .build();
+        UiInspectorProtocol.Command command2 =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(2)
+                        .setInspectorMessage(
+                                UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                        .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                                        .setPayload(
+                                                com.android.tools.idea.protobuf.ByteString.copyFrom(
+                                                        new byte[] {20}))
+                                        .build())
+                        .build();
 
-    ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
-    FramingProtocol.writeMessage(inputStreamData, command1.toByteArray());
-    FramingProtocol.writeMessage(inputStreamData, command2.toByteArray());
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command1.toByteArray());
+        FramingProtocol.writeMessage(inputStreamData, command2.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
 
-    List<byte[]> receivedPayloads = new ArrayList<>();
-    Inspector mockInspector = new Inspector(mockConnection) {
-      @Override
-      public void onReceiveCommand(byte[] data, CommandCallback callback) {
-        receivedPayloads.add(data);
-        callback.reply(new byte[]{30});
-      }
+        List<byte[]> receivedPayloads = new ArrayList<>();
+        Inspector mockInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        receivedPayloads.add(data);
+                        callback.reply(new byte[] {30});
+                    }
 
-      @Override
-      public void onDispose() {}
-    };
+                    @Override
+                    public void onDispose() {}
+                };
 
-    CountDownLatch shutdownLatch = new CountDownLatch(1);
-    Map<String, InspectorBridge> bridges = new HashMap<>();
-    HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test_thread_multiple", t -> {
-      throw new RuntimeException(t);
-    });
-        bridges.put(
-                ProtocolConstants.VIEW_INSPECTOR_ID,
-                InspectorBridge.createForTesting(
-                        ProtocolConstants.VIEW_INSPECTOR_ID,
-                        mockInspector,
-                        new AppInspectionUtils.DelegatingConnection(),
-                        primaryExecutor));
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, mockInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
 
-    SessionHandler sessionHandler = new SessionHandler(
-        inputStream,
-        outputStream,
-        t -> {
-          throw new RuntimeException(t);
-        },
-        shutdownLatch,
-        bridges
-    );
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        bridges);
 
-    sessionHandler.processCommands();
-    primaryExecutor.quitSafely();
+        sessionHandler.processCommands();
 
-    assertThat(receivedPayloads).hasSize(2);
-    assertThat(receivedPayloads.get(0)).isEqualTo(new byte[]{10});
-    assertThat(receivedPayloads.get(1)).isEqualTo(new byte[]{20});
+        assertThat(receivedPayloads).hasSize(2);
+        assertThat(receivedPayloads.get(0)).isEqualTo(new byte[] {10});
+        assertThat(receivedPayloads.get(1)).isEqualTo(new byte[] {20});
 
-    byte[] writtenBytes = outputStream.toByteArray();
-    ByteArrayInputStream responseInputStream = new ByteArrayInputStream(writtenBytes);
+        byte[] writtenBytes = outputStream.toByteArray();
+        ByteArrayInputStream responseInputStream = new ByteArrayInputStream(writtenBytes);
 
-    byte[] responseBytes1 = FramingProtocol.readMessage(responseInputStream);
+        byte[] responseBytes1 = FramingProtocol.readMessage(responseInputStream);
         UiInspectorProtocol.AgentMessage agentMessage1 =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes1);
         assertThat(agentMessage1.hasResponse()).isTrue();
         UiInspectorProtocol.Response response1 = agentMessage1.getResponse();
-    assertThat(response1.getCommandId()).isEqualTo(1);
+        assertThat(response1.getCommandId()).isEqualTo(1);
 
-    byte[] responseBytes2 = FramingProtocol.readMessage(responseInputStream);
+        byte[] responseBytes2 = FramingProtocol.readMessage(responseInputStream);
         UiInspectorProtocol.AgentMessage agentMessage2 =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes2);
         assertThat(agentMessage2.hasResponse()).isTrue();
         UiInspectorProtocol.Response response2 = agentMessage2.getResponse();
-    assertThat(response2.getCommandId()).isEqualTo(2);
-  }
+        assertThat(response2.getCommandId()).isEqualTo(2);
+    }
 
-  @Test
-  public void testHandle_getVersion_composeAbsent() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    @Test
+    public void testHandle_inspectorThrowsError_repliesErrorAndDisposesInspector()
+            throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    UiInspectorProtocol.Command command = UiInspectorProtocol.Command.newBuilder()
-        .setCommandId(1)
-        .setGetVersion(UiInspectorProtocol.GetVersionCommand.newBuilder()
-            .addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
-            .build())
-        .build();
+        UiInspectorProtocol.Command command1 =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setInspectorMessage(
+                                UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                        .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                                        .setPayload(
+                                                com.android.tools.idea.protobuf.ByteString.copyFrom(
+                                                        new byte[] {10}))
+                                        .build())
+                        .build();
 
-    ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
-    FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+        UiInspectorProtocol.Command command2 =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(2)
+                        .setInspectorMessage(
+                                UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                        .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                                        .setPayload(
+                                                com.android.tools.idea.protobuf.ByteString.copyFrom(
+                                                        new byte[] {20}))
+                                        .build())
+                        .build();
 
-    ClassLoader mockAbsentClassLoader = new ClassLoader(SessionHandlerTest.class.getClassLoader()) {
-      @Override
-      public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if ("androidx.compose.ui.Modifier".equals(name)) {
-          throw new ClassNotFoundException("androidx.compose.ui.Modifier");
-        }
-        return super.loadClass(name, resolve);
-      }
-    };
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command1.toByteArray());
+        FramingProtocol.writeMessage(inputStreamData, command2.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
 
-    CountDownLatch shutdownLatch = new CountDownLatch(1);
-    SessionHandler sessionHandler = new SessionHandler(
-        inputStream,
-        outputStream,
-        t -> {
-          throw new RuntimeException(t);
-        },
-        shutdownLatch,
-        new HashMap<>(),
-        mockAbsentClassLoader
-    );
+        Inspector throwingInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        if (data[0] == 10) {
+                            throw new UnsatisfiedLinkError(
+                                    "No implementation found for nativeMethod");
+                        }
+                        callback.reply(new byte[] {30});
+                    }
 
-    sessionHandler.processCommands();
+                    @Override
+                    public void onDispose() {}
+                };
 
-    byte[] writtenBytes = outputStream.toByteArray();
-    byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, throwingInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
+
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        bridges);
+
+        sessionHandler.processCommands();
+
+        ByteArrayInputStream responseInputStream =
+                new ByteArrayInputStream(outputStream.toByteArray());
+
+        UiInspectorProtocol.Response response1 =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(responseInputStream))
+                        .getResponse();
+        assertThat(response1.getCommandId()).isEqualTo(1);
+        assertThat(response1.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response1.getErrorMessage())
+                .contains("No implementation found for nativeMethod");
+
+        UiInspectorProtocol.Response response2 =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(responseInputStream))
+                        .getResponse();
+        // The session goes on, but the inspector that threw was disposed.
+        assertThat(response2.getCommandId()).isEqualTo(2);
+        assertThat(response2.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response2.getErrorMessage())
+                .contains("Inspector " + ProtocolConstants.VIEW_INSPECTOR_ID + " crashed");
+    }
+
+    @Test
+    public void testProcessCommands_errorWhileReading_reportsCrashAndReturns() {
+        OutOfMemoryError error = new OutOfMemoryError("simulated");
+        InputStream throwingInputStream =
+                new InputStream() {
+                    @Override
+                    public int read() {
+                        throw error;
+                    }
+                };
+
+        List<Throwable> crashes = new ArrayList<>();
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        throwingInputStream,
+                        new ByteArrayOutputStream(),
+                        crashes::add,
+                        new CountDownLatch(1),
+                        new HashMap<>());
+
+        sessionHandler.processCommands();
+
+        assertThat(crashes).containsExactly(error);
+    }
+
+    @Test
+    public void testHandle_getVersion_composeAbsent() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setGetVersion(
+                                UiInspectorProtocol.GetVersionCommand.newBuilder()
+                                        .addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
+                                        .build())
+                        .build();
+
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+        ClassLoader mockAbsentClassLoader =
+                new ClassLoader(SessionHandlerTest.class.getClassLoader()) {
+                    @Override
+                    public Class<?> loadClass(String name, boolean resolve)
+                            throws ClassNotFoundException {
+                        if ("androidx.compose.ui.Modifier".equals(name)) {
+                            throw new ClassNotFoundException("androidx.compose.ui.Modifier");
+                        }
+                        return super.loadClass(name, resolve);
+                    }
+                };
+
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        new HashMap<>(),
+                        mockAbsentClassLoader);
+
+        sessionHandler.processCommands();
+
+        byte[] writtenBytes = outputStream.toByteArray();
+        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
         UiInspectorProtocol.AgentMessage agentMessage =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
         assertThat(agentMessage.hasResponse()).isTrue();
         UiInspectorProtocol.Response response = agentMessage.getResponse();
 
-    assertThat(response.getCommandId()).isEqualTo(1);
-    assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
-    assertThat(response.getSpecializedCase()).isEqualTo(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION);
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
+        assertThat(response.getSpecializedCase())
+                .isEqualTo(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION);
 
-    UiInspectorProtocol.GetVersionResponse versionResponse = response.getGetVersion();
-    assertThat(versionResponse.getVersionsMap()).isEmpty();
-  }
+        UiInspectorProtocol.GetVersionResponse versionResponse = response.getGetVersion();
+        assertThat(versionResponse.getVersionsMap()).isEmpty();
+    }
 
-  @Test
-  public void testHandle_getVersion_composePresent() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    @Test
+    public void testHandle_getVersion_composePresent() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    UiInspectorProtocol.Command command = UiInspectorProtocol.Command.newBuilder()
-        .setCommandId(1)
-        .setGetVersion(UiInspectorProtocol.GetVersionCommand.newBuilder()
-            .addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
-            .build())
-        .build();
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setGetVersion(
+                                UiInspectorProtocol.GetVersionCommand.newBuilder()
+                                        .addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
+                                        .build())
+                        .build();
 
-    ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
-    FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
 
-    ClassLoader mockClassLoader = new ClassLoader(SessionHandlerTest.class.getClassLoader()) {
-      @Override
-      public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if ("androidx.compose.ui.Modifier".equals(name)) {
-          return Object.class;
-        }
-        return super.loadClass(name, resolve);
-      }
+        ClassLoader mockClassLoader =
+                new ClassLoader(SessionHandlerTest.class.getClassLoader()) {
+                    @Override
+                    public Class<?> loadClass(String name, boolean resolve)
+                            throws ClassNotFoundException {
+                        if ("androidx.compose.ui.Modifier".equals(name)) {
+                            return Object.class;
+                        }
+                        return super.loadClass(name, resolve);
+                    }
 
-      @Override
-      public InputStream getResourceAsStream(String name) {
-        if ("META-INF/androidx.compose.ui_ui.version".equals(name)) {
-          return new ByteArrayInputStream("1.5.4".getBytes());
-        }
-        return super.getResourceAsStream(name);
-      }
-    };
+                    @Override
+                    public InputStream getResourceAsStream(String name) {
+                        if ("META-INF/androidx.compose.ui_ui.version".equals(name)) {
+                            return new ByteArrayInputStream("1.5.4".getBytes());
+                        }
+                        return super.getResourceAsStream(name);
+                    }
+                };
 
-    CountDownLatch shutdownLatch = new CountDownLatch(1);
-    SessionHandler sessionHandler = new SessionHandler(
-        inputStream,
-        outputStream,
-        t -> {
-          throw new RuntimeException(t);
-        },
-        shutdownLatch,
-        new HashMap<>(),
-        mockClassLoader
-    );
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        new HashMap<>(),
+                        mockClassLoader);
 
-    sessionHandler.processCommands();
+        sessionHandler.processCommands();
 
-    byte[] writtenBytes = outputStream.toByteArray();
-    byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
+        byte[] writtenBytes = outputStream.toByteArray();
+        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
         UiInspectorProtocol.AgentMessage agentMessage =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
         assertThat(agentMessage.hasResponse()).isTrue();
         UiInspectorProtocol.Response response = agentMessage.getResponse();
 
-    assertThat(response.getCommandId()).isEqualTo(1);
-    assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
-    assertThat(response.getSpecializedCase()).isEqualTo(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION);
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
+        assertThat(response.getSpecializedCase())
+                .isEqualTo(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION);
 
-    UiInspectorProtocol.GetVersionResponse versionResponse = response.getGetVersion();
+        UiInspectorProtocol.GetVersionResponse versionResponse = response.getGetVersion();
         assertThat(versionResponse.getVersionsMap())
                 .containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.5.4");
-  }
+    }
 
-  @Test
-  public void testHandle_getVersion_unknownLibrary_fails() throws Exception {
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    @Test
+    public void testHandle_getVersion_unknownLibrary_fails() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    UiInspectorProtocol.Command command = UiInspectorProtocol.Command.newBuilder()
-        .setCommandId(1)
-        .setGetVersion(UiInspectorProtocol.GetVersionCommand.newBuilder()
-            .addLibraryIds("invalid:lib")
-            .build())
-        .build();
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setGetVersion(
+                                UiInspectorProtocol.GetVersionCommand.newBuilder()
+                                        .addLibraryIds("invalid:lib")
+                                        .build())
+                        .build();
 
-    ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
-    FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
 
-    CountDownLatch shutdownLatch = new CountDownLatch(1);
-    SessionHandler sessionHandler = new SessionHandler(
-        inputStream,
-        outputStream,
-        t -> {
-          throw new RuntimeException(t);
-        },
-        shutdownLatch,
-        new HashMap<>()
-    );
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        shutdownLatch,
+                        new HashMap<>());
 
-    sessionHandler.processCommands();
+        sessionHandler.processCommands();
 
-    byte[] writtenBytes = outputStream.toByteArray();
-    byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
+        byte[] writtenBytes = outputStream.toByteArray();
+        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
         UiInspectorProtocol.AgentMessage agentMessage =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
         assertThat(agentMessage.hasResponse()).isTrue();
         UiInspectorProtocol.Response response = agentMessage.getResponse();
 
-    assertThat(response.getCommandId()).isEqualTo(1);
-    assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
-    assertThat(response.getErrorMessage()).contains("Unsupported library ID: invalid:lib");
-  }
+        assertThat(response.getCommandId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response.getErrorMessage()).contains("Unsupported library ID: invalid:lib");
+    }
+
+    @Test
+    public void testHandle_inspectorThrowsIOException_repliesErrorAndKeepsSession()
+            throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        for (int commandId = 1; commandId <= 2; commandId++) {
+            UiInspectorProtocol.Command command =
+                    UiInspectorProtocol.Command.newBuilder()
+                            .setCommandId(commandId)
+                            .setInspectorMessage(
+                                    UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                            .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                                            .setPayload(
+                                                    com.android.tools.idea.protobuf.ByteString
+                                                            .copyFrom(new byte[] {1}))
+                                            .build())
+                            .build();
+            FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        }
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+
+        Inspector throwingInspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        // Kotlin code can throw a checked exception without declaring it.
+                        throwUnchecked(new IOException("Inspector I/O failure"));
+                    }
+
+                    @Override
+                    public void onDispose() {}
+                };
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        InspectorBridge viewBridge =
+                createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, throwingInspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
+
+        SessionHandler sessionHandler =
+                new SessionHandler(
+                        inputStream,
+                        outputStream,
+                        t -> {
+                            throw new RuntimeException(t);
+                        },
+                        new CountDownLatch(1),
+                        bridges);
+
+        sessionHandler.processCommands();
+        assertThat(viewBridge.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+        ByteArrayInputStream responseInputStream =
+                new ByteArrayInputStream(outputStream.toByteArray());
+        UiInspectorProtocol.Response response1 =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(responseInputStream))
+                        .getResponse();
+        // The inspector's IOException is replied as an error, not mistaken for a lost connection.
+        assertThat(response1.getCommandId()).isEqualTo(1);
+        assertThat(response1.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response1.getErrorMessage())
+                .contains("java.io.IOException: Inspector I/O failure");
+        // The session goes on and handles the next command, which fails because the inspector
+        // that threw was disposed.
+        UiInspectorProtocol.Response response2 =
+                UiInspectorProtocol.AgentMessage.parseFrom(
+                                FramingProtocol.readMessage(responseInputStream))
+                        .getResponse();
+        assertThat(response2.getCommandId()).isEqualTo(2);
+        assertThat(response2.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
+        assertThat(response2.getErrorMessage())
+                .contains("Inspector " + ProtocolConstants.VIEW_INSPECTOR_ID + " crashed");
+    }
+
+    /** Creates a bridge for {@code inspector}, wired like the bridges of the server. */
+    private InspectorBridge createBridge(String inspectorId, Inspector inspector) throws Exception {
+        InspectorBridge bridge =
+                InspectorBridge.create(
+                        inspectorId,
+                        environment -> inspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        t -> {},
+                        hookOwnerId -> {});
+        createdBridges.add(bridge);
+        return bridge;
+    }
+
+    /** Throws {@code t} even if it is a checked exception, as Kotlin code can. */
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void throwUnchecked(Throwable t) throws T {
+        throw (T) t;
+    }
+
+    @Test
+    public void testHandle_failureToWriteResponse_endsSession() throws Exception {
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        for (int commandId = 1; commandId <= 2; commandId++) {
+            UiInspectorProtocol.Command command =
+                    UiInspectorProtocol.Command.newBuilder()
+                            .setCommandId(commandId)
+                            .setInspectorMessage(
+                                    UiInspectorProtocol.InspectorMessageCommand.newBuilder()
+                                            .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                                            .setPayload(
+                                                    com.android.tools.idea.protobuf.ByteString
+                                                            .copyFrom(new byte[] {1}))
+                                            .build())
+                            .build();
+            FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        }
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
+        OutputStream brokenOutputStream = createBrokenOutputStream();
+
+        List<byte[]> receivedCommands = new ArrayList<>();
+        Inspector inspector =
+                new Inspector(mockConnection) {
+                    @Override
+                    public void onReceiveCommand(byte[] data, CommandCallback callback) {
+                        receivedCommands.add(data);
+                        callback.reply(data);
+                    }
+
+                    @Override
+                    public void onDispose() {}
+                };
+        Map<String, InspectorBridge> bridges = new HashMap<>();
+        InspectorBridge viewBridge = createBridge(ProtocolConstants.VIEW_INSPECTOR_ID, inspector);
+        bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID, viewBridge);
+        List<Throwable> crashes = new ArrayList<>();
+
+        new SessionHandler(
+                        inputStream,
+                        brokenOutputStream,
+                        crashes::add,
+                        new CountDownLatch(1),
+                        bridges)
+                .processCommands();
+
+        // The connection is lost: the session ends without running the next command, and it is
+        // not reported as a crash. The inspector is kept for the next session.
+        assertThat(receivedCommands).hasSize(1);
+        assertThat(crashes).isEmpty();
+        assertThat(viewBridge.isDisposed()).isFalse();
+    }
+
+    @Test
+    public void testHandle_shutdownWithFailureToWriteResponse_stillShutsDown() throws Exception {
+        UiInspectorProtocol.Command command =
+                UiInspectorProtocol.Command.newBuilder()
+                        .setCommandId(1)
+                        .setShutdown(UiInspectorProtocol.ShutdownCommand.getDefaultInstance())
+                        .build();
+        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
+        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        List<Throwable> crashes = new ArrayList<>();
+
+        new SessionHandler(
+                        new ByteArrayInputStream(inputStreamData.toByteArray()),
+                        createBrokenOutputStream(),
+                        crashes::add,
+                        shutdownLatch,
+                        new HashMap<>())
+                .processCommands();
+
+        // The host asked to shut down: failing to acknowledge it does not cancel the shutdown.
+        assertThat(shutdownLatch.getCount()).isEqualTo(0);
+        assertThat(crashes).isEmpty();
+    }
+
+    /** Returns an output stream that fails every write, like the socket of a lost connection. */
+    private static OutputStream createBrokenOutputStream() {
+        return new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                throw new IOException("Broken pipe");
+            }
+        };
+    }
 }

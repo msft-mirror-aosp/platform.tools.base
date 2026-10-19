@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.rClass
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.client.api.LintClient
+import java.io.File
 import org.intellij.lang.annotations.Language
 
 @Suppress("LintImplTrimIndent")
@@ -3537,6 +3538,495 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
         .trimIndent(),
     )
 
+  fun testWatchFaceFormatResources() {
+    lint()
+      .files(
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Metadata key="CLOCK_TICK_RATE_HZ" value="1" />
+              <UserConfigurations>
+                  <ColorConfiguration id="theme" displayName="@string/wf_label" />
+              </UserConfigurations>
+              <Scene>
+                  <Image resource="wf_background" />
+                  <MonochromaticImage icon="wf_icon" defaultImageResource="wf_default_icon" />
+                  <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                  <PartText>
+                      <Font family="wf_font" size="24" />
+                      <Font family="SYNC_TO_DEVICE" size="24" />
+                  </PartText>
+              </Scene>
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/values/strings.xml",
+            """
+          <resources>
+              <string name="wf_label">Watch Face Label</string>
+              <string name="unused_string">Unused</string>
+          </resources>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/wf_background.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="oval">
+              <solid android:color="#FF000000" />
+          </shape>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/wf_icon.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="oval">
+              <solid android:color="#FFFFFFFF" />
+          </shape>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/wf_default_icon.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="oval">
+              <solid android:color="#FF888888" />
+          </shape>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/unused_drawable.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="rectangle" />
+          """,
+          )
+          .indented(),
+        bytes("res/font/wf_font.ttf", byteArrayOf()),
+        bytes("res/font/unused_font.ttf", byteArrayOf()),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/values/strings.xml:3: Warning: The resource R.string.unused_string appears to be unused [UnusedResources]
+            <string name="unused_string">Unused</string>
+                    ~~~~~~~~~~~~~~~~~~~~
+        res/drawable/unused_drawable.xml:1: Warning: The resource R.drawable.unused_drawable appears to be unused [UnusedResources]
+        <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        0 errors, 3 warnings
+        """
+      )
+  }
+
+  // Regression test for b/571587969
+  fun testSourceDirectoriesNotTreatedAsResourceFolders() {
+    lint()
+      .files(
+        java(
+            "src/org/chromium/chrome/browser/font/FontPreloader.java",
+            """
+          package org.chromium.chrome.browser.font;
+
+          public class FontPreloader {
+          }
+          """,
+          )
+          .indented(),
+        // A Java package named "res" next to the "font" package. Previously, the mere
+        // existence of a sibling directory named "res" made lint treat the "font"
+        // directory as a resource folder, and this directory itself as a res root.
+        java(
+            "src/org/chromium/chrome/browser/res/ResHelper.java",
+            """
+          package org.chromium.chrome.browser.res;
+
+          public class ResHelper {
+          }
+          """,
+          )
+          .indented(),
+        bytes("res/font/unused_font.ttf", byteArrayOf()),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .configureDriver { driver ->
+        for (project in driver.projectRoots) {
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/font"))
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/res"))
+          project.addFile(File(project.dir, "res/font"))
+        }
+      }
+      .run()
+      .expect(
+        """
+        res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        0 errors, 1 warnings
+        """
+      )
+  }
+
+  // Regression test for b/571587969
+  fun testSourceFilesNotTreatedAsResourcesWithSubset() {
+    lint()
+      .files(
+        java(
+            "src/org/chromium/chrome/browser/font/FontPreloader.java",
+            """
+          package org.chromium.chrome.browser.font;
+
+          public class FontPreloader {
+          }
+          """,
+          )
+          .indented(),
+        kotlin(
+            "src/org/chromium/chrome/browser/font/FontHelper.kt",
+            """
+          package org.chromium.chrome.browser.font
+
+          class FontHelper
+          """,
+          )
+          .indented(),
+        java(
+            "src/org/chromium/chrome/browser/raw/RawParser.java",
+            """
+          package org.chromium.chrome.browser.raw;
+
+          public class RawParser {
+          }
+          """,
+          )
+          .indented(),
+        xml(
+            "src/org/chromium/chrome/browser/layout/config.xml",
+            """
+          <config>
+              <entry name="foo" value="bar" />
+          </config>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/layout/unused_layout.xml",
+            """
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent" />
+          """,
+          )
+          .indented(),
+        bytes("res/font/unused_font.ttf", byteArrayOf()),
+        bytes("res/raw/unused_raw.bin", byteArrayOf()),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .configureDriver { driver ->
+        for (project in driver.projectRoots) {
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/font/FontPreloader.java"))
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/font/FontHelper.kt"))
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/raw/RawParser.java"))
+          project.addFile(File(project.dir, "src/org/chromium/chrome/browser/layout/config.xml"))
+          project.addFile(File(project.dir, "res/font/unused_font.ttf"))
+          project.addFile(File(project.dir, "res/layout/unused_layout.xml"))
+          project.addFile(File(project.dir, "res/raw/unused_raw.bin"))
+        }
+      }
+      .run()
+      .expect(
+        """
+        res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        res/layout/unused_layout.xml:1: Warning: The resource R.layout.unused_layout appears to be unused [UnusedResources]
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        res/raw/unused_raw.bin: Warning: The resource R.raw.unused_raw appears to be unused [UnusedResources]
+        0 errors, 3 warnings
+        """
+      )
+  }
+
+  // Regression test ensuring subset analysis properly resolves relative File paths against
+  // project.dir rather than the process working directory when checking isFile/isDirectory.
+  fun testRelativePathsInSubset() {
+    lint()
+      .files(
+        bytes("res/font/unused_font.ttf", byteArrayOf()),
+        xml(
+            "res/layout/unused_layout.xml",
+            """
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent" />
+          """,
+          )
+          .indented(),
+        bytes("res/raw/unused_raw.bin", byteArrayOf()),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .configureDriver { driver ->
+        for (project in driver.projectRoots) {
+          project.addFile(File("res/font/unused_font.ttf"))
+          project.addFile(File("res/layout/unused_layout.xml"))
+          project.addFile(File("res/raw/unused_raw.bin"))
+        }
+      }
+      .run()
+      .expect(
+        """
+        res/font/unused_font.ttf: Warning: The resource R.font.unused_font appears to be unused [UnusedResources]
+        res/layout/unused_layout.xml:1: Warning: The resource R.layout.unused_layout appears to be unused [UnusedResources]
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        res/raw/unused_raw.bin: Warning: The resource R.raw.unused_raw appears to be unused [UnusedResources]
+        0 errors, 3 warnings
+        """
+      )
+  }
+
+  fun testWatchFaceInfoResources() {
+    lint()
+      .files(
+        xml(
+            "res/xml/watch_face_info.xml",
+            """
+          <WatchFaceInfo>
+              <Preview value="@drawable/preview" />
+          </WatchFaceInfo>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/preview.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="oval">
+              <solid android:color="#FF000000" />
+          </shape>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/drawable/unused_drawable.xml",
+            """
+          <shape xmlns:android="http://schemas.android.com/apk/res/android"
+              android:shape="rectangle" />
+          """,
+          )
+          .indented(),
+        xml(
+            "res/xml/other_watch_face_info.xml",
+            """
+          <WatchFaceInfo />
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/xml/other_watch_face_info.xml:1: Warning: The resource R.xml.other_watch_face_info appears to be unused [UnusedResources]
+        <WatchFaceInfo />
+        ~~~~~~~~~~~~~~~~~
+        res/drawable/unused_drawable.xml:1: Warning: The resource R.drawable.unused_drawable appears to be unused [UnusedResources]
+        <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        ^
+        0 errors, 2 warnings
+        """
+      )
+  }
+
+  fun testWatchFaceShapesResources() {
+    lint()
+      .files(
+        xml(
+            "res/xml/watch_face_shapes.xml",
+            """
+          <WatchFaces>
+              <WatchFace shape="CIRCLE" width="300" height="300" file="@raw/watchface_basic" />
+              <WatchFace shape="CIRCLE" width="450" height="450" file="@raw/watchface" />
+          </WatchFaces>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/watchface_basic.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="300" height="300">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/xml/other_watch_face_shapes.xml",
+            """
+          <WatchFaces />
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/xml/other_watch_face_shapes.xml:1: Warning: The resource R.xml.other_watch_face_shapes appears to be unused [UnusedResources]
+        <WatchFaces />
+        ~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testWatchFaceShapesWithUnusedWatchface() {
+    lint()
+      .files(
+        xml(
+            "res/xml/watch_face_shapes.xml",
+            """
+          <WatchFaces>
+              <WatchFace shape="CIRCLE" width="300" height="300" file="@raw/watchface_basic" />
+          </WatchFaces>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/watchface_basic.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="300" height="300">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/raw/watchface.xml:1: Warning: The resource R.raw.watchface appears to be unused [UnusedResources]
+        <WatchFace clipShape="CIRCLE" width="450" height="450">
+        ^
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testWatchFaceWithoutShapesWithUnusedExtraWatchface() {
+    lint()
+      .files(
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/raw/extra_watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Scene />
+          </WatchFace>
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/raw/extra_watchface.xml:1: Warning: The resource R.raw.extra_watchface appears to be unused [UnusedResources]
+        <WatchFace clipShape="CIRCLE" width="450" height="450">
+        ^
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testWatchFaceFormatBareStringResources() {
+    lint()
+      .files(
+        xml(
+            "res/raw/watchface.xml",
+            """
+          <WatchFace clipShape="CIRCLE" width="450" height="450">
+              <Metadata key="CLOCK_TICK_RATE_HZ" value="1" />
+              <UserConfigurations>
+                  <ColorConfiguration id="color_Style_Config" displayName="color_label" defaultValue="0">
+                      <ColorOption id="0" displayName="color_theme_0" colors="#ffffffff #ffecae36 #ffd29727" />
+                      <ColorOption id="1" displayName="Dark (Default)" colors="#ff000000" />
+                  </ColorConfiguration>
+                  <ListConfiguration id="list_config" displayName="list_label" defaultValue="0">
+                      <ListOption id="0" displayName="list_opt_0" screenReaderText="list_opt_0_desc" />
+                      <ListOption id="1" displayName="battery complication" screenReaderText="battery level (full)" />
+                  </ListConfiguration>
+              </UserConfigurations>
+              <Scene>
+                  <PartText>
+                      <Font family="SYNC_TO_DEVICE" size="24" />
+                  </PartText>
+              </Scene>
+          </WatchFace>
+          """,
+          )
+          .indented(),
+        xml(
+            "res/values/strings.xml",
+            """
+          <resources>
+              <string name="color_label">Color Label</string>
+              <string name="color_theme_0">Color Theme 0</string>
+              <string name="list_label">List Label</string>
+              <string name="list_opt_0">List Option 0</string>
+              <string name="list_opt_0_desc">List Option 0 Description</string>
+              <string name="unused_string">Unused</string>
+          </resources>
+          """,
+          )
+          .indented(),
+      )
+      .issues(UnusedResourceDetector.ISSUE)
+      .run()
+      .expect(
+        """
+        res/values/strings.xml:7: Warning: The resource R.string.unused_string appears to be unused [UnusedResources]
+            <string name="unused_string">Unused</string>
+                    ~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
   private val mLibraryStrings =
     xml(
       "res/values/strings.xml",
@@ -3628,7 +4118,8 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       """
         .trimIndent()
 
-    private val gradleClientFactory =
-      TestLintTask.ClientFactory { com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.Companion.CLIENT_GRADLE) }
+    private val gradleClientFactory = TestLintTask.ClientFactory {
+      com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.Companion.CLIENT_GRADLE)
+    }
   }
 }

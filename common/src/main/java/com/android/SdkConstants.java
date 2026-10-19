@@ -79,7 +79,7 @@ public final class SdkConstants {
      * safely recommend during its development cycle.
      */
     public static final AndroidVersion MAX_SUPPORTED_ANDROID_PLATFORM_VERSION =
-            new AndroidVersion(37, 0);
+            new AndroidVersion(37, 2);
 
     /** Property in local.properties file that specifies the path of the Android NDK. */
     public static final String NDK_DIR_PROPERTY = "ndk.dir";
@@ -789,6 +789,9 @@ public final class SdkConstants {
 
     public static final String CLASS_TILE_SERVICE = "androidx.wear.tiles.TileService";
 
+    public static final String CLASS_GLANCE_WEAR_WIDGET_SERVICE =
+            "androidx.glance.wear.GlanceWearWidgetService";
+
     public static final String CLASS_COMPLICATION_SERVICE_ANDROIDX =
             "androidx.wear.watchface.complications.datasource.ComplicationDataSourceService";
 
@@ -1211,6 +1214,11 @@ public final class SdkConstants {
     public static final String TAG_WATCH_FACE_INFO = "WatchFaceInfo";
     public static final String TAG_COMPLICATION = "Complication";
     public static final String TAG_IMAGE = "Image";
+
+    // File names: Watch Face
+    public static final String FN_WATCH_FACE_XML = "watchface.xml";
+    public static final String FN_WATCH_FACE_INFO_XML = "watch_face_info.xml";
+    public static final String FN_WATCH_FACE_SHAPES_XML = "watch_face_shapes.xml";
 
     public static final String VIEW = "View";
     public static final String VIEW_GROUP = "ViewGroup";
@@ -2926,19 +2934,19 @@ public final class SdkConstants {
      * display a diagnostic informing the user that this project's version AGP is unsupported, but
      * at some point that might fail.
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "7.1.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "7.2.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that this version of Studio will
      * support. (Support of the development series leading up to it is unknown.)
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "7.2.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "7.3.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that the next version of Studio
      * will support.
      */
-    public static final String GRADLE_PLUGIN_NEXT_MINIMUM_VERSION = "7.4.0";
+    public static final String GRADLE_PLUGIN_NEXT_MINIMUM_VERSION = "8.0.0";
 
     /**
      * A version of the Android Gradle Plugin that this version of Studio and associated tools (e.g.

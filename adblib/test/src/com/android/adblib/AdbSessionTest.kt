@@ -221,21 +221,21 @@ class AdbSessionTest {
     // Collect first list of devices, restart adb server, collect another list of devices
     val deviceListArray = ArrayList<TrackedDeviceList>()
     launch {
-        flow.collect { trackedDeviceList ->
-          hostServices.session.host.logger.debug { "Collected: $trackedDeviceList" }
-          deviceListArray.add(trackedDeviceList)
-          if (trackedDeviceList.size > 0) {
-            if (deviceListArray.count { it.isNotEmpty() } == 1) {
-              // Simulate ADB server killed and restarted
-              fakeAdb.restart()
-            }
-            if (deviceListArray.count { it.isNotEmpty() } == 2) {
-              // Cancel
-              currentCoroutineContext().cancel()
-            }
+      flow.collect { trackedDeviceList ->
+        hostServices.session.host.logger.debug { "Collected: $trackedDeviceList" }
+        deviceListArray.add(trackedDeviceList)
+        if (trackedDeviceList.size > 0) {
+          if (deviceListArray.count { it.isNotEmpty() } == 1) {
+            // Simulate ADB server killed and restarted
+            fakeAdb.restart()
+          }
+          if (deviceListArray.count { it.isNotEmpty() } == 2) {
+            // Cancel
+            currentCoroutineContext().cancel()
           }
         }
       }
+    }
       .join()
 
     // Assert

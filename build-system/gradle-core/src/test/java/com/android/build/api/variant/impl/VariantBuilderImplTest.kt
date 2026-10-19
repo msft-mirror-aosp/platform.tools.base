@@ -34,6 +34,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
@@ -47,6 +49,10 @@ internal class VariantBuilderImplTest {
   private val globalVariantBuilderConfig: GlobalVariantBuilderConfig = mock()
 
   val builder: ApplicationVariantBuilder by lazy {
+    whenever(variantBuilderServices.newInstance(eq(LintBuilderImpl::class.java), any())).thenAnswer {
+      LintBuilderImpl(variantBuilderServices)
+    }
+    whenever(variantBuilderServices.newInstance(eq(LintReportsBuilderImpl::class.java))).thenAnswer { LintReportsBuilderImpl() }
     object : ApplicationVariantBuilderImpl(globalVariantBuilderConfig, variantDslInfo, componentIdentity, variantBuilderServices) {
       override fun <T : VariantBuilder> createUserVisibleVariantObject(
         projectServices: ProjectServices,
@@ -128,6 +134,28 @@ internal class VariantBuilderImplTest {
     builder.minSdk = 43
     Truth.assertThat(getTargetSdk()).isEqualTo(23)
     Truth.assertThat(getTargetSdkPreview()).isNull()
+  }
+
+  @Test
+  fun testLintFlags() {
+    Truth.assertThat(builder.enableLint).isTrue()
+    Truth.assertThat(builder.lint.reports.enableReportWithDependencies).isTrue()
+    Truth.assertThat(builder.lint.reports.enableReportWithoutDependencies).isTrue()
+
+    builder.enableLint = false
+    Truth.assertThat(builder.enableLint).isFalse()
+
+    builder.lint.reports.enableReportWithDependencies = false
+    Truth.assertThat(builder.lint.reports.enableReportWithDependencies).isFalse()
+
+    builder.lint.reports.enableReportWithoutDependencies = false
+    Truth.assertThat(builder.lint.reports.enableReportWithoutDependencies).isFalse()
+
+    builder.lint.reports.enableReportWithDependencies = true
+    builder.lint.reports.enableReportWithoutDependencies = true
+
+    Truth.assertThat(builder.lint.reports.enableReportWithDependencies).isTrue()
+    Truth.assertThat(builder.lint.reports.enableReportWithoutDependencies).isTrue()
   }
 
   private fun getTargetSdk() = GeneratesApkBuilder::class.java.getMethod("getTargetSdk").invoke(builder)

@@ -29,6 +29,7 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
 import com.android.build.api.instrumentation.FramesComputationMode
+import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
@@ -48,6 +49,7 @@ import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.coverage.CoverageAgentConfigurations
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoPropertiesTask
 import com.android.build.gradle.internal.coverage.JacocoReportTask
@@ -94,6 +96,7 @@ import com.android.build.gradle.internal.tasks.DexFileDependenciesTask
 import com.android.build.gradle.internal.tasks.DexMergingAction
 import com.android.build.gradle.internal.tasks.DexMergingTask
 import com.android.build.gradle.internal.tasks.ExpandArtProfileWildcardsTask
+import com.android.build.gradle.internal.tasks.ExtractJavaResTask
 import com.android.build.gradle.internal.tasks.ExtractProguardFiles
 import com.android.build.gradle.internal.tasks.FeatureDexMergeTask
 import com.android.build.gradle.internal.tasks.FeatureGlobalSyntheticsMergeTask
@@ -121,6 +124,7 @@ import com.android.build.gradle.internal.tasks.ProcessJavaResTask
 import com.android.build.gradle.internal.tasks.R8AnalysisTask
 import com.android.build.gradle.internal.tasks.R8Task
 import com.android.build.gradle.internal.tasks.RecalculateStackFramesTask
+import com.android.build.gradle.internal.tasks.RedirectIdeApkOutputsTask
 import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
@@ -147,7 +151,6 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.tasks.mlkit.GenerateMlModelClass
 import com.android.build.gradle.internal.tasks.runResourceShrinking
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
-import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
@@ -160,6 +163,7 @@ import com.android.build.gradle.internal.utils.isKspPluginApplied
 import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -205,7 +209,6 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolutionStrategy
-import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logger
@@ -316,6 +319,9 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     creationConfig.artifacts
       .forScope(InternalScopedArtifacts.InternalScope.LOCAL_DEPS)
       .setInitialContent(ScopedArtifact.CLASSES, creationConfig.computeLocalPackagedJars())
+    creationConfig.artifacts
+      .forScope(InternalScopedArtifacts.InternalScope.LOCAL_DEPS)
+      .setInitialContent(ScopedArtifact.JAVA_RES, creationConfig.computeLocalPackagedJars())
 
     // Add stream of external java resources if EXTERNAL_LIBRARIES isn't in the set of java res
     // merging scopes.
@@ -737,7 +743,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
    *
    * This sets up only the Sync part. The java res merging is setup via [ ][.createMergeJavaResTask]
    */
-  protected fun createProcessJavaResTask(creationConfig: ComponentCreationConfig) {
+  protected fun createProcessJavaResTask(creationConfig: ComponentCreationConfig, packaging: Packaging) {
     // Copy the source folders java resources into the temporary location, mainly to
     // maintain the PluginDsl COPY semantics.
     val taskConfig =
@@ -761,6 +767,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
         override val sources: FlatSourceDirectoriesImpl?
           get() = creationConfig.sources.resources
 
+        override val packaging: Packaging = packaging
+
         override fun setJavaResTask(task: TaskProvider<out Sync>) {
           creationConfig.taskContainer.processJavaResourcesTask = task
         }
@@ -768,6 +776,10 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
     if (creationConfig.services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
       taskFactory.register(CompressJavaResTask.CreationAction(taskConfig))
+      // Restrict registering ExtractJavaResTask to HostTests to encourage use of the compressed artifact.
+      if (creationConfig is HostTestCreationConfig) {
+        taskFactory.register(ExtractJavaResTask.CreationAction(creationConfig))
+      }
     } else {
       taskFactory.register(ProcessJavaResTask.CreationAction(taskConfig))
     }
@@ -994,12 +1006,11 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       project.addMavenDependency(pluginConfigurationName, subplugin.getPluginArtifact())
 
       val subpluginOptionsProvider: Provider<List<SubpluginOption>> = subplugin.applyToCompilation(kotlinCompilation)
-      val compilerOptions =
-        subpluginOptionsProvider.map { subpluginOptions ->
-          val options = CompilerPluginOptions()
-          subpluginOptions.forEach { opt -> options.addPluginArgument(subpluginId, opt) }
-          options
-        }
+      val compilerOptions = subpluginOptionsProvider.map { subpluginOptions ->
+        val options = CompilerPluginOptions()
+        subpluginOptions.forEach { opt -> options.addPluginArgument(subpluginId, opt) }
+        options
+      }
 
       val configureKotlinTask: (KotlinCompilationTask<*>) -> Unit = {
         when (it) {
@@ -1224,26 +1235,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   }
 
   /**
-   * Determines if failures should be ignored based on the presence of specific tasks in the execution graph.
-   *
-   * Returns `true` if any task in the provided [tasks] list is included in the [graph]. This allows the build to proceed even if the
-   * current task fails, enabling downstream tasks (such as test result aggregators) to execute and report on the failures.
-   *
-   * @param tasks A list of [TaskProvider]s for tasks that, if present in the graph, indicate failures should be ignored.
-   * @param graph The [TaskExecutionGraph] for the current build.
-   * @return `true` if any of the [tasks] are scheduled to run, `false` otherwise.
-   */
-  protected fun shouldIgnoreFailures(tasks: List<TaskProvider<TestResultsCollectionTask>>?, graph: TaskExecutionGraph): Boolean {
-    if (tasks.isNullOrEmpty()) return false
-    tasks.forEach {
-      if (graph.hasTask(getTaskPath(project, it.name))) {
-        return true
-      }
-    }
-    return false
-  }
-
-  /**
    * Creates the post-compilation tasks for the given Variant.
    *
    * These tasks create the dex file from the .class files, plus optional intermediary steps like proguard and jacoco
@@ -1267,7 +1258,9 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     initializeAllScope(creationConfig.artifacts)
 
     // New gradle-transform jacoco instrumentation support.
-    if (creationConfig.requiresJacocoTransformation && !creationConfig.componentType.isForTesting) {
+    val requiresJacocoBytecodeTransform =
+      creationConfig.requiresJacocoTransformation && !creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]
+    if (requiresJacocoBytecodeTransform && !creationConfig.componentType.isForTesting) {
       createJacocoTask(creationConfig)
     } else {
       // When the Jacoco task does not run, republish CLASSES into FINAL_TRANSFORMED_CLASSES
@@ -1313,7 +1306,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     if (creationConfig.componentType.isDynamicFeature) {
       taskFactory.register(FeatureDexMergeTask.CreationAction(creationConfig))
     }
-    checkIfR8VersionMatches(creationConfig.services.issueReporter)
+    checkIfR8VersionMatches(creationConfig.services.issueReporter, creationConfig.services.r8FromMaven?.version)
     createDexTasks(creationConfig, creationConfig.dexing.dexingType)
   }
 
@@ -1589,12 +1582,31 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     }
   }
 
-  private fun handleOnTheFlyCoverageDependencies(creationConfig: ComponentCreationConfig) {
+  /**
+   * Maven coordinate of the on-device coverage agent for this project, computed (and its version validated) once: the agent version is the
+   * AGP version unless pinned with [StringOption.COVERAGE_AGENT_VERSION_OVERRIDE].
+   */
+  private val onTheFlyCoverageAgentDependency: String by lazy {
+    CoverageAgentConfigurations.getAgentRuntimeDependency(
+      globalConfig.services.projectOptions.get(StringOption.COVERAGE_AGENT_VERSION_OVERRIDE),
+      globalConfig.services.issueReporter,
+    )
+  }
+
+  protected fun handleOnTheFlyCoverageDependencies(creationConfig: ComponentCreationConfig) {
     val onTheFlyEnabled = globalConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
     if (onTheFlyEnabled && creationConfig.componentType.isForTesting && creationConfig.componentType.isApk) {
-      val coverageAgentDependency =
-        com.android.build.gradle.internal.coverage.CoverageAgentConfigurations.getAgentRuntimeDependency(globalConfig.services)
+      val coverageAgentDependency = onTheFlyCoverageAgentDependency
       project.dependencies.add(creationConfig.variantDependencies.runtimeClasspath.name, coverageAgentDependency)
+
+      // The agent version is the AGP version (or the release pinned via the
+      // StringOption.COVERAGE_AGENT_VERSION_OVERRIDE gradle property), so force it on the test
+      // component's classpaths: a different version declared by the build author (or pulled in
+      // transitively) must not win conflict resolution on the runtime classpath, nor leave the
+      // compile classpath on another version. Forcing is a no-op where the module is not present.
+      listOf(creationConfig.variantDependencies.compileClasspath, creationConfig.variantDependencies.runtimeClasspath).forEach {
+        it.resolutionStrategy { r: ResolutionStrategy -> r.force(coverageAgentDependency) }
+      }
     }
   }
 
@@ -1713,7 +1725,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       )
     )
 
-    taskContainer.assembleTask.configure { task: Task -> task.dependsOn(creationConfig.artifacts.get(SingleArtifact.APK)) }
+    val apkLocationOverride = creationConfig.services.projectOptions.get(StringOption.IDE_APK_LOCATION)
+    if (apkLocationOverride != null) {
+      val targetDir = File(creationConfig.services.file(apkLocationOverride), creationConfig.dirName)
+      val redirectTask = taskFactory.register(RedirectIdeApkOutputsTask.CreationAction(creationConfig, targetDir))
+      taskContainer.redirectIdeApkOutputsTask = redirectTask
+      taskContainer.assembleTask.configure { task: Task -> task.dependsOn(redirectTask) }
+    } else {
+      taskContainer.assembleTask.configure { task: Task -> task.dependsOn(creationConfig.artifacts.get(SingleArtifact.APK)) }
+    }
 
     // create install task for the variant Data. This will deal with finding the
     // right output if there are more than one.
@@ -2099,7 +2119,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     private fun createCoreLibraryDesugaringConfig(project: Project) {
       if (!project.configurations.names.contains(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING)) {
         project.configurations.register(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING) {
-          it.isVisible = false
           it.isCanBeConsumed = false
           it.description = "Configuration to desugar libraries"
         }

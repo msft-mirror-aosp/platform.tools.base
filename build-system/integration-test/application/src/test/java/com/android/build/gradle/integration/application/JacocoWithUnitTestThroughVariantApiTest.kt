@@ -30,48 +30,47 @@ import org.junit.Test
 class JacocoWithUnitTestThroughVariantApiTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.helloworld"
-          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.helloworld"
+        compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
 
-          files.add(
-            "src/main/java/com/example/helloworld/HelloWorld.java",
-            // language=java
-            """
-            package com.example.helloworld;
+        files.add(
+          "src/main/java/com/example/helloworld/HelloWorld.java",
+          // language=java
+          """
+          package com.example.helloworld;
 
-            public class HelloWorld {
-                public void foo() {}
-            }
-            """
-              .trimIndent(),
-          )
+          public class HelloWorld {
+              public void foo() {}
+          }
+          """
+            .trimIndent(),
+        )
 
-          files.add(
-            "src/test/java/com/example/helloworld/HelloWorldTest.java",
-            // language=java
-            """
-            package com.example.helloworld;
+        files.add(
+          "src/test/java/com/example/helloworld/HelloWorldTest.java",
+          // language=java
+          """
+          package com.example.helloworld;
 
-            import org.junit.Test;
+          import org.junit.Test;
 
-            public class HelloWorldTest {
-                @Test
-                public void testFoo() {
-                    new HelloWorld().foo();
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
-        dependencies { testImplementation("junit:junit:4.13.2") }
-        pluginCallbacks += EnableUnitTestCoverageCallback::class.java
+          public class HelloWorldTest {
+              @Test
+              public void testFoo() {
+                  new HelloWorld().foo();
+              }
+          }
+          """
+            .trimIndent(),
+        )
       }
+      dependencies { testImplementation("junit:junit:4.13.2") }
+      pluginCallbacks += EnableUnitTestCoverageCallback::class.java
     }
+  }
 
   class EnableUnitTestCoverageCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

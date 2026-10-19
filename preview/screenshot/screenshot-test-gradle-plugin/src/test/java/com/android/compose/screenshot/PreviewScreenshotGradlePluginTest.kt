@@ -74,7 +74,11 @@ class PreviewScreenshotGradlePluginTest {
       mockedJava.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_17)
 
       val unsupportedVersionsTooOld = listOf(AndroidPluginVersion(8, 4), AndroidPluginVersion(8, 5, 0).alpha(8))
-      val supportedVersions = listOf(AndroidPluginVersion(8, 5, 0).beta(1), AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE))
+      val supportedVersions =
+        listOf(
+          AndroidPluginVersion(8, 5, 0).beta(1),
+          AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE),
+        )
       val unsupportedVersionsTooNew = listOf(AndroidPluginVersion(10, 0).alpha(1), AndroidPluginVersion(10, 0))
       unsupportedVersionsTooOld.forEach {
         val e = assertThrows(IllegalStateException::class.java) { applyScreenshotPlugin(it) }
@@ -98,7 +102,10 @@ class PreviewScreenshotGradlePluginTest {
       val supportedVersions = listOf("0.0.1-dev", "0.0.1-alpha03")
 
       unsupportedVersionsTooOld.forEach {
-        val e = assertThrows(IllegalStateException::class.java) { applyScreenshotPlugin(validationEngineVersion = it) }
+        val e =
+          assertThrows(IllegalStateException::class.java) {
+            applyScreenshotPlugin(validationEngineVersion = it)
+          }
         assertThat(e)
           .hasMessageThat()
           .contains(

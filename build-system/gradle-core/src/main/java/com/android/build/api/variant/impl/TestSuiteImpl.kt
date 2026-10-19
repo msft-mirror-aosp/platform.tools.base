@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.getDefaultInstrumentationTestRunner
 import com.android.build.gradle.internal.core.dsl.impl.getInstrumentationRunner
+import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
@@ -42,7 +43,6 @@ import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.variant.VariantComponentInfo
 import com.android.builder.dexing.DexingType
 import java.io.File
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
@@ -62,6 +62,7 @@ internal constructor(
 ) : TestSuite, TestSuiteCreationConfig {
 
   private val _name = testSuiteBuilder.name
+  private val _testSuite = testSuiteBuilder.testSuite
 
   //
   // Public APIs
@@ -82,11 +83,13 @@ internal constructor(
         entry.value,
         computeTaskName(
           testedVariant.name,
-          "test${_name.capitalizeFirstChar()}${entry.value.uniqueName().capitalizeFirstChar()}",
-          "TestSuite",
+          "test",
+          "${_name.capitalizeFirstChar()}${entry.value.uniqueName().capitalizeFirstChar()}TestSuite",
         ),
       )
     }
+
+  override val requiresUpdateTask: Provider<Boolean> = variantServices.provider { testSuiteBuilder.testSuite.requiresUpdateTask }
 
   override val sources: Collection<TestSuiteSourceSet>
     get() = sourceContainers.map { it.source }
@@ -96,33 +99,54 @@ internal constructor(
     testTaskConfigActions.add(action)
   }
 
-  override val codeCoverage: Property<Boolean> = variantServices.propertyOf(Boolean::class.java, testSuiteBuilder.codeCoverage)
+  @Synchronized
+  override fun withTestTaskProviders(action: TaskProvider<out Test>.(context: TestTaskContext) -> Unit) {
+    testTaskProviderConfigActions.add(action)
+  }
+
+  override val codeCoverageEnabled: Boolean = testSuiteBuilder._enableCodeCoverage
 
   override val androidResourcesIncluded: Boolean = testSuiteBuilder.testSuite.androidResourcesIncluded
 
   override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> {
+    // Backup tests require BackupRestoreTestRunner (which survives app process
+    // death across backup/restore cycles) so ProcessTestManifest generates
+    // the matching <instrumentation> declaration in the Test APK manifest.
+    if (_testSuite is BackupAgpTestSuiteImpl) {
+      return variantServices.provider { "androidx.test.backup.BackupRestoreTestRunner" }
+    }
     val dslInfo = testedVariantComponent.variantDslInfo
     val variant = testedVariantComponent.variant
-    return if (dslInfo is ApplicationVariantDslInfo && variant is ApplicationCreationConfig) {
-      getInstrumentationRunner(
-        dslInfo.productFlavorList,
-        defaultConfig,
-        manifestDataProviderBuilder(source.manifestFile),
-        DexingImpl(variant, true, dslInfo.dexingDslInfo.multiDexKeepProguard, dslInfo.dexingDslInfo.multiDexKeepFile, variantServices)
-          .dexingType,
-        variantServices,
-      )
-    } else {
-      getDefaultInstrumentationTestRunner(variantServices, DexingType.MONO_DEX)
+    val manifestDataProv = manifestDataProviderBuilder(source.manifestFile)
+    return manifestDataProv.manifestData.flatMap { manifestData ->
+      if (!manifestData.instrumentationRunner.isNullOrBlank()) {
+        variantServices.provider { manifestData.instrumentationRunner!! }
+      } else if (dslInfo is ApplicationVariantDslInfo && variant is ApplicationCreationConfig) {
+        getInstrumentationRunner(
+          dslInfo.productFlavorList,
+          defaultConfig,
+          manifestDataProv,
+          DexingImpl(variant, true, dslInfo.dexingDslInfo.multiDexKeepProguard, dslInfo.dexingDslInfo.multiDexKeepFile, variantServices)
+            .dexingType,
+          variantServices,
+        )
+      } else {
+        getDefaultInstrumentationTestRunner(variantServices, DexingType.MONO_DEX)
+      }
     }
   }
 
   /** Internal APIs */
   private val testTaskConfigActions =
     mutableListOf<Test.(TestTaskContext) -> Unit>().also { it.addAll(testSuiteBuilder.testSuite.testTaskConfigActions) }
+  private val testTaskProviderConfigActions =
+    mutableListOf<TaskProvider<out Test>.(TestTaskContext) -> Unit>().also {
+      it.addAll(testSuiteBuilder.testSuite.testTaskProviderConfigActions)
+    }
 
   @Synchronized
   override fun runTestTaskConfigurationActions(context: TestTaskContext, testTaskProvider: TaskProvider<out Test>) {
+    testTaskProviderConfigActions.forEach { testTaskProvider.it(context) }
     testTaskConfigActions.forEach { testTaskProvider.configure { testTask -> it(testTask, context) } }
   }
 }

@@ -1,6 +1,20 @@
+load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.multipreview-asm",
+    srcs = ["src/main/java"],
+    iml_files = ["android.sdktools.multipreview-asm.iml"],
+    visibility = ["//visibility:public"],
+    # do not sort: must match IML order
+    deps = [
+        "@intellij//:intellij-sdk",
+        "@intellij//:com.intellij.java",
+    ],
+)
 
 # Build target to verify that compose-preview-detector builds for tools/base
 kotlin_library(
@@ -24,7 +38,6 @@ kotlin_test(
         "src/test/java/**/*.java",
     ]),
     friends = ["//tools/base/multipreview-asm:tools.compose-preview-detector"],
-    javacopts = ["-source 17"],
     jvm_flags = ["-Dtest.suite.jar=tools.compose-preview-detector.tests.jar"],
     resource_strip_prefix = "tools/base/multipreview-asm/src/test/resources",
     resources = glob(["src/test/resources/**"]),

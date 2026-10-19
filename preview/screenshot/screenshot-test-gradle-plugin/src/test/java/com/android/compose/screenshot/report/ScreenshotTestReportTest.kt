@@ -113,7 +113,11 @@ class ScreenshotTestReportTest {
 
     val classFileContentExcludingFooter = javaClass.getResourceAsStream("classError.txt")!!.readBytes().toString(Charsets.UTF_8)
     val expected =
-      String.format(classFileContentExcludingFooter, getBase64SrcFromPath(reference.absolutePath), reference.absolutePath)
+      String.format(
+          classFileContentExcludingFooter,
+          getBase64SrcFromPath(reference.absolutePath),
+          reference.absolutePath,
+        )
         .lines()
         .joinToString(System.lineSeparator())
     val classHtml = File(reportOutDir, "com.example.myapplication.ExampleInstrumentedTest.html")
@@ -131,6 +135,59 @@ class ScreenshotTestReportTest {
 
     val packageHtml = File(reportOutDir, ".html")
     assertThat(packageHtml).doesNotExist()
+  }
+
+  @Test
+  fun generateScreenshotReportSkipsUnparsableResultFile() {
+    createTestReportXmlFile()
+    // Simulates a report file left behind by an interrupted run: the <testsuite> start tag is
+    // damaged, so the file fails to parse with 'Element type "testsuite" must be followed by
+    // either attribute specifications, ">" or "/>".' (b/479862361)
+    val corruptedXml = File(resultsOutDir, "TEST-corrupted.xml")
+    Files.asCharSink(corruptedXml, Charsets.UTF_8)
+      .write(
+        """
+        <?xml version='1.0' encoding='UTF-8' ?>
+        <testsuite name="com.example.myapplication.CorruptedTest" tests="1" ="0">
+        </testsuite>
+        """
+          .trimIndent()
+      )
+
+    // Must not throw: the corrupted file is skipped, the valid one is still reported.
+    TestReport(resultsOutDir, reportOutDir).generateScreenshotTestReport()
+
+    assertThat(File(reportOutDir, "index.html")).exists()
+    val classHtml = File(reportOutDir, "com.example.myapplication.ExampleInstrumentedTest.html")
+    assertThat(classHtml).exists()
+    assertThat(classHtml.readText()).contains("useAppContext1")
+    assertThat(File(reportOutDir, "com.example.myapplication.CorruptedTest.html")).doesNotExist()
+  }
+
+  @Test
+  fun generateScreenshotReportErrorWithoutImageProperties() {
+    val reportXml = File(resultsOutDir, "TEST-render-error-no-properties.xml")
+    Files.asCharSink(reportXml, Charsets.UTF_8)
+      .write(
+        """
+        <?xml version='1.0' encoding='UTF-8' ?>
+        <testsuite name="com.example.myapplication.ExampleInstrumentedTest" tests="1" failures="0" errors="1" skipped="0" time="1.0" timestamp="2021-08-10T21:09:43" hostname="localhost">
+          <properties>
+            <property name="device" value="Previews" />
+          </properties>
+          <testcase name="renderErrorTest" classname="com.example.myapplication.ExampleInstrumentedTest" time="0.5">
+            <error message="Screenshot rendering failed: Cyclic style parent definitions" type="com.android.tools.screenshot.ScreenshotRenderException"/>
+          </testcase>
+        </testsuite>
+        """
+          .trimIndent()
+      )
+
+    TestReport(resultsOutDir, reportOutDir).generateScreenshotTestReport()
+
+    val classHtml = File(reportOutDir, "com.example.myapplication.ExampleInstrumentedTest.html")
+    assertThat(classHtml).exists()
+    assertThat(classHtml.readText()).contains("Screenshot rendering failed: Cyclic style parent definitions")
   }
 
   private fun createTempImageFile(dir: File, name: String): File {

@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.testing.suites
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasTestSuites
@@ -40,7 +39,7 @@ class AgpApplicationTestSuitesDeclarationTest {
         androidApplication {
           pluginCallbacks += MyAppCallback::class.java
           android {
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.inputs += AgpTestSuiteInputParameters.MERGED_MANIFEST
               it.targetVariants.add("debug")
               it.targets.apply { create("t1") {} }
@@ -59,7 +58,7 @@ class AgpApplicationTestSuitesDeclarationTest {
 class MyAppCallback : ApplicationComponentCallback {
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
     androidComponents.finalizeDsl { applicationExtension ->
-      Truth.assertThat(applicationExtension.testOptions.suites.getByName("first").useJunitEngine.inputs)
+      Truth.assertThat(applicationExtension.testOptions.customSuites.getByName("first").useJunitEngine.inputs)
         .containsExactly(AgpTestSuiteInputParameters.MERGED_MANIFEST)
     }
 

@@ -21,17 +21,25 @@ import java.io.Closeable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 
 /** A fake [ProcessTracker] for tests */
 class FakeProcessTracker : ProcessTracker, Closeable {
 
   private val channel = Channel<ProcessEvent>(10)
 
+  /** Whether [trackProcesses] is currently being collected. */
+  @Volatile
+  var isTracking = false
+    private set
+
   suspend fun send(vararg events: ProcessEvent) {
     events.forEach { channel.send(it) }
   }
 
-  override fun trackProcesses(): Flow<ProcessEvent> = channel.consumeAsFlow()
+  override fun trackProcesses(): Flow<ProcessEvent> =
+    channel.consumeAsFlow().onStart { isTracking = true }.onCompletion { isTracking = false }
 
   override fun close() {
     channel.close()

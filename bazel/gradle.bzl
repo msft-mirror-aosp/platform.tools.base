@@ -1,12 +1,25 @@
 load(":maven.bzl", "MavenRepoInfo")
 
+def _convert_problems(ctx):
+    args = ctx.actions.args()
+    html_report = ctx.outputs.problems_html
+    output_path = ctx.outputs.problems_txt
+    args.add("--html_report", html_report)
+    args.add("--output_path", output_path)
+
+    ctx.actions.run(
+        inputs = [html_report],
+        outputs = [output_path],
+        executable = ctx.executable._convert_script,
+        arguments = [args],
+        mnemonic = "convert",
+    )
+
 def _java_runtime(java_version):
     if java_version == 17:
         return "//prebuilts/studio/jdk/jdk17:java_runtime"
-    elif java_version == 11:
-        return "//prebuilts/studio/jdk/jdk11:java_runtime"
     else:
-        fail("unexpected java version " + java_version)
+        fail("unexpected java version %s" % java_version)
 
 def _gradle_build_impl(ctx):
     # TODO (b/182291459) --singlejar is a workaround for the Windows classpath jar bug.
@@ -19,6 +32,11 @@ def _gradle_build_impl(ctx):
         for source, dest in zip(ctx.attr.output_file_sources, ctx.outputs.output_file_destinations):
             outputs += [dest]
             args += ["--output", source, dest.path]
+
+    if ctx.attr.problems_report_path:
+        outputs += [ctx.outputs.problems_html]
+        args += ["--output", ctx.attr.problems_report_path, ctx.outputs.problems_html.path]
+
     distribution = ctx.attr.distribution.files.to_list()[0]
     args += ["--distribution", distribution.path]
     for task in ctx.attr.tasks:
@@ -49,6 +67,18 @@ def _gradle_build_impl(ctx):
         executable = ctx.executable._gradlew,
     )
 
+    files = ctx.outputs.output_file_destinations + [ctx.outputs.output_log]
+
+    if ctx.attr.problems_report_path:
+        files += [ctx.outputs.problems_txt, ctx.outputs.problems_html]
+        _convert_problems(ctx = ctx)
+
+    return [
+        DefaultInfo(
+            files = depset(files),
+        ),
+    ]
+
 # This rule is wrapped to allow the output Label to location map to be expressed as a map in the
 # build files.
 _gradle_build = rule(
@@ -63,6 +93,9 @@ _gradle_build = rule(
         "repos": attr.label_list(providers = [MavenRepoInfo]),
         "repo_zips": attr.label_list(allow_files = [".zip"]),
         "output_log": attr.output(),
+        "problems_report_path": attr.string(),
+        "problems_txt": attr.output(),
+        "problems_html": attr.output(),
         "java_runtime": attr.label(mandatory = True),
         "distribution": attr.label(allow_files = True),
         "max_workers": attr.int(default = 0, doc = "Max number of workers, 0 or negative means unset (Gradle will use the default: number of CPU cores)."),
@@ -79,6 +112,11 @@ _gradle_build = rule(
             cfg = "host",
             default = Label("//tools/base/bazel:gradlew_deploy.jar"),
             allow_single_file = True,
+        ),
+        "_convert_script": attr.label(
+            default = Label("//tools/base/build-system:convert_problems"),
+            executable = True,
+            cfg = "host",
         ),
     },
     implementation = _gradle_build_impl,
@@ -99,6 +137,7 @@ def gradle_build(
         gradle_properties = {},
         tags = [],
         java_version = 17,
+        problems_report_path = None,
         **kwargs):
     output_file_destinations = []
     output_file_sources = []
@@ -133,6 +172,9 @@ def gradle_build(
         tags = tags,
         tasks = tasks,
         max_workers = max_workers,
+        problems_report_path = problems_report_path,
+        problems_txt = name + "_problems.txt" if problems_report_path else None,
+        problems_html = name + "_problems_report.html" if problems_report_path else None,
         **kwargs
     )
 

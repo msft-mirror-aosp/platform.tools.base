@@ -54,12 +54,11 @@ class ProcessTrackerFactoryAdblibTest {
 }
 
 @Suppress("SameParameterValue")
-private fun deviceProperties(aplLevel: Int, abi: Abi) =
-  DeviceProperties.buildForTest {
-    androidVersion = AndroidVersion(aplLevel)
-    this.abiList = listOf(abi)
-    icon = EmptyIcon.DEFAULT
-  }
+private fun deviceProperties(aplLevel: Int, abi: Abi) = DeviceProperties.buildForTest {
+  androidVersion = AndroidVersion(aplLevel)
+  this.abiList = listOf(abi)
+  icon = EmptyIcon.DEFAULT
+}
 
 @Suppress("SameParameterValue")
 private fun mockDevice(serialNumber: String): ConnectedDevice =

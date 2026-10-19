@@ -19,9 +19,14 @@ package com.android.tools.deployer;
 import static com.android.tools.deployer.common.InstallOptions.MOBILE_INSTALL_DEFAULTS;
 import static com.android.tools.deployer.common.InstallOptions.STUDIO_DEFAULTS;
 
+import com.android.adblib.AdbServerController;
 import com.android.adblib.AdbSession;
+import com.android.adblib.ConnectedDevice;
+import com.android.adblib.ConnectedDeviceKt;
 import com.android.adblib.tools.AdbLibSessionFactoryKt;
+import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
@@ -31,10 +36,13 @@ import com.android.tools.deployer.common.ChangeType;
 import com.android.tools.deployer.common.DeployMetric;
 import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.common.DeployerOption;
+import com.android.tools.deployer.common.DeployerProperties;
 import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.common.InstallOptions;
 import com.android.tools.deployer.common.Installer;
 import com.android.tools.deployer.common.UIService;
+import com.android.tools.deployer.common.UnsupportedIDevice;
 import com.android.tools.deployer.install.InstallMode;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.component.ApkParserException;
@@ -51,8 +59,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -65,7 +76,6 @@ public class DeployerRunner {
 
     // These values are > 1000 in order to prevent collision with the DeployerException.Error
     // ordinal that is returned if a DeployerException is thrown during deployment.
-    private static final int ERR_SPECIFIED_DEVICE_NOT_FOUND = 1002;
     private static final int ERR_NO_MATCHING_DEVICE = 1003;
     private static final int ERR_BAD_ARGS = 1004;
 
@@ -93,6 +103,8 @@ public class DeployerRunner {
     private final UIService service;
 
     private long deviceWaitTimeoutMs = TimeUnit.SECONDS.toMillis(30);
+    private Integer serverPort = null;
+    private Boolean useConnectedDevices = null;
 
     // Run it from bazel with the following command:
     // bazel run :deployer.runner INSTALL --device=<target device> <package name> <apk 1> <apk 2>
@@ -182,6 +194,16 @@ public class DeployerRunner {
         deviceWaitTimeoutMs = unit.toMillis(duration);
     }
 
+    @VisibleForTesting
+    public void setServerPort(int serverPort) {
+        this.serverPort = serverPort;
+    }
+
+    @VisibleForTesting
+    public void setUseConnectedDevices(boolean useConnectedDevices) {
+        this.useConnectedDevices = useConnectedDevices;
+    }
+
     public int run(String[] args) {
         if (args.length < 3) {
             // The values for --user come directly from the framework's package manager, and is
@@ -193,48 +215,98 @@ public class DeployerRunner {
             return ERR_BAD_ARGS;
         }
 
-        try {
-            DeployRunnerParameters parameters = DeployRunnerParameters.parse(args);
-            ILogger logger = new StdLogger(parameters.getLogLevel());
-            Map<String, IDevice> devices =
-                    waitForDevices(
+        DeployRunnerParameters parameters = DeployRunnerParameters.parse(args);
+        StdLogger.Level logLevel = parameters.getLogLevel();
+        ILogger logger = new StdLogger(logLevel);
+        int serverPort =
+                this.serverPort != null
+                        ? this.serverPort
+                        : DeployerRunnerUtilsKt.getAdbServerPort(logger);
+
+        if (isUseConnectedDevices()) {
+            AdbServerController adbServerController =
+                    DeployerRunnerUtilsKt.createAndStartAdbServerControllerBlocking(
+                            parameters.getAdbExecutablePath(), serverPort, logLevel);
+            try (WaitForDevicesResult devicesResult =
+                    waitForConnectedDevices(
+                            adbServerController, parameters.getTargetDevices(), logLevel, logger)) {
+                return executeDeployment(parameters, devicesResult, logger);
+            } finally {
+                try {
+                    adbServerController.close();
+                } catch (Exception e) {
+                    logger.warning("Failed to close AdbServerController: " + e.getMessage());
+                }
+            }
+        } else {
+            if (parameters.getJdwpClientSupport()) {
+                AndroidDebugBridge.init(AdbInitOptions.DEFAULT);
+            } else {
+                AndroidDebugBridge.init(
+                        AdbInitOptions.builder()
+                                .setClientSupportEnabled(false)
+                                .useJdwpProxyService(false)
+                                .build());
+            }
+            try (WaitForDevicesResult devicesResult =
+                    waitForIDevices(
                             parameters.getAdbExecutablePath(),
                             parameters.getTargetDevices(),
-                            parameters.getJdwpClientSupport(),
-                            logger);
-
-            if (devices.isEmpty()) {
-                logger.error(null, "No device connected to ddmlib");
-                return ERR_NO_MATCHING_DEVICE;
+                            logLevel,
+                            logger)) {
+                return executeDeployment(parameters, devicesResult, logger);
+            } finally {
+                AndroidDebugBridge.terminate();
             }
-
-            for (String expectedDevice : parameters.getTargetDevices()) {
-                if (!devices.containsKey(expectedDevice)) {
-                    logger.error(null, "Could not find specified device: %s", expectedDevice);
-                    return ERR_SPECIFIED_DEVICE_NOT_FOUND;
-                }
-            }
-
-            for (IDevice device : devices.values()) {
-                int status = run(device, parameters, logger);
-                if (status != SUCCESS) {
-                    logger.error(null, "Error deploying to device: %s", device.getName());
-                    return status;
-                }
-            }
-
-            return SUCCESS;
-        } finally {
-            AndroidDebugBridge.terminate();
         }
     }
 
-    // Left in to support how DeployService calls us.
-    public int run(IDevice device, String[] args, ILogger logger) {
-        return run(device, DeployRunnerParameters.parse(args), logger);
+    /**
+     * Returns `true` if migration to ConnectedDevice is enabled. For deployerRunner command line
+     * utility it is done through `-Dcom.android.tools.deployer.use.connected.device=true` VM
+     * option.
+     */
+    private boolean isUseConnectedDevices() {
+        if (useConnectedDevices != null) {
+            return useConnectedDevices;
+        }
+
+        String value = System.getProperty(DeployerProperties.USE_CONNECTED_DEVICE_PROPERTY_NAME);
+        if (value != null) {
+            return Boolean.parseBoolean(value);
+        }
+        return DeployerProperties.USE_CONNECTED_DEVICE_DEFAULT_VALUE;
     }
 
-    private int run(IDevice device, DeployRunnerParameters parameters, ILogger logger) {
+    private int executeDeployment(
+            DeployRunnerParameters parameters, WaitForDevicesResult devicesResult, ILogger logger) {
+        if (devicesResult.devices.isEmpty()) {
+            logger.error(null, "No device connected");
+            return ERR_NO_MATCHING_DEVICE;
+        }
+
+        for (DeviceHolder device : devicesResult.devices.values()) {
+            int status = run(device, devicesResult.session, parameters, logger);
+            if (status != SUCCESS) {
+                logger.error(null, "Error deploying to device: %s", device.getSerialNumber());
+                return status;
+            }
+        }
+
+        return SUCCESS;
+    }
+
+    // Left in to support how DeployService calls us.
+    public int run(DeviceHolder device, AdbSession session, String[] args, ILogger logger) {
+        DeployRunnerParameters parameters = DeployRunnerParameters.parse(args);
+        return run(device, session, parameters, logger);
+    }
+
+    private int run(
+            DeviceHolder device,
+            AdbSession session,
+            DeployRunnerParameters parameters,
+            ILogger logger) {
         EnumSet<ChangeType> optimisticInstallSupport = EnumSet.noneOf(ChangeType.class);
         if (parameters.isOptimisticInstall()) {
             optimisticInstallSupport.add(ChangeType.DEX);
@@ -242,13 +314,6 @@ public class DeployerRunner {
         }
 
         metrics.getDeployMetrics().clear();
-
-        // Use an adblib connection. This is piggybagging on the adb server guaranteed to be
-        // spawned by DDMLIB.
-        AdbSession session =
-                AdbLibSessionFactoryKt.createSocketConnectSession(
-                        AndroidDebugBridge::getSocketAddress,
-                        new DeployerRunnerLoggerFactory(parameters.getLogLevel()));
 
         AdbClient adb = new AdbClient(device, logger, session);
         Installer installer =
@@ -296,7 +361,7 @@ public class DeployerRunner {
             if (parameters.getCommands().contains(DeployRunnerParameters.Command.INSTALL)) {
                 InstallOptions.Builder options = defaultInstallOptions.toBuilder();
 
-                if (device.supportsFeature(IDevice.HardwareFeature.EMBEDDED)) {
+                if (device.isEmbedded()) {
                     options.setGrantAllPermissions();
                 }
 
@@ -338,11 +403,6 @@ public class DeployerRunner {
             return e.getError().ordinal();
         } finally {
             service.shutdown();
-            try {
-                session.close();
-            } catch (Exception e) {
-                logger.warning("Failed to close AdbSession: " + e.getMessage());
-            }
         }
         return SUCCESS;
     }
@@ -369,10 +429,10 @@ public class DeployerRunner {
         }
     }
 
-    private Map<String, IDevice> waitForDevices(
+    private WaitForDevicesResult waitForIDevices(
             String adbExecutablePath,
             List<String> deviceSerials,
-            boolean jdwpClientSupport,
+            StdLogger.Level logLevel,
             ILogger logger) {
         try (Trace unused = Trace.begin("waitForDevices()")) {
             int expectedDevices = deviceSerials.isEmpty() ? 1 : deviceSerials.size();
@@ -398,16 +458,6 @@ public class DeployerRunner {
                         public void deviceChanged(IDevice device, int changeMask) {}
                     };
 
-            if (jdwpClientSupport) {
-                AndroidDebugBridge.init(AdbInitOptions.DEFAULT);
-            } else {
-                AndroidDebugBridge.init(
-                        AdbInitOptions.builder()
-                                .setClientSupportEnabled(false)
-                                .useJdwpProxyService(false)
-                                .build());
-            }
-
             AndroidDebugBridge.addDeviceChangeListener(listener);
 
             // This needs to be done *after* we add the listener, or else we risk missing devices.
@@ -423,20 +473,79 @@ public class DeployerRunner {
             }
             if (bridge == null) {
                 logger.error(null, "Could not create debug bridge");
-                return Collections.emptyMap();
+                return WaitForDevicesResult.empty();
             }
 
             try {
-                if (latch.await(deviceWaitTimeoutMs, TimeUnit.MILLISECONDS)) {
-                    return devices;
+                if (!latch.await(deviceWaitTimeoutMs, TimeUnit.MILLISECONDS)) {
+                    return WaitForDevicesResult.empty();
                 }
-                return Collections.emptyMap();
             } catch (InterruptedException e) {
-                return Collections.emptyMap();
+                return WaitForDevicesResult.empty();
             } finally {
                 AndroidDebugBridge.removeDeviceChangeListener(listener);
             }
+
+            // Create AdbSession
+            AdbSession session =
+                    AdbLibSessionFactoryKt.createSocketConnectSession(
+                            AndroidDebugBridge::getSocketAddress,
+                            new DeployerRunnerLoggerFactory(logLevel));
+
+            return WaitForDevicesResult.of(createLegacyDeviceHolders(devices), session, logger);
         }
+    }
+
+    private WaitForDevicesResult waitForConnectedDevices(
+            AdbServerController adbServerController,
+            List<String> deviceSerials,
+            StdLogger.Level logLevel,
+            ILogger logger) {
+        try (Trace unused = Trace.begin("waitForConnectedDevices()")) {
+            AdbSession session =
+                    DeployerRunnerUtilsKt.createAdbSession(adbServerController, logLevel);
+
+            List<ConnectedDevice> connectedDevices;
+            try {
+                connectedDevices =
+                        JavaBridge.runBlocking(
+                                session,
+                                continuation ->
+                                        DeployerRunnerUtilsKt.waitForConnectedDevices(
+                                                session,
+                                                deviceSerials,
+                                                deviceWaitTimeoutMs,
+                                                continuation));
+            } catch (Exception e) {
+                logger.warning("Unexpected error during device discovery: " + e.getMessage());
+                connectedDevices = Collections.emptyList();
+            }
+
+            Map<String, DeviceHolder> deviceHolders = new HashMap<>();
+            for (ConnectedDevice connectedDevice : connectedDevices) {
+                String serial = ConnectedDeviceKt.getSerialNumber(connectedDevice);
+                deviceHolders.put(
+                        serial,
+                        new DeviceHolder(
+                                new UnsupportedIDevice(), Optional.of(connectedDevice), true));
+            }
+
+            return WaitForDevicesResult.of(deviceHolders, session, logger);
+        }
+    }
+
+    /**
+     * Creates legacy {@link DeviceHolder} instances without adblib {@link ConnectedDevice} lookup.
+     */
+    @Deprecated
+    @NonNull
+    private Map<String, DeviceHolder> createLegacyDeviceHolders(
+            @NonNull Map<String, IDevice> devices) {
+        Map<String, DeviceHolder> deviceHolders = new HashMap<>(devices.size());
+        for (Map.Entry<String, IDevice> entry : devices.entrySet()) {
+            deviceHolders.put(entry.getKey(), new DeviceHolder(entry.getValue(), Optional.empty()));
+        }
+        return deviceHolders;
     }
 
     // MI has no way for users to respond to a prompt; just always proceed.
@@ -448,5 +557,54 @@ public class DeployerRunner {
 
         @Override
         public void message(String message) {}
+    }
+
+    /**
+     * A container for the results of a {@link #waitForIDevices} and {@link
+     * #waitForConnectedDevices} operations.
+     *
+     * <p>The main purpose of this class is to encapsulate the device discovery results while
+     * managing the lifecycle of the `AdbSession`.
+     */
+    private static final class WaitForDevicesResult implements AutoCloseable {
+        @NonNull private final Map<String, DeviceHolder> devices;
+        @Nullable private final AdbSession session;
+        @Nullable private final ILogger logger;
+
+        private WaitForDevicesResult(
+                @NonNull Map<String, DeviceHolder> devices,
+                @Nullable AdbSession session,
+                @Nullable ILogger logger) {
+            this.devices = devices;
+            this.session = session;
+            this.logger = logger;
+        }
+
+        public static WaitForDevicesResult empty() {
+            return new WaitForDevicesResult(Collections.emptyMap(), null, null);
+        }
+
+        public static WaitForDevicesResult of(
+                @NonNull Map<String, DeviceHolder> devices,
+                @NonNull AdbSession session,
+                @NonNull ILogger logger) {
+            Objects.requireNonNull(devices, "devices must not be null");
+            Objects.requireNonNull(session, "session must not be null");
+            Objects.requireNonNull(logger, "logger must not be null");
+            return new WaitForDevicesResult(devices, session, logger);
+        }
+
+        @Override
+        public void close() {
+            if (session != null) {
+                try {
+                    session.close();
+                } catch (Exception e) {
+                    if (logger != null) {
+                        logger.warning("Failed to close AdbSession: " + e.getMessage());
+                    }
+                }
+            }
+        }
     }
 }

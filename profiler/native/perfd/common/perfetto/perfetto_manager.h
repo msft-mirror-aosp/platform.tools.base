@@ -19,7 +19,7 @@
 
 #include "perfd/common/perfetto/perfetto.h"
 #include "proto/trace.grpc.pb.h"
-#include "protos/perfetto/config/perfetto_config.grpc.pb.h"
+#include "protos/perfetto/config/perfetto_config.pb.h"
 #include "utils/fs/file_system.h"
 
 namespace profiler {

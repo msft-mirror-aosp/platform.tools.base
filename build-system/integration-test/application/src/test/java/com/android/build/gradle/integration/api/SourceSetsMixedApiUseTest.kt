@@ -39,19 +39,18 @@ import org.junit.Test
 class SourceSetsMixedApiUseTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.api.use"
-          defaultConfig.applicationId = "com.example.api.use"
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.api.use"
+        defaultConfig.applicationId = "com.example.api.use"
 
-          enableKotlin = false
-        }
-        pluginCallbacks += MyCallback::class.java
+        enableKotlin = false
       }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      pluginCallbacks += MyCallback::class.java
     }
+    gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+  }
 
   class MyCallback : LegacyApplicationCallback {
     override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {

@@ -1,0 +1,50 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//tools/base/bazel:bazel.bzl", "iml_module")
+
+licenses(["notice"])
+
+# Replica of ../IntellijInferredThreadDetector's :lib / :consumer built from iml_module
+# targets, whose underlying rule exposes sources through java_srcs/kotlin_srcs rather than
+# srcs. This exercises the iml path of lint_partial_aspect. Handwritten test fixtures (not
+# managed by go/iml_to_build); the .iml files are minimal stand-ins required by the macro.
+# Kept in its own package so these sources do not sit inside the content root of the
+# kotlin_library test modules next door.
+iml_module(
+    name = "lib",
+    srcs = ["lib/src"],
+    iml_files = ["lib/lib.iml"],
+    deps = [
+        "//tools/base/annotations",
+        # Real iml_modules get the Kotlin stdlib from @intellij//:intellij-sdk; these
+        # fixtures avoid that dependency so they can build without the IDE prebuilts.
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+)
+
+# Linted with partial analysis: :lib is analyzed as its own module, so its recorded
+# @UiThread state is visible here and BOTH WrongThread errors in Consumer.kt are found.
+iml_module(
+    name = "consumer",
+    srcs = ["consumer/src"],
+    iml_files = ["consumer/consumer.iml"],
+    lint_baseline = "ConsumerBoth.xml",
+    lint_partial_analysis = True,
+    deps = [
+        ":lib",
+        "//tools/base/annotations",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+)

@@ -4,15 +4,26 @@ msvc_tools_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_ru
 
 windows_sdk_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_rules.bzl", "windows_sdk_repository")
 
-local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
-
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 rbe = use_extension("//tools/base/bazel/rbe:extensions.bzl", "rbe")
 
 macos_sdk_repository(
     name = "macos_sdk",
     build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
+    sdk_versions = [
+        "26.6",
+        "26.5",
+        "26.4",
+        "26.3",
+        "26.2",
+        "26.1",
+        "26.0",
+        "26",
+        "",
+    ],
 )
 
 msvc_tools_repository(
@@ -26,27 +37,13 @@ windows_sdk_repository(
     sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
 )
 
-local_repository(
-    name = "windows_toolchains",
-    path = "tools/base/bazel/toolchains/windows",
-)
-
 # CC toolchains
 register_toolchains(
     "//build/bazel/toolchains/cc/linux_clang:x64_toolchain",
+    "//build/bazel/toolchains/cc/linux_clang:arm64_toolchain",
     "//build/bazel/toolchains/cc/mac_clang:x64_toolchain",
     "//build/bazel/toolchains/cc/mac_clang:arm64_toolchain",
     "//build/bazel/toolchains/cc/windows_clang:x64_toolchain",
-)
-
-# Python toolchains
-register_toolchains(
-    "//tools/base/bazel/toolchains/darwin:python_toolchain",
-    "//prebuilts/python/linux-x86:python_toolchain",
-    "//prebuilts/python/linux-x86:exec_tools_toolchain",
-    # Bazel cannot auto-detect python on Windows yet
-    # See: https://github.com/bazelbuild/bazel/issues/7844
-    "@windows_toolchains//:python_toolchain",
 )
 
 # Java toolchains
@@ -58,10 +55,9 @@ register_toolchains(
     "//prebuilts/studio/jdk/jbr25:runtime_toolchain_definition",
 
     # Java runtime used to execute the Java compiler ('javac')
-    "//prebuilts/studio/jdk:java8_compile_toolchain_definition",
-    "//prebuilts/studio/jdk:java11_compile_toolchain_definition",
     "//prebuilts/studio/jdk:java17_compile_toolchain_definition",
     "//prebuilts/studio/jdk:java21_compile_toolchain_definition",
+    "//prebuilts/studio/jdk:java25_compile_toolchain_definition",
 
     # Bazel want those for bootclasspath shenanigans. Not used in studio-main rules
     # https://github.com/bazelbuild/rules_java/blob/master/toolchains/BUILD#L75
@@ -92,6 +88,19 @@ new_local_repository(
     name = "gcc_lib",
     build_file = "//build/bazel/toolchains/cc/linux_clang:gcc_lib.BUILD",
     path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
+)
+
+# Target sysroot for cross-compiling to Linux ARM64 (Debian Bullseye, glibc 2.31).
+# This is the sysroot Chromium uses; see "bullseye_arm64" in
+# https://chromium.googlesource.com/chromium/src/+/9754d6acd2be/build/linux/sysroot_scripts/sysroots.json.
+# This sysroot was added in a rush to support Googlebooks in Android CLI (b/549892162); we can reconsider
+# this approach later, especially if our Linux ARM64 toolchain is later used more broadly.
+http_archive(
+    name = "sysroot_linux_arm64",
+    build_file = "//build/bazel/toolchains/cc/linux_clang:sysroot_arm64.BUILD",
+    sha256 = "c7176a4c7aacbf46bda58a029f39f79a68008d3dee6518f154dcf5161a5486d8",
+    type = "tar.xz",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/c7176a4c7aacbf46bda58a029f39f79a68008d3dee6518f154dcf5161a5486d8"],
 )
 
 rbe.constant(

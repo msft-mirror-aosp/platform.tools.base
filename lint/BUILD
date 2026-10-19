@@ -93,6 +93,7 @@ iml_module(
         "@intellij//:com.intellij.java",
         "@intellij//:org.jetbrains.kotlin",
         "@intellij//:intellij.platform.uast",
+        "@intellij//:com.intellij.gradle",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/lint:studio.android.sdktools.lint-model",
         "//tools/base/common:studio.android.sdktools.common",
@@ -308,6 +309,7 @@ kotlin_library(
     ]),
     lint_baseline = "studio-checks/lint_baseline.xml",
     lint_classpath = ["//tools/base/lint/cli"],
+    lint_partial_analysis = True,
     visibility = ["//visibility:public"],
     deps = [
         ":tools.lint-api",

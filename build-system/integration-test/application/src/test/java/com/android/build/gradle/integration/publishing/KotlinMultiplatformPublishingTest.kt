@@ -33,21 +33,20 @@ import org.junit.Test
 class KotlinMultiplatformPublishingTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidKotlinMultiplatformLibrary(":lib") {
-        applyPlugin(PluginType.MAVEN_PUBLISH)
-        pluginCallbacks += Callback::class.java
+  val rule = GradleRule.from {
+    androidKotlinMultiplatformLibrary(":lib") {
+      applyPlugin(PluginType.MAVEN_PUBLISH)
+      pluginCallbacks += Callback::class.java
 
-        android {
-          namespace = "com.example.lib"
-          minSdk = 24
-        }
-
-        group = "com.example"
-        version = "0.1.2"
+      android {
+        namespace = "com.example.lib"
+        minSdk = 24
       }
+
+      group = "com.example"
+      version = "0.1.2"
     }
+  }
 
   class Callback : GenericCallback {
     override fun handleProject(project: Project) {

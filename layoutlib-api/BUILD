@@ -10,8 +10,6 @@ iml_module(
     iml_files = ["android.sdktools.layoutlib-api.iml"],
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
-    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     exports = [
@@ -27,6 +25,22 @@ iml_module(
     ],
 )
 
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.layoutlib-api.tests",
+    iml_files = ["android.sdktools.layoutlib-api.tests.iml"],
+    jvm_target = "8",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
+)
+
 maven_library(
     name = "tools.layoutlib-api",
     srcs = glob([
@@ -34,7 +48,7 @@ maven_library(
     ]),
     coordinates = "com.android.tools.layoutlib:layoutlib-api",
     description = "Library to use the rendering library for Android layouts: layoutlib",
-    javacopts = ["--release 17"],  # AGP supports up to Java 17. Targets Java 17 bytecode.
+    jvm_target = "17",  # AGP supports up to Java 17. Targets Java 17 bytecode.
     notice = "NOTICE",
     pom_name = "Android Tools layoutlib-api",
     resource_strip_prefix = "tools/base/layoutlib-api",

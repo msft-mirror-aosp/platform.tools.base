@@ -50,5 +50,6 @@ abstract class CollectClassesTransform : TransformAction<GenericTransformParamet
 }
 
 /** Write collection element by element to the outputFile. */
-internal fun writeListToFile(outputFile: File, list: Collection<String>): File =
-  outputFile.apply { writeText(list.joinToString(separator = "\n")) }
+internal fun writeListToFile(outputFile: File, list: Collection<String>): File = outputFile.apply {
+  writeText(list.joinToString(separator = "\n"))
+}

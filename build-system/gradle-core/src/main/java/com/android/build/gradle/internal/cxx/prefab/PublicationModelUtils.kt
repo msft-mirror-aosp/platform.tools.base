@@ -37,15 +37,14 @@ fun PrefabPublication.copyAsSingleAbi(abiName: String): PrefabPublication {
 fun PrefabPublication.copyWithLibraryInformationAdded(): PrefabPublication {
   fun PrefabModulePublication.patchLibraryType(): PrefabModulePublication {
     if (abis.isEmpty()) return this
-    val abiLibraries =
-      abis.mapNotNull { abi ->
-        readMiniConfigCreateIfNecessary(abi.abiAndroidGradleBuildJsonFile)
-          .libraries
-          .values
-          .singleOrNull { it.artifactName == moduleName }
-          ?.output
-          ?.let { abi to it }
-      }
+    val abiLibraries = abis.mapNotNull { abi ->
+      readMiniConfigCreateIfNecessary(abi.abiAndroidGradleBuildJsonFile)
+        .libraries
+        .values
+        .singleOrNull { it.artifactName == moduleName }
+        ?.output
+        ?.let { abi to it }
+    }
 
     return copy(abis = abiLibraries.map { (abi, library) -> abi.copy(abiLibrary = library.absoluteFile) })
   }

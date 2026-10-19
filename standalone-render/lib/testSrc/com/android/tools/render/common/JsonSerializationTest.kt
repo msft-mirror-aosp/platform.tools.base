@@ -218,6 +218,16 @@ class JsonSerializationTest {
     val restoredPreviewRendering = readPreviewRenderingJson(stringWriter.toString().reader())
 
     assertEquals(previewRendering, restoredPreviewRendering)
+
+    val previewRenderingWithRClasses =
+      previewRendering.copy(
+        resourceDirs = listOf("/path/to/res1", "/path/to/res2"),
+        rClassJars = listOf("/path/to/R.jar"),
+      )
+    val stringWriterWithRClasses = StringWriter()
+    writePreviewRenderingToJson(stringWriterWithRClasses, previewRenderingWithRClasses)
+    val restoredWithRClasses = readPreviewRenderingJson(stringWriterWithRClasses.toString().reader())
+    assertEquals(previewRenderingWithRClasses, restoredWithRClasses)
   }
 
   @Test
@@ -285,7 +295,8 @@ class JsonSerializationTest {
           {
             "previewId": "previewId1",
             "methodFQN": "methodFQN1",
-            "imagePath": "pkg/class/image1.png"
+            "imagePath": "pkg/class/image1.png",
+            "displayName": "customDisplayName"
           },
           {
             "previewId": "previewId2",
@@ -337,7 +348,7 @@ class JsonSerializationTest {
       PreviewRenderingResult(
         null,
         listOf(
-          PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image1.png", null),
+          PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image1.png", null, "customDisplayName"),
           PreviewScreenshotResult(
             "previewId2",
             "methodFQN2",
@@ -423,7 +434,7 @@ class JsonSerializationTest {
       PreviewRenderingResult(
         null,
         listOf(
-          PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image.png", null),
+          PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image.png", null, "customDisplayName"),
           PreviewScreenshotResult(
             "previewId2",
             "methodFQN2",
@@ -475,6 +486,39 @@ class JsonSerializationTest {
               ),
               listOf("com.foo.Bar"),
             ),
+          ),
+        ),
+      )
+
+    val stringWriter = StringWriter()
+    writePreviewRenderingResult(stringWriter, previewRenderingResult)
+
+    val restoredPreviewRenderingResult = readPreviewRenderingResultJson(stringWriter.toString().reader())
+
+    assertEquals(previewRenderingResult, restoredPreviewRenderingResult)
+  }
+
+  @Test
+  fun testPreviewRenderingResultWithComponentTreePathToJsonAndBack() {
+    val previewRenderingResult =
+      PreviewRenderingResult(
+        null,
+        listOf(
+          PreviewScreenshotResult(
+            previewId = "previewId1",
+            methodFQN = "methodFQN1",
+            imagePath = "pkg/class/image.png",
+            error = null,
+            displayName = "customDisplayName",
+            componentTreePath = "pkg/class/image.json",
+          ),
+          PreviewScreenshotResult(
+            previewId = "previewId2",
+            methodFQN = "methodFQN2",
+            imagePath = "",
+            error = null,
+            displayName = null,
+            componentTreePath = "pkg/class/image2.json",
           ),
         ),
       )

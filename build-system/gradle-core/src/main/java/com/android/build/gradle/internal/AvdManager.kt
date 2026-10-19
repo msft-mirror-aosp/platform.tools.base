@@ -115,10 +115,10 @@ class AvdManager(
     val systemImage = retrieveSystemImage(sdkHandler, imageLocation)
     systemImage ?: error("System image does not exist at $imageLocation")
 
-    val device =
-      deviceManager.getDevices(DeviceManager.DeviceCategory.DEFAULT, DeviceManager.DeviceCategory.VENDOR).find {
-        it.displayName == hardwareProfile
-      }
+    // Search all device categories, including user-defined profiles (~/.android/devices.xml) and
+    // profiles shipped in system images. Device XML parsing is hardened against XXE in DeviceSchema
+    // and DeviceParser, so these sources do not need to be excluded here.
+    val device = deviceManager.getDevices().find { it.displayName == hardwareProfile }
     if (device == null) {
       val availableDevices =
         getHardwareProfiles(hardwareProfile).ifEmpty {

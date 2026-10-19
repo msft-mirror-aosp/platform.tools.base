@@ -29,18 +29,38 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 /**
  * Assemble tests for packagingOptions.
  *
  * <p>Creates two jar files and test various packaging options.
  */
+@RunWith(Parameterized.class)
 public class PackagingOptionsTest {
+
+    final boolean enableJavaResOptimizations;
+
+    @Parameterized.Parameters(name = "enableJavaResOptimizations_{0}")
+    public static List<Object[]> parameters() {
+        return Arrays.asList(
+                new Object[][] {
+                        {false}, {true},
+                });
+    }
+
+    public PackagingOptionsTest(boolean enableJavaResOptimizations) {
+        this.enableJavaResOptimizations = enableJavaResOptimizations;
+    }
 
     // Projects to create jar files.
     private static GradleProject jarProject1 = new EmptyGradleProject();

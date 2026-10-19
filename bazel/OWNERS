@@ -1,7 +1,8 @@
 # Bug component: 1507221
+include platform/tools/adt_infra_internal:/OWNERS
+
 estebandlc@google.com
 gharrma@google.com
-tomrenn@google.com
 vsiva@google.com
 cmw@google.com # (London timezone)
 emrekultursay@google.com  # for maven

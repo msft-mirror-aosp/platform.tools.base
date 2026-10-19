@@ -16,6 +16,8 @@
 package com.android.tools.lint.checks.fx.utils
 
 import com.google.common.truth.Truth.assertThat
+import kotlin.math.max
+import kotlin.math.min
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import org.junit.Test
@@ -290,5 +292,76 @@ class MonotoneTest {
       ),
       State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(0), Expr.Const(1), Expr.Const(2))),
     )
+  }
+
+  /*
+   * Example 6: multiple roots sharing still-climbing cycles.
+   *
+   * Regression tests for stale root retirement in the per-round dirty tracking: a root may only be
+   * retired from the iteration domain once nothing in its transitive read closure can still grow,
+   * even when the staleness is only visible through regions of the read graph first traversed on
+   * behalf of other roots.
+   */
+
+  private val order4 = TotalOrderLattice(4)
+
+  @Test
+  fun `root reading a cycle post-update is not retired before the cycle converges`() {
+    val system =
+      object : Monotone<String, Int>, Lattice<Int> by order4 {
+        override fun invoke(rec: (String) -> Int, k: String) =
+          when (k) {
+            "p" -> min(rec("q") + 1, 3)
+            "q" -> min(rec("p") + 1, 3)
+            "A" -> rec("q")
+            "B" -> rec("p")
+            else -> error("unknown $k")
+          }
+      }
+
+    val m = system.leastFixPoint(listOf("A", "B"))
+    assertThat(m["A"]).isEqualTo(3)
+    assertThat(m["B"]).isEqualTo(3)
+  }
+
+  @Test
+  fun `staleness hidden behind a quiescent cycle member still propagates to dependent roots`() {
+    val system =
+      object : Monotone<String, Int>, Lattice<Int> by order4 {
+        override fun invoke(rec: (String) -> Int, k: String) =
+          when (k) {
+            "w" -> min(rec("z") + 1, 3)
+            "z" -> rec("w")
+            "S" -> rec("w")
+            "R" -> rec("z")
+            else -> error("unknown $k")
+          }
+      }
+
+    val m = system.leastFixPoint(listOf("S", "R"))
+    assertThat(m["S"]).isEqualTo(3)
+    assertThat(m["R"]).isEqualTo(3)
+  }
+
+  @Test
+  fun `demand-driven fixpoint over overlapping cycles agrees with dense Kleene iteration`() {
+    val deps = Array(10) { i -> intArrayOf((i * 3 + 1) % 10, (i * 7 + 2) % 10) }
+
+    val system =
+      object : Monotone<Int, Int>, Lattice<Int> by order4 {
+        override fun invoke(rec: (Int) -> Int, k: Int) = min(max(rec(deps[k][0]), rec(deps[k][1])) + k % 2, 3)
+      }
+
+    // Reference: iterate all ten points simultaneously until globally stable.
+    var reference = List(10) { 0 }
+    while (true) {
+      val next = List(10) { i -> min(max(reference[deps[i][0]], reference[deps[i][1]]) + i % 2, 3) }
+      if (next == reference) break
+      reference = next
+    }
+
+    val roots = listOf(0, 1, 2, 3)
+    val m = system.leastFixPoint(roots)
+    for (r in roots) assertThat(m[r] ?: 0).isEqualTo(reference[r])
   }
 }

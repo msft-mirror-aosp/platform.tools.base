@@ -44,7 +44,6 @@ class CaptureExecutor(
   private val root: View,
   private val isXr: Boolean,
   private val rootsDetector: RootsDetector,
-  private val foldSupport: FoldSupport?,
   private val updateState: (ProgressCheckpoint) -> Unit,
   private val connection: Connection,
 ) : Executor {
@@ -144,9 +143,6 @@ class CaptureExecutor(
     }
     if (snapshotResponse != null || context.isLastCapture) {
       sendAllPropertiesEvent(rootView, snapshotResponse)
-
-      // Send the updated fold state, in case we haven't been sending it continuously.
-      foldSupport?.sendFoldStateEventNow()
     }
     snapshotResponse?.let { snapshotRequest?.result?.complete(it.build()) }
     return
@@ -193,29 +189,28 @@ class CaptureExecutor(
     }
   }
 
-  private fun parseRootView(rootView: View, stringTable: StringTable) =
-    ThreadUtils.runOnMainThread {
-      val node = rootView.toNode(stringTable)
-      val offset = IntArray(2)
-      rootView.getLocationInSurface(offset)
-      val display = rootView.getDisplayCompat()
+  private fun parseRootView(rootView: View, stringTable: StringTable) = ThreadUtils.runOnMainThread {
+    val node = rootView.toNode(stringTable)
+    val offset = IntArray(2)
+    rootView.getLocationInSurface(offset)
+    val display = rootView.getDisplayCompat()
 
-      LayoutInspectorViewProtocol.RootView.newBuilder()
-        .apply {
-          this.node = node
-          this.offset =
-            LayoutInspectorViewProtocol.Point.newBuilder()
-              .apply {
-                x = offset[0]
-                y = offset[1]
-              }
-              .build()
-          if (display != null) {
-            this.displayId = display.displayId
-          }
+    LayoutInspectorViewProtocol.RootView.newBuilder()
+      .apply {
+        this.node = node
+        this.offset =
+          LayoutInspectorViewProtocol.Point.newBuilder()
+            .apply {
+              x = offset[0]
+              y = offset[1]
+            }
+            .build()
+        if (display != null) {
+          this.displayId = display.displayId
         }
-        .build()
-    }
+      }
+      .build()
+  }
 
   private fun sendAllPropertiesEvent(
     root: View,

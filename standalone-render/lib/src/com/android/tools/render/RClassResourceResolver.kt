@@ -40,15 +40,10 @@ class RClassResourceResolver(private val classLoaderManager: StandaloneModuleCla
   fun resolve(rClassJars: List<String>, resourceIdManager: StandaloneResourceIdManager, apkIdManager: ApkResourceIdManager): List<String> {
     val rClassPackages = mutableSetOf<String>()
 
-    resourceIdManager.resetCompiledIds { parser ->
-      try {
-        val classLoader = this::class.java.classLoader
-        parser.parseUsingReflection(classLoader.loadClass("android.R"))
-        parser.parseUsingReflection(classLoader.loadClass("com.android.internal.R"))
-      } catch (e: Throwable) {
-        logger.log(Level.WARNING, "Could not load Android framework R classes", e)
-      }
-
+    // Only project/library R classes are parsed into the RES_AUTO compiled-ID mapping. Framework (android.R / com.android.internal.R)
+    // IDs are resolved in the ANDROID namespace by ResourceIdManagerBase's framework mapping, as in Android Studio; parsing them here
+    // would make library resources whose names collide with framework ones (e.g. R.string.ok) resolve to framework IDs.
+    resourceIdManager.loadCompiledIds { parser ->
       for (path in rClassJars) {
         val file = File(path)
         if (file.isDirectory) {
@@ -105,7 +100,7 @@ class RClassResourceResolver(private val classLoaderManager: StandaloneModuleCla
           if (rClassFile.name == "R.class") {
             val rClassBytes = rClassFile.readBytes()
             parser.parseBytecode(rClassBytes) { innerName ->
-              val innerFile = File(file, innerName.replace('.', File.separatorChar) + ".class")
+              val innerFile = File(file, innerRClassName(className, innerName).replace('.', File.separatorChar) + ".class")
               if (innerFile.exists()) innerFile.readBytes() else ByteArray(0)
             }
           } else {
@@ -143,7 +138,7 @@ class RClassResourceResolver(private val classLoaderManager: StandaloneModuleCla
               if (isRClass) {
                 val rClassBytes = jar.getInputStream(entry).use { it.readBytes() }
                 parser.parseBytecode(rClassBytes) { innerName ->
-                  val innerEntryName = innerName.replace('.', '/') + ".class"
+                  val innerEntryName = innerRClassName(className, innerName).replace('.', '/') + ".class"
                   val innerEntry = jar.getJarEntry(innerEntryName)
                   if (innerEntry != null) jar.getInputStream(innerEntry).use { it.readBytes() } else ByteArray(0)
                 }
@@ -164,4 +159,11 @@ class RClassResourceResolver(private val classLoaderManager: StandaloneModuleCla
       logger.log(Level.FINE, "Linkage error while reading JAR file $path.", e)
     }
   }
+
+  /**
+   * Returns the fully qualified name of an inner R class. [ResourceIdManager.RClassParser.parseBytecode] requests inner classes by their
+   * simple binary name (e.g. `R$id`), so it must be resolved against the outer R class (e.g. `com.example.R` -> `com.example.R$id`), the
+   * same way `ViewLoader` does.
+   */
+  private fun innerRClassName(rClassName: String, innerName: String): String = "$rClassName$${innerName.substringAfterLast('$')}"
 }

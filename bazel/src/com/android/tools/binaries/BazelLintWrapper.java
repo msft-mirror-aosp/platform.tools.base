@@ -20,9 +20,16 @@ import static com.google.common.io.Files.getNameWithoutExtension;
 
 import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.Main;
+
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Table;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -37,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -46,10 +54,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 /**
  * Wrapper around Lint's CLI that is aware of the Bazel test environment. Locates the input files,
@@ -64,8 +68,17 @@ public class BazelLintWrapper {
     private final Path outputDir;
 
     public static void main(String[] args) throws IOException {
+        if (args.length > 0 && args[0].equals("--analyze")) {
+            // Build action (partial analysis phase 1), not a test: see analyze().
+            if (args.length < 2) {
+                throw new RuntimeException("Missing project XML argument after --analyze");
+            }
+            analyze(Paths.get(args[1]), Arrays.asList(args).subList(2, args.length));
+            return;
+        }
         Path projectXml = Paths.get(args[0]);
         Path baseline = null;
+        boolean reportOnly = false;
         List<String> extraArgs = new ArrayList<>();
         for (int i = 1; i < args.length; i++) {
             String arg = args[i];
@@ -76,12 +89,56 @@ public class BazelLintWrapper {
                 } else {
                     throw new RuntimeException("Missing argument after " + arg);
                 }
+            } else if (arg.equals("--report-only")) {
+                // Partial analysis phase 2: analysis already ran as build actions and the
+                // project XML references their outputs; only merge and report.
+                reportOnly = true;
             } else {
                 extraArgs.add(arg);
             }
         }
         boolean update = System.getenv("UPDATE_LINT_BASELINE") != null;
-        new BazelLintWrapper().run(projectXml, baseline, update, extraArgs);
+        new BazelLintWrapper().run(projectXml, baseline, update, reportOnly, extraArgs);
+    }
+
+    /**
+     * Runs lint with --analyze-only on the project XML, writing partial analysis results into the
+     * module's partial-results-dir. Lint findings do not fail analysis (they are reported by the
+     * lint tests merging these results); only lint failing to run does.
+     */
+    private static void analyze(Path projectXml, List<String> extraArgs) throws IOException {
+        if (!Files.exists(projectXml)) {
+            System.err.println("Cannot find project XML: " + projectXml);
+            System.exit(1);
+        }
+        // Keep the lint config and cache inside the action's scratch space.
+        Path tempDir = Files.createTempDirectory("lint_analyze");
+        Path lintConfig = tempDir.resolve("lint.xml");
+        writeLintConfig(lintConfig);
+        List<String> lintArgs =
+                new ArrayList<>(
+                        Arrays.asList(
+                                "--project",
+                                projectXml.toString(),
+                                "--analyze-only",
+                                "--config",
+                                lintConfig.toString(),
+                                "--cache-dir",
+                                tempDir.resolve("cache").toString(),
+                                "--client-id",
+                                "test"));
+        lintArgs.addAll(extraArgs);
+        System.exit(new Main().run(lintArgs.toArray(new String[0])));
+    }
+
+    /** Writes the lint configuration shared by both analysis and reporting. */
+    private static void writeLintConfig(Path lintConfig) throws IOException {
+        Files.write(
+                lintConfig,
+                ImmutableList.of(
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                        "<lint checkTestSources=\"true\">",
+                        "</lint>"));
     }
 
     private final DocumentBuilder documentBuilder;
@@ -113,7 +170,12 @@ public class BazelLintWrapper {
         return sandboxBase != null ? sandboxBase.relativize(path) : path;
     }
 
-    private void run(Path projectXml, Path originalBaseline, boolean update, List<String> extraArgs)
+    private void run(
+            Path projectXml,
+            Path originalBaseline,
+            boolean update,
+            boolean reportOnly,
+            List<String> extraArgs)
             throws IOException {
         if (!Files.exists(projectXml)) {
             System.err.println("Cannot find project XML: " + projectXml);
@@ -138,13 +200,7 @@ public class BazelLintWrapper {
         }
 
         Path lintConfig = outputDir.resolve("lint.xml");
-
-        Files.write(
-                lintConfig,
-                ImmutableList.of(
-                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                        "<lint checkTestSources=\"true\">",
-                        "</lint>"));
+        writeLintConfig(lintConfig);
 
         // We want to reuse code for configuring lint from the project descriptor XML, which is
         // private to the custom client used by Main. So instead of creating a LintCliClient, for
@@ -172,6 +228,20 @@ public class BazelLintWrapper {
                                     "--update-baseline",
                                     "--client-id",
                                     "test"));
+            if (reportOnly) {
+                lintArgs.add("--report-only");
+                // Keep lint's cache out of the read-only runfiles tree; putting it in the
+                // undeclared outputs means it can be downloaded from CI for debugging.
+                lintArgs.add("--cache-dir");
+                lintArgs.add(outputDir.resolve("cache").toString());
+                // A dependency module's definite incidents are reported by that module's own
+                // lint test; this report adds only this module's definite incidents plus the
+                // provisional/partial results evaluated against it. This lets one per-module
+                // analysis action be shared, unmodified, between the module's own report and
+                // its dependents' reports (ProjectInitializerTest
+                // .testPartialAnalysisSkipDefiniteIncidentsFromDeps).
+                lintArgs.add("--XskipDefiniteIncidentsFromDeps");
+            }
             lintArgs.addAll(extraArgs);
             int status = lintMain.run(lintArgs.toArray(new String[0]));
             switch (status) {
@@ -243,20 +313,17 @@ public class BazelLintWrapper {
     }
 
     private static final String BASELINE_MESSAGE =
-            "The baseline file contains issues which have "
-                    + "been fixed in the project. Please remove the fixed lint issues from the "
-                    + "lint_baseline.xml file in your module or regenerate it. Add the edited or "
-                    + "regenerated file to your CL and try again. See "
-                    + "tools/base/lint/studio-checks/README.md for more information.\n\n"
-                    + ""
-                    + "Do not add anything new to the baseline file; suppress new issues with "
-                    + "@SuppressWarnings in Java or @Suppress in Kotlin.\n\n"
-                    + ""
-                    + "If you want to regenerate the file, run\n"
-                    + "  bazel run --test_env=UPDATE_LINT_BASELINE=1 \\\n"
-                    + "    %1$s\n"
-                    + "You can also find the regenerated file in your presubmit results for the %1$s target, "
-                    + "under the Artifacts tab, in Archives/undeclared_outputs.zip";
+            "The baseline file contains issues which have been fixed in the project. Please remove"
+                + " the fixed lint issues from the lint_baseline.xml file in your module or"
+                + " regenerate it. Add the edited or regenerated file to your CL and try again. See"
+                + " tools/base/lint/studio-checks/README.md for more information.\n\n"
+                + "Do not add anything new to the baseline file; suppress new issues with"
+                + " @SuppressWarnings in Java or @Suppress in Kotlin.\n\n"
+                + "If you want to regenerate the file, run\n"
+                + "  bazel run --test_env=UPDATE_LINT_BASELINE=1 \\\n"
+                + "    %1$s\n"
+                + "You can also find the regenerated file in your presubmit results for the %1$s"
+                + " target, under the Artifacts tab, in Archives/undeclared_outputs.zip";
 
     /**
      * Creates content of the JUnit-like XML report used by Bazel and return a boolean value
@@ -279,8 +346,9 @@ public class BazelLintWrapper {
             // Check if the XML report contains issues worth of breaking the test target, which is
             // any issue which is not just information about the baseline being applied. We cannot
             // just disable the LintBaseline check, since we do want to fail if the baseline gets
-            // out of date and contains issues which are no longer in the project.
-            if ("LintBaseline".equals(id) && message != null) {
+            // out of date and contains issues which are no longer in the project (now reported as
+            // LintBaselineFixed).
+            if (("LintBaseline".equals(id) || "LintBaselineFixed".equals(id)) && message != null) {
                 if (message.contains("filtered out because")) {
                     // Ignore these.
                     continue;

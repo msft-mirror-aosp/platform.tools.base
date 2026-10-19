@@ -37,6 +37,7 @@ rust.toolchain(
     edition = "2024",
     extra_target_triples = [
         "aarch64-linux-android",
+        "aarch64-unknown-linux-gnu",
         "armv7-linux-androideabi",
         "i686-linux-android",
         "x86_64-linux-android",
@@ -114,6 +115,20 @@ crate.spec(
     package = "rustls",
     version = "=0.23.38",
 )
+crate.spec(
+    package = "rustls-platform-verifier",
+    version = "=0.6.2",
+)
+
+# Disable CPU jitter entropy to avoid https://github.com/aws/aws-lc/issues/3540 on Windows
+# (which leads to b/558351427). CPU jitter was added as an additional default source of entropy in
+# recent versions (starting in 2025), but it is not required, and it has some performance tradeoffs
+# that make it a poor fit for short-lived CLI processes anyway. For more details see
+# https://github.com/aws/aws-lc-rs/issues/899.
+crate.annotation(
+    build_script_env = {"AWS_LC_SYS_NO_JITTER_ENTROPY": "1"},
+    crate = "aws-lc-sys",
+)
 crate.from_specs(
     # Cargo upgrades crate versions during dependency resolution by default, which is
     # not what we want. We cache the dependency resolution step with toplevel.MODULE.bazel.lock,
@@ -124,6 +139,7 @@ crate.from_specs(
     # https://github.com/bazelbuild/rules_rust/blob/ae1be23677/crate_universe/private/crates_repository.bzl#L29
     supported_platform_triples = [
         "aarch64-apple-darwin",
+        "aarch64-unknown-linux-gnu",
         "x86_64-apple-darwin",
         "x86_64-pc-windows-msvc",
         "x86_64-unknown-linux-gnu",
@@ -133,23 +149,16 @@ use_repo(crate, "crates")
 
 bazel_dep(name = "rules_go", version = "0.52.0")
 bazel_dep(name = "rules_cc", version = "0.0.15")
-bazel_dep(name = "rules_python", version = "1.1.0")
-bazel_dep(name = "rules_license", version = "1.0.0")
-bazel_dep(name = "protobuf", version = "29.2", repo_name = "com_google_protobuf")
-single_version_override(
-    module_name = "protobuf",
-    patch_strip = 1,
-    patches = [
-        # b/392548175 - failure in upb aspect when using '-c opt'.
-        "//tools/base/bazel/bzlmod:protobuf-upb-proto-disable.patch",
-        # Stop rules_jvm_external from calling coursier for maven resolution.
-        "//tools/base/bazel/bzlmod:protobuf_use_maven_install_lockfile.patch",
-    ],
-    version = "29.2",
-)
+bazel_dep(name = "rules_python", version = "2.3.2")
 
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = "3.11")
+python.toolchain(python_version = "3.11")
+
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "rules_jvm_external", version = "6.8")
-bazel_dep(name = "rules_java", version = "8.13.0")
+bazel_dep(name = "rules_java", version = "9.8.0")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
 
 compat = use_extension("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy")
@@ -158,22 +167,104 @@ use_repo(compat, "compatibility_proxy")
 bazel_dep(name = "rules_robolectric", version = "4.14.1.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
 bazel_dep(name = "with_cfg.bzl", version = "0.9.1")
-bazel_dep(name = "grpc", version = "1.69.0")
+bazel_dep(name = "grpc", version = "1.83.0")
 single_version_override(
     module_name = "grpc",
     patch_strip = 1,
     patches = [
         "//tools/base/bazel/bzlmod:grpc_use_android_platforms.patch",
-        "//tools/base/bazel/bzlmod:grpc_fix_windows_platforms.patch",
     ],
-    version = "1.69.0",
+    version = "1.83.0",
 )
 
+# grpc depends on an older version of envoy_api, which has compatiblility issues
+# with googleapis module.
+single_version_override(
+    module_name = "envoy_api",
+    version = "0.0.0-20260130-84e8436",
+)
+
+# rules for typescript + node support
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+single_version_override(
+    module_name = "aspect_bazel_lib",
+    patch_strip = 1,
+    patches = [
+        # Patch Windows native batch launcher:
+        # 1. Resolves runfiles directly (from RUNFILES_DIR / adjacent files) if MANIFEST is missing (e.g. on RBE).
+        # 2. Normalizes Windows drive letters (C:\... -> /c/...) for MSYS2 bash compatibility.
+        "//tools/base/bazel/bzlmod:aspect_bazel_lib_windows_rbe.patch",
+    ],
+    version = "2.22.5",
+)
+bazel_dep(name = "aspect_rules_js", version = "2.0.0")
+single_version_override(
+    module_name = "aspect_rules_js",
+    patch_strip = 1,
+    patches = [
+        # 1. Force directory symlinks (target_type = "directory") on Windows for npm packages.
+        # 2. Add RUNFILES_DIR / RUNFILES / <binary>.bat.runfiles discovery in bash.bzl on Windows.
+        "//tools/base/bazel/bzlmod:aspect_rules_js_windows_symlinks.patch",
+        # Watch pnpm-lock.yaml, so that changing it alone re-evaluates the npm repositories in incremental builds.
+        "//tools/base/bazel/bzlmod:aspect_rules_js_watch_pnpm_lock.patch",
+    ],
+    version = "2.0.0",
+)
+bazel_dep(name = "aspect_rules_ts", version = "3.0.0")
+bazel_dep(name = "rules_nodejs", version = "6.7.5")
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
+node.toolchain(node_version = "20.14.0")
+use_repo(node, "nodejs_toolchains")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependency = True)
+npm.npm_translate_lock(
+    name = "npm_android_vsix",
+    bins = {
+        "vsce": ["vsce=vsce"],
+        "esbuild": ["esbuild=esbuild"],
+        "@tailwindcss/cli": ["tailwindcss=tailwindcss"],
+        "vitest": ["vitest=vitest"],
+        "@playwright/test": ["playwright=playwright"],
+    },
+    data = [
+        "//tools/base/bazel:package.json",
+        "//tools/base/bazel:pnpm-lock.yaml",
+        "//tools/base/bazel:pnpm-workspace.yaml",
+    ],
+    npmrc = "//tools/base/bazel:.npmrc",
+    pnpm_lock = "//tools/base/bazel:pnpm-lock.yaml",
+)
+use_repo(
+    npm,
+    "npm_android_vsix",
+)
+
+pnpm = use_extension("@aspect_rules_js//npm:extensions.bzl", "pnpm", dev_dependency = True)
+pnpm.pnpm(
+    name = "pnpm",
+    pnpm_version = "9.7.0",
+)
+use_repo(pnpm, "pnpm")
+
+rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "ext", dev_dependency = True)
+rules_ts_ext.deps(
+    ts_version_from = "//tools/vendor/google/android-vsix:package.json",
+)
+use_repo(rules_ts_ext, "npm_typescript")
+
 # rules_apple is included by grpc, but override to a newer version to pick up
-# fixes for Bazel 8.
+# fixes for Bazel 9.
 single_version_override(
     module_name = "rules_apple",
-    version = "3.16.0",
+    version = "4.5.3",
+)
+
+# grpc (google_benchmark) depends on rules_foreign_cc, but the version it pulls
+# in (0.10.1) is too old to support bazel 9
+single_version_override(
+    module_name = "rules_foreign_cc",
+    version = "0.15.1",
 )
 
 bazel_dep(name = "re2")
@@ -190,7 +281,7 @@ git_override(
 bazel_dep(name = "protoc-gen-validate", version = "1.0.4.bcr.2")
 bazel_dep(name = "abseil-py", version = "2.1.0", repo_name = "absl-py")
 bazel_dep(name = "abseil-cpp", version = "20250127.0", repo_name = "com_google_absl")
-bazel_dep(name = "rules_android", version = "0.6.5")
+bazel_dep(name = "rules_android", version = "0.7.3")
 single_version_override(
     module_name = "rules_android",
     patch_strip = 1,
@@ -198,37 +289,77 @@ single_version_override(
         # Disables ImportDepsChecker for //prebuilts/tools/common/m2:androidx-monitor
         # See https://github.com/bazelbuild/rules_android/issues/332
         "//tools/base/bazel/bzlmod:rules_android_aar_import_fallback.patch",
-        # Lock maven_install so rules_android does not call out to coursier for
-        # maven resolution.
-        "//tools/base/bazel/bzlmod:rules_android_lock_maven_install.patch",
+        # Configure toolchain_android_only to use current_java_runtime for executing javac,
+        # to keep it in sync with the JDK used to generate the system bootclasspath.
+        "//tools/base/bazel/bzlmod:rules_android_toolchain_java_runtime.patch",
+        # Pass absolute paths to aapt2 compile on Windows so libbase UTF8PathToWindowsLongPath
+        # can prepend the \\?\ prefix for long paths.
+        "//tools/base/bazel/bzlmod:rules_android_aapt2_absolute_paths.patch",
     ],
-    version = "0.6.5",
+    version = "0.7.3",
 )
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 
 # rules_jvm_external 6.8 includes the following commit:
 # https://github.com/bazel-contrib/rules_jvm_external/commit/3574cebf1a163ed992f460cc7877a0355e86e35b
-# which causes rules_android_maven's protobuf version to no longer be overridden.
+# which causes android_ide_common_30_1_3's protobuf version to no longer be overridden.
 # This override is re-added to ensure the same protobuf version is used. Otherwise,
 # the version conflict causes PackageAndroidResources actions to fail.
 maven.override(
-    name = "rules_android_maven",
+    name = "android_ide_common_30_1_3",
     coordinates = "com.google.protobuf:protobuf-java",
     target = "@com_google_protobuf//:protobuf_java",
+)
+maven.override(
+    name = "rules_android_maven",
+    coordinates = "com.google.protobuf:protobuf-java-util",
+    target = "@com_google_protobuf//:protobuf_java_util",
 )
 maven.install(
     known_contributing_modules = [
         "android_studio",
-        "grpc-java",
-        "bazel_worker_java",
+        "protobuf",
     ],
     lock_file = "//tools/base/bazel/bzlmod:maven_install.json",
 )
-
-# Rename the default rules_jvm_external maven repository to maven2 to avoid a
-# naming conflict with the custom maven repository.
-use_repo(maven, maven2 = "maven")
+maven.install(
+    name = "android_ide_common_30_1_3",
+    known_contributing_modules = ["rules_android"],
+    # Rerun REPIN=1 bazel run @android_ide_common_30_1_3//:pin to update
+    # the lock_file after upgrading rules_android.
+    lock_file = "//tools/base/bazel/bzlmod:android_ide_maven_install.json",
+    repositories = [
+        "https://maven.google.com",
+        "https://repo1.maven.org/maven2",
+    ],
+)
+maven.install(
+    name = "rules_android_maven",
+    artifacts = [
+        # Explicitly request tensorflow-lite-metadata:0.2.0. The version
+        # tensorflow-lite-metadata:0.1.0-rc2 used by com.google.tools.build:gradle
+        # does not pass airlock verification.
+        "org.tensorflow:tensorflow-lite-metadata:0.2.0",
+    ],
+    known_contributing_modules = ["rules_android"],
+    # Rerun REPIN=1 bazel run @rules_android_maven//:pin to update
+    # the lock_file after upgrading rules_android.
+    lock_file = "//tools/base/bazel/bzlmod:android_maven_install.json",
+    repositories = [
+        "https://maven.google.com",
+        "https://repo1.maven.org/maven2",
+    ],
+)
+use_repo(
+    maven,
+    # These are pulled in from rules_android to run the pin commands.
+    "android_ide_common_30_1_3",
+    "rules_android_maven",
+    # Rename the default rules_jvm_external maven repository to maven2 to avoid
+    # a naming conflict with the custom maven repository.
+    maven2 = "maven",
+)
 
 android_sdk_repository_extension = use_extension(
     "@rules_android//rules/android_sdk_repository:rule.bzl",
@@ -238,23 +369,23 @@ use_repo(android_sdk_repository_extension, "androidsdk")
 
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
 
+register_toolchains("@bazel_skylib//toolchains/unittest:cmd_toolchain", "@bazel_skylib//toolchains/unittest:bash_toolchain")
+
 bazel_dep(name = "rules_android_ndk", version = "0.1.5")
-bazel_dep(name = "perfetto", version = "56.0")
+bazel_dep(name = "perfetto", version = "58.2")
 archive_override(
     module_name = "perfetto",
-    integrity = "sha256-l0GTin/FNO0wJyPCssPJSSc6qS2/cl0OG3IpqTILbAc=",
+    integrity = "sha256-rVZlRtXEYRNaQZYulbaA83TkOM8tmTaGdgi4QTLsYQo=",
     patch_strip = 1,
     patches = [
-        "//tools/base/bazel/bzlmod:perfetto-fix-include-guard.patch",
-        "//tools/base/bazel/bzlmod:perfetto-fix-zlib-build.patch",
         "//tools/base/bazel/bzlmod:perfetto-no-android-sdk-ndk.patch",
-        "//tools/base/bazel/bzlmod:perfetto-pr-6121.patch",
         # b/528480763: Replaces fork() with posix_spawnp() on macOS to prevent kernel panics
         # (EXC_BREAKPOINT) when symbolizing traces from multithreaded gRPC daemon processes.
+        # TODO[b/531691024] Remove the patch after migrating to traceconv.
         "//tools/base/bazel/bzlmod:perfetto-mac-fork-fix.patch",
     ],
-    strip_prefix = "perfetto-56.0",
-    urls = ["https://github.com/google/perfetto/archive/refs/tags/v56.0.tar.gz"],
+    strip_prefix = "perfetto-58.2",
+    urls = ["https://github.com/google/perfetto/archive/refs/tags/v58.2.tar.gz"],
 )
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")

@@ -16,11 +16,13 @@
 
 package com.android.build.gradle.internal.res
 
+import com.android.SdkConstants
 import com.android.build.gradle.internal.dependency.GenericTransformParameters
 import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
 import com.android.build.gradle.internal.fixtures.FakeTransformOutputs
+import com.android.build.gradle.options.StringOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -30,6 +32,7 @@ import java.util.zip.ZipOutputStream
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -38,6 +41,61 @@ import org.junit.rules.TemporaryFolder
 class Aapt2FromMavenTest {
 
   @Rule @JvmField val tmp = TemporaryFolder()
+
+  @Test
+  fun testClassifierResolutionLinuxArm64() {
+    val classifier =
+      Aapt2FromMaven.getClassifier(
+        stringOption = { null },
+        currentPlatform = SdkConstants.PLATFORM_LINUX,
+        osArch = "aarch64",
+      )
+    assertThat(classifier).isEqualTo("linux_arm64")
+
+    val classifierArm64 =
+      Aapt2FromMaven.getClassifier(
+        stringOption = { null },
+        currentPlatform = SdkConstants.PLATFORM_LINUX,
+        osArch = "arm64",
+      )
+    assertThat(classifierArm64).isEqualTo("linux_arm64")
+  }
+
+  @Test
+  fun testClassifierResolutionLinuxX86_64() {
+    val classifier =
+      Aapt2FromMaven.getClassifier(
+        stringOption = { null },
+        currentPlatform = SdkConstants.PLATFORM_LINUX,
+        osArch = "x86_64",
+      )
+    assertThat(classifier).isEqualTo("linux")
+  }
+
+  @Test
+  fun testClassifierOverrideLinuxArm64() {
+    val classifier =
+      Aapt2FromMaven.getClassifier(
+        stringOption = { option ->
+          if (option == StringOption.AAPT2_FROM_MAVEN_PLATFORM_OVERRIDE) "linux_arm64" else null
+        },
+        currentPlatform = SdkConstants.PLATFORM_WINDOWS,
+      )
+    assertThat(classifier).isEqualTo("linux_arm64")
+  }
+
+  @Test
+  fun testClassifierOverrideInvalid() {
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        Aapt2FromMaven.getClassifier(
+          stringOption = { option ->
+            if (option == StringOption.AAPT2_FROM_MAVEN_PLATFORM_OVERRIDE) "unsupported_platform" else null
+          }
+        )
+      }
+    assertThat(exception).hasMessageThat().contains("Unknown platform 'unsupported_platform'")
+  }
 
   /** Verifies that directory traversal entries (Zip-Slip) are skipped during extraction. */
   @Test

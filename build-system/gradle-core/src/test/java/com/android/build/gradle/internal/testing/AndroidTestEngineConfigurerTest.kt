@@ -79,6 +79,7 @@ class AndroidTestEngineConfigurerTest {
     whenever(testData.instrumentationTargetPackageId).thenReturn(project.providers.provider { "com.example.app.target" })
     whenever(testData.instrumentationRunnerArguments).thenReturn(project.providers.provider { mapOf("arg1" to "value1") })
     whenever(testData.testCoverageEnabled).thenReturn(project.providers.provider { false })
+    whenever(testData.privateComputeCoreInstrumentation).thenReturn(project.providers.provider { false })
 
     whenever(creationConfig.name).thenReturn("debug")
     whenever(creationConfig.isForceAotCompilation).thenReturn(false)
@@ -100,6 +101,7 @@ class AndroidTestEngineConfigurerTest {
     assertThat(spyTask.engineInputProperties.get())
       .containsEntry("android-test.instrumentation-target-package-id", "com.example.app.target")
     assertThat(spyTask.engineInputProperties.get()).containsEntry("android-test.instrumentation-args", "arg1=value1")
+    assertThat(spyTask.engineInputProperties.get()).containsEntry("android-test.instrument-in-pcc", "false")
 
     // Verify file paths
     val buildDir = project.layout.buildDirectory.get().asFile.absolutePath
@@ -167,5 +169,25 @@ class AndroidTestEngineConfigurerTest {
     val buildDir = project.layout.buildDirectory.get().asFile.absolutePath
     assertThat(spyTask.engineInputPropertiesFiles.get().asFile.absolutePath)
       .isEqualTo("$buildDir/intermediates/androidTest/debugAndroidTest/mySubFolder/junit_inputs.txt".replace('/', File.separatorChar))
+  }
+
+  @Test
+  fun testConfigureWithCommaSeparatedInstrumentationArgs() {
+    val testApkDirectory = project.objects.directoryProperty().fileValue(tempFolderRule.newFolder("test_apks"))
+    whenever(creationConfig.artifacts.get(SingleArtifact.APK)).thenReturn(testApkDirectory)
+    whenever(testData.instrumentationRunnerArguments)
+      .thenReturn(
+        project.providers.provider {
+          mapOf("class" to "com.example.ATest,com.example.BTest", "trailing" to "foo\\")
+        }
+      )
+
+    configureAndroidTestEngine(spyTask, creationConfig, testData, "mySubFolder")
+
+    assertThat(spyTask.engineInputProperties.get())
+      .containsEntry(
+        INSTRUMENTATION_ARGS_KEY,
+        "class=com.example.ATest\\,com.example.BTest,trailing=foo\\\\",
+      )
   }
 }

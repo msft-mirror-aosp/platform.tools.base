@@ -54,7 +54,7 @@ interface HostTestBuilder {
    */
   @get:Incubating
   @get:Deprecated(
-    message = "Other plugins can change this value, it is not safe to read it at this stage, " + "use [HostTest.enableCodeCoverage]",
+    message = "Other plugins can change this value, it is not safe to read it at this stage, " + "use [HostTest.codeCoverageEnabled]",
     level = DeprecationLevel.ERROR,
   )
   @set:Incubating

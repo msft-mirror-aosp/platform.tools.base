@@ -15,6 +15,7 @@
  */
 package com.android.deploy.service
 
+import com.android.adblib.testing.FakeAdbSession
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.Client
 import com.android.ddmlib.ClientData
@@ -30,6 +31,7 @@ import com.android.deploy.service.proto.Service.NetworkTest
 import com.android.tools.deploy.proto.Deploy
 import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.common.DeployMetric
+import com.android.tools.deployer.common.DeviceHolder
 import com.android.tools.idea.io.grpc.stub.StreamObserver
 import com.google.common.truth.Truth
 import org.junit.Test
@@ -124,12 +126,29 @@ class DeployServerTest {
 
   @Test
   fun installApkNoDevice() {
+    val presentDeviceId = "1234"
+    val missingDeviceId = "4321"
+    val adbSession = FakeAdbSession()
+    adbSession.hostServices.devices =
+      com.android.adblib.DeviceList(
+        listOf(
+          com.android.adblib.DeviceInfo(
+            presentDeviceId,
+            com.android.adblib.DeviceState.ONLINE,
+            "product",
+            "model",
+            "device",
+            "transportId",
+          )
+        ),
+        emptyList(),
+      )
     val bridge = Mockito.mock(AndroidDebugBridge::class.java)
-    val devices = arrayOf(mockDevice("1234", IDevice.DeviceState.ONLINE))
+    val devices = arrayOf(mockDevice(presentDeviceId, IDevice.DeviceState.ONLINE))
     Mockito.`when`<Array<IDevice>>(bridge.getDevices()).thenReturn(devices)
-    val server = DeployServer(bridge, null)
+    val server = DeployServer(bridge, null, adbSession)
     val response = FakeStreamObserver<InstallApkResponse>()
-    val request = InstallApkRequest.newBuilder().setDeviceId("4321").build()
+    val request = InstallApkRequest.newBuilder().setDeviceId(missingDeviceId).build()
     server.installApk(request, response)
     Truth.assertThat(response.response).isNotNull()
     Truth.assertThat(response.response!!.exitStatus).isEqualTo(-1)
@@ -139,25 +158,42 @@ class DeployServerTest {
 
   @Test
   fun installApk() {
+    val deviceId = "1234"
+    val adbSession = FakeAdbSession()
+    adbSession.hostServices.devices =
+      com.android.adblib.DeviceList(
+        listOf(
+          com.android.adblib.DeviceInfo(
+            deviceId,
+            com.android.adblib.DeviceState.ONLINE,
+            "product",
+            "model",
+            "device",
+            "transportId",
+          )
+        ),
+        emptyList(),
+      )
+
     val apkPath = "/fake/path.apk"
     val packageName = "com.example.app"
     val bridge = Mockito.mock(AndroidDebugBridge::class.java)
-    val devices = arrayOf(mockDevice("1234", IDevice.DeviceState.ONLINE))
+    val devices = arrayOf(mockDevice(deviceId, IDevice.DeviceState.ONLINE))
     Mockito.`when`<Array<IDevice>>(bridge.getDevices()).thenReturn(devices)
     val runner = Mockito.mock(DeployerRunner::class.java)
-    val deviceCaptor = ArgumentCaptor.forClass(IDevice::class.java)
+    val deviceHolderCaptor = ArgumentCaptor.forClass(DeviceHolder::class.java)
     val argsCaptor = ArgumentCaptor.forClass(Array<String>::class.java)
-    Mockito.`when`(runner.run(deviceCaptor.capture(), argsCaptor.capture(), any())).thenReturn(0)
+    Mockito.`when`(runner.run(deviceHolderCaptor.capture(), any(), argsCaptor.capture(), any())).thenReturn(0)
     val metrics = ArrayList<DeployMetric>()
     metrics.add(DeployMetric("Test", 1, 2))
     Mockito.`when`(runner.metrics).thenReturn(metrics)
-    val server = DeployServer(bridge, runner)
+    val server = DeployServer(bridge, runner, adbSession)
     val response = FakeStreamObserver<InstallApkResponse>()
-    val request = InstallApkRequest.newBuilder().setDeviceId("1234").addApk(apkPath).setPackageName(packageName).build()
+    val request = InstallApkRequest.newBuilder().setDeviceId(deviceId).addApk(apkPath).setPackageName(packageName).build()
     server.installApk(request, response)
     Truth.assertThat(response.response).isNotNull()
     Truth.assertThat(response.response!!.getExitStatus()).isEqualTo(0)
-    Truth.assertThat(deviceCaptor.getValue()).isEqualTo(devices[0])
+    Truth.assertThat(deviceHolderCaptor.getValue().serialNumber).isEqualTo(deviceId)
     val args: Array<String> = argsCaptor.getValue()!!
     Truth.assertThat(args[0]).isEqualTo("install")
     Truth.assertThat(args[1]).isEqualTo(packageName)

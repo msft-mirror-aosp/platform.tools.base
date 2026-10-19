@@ -842,7 +842,7 @@ class LintBaseline(
         return false
       }
 
-      while (j > begin) {
+      while (j >= begin) {
         var c1 = path[i]
         var c2 = suffix[j]
         if (c1 != c2) {

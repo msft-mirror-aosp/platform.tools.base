@@ -28,20 +28,19 @@ import org.junit.Test
 class AndroidTestImplementationWarningTest2 {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        pluginCallbacks += DisableAndroidTestForOneFlavorCallback::class.java
-        android {
-          flavorDimensions += "version"
-          productFlavors {
-            create("demo") { it.dimension = "version" }
-            create("full") { it.dimension = "version" }
-          }
+  val rule = GradleRule.from {
+    androidApplication {
+      pluginCallbacks += DisableAndroidTestForOneFlavorCallback::class.java
+      android {
+        flavorDimensions += "version"
+        productFlavors {
+          create("demo") { it.dimension = "version" }
+          create("full") { it.dimension = "version" }
         }
-        dependencies { androidTestImplementation("com.google.guava:guava:19.0") }
       }
+      dependencies { androidTestImplementation("com.google.guava:guava:19.0") }
     }
+  }
 
   class DisableAndroidTestForOneFlavorCallback : ApplicationComponentCallback {
 

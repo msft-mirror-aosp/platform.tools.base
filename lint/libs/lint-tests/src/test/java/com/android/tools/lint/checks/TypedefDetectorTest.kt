@@ -3176,4 +3176,32 @@ src/Autocomplete.java:34: Error: Must be one or more of: Hint.NONE, Hint.GENERAT
         """
       )
   }
+
+  fun testShortNameMethod() {
+    lint()
+      .files(
+        kotlin(
+          """
+            import androidx.annotation.IntDef
+
+            const val CONST_1 = 1
+            const val CONST_2 = 2
+
+            @IntDef(CONST_1, CONST_2)
+            @Retention(AnnotationRetention.SOURCE)
+            annotation class MyDef
+
+            fun f(): Int = CONST_1
+            fun test(@MyDef val1: Int) {}
+
+            fun usage() {
+                test(f()) // OK - no crash on 1-char function name
+            }
+          """
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
 }

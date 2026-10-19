@@ -17,11 +17,16 @@
 package com.android.build.gradle.internal
 
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
+import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.api.variant.impl.capitalizeFirstChar
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask
 import com.android.build.gradle.internal.tasks.CompressAssetsTask
@@ -33,7 +38,6 @@ import com.android.build.gradle.internal.tasks.StripDebugSymbolsTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.CompileNavigationXmlTask
@@ -43,6 +47,7 @@ import org.gradle.api.Task
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.testing.jacoco.plugins.JacocoPlugin
 
 class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : TaskManager(project, globalConfig) {
 
@@ -52,7 +57,13 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     javacTask: TaskProvider<out JavaCompile>,
     preBuildTask: TaskProvider<out Task>,
   ): TaskProvider<out Task> {
-    val apkCreationConfig = TestSuiteApkCreationConfig(testSuite, sourceContainer)
+    val apkCreationConfig = sourceContainer.creationConfig as ApkCreationConfig
+
+    // Like the androidTest APK, a suite's test APK carries the on-device coverage agent, which the test engine attaches from it.
+    // Only suites that collect coverage need it.
+    if (testSuite.codeCoverageEnabled) {
+      handleOnTheFlyCoverageDependencies(apkCreationConfig)
+    }
 
     val taskContainer = apkCreationConfig.taskContainer
     taskContainer.javacTask = javacTask
@@ -61,15 +72,17 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     val sourceGenTask = taskFactory.register(apkCreationConfig.computeTaskNameInternal("generate", "Sources"))
     taskContainer.sourceGenTask = sourceGenTask
 
+    val compileTask = taskFactory.register(apkCreationConfig.computeTaskNameInternal("compile", "Sources"))
+    taskContainer.compileTask = compileTask
+    TaskManager.setJavaCompilerTask(javacTask, apkCreationConfig)
+
     val resourceGenTask = taskFactory.register(ValidateResourcesTask.CreateAction(apkCreationConfig))
     taskContainer.resourceGenTask = resourceGenTask
 
     val assetGenTask = taskFactory.register(apkCreationConfig.computeTaskNameInternal("generate", "Assets"))
     taskContainer.assetGenTask = assetGenTask
 
-    val assembleTaskName = apkCreationConfig.computeTaskNameInternal("assemble")
-    val assembleTask = taskFactory.register(assembleTaskName)
-    taskContainer.assembleTask = assembleTask
+    createAssembleTask(apkCreationConfig)
 
     createMergeResourcesTask(apkCreationConfig, true, emptySet())
     val appCompileRClass = apkCreationConfig.services.projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]
@@ -88,7 +101,7 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     taskFactory.register(CompressAssetsTask.CreationAction(apkCreationConfig))
     createNavigationProcessingTasks(apkCreationConfig)
     createApkProcessResTask(apkCreationConfig)
-    createProcessJavaResTask(apkCreationConfig)
+    createProcessJavaResTask(apkCreationConfig, apkCreationConfig.packaging)
     createMergeJniLibFoldersTasks(apkCreationConfig)
     taskFactory.register(StripDebugSymbolsTask.CreationAction(apkCreationConfig))
     createPostCompilationTasks(apkCreationConfig)
@@ -101,23 +114,76 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
 
     createPackagingTask(apkCreationConfig)
 
-    return assembleTask
+    return taskContainer.assembleTask
   }
 
   fun createHostJarTestSuiteResourcesTasks(hostJarConfig: TestSuiteHostJarCreationConfig) {
     // Add a task to process the manifest
     createProcessTestManifestTask(hostJarConfig)
 
-    // Add a task to create the res values
-    createGenerateResValuesTask(hostJarConfig)
-
     // Add a task to merge the assets folders
+    createMergeTestSuiteAssetsTask(hostJarConfig)
+
+    if (hostJarConfig.buildFeatures.androidResources) {
+      createMergeAndLinkResourcesTasks(hostJarConfig)
+    }
+  }
+
+  /**
+   * Merges the assets of the tested variant of [hostJarConfig] with the assets of the runtime classpath of the host jar sources of the test
+   * suite.
+   */
+  private fun createMergeTestSuiteAssetsTask(hostJarConfig: TestSuiteHostJarCreationConfig) {
+    val testedVariant = hostJarConfig.mainVariant
+    val testedArtifacts = testedVariant.artifacts
+    val artifacts = hostJarConfig.artifacts
+
+    artifacts.copy(InternalArtifactType.SHADER_ASSETS, testedArtifacts)
+    artifacts.copy(InternalArtifactType.MERGED_ML_MODELS, testedArtifacts)
+    hostJarConfig.taskContainer.assetGenTask.dependsOn(testedVariant.taskContainer.assetGenTask)
+
     createMergeAssetsTask(hostJarConfig, includeDependencies = true)
+  }
 
-    createMergeResourcesTask(hostJarConfig, true, emptySet())
+  /**
+   * Merges the resources of the tested variant of [hostJarConfig] with the resources of the runtime classpath of the host jar sources of
+   * the test suite, and links them.
+   */
+  private fun createMergeAndLinkResourcesTasks(hostJarConfig: TestSuiteHostJarCreationConfig) {
+    val testedVariant = hostJarConfig.mainVariant
+    val testedArtifacts = testedVariant.artifacts
+    val artifacts = hostJarConfig.artifacts
 
-    // Add a task to process the Android Resources and generate source files
-    createApkProcessResTask(hostJarConfig, InternalArtifactType.FEATURE_RESOURCE_PKG)
+    // Reuse the intermediates of the tested variant that do not depend on its dependencies.
+    artifacts.copy(InternalArtifactType.RENDERSCRIPT_GENERATED_RES, testedArtifacts)
+    artifacts.copy(InternalArtifactType.GENERATED_RES, testedArtifacts)
+    artifacts.copy(InternalArtifactType.GENERATED_LOCALE_CONFIG, testedArtifacts)
+    artifacts.copy(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP, testedArtifacts)
+    artifacts.copy(InternalArtifactType.LOCAL_ONLY_SYMBOL_LIST, testedArtifacts)
+    artifacts.copy(InternalArtifactType.COMPILED_NAVIGATION_RES, testedArtifacts)
+    hostJarConfig.taskContainer.resourceGenTask.dependsOn(testedVariant.taskContainer.resourceGenTask)
+
+    createCheckAarMetadataTask(hostJarConfig)
+
+    basicCreateMergeResourcesTask(
+      hostJarConfig,
+      MergeType.MERGE,
+      includeDependencies = true,
+      processResources = true,
+      alsoOutputNotCompiledResources = false,
+      flags = emptySet(),
+      taskProviderCallback = null,
+    )
+
+    taskFactory.register(
+      LinkApplicationAndroidResourcesTask.CreationAction(
+        creationConfig = hostJarConfig,
+        generateLegacyMultidexMainDexProguardRules = false,
+        sourceArtifactType = MergeType.MERGE,
+        baseName = hostJarConfig.services.projectInfo.getProjectBaseName(),
+        isLibrary = false,
+      )
+    )
   }
 
   fun createTestSuiteProcessTestManifestTask(config: TestComponentCreationConfig) {
@@ -128,10 +194,19 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     createAnchorTasks(creationConfig)
   }
 
+  fun createAssembleTaskForSuite(creationConfig: ComponentCreationConfig) {
+    createAssembleTask(creationConfig)
+  }
+
   override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope>
     get() = setOf()
 
   fun createTasks(creationConfig: TestSuiteCreationConfig) {
+    val isHostSuite = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }
+    if (isHostSuite && creationConfig.codeCoverageEnabled) {
+      project.pluginManager.apply(JacocoPlugin::class.java)
+    }
+
     // first create all tasks related to processing the source folders.
     val allSourcesProcessingTasks =
       creationConfig.sourceContainers.mapNotNull { testSuiteSourceContainer ->
@@ -144,43 +219,62 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     val connectedCheckSerials: Provider<List<String>> =
       taskFactory.named(globalConfig.taskNames.connectedCheck).flatMap { test -> (test as DeviceSerialTestTask).serialValues }
 
-    creationConfig.targets
-      .filter { it.value.enabled }
-      .forEach { mapEntry ->
-        val target = mapEntry.value
-        val testSuiteTestTask = taskFactory.register(TestSuiteTestTask.CreationAction(creationConfig, target, connectedCheckSerials))
-        val context =
-          object : TestTaskContext {
-            override val targetName: String
-              get() = target.name
+    val tasks = mutableListOf(Pair("test", false))
+    if (creationConfig.requiresUpdateTask.get()) {
+      tasks.add(Pair("update", true))
+    }
 
-            override val suiteName: String
-              get() = creationConfig.name
+    tasks.forEach { (verb, isUpdate) ->
+      creationConfig.targets
+        .filter { it.value.enabled }
+        .forEach { mapEntry ->
+          val target = mapEntry.value
+          val taskName =
+            computeTaskName(
+              creationConfig.testedVariant.name,
+              verb,
+              "${creationConfig.name.capitalizeFirstChar()}${target.uniqueName.capitalizeFirstChar()}TestSuite",
+            )
+          val testSuiteTestTask =
+            taskFactory.register(
+              TestSuiteTestTask.CreationAction(creationConfig, target, taskName, connectedCheckSerials, isUpdate = isUpdate)
+            )
+          val context =
+            object : TestTaskContext {
+              override val targetName: String
+                get() = target.name
 
-            override val targetedVariant: String
-              get() = creationConfig.testedVariant.name
+              override val isUpdateTask: Boolean
+                get() = isUpdate
 
-            override val targetedDevices: Collection<String>
-              get() = target.targetDevices
+              override val suiteName: String
+                get() = creationConfig.name
 
-            override fun toString(): String {
-              return super.toString() +
-                "targetName:$targetName, suiteName:$suiteName," +
-                " targetedVariant:$targetedVariant, " +
-                "devices = ${targetedDevices.joinToString(separator = ":")}"
+              override val targetedVariant: String
+                get() = creationConfig.testedVariant.name
+
+              override val targetedDevices: Collection<String>
+                get() = target.targetDevices
+
+              override fun toString(): String {
+                return super.toString() +
+                  "targetName:$targetName, isUpdateTask:$isUpdateTask, suiteName:$suiteName," +
+                  " targetedVariant:$targetedVariant, " +
+                  "devices = ${targetedDevices.joinToString(separator = ":")}"
+              }
             }
+          creationConfig.runTestTaskConfigurationActions(context, testSuiteTestTask)
+
+          // add sources processing dependencies
+          allSourcesProcessingTasks.forEach { sourceProcessingTask -> testSuiteTestTask.dependsOn(sourceProcessingTask) }
+
+          // Adds GMD Setup task dependency.
+          target.targetDevices.forEach { targetDeviceName ->
+            val targetDevice = creationConfig.global.androidTestOptions.managedDevices.localDevices.getByName(targetDeviceName)
+            testSuiteTestTask.dependsOn(setupTaskName(targetDevice))
           }
-        creationConfig.runTestTaskConfigurationActions(context, testSuiteTestTask)
-
-        // add sources processing dependencies
-        allSourcesProcessingTasks.forEach { sourceProcessingTask -> testSuiteTestTask.dependsOn(sourceProcessingTask) }
-
-        // Adds GMD Setup task dependency.
-        target.targetDevices.forEach { targetDeviceName ->
-          val targetDevice = creationConfig.global.androidTestOptions.managedDevices.localDevices.getByName(targetDeviceName)
-          testSuiteTestTask.dependsOn(setupTaskName(targetDevice))
         }
-      }
+    }
   }
 
   private fun createNavigationProcessingTasks(creationConfig: ComponentCreationConfig) {

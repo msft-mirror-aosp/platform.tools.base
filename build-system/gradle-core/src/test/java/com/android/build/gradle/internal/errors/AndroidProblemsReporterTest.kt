@@ -37,7 +37,6 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.same
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -65,12 +64,13 @@ class AndroidProblemsReporterTest {
   }
 
   @Test
-  fun testReportingCallsToProblemsApi() {
+  fun testReportingErrorCallsToProblemsApi() {
     val problemsServiceMock = mock<Problems>()
     val reporterMock = mock<ProblemReporter>()
     val problemMock = mock<Problem>()
     whenever(problemsServiceMock.reporter).thenReturn(reporterMock)
     whenever(reporterMock.create(any<ProblemId>(), any<Action<ProblemSpec>>())).thenReturn(problemMock)
+    whenever(reporterMock.throwing(any<RuntimeException>(), any<Problem>())).then { i -> i.arguments[0] }
 
     val reporterProvider =
       object : AndroidProblemReporterProvider(problemsServiceMock) {
@@ -93,7 +93,41 @@ class AndroidProblemsReporterTest {
       )
     verify(problemsServiceMock).reporter
     verify(reporterMock).create(eq(expectedId), any<Action<ProblemSpec>>())
-    verify(reporterMock).report(same(problemMock))
+    verify(reporterMock).throwing(any<RuntimeException>(), eq(problemMock))
+    verifyNoMoreInteractions(problemsServiceMock)
+    verifyNoMoreInteractions(reporterMock)
+  }
+
+  @Test
+  fun testReportingWarningCallsToProblemsApi() {
+    val problemsServiceMock = mock<Problems>()
+    val reporterMock = mock<ProblemReporter>()
+    val problemMock = mock<Problem>()
+    whenever(problemsServiceMock.reporter).thenReturn(reporterMock)
+    whenever(reporterMock.create(any<ProblemId>(), any<Action<ProblemSpec>>())).thenReturn(problemMock)
+
+    val reporterProvider =
+      object : AndroidProblemReporterProvider(problemsServiceMock) {
+        override fun getParameters(): Parameters {
+          return object : Parameters {
+            override val enableProblemsApi: Property<Boolean>
+              get() = FakeGradleProperty(true)
+          }
+        }
+      }
+
+    reporterProvider
+      .reporter()
+      .reportSyncIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.WARNING, EvalIssueException(RuntimeException("")))
+    val expectedId =
+      ProblemId.create(
+        /* name = */ IssueReporter.Type.BUILD_TOOLS_TOO_LOW.type.toString(),
+        /* displayName = */ IssueReporter.Type.BUILD_TOOLS_TOO_LOW.name,
+        /* group = */ ProblemGroup.create("agp-sync-issues", "Sync Issues"),
+      )
+    verify(problemsServiceMock).reporter
+    verify(reporterMock).create(eq(expectedId), any<Action<ProblemSpec>>())
+    verify(reporterMock).report(eq(problemMock))
     verifyNoMoreInteractions(problemsServiceMock)
     verifyNoMoreInteractions(reporterMock)
   }
@@ -103,17 +137,12 @@ class AndroidProblemsReporterTest {
     val problemSpec = FakeProblemSpec()
 
     val evalIssueException = EvalIssueException(RuntimeException("Error 1"))
-    AndroidProblemsReporterImpl.AndroidSyncIssueProblemBuilder(
-        IssueReporter.Type.BUILD_TOOLS_TOO_LOW,
-        IssueReporter.Severity.ERROR,
-        evalIssueException,
-      )
+    AndroidProblemsReporterImpl.AndroidSyncIssueProblemBuilder(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, evalIssueException)
       .execute(problemSpec)
 
     // Note: id is now part of reporting call outside of problem spec.
     problemSpec.verifyRecordedFields(
       mapOf(
-        "severity" to Severity.ERROR,
         // Not sure if message should actually go to contextual label or somewhere else
         "contextualLabel" to "Error 1",
         "exception" to evalIssueException,
@@ -126,17 +155,11 @@ class AndroidProblemsReporterTest {
     val problemSpec = FakeProblemSpec()
 
     val evalIssueException = EvalIssueException(RuntimeException("Warning 1"))
-    AndroidProblemsReporterImpl.AndroidSyncIssueProblemBuilder(
-        IssueReporter.Type.DEPRECATED_DSL,
-        IssueReporter.Severity.WARNING,
-        evalIssueException,
-      )
-      .execute(problemSpec)
+    AndroidProblemsReporterImpl.AndroidSyncIssueProblemBuilder(IssueReporter.Type.DEPRECATED_DSL, evalIssueException).execute(problemSpec)
 
     // Note: id is now part of reporting call outside of problem spec.
     problemSpec.verifyRecordedFields(
       mapOf(
-        "severity" to Severity.WARNING,
         // Not sure if message should actually go to contextual label or somewhere else
         "contextualLabel" to "Warning 1",
         "exception" to evalIssueException,
@@ -148,17 +171,12 @@ class AndroidProblemsReporterTest {
   fun testProblemBuildingFromSyncIssue_MultilineErrorWithAdditionalData() {
     val problemSpec = FakeProblemSpec()
     val evalIssueException = EvalIssueException("Error 1", "my-additional-data", listOf("Line 1", "Line 2", "Line 3"))
-    AndroidProblemsReporterImpl.AndroidSyncIssueProblemBuilder(
-        IssueReporter.Type.BUILD_TOOLS_TOO_LOW,
-        IssueReporter.Severity.ERROR,
-        evalIssueException,
-      )
+    AndroidProblemsReporterImpl.AndroidSyncIssueProblemBuilder(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, evalIssueException)
       .execute(problemSpec)
 
     // Note: id is now part of reporting call outside of problem spec.
     problemSpec.verifyRecordedFields(
       mapOf(
-        "severity" to Severity.ERROR,
         // Not sure if message should actually go to contextual label or somewhere else
         "contextualLabel" to "Error 1",
         "details" to "Line 1\nLine 2\nLine 3",
@@ -228,6 +246,6 @@ class AndroidProblemsReporterTest {
 
     override fun withException(p0: Throwable): ProblemSpec = apply { record("exception", p0) }
 
-    override fun severity(p0: Severity): ProblemSpec = apply { record("severity", p0) }
+    override fun severity(p0: Severity): ProblemSpec = this
   }
 }

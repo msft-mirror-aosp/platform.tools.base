@@ -139,7 +139,6 @@ constructor(
         project.configurations.register("runtimePublication") {
           it.isCanBeConsumed = false
           it.isCanBeResolved = false
-          it.isVisible = false
           it.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
           it.attributes.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling::class.java, Bundling.EXTERNAL))
           it.attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category::class.java, Category.LIBRARY))
@@ -161,7 +160,6 @@ constructor(
         project.configurations.register("runtimeSourcePublication") {
           it.isCanBeConsumed = false
           it.isCanBeResolved = false
-          it.isVisible = false
           it.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
           it.attributes.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling::class.java, Bundling.EXTERNAL))
           it.attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category::class.java, Category.DOCUMENTATION))

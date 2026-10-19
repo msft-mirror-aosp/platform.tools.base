@@ -1,9 +1,11 @@
 """This module implements kotlin rules."""
 
 load("@bazel_skylib//lib:collections.bzl", "collections")
+load("@rules_cc//cc:defs.bzl", "CcInfo")
+load("@rules_java//java:defs.bzl", "JavaInfo", "JavaPluginInfo")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file")
-load(":kotlin_common.bzl", "KtJvmToolchainInfo", "default_javac_opts", "default_kotlinc_opts", "select_java_compile_toolchain", "select_java_runtime")
+load(":kotlin_common.bzl", "KtJvmToolchainInfo", "add_jvm_target_opts", "select_java_compile_toolchain", "select_java_runtime")
 load(":lint.bzl", "lint_test")
 load(":merge_archives.bzl", "run_singlejar")
 
@@ -121,6 +123,9 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
 
     return JavaInfo(output_jar = out, compile_jar = out_ijar or out)
 
+# The default value corresponds to the minimum JDK across AGP, google3, etc.
+DEFAULT_JVM_TARGET = "17"
+
 def kotlin_test(
         name,
         srcs,
@@ -133,6 +138,7 @@ def kotlin_test(
         lint_classpath = [],
         lint_enabled = True,
         javacopts = [],
+        jvm_target = DEFAULT_JVM_TARGET,
         **kwargs):
     target_compatible_with = kwargs.get("target_compatible_with", None)
     kotlin_library(
@@ -150,14 +156,13 @@ def kotlin_test(
         friends = friends,
         kotlinc_opts = kotlinc_opts,
         javacopts = javacopts,
+        jvm_target = jvm_target,
         target_compatible_with = target_compatible_with,
     )
 
     coverage_java_test(
         name = name + ".test",
-        runtime_deps = [
-            ":" + name + ".testlib",
-        ] + runtime_deps,
+        runtime_deps = [":" + name + ".testlib"],
         visibility = visibility,
         **kwargs
     )
@@ -213,7 +218,7 @@ def kotlin_library(
         exports = None,
         javacopts = [],
         kotlin_version = "2.2",  # The default value corresponds to the minimum kotlin-stdlib across AGP, google3, etc.
-        jvm_target = "17",  # The default value corresponds to the minimum JDK across AGP, google3, etc.
+        jvm_target = DEFAULT_JVM_TARGET,
         kotlinc_opts = [],
         lint_enabled = True,
         lint_baseline = None,
@@ -221,6 +226,7 @@ def kotlin_library(
         lint_custom_rules = [],
         lint_extra_args = [],
         lint_is_test_sources = False,
+        lint_partial_analysis = False,
         lint_timeout = None,
         compress_resources = False,
         testonly = False,
@@ -246,6 +252,7 @@ def kotlin_library(
         lint_custom_rules: See impl.
         lint_extra_args: See impl.
         lint_is_test_sources: See impl.
+        lint_partial_analysis: See impl.
         lint_timeout: See impl.
         compress_resources: Whether to compress resources.
         testonly: See impl.
@@ -256,10 +263,9 @@ def kotlin_library(
         **kwargs: arguments to pass through to _kotlin_library
     """
 
-    kotlinc_opts = ["-jvm-target", jvm_target] + kotlinc_opts
-
-    # b/382592220: various AGP-related targets are not ready for lambdas compiled with invokedynamic.
-    kotlinc_opts = ["-Xlambdas=class", "-Xsam-conversions=class"] + kotlinc_opts
+    # Note: -Xsam-conversions=class is needed in AGP because Gradle relies on lambda classes for
+    # up-to-date checks, and SAM-converted lambdas are quite common when using Gradle APIs (b/382592220).
+    kotlinc_opts = ["-Xsam-conversions=class"] + kotlinc_opts
 
     # Include non-test kotlin libraries in coverage
     cb_jar = name + "_coverage.baseline.classes.jar"  # a jar for coverage baseline classfiles
@@ -304,6 +310,11 @@ def kotlin_library(
             tags = ["noci:studio-win"],
             is_test_sources = lint_is_test_sources,
             extra_args = ["--java-language-level", jvm_target] + lint_extra_args,
+            # Unset when partial analysis is off, so the aspect does not run at all. The
+            # aspect reaches deps and exports through the library target itself; only
+            # lint_classpath extras need to be analyzed separately.
+            partial_module = (":" + name) if lint_partial_analysis else None,
+            partial_deps = (lint_classpath or []) if lint_partial_analysis else [],
             timeout = lint_timeout if lint_timeout else None,
         )
 
@@ -337,8 +348,8 @@ def _kotlin_library_impl(ctx):
     kotlin_ijar = ctx.actions.declare_file(name + ".kotlin-ijar.jar") if kotlin_srcs else None
     full_ijar = ctx.actions.declare_file(name + ".merged-ijar-kotlin-lib.jar")
 
-    deps = [dep[JavaInfo] for dep in ctx.attr.deps + ctx.attr.exports]
-    java_info_deps = [dep[JavaInfo] for dep in ctx.attr.deps]
+    deps = [dep[JavaInfo] for dep in ctx.attr.deps + ctx.attr.exports if JavaInfo in dep]
+    java_info_deps = [dep[JavaInfo] for dep in ctx.attr.deps if JavaInfo in dep]
 
     # Kotlin
     cjars = []  # classfiles
@@ -350,8 +361,14 @@ def _kotlin_library_impl(ctx):
     java_compile_toolchain = select_java_compile_toolchain(ctx.attr._java_toolchains, ctx.attr.jvm_target)
     java_runtime = select_java_runtime(ctx.attr._java_toolchains, ctx.attr.jvm_target)
     warn = ctx.attr.warn
-    javac_opts = default_javac_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.javacopts + (["-Werror"] if warn == "error" else [])
-    kotlinc_opts = default_kotlinc_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.kotlinc_opts
+    javac_opts = ctx.attr.javacopts + (["-Werror"] if warn == "error" else [])
+    javac_opts, kotlinc_opts = add_jvm_target_opts(
+        ctx.attr._java_toolchains,
+        ctx.attr.jvm_target,
+        javac_opts,
+        ctx.attr.kotlinc_opts,
+        label = ctx.label,
+    )
 
     if kotlin_srcs:
         if ctx.attr.stdlib:
@@ -435,7 +452,8 @@ def _kotlin_library_impl(ctx):
         source_jar = ctx.outputs.source_jar,
         deps = java_info_deps,
         exports = [dep[JavaInfo] for dep in ctx.attr.exports],
-        runtime_deps = java_info_deps,
+        runtime_deps = [dep[JavaInfo] for dep in ctx.attr.runtime_deps if JavaInfo in dep],
+        native_libraries = [dep[CcInfo] for dep in ctx.attr.deps + ctx.attr.runtime_deps if CcInfo in dep],
     )
 
     transitive_runfiles = [
@@ -461,10 +479,10 @@ _kotlin_library = rule(
         "jar": attr.output(mandatory = True),
         "kotlin_version": attr.string(mandatory = True),
         "jvm_target": attr.string(mandatory = True),
-        "deps": attr.label_list(providers = [JavaInfo]),
+        "deps": attr.label_list(providers = [[JavaInfo], [CcInfo]]),
         "exports": attr.label_list(providers = [JavaInfo]),
         "runtime_deps": attr.label_list(
-            providers = [JavaInfo],
+            providers = [[JavaInfo], [CcInfo]],
         ),
         "module_name": attr.string(
             default = "unnamed",

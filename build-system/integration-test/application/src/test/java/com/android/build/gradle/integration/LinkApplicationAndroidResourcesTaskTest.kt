@@ -24,80 +24,79 @@ import org.junit.Test
 
 class LinkApplicationAndroidResourcesTaskTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {
-          android {
-            namespace = "com.example.app"
-            defaultConfig {
-              applicationId = "com.example.app"
-              minSdk = 24
-            }
-            dependencies {
-              implementation("androidx.navigation:navigation-fragment:2.5.2")
-              implementation(project(":lib"))
-            }
+  val rule = GradleRule.from {
+    androidApplication(":app") {
+        android {
+          namespace = "com.example.app"
+          defaultConfig {
+            applicationId = "com.example.app"
+            minSdk = 24
+          }
+          dependencies {
+            implementation("androidx.navigation:navigation-fragment:2.5.2")
+            implementation(project(":lib"))
           }
         }
-        .files {
-          add(
-            "src/main/res/layout/content_main.xml",
-            """
-            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:app="http://schemas.android.com/apk/res-auto"
-                    android:layout_width="match_parent" android:layout_height="match_parent">
-                    <androidx.fragment.app.FragmentContainerView
-                         android:id="@+id/nav_host_fragment_content_main"
-                         android:name="androidx.navigation.fragment.NavHostFragment"
-                         app:navGraph="@navigation/nav_graph" />
-             </FrameLayout>
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/res/navigation/nav_graph.xml",
-            """
-            <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-             android:id="@+id/nav_graph">
-            </navigation>
-            """
-              .trimIndent(),
-          )
-        }
+      }
+      .files {
+        add(
+          "src/main/res/layout/content_main.xml",
+          """
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  xmlns:app="http://schemas.android.com/apk/res-auto"
+                  android:layout_width="match_parent" android:layout_height="match_parent">
+                  <androidx.fragment.app.FragmentContainerView
+                       android:id="@+id/nav_host_fragment_content_main"
+                       android:name="androidx.navigation.fragment.NavHostFragment"
+                       app:navGraph="@navigation/nav_graph" />
+           </FrameLayout>
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/res/navigation/nav_graph.xml",
+          """
+          <navigation xmlns:android="http://schemas.android.com/apk/res/android"
+           android:id="@+id/nav_graph">
+          </navigation>
+          """
+            .trimIndent(),
+        )
+      }
 
-      androidLibrary(":lib") {
-          android {
-            namespace = "com.example.lib"
-            defaultConfig { minSdk = 24 }
-            dependencies { implementation("androidx.navigation:navigation-fragment:2.5.2") }
-          }
+    androidLibrary(":lib") {
+        android {
+          namespace = "com.example.lib"
+          defaultConfig { minSdk = 24 }
+          dependencies { implementation("androidx.navigation:navigation-fragment:2.5.2") }
         }
-        .files {
-          add(
-            "src/main/res/layout/content_lib.xml",
-            """
-            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:app="http://schemas.android.com/apk/res-auto"
-                    android:layout_width="match_parent" android:layout_height="match_parent">
-                    <androidx.fragment.app.FragmentContainerView
-                         android:id="@+id/nav_host_fragment_content_main"
-                         android:name="androidx.navigation.fragment.NavHostFragment"
-                         app:navGraph="@navigation/lib_nav_graph" />
-             </FrameLayout>
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/res/navigation/lib_nav_graph.xml",
-            """
-            <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-             android:id="@+id/lib_nav_graph">
-            </navigation>
-            """
-              .trimIndent(),
-          )
-        }
-    }
+      }
+      .files {
+        add(
+          "src/main/res/layout/content_lib.xml",
+          """
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  xmlns:app="http://schemas.android.com/apk/res-auto"
+                  android:layout_width="match_parent" android:layout_height="match_parent">
+                  <androidx.fragment.app.FragmentContainerView
+                       android:id="@+id/nav_host_fragment_content_main"
+                       android:name="androidx.navigation.fragment.NavHostFragment"
+                       app:navGraph="@navigation/lib_nav_graph" />
+           </FrameLayout>
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/res/navigation/lib_nav_graph.xml",
+          """
+          <navigation xmlns:android="http://schemas.android.com/apk/res/android"
+           android:id="@+id/lib_nav_graph">
+          </navigation>
+          """
+            .trimIndent(),
+        )
+      }
+  }
 
   @Test
   fun testLinkNavigationXml() {

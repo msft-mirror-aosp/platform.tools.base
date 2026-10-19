@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
@@ -108,7 +107,7 @@ class TestEngineWiringTest(
         configuration(this, modulePath) {
           android {
             namespace = "com.example.test"
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
@@ -134,16 +133,16 @@ class TestEngineWiringTest(
 
   @Test
   fun testJunitWiringThroughDSL() {
-    val result = rule.build.executor.run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.didWorkTasks).contains("$modulePath:testFirstT1DebugTestSuite")
+    val result = rule.build.executor.run("testDebugFirstT1TestSuite")
+    Truth.assertThat(result.didWorkTasks).contains("$modulePath:testDebugFirstT1TestSuite")
   }
 
   @Test
   fun testLoggingRedirection() {
-    rule.build.executor.run("testFirstT1DebugTestSuite")
+    rule.build.executor.run("testDebugFirstT1TestSuite")
 
     val logFile =
-      rule.build.subProject(modulePath).resolve("build/intermediates/debug/testFirstT1DebugTestSuite/junit_engines_logging.txt").toFile()
+      rule.build.subProject(modulePath).resolve("build/intermediates/debug/testDebugFirstT1TestSuite/junit_engines_logging.txt").toFile()
     Truth.assertThat(logFile.exists()).isTrue()
     Truth.assertThat(logFile.readText()).contains("JUL getId::called")
   }
@@ -186,7 +185,7 @@ class TestEngineWiringTest(
     val targets = firstTestSuite!!.testInfo.targets
     Truth.assertThat(targets.size).isEqualTo(1)
     Truth.assertThat(targets.values.single().name).isEqualTo("t1")
-    Truth.assertThat(targets.values.single().testTaskName).isEqualTo("testFirstT1DebugTestSuite")
+    Truth.assertThat(targets.values.single().testTaskName).isEqualTo("testDebugFirstT1TestSuite")
     Truth.assertThat(firstTestSuite.testInfo.junitInfo.includedEngines.single()).isEqualTo("[engine:toy-junit-engine-for-tests]")
   }
 

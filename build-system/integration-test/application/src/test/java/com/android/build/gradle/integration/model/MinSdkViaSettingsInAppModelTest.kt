@@ -26,20 +26,19 @@ import org.junit.Test
 
 class MinSdkViaSettingsInAppModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android { minSdk = 23 }
-      }
-      androidApplication(createMinimumProject = false) {
-        android {
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          namespace = "com.example.library"
-        }
-        files.setupMinimumManifest()
-      }
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { minSdk = 23 }
     }
+    androidApplication(createMinimumProject = false) {
+      android {
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+        namespace = "com.example.library"
+      }
+      files.setupMinimumManifest()
+    }
+  }
 
   @Test
   fun `test minSdkVersion`() {

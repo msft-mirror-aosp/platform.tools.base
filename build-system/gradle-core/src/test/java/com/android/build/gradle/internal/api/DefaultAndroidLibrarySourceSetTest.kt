@@ -66,4 +66,10 @@ class DefaultAndroidLibrarySourceSetTest {
     }
     assertThat(called).isTrue()
   }
+
+  @Test
+  fun testImplementsBothLegacyAndDslInterfaces() {
+    assertThat(sourceSet).isInstanceOf(com.android.build.gradle.api.AndroidLibrarySourceSet::class.java)
+    assertThat(sourceSet).isInstanceOf(com.android.build.api.dsl.AndroidLibrarySourceSet::class.java)
+  }
 }

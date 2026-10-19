@@ -3,8 +3,8 @@ load("@//tools/base/bazel:maven.bzl", "maven_artifact", "maven_import")
 # Bazel rules auto-generated from maven repo.
 maven_artifact(
     name = "com.google.example2.a_1",
-    pom = "repository/com/google/example2/a/1/a-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example2/a/1/a-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example2/a/1",
     visibility = ["//visibility:public"],
 )
@@ -13,19 +13,19 @@ maven_import(
     name = "com.google.example2.a",
     classifiers = [],
     jars = [
-        "repository/com/google/example2/a/1/a-1.jar"
+        "com/google/example2/a/1/a-1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example2/a/1/a-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example2/a/1/a-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example2/a/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.a_1",
-    pom = "repository/com/google/example/a/1/a-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/a/1/a-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/a/1",
     parent = "com.google.example.a-parent_1",
     deps = [
@@ -39,7 +39,7 @@ maven_import(
     classifiers = [],
     parent = "com.google.example.a-parent_1",
     jars = [
-        "repository/com/google/example/a/1/a-1.jar"
+        "com/google/example/a/1/a-1.jar"
     ],
     exports = [
         "com.google.example.c",
@@ -47,16 +47,16 @@ maven_import(
     original_deps = [
         "com.google.example.c_1",
     ],
-    pom = "repository/com/google/example/a/1/a-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/a/1/a-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/a/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.aa_3",
-    pom = "repository/com/google/example/aa/3/aa-3.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/aa/3/aa-3.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/aa/3",
     visibility = ["//visibility:public"],
 )
@@ -64,18 +64,18 @@ maven_artifact(
 maven_import(
     name = "com.google.example.aa",
     classifiers = [],
-    aar = "repository/com/google/example/aa/3/aa-3.aar",
+    aar = "com/google/example/aa/3/aa-3.aar",
     original_deps = [],
-    pom = "repository/com/google/example/aa/3/aa-3.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/aa/3/aa-3.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/aa/3",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.b_1",
-    pom = "repository/com/google/example/b/1/b-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/b/1/b-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/b/1",
     deps = [
         "com.google.example.c_2",
@@ -87,7 +87,7 @@ maven_import(
     name = "com.google.example.b",
     classifiers = [],
     jars = [
-        "repository/com/google/example/b/1/b-1.jar"
+        "com/google/example/b/1/b-1.jar"
     ],
     exports = [
         "com.google.example.c",
@@ -95,16 +95,16 @@ maven_import(
     original_deps = [
         "com.google.example.c_2",
     ],
-    pom = "repository/com/google/example/b/1/b-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/b/1/b-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/b/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.bb_1",
-    pom = "repository/com/google/example/bb/1/bb-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/bb/1/bb-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/bb/1",
     visibility = ["//visibility:public"],
 )
@@ -113,19 +113,19 @@ maven_import(
     name = "com.google.example.bb",
     classifiers = [],
     jars = [
-        "repository/com/google/example/bb/1/bb-1.jar"
+        "com/google/example/bb/1/bb-1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/bb/1/bb-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/bb/1/bb-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/bb/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.c_2",
-    pom = "repository/com/google/example/c/2/c-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/c/2/c-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/c/2",
     deps = [
         "com.google.example.d_2",
@@ -138,7 +138,7 @@ maven_import(
     name = "com.google.example.c",
     classifiers = [],
     jars = [
-        "repository/com/google/example/c/2/c-2.jar"
+        "com/google/example/c/2/c-2.jar"
     ],
     exports = [
         "com.google.example.d",
@@ -150,8 +150,8 @@ maven_import(
         "com.google.example.d_2",
         "com.google.example.r_1",
     ],
-    pom = "repository/com/google/example/c/2/c-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/c/2/c-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/c/2",
     deps_with_exclusions = [
         "com.google.example.r",
@@ -161,8 +161,8 @@ maven_import(
 
 maven_artifact(
     name = "com.google.example.cc_1",
-    pom = "repository/com/google/example/cc/1/cc-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/cc/1/cc-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/cc/1",
     deps = [
         "com.google.example.d_2",
@@ -174,7 +174,7 @@ maven_import(
     name = "com.google.example.cc",
     classifiers = [],
     jars = [
-        "repository/com/google/example/cc/1/cc-1.jar"
+        "com/google/example/cc/1/cc-1.jar"
     ],
     exports = [
         "com.google.example.d",
@@ -182,16 +182,16 @@ maven_import(
     original_deps = [
         "com.google.example.d_2",
     ],
-    pom = "repository/com/google/example/cc/1/cc-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/cc/1/cc-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/cc/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.d_2",
-    pom = "repository/com/google/example/d/2/d-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/d/2/d-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/d/2",
     parent = "com.google.example.d-parent_2",
     deps = [
@@ -207,7 +207,7 @@ maven_import(
     classifiers = [],
     parent = "com.google.example.d-parent_2",
     jars = [
-        "repository/com/google/example/d/2/d-2.jar"
+        "com/google/example/d/2/d-2.jar"
     ],
     exports = [
         "com.google.example.e",
@@ -219,16 +219,16 @@ maven_import(
         "com.google.example.f_1",
         "com.google.example.g_1",
     ],
-    pom = "repository/com/google/example/d/2/d-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/d/2/d-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/d/2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.dd_2-20251021.131246-1",
-    pom = "repository/com/google/example/dd/2-SNAPSHOT/dd-2-SNAPSHOT.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/dd/2-SNAPSHOT/dd-2-SNAPSHOT.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/dd/2-SNAPSHOT",
     visibility = ["//visibility:public"],
 )
@@ -237,19 +237,19 @@ maven_import(
     name = "com.google.example.dd",
     classifiers = [],
     jars = [
-        "repository/com/google/example/dd/2-SNAPSHOT/dd-2-SNAPSHOT.jar"
+        "com/google/example/dd/2-SNAPSHOT/dd-2-SNAPSHOT.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/dd/2-SNAPSHOT/dd-2-SNAPSHOT.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/dd/2-SNAPSHOT/dd-2-SNAPSHOT.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/dd/2-SNAPSHOT",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.e_1",
-    pom = "repository/com/google/example/e/1/e-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/e/1/e-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/e/1",
     visibility = ["//visibility:public"],
 )
@@ -258,19 +258,19 @@ maven_import(
     name = "com.google.example.e",
     classifiers = [],
     jars = [
-        "repository/com/google/example/e/1/e-1.jar"
+        "com/google/example/e/1/e-1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/e/1/e-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/e/1/e-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/e/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.f_2",
-    pom = "repository/com/google/example/f/2/f-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/f/2/f-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/f/2",
     visibility = ["//visibility:public"],
 )
@@ -279,19 +279,19 @@ maven_import(
     name = "com.google.example.f",
     classifiers = [],
     jars = [
-        "repository/com/google/example/f/2/f-2.jar"
+        "com/google/example/f/2/f-2.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/f/2/f-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/f/2/f-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/f/2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.g_1",
-    pom = "repository/com/google/example/g/1/g-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/g/1/g-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/g/1",
     deps = [
         "com.google.example.f_2",
@@ -303,7 +303,7 @@ maven_import(
     name = "com.google.example.g",
     classifiers = [],
     jars = [
-        "repository/com/google/example/g/1/g-1.jar"
+        "com/google/example/g/1/g-1.jar"
     ],
     exports = [
         "com.google.example.f",
@@ -311,16 +311,16 @@ maven_import(
     original_deps = [
         "com.google.example.f_2",
     ],
-    pom = "repository/com/google/example/g/1/g-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/g/1/g-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/g/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.h_1",
-    pom = "repository/com/google/example/h/1/h-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/h/1/h-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/h/1",
     deps = [
         "com.google.example.i_1",
@@ -337,16 +337,16 @@ maven_import(
     original_deps = [
         "com.google.example.i_1",
     ],
-    pom = "repository/com/google/example/h/1/h-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/h/1/h-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/h/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.i_1",
-    pom = "repository/com/google/example/i/1/i-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/i/1/i-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/i/1",
     visibility = ["//visibility:public"],
 )
@@ -355,19 +355,19 @@ maven_import(
     name = "com.google.example.i",
     classifiers = [],
     jars = [
-        "repository/com/google/example/i/1/i-1.jar"
+        "com/google/example/i/1/i-1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/i/1/i-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/i/1/i-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/i/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.j_1",
-    pom = "repository/com/google/example/j/1/j-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/j/1/j-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/j/1",
     visibility = ["//visibility:public"],
 )
@@ -376,19 +376,19 @@ maven_import(
     name = "com.google.example.j.linux",
     classifiers = [],
     jars = [
-        "repository/com/google/example/j/1/j-1-linux.jar"
+        "com/google/example/j/1/j-1-linux.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/j/1/j-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/j/1/j-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/j/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.k_1",
-    pom = "repository/com/google/example/k/1/k-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/k/1/k-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/k/1",
     deps = [
         "com.google.example.m_1",
@@ -400,7 +400,7 @@ maven_import(
     name = "com.google.example.k",
     classifiers = [],
     jars = [
-        "repository/com/google/example/k/1/k-1.jar"
+        "com/google/example/k/1/k-1.jar"
     ],
     exports = [
         "com.google.example.m",
@@ -408,8 +408,8 @@ maven_import(
     original_deps = [
         "com.google.example.m_1",
     ],
-    pom = "repository/com/google/example/k/1/k-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/k/1/k-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/k/1",
     deps_with_exclusions = [
         "com.google.example.m",
@@ -419,8 +419,8 @@ maven_import(
 
 maven_artifact(
     name = "com.google.example.l_1",
-    pom = "repository/com/google/example/l/1/l-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/l/1/l-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/l/1",
     deps = [
         "com.google.example.m_1",
@@ -432,7 +432,7 @@ maven_import(
     name = "com.google.example.l",
     classifiers = [],
     jars = [
-        "repository/com/google/example/l/1/l-1.jar"
+        "com/google/example/l/1/l-1.jar"
     ],
     exports = [
         "com.google.example.m",
@@ -440,16 +440,16 @@ maven_import(
     original_deps = [
         "com.google.example.m_1",
     ],
-    pom = "repository/com/google/example/l/1/l-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/l/1/l-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/l/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.m_1",
-    pom = "repository/com/google/example/m/1/m-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/m/1/m-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/m/1",
     deps = [
         "com.google.example.n_1",
@@ -462,7 +462,7 @@ maven_import(
     name = "com.google.example.m",
     classifiers = [],
     jars = [
-        "repository/com/google/example/m/1/m-1.jar"
+        "com/google/example/m/1/m-1.jar"
     ],
     exports = [
         "com.google.example.n",
@@ -472,8 +472,8 @@ maven_import(
         "com.google.example.n_1",
         "com.google.example.o_1",
     ],
-    pom = "repository/com/google/example/m/1/m-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/m/1/m-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/m/1",
     exclusions_for_parents = {
         "com.google.example.k": [
@@ -485,8 +485,8 @@ maven_import(
 
 maven_artifact(
     name = "com.google.example.n_1",
-    pom = "repository/com/google/example/n/1/n-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/n/1/n-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/n/1",
     visibility = ["//visibility:public"],
 )
@@ -495,19 +495,19 @@ maven_import(
     name = "com.google.example.n",
     classifiers = [],
     jars = [
-        "repository/com/google/example/n/1/n-1.jar"
+        "com/google/example/n/1/n-1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/n/1/n-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/n/1/n-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/n/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.o_1",
-    pom = "repository/com/google/example/o/1/o-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/o/1/o-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/o/1",
     visibility = ["//visibility:public"],
 )
@@ -516,19 +516,19 @@ maven_import(
     name = "com.google.example.o",
     classifiers = [],
     jars = [
-        "repository/com/google/example/o/1/o-1.jar"
+        "com/google/example/o/1/o-1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/o/1/o-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/o/1/o-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/o/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.p_1",
-    pom = "repository/com/google/example/p/1/p-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/p/1/p-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/p/1",
     deps = [
         "com.google.example.q_1",
@@ -540,7 +540,7 @@ maven_import(
     name = "com.google.example.p",
     classifiers = [],
     jars = [
-        "repository/com/google/example/p/1/p-1.jar"
+        "com/google/example/p/1/p-1.jar"
     ],
     exports = [
         "com.google.example.q",
@@ -548,16 +548,16 @@ maven_import(
     original_deps = [
         "com.google.example.q_1",
     ],
-    pom = "repository/com/google/example/p/1/p-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/p/1/p-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/p/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.q_1",
-    pom = "repository/com/google/example/q/1/q-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/q/1/q-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/q/1",
     visibility = ["//visibility:public"],
 )
@@ -566,19 +566,19 @@ maven_import(
     name = "com.google.example.q",
     classifiers = [],
     jars = [
-        "repository/com/google/example/q/1/q-1.jar"
+        "com/google/example/q/1/q-1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/q/1/q-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/q/1/q-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/q/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.r_1",
-    pom = "repository/com/google/example/r/1/r-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/r/1/r-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/r/1",
     deps = [
         "com.google.example.t_1",
@@ -590,11 +590,11 @@ maven_import(
     name = "com.google.example.r.nodeps",
     classifiers = [],
     jars = [
-        "repository/com/google/example/r/1/r-1-nodeps.jar"
+        "com/google/example/r/1/r-1-nodeps.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/r/1/r-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/r/1/r-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/r/1",
     exclusions_for_parents = {
         "com.google.example.c": [
@@ -606,8 +606,8 @@ maven_import(
 
 maven_artifact(
     name = "com.google.example.u_1",
-    pom = "repository/com/google/example/u/1/u-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/u/1/u-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/u/1",
     deps = [
         "com.google.example.w_1",
@@ -622,7 +622,7 @@ maven_import(
     name = "com.google.example.u",
     classifiers = [],
     jars = [
-        "repository/com/google/example/u/1/u-1.jar"
+        "com/google/example/u/1/u-1.jar"
     ],
     exports = [
         "com.google.example.w",
@@ -634,16 +634,16 @@ maven_import(
         "com.google.example.v_1",
         "com.google.example.z_2",
     ],
-    pom = "repository/com/google/example/u/1/u-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/u/1/u-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/u/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.v_2",
-    pom = "repository/com/google/example/v/2/v-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/v/2/v-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/v/2",
     visibility = ["//visibility:public"],
 )
@@ -652,16 +652,16 @@ maven_import(
     name = "com.google.example.v",
     classifiers = [],
     original_deps = [],
-    pom = "repository/com/google/example/v/2/v-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/v/2/v-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/v/2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.w_2",
-    pom = "repository/com/google/example/w/2/w-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/w/2/w-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/w/2",
     visibility = ["//visibility:public"],
 )
@@ -670,19 +670,19 @@ maven_import(
     name = "com.google.example.w",
     classifiers = [],
     jars = [
-        "repository/com/google/example/w/2/w-2.jar"
+        "com/google/example/w/2/w-2.jar"
     ],
     original_deps = [],
-    pom = "repository/com/google/example/w/2/w-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/w/2/w-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/w/2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.x_1",
-    pom = "repository/com/google/example/x/1/x-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/x/1/x-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/x/1",
     deps = [
         "com.google.example.w_2",
@@ -695,7 +695,7 @@ maven_import(
     name = "com.google.example.x",
     classifiers = [],
     jars = [
-        "repository/com/google/example/x/1/x-1.jar"
+        "com/google/example/x/1/x-1.jar"
     ],
     exports = [
         "com.google.example.w",
@@ -704,16 +704,16 @@ maven_import(
         "com.google.example.w_2",
         "com.google.example.v_2",
     ],
-    pom = "repository/com/google/example/x/1/x-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/x/1/x-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/x/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.y_1",
-    pom = "repository/com/google/example/y/1/y-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/y/1/y-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/y/1",
     visibility = ["//visibility:public"],
 )
@@ -722,16 +722,16 @@ maven_import(
     name = "com.google.example.y",
     classifiers = [],
     original_deps = [],
-    pom = "repository/com/google/example/y/1/y-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/y/1/y-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/y/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.z_2",
-    pom = "repository/com/google/example/z/2/z-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/z/2/z-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/z/2",
     visibility = ["//visibility:public"],
 )
@@ -740,16 +740,16 @@ maven_import(
     name = "com.google.example.z",
     classifiers = [],
     original_deps = [],
-    pom = "repository/com/google/example/z/2/z-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/z/2/z-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/z/2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.a_2",
-    pom = "repository/com/google/example/a/2/a-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/a/2/a-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/a/2",
     parent = "com.google.example.a-parent_1",
     deps = [
@@ -760,8 +760,8 @@ maven_artifact(
 
 maven_artifact(
     name = "com.google.example.c_1",
-    pom = "repository/com/google/example/c/1/c-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/c/1/c-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/c/1",
     deps = [
         "com.google.example.d_1",
@@ -772,8 +772,8 @@ maven_artifact(
 
 maven_artifact(
     name = "com.google.example.d_1",
-    pom = "repository/com/google/example/d/1/d-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/d/1/d-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/d/1",
     parent = "com.google.example.d-parent_1",
     deps = [
@@ -784,77 +784,77 @@ maven_artifact(
 
 maven_artifact(
     name = "com.google.example.f_1",
-    pom = "repository/com/google/example/f/1/f-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/f/1/f-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/f/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.t_1",
-    pom = "repository/com/google/example/t/1/t-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/t/1/t-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/t/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.v_1",
-    pom = "repository/com/google/example/v/1/v-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/v/1/v-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/v/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.w_1",
-    pom = "repository/com/google/example/w/1/w-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/w/1/w-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/w/1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
     name = "com.google.example.a-parent-parent_1",
-    pom = "repository/com/google/example/a-parent-parent/1/a-parent-parent-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/a-parent-parent/1/a-parent-parent-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/a-parent-parent/1",
 )
 
 maven_artifact(
     name = "com.google.example.a-parent_1",
-    pom = "repository/com/google/example/a-parent/1/a-parent-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/a-parent/1/a-parent-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/a-parent/1",
     parent = "com.google.example.a-parent-parent_1",
 )
 
 maven_artifact(
     name = "com.google.example.d-parent-parent_1",
-    pom = "repository/com/google/example/d-parent-parent/1/d-parent-parent-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/d-parent-parent/1/d-parent-parent-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/d-parent-parent/1",
 )
 
 maven_artifact(
     name = "com.google.example.d-parent-parent_2",
-    pom = "repository/com/google/example/d-parent-parent/2/d-parent-parent-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/d-parent-parent/2/d-parent-parent-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/d-parent-parent/2",
 )
 
 maven_artifact(
     name = "com.google.example.d-parent_1",
-    pom = "repository/com/google/example/d-parent/1/d-parent-1.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/d-parent/1/d-parent-1.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/d-parent/1",
     parent = "com.google.example.d-parent-parent_1",
 )
 
 maven_artifact(
     name = "com.google.example.d-parent_2",
-    pom = "repository/com/google/example/d-parent/2/d-parent-2.pom",
-    repo_root_path = "repository",
+    pom = "com/google/example/d-parent/2/d-parent-2.pom",
+    repo_root_path = "",
     repo_path = "com/google/example/d-parent/2",
     parent = "com.google.example.d-parent-parent_2",
 )

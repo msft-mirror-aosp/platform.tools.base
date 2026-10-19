@@ -28,27 +28,26 @@ import org.junit.Test
 
 class HelloWorldCompositeModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation("com.composite-build:lib:1.2") }
-      }
-      includedBuild("other-build") {
-        includedBuild("nested-build") {
-          androidLibrary(":anotherLib") {
-            android { enableKotlin = false }
-            group = "com.nested-build"
-            version = "1.3"
-          }
-        }
-        androidLibrary(":lib") {
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation("com.composite-build:lib:1.2") }
+    }
+    includedBuild("other-build") {
+      includedBuild("nested-build") {
+        androidLibrary(":anotherLib") {
           android { enableKotlin = false }
-          group = "com.composite-build"
-          version = "1.2"
+          group = "com.nested-build"
+          version = "1.3"
         }
+      }
+      androidLibrary(":lib") {
+        android { enableKotlin = false }
+        group = "com.composite-build"
+        version = "1.2"
       }
     }
+  }
 
   private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
@@ -85,30 +84,29 @@ class HelloWorldCompositeModelTest : ModelComparator() {
 class CompositeBuildWithSameNameTest : ModelComparator() {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies {
-          implementation("com.androidlib:lib:1.0")
-          implementation("com.javalib:lib:1.0")
-        }
-      }
-      includedBuild("includedBuild1") {
-        androidLibrary(":lib") {
-          android { enableKotlin = false }
-          group = "com.androidlib"
-          version = "1.0"
-        }
-      }
-      includedBuild("includedBuild2") {
-        genericProject(":lib") {
-          applyPlugin(PluginType.JAVA_LIBRARY)
-          group = "com.javalib"
-          version = "1.0"
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies {
+        implementation("com.androidlib:lib:1.0")
+        implementation("com.javalib:lib:1.0")
       }
     }
+    includedBuild("includedBuild1") {
+      androidLibrary(":lib") {
+        android { enableKotlin = false }
+        group = "com.androidlib"
+        version = "1.0"
+      }
+    }
+    includedBuild("includedBuild2") {
+      genericProject(":lib") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        group = "com.javalib"
+        version = "1.0"
+      }
+    }
+  }
 
   private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
@@ -125,22 +123,21 @@ class CompositeBuildWithSameNameTest : ModelComparator() {
 
 class DependencySubstitutionInCompositeModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation("com.example.included:lib:1.0") }
-      }
-      includedBuild("includedBuild") {
-        androidLibrary(":lib") {
-          android { enableKotlin = false }
-
-          group = "com.example.included"
-          version = "1.0"
-        }
-        settings { dependencySubstitution { substitute(module("com.example.included:lib")).using(project(":lib")) } }
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation("com.example.included:lib:1.0") }
     }
+    includedBuild("includedBuild") {
+      androidLibrary(":lib") {
+        android { enableKotlin = false }
+
+        group = "com.example.included"
+        version = "1.0"
+      }
+      settings { dependencySubstitution { substitute(module("com.example.included:lib")).using(project(":lib")) } }
+    }
+  }
 
   private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 

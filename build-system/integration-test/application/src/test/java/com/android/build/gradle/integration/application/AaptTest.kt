@@ -18,16 +18,15 @@ class AaptTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { defaultConfig.versionCode = 1 }
-        files {
-          add("src/main/assets/ignored", "ignored")
-          add("src/main/assets/kept", "kept")
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { defaultConfig.versionCode = 1 }
+      files {
+        add("src/main/assets/ignored", "ignored")
+        add("src/main/assets/kept", "kept")
       }
     }
+  }
 
   @Test
   fun testAaptOptionsFlagsWithAapt2() {
@@ -36,10 +35,9 @@ class AaptTest {
     val traceFolderPath = tracesFolder.absolutePath
     val windowsFriendlyFilePath = traceFolderPath.replace("\\", "\\\\")
 
-    val build =
-      rule.build {
-        androidApplication { android { androidResources { additionalParameters += listOf("--trace-folder", windowsFriendlyFilePath) } } }
-      }
+    val build = rule.build {
+      androidApplication { android { androidResources { additionalParameters += listOf("--trace-folder", windowsFriendlyFilePath) } } }
+    }
 
     build.executor.run("clean", "assembleDebug")
 
@@ -71,11 +69,10 @@ class AaptTest {
     val traceFolderPath = tracesFolder.absolutePath
     val windowsFriendlyFilePath = traceFolderPath.replace("\\", "\\\\")
 
-    val build =
-      rule.build {
-        androidApplication { pluginCallbacks += TraceFolderCallback::class.java }
-        gradleProperties { add("_aaptTest_", windowsFriendlyFilePath) }
-      }
+    val build = rule.build {
+      androidApplication { pluginCallbacks += TraceFolderCallback::class.java }
+      gradleProperties { add("_aaptTest_", windowsFriendlyFilePath) }
+    }
 
     build.executor.run("assembleDebug")
     assertThat(tracesFolder).exists()
@@ -84,22 +81,21 @@ class AaptTest {
 
   @Test
   fun emptyNoCompressList() {
-    val build =
-      rule.build {
-        androidApplication {
-          android { androidResources { noCompress("") } }
-          files.add(
-            "src/main/res/layout/main.xml",
-            // language=xml
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android">
-            </LinearLayout>
-            """
-              .trimIndent(),
-          )
-        }
+    val build = rule.build {
+      androidApplication {
+        android { androidResources { noCompress("") } }
+        files.add(
+          "src/main/res/layout/main.xml",
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android">
+          </LinearLayout>
+          """
+            .trimIndent(),
+        )
       }
+    }
 
     build.executor.run("clean", "assembleDebug")
 
@@ -173,18 +169,17 @@ class AaptTest {
     expectedTasksThatDidWorkOnANoCompressChange: List<String>,
     expectedTasksThatDidWorkOnANoIgnoreAssetsChange: List<String>,
   ) {
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            androidResources {
-              noCompress += "noCompressDsl"
-              ignoreAssetsPattern = ".ignoreAssetsPatternDsl"
-            }
+    val build = rule.build {
+      androidApplication {
+        android {
+          androidResources {
+            noCompress += "noCompressDsl"
+            ignoreAssetsPattern = ".ignoreAssetsPatternDsl"
           }
-          pluginCallbacks += IgnorePatternCallback2::class.java
         }
+        pluginCallbacks += IgnorePatternCallback2::class.java
       }
+    }
 
     build.executor.run("clean", assembleTask)
 

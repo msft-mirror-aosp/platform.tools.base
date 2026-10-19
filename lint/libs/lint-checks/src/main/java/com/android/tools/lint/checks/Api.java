@@ -19,8 +19,9 @@ import com.android.annotations.NonNull;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.detector.api.ExtensionSdk;
 import com.android.utils.XmlUtils;
-import it.unimi.dsi.fastutil.Hash;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenCustomHashMap;
+
+import org.xml.sax.SAXException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,10 +32,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import org.xml.sax.SAXException;
 
 /**
  * Main entry point for API descriptions.
@@ -134,8 +135,8 @@ class Api<C extends ApiClassBase> {
             @NonNull Map<String, C> classes,
             @NonNull Map<String, ApiClassOwner<C>> containers,
             List<ExtensionSdk> sdks) {
-        mClasses = Collections.unmodifiableMap(new MyHashMap<>(classes));
-        mContainers = Collections.unmodifiableMap(new MyHashMap<>(containers));
+        mClasses = Collections.unmodifiableMap(classes);
+        mContainers = Collections.unmodifiableMap(containers);
         mSdks = Collections.unmodifiableList(sdks);
     }
 
@@ -192,49 +193,5 @@ class Api<C extends ApiClassBase> {
     @NonNull
     public List<ExtensionSdk> getExtensionSdks() {
         return mSdks;
-    }
-
-    /** The hash map that doesn't distinguish between '.', '/', and '$' in the key string. */
-    private static class MyHashMap<V> extends Object2ObjectOpenCustomHashMap<String, V> {
-        private static final Hash.Strategy<String> myHashingStrategy =
-                new Hash.Strategy<>() {
-                    @Override
-                    public int hashCode(String str) {
-                        if (str == null) return 0;
-                        int h = 0;
-                        for (int i = 0; i < str.length(); i++) {
-                            char c = str.charAt(i);
-                            c = normalizeSeparator(c);
-                            h = 31 * h + c;
-                        }
-                        return h;
-                    }
-
-                    @Override
-                    public boolean equals(String s1, String s2) {
-                        if (s1 == null) return s2 == null;
-                        if (s2 == null) return false;
-                        if (s1.length() != s2.length()) return false;
-
-                        for (int i = 0; i < s1.length(); i++) {
-                            if (normalizeSeparator(s1.charAt(i))
-                                    != normalizeSeparator(s2.charAt(i))) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                };
-
-        private static char normalizeSeparator(char c) {
-            if (c == '/' || c == '$') {
-                c = '.';
-            }
-            return c;
-        }
-
-        MyHashMap(Map<String, V> data) {
-            super(data, myHashingStrategy);
-        }
     }
 }

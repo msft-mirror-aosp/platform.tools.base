@@ -62,10 +62,10 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
   open fun severityOverrides(): Set<String> = emptySet()
 
   override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity? {
-    if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
-      return getDefaultSeverity(issue, visibleDefault)
-    }
     var severity = computeSeverity(issue, source, visibleDefault)
+    if (source.getSuppressNames(issue)?.contains(issue.id) == false) {
+      return Severity.max(severity ?: Severity.IGNORE, getDefaultSeverity(issue, visibleDefault))
+    }
     if (fatalOnly()) {
       if (severity == null) {
         val configuredSeverity = client.configurations.getDefinedSeverityWithoutOverride(source, issue, visibleDefault)
@@ -150,10 +150,6 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
   }
 
   private fun computeSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity? {
-    if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id) && !allowSuppress()) {
-      return getDefaultSeverity(issue, visibleDefault)
-    }
-
     val severity = parent?.getDefinedSeverity(issue, source, visibleDefault)
 
     // Issue not allowed to be suppressed?
@@ -353,7 +349,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
     val exactCategories = exactCategories()
 
     for (issue in registry.issues) {
-      if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id) && !allowSuppress()) {
+      if (getSuppressNames(issue)?.contains(issue.id) == false && !allowSuppress()) {
         continue
       }
 

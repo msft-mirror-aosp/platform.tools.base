@@ -12,7 +12,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/src/androidDeviceTest/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }
@@ -36,9 +38,7 @@
               "storeFile": {
                 "absolutePath": "{ANDROID_PREFS}/.android/debug.keystore"
               },
-              "storePassword": "android",
               "keyAlias": "AndroidDebugKey",
-              "keyPassword": "android",
               "enableV1Signing": true,
               "enableV2Signing": true,
               "enableV3Signing": false,
@@ -78,7 +78,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/src/androidHostTest/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }
@@ -128,7 +130,9 @@
             "sourceProvider": {
               "manifestFile": {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/src/androidMain/AndroidManifest.xml"
-              }
+              },
+              "extraResDirectories": [],
+              "extraAssetsDirectories": []
             }
           }
         }
@@ -201,7 +205,8 @@
         "animationsDisabled": false,
         "execution": "HOST",
         "additionalRuntimeApks": [],
-        "instrumentedTestTaskName": "connectedAndroidDeviceTest"
+        "instrumentedTestTaskName": "connectedAndroidDeviceTest",
+        "instrumentInPrivateComputeCore": false
       },
       "flags": {
         "booleanFlagValues": [

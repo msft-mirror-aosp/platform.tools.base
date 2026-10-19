@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
@@ -68,30 +67,30 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
       .from {
         gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
         androidApplication {
-            android {
-              namespace = "com.example.test"
-              testOptions.suites.create("first", AgpTestSuite::class.java) {
-                it.useJunitEngine.apply {
-                  includeEngines.add("[engine:toy-junit-engine-for-tests]")
-                  enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
-                  enginesDependencies.add("org.junit.platform:junit-platform-launcher")
-                  enginesDependencies.add("com.test:toy-junit-engine:1.0")
-                  enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
-                }
-                if (testType == TestType.HOST_JAR) {
-                  it.hostJar {}
-                } else {
-                  it.testApk {}
-                }
-                it.targetVariants.add("debug")
-                it.targets.apply { create("t1") {} }
+          android {
+            namespace = "com.example.test"
+            testOptions.customSuites.create("first") {
+              it.useJunitEngine.apply {
+                includeEngines.add("[engine:toy-junit-engine-for-tests]")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                enginesDependencies.add("com.test:toy-junit-engine:1.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
               }
+              if (testType == TestType.HOST_JAR) {
+                it.hostJar {}
+              } else {
+                it.testApk {}
+              }
+              it.targetVariants.add("debug")
+              it.targets.apply { create("t1") {} }
             }
-            dependencies { implementation("com.google.truth:truth:0.44") }
-            pluginCallbacks +=
-              if (testType == TestType.HOST_JAR) AddStaticFolderToHostJarTestSuiteCallback::class.java
-              else AddStaticFolderToTestApkTestSuiteCallback::class.java
           }
+          dependencies { implementation("com.google.truth:truth:0.44") }
+          pluginCallbacks +=
+            if (testType == TestType.HOST_JAR) AddStaticFolderToHostJarTestSuiteCallback::class.java
+            else AddStaticFolderToTestApkTestSuiteCallback::class.java
+        }
           .files {
             add("src/first/java/Dummy.java", "public class Dummy {}")
             add("src/first/resources/some/random/file.txt", "some random text")
@@ -105,16 +104,16 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
     Assume.assumeFalse(testType == TestType.TEST_APK)
 
     val project = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1DebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testDebugFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processDebugFirstJavaRes")
     val javaRes = getJavaRes(project)
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.resolve("some/random").listFiles().map { it.name }).containsExactly("file.txt", "res.txt")
 
     // Run it again to check that we are up to date.
-    result = project.executor.run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstHostJarDebugJavaRes")
+    result = project.executor.run("testDebugFirstT1TestSuite")
+    Truth.assertThat(result.upToDateTasks).contains(":app:processDebugFirstJavaRes")
   }
 
   @Test
@@ -123,9 +122,9 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
     Assume.assumeFalse(testType == TestType.TEST_APK)
 
     val project = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1DebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testDebugFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processDebugFirstJavaRes")
     val javaRes = getJavaRes(project).resolve("some${File.separatorChar}random")
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt", "res.txt")
@@ -134,8 +133,8 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
       build.subProject(":app").files.run { add("src/shared/resources/some/random/third.txt", "yet another one") }
 
       // Run it again to check that we are not up to date.
-      result = build.executor.run("testFirstT1DebugTestSuite")
-      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
+      result = build.executor.run("testDebugFirstT1TestSuite")
+      Truth.assertThat(result.didWorkTasks).contains(":app:processDebugFirstJavaRes")
       Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt", "res.txt", "third.txt")
     }
   }
@@ -171,8 +170,8 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
 
   private fun getJavaRes(project: GradleBuild) =
     InternalArtifactType.JAVA_RES.getIntermediateOutputDir(project.subProject(":app").buildDir.toFile())
-      .resolve("firstHostJarDebug")
-      .resolve("processFirstHostJarDebugJavaRes")
+      .resolve("debugFirst")
+      .resolve("processDebugFirstJavaRes")
       .resolve("out")
 }
 

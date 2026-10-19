@@ -50,14 +50,16 @@ import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaClassErrorType
 import org.jetbrains.kotlin.analysis.api.types.KaType
-import org.jetbrains.kotlin.asJava.elements.KotlinLightTypeParameterBuilder
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
 import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtElement
@@ -1584,11 +1586,7 @@ class UastTest : TestCase() {
       // in the kotlin-compiler fork (i.e. KotlinLightTypeParameterBuilder).
 
       fun hasTypeParameterKeyword(element: PsiTypeParameter?, keyword: KtModifierKeywordToken): Boolean {
-        val ktOrigin =
-          when (element) {
-            is KotlinLightTypeParameterBuilder -> element.origin
-            else -> element?.unwrapped as? KtTypeParameter ?: return false
-          }
+        val ktOrigin = element?.unwrapped as? KtTypeParameter ?: return false
         return ktOrigin.hasModifier(keyword)
       }
 
@@ -2745,6 +2743,30 @@ class UastTest : TestCase() {
         }
       )
     }
+  }
+
+  fun testAbstractMapAsSuper() {
+    val source =
+      kotlin(
+          """
+          abstract class Awd : AbstractMap<String, String>()
+          """
+        )
+        .indented()
+    var i = 0
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitClass(node: UClass): Boolean {
+            assertEquals(1, node.javaPsi.supers.size)
+            assertEquals("kotlin.collections.AbstractMap", node.javaPsi.supers[0].qualifiedName)
+            ++i
+            return super.visitClass(node)
+          }
+        }
+      )
+    }
+    assertTrue(i > 0)
   }
 
   fun testCommentOnDataClass() {
@@ -4350,6 +4372,48 @@ class UastTest : TestCase() {
       )
     }
     assertEquals(8, count)
+  }
+
+  fun testContainingClassOfDelegatedImplementationMember() {
+    // Regression test for: b/548670996
+    val testFiles =
+      arrayOf(
+        kotlin(
+            """
+            package com.example.app
+
+            interface MyInterface {
+              val myProperty: Int
+            }
+
+            class MyOuter {
+
+              class MyNested (
+                param: MyInterface,
+              ) : MyInterface by param
+
+            }
+            """
+          )
+          .indented()
+      )
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitClass(node: UClass): Boolean {
+            val ktClass = node.sourcePsi as? KtClass ?: return false
+            if (ktClass.name != "MyNested") return false
+            analyze(ktClass) {
+              val symbol = ktClass.symbol as KaNamedClassSymbol
+              val prop = symbol.combinedMemberScope.callables(Name.identifier("myProperty")).first()
+              val containingClass = prop.containingSymbol as KaNamedClassSymbol
+              assertEquals("Wrong containingClass", "MyNested", containingClass.name.identifier)
+            }
+            return false
+          }
+        }
+      )
+    }
   }
 
   fun testResolutionToFunWithValueClass() {

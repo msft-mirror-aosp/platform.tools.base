@@ -6,23 +6,41 @@ iml_module(
     name = "studio.android.sdktools.template-engine",
     srcs = ["src"],
     iml_files = ["android.sdktools.template-engine.iml"],
+    visibility = [
+        "//tools/adt/idea/android-npw:__subpackages__",
+        "//tools/adt/idea/studio:__subpackages__",
+    ],
+    # do not sort: must match IML order
+    deps = ["@intellij//:intellij-sdk"],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.template-engine.tests",
+    iml_files = ["android.sdktools.template-engine.tests.iml"],
     # do not sort: must match IML order
     test_deps = [
+        "//tools/base/template-engine:studio.android.sdktools.template-engine",
+        "@intellij//:intellij-sdk",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:truth",
         "//tools/adt/idea/.idea/libraries:jimfs",
         "//tools/base/testutils:studio.android.sdktools.testutils",
     ],
+    test_friends = ["//tools/base/template-engine:studio.android.sdktools.template-engine"],
     test_srcs = ["test/src"],
-    # do not sort: must match IML order
-    deps = ["@intellij//:intellij-sdk"],
+    visibility = [
+        "//tools/adt/idea/android-npw:__subpackages__",
+        "//tools/adt/idea/studio:__subpackages__",
+    ],
 )
 
 kotlin_library(
     name = "tools.template-engine",
     srcs = glob(["src/**/*.kt"]),
     visibility = [
-        "//tools/vendor/google/android:__subpackages__",
+        "//tools/vendor/google/android-cli:__subpackages__",
+        "//tools/vendor/google/lume/lightbuild-cli:__subpackages__",
     ],
     deps = [
         "@maven//:com.google.code.gson.gson",
@@ -40,7 +58,7 @@ kotlin_test(
     jvm_flags = ["-Dtest.suite.jar=tools.template-engine-test.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     visibility = [
-        "//tools/vendor/google/android:__subpackages__",
+        "//tools/vendor/google/android-cli:__subpackages__",
     ],
     deps = [
         ":tools.template-engine",

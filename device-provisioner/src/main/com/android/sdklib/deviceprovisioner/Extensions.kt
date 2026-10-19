@@ -46,8 +46,9 @@ inline fun <reified T : Extension> Extensible.extension() = extension(T::class.j
 class ExtensionRegistry<BaseT>(base: BaseT, extensionProviders: List<ExtensionProvider<BaseT, *>>) : Extensible {
   constructor(base: BaseT, vararg extensionProviders: ExtensionProvider<BaseT, *>) : this(base, extensionProviders.toList())
 
-  private val extensions: Map<Class<out Extension>, Lazy<Extension?>> =
-    extensionProviders.associate { it.extensionClass to lazy { it.createExtension(base) } }
+  private val extensions: Map<Class<out Extension>, Lazy<Extension?>> = extensionProviders.associate {
+    it.extensionClass to lazy { it.createExtension(base) }
+  }
 
   override fun <T : Extension> extension(extensionClass: Class<T>): T? {
     @Suppress("UNCHECKED_CAST")

@@ -58,6 +58,11 @@ class ToyJunitEngineForTesting : TestEngine {
     p0?.let { executionRequest ->
       logger.info("Executing toy engine ! ${executionRequest.rootTestDescriptor}")
       inputParams.inputParameters.forEach { logger.info("Input : $it") }
+      System.getProperties()
+        .stringPropertyNames()
+        .filter { it.startsWith("androidx.test.") }
+        .sorted()
+        .forEach { logger.info("System property : $it = ${System.getProperty(it)}") }
       val listener: EngineExecutionListener = executionRequest.engineExecutionListener
 
       val engineDescriptor = executionRequest.rootTestDescriptor
@@ -69,11 +74,12 @@ class ToyJunitEngineForTesting : TestEngine {
         logger.info("Starting child $child")
         listener.executionStarted(child)
         try {
-          val testSucceeded = true // Replace with actual test outcome.
-          if (testSucceeded) {
+          // A test fails with the message in the `toyEngine.failure` system property, when it is set.
+          val failure = System.getProperty("toyEngine.failure")
+          if (failure == null) {
             listener.executionFinished(child, TestExecutionResult.successful())
           } else {
-            listener.executionFinished(child, TestExecutionResult.failed(Exception("Test failed")))
+            listener.executionFinished(child, TestExecutionResult.failed(Exception(failure)))
           }
         } catch (t: Throwable) {
           listener.executionFinished(child, TestExecutionResult.failed(t))

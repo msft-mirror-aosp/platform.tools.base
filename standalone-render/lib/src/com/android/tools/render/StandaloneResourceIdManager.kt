@@ -26,7 +26,7 @@ class StandaloneResourceIdManager(private val apkIdManager: ApkResourceIdManager
   ResourceIdManager {
   override val finalIdsUsed: Boolean = true
 
-  override fun findById(id: Int): ResourceReference? = apkIdManager.findById(id) ?: baseIdManager.findById(id)
+  override fun findById(id: Int): ResourceReference? = if (id == 0) null else apkIdManager.findById(id) ?: baseIdManager.findById(id)
 
   override fun getCompiledId(resource: ResourceReference): Int? =
     apkIdManager.getCompiledId(resource) ?: baseIdManager.getCompiledId(resource)
@@ -38,7 +38,12 @@ class StandaloneResourceIdManager(private val apkIdManager: ApkResourceIdManager
 
   override fun getGeneration(): Long = baseIdManager.getGeneration()
 
-  override fun resetCompiledIds(rClassProvider: Consumer<ResourceIdManager.RClassParser>) {
+  /** Loads compiled resource IDs from R classes during renderer bootstrap. */
+  fun loadCompiledIds(rClassProvider: Consumer<ResourceIdManager.RClassParser>) {
     baseIdManager.resetCompiledIds(rClassProvider)
   }
+
+  // No-op: compiled IDs are already loaded from the APK and R-class jars during bootstrap.
+  // Preventing per-RenderTask resets avoids repeatedly reloading and ASM-transforming R classes.
+  override fun resetCompiledIds(rClassProvider: Consumer<ResourceIdManager.RClassParser>) {}
 }

@@ -15,8 +15,14 @@
  */
 
 #include "tools/base/android-test/coverage/agent/native/hits_extractor.h"
+#include "tools/base/android-test/coverage/agent/native/instrumenter.h"
+#include "tools/base/android-test/coverage/agent/native/tagging_manager.h"
+#include "tools/base/build-system/gradle-core/src/main/proto/coverage_metadata.pb.h"
 
 #include <gtest/gtest.h>
+
+#include <fstream>
+#include <string>
 
 namespace coverage {
 
@@ -69,6 +75,129 @@ TEST(HitsExtractorTest, PackHitsEmpty) {
   std::string bitmask = HitsExtractor::PackHits(hits, 10, &last_hit_index);
 
   EXPECT_TRUE(bitmask.empty());
+}
+
+// Reads back a hits file written by HitsExtractor::WriteHitsFile.
+static bool ReadHitsFile(const std::string& path,
+                         android::tools::coverage::proto::CoverageHits* hits) {
+  std::ifstream in(path, std::ios::binary);
+  return in.good() && hits->ParseFromIstream(&in);
+}
+
+TEST(HitsExtractorTest, WriteHitsFileWithHits) {
+  const std::string path = ::testing::TempDir() + "coverage_hits_some.pb";
+  const std::string bitmask("\x05\x80", 2);
+
+  ASSERT_TRUE(HitsExtractor::WriteHitsFile(path, bitmask));
+
+  android::tools::coverage::proto::CoverageHits hits;
+  ASSERT_TRUE(ReadHitsFile(path, &hits));
+  EXPECT_EQ(hits.version(), 1u);
+  EXPECT_EQ(hits.hit_mask(), bitmask);
+  // The temporary file is renamed, not left behind.
+  EXPECT_FALSE(std::ifstream(path + ".tmp").good());
+}
+
+TEST(HitsExtractorTest, WriteHitsFileWithoutHits) {
+  // A run that executes no instrumented code still gets a hits file, so the
+  // host reports 0% coverage instead of failing to find the file.
+  const std::string path = ::testing::TempDir() + "coverage_hits_none.pb";
+
+  ASSERT_TRUE(HitsExtractor::WriteHitsFile(path, ""));
+
+  android::tools::coverage::proto::CoverageHits hits;
+  ASSERT_TRUE(ReadHitsFile(path, &hits));
+  EXPECT_EQ(hits.version(), 1u);
+  EXPECT_TRUE(hits.hit_mask().empty());
+}
+
+TEST(HitsExtractorTest, WriteHitsFileFailsForMissingDirectory) {
+  const std::string path =
+      ::testing::TempDir() + "does_not_exist/coverage_hits.pb";
+
+  EXPECT_FALSE(HitsExtractor::WriteHitsFile(path, ""));
+}
+
+TEST(InstrumenterTest, IsSyntheticOrCompilerGenerated) {
+  // 1. Standard user-written outer classes (Should NOT be filtered)
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyClass"));
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyViewModel"));
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyClass2"));
+
+  // 2. User-written nested & inner classes (Should NOT be filtered)
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$MyInnerClass"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$InnerHelper2"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass2$InnerClass"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$InnerClass2"));
+
+  // 3. User-written inner classes containing "Lambda" or "Sam" (Should NOT be
+  // filtered)
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyLambdaClass"));
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/SamClass"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$MyLambdaHelper"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$SamHelper"));
+
+  // 4. Java anonymous inner classes and Kotlin numbered closures (Should be
+  // instrumented / not filtered)
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyClass$1"));
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyClass$2"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$test$1"));
+
+  // 5. Kotlin Coroutine State Machines / Suspend Lambdas (Should be
+  // instrumented / not filtered)
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/ScrollbarExtKt$scrollbarState$6$1"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyViewModel$fetchData$2$1"));
+
+  // 6. Kotlin Compiler Synthetic Lambdas, SAMs, and Inlined Helpers (Lambdas
+  // should be instrumented)
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$lambda-0"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$sam$0"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$sam$i$org_junit_Test$0"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$inlined$0"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$inlined$MyHelper$1"));
+}
+
+TEST(TaggingManagerTest, TaggingManagerStateMachine) {
+  TaggingManager& manager = TaggingManager::Instance();
+
+  // 1. Verify initially untracked
+  EXPECT_FALSE(manager.IsClassTrackedForTesting("Lcom/example/MyClass;"));
+  EXPECT_FALSE(manager.IsClassTrackedForTesting("Lcom/example/OtherClass;"));
+
+  // 2. Track class and verify tracking state
+  manager.TrackClass("Lcom/example/MyClass;");
+  EXPECT_TRUE(manager.IsClassTrackedForTesting("Lcom/example/MyClass;"));
+  EXPECT_FALSE(manager.IsClassTrackedForTesting("Lcom/example/OtherClass;"));
+
+  // 3. Track multiple classes and verify independent states
+  manager.TrackClass("Lcom/example/OtherClass;");
+  EXPECT_TRUE(manager.IsClassTrackedForTesting("Lcom/example/MyClass;"));
+  EXPECT_TRUE(manager.IsClassTrackedForTesting("Lcom/example/OtherClass;"));
+
+  // 4. Test safe mock cleanup on null JVMTI environment (fallback safe-path)
+  manager.TagClassIfTracked(nullptr, nullptr, nullptr);
+  EXPECT_TRUE(manager.IsClassTrackedForTesting("Lcom/example/MyClass;"));
 }
 
 }  // namespace coverage

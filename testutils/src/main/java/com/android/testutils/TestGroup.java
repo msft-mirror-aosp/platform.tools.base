@@ -19,12 +19,21 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -34,18 +43,12 @@ import java.util.Locale;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * Defines how to extract tests from class path jars or any particular given jar. Once built, tests
@@ -122,7 +125,8 @@ public class TestGroup {
             String path = paths.remove();
             // Lower case in order to avoid issues on Windows/Mac.
             String pathLowerCase = path.toLowerCase(Locale.US);
-            if (pathLowerCase.endsWith(classpathJarSuffixLowerCase)) {
+            if (pathLowerCase.endsWith(classpathJarSuffixLowerCase)
+                    || pathLowerCase.endsWith(".test_deploy.jar")) {
                 testClasses.addAll(scanTestJar(path));
             }
             addManifestClassPath(path, paths);
@@ -130,37 +134,30 @@ public class TestGroup {
         return testClasses;
     }
 
-    private static void addManifestClassPath(String jarPath, Queue<String> existingPaths)
+    static void addManifestClassPath(String jarPath, Queue<String> existingPaths)
             throws IOException {
-        if (jarPath.endsWith(".jar")) {
-            File file = new File(jarPath);
-            try (ZipFile zipFile = new ZipFile(file)) {
-                ZipEntry entry = zipFile.getEntry("META-INF/MANIFEST.MF");
-                if (entry != null) {
-                    try (InputStream is = zipFile.getInputStream(entry)) {
-                        Manifest manifest = new Manifest(is);
-                        Attributes attributes = manifest.getMainAttributes();
-                        String cp = attributes.getValue("Class-Path");
-                        if (cp != null) {
-                            String[] paths = cp.split(" ");
-                            for (String path : paths) {
-                                File absoluteFile = new File(path);
-                                if (absoluteFile.exists()) {
-                                    existingPaths.add(path);
-                                } else {
-                                    File relFile = new File(file.getParentFile(), path);
-                                    if (relFile.exists()) {
-                                        existingPaths.add(relFile.getAbsolutePath());
-                                    } else {
-                                        System.err.println(
-                                                "Cannot find class-path jar: "
-                                                        + path
-                                                        + " referenced from "
-                                                        + file.getName());
-                                    }
-                                }
-                            }
-                        }
+        // https://docs.oracle.com/en/java/javase/25/docs/specs/jar/jar.html#class-path-attribute.
+        File file = new File(jarPath);
+        if (!file.isFile()) return;
+        try (ZipFile zipFile = new ZipFile(file)) {
+            ZipEntry entry = zipFile.getEntry("META-INF/MANIFEST.MF");
+            if (entry == null) return;
+            try (InputStream is = zipFile.getInputStream(entry)) {
+                Manifest manifest = new Manifest(is);
+                String cp = manifest.getMainAttributes().getValue("Class-Path");
+                if (cp == null) return;
+                URI baseUri = file.toURI();
+                for (String path : cp.split("\\s+")) {
+                    if (path.isEmpty()) continue;
+                    File resolvedFile = new File(baseUri.resolve(path));
+                    if (resolvedFile.isFile()) {
+                        existingPaths.add(resolvedFile.getAbsolutePath());
+                    } else {
+                        System.err.println(
+                                "Cannot find class-path jar: "
+                                + path
+                                + " referenced from "
+                                + file.getName());
                     }
                 }
             }
@@ -172,21 +169,29 @@ public class TestGroup {
             throws ClassNotFoundException, IOException {
         List<Class<?>> testClasses = new ArrayList<>();
         File file = new File(jar);
-        if (file.exists()) {
-            try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file))) {
-                ZipEntry ze;
-                while ((ze = zis.getNextEntry()) != null) {
-                    if (ze.getName().endsWith(".class")) {
-                        String className =
-                                ze.getName().replaceAll("/", ".").replaceAll(".class$", "");
-                        Class<?> aClass = loader.loadClass(className);
-                        testClasses.add(aClass);
-                    }
+        if (!file.exists()) {
+            return testClasses;
+        }
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file))) {
+            ZipEntry ze;
+            while ((ze = zis.getNextEntry()) != null) {
+                if (!ze.getName().endsWith(".class")
+                        || ze.getName().startsWith("junit/")
+                        || ze.getName().startsWith("java/")) {
+                    continue;
                 }
-            } catch (ZipException e) {
-                System.err.println(
-                        "Error while opening jar " + file.getName() + " : " + e.getMessage());
+                String className = ze.getName().replaceAll("/", ".").replaceAll(".class$", "");
+                Class<?> aClass;
+                try {
+                    aClass = loader.loadClass(className);
+                } catch (NoClassDefFoundError | ClassNotFoundException e) {
+                    continue;
+                }
+                testClasses.add(aClass);
             }
+        } catch (ZipException e) {
+            System.err.println(
+                    "Error while opening jar " + file.getName() + " : " + e.getMessage());
         }
         return testClasses;
     }
@@ -223,9 +228,13 @@ public class TestGroup {
 
     private static boolean seemsLikeJUnit4(Class<?> aClass) {
         Predicate<Method> hasTestAnnotation = method -> method.isAnnotationPresent(Test.class);
-        return (aClass.isAnnotationPresent(RunWith.class)
-                || Arrays.stream(aClass.getMethods()).anyMatch(hasTestAnnotation))
-                && !Modifier.isAbstract(aClass.getModifiers());
+        try {
+            return (aClass.isAnnotationPresent(RunWith.class)
+                            || Arrays.stream(aClass.getMethods()).anyMatch(hasTestAnnotation))
+                    && !Modifier.isAbstract(aClass.getModifiers());
+        } catch (NoClassDefFoundError e) {
+            return false;
+        }
     }
 
     /** A TestGroup builder. */

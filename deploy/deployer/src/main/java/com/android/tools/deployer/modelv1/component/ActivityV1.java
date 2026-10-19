@@ -16,8 +16,8 @@
 package com.android.tools.deployer.modelv1.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
+import com.android.tools.deployer.common.DeployerIShellOutputReceiver;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.component.Activity;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
@@ -34,8 +34,8 @@ public class ActivityV1 extends Activity implements AppComponentV1 {
     public void activate(
             @NonNull String extraFlags,
             @NonNull Mode activationMode,
-            @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeployerIShellOutputReceiver receiver,
+            @NonNull DeviceHolder device)
             throws ModelException {
         extraFlags = extraFlags.trim();
         logger.info(

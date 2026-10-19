@@ -42,24 +42,37 @@ iml_module(
         "tools/src",
     ],
     iml_files = ["android.sdktools.kexter.iml"],
-    test_data = [
-        "//tools/base/kexter/test/resources:container_dex",
-        "//tools/base/kexter/test/resources:main_container_dex",
-        "//tools/base/kexter/test/resources:main_dex",
-        "//tools/base/kexter/test/resources:other_dex",
-    ],
-    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    # do not sort: must match IML order
-    test_srcs = [
-        "test/src",
-        "test/resources/container/src",
-        "test/resources/main/src",
-        "test/resources/other/src",
-    ],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
         "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
     ],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.kexter.tests",
+    iml_files = ["android.sdktools.kexter.tests.iml"],
+    test_data = [
+        "//tools/base/kexter/test/resources:container_dex",
+        "//tools/base/kexter/test/resources:main_container_dex",
+        "//tools/base/kexter/test/resources:main_dex",
+        "//tools/base/kexter/test/resources:other_dex",
+    ],
+    # do not sort: must match IML order
+    test_deps = [
+        "@intellij//:intellij-sdk",
+        "//tools/base/kexter:studio.android.sdktools.kexter",
+        "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
+        "//tools/adt/idea/.idea/libraries:junit4",
+    ],
+    test_friends = ["//tools/base/kexter:studio.android.sdktools.kexter"],
+    test_srcs = [
+        "test/resources/container/src",
+        "test/resources/main/src",
+        "test/resources/other/src",
+        "test/src",
+    ],
+    visibility = ["//visibility:public"],
 )

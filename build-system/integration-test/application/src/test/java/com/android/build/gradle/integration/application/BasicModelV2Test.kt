@@ -16,11 +16,11 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
 import com.android.builder.model.v2.ide.SyncIssue
-import com.android.builder.model.v2.models.ModelBuilderParameter
 import org.junit.Rule
 import org.junit.Test
 
@@ -71,8 +71,8 @@ class BasicModelV2Test : ModelComparator() {
   }
 }
 
-fun buildOnlyTestRuntimeClasspaths(buildUnitTestsRuntime: Boolean, buildScreenshotTestsRuntime: Boolean): (ModelBuilderParameter) -> Unit =
-  {
+fun buildOnlyTestRuntimeClasspaths(buildUnitTestsRuntime: Boolean, buildScreenshotTestsRuntime: Boolean): ModelBuilderV2.ParameterMutator =
+  ModelBuilderV2.ParameterMutator {
     it.dontBuildRuntimeClasspath = true
     it.dontBuildUnitTestRuntimeClasspath = !buildUnitTestsRuntime
     it.dontBuildScreenshotTestRuntimeClasspath = !buildScreenshotTestsRuntime

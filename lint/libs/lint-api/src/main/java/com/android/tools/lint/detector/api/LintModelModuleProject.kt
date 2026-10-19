@@ -138,10 +138,9 @@ open class LintModelModuleProject(
 
   override fun getManifestFiles(): List<File> {
     if (manifestFiles == null) {
-      manifestFiles =
-        sourceProviders.flatMap { provider ->
-          provider.manifestFiles.filter { it.exists() } // model returns path whether or not it exists
-        }
+      manifestFiles = sourceProviders.flatMap { provider ->
+        provider.manifestFiles.filter { it.exists() } // model returns path whether or not it exists
+      }
     }
     return manifestFiles
   }

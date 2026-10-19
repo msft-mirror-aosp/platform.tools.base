@@ -1,4 +1,5 @@
-load(":android.bzl", "select_android")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_java//java:defs.bzl", "java_library")
 load(":functions.bzl", "label_workspace_path")
 load(":kotlin.bzl", "kotlin_library")
 load(":maven.bzl", "maven_library")
@@ -16,12 +17,18 @@ proto_languages = struct(
 # This version of protoc is the one currently used in the studio-sdk.jar
 # It will be used to pin the version of protoc used to generate protofiles for analytics.
 # Please do not remove or change it unless the version in the platform has changed
-INTELLIJ_PLATFORM_PROTO_VERSION = "3.24.4"
+INTELLIJ_PLATFORM_PROTO_VERSION = "3.25.5"
 INTELLIJ_PLATFORM_GRPC_VERSION = "1.66.0"
 INTELLIJ_PLATFORM_KOTLIN_GRPC_PLUGIN_VERSION = "1.4.1"
 
-PROTOC_VERSION = "3.22.3"
+PROTOC_VERSION = "3.25.5"
 PROTOC_GRPC_VERSION = "1.57.0"
+
+PROTO_DISABLE_CHECKS_JAVACOPTS = [
+    "-XepDisableAllChecks",
+    "-Xlint:none",
+    "-nowarn",
+]
 
 ProtoPackageInfo = provider(fields = ["proto_src", "proto_paths"])
 
@@ -33,7 +40,6 @@ def _gen_proto_impl(ctx):
     args.use_param_file("@%s")
     args.set_param_file_format("multiline")
 
-    needs_label_path = False
     proto_paths = []
     for src_target in ctx.attr.srcs:
         prefix = []
@@ -134,7 +140,7 @@ _gen_proto_rule = rule(
     attrs = {
         "srcs": attr.label_list(
             allow_files = [".proto"],
-            providers = [[ProtoPackageInfo], ["files"]],
+            providers = [[ProtoPackageInfo], [DefaultInfo]],
         ),
         "deps": attr.label_list(
             allow_files = False,
@@ -226,12 +232,11 @@ def java_proto_library(
     grpc_extra_deps = ["@//prebuilts/tools/common/m2:javax.annotation.javax.annotation-api.1.3.2"]
     java_deps = list(java_deps) + (grpc_extra_deps if grpc_support else [])
     java_deps += proto_java_runtime_library
-
-    native.java_library(
+    java_library(
         name = name,
         srcs = outs,
         deps = java_deps,
-        javacopts = kwargs.pop("javacopts", []) + ["--release", "8"],
+        javacopts = kwargs.pop("javacopts", []) + ["--release", "8"] + PROTO_DISABLE_CHECKS_JAVACOPTS,
         visibility = visibility,
         **kwargs
     )
@@ -335,10 +340,10 @@ def cc_grpc_proto_library(
         tags = tags,
         target_compatible_with = target_compatible_with,
     )
-    native.cc_library(
+    cc_library(
         name = name,
         srcs = outs + hdrs,
-        deps = deps + ["@grpc//:grpc++_unsecure", "@com_google_protobuf//:protobuf"],
+        deps = deps + (["@grpc//:grpc++"] if grpc_support else []) + ["@com_google_protobuf//:protobuf"],
         includes = includes,
         visibility = visibility,
         tags = tags,
@@ -391,16 +396,17 @@ def maven_proto_library(
             deps = java_deps,
             exports = java_exports,
             coordinates = coordinates,
+            javacopts = kwargs.pop("javacopts", []) + PROTO_DISABLE_CHECKS_JAVACOPTS,
             visibility = visibility,
             **kwargs
         )
     else:
-        native.java_library(
+        java_library(
             name = name,
             srcs = outs,
             deps = java_deps,
             exports = java_exports,
-            javacopts = kwargs.pop("javacopts", []) + ["--release", "8"],
+            javacopts = kwargs.pop("javacopts", []) + ["--release", "8"] + PROTO_DISABLE_CHECKS_JAVACOPTS,
             visibility = visibility,
             **kwargs
         )
@@ -495,12 +501,13 @@ def kotlin_proto_library(
         name = java_proto_name,
         srcs = srcs,
         proto_deps = proto_deps,
-        java_deps = deps + grpc_java_deps if grpc_support else [],
+        java_deps = list(deps) + (grpc_java_deps if grpc_support else []),
         visibility = visibility,
         grpc_support = grpc_support,
         protoc_version = protoc_version,
         protoc_grpc_version = protoc_java_grpc_version,
         proto_java_runtime_library = proto_java_runtime_library,
+        strip_prefix = strip_prefix,
     )
 
     kt_srcs_name = name + "_srcs"
