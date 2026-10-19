@@ -111,6 +111,16 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
           methodFound = true
           val discoveryContext = MethodDiscoveryContext()
           val traversalPath = mutableSetOf<String>()
+          // MultiPreview annotation classes whose @PreviewWrapper has already been recorded. A class reachable through several paths
+          // (e.g. a diamond of MultiPreviews) declares a single wrapper, so it is only counted once, as in Android Studio (AnnotationsGraph
+          // skips annotation classes it has already visited). Unlike Studio, the @Preview annotations of such a class are still collected
+          // once per path.
+          val annotationClassesWithRecordedWrapper = mutableSetOf<String>()
+          val onWrapperFound: (String?, String) -> Unit = { declaringAnnotationClass, wrapperFqn ->
+            if (declaringAnnotationClass == null || annotationClassesWithRecordedWrapper.add(declaringAnnotationClass)) {
+              discoveryContext.previewWrapperFqns.add(wrapperFqn)
+            }
+          }
 
           return object : MethodVisitor(Opcodes.ASM9) {
             override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
@@ -118,7 +128,13 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
                 discoveryContext.isComposable = true
                 return null
               }
-              return handleAnnotation(desc, traversalPath, discoveryContext.previewConfigurations, discoveryContext.previewWrapperFqns::add)
+              return handleAnnotation(
+                desc,
+                declaringAnnotationClass = null,
+                traversalPath,
+                discoveryContext.previewConfigurations,
+                onWrapperFound,
+              )
             }
 
             override fun visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean): AnnotationVisitor? {
@@ -189,14 +205,17 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
    * Routes an annotation [desc] encountered during traversal:
    * - Direct `@Preview`: Extracts its preview parameters.
    * - Repeatable `@Preview$Container`: Traverses the container array of `@Preview` annotations.
-   * - Direct `@PreviewWrapper`: Extracts wrapper provider FQN.
+   * - Direct `@PreviewWrapper`: Extracts wrapper provider FQN and reports it with [declaringAnnotationClass] to [onWrapperFound].
    * - Custom MultiPreview: Recursively inspects the annotation class bytecode if [isPotentialMultiPreview] matches.
+   *
+   * @param declaringAnnotationClass the MultiPreview annotation class that declares [desc], or `null` if it is declared on the method.
    */
   private fun handleAnnotation(
     desc: String,
+    declaringAnnotationClass: String?,
     traversalPath: MutableSet<String>,
     discoveredList: MutableList<Map<String, String>>,
-    onWrapperFound: (String) -> Unit,
+    onWrapperFound: (declaringAnnotationClass: String?, wrapperFqn: String) -> Unit,
   ): AnnotationVisitor? {
     if (discoveredList.size >= MAX_DISCOVERED_PREVIEWS) {
       return null
@@ -212,7 +231,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
         return createPreviewContainerVisitor(discoveredList)
       }
       PREVIEW_WRAPPER_DESC -> {
-        return createPreviewWrapperVisitor(onWrapperFound)
+        return createPreviewWrapperVisitor { wrapperFqn -> onWrapperFound(declaringAnnotationClass, wrapperFqn) }
       }
       else -> {
         if (isPotentialMultiPreview(desc)) {
@@ -232,7 +251,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     annotationClassName: String,
     traversalPath: MutableSet<String>,
     discoveredList: MutableList<Map<String, String>>,
-    onWrapperFound: (String) -> Unit,
+    onWrapperFound: (declaringAnnotationClass: String?, wrapperFqn: String) -> Unit,
   ) {
     if (discoveredList.size >= MAX_DISCOVERED_PREVIEWS) {
       return
@@ -251,7 +270,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
       classReader.accept(
         object : ClassVisitor(Opcodes.ASM9) {
           override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
-            return handleAnnotation(desc, traversalPath, discoveredList, onWrapperFound)
+            return handleAnnotation(desc, annotationClassName, traversalPath, discoveredList, onWrapperFound)
           }
         },
         ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
