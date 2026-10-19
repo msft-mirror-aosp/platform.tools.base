@@ -1,852 +1,852 @@
-androidx.databinding:databinding-adapters
+androidx.databinding:databinding-adapters:$BUILD_VERSION
   pomName=
   description=
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
-    androidx.databinding:databinding-common (compile)
-    androidx.databinding:databinding-runtime (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
+    androidx.databinding:databinding-common:$BUILD_VERSION (compile)
+    androidx.databinding:databinding-runtime:$BUILD_VERSION (runtime)
 
-androidx.databinding:databinding-common
+androidx.databinding:databinding-common:$BUILD_VERSION
   pomName=androidx.databinding.databinding-common
   description=Shared library between Data Binding runtime lib and compiler
 
-androidx.databinding:databinding-compiler
+androidx.databinding:databinding-compiler:$BUILD_VERSION
   pomName=androidx.databinding.databinding-compiler
   description=The annotation processor for Data Binding. Generates binding classes for runtime.
   dependencies:
-    androidx.databinding:databinding-common (runtime)
-    androidx.databinding:databinding-compiler-common (runtime)
-    com.android.tools:annotations (runtime)
-    com.google.auto:auto-common (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.guava:guava (runtime)
-    com.googlecode.juniversalchardet:juniversalchardet (runtime)
-    com.squareup:javapoet (runtime)
-    commons-io:commons-io (runtime)
-    org.glassfish.jaxb:jaxb-runtime (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    androidx.databinding:databinding-common:$BUILD_VERSION (runtime)
+    androidx.databinding:databinding-compiler-common:$BUILD_VERSION (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.google.auto:auto-common:1.2.1 (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.googlecode.juniversalchardet:juniversalchardet:1.0.3 (runtime)
+    com.squareup:javapoet:1.13.0 (runtime)
+    commons-io:commons-io:2.16.1 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
-androidx.databinding:databinding-compiler-common
+androidx.databinding:databinding-compiler-common:$BUILD_VERSION
   pomName=androidx.databinding.databinding-compiler-common
   description=Common library that can be shared between different build tools
   dependencies:
-    androidx.databinding:databinding-common (runtime)
-    com.android.databinding:baseLibrary (runtime)
-    com.android.tools:annotations (runtime)
-    com.android.tools.build.jetifier:jetifier-core (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.guava:guava (runtime)
-    com.googlecode.juniversalchardet:juniversalchardet (runtime)
-    com.squareup:javapoet (runtime)
-    commons-io:commons-io (runtime)
-    org.glassfish.jaxb:jaxb-runtime (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    androidx.databinding:databinding-common:$BUILD_VERSION (runtime)
+    com.android.databinding:baseLibrary:$BUILD_VERSION (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10 (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.googlecode.juniversalchardet:juniversalchardet:1.0.3 (runtime)
+    com.squareup:javapoet:1.13.0 (runtime)
+    commons-io:commons-io:2.16.1 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
-androidx.databinding:databinding-ktx
+androidx.databinding:databinding-ktx:$BUILD_VERSION
   pomName=
   description=
   dependencies:
-    org.jetbrains.kotlinx:kotlinx-coroutines-android (compile)
-    androidx.lifecycle:lifecycle-runtime-ktx (compile)
-    androidx.lifecycle:lifecycle-livedata (compile)
-    androidx.lifecycle:lifecycle-process (compile)
-    androidx.lifecycle:lifecycle-service (compile)
-    androidx.lifecycle:lifecycle-viewmodel (compile)
-    androidx.databinding:databinding-runtime (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1 (compile)
+    androidx.lifecycle:lifecycle-runtime-ktx:2.6.1 (compile)
+    androidx.lifecycle:lifecycle-livedata:2.6.1 (compile)
+    androidx.lifecycle:lifecycle-process:2.6.1 (compile)
+    androidx.lifecycle:lifecycle-service:2.6.1 (compile)
+    androidx.lifecycle:lifecycle-viewmodel:2.6.1 (compile)
+    androidx.databinding:databinding-runtime:$BUILD_VERSION (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
-androidx.databinding:databinding-runtime
+androidx.databinding:databinding-runtime:$BUILD_VERSION
   pomName=
   description=
   dependencies:
-    androidx.databinding:databinding-common (compile)
-    androidx.databinding:viewbinding (compile)
-    androidx.lifecycle:lifecycle-runtime (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
-    androidx.collection:collection (runtime)
+    androidx.databinding:databinding-common:$BUILD_VERSION (compile)
+    androidx.databinding:viewbinding:$BUILD_VERSION (compile)
+    androidx.lifecycle:lifecycle-runtime:2.6.1 (compile)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
+    androidx.collection:collection:1.0.0 (runtime)
 
-androidx.databinding:viewbinding
+androidx.databinding:viewbinding:$BUILD_VERSION
   pomName=
   description=
   dependencies:
-    androidx.annotation:annotation (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
+    androidx.annotation:annotation:1.0.0 (compile)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
 
-com.android:signflinger
+com.android:signflinger:$BUILD_VERSION
   pomName=com.android.signflinger
   description=Library used to sign APKs
   dependencies:
-    com.android.tools:annotations (runtime)
-    com.android.tools.build:apksig (runtime)
-    com.android:zipflinger (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools.build:apksig:$BUILD_VERSION (runtime)
+    com.android:zipflinger:$BUILD_VERSION (runtime)
 
-com.android:zipflinger
+com.android:zipflinger:$BUILD_VERSION
   pomName=com.android.zipflinger
   description=Library used to build and incrementally modify zip files
   dependencies:
-    com.android.tools:annotations (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
 
-com.android.ai-pack:com.android.ai-pack.gradle.plugin
+com.android.ai-pack:com.android.ai-pack.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.application:com.android.application.gradle.plugin
+com.android.application:com.android.application.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.asset-pack:com.android.asset-pack.gradle.plugin
+com.android.asset-pack:com.android.asset-pack.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.asset-pack-bundle:com.android.asset-pack-bundle.gradle.plugin
+com.android.asset-pack-bundle:com.android.asset-pack-bundle.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.built-in-kotlin:com.android.built-in-kotlin.gradle.plugin
+com.android.built-in-kotlin:com.android.built-in-kotlin.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-kotlin
   description=Gradle plugin to register and configure Kotlin tasks for Android projects.
   dependencies:
-    com.android.tools.build:gradle-kotlin ()
+    com.android.tools.build:gradle-kotlin:$BUILD_VERSION ()
 
-com.android.databinding:adapters
+com.android.databinding:adapters:$BUILD_VERSION
   pomName=
   description=
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
-    com.android.databinding:baseLibrary (compile)
-    com.android.databinding:library (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
+    com.android.databinding:baseLibrary:$BUILD_VERSION (compile)
+    com.android.databinding:library:$BUILD_VERSION (runtime)
 
-com.android.databinding:baseLibrary
+com.android.databinding:baseLibrary:$BUILD_VERSION
   pomName=com.android.databinding.baseLibrary
   description=Shared library between Data Binding runtime lib and compiler
 
-com.android.databinding:library
+com.android.databinding:library:$BUILD_VERSION
   pomName=
   description=
   dependencies:
-    com.android.databinding:viewbinding (compile)
-    android.arch.lifecycle:runtime (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
-    com.android.support:support-core-utils (runtime)
-    com.android.databinding:baseLibrary (runtime)
+    com.android.databinding:viewbinding:$BUILD_VERSION (compile)
+    android.arch.lifecycle:runtime:1.0.3 (compile)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
+    com.android.support:support-core-utils:26.1.0 (runtime)
+    com.android.databinding:baseLibrary:$BUILD_VERSION (runtime)
 
-com.android.databinding:viewbinding
+com.android.databinding:viewbinding:$BUILD_VERSION
   pomName=
   description=
   dependencies:
-    com.android.support:support-annotations (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
+    com.android.support:support-annotations:26.1.0 (compile)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
 
-com.android.dynamic-feature:com.android.dynamic-feature.gradle.plugin
+com.android.dynamic-feature:com.android.dynamic-feature.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.experimental.built-in-kotlin:com.android.experimental.built-in-kotlin.gradle.plugin
+com.android.experimental.built-in-kotlin:com.android.experimental.built-in-kotlin.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-kotlin
   description=Gradle plugin to register and configure Kotlin tasks for Android projects.
   dependencies:
-    com.android.tools.build:gradle-kotlin ()
+    com.android.tools.build:gradle-kotlin:$BUILD_VERSION ()
 
-com.android.fused-library:com.android.fused-library.gradle.plugin
+com.android.fused-library:com.android.fused-library.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.internal.settings:com.android.internal.settings.gradle.plugin
+com.android.internal.settings:com.android.internal.settings.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-settings
   description=Gradle Settings plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle-settings ()
+    com.android.tools.build:gradle-settings:$BUILD_VERSION ()
 
-com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin
+com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.legacy-kapt:com.android.legacy-kapt.gradle.plugin
+com.android.legacy-kapt:com.android.legacy-kapt.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-kotlin
   description=Gradle plugin to register and configure Kotlin tasks for Android projects.
   dependencies:
-    com.android.tools.build:gradle-kotlin ()
+    com.android.tools.build:gradle-kotlin:$BUILD_VERSION ()
 
-com.android.library:com.android.library.gradle.plugin
+com.android.library:com.android.library.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.lint:com.android.lint.gradle.plugin
+com.android.lint:com.android.lint.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.r8:com.android.r8.gradle.plugin
+com.android.r8:com.android.r8.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.settings:com.android.settings.gradle.plugin
+com.android.settings:com.android.settings.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-settings
   description=Gradle Settings plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle-settings ()
+    com.android.tools.build:gradle-settings:$BUILD_VERSION ()
 
-com.android.test:com.android.test.gradle.plugin
+com.android.test:com.android.test.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle ()
+    com.android.tools.build:gradle:$BUILD_VERSION ()
 
-com.android.tools:annotations
+com.android.tools:annotations:$BASE_VERSION
   pomName=com.android.tools.annotations
   description=
 
-com.android.tools:common
+com.android.tools:common:$BASE_VERSION
   pomName=com.android.tools.common
   description=common library used by other Android tools libraries.
   dependencies:
-    com.android.tools:annotations (compile)
-    com.google.guava:guava (compile)
-    net.java.dev.jna:jna-platform (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    com.android.tools:annotations:$BASE_VERSION (compile)
+    com.google.guava:guava:33.4.0-jre (compile)
+    net.java.dev.jna:jna-platform:5.6.0 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
-com.android.tools:draw9patch
+com.android.tools:draw9patch:$BASE_VERSION
   pomName=Draw 9-patch tool
   description=WYSIWYG editor for automatically resizing images
 
-com.android.tools:dvlib
+com.android.tools:dvlib:$BASE_VERSION
   pomName=com.android.tools.dvlib
   description=A Library to manage the Android device database XML files.
   dependencies:
-    com.android.tools:common (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
 
-com.android.tools:ninepatch
+com.android.tools:ninepatch:$BASE_VERSION
   pomName=NinePatch
   description=draws a bitmap in nine or more sections
   dependencies:
-    com.google.guava:guava (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
 
-com.android.tools:play-sdk-proto
+com.android.tools:play-sdk-proto:$BASE_VERSION
   pomName=com.android.tools.play-sdk-proto
   description=A protobuf message used for Google Play SDK Index
   dependencies:
-    com.google.protobuf:protobuf-java (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
 
-com.android.tools:repository
+com.android.tools:repository:$BASE_VERSION
   pomName=com.android.tools.repository
   description=A library for downloading and managing package repositories
   dependencies:
-    com.android.tools.analytics-library:shared (runtime)
-    com.android.tools:common (runtime)
-    com.google.jimfs:jimfs (runtime)
-    org.apache.commons:commons-compress (runtime)
-    org.glassfish.jaxb:jaxb-runtime (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.google.jimfs:jimfs:1.1 (runtime)
+    org.apache.commons:commons-compress:1.27.1 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
-com.android.tools:sdk-common
+com.android.tools:sdk-common:$BASE_VERSION
   pomName=com.android.tools.sdk-common
   description=sdk-common library used by other Android tools libraries.
   dependencies:
-    com.android.tools.analytics-library:shared (runtime)
-    com.android.tools.build:aapt2-proto (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools.layoutlib:layoutlib-api (runtime)
-    com.android.tools:sdklib (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.guava:guava (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    javax.inject:javax.inject (runtime)
-    net.sf.kxml:kxml2 (runtime)
-    org.apache.commons:commons-compress (runtime)
-    org.bouncycastle:bcpkix-jdk18on (runtime)
-    org.bouncycastle:bcprov-jdk18on (runtime)
-    org.glassfish.jaxb:jaxb-runtime (runtime)
-    org.jetbrains.kotlin:kotlin-reflect (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
+    com.android.tools.build:aapt2-proto:$AAPT2_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    javax.inject:javax.inject:1 (runtime)
+    net.sf.kxml:kxml2:2.3.0 (runtime)
+    org.apache.commons:commons-compress:1.27.1 (runtime)
+    org.bouncycastle:bcpkix-jdk18on:1.80.2 (runtime)
+    org.bouncycastle:bcprov-jdk18on:1.80.2 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
-com.android.tools:sdklib
+com.android.tools:sdklib:$BASE_VERSION
   pomName=com.android.tools.sdklib
   description=A library to parse and download the Android SDK.
   dependencies:
-    com.android.tools:repository (compile)
-    com.android.tools:common (runtime)
-    com.android.tools:dvlib (runtime)
-    com.android.tools.layoutlib:layoutlib-api (runtime)
-    com.google.code.gson:gson (runtime)
-    org.apache.commons:commons-compress (runtime)
-    org.apache.httpcomponents:httpcore (runtime)
-    org.apache.httpcomponents:httpmime (runtime)
-    org.glassfish.jaxb:jaxb-runtime (runtime)
+    com.android.tools:repository:$BASE_VERSION (compile)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools:dvlib:$BASE_VERSION (runtime)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    org.apache.commons:commons-compress:1.27.1 (runtime)
+    org.apache.httpcomponents:httpcore:4.4.16 (runtime)
+    org.apache.httpcomponents:httpmime:4.5.6 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
 
-com.android.tools:testutils
+com.android.tools:testutils:$BASE_VERSION
   pomName=com.android.tools.testutils
   description=Internal test utilities for Android Studio and other tools developed alongside Studio
   dependencies:
-    com.google.truth.extensions:truth-java8-extension (compile)
-    com.google.truth:truth (compile)
-    com.android.tools:common (runtime)
-    com.android.tools.smali:smali-dexlib2 (runtime)
-    com.google.jimfs:jimfs (runtime)
-    junit:junit (runtime)
-    org.apache.commons:commons-compress (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlin:kotlin-test (runtime)
-    org.mockito:mockito-core (runtime)
-    org.ow2.asm:asm (runtime)
+    com.google.truth.extensions:truth-java8-extension:0.42 (compile)
+    com.google.truth:truth:0.44 (compile)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.smali:smali-dexlib2:3.0.9 (runtime)
+    com.google.jimfs:jimfs:1.1 (runtime)
+    junit:junit:4.13.2 (runtime)
+    org.apache.commons:commons-compress:1.27.1 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlin:kotlin-test:2.2.10 (runtime)
+    org.mockito:mockito-core:5.20.0 (runtime)
+    org.ow2.asm:asm:9.9 (runtime)
 
-com.android.tools.adblib:adblib
+com.android.tools.adblib:adblib:$BUILD_VERSION
   pomName=com.android.tools.adblib.adblib
   description=Library used to communicate with Android devices
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    at.yawk.lz4:lz4-java (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    at.yawk.lz4:lz4-java:1.11.4 (runtime)
 
-com.android.tools.adblib:adblib-ddmlibcompatibility
+com.android.tools.adblib:adblib-ddmlibcompatibility:$BUILD_VERSION
   pomName=com.android.tools.adblib.adblib-ddmlibcompatibility
   description=Compatibility library between ddmlib and adblib
   dependencies:
-    com.android.tools.adblib:adblib (runtime)
-    com.android.tools.adblib:adblib-tools (runtime)
-    com.android.tools:annotations (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools.ddms:ddmlib (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-guava (runtime)
+    com.android.tools.adblib:adblib:$BUILD_VERSION (runtime)
+    com.android.tools.adblib:adblib-tools:$BUILD_VERSION (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4 (runtime)
 
-com.android.tools.adblib:adblib-tools
+com.android.tools.adblib:adblib-tools:$BUILD_VERSION
   pomName=com.android.tools.adblib.adblib-tools
   description=Tooling for the library used to communicate with Android devices
   dependencies:
-    com.android.tools.adblib:adblib (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    com.android.tools.adblib:adblib:$BUILD_VERSION (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
-com.android.tools.analytics-library:crash
+com.android.tools.analytics-library:crash:$BASE_VERSION
   pomName=Android Tools Analytics Crash Library
   description=Helper Library for uploading crash reports.
   dependencies:
-    com.android.tools:annotations (runtime)
-    com.google.guava:guava (runtime)
-    org.apache.httpcomponents:httpclient (runtime)
-    org.apache.httpcomponents:httpcore (runtime)
-    org.apache.httpcomponents:httpmime (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    org.apache.httpcomponents:httpclient:4.5.14 (runtime)
+    org.apache.httpcomponents:httpcore:4.4.16 (runtime)
+    org.apache.httpcomponents:httpmime:4.5.6 (runtime)
 
-com.android.tools.analytics-library:inspector
+com.android.tools.analytics-library:inspector:$BASE_VERSION
   pomName=Android Tools Analytics Inspector
   description=Tool for debugging usage analytics spool files.
   dependencies:
-    com.android.tools.analytics-library:protos (runtime)
-    com.android.tools.analytics-library:shared (runtime)
-    com.android.tools:annotations (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.guava:guava (runtime)
-    com.google.protobuf:protobuf-java (runtime)
+    com.android.tools.analytics-library:protos:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
 
-com.android.tools.analytics-library:protos
+com.android.tools.analytics-library:protos:$BASE_VERSION
   pomName=Android Tools Analytics Protobufs
   description=Library containing protobufs for usage analytics.
   dependencies:
-    com.google.protobuf:protobuf-java (compile)
+    com.google.protobuf:protobuf-java:3.25.5 (compile)
 
-com.android.tools.analytics-library:publisher
+com.android.tools.analytics-library:publisher:$BASE_VERSION
   pomName=Android Tools Analytics Publisher
   description=Library for publishing usage analytics.
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (compile)
-    com.android.tools.analytics-library:protos (runtime)
-    com.android.tools.analytics-library:shared (runtime)
-    com.android.tools:annotations (runtime)
-    com.android.tools:common (runtime)
-    com.google.guava:guava (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (compile)
+    com.android.tools.analytics-library:protos:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
-com.android.tools.analytics-library:shared
+com.android.tools.analytics-library:shared:$BASE_VERSION
   pomName=Android Tools Analytics Shared Library
   description=Helper Library for tracking usage analytics.
   dependencies:
-    com.android.tools.analytics-library:protos (compile)
-    com.android.tools:annotations (runtime)
-    com.android.tools:common (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.guava:guava (runtime)
-    net.java.dev.jna:jna-platform (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    com.android.tools.analytics-library:protos:$BASE_VERSION (compile)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    net.java.dev.jna:jna-platform:5.6.0 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
-com.android.tools.analytics-library:testing
+com.android.tools.analytics-library:testing:$BASE_VERSION
   pomName=Android Tools Analytics Testing Library
   description=Library for tracking usage analytics.
   dependencies:
-    com.android.tools.analytics-library:protos (runtime)
-    com.android.tools.analytics-library:shared (runtime)
-    com.android.tools.analytics-library:tracker (runtime)
-    com.android.tools:annotations (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools:testutils (runtime)
-    com.google.guava:guava (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    com.android.tools.analytics-library:protos:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:tracker:$BASE_VERSION (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools:testutils:$BASE_VERSION (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
-com.android.tools.analytics-library:tracker
+com.android.tools.analytics-library:tracker:$BASE_VERSION
   pomName=Android Tools Analytics Tracker
   description=Library for tracking usage analytics.
   dependencies:
-    com.android.tools.analytics-library:protos (compile)
-    com.android.tools.analytics-library:shared (compile)
-    com.android.tools:annotations (runtime)
-    com.android.tools:common (runtime)
-    com.google.guava:guava (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    com.android.tools.analytics-library:protos:$BASE_VERSION (compile)
+    com.android.tools.analytics-library:shared:$BASE_VERSION (compile)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
-com.android.tools.apkdeployer:apkdeployer
+com.android.tools.apkdeployer:apkdeployer:$BUILD_VERSION
   pomName=com.android.tools.apkdeployer.apkdeployer
   description=Library used to deploy Android applications
   dependencies:
-    com.android.tools.adblib:adblib (runtime)
-    com.android.tools.adblib:adblib-tools (runtime)
-    com.android.tools:annotations (runtime)
-    com.android.tools.apkparser:binary-resources (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools.ddms:ddmlib (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android:zipflinger (runtime)
-    com.android.tools:r8 (runtime)
-    com.google.guava:guava (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    org.jetbrains:annotations (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
-    org.xerial:sqlite-jdbc (runtime)
+    com.android.tools.adblib:adblib:$BUILD_VERSION (runtime)
+    com.android.tools.adblib:adblib-tools:$BUILD_VERSION (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools.apkparser:binary-resources:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android:zipflinger:$BUILD_VERSION (runtime)
+    com.android.tools:r8:9.5.26 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    org.jetbrains:annotations:23.0.0 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.xerial:sqlite-jdbc:3.43.0.0 (runtime)
 
-com.android.tools.apkparser:apkanalyzer
+com.android.tools.apkparser:apkanalyzer:$BASE_VERSION
   pomName=Apk Analyzer library
   description=Library for parsing and analyzing information from APK files
   dependencies:
-    com.android.tools.apkparser:binary-resources (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools:sdklib (runtime)
-    com.android.tools.smali:smali-baksmali (runtime)
-    com.android.tools.smali:smali-dexlib2 (runtime)
-    com.google.guava:guava (runtime)
+    com.android.tools.apkparser:binary-resources:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    com.android.tools.smali:smali-baksmali:3.0.9 (runtime)
+    com.android.tools.smali:smali-dexlib2:3.0.9 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
 
-com.android.tools.apkparser:binary-resources
+com.android.tools.apkparser:binary-resources:$BASE_VERSION
   pomName=Binary Resources parser
   description=Library for parsing the resources.arsc file
   dependencies:
-    com.google.guava:guava (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
 
-com.android.tools.backup:backup-restore
+com.android.tools.backup:backup-restore:$BASE_VERSION
   pomName=com.android.tools.backup.backup-restore
   description=Library to perform backup and restore operations
   dependencies:
-    com.android.tools.adblib:adblib (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools:sdklib (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    com.android.tools.adblib:adblib:$BUILD_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
-com.android.tools.build:aapt2
+com.android.tools.build:aapt2:$AAPT2_VERSION
   pomName=com.android.tools.build.aapt2
   description=Android resource compiler
 
-com.android.tools.build:aapt2-proto
+com.android.tools.build:aapt2-proto:$AAPT2_VERSION
   pomName=com.android.tools.build.aapt2-proto
   description=Android Asset Packaging Tool 2. Protocol Buffer Files
   dependencies:
-    com.google.protobuf:protobuf-java (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
 
-com.android.tools.build:aaptcompiler
+com.android.tools.build:aaptcompiler:$BUILD_VERSION
   pomName=com.android.tools.build.aaptcompiler
   description=Compiler for Android Resources, to be used by AAPT2.
   dependencies:
-    com.android.tools.build:aapt2-proto (runtime)
-    com.android.tools.layoutlib:layoutlib-api (runtime)
-    com.android.tools:common (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.google.guava:guava (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    com.android.tools.build:aapt2-proto:$AAPT2_VERSION (runtime)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.guava:guava:33.3.1-jre (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
-com.android.tools.build:apksig
+com.android.tools.build:apksig:$BUILD_VERSION
   pomName=com.android.tools.build.apksig
   description=Library for signing APKs and for checking that APK signatures verify on Android
 
-com.android.tools.build:apkzlib
+com.android.tools.build:apkzlib:$BUILD_VERSION
   pomName=com.android.tools.build.apkzlib
   description=Library used to incrementally build and sign APKs
   dependencies:
-    com.android.tools.build:apksig (runtime)
-    com.google.code.findbugs:jsr305 (runtime)
-    com.google.guava:guava (runtime)
-    org.bouncycastle:bcpkix-jdk18on (runtime)
-    org.bouncycastle:bcprov-jdk18on (runtime)
+    com.android.tools.build:apksig:$BUILD_VERSION (runtime)
+    com.google.code.findbugs:jsr305:3.0.2 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    org.bouncycastle:bcpkix-jdk18on:1.80.2 (runtime)
+    org.bouncycastle:bcprov-jdk18on:1.80.2 (runtime)
 
-com.android.tools.build:builder
+com.android.tools.build:builder:$BUILD_VERSION
   pomName=com.android.tools.build.builder
   description=Library to build Android applications.
   dependencies:
-    com.android.tools.build:manifest-merger (compile)
-    com.android:zipflinger (compile)
-    com.android.tools.build:apksig (compile)
-    com.android.tools.build:apkzlib (compile)
-    com.squareup:javawriter (compile)
-    com.android.tools.build:builder-model (runtime)
-    com.android.tools.build:builder-test-api (runtime)
-    com.android.tools:sdklib (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools.ddms:ddmlib (runtime)
-    com.android:signflinger (runtime)
-    com.android.tools.analytics-library:protos (runtime)
-    com.android.tools.analytics-library:tracker (runtime)
-    com.android.tools.layoutlib:layoutlib-api (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    org.bouncycastle:bcpkix-jdk18on (runtime)
-    org.bouncycastle:bcprov-jdk18on (runtime)
-    javax.inject:javax.inject (runtime)
-    org.ow2.asm:asm-commons (runtime)
-    com.google.code.gson:gson (runtime)
+    com.android.tools.build:manifest-merger:$BASE_VERSION (compile)
+    com.android:zipflinger:$BUILD_VERSION (compile)
+    com.android.tools.build:apksig:$BUILD_VERSION (compile)
+    com.android.tools.build:apkzlib:$BUILD_VERSION (compile)
+    com.squareup:javawriter:2.5.0 (compile)
+    com.android.tools.build:builder-model:$BUILD_VERSION (runtime)
+    com.android.tools.build:builder-test-api:$BUILD_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
+    com.android:signflinger:$BUILD_VERSION (runtime)
+    com.android.tools.analytics-library:protos:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:tracker:$BASE_VERSION (runtime)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
+    org.bouncycastle:bcpkix-jdk18on:1.80.2 (runtime)
+    org.bouncycastle:bcprov-jdk18on:1.80.2 (runtime)
+    javax.inject:javax.inject:1 (runtime)
+    org.ow2.asm:asm-commons:9.9 (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
 
-com.android.tools.build:builder-model
+com.android.tools.build:builder-model:$BUILD_VERSION
   pomName=com.android.tools.build.builder-model
   description=Model for the Builder library.
   dependencies:
-    com.android.tools:annotations (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
-com.android.tools.build:builder-test-api
+com.android.tools.build:builder-test-api:$BUILD_VERSION
   pomName=com.android.tools.build.builder-test-api
   description=API for the Test extension point in the Builder library.
   dependencies:
-    com.android.tools.ddms:ddmlib (runtime)
-    com.android.tools:annotations (runtime)
-    com.android.tools:common (runtime)
-    com.google.guava:guava (runtime)
+    com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.google.guava:guava:33.3.1-jre (runtime)
 
-com.android.tools.build:gradle
+com.android.tools.build:gradle:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
   description=Gradle plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:builder (compile)
-    com.android.tools.build:builder-model (compile)
-    com.android.tools.build:gradle-api (compile)
-    com.android.tools.build:gradle-settings-api (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools:sdklib (runtime)
-    com.android.tools:repository (runtime)
-    com.android.tools.ddms:ddmlib (runtime)
-    com.android.tools.build:aapt2-proto (runtime)
-    com.android.tools.build:aaptcompiler (runtime)
-    com.android.tools.analytics-library:crash (runtime)
-    com.android.tools.analytics-library:shared (runtime)
-    com.android.tools.lint:lint-model (runtime)
-    com.android.tools.lint:lint-typedef-remover (runtime)
-    androidx.databinding:databinding-compiler-common (runtime)
-    androidx.databinding:databinding-common (runtime)
-    com.android.databinding:baseLibrary (runtime)
-    com.android.tools.build:builder-test-api (runtime)
-    com.android.tools.layoutlib:layoutlib-api (runtime)
-    com.android.tools.utp:gradle-work-action-api (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    org.apache.httpcomponents:httpmime (runtime)
-    commons-io:commons-io (runtime)
-    org.ow2.asm:asm (runtime)
-    org.ow2.asm:asm-analysis (runtime)
-    org.ow2.asm:asm-commons (runtime)
-    org.ow2.asm:asm-util (runtime)
-    org.glassfish.jaxb:jaxb-runtime (runtime)
-    net.sf.jopt-simple:jopt-simple (runtime)
-    com.android.tools.build:bundletool (runtime)
-    com.android.tools.build.jetifier:jetifier-core (runtime)
-    com.android.tools.build.jetifier:jetifier-processor (runtime)
-    com.squareup:javapoet (runtime)
-    org.jetbrains.kotlin:kotlin-gradle-plugin (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.google.protobuf:protobuf-java-util (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.crypto.tink:tink (runtime)
-    org.tensorflow:tensorflow-lite-metadata (runtime)
+    com.android.tools.build:builder:$BUILD_VERSION (compile)
+    com.android.tools.build:builder-model:$BUILD_VERSION (compile)
+    com.android.tools.build:gradle-api:$BUILD_VERSION (compile)
+    com.android.tools.build:gradle-settings-api:$BUILD_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    com.android.tools:repository:$BASE_VERSION (runtime)
+    com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
+    com.android.tools.build:aapt2-proto:$AAPT2_VERSION (runtime)
+    com.android.tools.build:aaptcompiler:$BUILD_VERSION (runtime)
+    com.android.tools.analytics-library:crash:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
+    com.android.tools.lint:lint-model:$BASE_VERSION (runtime)
+    com.android.tools.lint:lint-typedef-remover:$BASE_VERSION (runtime)
+    androidx.databinding:databinding-compiler-common:$BUILD_VERSION (runtime)
+    androidx.databinding:databinding-common:$BUILD_VERSION (runtime)
+    com.android.databinding:baseLibrary:$BUILD_VERSION (runtime)
+    com.android.tools.build:builder-test-api:$BUILD_VERSION (runtime)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
+    com.android.tools.utp:gradle-work-action-api:$BASE_VERSION (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
+    org.apache.httpcomponents:httpmime:4.5.6 (runtime)
+    commons-io:commons-io:2.16.1 (runtime)
+    org.ow2.asm:asm:9.9 (runtime)
+    org.ow2.asm:asm-analysis:9.9 (runtime)
+    org.ow2.asm:asm-commons:9.9 (runtime)
+    org.ow2.asm:asm-util:9.9 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    net.sf.jopt-simple:jopt-simple:4.9 (runtime)
+    com.android.tools.build:bundletool:1.18.3 (runtime)
+    com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10 (runtime)
+    com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10 (runtime)
+    com.squareup:javapoet:1.13.0 (runtime)
+    org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10 (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java-util:3.25.5 (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.crypto.tink:tink:1.7.0 (runtime)
+    org.tensorflow:tensorflow-lite-metadata:0.2.0 (runtime)
 
-com.android.tools.build:gradle-api
+com.android.tools.build:gradle-api:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-api
   description=APIs to customize Android Gradle Builds
   dependencies:
-    com.android.tools.build:gradle-common-api (compile)
-    org.ow2.asm:asm (compile)
-    org.jetbrains.kotlin:kotlin-gradle-plugin-api (compile)
-    com.android.tools.build:builder-test-api (runtime)
-    com.google.guava:guava (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    com.android.tools.build:gradle (runtime)
+    com.android.tools.build:gradle-common-api:$BUILD_VERSION (compile)
+    org.ow2.asm:asm:9.9 (compile)
+    org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.2.10 (compile)
+    com.android.tools.build:builder-test-api:$BUILD_VERSION (runtime)
+    com.google.guava:guava:33.3.1-jre (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
+    com.android.tools.build:gradle:$BUILD_VERSION (runtime)
 
-com.android.tools.build:gradle-common-api
+com.android.tools.build:gradle-common-api:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-common-api
   description=Common APIs for Android Gradle tools.
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
-com.android.tools.build:gradle-kotlin
+com.android.tools.build:gradle-kotlin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-kotlin
   description=Gradle plugin to register and configure Kotlin tasks for Android projects.
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    org.jetbrains.kotlin:kotlin-gradle-plugin (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
+    org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10 (runtime)
 
-com.android.tools.build:gradle-settings
+com.android.tools.build:gradle-settings:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-settings
   description=Gradle Settings plug-in to build Android applications.
   dependencies:
-    com.android.tools.build:gradle-settings-api (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    com.android.tools.build:gradle-settings-api:$BUILD_VERSION (compile)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
-com.android.tools.build:gradle-settings-api
+com.android.tools.build:gradle-settings-api:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-settings-api
   description=Gradle Settings API to build Android applications.
   dependencies:
-    com.android.tools.build:gradle-common-api (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    com.android.tools.build:gradle-common-api:$BUILD_VERSION (compile)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
-com.android.tools.build:manifest-merger
+com.android.tools.build:manifest-merger:$BASE_VERSION
   pomName=com.android.tools.build.manifest-merger
   description=A Library to merge Android manifests.
   dependencies:
-    com.android.tools:common (runtime)
-    com.android.tools:sdklib (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.google.code.gson:gson (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
-com.android.tools.chunkio:chunkio
+com.android.tools.chunkio:chunkio:$BASE_VERSION
   pomName=ChunkIO
   description=annotations for use with chunkio-processor, and runtime supporting APIs
 
-com.android.tools.compose:compose-preview-detector
+com.android.tools.compose:compose-preview-detector:$BASE_VERSION
   pomName=com.android.tools.compose.compose-preview-detector
   description=Library to search for compose previews in the Java binary code.
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.ow2.asm:asm (runtime)
-    org.ow2.asm:asm-tree (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.ow2.asm:asm:9.9 (runtime)
+    org.ow2.asm:asm-tree:9.9 (runtime)
 
-com.android.tools.ddms:ddmlib
+com.android.tools.ddms:ddmlib:$BASE_VERSION
   pomName=Android Tools ddmlib
   description=Library providing APIs to talk to Android devices
   dependencies:
-    com.android.tools:common (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    net.sf.kxml:kxml2 (runtime)
-    org.jetbrains:annotations (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    net.sf.kxml:kxml2:2.3.0 (runtime)
+    org.jetbrains:annotations:23.0.0 (runtime)
 
-com.android.tools.emulator:proto
+com.android.tools.emulator:proto:$BASE_VERSION
   pomName=Emulator protos for Android Tools
   description=A protobuf messages to control Android Emulator
   dependencies:
-    com.google.code.gson:gson (runtime)
-    com.google.guava:guava (runtime)
-    io.grpc:grpc-core (runtime)
-    io.grpc:grpc-netty (runtime)
-    io.grpc:grpc-protobuf (runtime)
-    io.grpc:grpc-stub (runtime)
-    javax.annotation:javax.annotation-api (runtime)
-    com.google.protobuf:protobuf-java (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    io.grpc:grpc-core:1.69.1 (runtime)
+    io.grpc:grpc-netty:1.69.1 (runtime)
+    io.grpc:grpc-protobuf:1.69.1 (runtime)
+    io.grpc:grpc-stub:1.69.1 (runtime)
+    javax.annotation:javax.annotation-api:1.3.2 (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
 
-com.android.tools.external.com-intellij:intellij-core
+com.android.tools.external.com-intellij:intellij-core:$BASE_VERSION
   pomName=com.android.tools.external.com-intellij.intellij-core
   description=IntelliJ IDEA Core
 
-com.android.tools.external.com-intellij:kotlin-compiler
+com.android.tools.external.com-intellij:kotlin-compiler:$BASE_VERSION
   pomName=com.android.tools.external.com-intellij.kotlin-compiler
   description=Kotlin Compiler
 
-com.android.tools.external.org-jetbrains:uast
+com.android.tools.external.org-jetbrains:uast:$BASE_VERSION
   pomName=com.android.tools.external.org-jetbrains.uast
   description=Unified AST
 
-com.android.tools.fakeadbserver:fakeadbserver
+com.android.tools.fakeadbserver:fakeadbserver:$BASE_VERSION
   pomName=com.android.tools.fakeadbserver.fakeadbserver
   description=Library implementing the ADB Server protocol
   dependencies:
-    com.android.tools:common (runtime)
-    at.yawk.lz4:lz4-java (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    net.sf.kxml:kxml2 (runtime)
-    org.jetbrains.kotlin:kotlin-reflect (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    at.yawk.lz4:lz4-java:1.11.4 (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    net.sf.kxml:kxml2:2.3.0 (runtime)
+    org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
-com.android.tools.layoutlib:layoutlib-api
+com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION
   pomName=Android Tools layoutlib-api
   description=Library to use the rendering library for Android layouts: layoutlib
   dependencies:
-    com.android.tools:annotations (runtime)
-    com.android.tools:common (runtime)
-    net.sf.kxml:kxml2 (runtime)
-    org.jetbrains:annotations (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    net.sf.kxml:kxml2:2.3.0 (runtime)
+    org.jetbrains:annotations:23.0.0 (runtime)
 
-com.android.tools.lint:lint
+com.android.tools.lint:lint:$BASE_VERSION
   pomName=com.android.tools.lint.lint
   description=Lint tools. Both a Command line tool and a library to add lint features to other tools
   dependencies:
-    com.android.tools.lint:lint-api (compile)
-    com.android.tools.lint:lint-checks (compile)
-    com.android.tools.external.com-intellij:intellij-core (runtime)
-    com.android.tools.external.com-intellij:kotlin-compiler (runtime)
-    com.android.tools.external.org-jetbrains:uast (runtime)
-    com.android.tools.analytics-library:protos (runtime)
-    com.android.tools.analytics-library:shared (runtime)
-    com.android.tools.analytics-library:tracker (runtime)
-    com.android.tools.build:manifest-merger (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools.layoutlib:layoutlib-api (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools:sdklib (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.guava:guava (runtime)
-    org.jetbrains.kotlin:kotlin-reflect (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    com.android.tools.lint:lint-api:$BASE_VERSION (compile)
+    com.android.tools.lint:lint-checks:$BASE_VERSION (compile)
+    com.android.tools.external.com-intellij:intellij-core:$BASE_VERSION (runtime)
+    com.android.tools.external.com-intellij:kotlin-compiler:$BASE_VERSION (runtime)
+    com.android.tools.external.org-jetbrains:uast:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:protos:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
+    com.android.tools.analytics-library:tracker:$BASE_VERSION (runtime)
+    com.android.tools.build:manifest-merger:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
-com.android.tools.lint:lint-api
+com.android.tools.lint:lint-api:$BASE_VERSION
   pomName=com.android.tools.lint.lint-api
   description=API to build lint checks
   dependencies:
-    com.android.tools.lint:lint-model (compile)
-    com.android.tools.external.com-intellij:intellij-core (compile)
-    com.android.tools.external.com-intellij:kotlin-compiler (compile)
-    com.android.tools.external.org-jetbrains:uast (compile)
-    com.android.tools.build:manifest-merger (compile)
-    com.android.tools:common (compile)
-    com.android.tools.layoutlib:layoutlib-api (compile)
-    com.android.tools:sdk-common (compile)
-    com.android.tools:sdklib (compile)
-    commons-io:commons-io (compile)
-    net.sf.kxml:kxml2 (compile)
-    org.jetbrains.kotlin:kotlin-reflect (compile)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (compile)
-    org.ow2.asm:asm (compile)
-    org.ow2.asm:asm-commons (compile)
-    org.ow2.asm:asm-tree (compile)
-    com.android.tools.build:builder-model (runtime)
-    com.google.guava:guava (runtime)
+    com.android.tools.lint:lint-model:$BASE_VERSION (compile)
+    com.android.tools.external.com-intellij:intellij-core:$BASE_VERSION (compile)
+    com.android.tools.external.com-intellij:kotlin-compiler:$BASE_VERSION (compile)
+    com.android.tools.external.org-jetbrains:uast:$BASE_VERSION (compile)
+    com.android.tools.build:manifest-merger:$BASE_VERSION (compile)
+    com.android.tools:common:$BASE_VERSION (compile)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (compile)
+    com.android.tools:sdk-common:$BASE_VERSION (compile)
+    com.android.tools:sdklib:$BASE_VERSION (compile)
+    commons-io:commons-io:2.16.1 (compile)
+    net.sf.kxml:kxml2:2.3.0 (compile)
+    org.jetbrains.kotlin:kotlin-reflect:2.2.10 (compile)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (compile)
+    org.ow2.asm:asm:9.9 (compile)
+    org.ow2.asm:asm-commons:9.9 (compile)
+    org.ow2.asm:asm-tree:9.9 (compile)
+    com.android.tools.build:builder-model:$BUILD_VERSION (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
 
-com.android.tools.lint:lint-checks
+com.android.tools.lint:lint-checks:$BASE_VERSION
   pomName=com.android.tools.lint.lint-checks
   description=Checks for Android Lint
   dependencies:
-    com.android.tools.lint:lint-api (compile)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (compile)
-    com.android.tools.external.com-intellij:intellij-core (runtime)
-    com.android.tools.external.com-intellij:kotlin-compiler (runtime)
-    com.android.tools.external.org-jetbrains:uast (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools.layoutlib:layoutlib-api (runtime)
-    com.android.tools:play-sdk-proto (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools:sdklib (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.guava:guava (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    net.sf.kxml:kxml2 (runtime)
-    org.ow2.asm:asm-analysis (runtime)
+    com.android.tools.lint:lint-api:$BASE_VERSION (compile)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (compile)
+    com.android.tools.external.com-intellij:intellij-core:$BASE_VERSION (runtime)
+    com.android.tools.external.com-intellij:kotlin-compiler:$BASE_VERSION (runtime)
+    com.android.tools.external.org-jetbrains:uast:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
+    com.android.tools:play-sdk-proto:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    net.sf.kxml:kxml2:2.3.0 (runtime)
+    org.ow2.asm:asm-analysis:9.9 (runtime)
 
-com.android.tools.lint:lint-gradle
+com.android.tools.lint:lint-gradle:$BASE_VERSION
   pomName=com.android.tools.lint.lint-gradle
   description=Gradle integration for Android Lint
   dependencies:
-    com.android.tools.external.com-intellij:intellij-core (runtime)
-    com.android.tools.external.com-intellij:kotlin-compiler (runtime)
-    com.android.tools.external.org-jetbrains:uast (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools.lint:lint (runtime)
-    com.android.tools.lint:lint-typedef-remover (runtime)
-    org.apache.groovy:groovy (runtime)
+    com.android.tools.external.com-intellij:intellij-core:$BASE_VERSION (runtime)
+    com.android.tools.external.com-intellij:kotlin-compiler:$BASE_VERSION (runtime)
+    com.android.tools.external.org-jetbrains:uast:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.lint:lint:$BASE_VERSION (runtime)
+    com.android.tools.lint:lint-typedef-remover:$BASE_VERSION (runtime)
+    org.apache.groovy:groovy:4.0.29 (runtime)
 
-com.android.tools.lint:lint-model
+com.android.tools.lint:lint-model:$BASE_VERSION
   pomName=com.android.tools.lint.lint-model
   description=Lint build system model
   dependencies:
-    com.android.tools.build:builder-model (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools:repository (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools:sdklib (runtime)
-    net.sf.kxml:kxml2 (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    com.android.tools.build:builder-model:$BUILD_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools:repository:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    net.sf.kxml:kxml2:2.3.0 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
-com.android.tools.lint:lint-tests
+com.android.tools.lint:lint-tests:$BASE_VERSION
   pomName=com.android.tools.lint.lint-tests
   description=API to build lint check tests
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (compile)
-    com.android.tools.external.com-intellij:intellij-core (runtime)
-    com.android.tools.external.com-intellij:kotlin-compiler (runtime)
-    com.android.tools.external.org-jetbrains:uast (runtime)
-    com.android.tools:common (runtime)
-    com.android.tools.layoutlib:layoutlib-api (runtime)
-    com.android.tools.lint:lint (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools:sdklib (runtime)
-    com.google.code.gson:gson (runtime)
-    junit:junit (runtime)
-    net.sf.kxml:kxml2 (runtime)
-    org.apache.groovy:groovy (runtime)
-    org.ow2.asm:asm (runtime)
-    org.ow2.asm:asm-tree (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (compile)
+    com.android.tools.external.com-intellij:intellij-core:$BASE_VERSION (runtime)
+    com.android.tools.external.com-intellij:kotlin-compiler:$BASE_VERSION (runtime)
+    com.android.tools.external.org-jetbrains:uast:$BASE_VERSION (runtime)
+    com.android.tools:common:$BASE_VERSION (runtime)
+    com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
+    com.android.tools.lint:lint:$BASE_VERSION (runtime)
+    com.android.tools:sdk-common:$BASE_VERSION (runtime)
+    com.android.tools:sdklib:$BASE_VERSION (runtime)
+    com.google.code.gson:gson:2.11.0 (runtime)
+    junit:junit:4.13.2 (runtime)
+    net.sf.kxml:kxml2:2.3.0 (runtime)
+    org.apache.groovy:groovy:4.0.29 (runtime)
+    org.ow2.asm:asm:9.9 (runtime)
+    org.ow2.asm:asm-tree:9.9 (runtime)
 
-com.android.tools.lint:lint-typedef-remover
+com.android.tools.lint:lint-typedef-remover:$BASE_VERSION
   pomName=com.android.tools.lint.lint-typedef-remover
   description=Utility to remove typedef annotations from classes
   dependencies:
-    com.android.tools:annotations (runtime)
-    com.google.guava:guava (runtime)
-    org.ow2.asm:asm (runtime)
+    com.android.tools:annotations:$BASE_VERSION (runtime)
+    com.google.guava:guava:33.4.0-jre (runtime)
+    org.ow2.asm:asm:9.9 (runtime)
 
-com.android.tools.pixelprobe:pixelprobe
+com.android.tools.pixelprobe:pixelprobe:$BASE_VERSION
   pomName=Pixel Probe
   description=library to read pixel data and metadata from various image formats
   dependencies:
-    com.android.tools.chunkio:chunkio (runtime)
+    com.android.tools.chunkio:chunkio:$BASE_VERSION (runtime)
 
-com.android.tools.test:coverage-agent
+com.android.tools.test:coverage-agent:$BUILD_VERSION
   pomName=com.android.tools.test.coverage-agent
   description=On-device code coverage agent used by the Android Gradle plugin for instrumented tests.
 
-com.android.tools.utp:gradle-work-action
+com.android.tools.utp:gradle-work-action:$BASE_VERSION
   pomName=com.android.tools.utp.gradle-work-action
   description=Provides Gradle WorkAction implementations for executing the Unified Test Platform (UTP) in isolation.
   dependencies:
-    com.android.tools.androidtest:android-test-engine-result-listener (runtime)
-    com.android.tools.androidtest:android-test-engine (runtime)
-    com.android.tools.androidtest:test-result-proto (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    org.junit.platform:junit-platform-engine (runtime)
-    org.junit.platform:junit-platform-launcher (runtime)
-    com.android.tools.utp:gradle-work-action-api (provided)
-    org.jetbrains.kotlin:kotlin-stdlib (provided)
+    com.android.tools.androidtest:android-test-engine-result-listener:1.0.8 (runtime)
+    com.android.tools.androidtest:android-test-engine:1.0.8 (runtime)
+    com.android.tools.androidtest:test-result-proto:1.0.8 (runtime)
+    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    org.junit.platform:junit-platform-engine:1.13.3 (runtime)
+    org.junit.platform:junit-platform-launcher:1.13.3 (runtime)
+    com.android.tools.utp:gradle-work-action-api:$BASE_VERSION (provided)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (provided)
 
-com.android.tools.utp:gradle-work-action-api
+com.android.tools.utp:gradle-work-action-api:$BASE_VERSION
   pomName=com.android.tools.utp.gradle-work-action-api
   description=Provides Gradle WorkAction API for executing the Unified Test Platform (UTP) in isolation.
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
+    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
