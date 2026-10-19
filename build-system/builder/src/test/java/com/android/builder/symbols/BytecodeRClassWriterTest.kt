@@ -234,6 +234,14 @@ class BytecodeRClassWriterTest {
     assertThat(parseArrayLiteral(1, "{0x70}").asList()).containsExactly(0x70)
     assertThat(parseArrayLiteral(5, "{ 0x72, 0x73, 0x74, 0x71, 0x70 }").asList()).containsExactly(0x72, 0x73, 0x74, 0x71, 0x70)
     assertThat(parseArrayLiteral(2, "{     0x71    ,    0x72   }").asList()).containsExactly(0x71, 0x72)
+    assertThat(
+        parseArrayLiteral(
+            3,
+            "{ android.R.attr.lStar, com.android.webview.R.attr.background, 0x7f04002c }",
+          )
+          .asList()
+      )
+      .containsExactly(0, 0, 0x7f04002c)
 
     try {
       parseArrayLiteral(3, "{0x1,0x2}")
