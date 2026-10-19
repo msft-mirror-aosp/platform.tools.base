@@ -16,6 +16,7 @@
 
 package com.android.tools.utp.gradle
 
+import com.android.tools.androidtest.listener.AndroidTestResultListener
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys
 import com.android.tools.utp.gradle.api.EmulatorControlConfig
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
@@ -40,6 +41,7 @@ import org.junit.Test
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.launcher.LauncherDiscoveryRequest
+import org.junit.platform.launcher.TestExecutionListener
 import org.junit.platform.launcher.TestIdentifier
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
@@ -502,6 +504,31 @@ class AndroidTestEngineRunnerTest {
     assertThat(copiedShard1Xml.exists()).isTrue()
     assertThat(copiedShard0Xml.readText()).isEqualTo("<testsuite name=\"shard0\"/>")
     assertThat(copiedShard1Xml.readText()).isEqualTo("<testsuite name=\"shard1\"/>")
+  }
+
+  @Test
+  fun execute_registersResultAndConsoleProgressListeners() {
+    val parameters = mock<RunUtpWorkParameters>()
+    val config = mock<UtpRunConfig>()
+    val xmlReportDir = temporaryFolder.newFolder("xml-report")
+    val outputDir = temporaryFolder.newFolder("output")
+    val targetResultFile = File(outputDir, "test-result.pb")
+    configureMockConfig(config, "device1", "serial1", outputDir, targetResultFile)
+    configureMockParameters(parameters, listOf(config))
+    val xmlReportDirProp = mockDirectoryProperty(xmlReportDir)
+    whenever(parameters.xmlTestReportOutputDirectory).thenReturn(xmlReportDirProp)
+
+    var capturedListeners: List<TestExecutionListener>? = null
+    val runner = AndroidTestEngineRunner { _, listeners ->
+      capturedListeners = listeners
+      mapOf("serial1" to true)
+    }
+
+    runner.execute(parameters, emptyList(), mergedResultFile, exitCodeFile)
+
+    assertThat(capturedListeners).isNotNull()
+    assertThat(capturedListeners!!.map { it.javaClass })
+      .containsExactly(AndroidTestResultListener::class.java, ConsoleTestProgressListener::class.java)
   }
 
   @Test

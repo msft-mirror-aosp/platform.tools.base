@@ -357,6 +357,7 @@ class AndroidDeviceDescriptor(
             runner.run()
           } catch (t: Throwable) {
             logger.log(Level.SEVERE, "AndroidTestRunner failed on $deviceSerial", t)
+            listener.reportRunFailure(t.message ?: t.javaClass.name)
           } finally {
             try {
               logcatCollector?.cleanup()
@@ -510,6 +511,7 @@ class AndroidDeviceDescriptor(
     /** Handles instrumentation failures by completing all pending test results exceptionally. */
     override fun instrumentationFailed(errorMessage: String) {
       reporter?.testRunFailed(errorMessage)
+      reportRunFailure(errorMessage)
       val exception = RuntimeException(errorMessage)
       testDescriptors.values.forEach {
         if (!it.resultDeferred.isCompleted) {
@@ -528,6 +530,15 @@ class AndroidDeviceDescriptor(
           it.resultDeferred.completeExceptionally(exception)
         }
       }
+    }
+
+    /**
+     * Publishes a [AndroidTestReportKeys.RUN_FAILURE] report entry on this device so that listeners can report that the test run failed as
+     * a whole, e.g. when the instrumentation crashes before any test case has started.
+     */
+    fun reportRunFailure(errorMessage: String) {
+      // This is best-effort: the channel is already closed if the test run has finished.
+      tests.trySend(TestEvent.DeviceReportEntries(listOf(ReportEntry.from(AndroidTestReportKeys.RUN_FAILURE, errorMessage))))
     }
 
     /** Ensures all pending results are completed exceptionally and signals completion by closing [tests]. */

@@ -28,8 +28,10 @@ import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
+import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -167,6 +169,67 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
   @Test fun runAndroidTestWithNoTestClasses() = util.runAndroidTestWithNoTestClasses()
 
   @Test fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() = util.connectedAndroidTestDoesNotOutputNoClassDefFoundError()
+
+  @Test
+  fun connectedAndroidTestLogsTestProgressToConsole() {
+    // With the built-in test platform, connectedAndroidTest runs as a Gradle test suite task
+    // which reports progress through Gradle's own test logging.
+    Assume.assumeFalse(runWithBuiltInPlatform)
+    util.selectModule("app")
+    util.rule.build.androidApplication().reconfigure {
+      files {
+        add(
+          "src/androidTest/java/com/example/android/kotlin/FailingInstrumentedTest.kt",
+          // language=kotlin
+          """
+          package com.example.android.kotlin
+
+          import android.os.SystemClock
+          import androidx.test.ext.junit.runners.AndroidJUnit4
+
+          import org.junit.Assert
+          import org.junit.Test
+          import org.junit.runner.RunWith
+
+          @RunWith(AndroidJUnit4::class)
+          class FailingInstrumentedTest {
+
+              @Test
+              fun failingTest() {
+                  Assert.fail()
+              }
+
+              // Keeps the test run going for longer than the progress logging interval.
+              @Test
+              fun slowTest() {
+                  SystemClock.sleep(12000)
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+    }
+
+    val result = util.executor.expectFailure().run(util.testTaskName)
+
+    val stdoutLines = result.stdout.use { scanner -> generateSequence { if (scanner.hasNextLine()) scanner.nextLine() else null }.toList() }
+    // The device name depends on whether the AVD name can be resolved (e.g. "emulator-5554 - 13" or
+    // "default_avd-5554(AVD) - 13"), so take it from the list of devices that the tests run on.
+    val runningOnDevicesPrefix = "Running tests on devices: "
+    val deviceName = stdoutLines.firstOrNull { it.startsWith(runningOnDevicesPrefix) }?.removePrefix(runningOnDevicesPrefix)?.trim()
+    assertWithMessage("stdout contains the list of devices").that(deviceName).isNotNull()
+
+    fun assertStdoutContains(expected: String) {
+      assertWithMessage("stdout contains \"$expected\"").that(stdoutLines.any { it.contains(expected) }).isTrue()
+    }
+    assertStdoutContains("Starting 3 tests on $deviceName")
+    assertStdoutContains("Finished 3 tests on $deviceName")
+    assertStdoutContains("com.example.android.kotlin.FailingInstrumentedTest > failingTest[$deviceName] \u001B[31mFAILED \u001B[0m")
+    // The progress status is logged periodically while the tests are running.
+    val progressStatus = Regex("${Regex.escape(deviceName!!)} Tests \\d/3 completed\\. \\(0 skipped\\) \\(\\d failed\\)")
+    assertWithMessage("stdout contains a test progress status line").that(stdoutLines.any { progressStatus.containsMatchIn(it) }).isTrue()
+  }
 
   @Test
   @Throws(Exception::class)
