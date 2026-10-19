@@ -4,6 +4,8 @@ load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 kotlin_library(
     name = "cli",
     srcs = glob(["src/main/java/**/*.kt"]),
+    # The standalone CLI bundles the files the host ships to the device.
+    resources = ["//tools/base/ui-inspector/core:device_artifact_files"],
     deps = [
         "//tools/base/adblib",
         "//tools/base/adblib-tools:adblib.tools",

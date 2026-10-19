@@ -213,7 +213,12 @@ hardware characteristics of the device.
 Selects the appropriate `.so`, the ART Tooling library dex, and the
 payload `.jar` matching the target device and pushes them to the
 staging directory on the device
-(`/data/local/tmp/ui-inspector`). Every staged file — agent binary,
+(`/data/local/tmp/ui-inspector`). The standalone CLI bundles these files
+as classpath resources. A tool embedding the inspector can instead ship
+them separately, e.g. in a downloaded zip of
+`//tools/base/ui-inspector/core:device_artifacts_pkg_files`, and pass the
+extraction directory as the `deviceArtifactsDir` of `UiInspector`.
+Every staged file — agent binary,
 library dex, payload jar, and inspector jars — is named by its own
 content hash (`<base>.<hash12>.<ext>`, 12 hex characters of the file's
 SHA-256), so a file's staging path is determined by its base name and

@@ -1,4 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "android_cc_binary")
 
 cc_library(
@@ -44,6 +45,15 @@ android_cc_binary(
     name = "libarttooling_agent.so",
     binary = ":arttooling_agent_native.stripped",
     filename = "libarttooling_agent.so",
+    visibility = ["//tools/base/ui-inspector:__subpackages__"],
+)
+
+# The agent of each ABI at <abi>/libarttooling_agent.so, for //tools/base/ui-inspector/core:device_artifacts_pkg_files:
+# android_cc_binary writes one output per ABI at libarttooling_agent.so/<abi>/libarttooling_agent.so.
+pkg_files(
+    name = "libarttooling_agent_files",
+    srcs = [":libarttooling_agent.so"],
+    strip_prefix = strip_prefix.from_pkg("libarttooling_agent.so"),
     visibility = ["//tools/base/ui-inspector:__subpackages__"],
 )
 

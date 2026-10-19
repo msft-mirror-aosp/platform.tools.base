@@ -18,6 +18,8 @@ package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbSession
 import com.android.tools.ui.inspector.deploy.ArtifactDownloader
+import com.android.tools.ui.inspector.deploy.DEFAULT_TEMP_FILE_SUFFIX_GENERATOR
+import com.android.tools.ui.inspector.deploy.DeviceArtifactsDirectory
 import com.android.tools.ui.inspector.deploy.HttpArtifactDownloader
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.model.ParameterReference
@@ -35,6 +37,10 @@ import java.nio.file.Path
  * @param logger An optional logger the ui inspector can use to log its progress.
  * @param artifactDownloader An optional downloader for the Compose inspector jars, e.g. to use the HTTP stack of the tool embedding the
  *   inspector. Defaults to [java.net.URL] connections.
+ * @param deviceArtifactsDir An optional directory with the files the inspector pushes to the device, for tools that don't bundle them in
+ *   their classpath, e.g. the Android CLI, which downloads them in a pack: the directory where the files of the
+ *   `//tools/base/ui-inspector/core:device_artifacts_pkg_files` target were extracted. When null, the files are read from the classpath,
+ *   where the standalone CLI bundles them.
  */
 class UiInspector
 internal constructor(
@@ -51,7 +57,8 @@ internal constructor(
     composeInspectorJar: Path? = null,
     logger: Logger? = null,
     artifactDownloader: ArtifactDownloader? = null,
-  ) : this(adbSession, cacheDir, composeInspectorJar, logger, artifactDownloader, ::InjectionManager)
+    deviceArtifactsDir: Path? = null,
+  ) : this(adbSession, cacheDir, composeInspectorJar, logger, artifactDownloader, defaultInjectionManagerFactory(deviceArtifactsDir))
 
   private val logger: Logger = logger ?: Logger { _, _ -> }
   private val artifactDownloader: ArtifactDownloader = artifactDownloader ?: HttpArtifactDownloader()
@@ -100,4 +107,32 @@ internal constructor(
     ) { commandSender, composeInspectorConnected ->
       fetchParameter(commandSender, composeInspectorConnected, reference)
     }
+}
+
+/** Creates the [InjectionManager]s of a [UiInspector], which ship the files in [deviceArtifactsDir], or the bundled ones if it is null. */
+private fun defaultInjectionManagerFactory(deviceArtifactsDir: Path?): InjectionManagerFactory =
+  if (deviceArtifactsDir == null) ::InjectionManager
+  else deviceArtifactsInjectionManagerFactory(DeviceArtifactsDirectory(deviceArtifactsDir))
+
+/**
+ * Creates [InjectionManager]s that ship the files of [deviceArtifacts], naming their temporary copies on the device with
+ * [tempFileSuffixGenerator]. Each creation first checks that the directory of [deviceArtifacts] exists, and throws if not.
+ */
+internal fun deviceArtifactsInjectionManagerFactory(
+  deviceArtifacts: DeviceArtifactsDirectory,
+  tempFileSuffixGenerator: () -> String = DEFAULT_TEMP_FILE_SUFFIX_GENERATOR,
+): InjectionManagerFactory = { adbSession, serial, packageName, composeInspectorOverrideJarPath, logger ->
+  deviceArtifacts.checkExists()
+  InjectionManager(
+    adbSession,
+    serial,
+    packageName,
+    composeInspectorOverrideJarPath,
+    logger,
+    agentPathResolver = deviceArtifacts::agentPath,
+    libraryDexPath = deviceArtifacts.libraryDexPath,
+    payloadJarPath = deviceArtifacts.payloadJarPath,
+    viewInspectorJarPath = deviceArtifacts.viewInspectorJarPath,
+    tempFileSuffixGenerator = tempFileSuffixGenerator,
+  )
 }

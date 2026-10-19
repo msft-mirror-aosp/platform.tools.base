@@ -42,16 +42,16 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
 /** The name of the ART Tooling native agent binary. */
-private const val AGENT_FILE_NAME = "libarttooling_agent.so"
+internal const val AGENT_FILE_NAME = "libarttooling_agent.so"
 
 /** The name of the ART Tooling library dex. The native agent adds it to the bootstrap class loader search path. */
-private const val LIBRARY_DEX_FILE_NAME = "libarttooling.jar"
+internal const val LIBRARY_DEX_FILE_NAME = "libarttooling.jar"
 
 /** The fully qualified name of the UI Inspector's ART Tooling agent, loaded from the payload dex. */
 private const val AGENT_CLASS_NAME = "com.android.tools.ui.inspector.payload.InspectorLauncher"
 
 /** The name of the payload jar file. */
-private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
+internal const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
 
 /** The relative path to the payload jar in the runfiles. */
 private const val HOST_PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/payload/$PAYLOAD_JAR_FILE_NAME"
@@ -64,6 +64,9 @@ private const val HOST_LIBRARY_DEX_PATH = "tools/base/ui-inspector/art-tooling/j
 
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
+
+/** Default generator of the unique suffixes of the temporary files pushed to the device. */
+internal val DEFAULT_TEMP_FILE_SUFFIX_GENERATOR: () -> String = { "${UUID.randomUUID()}.tmp" }
 
 /**
  * Manages the lifecycle of injecting and attaching the native agent to a target application.
@@ -86,7 +89,7 @@ internal class InjectionManager(
   private val libraryDexPath: Path = Paths.get(HOST_LIBRARY_DEX_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
   private val viewInspectorJarPath: Path = InspectorRegistry.VIEW_INSPECTOR.localJarPath,
-  internal val tempFileSuffixGenerator: () -> String = { "${UUID.randomUUID()}.tmp" },
+  internal val tempFileSuffixGenerator: () -> String = DEFAULT_TEMP_FILE_SUFFIX_GENERATOR,
 ) {
   init {
     validateSerial(serial)
@@ -384,7 +387,12 @@ internal class InjectionManager(
 
   /** Resolves the local path to the agent binary for the given ABI. */
   private fun getAgentLocalPath(deviceAbi: String): Path {
-    return resolveLocalPathOrExtractFromClasspath(agentPathResolver(deviceAbi))
+    return try {
+      resolveLocalPathOrExtractFromClasspath(agentPathResolver(deviceAbi))
+    } catch (e: IllegalStateException) {
+      // The agent is built for a fixed set of ABIs: a missing one is most likely a device with another ABI, e.g. riscv64.
+      throw IllegalStateException("The UI Inspector has no agent for the device ABI '$deviceAbi': ${e.message}", e)
+    }
   }
 
   /** Resolves the local path to the library dex. */

@@ -36,6 +36,7 @@ import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.PROCESS_PACKAGES_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
+import com.android.tools.ui.inspector.deviceArtifactsInjectionManagerFactory
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.resolveForegroundPackage
 import com.android.tools.ui.inspector.runWithConnectedInspectors
@@ -310,6 +311,7 @@ class InjectionManagerTest {
 
   @Test
   fun testInjectAndAttach_missingArtifactFailsBeforeDeviceMutation() = runTest {
+    val absentViewInspector = tempFolder.root.toPath().resolve("absent-view-inspector.jar")
     val injectionManager =
       InjectionManager(
         testSession,
@@ -320,7 +322,7 @@ class InjectionManagerTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
-        tempFolder.root.toPath().resolve("absent-view-inspector.jar"),
+        absentViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
     configureSuccessfulInjection()
@@ -331,13 +333,87 @@ class InjectionManagerTest {
       injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for a missing artifact")
     } catch (e: IllegalStateException) {
-      assertThat(e.message).contains("File not found on filesystem")
+      // An absolute path names a file on disk, never a classpath resource: the error names the file only.
+      assertThat(e.message).isEqualTo("UI Inspector file not found: $absentViewInspector")
     }
 
     assertThat(testDeviceServices.recordedSyncSends).isEmpty()
     val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
     assertThat(commands.filter { it.startsWith("settings put ") }).isEmpty()
     assertThat(commands.filter { it.startsWith("cmd activity attach-agent") }).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_deviceArtifactsDirectory_shipsEachOfItsFiles() = runTest {
+    // Distinct contents give each file its own digest, which names its staged copy and joins the server token: a file read from the
+    // wrong path changes them. Neither the classpath nor the runfiles of these tests have the bundled files, so the injection can only
+    // find them in the directory.
+    Files.write(dummyAgent, byteArrayOf(1))
+    Files.write(dummyJar, byteArrayOf(2))
+    Files.write(dummyPayload, byteArrayOf(3))
+    Files.write(dummyViewInspector, byteArrayOf(4))
+    val dir = createDeviceArtifactsDirectory(abis = listOf("arm64-v8a"))
+    val injectionManager =
+      deviceArtifactsInjectionManagerFactory(DeviceArtifactsDirectory(dir), tempFileSuffixGenerator = { "test.tmp" })(
+        testSession,
+        deviceSerial,
+        packageName,
+        null,
+        logger,
+      )
+    configureSuccessfulInjection(token = "1234_" + computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector).combined)
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+
+    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath })
+      .containsExactlyElementsIn(baseStagingPaths().map { "$it.test.tmp" })
+  }
+
+  @Test
+  fun testDump_deviceArtifactsDirectoryWithoutTheDeviceAbi_failsNamingTheAbi() = runTest {
+    val dir = createDeviceArtifactsDirectory(abis = listOf("x86_64"))
+    // Through the public constructor, which is how tools pass the directory.
+    val inspector = UiInspector(testSession, tempFolder.newFolder().toPath(), deviceArtifactsDir = dir)
+    configureSuccessfulInjection()
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { inspector.dump(deviceSerial, packageName) } }
+
+    // The device of configureSuccessfulInjection is arm64-v8a.
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo(
+        "The UI Inspector has no agent for the device ABI 'arm64-v8a': UI Inspector file not found: " +
+          dir.resolve("arm64-v8a/libarttooling_agent.so")
+      )
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+  }
+
+  @Test
+  fun testDump_missingDeviceArtifactsDirectory_failsNamingTheDirectory() = runTest {
+    val dir = tempFolder.root.toPath().resolve("absent-device-artifacts")
+    val inspector = UiInspector(testSession, tempFolder.newFolder().toPath(), deviceArtifactsDir = dir)
+    configureSuccessfulInjection()
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { inspector.dump(deviceSerial, packageName) } }
+
+    // Not as a missing agent for the device ABI, the first file looked up.
+    assertThat(exception).hasMessageThat().isEqualTo("UI Inspector files directory not found or not a directory: $dir")
+    assertThat(fakeSession.deviceServices.shellV2Requests).isEmpty()
+  }
+
+  /**
+   * Creates a directory laid out as [DeviceArtifactsDirectory] reads it, with copies of the dummy artifacts and an agent for each of
+   * [abis].
+   */
+  private fun createDeviceArtifactsDirectory(abis: List<String>): Path {
+    val dir = tempFolder.newFolder("device-artifacts").toPath()
+    for (artifact in listOf(dummyJar, dummyPayload, dummyViewInspector)) {
+      artifact.toFile().copyTo(dir.resolve(artifact.fileName).toFile())
+    }
+    for (abi in abis) {
+      dummyAgent.toFile().copyTo(Files.createDirectories(dir.resolve(abi)).resolve("libarttooling_agent.so").toFile())
+    }
+    return dir
   }
 
   @Test
