@@ -7,7 +7,7 @@ load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file", "label_workspace_path")
 load(":kotlin.bzl", "kotlin_compile")
 load(":kotlin_common.bzl", "KtJvmToolchainInfo", "add_jvm_target_opts", "select_java_compile_toolchain", "select_java_runtime")
-load(":lint.bzl", "lint_test")
+load(":lint.bzl", "LINT_CUSTOM_RULES", "LINT_EXTERNAL_ANNOTATIONS", "lint_test")
 load(":merge_archives.bzl", "run_singlejar")
 
 ImlModuleInfo = provider(
@@ -521,8 +521,8 @@ def iml_module(
             srcs = lint_srcs,
             baseline = lint_baseline,
             deps = deps,
-            custom_rules = ["//tools/base/lint:studio-checks.lint-rules.jar", "//tools/base/lint/studio-checks/compose-desktop-checks"],
-            external_annotations = ["//tools/base/external-annotations:annotations.zip"],
+            custom_rules = LINT_CUSTOM_RULES,
+            external_annotations = LINT_EXTERNAL_ANNOTATIONS,
             tags = lint_tags,
             # Unset when partial analysis is off, so the aspect does not run at all; it
             # reaches the module dependencies through the iml_module target itself.
