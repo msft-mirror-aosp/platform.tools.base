@@ -25,7 +25,7 @@ import com.android.tools.rendering.classloading.StringReplaceTransform
 import com.android.tools.rendering.classloading.loaders.AsmTransformingLoader
 import com.android.tools.rendering.classloading.loaders.ClassLoaderLoader
 import com.android.tools.rendering.classloading.loaders.DelegatingClassLoader
-import com.android.tools.rendering.classloading.loaders.MultiLoader
+import com.android.tools.rendering.classloading.loaders.MultiLoaderWithAffinity
 import com.android.tools.rendering.classloading.loaders.NameRemapperLoader
 import com.android.tools.rendering.classloading.toClassTransform
 import com.intellij.util.containers.ContainerUtil
@@ -421,6 +421,27 @@ internal class LibraryClassBinaryCacheEntry(val key: LibraryCacheKey) : AutoClos
 }
 
 /**
+ * Returns `true` if [fqcn] is a top-level or inner Android resource (`R` or `R$*`) class.
+ *
+ * Resource classes must always be resolved in strict `projectLoader` -> `depsLoader` order rather
+ * than via [MultiLoaderWithAffinity]:
+ * 1. In Android builds (e.g., library screenshot tests), AGP places the linked `R.jar` (containing
+ *    finalized `0x7f...` resource IDs for both project and transitive library packages such as
+ *    `androidx.compose.ui.R$id`) on `projectClassPath` (`projectLoader`), while unlinked
+ *    compile-time `R.jar`s (where all resource IDs are `0`) remain on `depsClassPath`
+ *    (`depsLoader`). Using package-affinity dispatch for `R` classes would cause `depsLoader`
+ *    (which has affinity for `androidx.compose.ui` after loading Compose library code) to shadow
+ *    the linked `R.jar` in `projectLoader` with uninitialized `0` resource IDs.
+ * 2. Conversely, scanning `rClassJars` (on `depsClassPath`) during bootstrap loads `R` classes in
+ *    the module's own package from `depsLoader`, which would otherwise assign `depsLoader` affinity
+ *    to the user module's package before user project classes are loaded.
+ */
+private fun isResourceClass(fqcn: String): Boolean {
+  val simpleName = fqcn.substringAfterLast('.')
+  return simpleName == "R" || simpleName.startsWith("R$")
+}
+
+/**
  * [DelegatingClassLoader.Loader] responsible for loading both user project classes and external
  * library classes into a single out-of-studio [DefaultModuleClassLoader].
  *
@@ -440,13 +461,15 @@ internal class DefaultLoader(parent: ClassLoader?, classPath: List<String>, proj
   val classesToPaths = ConcurrentHashMap<String, String>()
 
   private val cacheEntry: LibraryClassBinaryCacheEntry = LibraryClassBinaryCache.getEntry(classPath, projectClassPath)
+  private val projectLoader: DelegatingClassLoader.Loader
+  private val depsLoader: DelegatingClassLoader.Loader
   private val loader: DelegatingClassLoader.Loader
   private val depsClassLoader: ClassLoader = cacheEntry.depsClassLoader
   private val projectClassLoader: ClassLoader
 
   init {
     val parentLoader = parent?.let { ClassLoaderLoader(it) }
-    val depsLoader =
+    depsLoader =
       object : DelegatingClassLoader.Loader {
         override fun loadClass(fqcn: String): ByteArray? = cacheEntry.loadDepsClassBytes(fqcn, parent)
       }
@@ -456,7 +479,7 @@ internal class DefaultLoader(parent: ClassLoader?, classPath: List<String>, proj
     projectClassLoader = UrlClassLoader.build().useCache(false).parent(parent).files(projectClassPath.map { Path(it) }).get()
     val projectClassLoaderLoaderRaw = ClassLoaderLoader(projectClassLoader) { fqcn, path, _ -> classesToPaths[fqcn] = path }
     val projectClassLoaderLoader = NameRemapperLoader(projectClassLoaderLoaderRaw, ON_DISK_LOOKUP)
-    val projectLoader =
+    projectLoader =
       AsmTransformingLoader(
         PROJECT_CLASS_TRANSFORMS,
         projectClassLoaderLoader,
@@ -465,9 +488,10 @@ internal class DefaultLoader(parent: ClassLoader?, classPath: List<String>, proj
         // maximum stack size.
         asmFlags = ClassWriter.COMPUTE_MAXS,
       )
-    // Search `projectLoader` before `depsLoader` so user project classes take precedence over
-    // external dependency JARs.
-    loader = MultiLoader(projectLoader, depsLoader)
+    // Search `projectLoader` before `depsLoader` by default so user project classes take precedence,
+    // while recording package-prefix affinity via `MultiLoaderWithAffinity` to avoid probing
+    // `projectClassLoader` on disk for known external library packages.
+    loader = MultiLoaderWithAffinity(projectLoader, depsLoader)
   }
 
   fun getResource(name: String): URL? {
@@ -495,7 +519,12 @@ internal class DefaultLoader(parent: ClassLoader?, classPath: List<String>, proj
     return Collections.enumeration(allRes)
   }
 
-  override fun loadClass(fqcn: String): ByteArray? = loader.loadClass(fqcn)
+  override fun loadClass(fqcn: String): ByteArray? {
+    if (isResourceClass(fqcn)) {
+      return projectLoader.loadClass(fqcn) ?: depsLoader.loadClass(fqcn)
+    }
+    return loader.loadClass(fqcn)
+  }
 
   override fun close() {
     classesToPaths.clear()

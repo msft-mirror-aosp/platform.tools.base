@@ -279,6 +279,46 @@ class StandaloneModuleClassLoaderManagerTest {
     }
   }
 
+  @Test
+  fun testProjectRClassTakesPrecedenceOverDepsRClassInLibraryPackage() {
+    val projectDir = temporaryFolder.newFolder("project-r-precedence")
+    val depsDir = temporaryFolder.newFolder("deps-r-precedence")
+
+    // Simulate a library package ("com/example/lib") where:
+    // - `StableLib` exists only on `depsClassPath` (establishing depsLoader package affinity).
+    // - Both `projectClassPath` (linked R.jar) and `depsClassPath` (unlinked compile R.jar)
+    //   contain `com/example/lib/R` and `com/example/lib/R$id`.
+    writeValueClass(depsDir, "com/example/lib/StableLib", "from-deps")
+    writeValueClass(depsDir, "com/example/lib/R", "unlinked-deps-R")
+    writeValueClass(depsDir, "com/example/lib/R\$id", "unlinked-deps-R-id")
+    writeValueClass(projectDir, "com/example/lib/R", "linked-project-R")
+    writeValueClass(projectDir, "com/example/lib/R\$id", "linked-project-R-id")
+
+    val classPath = listOf(projectDir.absolutePath, depsDir.absolutePath)
+    val projectClassPath = listOf(projectDir.absolutePath)
+
+    val manager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
+    try {
+      manager.getShared(null).use { ref ->
+        val cl = ref.classLoader
+        // Load `StableLib` first so `MultiLoaderWithAffinity` records `depsLoader` affinity for
+        // `com.example.lib`.
+        val stableLibClass = cl.loadClass("com.example.lib.StableLib")
+        assertThat(stableLibClass.getMethod("getValue").invoke(null)).isEqualTo("from-deps")
+
+        // Loading `R` and `R$id` in the same package must still resolve the linked version from
+        // `projectClassPath` rather than the unlinked version from `depsClassPath`.
+        val rClass = cl.loadClass("com.example.lib.R")
+        assertThat(rClass.getMethod("getValue").invoke(null)).isEqualTo("linked-project-R")
+
+        val rIdClass = cl.loadClass("com.example.lib.R\$id")
+        assertThat(rIdClass.getMethod("getValue").invoke(null)).isEqualTo("linked-project-R-id")
+      }
+    } finally {
+      manager.close()
+    }
+  }
+
   /**
    * Generates a `.class` file equivalent to the following Java source:
    * ```java
