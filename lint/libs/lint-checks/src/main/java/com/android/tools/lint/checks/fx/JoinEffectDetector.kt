@@ -22,6 +22,7 @@ import com.android.tools.lint.checks.fx.analysis.LocalFun
 import com.android.tools.lint.checks.fx.analysis.Module
 import com.android.tools.lint.checks.fx.analysis.Module.AnnotationParser.Companion.nearestBaseAnns
 import com.android.tools.lint.checks.fx.analysis.Module.AnnotationParser.Companion.nearestSuperclassAnns
+import com.android.tools.lint.checks.fx.analysis.isKtProperty
 import com.android.tools.lint.checks.fx.result.AssumptionTable
 import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.Constraint
@@ -38,6 +39,7 @@ import com.android.tools.lint.checks.fx.result.Scope
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.static
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.virtual
+import com.android.tools.lint.checks.fx.result.Type.Sym.Companion.chain
 import com.android.tools.lint.checks.fx.result.emptySubst
 import com.android.tools.lint.checks.fx.result.get
 import com.android.tools.lint.checks.fx.utils.Encoder
@@ -62,12 +64,15 @@ import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.PartialResult
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.intellij.openapi.application.runReadAction
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiTypeParameter
 import java.io.Closeable
 import java.io.File
@@ -87,6 +92,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
 import org.jetbrains.annotations.VisibleForTesting
+import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
@@ -95,6 +101,7 @@ import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UVariable
+import org.jetbrains.uast.resolveToUElement
 import org.jetbrains.uast.toUElement
 
 /**
@@ -116,6 +123,11 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   private lateinit var summariesCache: Map<Type.MethodRef, Result<Type<FX>, EffectResult.Eval<FX>>>
 
   protected abstract val mainIssue: Issue
+
+  protected open val unsatisfiableConstraintIssue: Issue
+    get() = mainIssue
+
+  protected abstract val errorExplanation: Error.Explanation<FX>
 
   protected abstract val effectEncoder: Encoder<FX>
 
@@ -222,17 +234,101 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   }
 
   /**
-   * Report error discovered by the detector. Each implementation of this detector may have a different interpretation of the [error], and
-   * may not even consider it an error. For example, not all detectors consider [Error.IntroducingTop] a problem, where the inferred effect
-   * is [Lattice.top].
+   * Report error discovered by the detector. Each implementation of this detector relies on [errorExplanation] to explain [error], and may
+   * not even consider it an error. For example, not all detectors consider [Error.IntroducingTop] a problem, where the inferred effect is
+   * [Lattice.top].
    */
-  protected abstract fun report(context: Context, error: Error<FX>)
+  protected fun report(context: Context, error: Error<FX>) =
+    with(errorExplanation) {
+      when (error) {
+        is Error.ExceedingAnnotation -> {
+          val site = error.site
+          context.reportAt(mainIssue, site, "${callLabel(site).replaceFirstChar(Char::titlecase)} ${explain(error)}")
+        }
+        is Error.IntroducingTop -> {
+          val msg = explain(error) ?: return@with
+          context.reportAt(unsatisfiableConstraintIssue, error.site, msg)
+        }
+        is Error.CallingTop -> {
+          val msg = explain(error) ?: return@with
+          context.reportAt(unsatisfiableConstraintIssue, error.source, msg)
+        }
+        is Error.FailingConstraint -> reportFailingConstraint(context, error)
+        is Error.ConflictingAnnotations -> context.reportAt(mainIssue, error.self.origin, explain(error))
+        is Error.ConflictingInference -> context.reportAt(mainIssue, error.site, explain(error))
+      }
+    }
+
+  private fun Error.Explanation<FX>.reportFailingConstraint(context: Context, error: Error.FailingConstraint<FX>) {
+    val call = error.site
+    val constraints = error.constraints ?: return context.reportAt(mainIssue, call, explain(error))
+    assert(constraints.isNotEmpty())
+    val paramToArg =
+      when (val method = (call as? UCallExpression)?.resolveToUElement()) {
+        is UMethod -> {
+          val params = method.uastParameters
+          val receiver = call.receiver
+          buildMap {
+            if (receiver != null) put("this", receiver)
+            for ((x, v) in params zip call.valueArguments) {
+              put((x.javaPsi as PsiParameter).name, v)
+            }
+          }
+        }
+        else -> mapOf()
+      }
+    val concreteReasons = constraints.mapNotNull { failure ->
+      when (val arg = paramToArg[failure.invocation.chain.first] ?: argumentOfAssumedDomain(call, failure.invocation)) {
+        null -> null
+        else -> arg to failure
+      }
+    }
+    // Friendlier message for special case of invoking the argument itself
+    fun calledChain(failure: ConstraintFailure<FX>): String? {
+      val (_, chain) = failure.invocation.chain
+      return when {
+        chain.size == 1 && chain.first().name == "invoke" -> null
+        else -> "`${chain.joinToString(".") { "${it.name}()" }}`"
+      }
+    }
+    when {
+      concreteReasons.isEmpty() -> {
+        val message =
+          constraints.joinToString(" ") { failure ->
+            "${explain(failure, "Argument at `${failure.invocation.chain.first}`", calledChain(failure))}."
+          }
+        context.reportAt(mainIssue, call, message)
+      }
+      // If have concrete locations, report some, sloppily skipping some others (e.g. the
+      // receiver) for now.
+      else -> for ((arg, failure) in concreteReasons) context.reportAt(mainIssue, arg, explain(failure, "Argument", calledChain(failure)))
+    }
+  }
+
+  private fun Context.reportAt(issue: Issue, site: UElement, message: String) = report(issue, locationOf(site), message)
+
+  private fun Context.locationOf(site: UElement): Location {
+    val parser = client.getUastParser(project)
+    if (site.sourcePsi == null) {
+      // Kotlin's synthesized constructor body has no source of its own; point at the declared body rather than the whole constructor
+      ((site.uastParent as? UMethod)?.sourcePsi as? KtDeclarationWithBody)?.bodyExpression?.let {
+        return parser.createLocation(it)
+      }
+    }
+    return parser.createLocation(site)
+  }
+
+  final override fun sameMessage(issue: Issue, new: String, old: String): Boolean =
+    issue.id == mainIssue.id && (stringsEquivalent(old, new) || sameArgumentMessage(new, old) || sameLegacyMessage(new, old))
+
+  /** Whether [old], as worded before some improvement, still means [new] */
+  protected open fun sameLegacyMessage(new: String, old: String): Boolean = false
 
   /**
    * The argument of [call] standing for the base of [invocation]'s receiver chain in the callee's assumed summary, if any. For example,
    * with `invoke` assumed as `(this, x₀) -> x₀.run()`, `argumentOfAssumedDomain(app.invoke(r), x₀.run())` = `r`
    */
-  protected fun argumentOfAssumedDomain(call: UExpression, invocation: Type.Sym<FX>): UExpression? {
+  private fun argumentOfAssumedDomain(call: UExpression, invocation: Type.Sym<FX>): UExpression? {
     val callExpr = call as? UCallExpression ?: return null
     val callee = callExpr.resolve() ?: return null
     // The callee may inherit or override the assumed declaration
@@ -255,8 +351,11 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     return if (index < receiverCount) callExpr.receiver else callExpr.getArgumentForParameter(index - receiverCount)
   }
 
-  protected fun sameArgumentMessage(new: String, old: String): Boolean =
+  private fun sameArgumentMessage(new: String, old: String): Boolean =
     old.split(LEGACY_ARGUMENT_SENTENCE_BOUNDARY).any { stringsEquivalent(it.replace(LEGACY_ARGUMENT_PARAM, "$1"), new) }
+
+  private fun callLabel(site: UElement) =
+    if ((site.tryResolveUDeclaration() as? UMethod)?.isKtProperty() == true) "property call" else "call"
 
   /** Best-effort lookup of the explicit effect annotation on a method not in the current scope or the assumption table */
   private fun externalAnnotationFinder(evaluator: JavaEvaluator, findPsiMethod: (Type.MethodRef) -> PsiMethod?): (Type.MethodRef) -> FX? {

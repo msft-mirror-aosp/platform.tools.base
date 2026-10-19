@@ -20,6 +20,8 @@ import com.android.tools.lint.checks.fx.utils.possibilityLattice
 import kotlinx.collections.immutable.persistentSetOf
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.getContainingUClass
 
 /**
  * Generic errors to be accumulated and reported at the end. We don't report on-the-fly like most simple syntactic Lint checks, because (1)
@@ -63,6 +65,59 @@ sealed interface Error<out FX> {
   ) : Error<FX> {
 
     override fun toString() = "$site ⋤ $conflictingBase"
+  }
+
+  /** Each handler of a concrete [FX] interprets the error as a concrete message, or `null` for no error */
+  interface Explanation<FX> {
+    /** Describes the call at [ExceedingAnnotation.site], e.g. "must be from X, but context is allowing Y" */
+    fun explain(error: ExceedingAnnotation<FX>): String
+
+    /** Message for [error] when its [FailingConstraint.constraints] are unknown */
+    fun explain(error: FailingConstraint<FX>): String
+
+    /** Describes [failure] on [argument] (e.g. "Argument"), calling [call] (e.g. "`run()`"), or `null` if invoking the argument itself */
+    fun explain(failure: ConstraintFailure<FX>, argument: String, call: String?): String
+
+    fun explain(error: IntroducingTop<FX>): String? = null
+
+    fun explain(error: CallingTop<FX>): String? = null
+
+    fun explain(error: ConflictingAnnotations<FX>): String {
+      val (self, bases) = error
+      val baseAnnotations = bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin })
+
+      fun <T> Iterable<T>.join(size: Int, format: (T) -> String): String = buildString {
+        for ((i, elem) in this@join.withIndex()) {
+          val sep =
+            when {
+              i == 0 -> ""
+              size > 1 && i == size - 1 -> ", and "
+              else -> ","
+            }
+          append("$sep${format(elem)}")
+        }
+      }
+
+      fun originStr(origins: List<UElement>): String {
+        val labels = origins.map(::superMethodLabel).distinct()
+        return labels.join(labels.size) { it }
+      }
+
+      val baseStr = baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) -> "$ann (from ${originStr(origins)})" }
+
+      return "${self.annotated} restricts $baseStr"
+    }
+
+    fun explain(error: ConflictingInference<FX>): String
+
+    /** Label for the super method at [origin], e.g. "super method `Base.m(…)`" */
+    fun superMethodLabel(origin: UElement): String {
+      val method = origin as? UMethod
+      return when (val baseName = method?.getContainingUClass()?.javaPsi?.name) {
+        null -> "a super method"
+        else -> "super method `$baseName.${method.name}(…)`"
+      }
+    }
   }
 }
 
