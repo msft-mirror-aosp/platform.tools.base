@@ -16,28 +16,26 @@
 
 package com.android.tools.ui.inspector
 
-import picocli.CommandLine
-
-/** The `--include` vocabulary: every [Facet] by its command-line name, plus `all`, which stands for all of them. */
-internal enum class IncludeFacet(val cliName: String, val facet: Facet?) {
+/**
+ * The `--include` vocabulary: every [Facet] by its command-line name, plus `all`, which stands for all of them. Every CLI that exposes the
+ * UI inspector uses it, so that the same names select the same facets everywhere.
+ */
+enum class IncludeFacet(val cliName: String, val facet: Facet?) {
   ATTRIBUTES("attributes", Facet.ATTRIBUTES),
   SEMANTICS("semantics", Facet.SEMANTICS),
   RESOLUTION_STACK("resolution-stack", Facet.RESOLUTION_STACK),
   SYSTEM_COMPOSABLES("system-composables", Facet.SYSTEM_COMPOSABLES),
-  ALL("all", null),
+  ALL("all", null);
+
+  companion object {
+    /** Returns the [IncludeFacet] named [cliName], ignoring surrounding whitespace, or null if there is none. */
+    fun fromCliName(cliName: String): IncludeFacet? {
+      val trimmed = cliName.trim()
+      return entries.firstOrNull { it.cliName == trimmed }
+    }
+  }
 }
 
 /** The facets [included] asks for: `all` stands for every facet. */
-internal fun requestedFacets(included: Collection<IncludeFacet>): Set<Facet> =
+fun requestedFacets(included: Collection<IncludeFacet>): Set<Facet> =
   if (IncludeFacet.ALL in included) Facet.entries.toSet() else included.mapNotNull { it.facet }.toSet()
-
-/** Converts kebab-case `--include` values into [IncludeFacet]s. */
-internal class IncludeFacetConverter : CommandLine.ITypeConverter<IncludeFacet> {
-  override fun convert(value: String): IncludeFacet {
-    val trimmedValue = value.trim()
-    return IncludeFacet.entries.firstOrNull { it.cliName == trimmedValue }
-      ?: throw CommandLine.TypeConversionException(
-        "Invalid value for --include: '$value'. Expected one of: ${IncludeFacet.entries.joinToString { it.cliName }}."
-      )
-  }
-}

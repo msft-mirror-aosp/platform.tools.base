@@ -44,9 +44,21 @@ class IncludeFacetTest {
   }
 
   @Test
-  fun testIncludeFacetConverterTrimsWhitespace() {
-    val converter = IncludeFacetConverter()
-    assertThat(converter.convert("  semantics ")).isEqualTo(IncludeFacet.SEMANTICS)
-    assertThat(converter.convert("\tattributes\n")).isEqualTo(IncludeFacet.ATTRIBUTES)
+  fun testFromCliNameFindsEachFacet() {
+    for (includeFacet in IncludeFacet.entries) {
+      assertThat(IncludeFacet.fromCliName(includeFacet.cliName)).isEqualTo(includeFacet)
+    }
+  }
+
+  @Test
+  fun testFromCliNameTrimsWhitespace() {
+    assertThat(IncludeFacet.fromCliName("  semantics ")).isEqualTo(IncludeFacet.SEMANTICS)
+    assertThat(IncludeFacet.fromCliName("\tattributes\n")).isEqualTo(IncludeFacet.ATTRIBUTES)
+  }
+
+  @Test
+  fun testFromCliNameUnknownNameIsNull() {
+    assertThat(IncludeFacet.fromCliName("everything")).isNull()
+    assertThat(IncludeFacet.fromCliName("SEMANTICS")).isNull()
   }
 }
