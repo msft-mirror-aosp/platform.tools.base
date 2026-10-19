@@ -115,6 +115,14 @@ public interface ISystemImage {
         return SystemImageTags.hasGooglePlay(getTags(), getAndroidVersion(), getPackage());
     }
 
+    /**
+     * Returns true if the system image has 16 KB page size. Currently, this is indicated by a tag,
+     * but it may become implicit in future API levels.
+     */
+    default boolean has16KbPageSize() {
+        return getTags().contains(SystemImageTags.PAGE_SIZE_16KB);
+    }
+
     /** The sdk package containing this system image. */
     @NonNull
     RepoPackage getPackage();

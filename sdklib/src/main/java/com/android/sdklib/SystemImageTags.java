@@ -105,6 +105,10 @@ public class SystemImageTags {
      */
     public static final IdDisplay TABLET_TAG = IdDisplay.create("tablet", "Tablet");
 
+    /** Tag to apply to system images with 16 KB page size. */
+    public static final IdDisplay PAGE_SIZE_16KB =
+            IdDisplay.create("page_size_16kb", "Page Size 16KB");
+
     /**
      * Tags that indicate a tablet system image. Only TABLET_TAG should be used; any other tag is
      * deprecated.
