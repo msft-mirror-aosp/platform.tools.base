@@ -15064,10 +15064,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bc-jdk18on-bom_1.80.2",
-    pom = "org/bouncycastle/bc-jdk18on-bom/1.80.2/bc-jdk18on-bom-1.80.2.pom",
+    name = "org.bouncycastle.bc-jdk18on-bom_1.86",
+    pom = "org/bouncycastle/bc-jdk18on-bom/1.86/bc-jdk18on-bom-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.80.2",
+    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.86",
     visibility = ["//visibility:public"],
 )
 
@@ -15075,19 +15075,19 @@ maven_import(
     name = "org.bouncycastle.bc-jdk18on-bom",
     classifiers = [],
     original_deps = [],
-    pom = "org/bouncycastle/bc-jdk18on-bom/1.80.2/bc-jdk18on-bom-1.80.2.pom",
+    pom = "org/bouncycastle/bc-jdk18on-bom/1.86/bc-jdk18on-bom-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.80.2",
+    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.86",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bcpkix-jdk18on_1.80.2",
-    pom = "org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.pom",
+    name = "org.bouncycastle.bcpkix-jdk18on_1.86",
+    pom = "org/bouncycastle/bcpkix-jdk18on/1.86/bcpkix-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.86",
     deps = [
-        "org.bouncycastle.bcutil-jdk18on_1.80.2",
+        "org.bouncycastle.bcutil-jdk18on_1.86",
     ],
     visibility = ["//visibility:public"],
 )
@@ -15096,25 +15096,25 @@ maven_import(
     name = "org.bouncycastle.bcpkix-jdk18on",
     classifiers = [],
     jars = [
-        "org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.jar"
+        "org/bouncycastle/bcpkix-jdk18on/1.86/bcpkix-jdk18on-1.86.jar"
     ],
     exports = [
         "org.bouncycastle.bcutil-jdk18on",
     ],
     original_deps = [
-        "org.bouncycastle.bcutil-jdk18on_1.80.2",
+        "org.bouncycastle.bcutil-jdk18on_1.86",
     ],
-    pom = "org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.pom",
+    pom = "org/bouncycastle/bcpkix-jdk18on/1.86/bcpkix-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.86",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bcprov-jdk18on_1.80.2",
-    pom = "org/bouncycastle/bcprov-jdk18on/1.80.2/bcprov-jdk18on-1.80.2.pom",
+    name = "org.bouncycastle.bcprov-jdk18on_1.86",
+    pom = "org/bouncycastle/bcprov-jdk18on/1.86/bcprov-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcprov-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcprov-jdk18on/1.86",
     visibility = ["//visibility:public"],
 )
 
@@ -15122,22 +15122,22 @@ maven_import(
     name = "org.bouncycastle.bcprov-jdk18on",
     classifiers = [],
     jars = [
-        "org/bouncycastle/bcprov-jdk18on/1.80.2/bcprov-jdk18on-1.80.2.jar"
+        "org/bouncycastle/bcprov-jdk18on/1.86/bcprov-jdk18on-1.86.jar"
     ],
     original_deps = [],
-    pom = "org/bouncycastle/bcprov-jdk18on/1.80.2/bcprov-jdk18on-1.80.2.pom",
+    pom = "org/bouncycastle/bcprov-jdk18on/1.86/bcprov-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcprov-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcprov-jdk18on/1.86",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bcutil-jdk18on_1.80.2",
-    pom = "org/bouncycastle/bcutil-jdk18on/1.80.2/bcutil-jdk18on-1.80.2.pom",
+    name = "org.bouncycastle.bcutil-jdk18on_1.86",
+    pom = "org/bouncycastle/bcutil-jdk18on/1.86/bcutil-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcutil-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcutil-jdk18on/1.86",
     deps = [
-        "org.bouncycastle.bcprov-jdk18on_1.80.2",
+        "org.bouncycastle.bcprov-jdk18on_1.86",
     ],
     visibility = ["//visibility:public"],
 )
@@ -15146,17 +15146,17 @@ maven_import(
     name = "org.bouncycastle.bcutil-jdk18on",
     classifiers = [],
     jars = [
-        "org/bouncycastle/bcutil-jdk18on/1.80.2/bcutil-jdk18on-1.80.2.jar"
+        "org/bouncycastle/bcutil-jdk18on/1.86/bcutil-jdk18on-1.86.jar"
     ],
     exports = [
         "org.bouncycastle.bcprov-jdk18on",
     ],
     original_deps = [
-        "org.bouncycastle.bcprov-jdk18on_1.80.2",
+        "org.bouncycastle.bcprov-jdk18on_1.86",
     ],
-    pom = "org/bouncycastle/bcutil-jdk18on/1.80.2/bcutil-jdk18on-1.80.2.pom",
+    pom = "org/bouncycastle/bcutil-jdk18on/1.86/bcutil-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcutil-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcutil-jdk18on/1.86",
     visibility = ["//visibility:public"],
 )
 
@@ -93115,6 +93115,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.bouncycastle.bcpkix-jdk18on_1.80.2",
+    pom = "org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.pom",
+    repo_root_path = "",
+    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.80.2",
+    deps = [
+        "org.bouncycastle.bcutil-jdk18on_1.80.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.bouncycastle.bcprov-jdk15on_1.56",
     pom = "org/bouncycastle/bcprov-jdk15on/1.56/bcprov-jdk15on-1.56.pom",
     repo_root_path = "",
@@ -93171,6 +93182,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.bouncycastle.bcprov-jdk18on_1.80.2",
+    pom = "org/bouncycastle/bcprov-jdk18on/1.80.2/bcprov-jdk18on-1.80.2.pom",
+    repo_root_path = "",
+    repo_path = "org/bouncycastle/bcprov-jdk18on/1.80.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.bouncycastle.bcutil-jdk18on_1.77",
     pom = "org/bouncycastle/bcutil-jdk18on/1.77/bcutil-jdk18on-1.77.pom",
     repo_root_path = "",
@@ -93188,6 +93207,17 @@ maven_artifact(
     repo_path = "org/bouncycastle/bcutil-jdk18on/1.79",
     deps = [
         "org.bouncycastle.bcprov-jdk18on_1.79",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.bouncycastle.bcutil-jdk18on_1.80.2",
+    pom = "org/bouncycastle/bcutil-jdk18on/1.80.2/bcutil-jdk18on-1.80.2.pom",
+    repo_root_path = "",
+    repo_path = "org/bouncycastle/bcutil-jdk18on/1.80.2",
+    deps = [
+        "org.bouncycastle.bcprov-jdk18on_1.80.2",
     ],
     visibility = ["//visibility:public"],
 )

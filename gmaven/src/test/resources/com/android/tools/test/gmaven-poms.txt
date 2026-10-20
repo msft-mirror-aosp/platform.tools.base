@@ -273,8 +273,8 @@ com.android.tools:sdk-common:$BASE_VERSION
     javax.inject:javax.inject:1 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
     org.apache.commons:commons-compress:1.27.1 (runtime)
-    org.bouncycastle:bcpkix-jdk18on:1.80.2 (runtime)
-    org.bouncycastle:bcprov-jdk18on:1.80.2 (runtime)
+    org.bouncycastle:bcpkix-jdk18on:1.86 (runtime)
+    org.bouncycastle:bcprov-jdk18on:1.86 (runtime)
     org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
     org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
@@ -533,8 +533,8 @@ com.android.tools.build:apkzlib:$BUILD_VERSION
     com.android.tools.build:apksig:$BUILD_VERSION (runtime)
     com.google.code.findbugs:jsr305:3.0.2 (runtime)
     com.google.guava:guava:33.4.0-jre (runtime)
-    org.bouncycastle:bcpkix-jdk18on:1.80.2 (runtime)
-    org.bouncycastle:bcprov-jdk18on:1.80.2 (runtime)
+    org.bouncycastle:bcpkix-jdk18on:1.86 (runtime)
+    org.bouncycastle:bcprov-jdk18on:1.86 (runtime)
 
 com.android.tools.build:builder:$BUILD_VERSION
   pomName=com.android.tools.build.builder
@@ -556,8 +556,8 @@ com.android.tools.build:builder:$BUILD_VERSION
     com.android.tools.analytics-library:tracker:$BASE_VERSION (runtime)
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
-    org.bouncycastle:bcpkix-jdk18on:1.80.2 (runtime)
-    org.bouncycastle:bcprov-jdk18on:1.80.2 (runtime)
+    org.bouncycastle:bcpkix-jdk18on:1.86 (runtime)
+    org.bouncycastle:bcprov-jdk18on:1.86 (runtime)
     javax.inject:javax.inject:1 (runtime)
     org.ow2.asm:asm-commons:9.9 (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
