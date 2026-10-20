@@ -16,8 +16,11 @@
 package com.android.jdwptracer;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -103,10 +106,27 @@ public class JDWPTracer {
             return;
         }
 
-        Path outputPath = outputFolder.resolve("perfetto-trace-" + session.name() + ".json");
-        SystraceOutput.genOutput(session, outputPath);
-        log.info("JDWTrace written to '" + outputPath.toAbsolutePath() + "'");
+        try {
+            Files.createDirectories(outputFolder);
+            Path outputPath =
+                    Files.createTempFile(
+                            outputFolder,
+                            "perfetto-trace-" + sanitizeSessionName(session.name()) + "-",
+                            ".json");
+            SystraceOutput.genOutput(session, outputPath);
+            log.info("JDWTrace written to '" + outputPath.toAbsolutePath() + "'");
+        } catch (IOException e) {
+            log.warn("Unable to write JDWP trace", e);
+        }
         session = new Session(log);
+    }
+
+    @NonNull
+    static String sanitizeSessionName(@Nullable String name) {
+        if (name == null || name.isEmpty()) {
+            return "unknown";
+        }
+        return name.replaceAll("[^A-Za-z0-9_.-]", "_").replaceAll("\\.{2,}", "_");
     }
 
     /**

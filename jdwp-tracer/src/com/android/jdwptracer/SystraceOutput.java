@@ -20,9 +20,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +36,13 @@ class SystraceOutput {
 
     static void genOutput(@NonNull Session session, @NonNull Path path) {
         List<Event> events = session.events();
-        try {
-            FileWriter out = new FileWriter(path.toAbsolutePath().toString());
+        try (Writer out =
+                Files.newBufferedWriter(
+                        path,
+                        StandardCharsets.UTF_8,
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.TRUNCATE_EXISTING,
+                        LinkOption.NOFOLLOW_LINKS)) {
             JsonArray root = new JsonArray();
             for (int i = 0; i < events.size(); i++) {
                 Event event = events.get(i);
@@ -58,7 +67,6 @@ class SystraceOutput {
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             out.write(gson.toJson(root));
             out.flush();
-            out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
