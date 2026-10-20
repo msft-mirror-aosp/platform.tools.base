@@ -9,7 +9,7 @@ architecture in Android Studio's Bazel build system.
 
 TypeScript and Node.js support is integrated into the Bazel build system using modern Bzlmod rules:
 
-* **`@rules_nodejs`**: Manages a pinned, hermetic Node.js runtime toolchain (Node 20.14.0).
+* **`@rules_nodejs`**: Manages a pinned, hermetic Node.js runtime toolchain.
   Developers do not need Node.js or npm installed locally.
 * **`@aspect_rules_js`**: Provides hermetic npm package management using `pnpm` lockfiles,
   translating npm packages into isolated Bazel targets and generating virtual `node_modules` trees.
@@ -35,7 +35,7 @@ workspace** rooted in `tools/base/bazel/`.
 | **`tools/base/bazel/pnpm-workspace.yaml`** | Defines member package locations across repositories (e.g. `../../vendor/google/android-vsix`). |
 | **`tools/base/bazel/pnpm-lock.yaml`** | The central multi-package lockfile pinning exact versions and integrity checksums for all npm packages in the workspace. |
 | **`tools/base/bazel/BUILD`** | Calls `npm_link_all_packages(name = "node_modules")` for the root package and exposes the `//tools/base/bazel:pnpm_update` target. |
-| **`tools/base/bazel/toplevel.MODULE.bazel`** | Registers `@aspect_bazel_lib` (2.22.5), `@rules_nodejs`, `@aspect_rules_js`, `@aspect_rules_ts`, Node 20.14.0, `pnpm` 9.7.0, and `npm.npm_translate_lock`. |
+| **`tools/base/bazel/toplevel.MODULE.bazel`** | Registers `@aspect_bazel_lib`, `@rules_nodejs`, `@aspect_rules_js`, `@aspect_rules_ts`, Node.js, `pnpm`, and `npm.npm_translate_lock`. |
 | **`tools/base/bazel/common.bazelrc`** | Sets `--@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig` so `ts_project` adheres to local `tsconfig.json` settings. |
 | **`tools/base/bazel/ci/data/downloader.cfg`** | Configures network proxy and airlock rules for CI, allowlisting `registry.npmjs.org`, `us-npm.pkg.dev`, and `nodejs.org`. |
 
