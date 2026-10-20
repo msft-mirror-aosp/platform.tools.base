@@ -169,9 +169,10 @@ This is the path of preference folder expected by the Android tools."""
 
     // We no longer default to XDG_CONFIG_HOME, as ".android" is not a config directory
     // and a multitude of other tools do not support it, creating inconsistencies, but
-    // if we find it and it contains regular files we keep using it for backwards compatibility
+    // if we find it, and it contains regular files under the "avd" subdirectory, we keep
+    // using it for backwards compatibility.
     val legacy = pathLocator.firstPathOf(Global.XDG_CONFIG_HOME)?.resolve(FOLDER_DOT_ANDROID)
-    if (legacy != null && legacy.containsRegularFiles()) {
+    if (legacy != null && legacy.resolve("avd").containsRegularFiles()) {
       return legacy
     }
 
