@@ -62,17 +62,6 @@ def find_test_targets(
   """
   gerrit_info = gerrit.get_gerrit_info(build_env)
 
-  try:
-    impacted_targets_info = impacted_targets.get_impacted_targets_info(
-        build_env,
-        gerrit_info,
-        base_targets,
-        test_flag_filters,
-    )
-  except impacted_targets.ImpactedTargetsNotFoundError as e:
-    logging.warning('Failed to find impacted test targets: %s', e)
-    impacted_targets_info = None
-
   runs_per_test_info = runs_per_test.get_runs_per_test_info(
       build_env,
       gerrit_info,
@@ -109,6 +98,17 @@ def find_test_targets(
     logging.warning('Failed to find failed tests: %s', e)
 
   # Finally, try impacted targets.
+  try:
+    impacted_targets_info = impacted_targets.get_impacted_targets_info(
+        build_env,
+        gerrit_info,
+        base_targets,
+        test_flag_filters,
+    )
+  except impacted_targets.ImpactedTargetsNotFoundError as e:
+    logging.warning('Failed to find impacted test targets: %s', e)
+    impacted_targets_info = None
+
   if impacted_targets_info:
     labels = [t.label for t in impacted_targets_info.get_filtered_targets()]
     logging.info('Found %d impacted targets', len(labels))

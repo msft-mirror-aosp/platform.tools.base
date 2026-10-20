@@ -1,6 +1,7 @@
 """Tests for impacted_targets."""
 
 import json
+import os
 import pathlib
 import subprocess
 from typing import Iterable, List
@@ -174,11 +175,18 @@ class ImpactedTargetsTest(absltest.TestCase):
     )
 
   def test_impacted_targets_info_with_real_bazel_diff(self):
-    object.__setattr__(self.build_env, 'bazel_path', '/bin/true')
+    if os.name == 'nt':
+      fake_bazel = self.build_env.tmp_path / 'fake_bazel.bat'
+      fake_bazel.write_text('@echo off\necho fake_output_base\n')
+    else:
+      fake_bazel = self.build_env.tmp_path / 'fake_bazel.sh'
+      fake_bazel.write_text('#!/bin/sh\necho fake_output_base\n')
+      fake_bazel.chmod(0o755)
+    object.__setattr__(self.build_env, 'bazel_path', str(fake_bazel))
     self._mock_generate_hash_file(
         json.dumps({
             '//pkg:target1': 'Rule#a2~a2',
-            '//pkg:target2': 'Rule#b1~b2',
+            '//pkg:target2': 'Rule#b2~b1',
         }),
         deps_contents=json.dumps({'//pkg:target2': ['//pkg:target1']}),
     )
@@ -211,6 +219,31 @@ class ImpactedTargetsTest(absltest.TestCase):
         info.get_filtered_targets(),
         [impacted_targets.ImpactedTarget('//pkg:target2', 1, 0)],
     )
+
+  def test_missing_base_hash_skips_generate_hashes(self):
+    mock_generate = self._mock_generate_hash_file('hash-file')
+    with self.assertRaises(impacted_targets.ImpactedTargetsNotFoundError):
+      impacted_targets.get_impacted_targets_info(
+          self.build_env,
+          gerrit.GerritInfo(
+              _build_env=self.build_env, changes=[], changes_hash=''
+          ),
+          [],
+          '',
+      )
+    mock_generate.assert_not_called()
+
+  def test_incremental_build_fallback_to_gcs(self):
+    parent_hash_path = self.build_env.tmp_path / 'parent.json'
+    parent_hash_path.write_text('parent-hash-file')
+    gce.upload_to_gcs(
+        parent_hash_path,
+        'adt-byob',
+        'bazel-diff-hashes/v8/789-studio-test.json',
+    )
+    with mock.patch.dict(os.environ, {'INCREMENTAL_BUILD': 'true'}):
+      base_hash_path = impacted_targets.get_base_hash_file(self.build_env)
+    self.assertEqual(pathlib.Path(base_hash_path).read_text(), 'parent-hash-file')
 
 
 if __name__ == "__main__":

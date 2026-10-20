@@ -18,7 +18,7 @@ from tools.base.bazel.ci.presubmit import gerrit
 _BUCKET = 'adt-byob'
 _FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
 _LOCAL_REPOSITORIES = [
-    'maven',
+    '@maven',
 ]
 _INCREMENTAL_BAZEL_DIFF_HASH = 'out/bazel-diff-hashes.json'
 
@@ -208,10 +208,9 @@ def get_base_hash_file(build_env: bazel.BuildEnv) -> str:
     if base_hashes_path.exists():
       logging.info('Found base hash file in incremental out/')
       return str(base_hashes_path)
-    else:
-      raise ImpactedTargetsNotFoundError(
-          'base hash file not found in incremental out/'
-      )
+    logging.warning(
+        'Base hash file not found in incremental out/, falling back to GCS'
+    )
 
   reference_bid = gce.get_reference_build_id(
       build_env.build_number,
@@ -254,6 +253,10 @@ def _find_impacted_targets(
   Raises:
     ImpactedTargetsNotFoundError: If impacted targets could not be determined.
   """
+  # Resolve the base hash file before running generate-hashes (which is a
+  # long-running operation taking several minutes) so we fail fast when the
+  # base hash file is unavailable.
+  base_hashes = get_base_hash_file(build_env)
   with tempfile.TemporaryDirectory() as temp_dir:
     temp_path = pathlib.Path(temp_dir)
     dep_edges = temp_path / 'dep-edges.json'
@@ -270,7 +273,7 @@ def _find_impacted_targets(
     try:
       bazel_diff.get_impacted_targets(
           build_env,
-          get_base_hash_file(build_env),
+          base_hashes,
           current_hashes,
           dep_edges,
           impacted_targets,

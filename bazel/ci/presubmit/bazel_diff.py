@@ -63,10 +63,18 @@ def get_impacted_targets(
 ) -> None:
   """Generates the list of impacted targets given base and current hash file paths."""
   start = time.time()
-  _run([
+  args = [
       os.environ['BAZEL_DIFF_BINARY'],
       '--verbose',
       'get-impacted-targets',
+      '--bazelPath',
+      build_env.bazel_path,
+      '--workspacePath',
+      build_env.workspace_dir,
+  ]
+  if build_env.startup_options:
+    args.extend(['--bazelStartupOptions', ' '.join(build_env.startup_options)])
+  args.extend([
       '--startingHashes',
       starting_hashes_path,
       '--finalHashes',
@@ -76,5 +84,6 @@ def get_impacted_targets(
       '--output',
       str(output_path),
   ])
+  _run(args)
   end = time.time()
   logging.info('get-impacted-targets took %d seconds', end - start)
