@@ -21,9 +21,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.io.CancellableFileIo;
+
 import com.google.common.base.Objects;
 import com.google.common.hash.Hashing;
 import com.google.common.io.CharStreams;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -31,6 +33,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Comparator;
+import java.util.regex.Pattern;
+
 import javax.xml.bind.annotation.XmlTransient;
 
 /**
@@ -44,6 +48,8 @@ public abstract class License implements Comparable<License> {
      * The name of the directory used to store tokens indicating approval of licenses.
      */
     public static final String LICENSE_DIR = "licenses";
+
+    private static final Pattern SAFE_ID = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_.\\-]{0,127}");
 
     /**
      * Gets the ID of this license, used to refer to it from within a {@link RepoPackage}.
@@ -133,6 +139,15 @@ public abstract class License implements Comparable<License> {
                 Objects.equal(getId(), other.getId());
     }
 
+    @Nullable
+    private Path getLicenseFile(@Nullable Path repositoryRoot) {
+        String id = getId();
+        if (repositoryRoot == null || !SAFE_ID.matcher(id).matches()) {
+            return null;
+        }
+        return repositoryRoot.resolve(LICENSE_DIR).resolve(id);
+    }
+
     /**
      * Checks whether this license has previously been accepted.
      *
@@ -140,11 +155,10 @@ public abstract class License implements Comparable<License> {
      * @return true if this license has already been accepted
      */
     public boolean checkAccepted(@Nullable Path repositoryRoot) {
-        if (repositoryRoot == null) {
+        Path licenseFile = getLicenseFile(repositoryRoot);
+        if (licenseFile == null) {
             return false;
         }
-        Path licenseDir = repositoryRoot.resolve(LICENSE_DIR);
-        Path licenseFile = licenseDir.resolve(getId());
         try (InputStreamReader licenseReader =
                 new InputStreamReader(CancellableFileIo.newInputStream(licenseFile))) {
             for (String hash : CharStreams.readLines(licenseReader)) {
@@ -165,19 +179,19 @@ public abstract class License implements Comparable<License> {
      * @return true if the acceptance was persisted successfully.
      */
     public boolean setAccepted(@Nullable Path repositoryRoot) {
-        if (repositoryRoot == null) {
+        Path licenseFile = getLicenseFile(repositoryRoot);
+        if (licenseFile == null) {
             return false;
         }
         if (checkAccepted(repositoryRoot)) {
             return true;
         }
-        Path licenseDir = repositoryRoot.resolve(LICENSE_DIR);
+        Path licenseDir = licenseFile.getParent();
         if (Files.exists(licenseDir) && !Files.isDirectory(licenseDir)) {
             return false;
         }
         try {
             Files.createDirectories(licenseDir);
-            Path licenseFile = licenseDir.resolve(getId());
             try (OutputStream os =
                     Files.newOutputStream(
                             licenseFile, StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
