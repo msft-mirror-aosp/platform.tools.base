@@ -20,7 +20,6 @@ import com.android.tools.lint.checks.fx.utils.assoc
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
-import kotlinx.collections.immutable.persistentHashMapOf
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 
@@ -169,7 +168,7 @@ private typealias FunEnv = PersistentMap<String, PersistentList<Type.MethodRef>>
 /** An explicit substitution explaining free type variables */
 internal typealias Subst<FX> = PersistentMap<Type.Sym.Name, Type<FX>>
 
-internal val emptySubst: Subst<Nothing> = persistentHashMapOf()
+internal val emptySubst: Subst<Nothing> = persistentMapOf()
 
 private fun <FX> emptyEnv(): TermEnv<FX> = persistentMapOf()
 
