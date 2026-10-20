@@ -23,7 +23,9 @@ class ImpactedTargetsTest(absltest.TestCase):
     self.build_env = self.enter_context(fake_build_env.make_fake_build_env())
     self.gce = self.enter_context(fake_gce.make_fake_gce(self, self.build_env))
 
-  def _mock_generate_hash_file(self, contents: str) -> mock.Mock:
+  def _mock_generate_hash_file(
+      self, contents: str, deps_contents: str = '{}'
+  ) -> mock.Mock:
     def func(
         build_env: bazel.BuildEnv,
         external_repos: Iterable[str],
@@ -31,8 +33,10 @@ class ImpactedTargetsTest(absltest.TestCase):
         deps_output_path: pathlib.Path | None = None,
         modified_files_path: pathlib.Path | None = None,
     ) -> None:
-      del build_env, external_repos
+      del build_env, external_repos, modified_files_path
       pathlib.Path(path).write_text(contents)
+      if deps_output_path:
+        deps_output_path.write_text(deps_contents)
 
     return self.enter_context(
         mock.patch.object(bazel_diff, 'generate_hash_file', side_effect=func)
@@ -167,6 +171,45 @@ class ImpactedTargetsTest(absltest.TestCase):
         mock.ANY,
         deps_output_path=None,
         modified_files_path=mock.ANY,
+    )
+
+  def test_impacted_targets_info_with_real_bazel_diff(self):
+    object.__setattr__(self.build_env, 'bazel_path', '/bin/true')
+    self._mock_generate_hash_file(
+        json.dumps({
+            '//pkg:target1': 'Rule#a2~a2',
+            '//pkg:target2': 'Rule#b1~b2',
+        }),
+        deps_contents=json.dumps({'//pkg:target2': ['//pkg:target1']}),
+    )
+    self.build_env.bazel_cquery.return_value.stdout = (
+        b'//pkg:target2 (configA)\n'
+    )
+
+    parent_hash_path = self.build_env.tmp_path / 'parent.json'
+    parent_hash_path.write_text(
+        json.dumps({
+            '//pkg:target1': 'Rule#a1~a1',
+            '//pkg:target2': 'Rule#b1~b1',
+        })
+    )
+    gce.upload_to_gcs(
+        parent_hash_path,
+        'adt-byob',
+        'bazel-diff-hashes/v8/789-studio-test.json',
+    )
+
+    info = impacted_targets.get_impacted_targets_info(
+        self.build_env,
+        gerrit.GerritInfo(
+            _build_env=self.build_env, changes=[], changes_hash=''
+        ),
+        [],
+        '',
+    )
+    self.assertEqual(
+        info.get_filtered_targets(),
+        [impacted_targets.ImpactedTarget('//pkg:target2', 1, 0)],
     )
 
 
