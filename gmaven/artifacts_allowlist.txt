@@ -1,19 +1,12 @@
-  androidx/databinding:databinding-adapters
   androidx/databinding:databinding-common
   androidx/databinding:databinding-compiler
   androidx/databinding:databinding-compiler-common
-  androidx/databinding:databinding-ktx
-  androidx/databinding:databinding-runtime
-  androidx/databinding:viewbinding
   com/android/ai-pack:com.android.ai-pack.gradle.plugin
   com/android/application:com.android.application.gradle.plugin
   com/android/asset-pack-bundle:com.android.asset-pack-bundle.gradle.plugin
   com/android/asset-pack:com.android.asset-pack.gradle.plugin
   com/android/built-in-kotlin:com.android.built-in-kotlin.gradle.plugin
-  com/android/databinding:adapters
   com/android/databinding:baseLibrary
-  com/android/databinding:library
-  com/android/databinding:viewbinding
   com/android/dynamic-feature:com.android.dynamic-feature.gradle.plugin
   com/android/experimental/built-in-kotlin:com.android.experimental.built-in-kotlin.gradle.plugin
   com/android/fused-library:com.android.fused-library.gradle.plugin

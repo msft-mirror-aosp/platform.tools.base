@@ -56,3 +56,10 @@ const val DESUGAR_DEPENDENCY_VERSION = "1.1.5"
 const val DESUGAR_NIO_DEPENDENCY_VERSION = "2.0.2"
 
 const val COM_GOOGLE_ANDROID_MATERIAL_MATERIAL_VERSION = "1.9.0"
+
+/**
+ * The version of the prebuilt data binding runtime libraries that AGP adds to projects that use
+ * data binding. Keep in sync with DATA_BINDING_RUNTIME_VERSION in
+ * tools/data-binding/runtime_version.bzl.
+ */
+const val DATA_BINDING_RUNTIME_VERSION = "9.4.1"

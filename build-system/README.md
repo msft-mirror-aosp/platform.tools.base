@@ -28,8 +28,7 @@ The root of that project is `tools/`
 ***
 
 To build AGP for use in other projects, use the "Execute Gradle Task" action to
-run `:publishAndroidGradleLocal` (or `:publishLocal` if you also need the
-databinding libraries)
+run `:publishAndroidGradleLocal`.
 
 The above command publishes the plugin to a local Maven repository located in
 `../out/repo/`, and it is also done as part of running the integration tests.

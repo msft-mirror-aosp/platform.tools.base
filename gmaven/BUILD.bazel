@@ -126,7 +126,6 @@ merged_zip(
     srcs = [
         ":gmaven_with_vendor.zip",
         ":zips_without_vendor",
-        "//tools/data-binding:data_binding_runtime.zip",
     ],
 )
 

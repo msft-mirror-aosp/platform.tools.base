@@ -103,20 +103,6 @@ public class GmavenZipTest {
 
     private static final Set<String> MISSING_LICENSE =
             ImmutableSet.of(
-                    "androidx/databinding/databinding-adapters",
-                    "androidx/databinding/databinding-adapters:sources",
-                    "androidx/databinding/databinding-ktx",
-                    "androidx/databinding/databinding-ktx:sources",
-                    "androidx/databinding/databinding-runtime",
-                    "androidx/databinding/databinding-runtime:sources",
-                    "androidx/databinding/viewbinding",
-                    "androidx/databinding/viewbinding:sources",
-                    "com/android/databinding/library",
-                    "com/android/databinding/library:sources",
-                    "com/android/databinding/viewbinding",
-                    "com/android/databinding/viewbinding:sources",
-                    "com/android/databinding/adapters",
-                    "com/android/databinding/adapters:sources",
                     "com/android/signflinger",
                     "com/android/signflinger:sources",
                     "com/android/tools/emulator/proto",

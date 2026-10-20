@@ -44737,6 +44737,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.databinding.databinding-adapters_9.4.1",
+    pom = "androidx/databinding/databinding-adapters/9.4.1/databinding-adapters-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/databinding-adapters/9.4.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "androidx.databinding.databinding-common_9.4.1",
+        "androidx.databinding.databinding-runtime_9.4.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.databinding.databinding-common_3.5.0",
     pom = "androidx/databinding/databinding-common/3.5.0/databinding-common-3.5.0.pom",
     repo_root_path = "",
@@ -44973,6 +44986,14 @@ maven_artifact(
     pom = "androidx/databinding/databinding-common/9.4.0/databinding-common-9.4.0.pom",
     repo_root_path = "",
     repo_path = "androidx/databinding/databinding-common/9.4.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.databinding.databinding-common_9.4.1",
+    pom = "androidx/databinding/databinding-common/9.4.1/databinding-common-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/databinding-common/9.4.1",
     visibility = ["//visibility:public"],
 )
 
@@ -45673,6 +45694,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.databinding.databinding-ktx_9.4.1",
+    pom = "androidx/databinding/databinding-ktx/9.4.1/databinding-ktx-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/databinding-ktx/9.4.1",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-android_1.4.1",
+        "androidx.lifecycle.lifecycle-runtime-ktx_2.6.1",
+        "androidx.lifecycle.lifecycle-livedata_2.6.1",
+        "androidx.lifecycle.lifecycle-process_2.6.1",
+        "androidx.lifecycle.lifecycle-service_2.6.1",
+        "androidx.lifecycle.lifecycle-viewmodel_2.6.1",
+        "androidx.databinding.databinding-runtime_9.4.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.databinding.databinding-runtime_8.5.0",
     pom = "androidx/databinding/databinding-runtime/8.5.0/databinding-runtime-8.5.0.pom",
     repo_root_path = "",
@@ -45709,6 +45748,21 @@ maven_artifact(
     deps = [
         "androidx.databinding.databinding-common_9.1.0",
         "androidx.databinding.viewbinding_9.1.0",
+        "androidx.lifecycle.lifecycle-runtime_2.6.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "androidx.collection.collection_1.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.databinding.databinding-runtime_9.4.1",
+    pom = "androidx/databinding/databinding-runtime/9.4.1/databinding-runtime-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/databinding-runtime/9.4.1",
+    deps = [
+        "androidx.databinding.databinding-common_9.4.1",
+        "androidx.databinding.viewbinding_9.4.1",
         "androidx.lifecycle.lifecycle-runtime_2.6.1",
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
         "androidx.collection.collection_1.0.0",
@@ -45777,6 +45831,18 @@ maven_artifact(
     pom = "androidx/databinding/viewbinding/9.1.0/viewbinding-9.1.0.pom",
     repo_root_path = "",
     repo_path = "androidx/databinding/viewbinding/9.1.0",
+    deps = [
+        "androidx.annotation.annotation_1.0.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.databinding.viewbinding_9.4.1",
+    pom = "androidx/databinding/viewbinding/9.4.1/viewbinding-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/viewbinding/9.4.1",
     deps = [
         "androidx.annotation.annotation_1.0.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
@@ -57293,6 +57359,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.databinding.adapters_9.4.1",
+    pom = "com/android/databinding/adapters/9.4.1/adapters-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "com/android/databinding/adapters/9.4.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.android.databinding.baseLibrary_9.4.1",
+        "com.android.databinding.library_9.4.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.databinding.baseLibrary_3.1.4",
     pom = "com/android/databinding/baseLibrary/3.1.4/baseLibrary-3.1.4.pom",
     repo_root_path = "",
@@ -57537,6 +57616,14 @@ maven_artifact(
     pom = "com/android/databinding/baseLibrary/9.4.0/baseLibrary-9.4.0.pom",
     repo_root_path = "",
     repo_path = "com/android/databinding/baseLibrary/9.4.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.databinding.baseLibrary_9.4.1",
+    pom = "com/android/databinding/baseLibrary/9.4.1/baseLibrary-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "com/android/databinding/baseLibrary/9.4.1",
     visibility = ["//visibility:public"],
 )
 
@@ -57885,6 +57972,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.databinding.library_9.4.1",
+    pom = "com/android/databinding/library/9.4.1/library-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "com/android/databinding/library/9.4.1",
+    deps = [
+        "com.android.databinding.viewbinding_9.4.1",
+        "android.arch.lifecycle.runtime_1.0.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.android.support.support-core-utils_26.1.0",
+        "com.android.databinding.baseLibrary_9.4.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.databinding.viewbinding_7.0.0",
     pom = "com/android/databinding/viewbinding/7.0.0/viewbinding-7.0.0.pom",
     repo_root_path = "",
@@ -58133,6 +58235,18 @@ maven_artifact(
     pom = "com/android/databinding/viewbinding/9.2.0/viewbinding-9.2.0.pom",
     repo_root_path = "",
     repo_path = "com/android/databinding/viewbinding/9.2.0",
+    deps = [
+        "com.android.support.support-annotations_26.1.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.databinding.viewbinding_9.4.1",
+    pom = "com/android/databinding/viewbinding/9.4.1/viewbinding-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "com/android/databinding/viewbinding/9.4.1",
     deps = [
         "com.android.support.support-annotations_26.1.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",

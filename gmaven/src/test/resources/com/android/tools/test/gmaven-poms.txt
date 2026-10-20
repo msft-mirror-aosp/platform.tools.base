@@ -1,11 +1,3 @@
-androidx.databinding:databinding-adapters:$BUILD_VERSION
-  pomName=
-  description=
-  dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
-    androidx.databinding:databinding-common:$BUILD_VERSION (compile)
-    androidx.databinding:databinding-runtime:$BUILD_VERSION (runtime)
-
 androidx.databinding:databinding-common:$BUILD_VERSION
   pomName=androidx.databinding.databinding-common
   description=Shared library between Data Binding runtime lib and compiler
@@ -41,36 +33,6 @@ androidx.databinding:databinding-compiler-common:$BUILD_VERSION
     commons-io:commons-io:2.16.1 (runtime)
     org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-
-androidx.databinding:databinding-ktx:$BUILD_VERSION
-  pomName=
-  description=
-  dependencies:
-    org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1 (compile)
-    androidx.lifecycle:lifecycle-runtime-ktx:2.6.1 (compile)
-    androidx.lifecycle:lifecycle-livedata:2.6.1 (compile)
-    androidx.lifecycle:lifecycle-process:2.6.1 (compile)
-    androidx.lifecycle:lifecycle-service:2.6.1 (compile)
-    androidx.lifecycle:lifecycle-viewmodel:2.6.1 (compile)
-    androidx.databinding:databinding-runtime:$BUILD_VERSION (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
-
-androidx.databinding:databinding-runtime:$BUILD_VERSION
-  pomName=
-  description=
-  dependencies:
-    androidx.databinding:databinding-common:$BUILD_VERSION (compile)
-    androidx.databinding:viewbinding:$BUILD_VERSION (compile)
-    androidx.lifecycle:lifecycle-runtime:2.6.1 (compile)
-    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
-    androidx.collection:collection:1.0.0 (runtime)
-
-androidx.databinding:viewbinding:$BUILD_VERSION
-  pomName=
-  description=
-  dependencies:
-    androidx.annotation:annotation:1.0.0 (compile)
-    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
 
 com.android:signflinger:$BUILD_VERSION
   pomName=com.android.signflinger
@@ -116,34 +78,9 @@ com.android.built-in-kotlin:com.android.built-in-kotlin.gradle.plugin:$BUILD_VER
   dependencies:
     com.android.tools.build:gradle-kotlin:$BUILD_VERSION ()
 
-com.android.databinding:adapters:$BUILD_VERSION
-  pomName=
-  description=
-  dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
-    com.android.databinding:baseLibrary:$BUILD_VERSION (compile)
-    com.android.databinding:library:$BUILD_VERSION (runtime)
-
 com.android.databinding:baseLibrary:$BUILD_VERSION
   pomName=com.android.databinding.baseLibrary
   description=Shared library between Data Binding runtime lib and compiler
-
-com.android.databinding:library:$BUILD_VERSION
-  pomName=
-  description=
-  dependencies:
-    com.android.databinding:viewbinding:$BUILD_VERSION (compile)
-    android.arch.lifecycle:runtime:1.0.3 (compile)
-    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
-    com.android.support:support-core-utils:26.1.0 (runtime)
-    com.android.databinding:baseLibrary:$BUILD_VERSION (runtime)
-
-com.android.databinding:viewbinding:$BUILD_VERSION
-  pomName=
-  description=
-  dependencies:
-    com.android.support:support-annotations:26.1.0 (compile)
-    org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (compile)
 
 com.android.dynamic-feature:com.android.dynamic-feature.gradle.plugin:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
