@@ -465,7 +465,7 @@ com.android.tools.apkdeployer:apkdeployer:$BUILD_VERSION
     com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android:zipflinger:$BUILD_VERSION (runtime)
-    com.android.tools:r8:9.5.26 (runtime)
+    com.android.tools:r8:9.6.0-alpha06 (runtime)
     com.google.guava:guava:33.4.0-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains:annotations:23.0.0 (runtime)
