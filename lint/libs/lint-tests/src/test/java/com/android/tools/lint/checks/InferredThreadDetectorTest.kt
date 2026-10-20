@@ -6188,6 +6188,62 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test Kotlin SAM constructors applied to callable references`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+
+            public interface JCallback {
+              @UiThread void run();
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            fun interface KCallback {
+              @UiThread fun run()
+            }
+
+            @WorkerThread fun work() { }
+
+            fun register(c: JCallback) { }
+
+            fun javaSamReturn(): JCallback = JCallback(::work) // ERROR
+            fun kotlinSamReturn(): KCallback = KCallback(::work) // ERROR
+            fun javaSamArgument() = register(JCallback(::work)) // ERROR
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/KCallback.kt:14: Error: Call must be from @WorkerThread, but super method JCallback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+        fun javaSamReturn(): JCallback = JCallback(::work) // ERROR
+                                                   ~~~~~~
+        src/test/pkg/KCallback.kt:15: Error: Call must be from @WorkerThread, but super method KCallback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+        fun kotlinSamReturn(): KCallback = KCallback(::work) // ERROR
+                                                     ~~~~~~
+        src/test/pkg/KCallback.kt:16: Error: Call must be from @WorkerThread, but super method JCallback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+        fun javaSamArgument() = register(JCallback(::work)) // ERROR
+                                                   ~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testFunctionalInterfacesKotlin_indirect() {
     lint()
       .files(

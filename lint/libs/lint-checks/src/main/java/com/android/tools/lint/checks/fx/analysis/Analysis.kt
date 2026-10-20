@@ -67,6 +67,7 @@ import com.android.tools.lint.checks.fx.utils.possibilityLattice
 import com.android.tools.lint.checks.fx.utils.pure
 import com.android.tools.lint.checks.fx.utils.unionedWith
 import com.android.tools.lint.checks.isEffectivelyFinal
+import com.android.tools.lint.checks.isFunInterfaceConversion
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.android.tools.lint.detector.api.asCall
@@ -587,10 +588,10 @@ internal open class Analysis<FX : Any>(
 
       fun call(call: UCallExpression): Result<Type<FX>, R> {
         val method = call.resolveToUElement()
-        val samLambda = if (method == null) call.samConvertedLambda() else null
+        val samArg = if (method == null) call.samConvertedArgument() else null
         return when {
-          // Kotlin's `Intf { … }` is the lambda, as far as effects go
-          samLambda != null -> loop(samLambda)
+          // Kotlin's `Intf { … }` or `Intf(::f)` is its argument, as far as effects go
+          samArg != null -> loop(samArg)
           // constructor call, with constructor definition missing
           call.isConstructorCall() && method == null -> pure(getType(call))
           method is UMethod -> {
@@ -1395,14 +1396,17 @@ internal open class Analysis<FX : Any>(
   /** [e]'s enclosing call, with the callee and the parameter [e] is passed as resolved once, for the resolution-hungry helpers to share */
   private fun argumentSiteOf(e: UExpression): ArgumentSite? {
     val call = e.uastParent as? UCallExpression ?: return null
-    return if (call.samConvertedLambda() == e) argumentSiteOf(call) else ArgumentSite(call, e)
+    return if (call.samConvertedArgument() == e) argumentSiteOf(call) else ArgumentSite(call, e)
   }
 
-  /** The lambda in Kotlin's `Intf { ... }`, which UAST presents as an unresolvable constructor call of the interface */
-  private fun UCallExpression.samConvertedLambda(): ULambdaExpression? {
-    if (!isConstructorCall() || resolve() != null) return null
-    val lambda = valueArguments.singleOrNull() as? ULambdaExpression ?: return null
-    return lambda.takeIf { (classReference?.resolve() as? PsiClass)?.isInterface == true }
+  /**
+   * The lambda or callable reference in Kotlin's `Intf { ... }` or `Intf(::f)`, which UAST presents as an unresolvable constructor call of
+   * the interface
+   */
+  private fun UCallExpression.samConvertedArgument(): UExpression? {
+    if (!isConstructorCall()) return null
+    val arg = valueArguments.singleOrNull()?.takeIf { it is ULambdaExpression || it is UCallableReferenceExpression } ?: return null
+    return arg.takeIf { isFunInterfaceConversion() }
   }
 
   private class ArgumentSite(val call: UCallExpression, arg: UExpression) {
@@ -1433,7 +1437,7 @@ internal open class Analysis<FX : Any>(
         e is ULambdaExpression -> typeOf(e.functionalInterfaceType)
         else ->
           when (val parent = e.uastParent) {
-            is UCallExpression -> typeOf(site?.param?.type)
+            is UCallExpression -> if (parent.samConvertedArgument() == e) typeOf(parent.getExpressionType()) else null
             is ULocalVariable -> if (e.isDelegateOf(parent)) null else typeOf((parent.javaPsi as PsiVariable).type)
             else -> null
           }
