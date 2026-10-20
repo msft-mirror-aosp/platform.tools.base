@@ -76,6 +76,19 @@ final class HelperConfig {
     static final String INTERNAL_PERMISSION_SUFFIX = ".permission.LEAK_CANARY_INTERNAL";
 
     // Reflection Constants
+    //
+    // Every LeakCanary class this library reaches through reflection must have a *_CLASS constant
+    // here, including classes only reached through getClass() (e.g. ObjectWatcher,
+    // LeakCanary$Config), and a matching -keep rule in proguard-rules.pro. ProguardRulesTest reads
+    // these constants and fails if a rule is missing, so apps that minify their debug build keep
+    // working (b/512795977).
+
+    /** Runtime class of LeakCanary.getConfig(); reached through getClass(). */
+    static final String LEAK_CANARY_CONFIG_CLASS = "leakcanary.LeakCanary$Config";
+
+    /** Runtime class of AppWatcher.getObjectWatcher(); reached through getClass(). */
+    static final String OBJECT_WATCHER_CLASS = "leakcanary.ObjectWatcher";
+
     static final String LEAK_CANARY_CLASS = "leakcanary.LeakCanary";
     static final String INSTANCE_FIELD = "INSTANCE";
     static final String GET_CONFIG_METHOD = "getConfig";

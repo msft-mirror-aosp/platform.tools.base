@@ -47,6 +47,8 @@ android {
         targetSdkVersion 34
         versionCode 1
         versionName project.version
+        // Consumer R8/ProGuard rules, packaged into the AAR as proguard.txt.
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     buildTypes {

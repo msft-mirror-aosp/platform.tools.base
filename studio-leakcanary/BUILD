@@ -37,6 +37,8 @@ android_library(
         "8",
     ],
     manifest = "src/main/AndroidManifest.xml",
+    # Consumer R8/ProGuard rules, packaged into the AAR as proguard.txt.
+    proguard_specs = ["proguard-rules.pro"],
     visibility = ["//visibility:public"],
     deps = [
         # Dependency on the STUB, so it goes into the POM
@@ -81,6 +83,7 @@ robolectric_test(
     name = "studio-leakcanary_tests",
     srcs = glob(["testSrc/main/java/**/*.java"]),
     custom_package = "com.android.tools.studio.leakcanary",
+    data = ["proguard-rules.pro"],
     test_class = "com.android.tools.studio.leakcanary.StudioLeakCanaryTestSuite",
     deps = [
         ":studio-leakcanary_lib",

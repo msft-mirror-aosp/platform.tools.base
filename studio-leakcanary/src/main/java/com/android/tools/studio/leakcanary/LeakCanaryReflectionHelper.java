@@ -26,6 +26,9 @@ import java.lang.reflect.Method;
  *
  * <p>This avoids duplicating reflection logic across different receivers and listeners, and
  * improves performance by caching Class, Method, and Field lookups.
+ *
+ * <p>All LeakCanary class names used here must be {@code *_CLASS} constants in {@link HelperConfig}
+ * with a matching rule in proguard-rules.pro (see HelperConfig).
  */
 public class LeakCanaryReflectionHelper {
 
