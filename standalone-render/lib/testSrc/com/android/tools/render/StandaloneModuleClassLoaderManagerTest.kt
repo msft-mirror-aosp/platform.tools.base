@@ -17,6 +17,9 @@ package com.android.tools.render
 
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import java.io.FileOutputStream
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -119,13 +122,12 @@ class StandaloneModuleClassLoaderManagerTest {
       assertThat(libClassV1.getMethod("getValue").invoke(null)).isEqualTo("lib-v1")
       assertThat(projectClassV1.getMethod("getValue").invoke(null)).isEqualTo("widget-v1")
 
-      val cacheEntryV1 = LibraryClassBinaryCache.getEntry(classPathV1, projectClassPathV1)
-      val transformCountAfterV1 = cacheEntryV1.asmTransformCount
+      val transformCountAfterV1 = LibraryClassBinaryCache.asmTransformCount
       assertThat(transformCountAfterV1).isEqualTo(1)
 
       // Refreshing with updated project classes while keeping stable library classpath unchanged
-      // should reuse the cached ASM-transformed library class bytes without re-running ASM transforms,
-      // while loading the newly compiled project class.
+      // should reuse the cached ASM-transformed library class bytes from ClassBinaryCacheManager
+      // without re-running ASM transforms, while loading the newly compiled project class.
       val classPathV2 = listOf(libDir.absolutePath, projectDirV2.absolutePath)
       val projectClassPathV2 = listOf(projectDirV2.absolutePath)
       manager.refreshClassPath(classPathV2, projectClassPathV2)
@@ -134,14 +136,10 @@ class StandaloneModuleClassLoaderManagerTest {
       val libClassV2 = loaderV2.loadClass("com.example.lib.StableLib")
       val projectClassV2 = loaderV2.loadClass("com.example.app.ProjectWidget")
 
-      val cacheEntryV2 = LibraryClassBinaryCache.getEntry(classPathV2, projectClassPathV2)
-      assertThat(cacheEntryV2).isSameInstanceAs(cacheEntryV1)
-      assertThat(cacheEntryV2.asmTransformCount).isEqualTo(transformCountAfterV1)
+      assertThat(LibraryClassBinaryCache.asmTransformCount).isEqualTo(transformCountAfterV1)
       assertThat(libClassV2.getMethod("getValue").invoke(null)).isEqualTo("lib-v1")
       assertThat(projectClassV2).isNotSameInstanceAs(projectClassV1)
       assertThat(projectClassV2.getMethod("getValue").invoke(null)).isEqualTo("widget-v2")
-      cacheEntryV1.release()
-      cacheEntryV2.release()
     } finally {
       manager.close()
     }
@@ -168,61 +166,69 @@ class StandaloneModuleClassLoaderManagerTest {
   }
 
   @Test
-  fun testLibraryClassBinaryCacheEntryClosesOnEvictionAndClear() {
-    val libDir1 = temporaryFolder.newFolder("lib1")
-    val libDir2 = temporaryFolder.newFolder("lib2")
-    val projectDir = temporaryFolder.newFolder("project-cache-evict")
+  fun testLibraryClassBinaryCacheInvalidatesWhenJarTimestampChanges() {
+    LibraryClassBinaryCache.clearForTest()
+    val libJar = File(temporaryFolder.root, "dep.jar")
+    val projectDir = temporaryFolder.newFolder("project-jar-evict")
 
-    val classPath1 = listOf(libDir1.absolutePath, projectDir.absolutePath)
-    val classPath2 = listOf(libDir2.absolutePath, projectDir.absolutePath)
+    writeJarWithValueClass(libJar, "com/example/lib/JarLib", "jar-v1", lastModifiedMs = 1_000_000L)
+    val classPath = listOf(libJar.absolutePath, projectDir.absolutePath)
     val projectClassPath = listOf(projectDir.absolutePath)
 
-    val entry1 = LibraryClassBinaryCache.getEntry(classPath1, projectClassPath)
-    assertThat(entry1).isNotNull()
-    assertThat(entry1.isClosed).isFalse()
+    val manager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
+    try {
+      val ref1 = manager.getPrivate(null)
+      val cls1 = ref1.classLoader.loadClass("com.example.lib.JarLib")
+      assertThat(cls1.getMethod("getValue").invoke(null)).isEqualTo("jar-v1")
+      assertThat(LibraryClassBinaryCache.asmTransformCount).isEqualTo(1)
+      ref1.close()
 
-    // Caller releases its retained reference; entry1 remains cached
-    entry1.release()
-    assertThat(entry1.isClosed).isFalse()
+      // Replace the JAR in-place with an updated modification timestamp
+      writeJarWithValueClass(libJar, "com/example/lib/JarLib", "jar-v2", lastModifiedMs = 2_000_000L)
+      manager.refreshClassPath(classPath, projectClassPath)
 
-    // Querying with new classpath evicts entry1 and closes it since activeReferences == 0
-    val entry2 = LibraryClassBinaryCache.getEntry(classPath2, projectClassPath)
-    assertThat(entry2).isNotSameInstanceAs(entry1)
-    assertThat(entry1.isClosed).isTrue()
-
-    // Clear for test should also close entry2 without error
-    entry2.release()
-    LibraryClassBinaryCache.clearForTest()
-    assertThat(entry2.isClosed).isTrue()
+      val ref2 = manager.getPrivate(null)
+      val cls2 = ref2.classLoader.loadClass("com.example.lib.JarLib")
+      assertThat(cls2.getMethod("getValue").invoke(null)).isEqualTo("jar-v2")
+      assertThat(LibraryClassBinaryCache.asmTransformCount).isEqualTo(2)
+      ref2.close()
+    } finally {
+      manager.close()
+    }
   }
 
   @Test
-  fun testLibraryClassBinaryCacheEntryDefersDisposalUntilActiveReferencesRelease() {
-    val libDir1 = temporaryFolder.newFolder("lib-ref1")
-    val libDir2 = temporaryFolder.newFolder("lib-ref2")
-    val projectDir = temporaryFolder.newFolder("project-cache-ref")
+  fun testLibraryClassBinaryCacheInvalidatesWhenDirectoryTimestampChanges() {
+    LibraryClassBinaryCache.clearForTest()
+    val libDir = temporaryFolder.newFolder("lib-dir-evict")
+    val projectDir = temporaryFolder.newFolder("project-dir-evict")
 
-    val classPath1 = listOf(libDir1.absolutePath, projectDir.absolutePath)
-    val classPath2 = listOf(libDir2.absolutePath, projectDir.absolutePath)
+    writeValueClass(libDir, "com/example/lib/DirLib", "dir-v1")
+    val initialMtime = LibraryClassBinaryCache.computePathTimestamp(libDir.absolutePath, maxCacheAgeMs = 0L)
+    val classPath = listOf(libDir.absolutePath, projectDir.absolutePath)
     val projectClassPath = listOf(projectDir.absolutePath)
 
-    // getEntry returns entry1 with an active reference held by the caller
-    val entry1 = LibraryClassBinaryCache.getEntry(classPath1, projectClassPath)
-    assertThat(entry1.isClosed).isFalse()
+    val manager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
+    try {
+      val ref1 = manager.getPrivate(null)
+      val cls1 = ref1.classLoader.loadClass("com.example.lib.DirLib")
+      assertThat(cls1.getMethod("getValue").invoke(null)).isEqualTo("dir-v1")
+      assertThat(LibraryClassBinaryCache.asmTransformCount).isEqualTo(1)
+      ref1.close()
 
-    // Evict entry1 by requesting entry2 with a different classpath
-    val entry2 = LibraryClassBinaryCache.getEntry(classPath2, projectClassPath)
-    assertThat(entry2).isNotSameInstanceAs(entry1)
+      // Update the nested .class file on disk with a newer timestamp and refresh the TTL cache
+      val updatedFile = writeValueClass(libDir, "com/example/lib/DirLib", "dir-v2")
+      updatedFile.setLastModified(initialMtime + 5_000L)
+      LibraryClassBinaryCache.computePathTimestamp(libDir.absolutePath, maxCacheAgeMs = 0L)
 
-    // entry1 was evicted but remains open while the caller's active reference is held
-    assertThat(entry1.isClosed).isFalse()
-
-    // Releasing the caller's active reference triggers deferred closure of the evicted entry
-    entry1.release()
-    assertThat(entry1.isClosed).isTrue()
-
-    entry2.release()
-    LibraryClassBinaryCache.clearForTest()
+      val ref2 = manager.getPrivate(null)
+      val cls2 = ref2.classLoader.loadClass("com.example.lib.DirLib")
+      assertThat(cls2.getMethod("getValue").invoke(null)).isEqualTo("dir-v2")
+      assertThat(LibraryClassBinaryCache.asmTransformCount).isEqualTo(2)
+      ref2.close()
+    } finally {
+      manager.close()
+    }
   }
 
   @Test
@@ -330,7 +336,31 @@ class StandaloneModuleClassLoaderManagerTest {
    * }
    * ```
    */
-  private fun writeValueClass(rootDir: File, internalName: String, returnValue: String) {
+  private fun writeValueClass(rootDir: File, internalName: String, returnValue: String): File {
+    val bytes = generateValueClassBytes(internalName, returnValue)
+    val outFile = File(rootDir, "$internalName.class")
+    outFile.parentFile.mkdirs()
+    outFile.writeBytes(bytes)
+    return outFile
+  }
+
+  /**
+   * Packages a generated `.class` file (see [writeValueClass]) into [jarFile] with the given
+   * [lastModifiedMs] timestamp.
+   */
+  private fun writeJarWithValueClass(jarFile: File, internalName: String, returnValue: String, lastModifiedMs: Long) {
+    val bytes = generateValueClassBytes(internalName, returnValue)
+    JarOutputStream(FileOutputStream(jarFile)).use { jos ->
+      val entry = JarEntry("$internalName.class")
+      entry.time = lastModifiedMs
+      jos.putNextEntry(entry)
+      jos.write(bytes)
+      jos.closeEntry()
+    }
+    jarFile.setLastModified(lastModifiedMs)
+  }
+
+  private fun generateValueClassBytes(internalName: String, returnValue: String): ByteArray {
     val cw = ClassWriter(0)
     cw.visit(
       Opcodes.V17,
@@ -354,9 +384,6 @@ class StandaloneModuleClassLoaderManagerTest {
     mv.visitMaxs(1, 0)
     mv.visitEnd()
     cw.visitEnd()
-
-    val outFile = File(rootDir, "$internalName.class")
-    outFile.parentFile.mkdirs()
-    outFile.writeBytes(cw.toByteArray())
+    return cw.toByteArray()
   }
 }
