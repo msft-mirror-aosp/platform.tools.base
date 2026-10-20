@@ -15,9 +15,15 @@
  */
 package com.android.deploy.service
 
-import com.android.ddmlib.Log
+import com.android.tools.deployer.createAndStartAdbServerControllerBlocking
+import com.android.tools.deployer.getAdbServerPort
+import com.android.utils.ILogger
+import com.android.utils.StdLogger
+import com.google.common.annotations.VisibleForTesting
 
 object DeployServiceMain {
+  @VisibleForTesting var logger: ILogger = StdLogger(StdLogger.Level.INFO)
+
   /**
    * Blocking main function that starts a [DeployServer] if the required args are not specified a message is printed and the program is
    * exited.
@@ -34,12 +40,16 @@ object DeployServiceMain {
     val port = argsMap["port"]!!.toInt()
     val adbPath = argsMap["adbPath"]!!
 
-    val deployServer = DeployServer()
-    deployServer.start(port, adbPath)
+    val logLevel = StdLogger.Level.INFO
+    createAndStartAdbServerControllerBlocking(adbPath, getAdbServerPort(logger), logLevel).use { controller ->
+      AdbHelper.initAdbSession(controller, logLevel).use { session ->
+        DeployServer(session).runServer(port)
+      }
+    }
   }
 
   private fun printUsage() {
-    Log.e("DeployService", "DeployServiceMain --port [port number] --adbPath [/path/to/adb]")
+    logger.error(null, "DeployServiceMain --port [port number] --adbPath [/path/to/adb]")
   }
 
   private fun mapArgs(args: Array<String>): MutableMap<String, String> {

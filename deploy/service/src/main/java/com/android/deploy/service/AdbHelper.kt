@@ -15,43 +15,46 @@
  */
 package com.android.deploy.service
 
+import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
-import com.android.adblib.AdbSession.Companion.create
-import com.android.adblib.AdbSessionHost
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManagerFactory
 import com.android.adblib.device
-import com.android.adblib.serialNumber
+import com.android.adblib.getOrPutSynchronized
+import com.android.adblib.scope
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.jdwpProcessTracker
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
 import com.android.adblib.tools.debugging.processinventory.installProcessInventoryJdwpProcessCommandDispatcherFactory
 import com.android.adblib.tools.debugging.processinventory.installProcessInventoryJdwpProcessPropertiesCollectorFactory
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
+import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.resumeProcess
 import com.android.adblib.waitForDevice
 import com.android.adblib.waitUntilOnline
-import com.android.ddmlib.AdbHelper
-import com.android.ddmlib.AdbInitOptions
-import com.android.ddmlib.AndroidDebugBridge
+import com.android.tools.deployer.createAdbSession
+import com.android.utils.StdLogger
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 
 private val logger: Logger = Logger.getLogger(AdbHelper::class.java.getName())
+private val deviceTrackingKey = CoroutineScopeCache.Key<Job>("AdbHelper.deviceTracking")
+private val processTrackingKey = CoroutineScopeCache.Key<Job>("AdbHelper.processTracking")
 
 object AdbHelper {
 
-  /** Initializes the AndroidDebugBridge, using adblib or ddmlib. */
-  fun initAndroidDebugBridge(): AdbSession {
-    val host = AdbSessionHost()
-    val session = create(host)
+  /** Initializes an [AdbSession] connected to the ADB server managed by [controller]. */
+  fun initAdbSession(controller: AdbServerController, logLevel: StdLogger.Level): AdbSession {
+    val session = createAdbSession(controller, logLevel)
 
     val inventoryServerEnabled = {
       val enabled = System.getProperty("deploy.service.use.adblib.inventory.server").toBoolean()
@@ -63,9 +66,34 @@ object AdbHelper {
     val inventoryServerConnection = ProcessInventoryServerConnection.create(session, inventoryServerConfig)
     session.installProcessInventoryJdwpProcessPropertiesCollectorFactory(inventoryServerConnection, inventoryServerEnabled)
     session.installProcessInventoryJdwpProcessCommandDispatcherFactory(inventoryServerConnection, inventoryServerEnabled)
-    val options = AdbInitOptions.Builder().setIDeviceManagerFactory(AdbLibIDeviceManagerFactory(session)).build()
-    AndroidDebugBridge.init(options)
     return session
+  }
+
+  /**
+   * Starts background tracking of connected devices and their JDWP processes so that process properties and JDWP proxy socket servers are
+   * initialized proactively. Calling this more than once for the same [session] has no effect.
+   */
+  fun startDeviceAndProcessTracking(session: AdbSession) {
+    session.cache.getOrPutSynchronized(deviceTrackingKey) {
+      session.scope.launch {
+        session.connectedDevicesTracker.connectedDevices.collect { devices ->
+          for (device in devices) {
+            device.cache.getOrPutSynchronized(processTrackingKey) {
+              device.scope.launch {
+                device.waitUntilOnline()
+                device.jdwpProcessTracker.processesFlow.collect { processes ->
+                  for (process in processes) {
+                    // Both getters lazily start their background work (property collection, proxy server socket) on first access.
+                    process.propertiesFlow
+                    process.jdwpProxySocketServer.proxyStatusFlow
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   /**

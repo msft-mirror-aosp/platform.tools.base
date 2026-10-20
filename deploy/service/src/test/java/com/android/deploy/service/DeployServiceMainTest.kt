@@ -15,26 +15,26 @@
  */
 package com.android.deploy.service
 
-import com.android.ddmlib.Log
+import com.android.testutils.MockLog
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Test
 
 class DeployServiceMainTest {
 
-  var myLogger: TestValidationLogger = TestValidationLogger()
+  var myLogger: MockLog = MockLog()
 
   @Before
   fun setup() {
-    Log.addLogger(myLogger)
+    DeployServiceMain.logger = myLogger
   }
 
   @Test
   fun invalidArguments() {
     DeployServiceMain.main(arrayOf())
-    val output = myLogger.nextLogLine
-    Truth.assertThat<Log.LogLevel?>(output!!.logLevel).isEqualTo(Log.LogLevel.ERROR)
-    Truth.assertThat(output.message).contains("--port")
-    Truth.assertThat(output.message).contains("--adbPath")
+    val output = myLogger.messages.single()
+    Truth.assertThat(output).startsWith("E ")
+    Truth.assertThat(output).contains("--port")
+    Truth.assertThat(output).contains("--adbPath")
   }
 }

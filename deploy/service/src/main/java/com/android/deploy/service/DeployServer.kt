@@ -16,11 +16,23 @@
 package com.android.deploy.service
 
 import com.android.adblib.AdbSession
-import com.android.adblib.AdbSessionHost
-import com.android.ddmlib.AndroidDebugBridge
-import com.android.ddmlib.Client
-import com.android.ddmlib.ClientData.DebuggerStatus
-import com.android.ddmlib.IDevice
+import com.android.adblib.ConnectedDevice
+import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.DevicePropertyNames
+import com.android.adblib.connectedDevicesTracker
+import com.android.adblib.deviceInfo
+import com.android.adblib.deviceProperties
+import com.android.adblib.isOnline
+import com.android.adblib.serialNumber
+import com.android.adblib.tools.debugging.JdwpProcess
+import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.getOrNull
+import com.android.adblib.tools.debugging.jdwpProcessTracker
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
+import com.android.adblib.tools.debugging.properties
+import com.android.adblib.tools.debugging.propertiesFlow
+import com.android.adblib.tools.localConsoleAddress
+import com.android.adblib.tools.openEmulatorConsole
 import com.android.deploy.service.proto.DeployServiceGrpc.DeployServiceImplBase
 import com.android.deploy.service.proto.Service
 import com.android.deploy.service.proto.Service.ClientResponse
@@ -48,32 +60,35 @@ import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.util.Locale
 import java.util.Random
 import kotlin.math.min
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 class DeployServer : DeployServiceImplBase {
 
-  private lateinit var myActiveBridge: AndroidDebugBridge
-  private lateinit var mySession: AdbSession
+  private val mySession: AdbSession
   private lateinit var myServer: Server
   private val myDeployRunner: DeployerRunner?
   private val myDeployerInteraction = DeployerInteraction()
 
-  constructor() {
+  constructor(session: AdbSession) {
+    mySession = session
     myDeployRunner =
       DeployerRunner(File.createTempFile("deploy_cache", ".files"), File.createTempFile("deploy_db", ".db"), myDeployerInteraction)
+    AdbHelper.startDeviceAndProcessTracking(mySession)
   }
 
   /**
    * This function is responsible for starting a GRPC server and blocks until the server is terminated.
    *
    * @param port to open grpc server on
-   * @param adbPath full path to adb.exe required by [AndroidDebugBridge].
    */
-  fun start(port: Int, adbPath: String) {
-    mySession = AdbHelper.initAndroidDebugBridge()
-    myActiveBridge = AndroidDebugBridge.createBridge(adbPath, false)!!
+  fun runServer(port: Int) {
     val serverBuilder = NettyServerBuilder.forPort(port)
     serverBuilder.addService(this)
     myServer = serverBuilder.build()!!
@@ -82,32 +97,30 @@ class DeployServer : DeployServiceImplBase {
   }
 
   @VisibleForTesting
-  constructor(
-    bridge: AndroidDebugBridge,
-    deployerRunner: DeployerRunner?,
-    session: AdbSession = AdbSession.create(AdbSessionHost()),
-  ) {
-    myActiveBridge = bridge
+  constructor(deployerRunner: DeployerRunner?, session: AdbSession) {
     myDeployRunner = deployerRunner
     mySession = session
+    AdbHelper.startDeviceAndProcessTracking(mySession)
   }
 
   override fun getDevices(request: DeviceRequest, responseObserver: StreamObserver<DeviceResponse>) {
     val response = DeviceResponse.newBuilder()
-    myActiveBridge.devices.forEach { response.addDevices(ddmDeviceToRpcDevice(it)) }
+    runBlocking {
+      mySession.connectedDevicesTracker.connectedDevices.value.forEach { response.addDevices(connectedDeviceToRpcDevice(it)) }
+    }
     responseObserver.onNext(response.build())
     responseObserver.onCompleted()
   }
 
   override fun getClients(request: Service.ClientRequest, responseObserver: StreamObserver<ClientResponse>) {
     val response = ClientResponse.newBuilder()
-    myActiveBridge.devices.forEach { device ->
+    mySession.connectedDevicesTracker.connectedDevices.value.forEach { device ->
       if (!request.deviceId.isEmpty() && request.deviceId != device.serialNumber) {
         // We are looking for a particular device, but this is not that device.
         return@forEach
       }
-      for (client in device.getClients()) {
-        response.addClients(ddmClientToRpcClient(client))
+      for (jdwpProcess in device.jdwpProcessTracker.processesFlow.value) {
+        response.addClients(jdwpProcessToRpcClient(jdwpProcess))
       }
     }
     responseObserver.onNext(response.build())
@@ -116,40 +129,38 @@ class DeployServer : DeployServiceImplBase {
 
   override fun getDebugPort(request: DebugPortRequest, responseObserver: StreamObserver<DebugPortResponse>) {
     val response = DebugPortResponse.newBuilder()
-    val selectedDevice = getDeviceBySerial(request.deviceId)
+    val selectedDevice = runBlocking { AdbHelper.getConnectedDevice(mySession, request.deviceId) }
     if (selectedDevice == null) {
       // TODO (gijosh): Respond with error.
       responseObserver.onNext(response.build())
       responseObserver.onCompleted()
       return
     }
-    val selectedClient = selectedDevice.clients.firstOrNull { client -> client.clientData.pid == request.pid }
-    if (selectedClient == null) {
+    val selectedProcess = selectedDevice.jdwpProcessTracker.processesFlow.value.firstOrNull { process -> process.pid == request.pid }
+    if (selectedProcess == null) {
       // TODO (gijosh): Respond with error.
       responseObserver.onNext(response.build())
       responseObserver.onCompleted()
       return
     }
-    // This logic mirrors logic in the ConnectDebuggerTask used by Android Studio
-    // When a client is created it will immediately start a debugging server. The
-    // server then waits for a WAIT jdwp packet to indicate the client is
-    // waiting for a debugger to attach. If this loop times out and returns early
-    // the client may connect a debugger to a client that is not in this state.
-    // The behavior at that point is undefined. Most of the time it will work,
-    // some breakpoints may get missed.
-    for (i in 0..GET_DEBUG_PORT_RETRY_LIMIT) {
-      try { // Wait until we receive the WAIT packet.
-        val status = selectedClient.clientData.debuggerConnectionStatus
-        if (status == DebuggerStatus.WAITING) {
-          break
-        }
-        Thread.sleep(100)
-      } catch (_: InterruptedException) {
-        // Sleep interrupted this is okay.
-        break
+    // This logic mirrors logic in the ConnectDebuggerTask used by Android Studio.
+    // When a client is created it will immediately start a debugging server. We
+    // then wait until adblib reports that the client is waiting for a debugger to
+    // attach, which adblib learns from the JDWP WAIT packet or, on devices that
+    // support it, from app info. If this wait times out and returns early the
+    // client may connect a debugger to a client that is not in this state. The
+    // behavior at that point is undefined. Most of the time it will work, some
+    // breakpoints may get missed.
+    val socketAddress = runBlocking {
+      // Wait until adblib reports the process as waiting for a debugger.
+      withTimeoutOrNull(WAIT_FOR_DEBUGGER_TIMEOUT_MS) {
+        selectedProcess.propertiesFlow.first { it.isWaitingForDebugger.getOrDefault(false) }
+      }
+      withTimeoutOrNull(1000) {
+        selectedProcess.jdwpProxySocketServer.proxyStatusFlow.first { !it.socketAddress.isEmpty }.socketAddress.getOrNull()
       }
     }
-    response.port = selectedClient.debuggerListenPort
+    response.port = socketAddress?.port ?: -1
     responseObserver.onNext(response.build())
     responseObserver.onCompleted()
   }
@@ -168,11 +179,8 @@ class DeployServer : DeployServiceImplBase {
   }
 
   override fun installApk(request: InstallApkRequest, responseObserver: StreamObserver<InstallApkResponse>) {
-    val iDevice = getDeviceBySerial(request.deviceId)
-    val connectedDevice = iDevice?.let {
-      runBlocking { AdbHelper.getConnectedDevice(mySession, request.deviceId) }
-    }
-    if (iDevice == null || connectedDevice == null) {
+    val connectedDevice = runBlocking { AdbHelper.getConnectedDevice(mySession, request.deviceId) }
+    if (connectedDevice == null) {
       responseObserver.onNext(
         InstallApkResponse.newBuilder()
           .setExitStatus(-1)
@@ -191,7 +199,7 @@ class DeployServer : DeployServiceImplBase {
     //   install <packageName> <baseApk> [additionalApks]...
     // For instance:
     // install com.example.myApp c:\Temp\myapp.apk
-    val deviceHolder = DeviceHolder(iDevice, connectedDevice, mySession)
+    val deviceHolder = DeviceHolder(connectedDevice)
     val exitCode = myDeployRunner!!.run(deviceHolder, mySession, arguments.toTypedArray<String>(), logger)
     responseObserver.onNext(
       InstallApkResponse.newBuilder()
@@ -206,20 +214,15 @@ class DeployServer : DeployServiceImplBase {
   }
 
   override fun runNetworkTest(request: Service.NetworkTestRequest, responseObserver: StreamObserver<Service.NetworkTestResponse>) {
-    val iDevice = getDeviceBySerial(request.deviceId)
-    val connectedDevice = iDevice?.let {
-      runBlocking { AdbHelper.getConnectedDevice(mySession, request.deviceId) }
-    }
-    if (iDevice == null || connectedDevice == null) {
+    val connectedDevice = runBlocking { AdbHelper.getConnectedDevice(mySession, request.deviceId) }
+    if (connectedDevice == null) {
       responseObserver.onNext(
-        Service.NetworkTestResponse.newBuilder()
-          .setError("Cannot find device with the given device id: ${request.deviceId}")
-          .build()
+        Service.NetworkTestResponse.newBuilder().setError("Cannot find device with the given device id: ${request.deviceId}").build()
       )
       responseObserver.onCompleted()
       return
     }
-    val deviceHolder = DeviceHolder(iDevice, connectedDevice, mySession)
+    val deviceHolder = DeviceHolder(connectedDevice)
     val logger = DeployLogger(DeployLogger.Level.ERROR)
     val adb = AdbClient(deviceHolder, logger, mySession)
     val metrics = mutableListOf<DeployMetric>()
@@ -301,13 +304,9 @@ class DeployServer : DeployServiceImplBase {
     return response
   }
 
-  private fun getDeviceBySerial(serial: String): IDevice? {
-    return myActiveBridge.devices.firstOrNull { device -> device.serialNumber == serial }
-  }
-
   companion object {
     const val MAX_BUFFER_SIZE: Int = 1024 * 1024
-    const val GET_DEBUG_PORT_RETRY_LIMIT = 10
+    private const val WAIT_FOR_DEBUGGER_TIMEOUT_MS = 1000L
   }
 }
 
@@ -324,26 +323,118 @@ private fun convertToMetricsProto(metrics: List<DeployMetric>): List<Service.Dep
     .toList()
 }
 
-private fun ddmDeviceToRpcDevice(device: IDevice): Service.Device {
-  val avdOrEmpty = device.avdName ?: ""
-  val modelOrEmpty = device.getProperty(IDevice.PROP_DEVICE_MODEL) ?: ""
+private val LOCAL_EMULATOR_REGEX = "emulator-(\\d+)".toRegex()
+private const val DEVICE_NAME_SEPARATOR = "-"
+private val AVD_NAME_KEY = CoroutineScopeCache.Key<String?>("DeployServer.avdName")
+
+/**
+ * How long [getDevices][DeployServer.getDevices] waits for a device's properties or AVD name, matching the initial `IDevice.getProperty()`
+ * timeout of ddmlib. Fetching continues in the background after the timeout, and later calls return the cached result.
+ */
+private val DEVICE_INFO_TIMEOUT = 5.seconds
+
+private suspend fun connectedDeviceToRpcDevice(device: ConnectedDevice): Service.Device {
+  val properties =
+    if (device.isOnline) {
+      runCatching { withTimeoutOrNull(DEVICE_INFO_TIMEOUT) { device.deviceProperties().allReadonly() } }.getOrNull() ?: emptyMap()
+    } else {
+      emptyMap()
+    }
+
+  // Try abilist first (implemented in L onwards); otherwise, fall back to abi and abi2.
+  val abis =
+    properties[DevicePropertyNames.RO_PRODUCT_CPU_ABILIST]?.split(",")
+      ?: listOfNotNull(properties[DevicePropertyNames.RO_PRODUCT_CPU_ABI], properties[DevicePropertyNames.RO_PRODUCT_CPU_ABI2])
+  val isEmulator = LOCAL_EMULATOR_REGEX.matches(device.serialNumber)
+  val avdName = if (isEmulator) device.avdName() else null
+  val modelOrEmpty = properties[DevicePropertyNames.RO_PRODUCT_MODEL] ?: ""
   return Service.Device.newBuilder()
-    .addAllAbis(device.abis)
-    .setAvd(avdOrEmpty)
-    .setDevice(device.name)
-    .setIsEmulator(device.isEmulator())
+    .addAllAbis(abis)
+    .setAvd(avdName ?: "")
+    .setDevice(humanizedName(device.serialNumber, properties, isEmulator, avdName))
+    .setIsEmulator(isEmulator)
     .setModel(modelOrEmpty)
     .setSerialNumber(device.serialNumber)
-    .setStatus(device.state.state)
+    .setStatus(device.deviceInfo.deviceState.state)
     .build()
 }
 
-private fun ddmClientToRpcClient(client: Client): Service.Client {
-  val packageName = client.clientData.packageName
-  val description = client.clientData.processName
+/**
+ * Returns the AVD name of this local emulator, or `null` if the emulator is not online, its console could not provide the AVD name, or the
+ * console did not answer within [DEVICE_INFO_TIMEOUT].
+ *
+ * Like ddmlib, the emulator console is queried at most once per device connection: the result is kept in the device cache, which is cleared
+ * when the device disconnects.
+ */
+private suspend fun ConnectedDevice.avdName(): String? {
+  val consolePort = LOCAL_EMULATOR_REGEX.matchEntire(serialNumber)?.groupValues?.get(1)?.toIntOrNull() ?: return null
+  if (!isOnline) {
+    return null
+  }
+  return withTimeoutOrNull(DEVICE_INFO_TIMEOUT) {
+    cache.getOrPutSuspending(AVD_NAME_KEY) {
+      try {
+        session.openEmulatorConsole(localConsoleAddress(consolePort)).use { console -> console.avdName() }
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Exception) {
+        null
+      }
+    }
+  }
+}
+
+/**
+ * Returns the same device name as ddmlib's `IDevice.getName()`, which this service used to report, so that clients keep seeing the same
+ * value: `"<avd name> [<serial number>]"` for emulators (or just the serial number if the AVD name is not known), and
+ * `"<manufacturer>-<model>-<serial number>"` for other devices.
+ *
+ * Note: This logic matches ddmlib's `IDeviceSharedImpl.constructName()`.
+ */
+private fun humanizedName(
+  serialNumber: String,
+  properties: Map<String, String>,
+  isEmulator: Boolean,
+  avdName: String?,
+): String {
+  // TODO: Consider reading the AVD name from the `ro.boot.qemu.avd_name` device property (`ro.kernel.qemu.avd_name` on older
+  //  emulators) instead of querying the emulator console. This method would then only need device properties, and could be moved to
+  //  adblib as a `ConnectedDevice` extension.
+  if (isEmulator) {
+    return if (avdName != null) "$avdName [$serialNumber]" else serialNumber
+  }
+  val manufacturer = cleanupStringForDisplay(properties[DevicePropertyNames.RO_PRODUCT_MANUFACTURER])
+  val model = cleanupStringForDisplay(properties[DevicePropertyNames.RO_PRODUCT_MODEL])
+  // Omit the manufacturer if the model already starts with it, e.g. "samsung_sm_g991b-<serial>" rather than
+  // "samsung-samsung_sm_g991b-<serial>".
+  val modelStartsWithManufacturer =
+    manufacturer != null && model != null && model.uppercase(Locale.US).startsWith(manufacturer.uppercase(Locale.US))
+  return listOfNotNull(manufacturer.takeUnless { modelStartsWithManufacturer }, model, serialNumber).joinToString(DEVICE_NAME_SEPARATOR)
+}
+
+/** Match ddmlib's `IDeviceSharedImpl.cleanupStringForDisplay()` used by `IDevice.getName()` (see [humanizedName]). */
+private fun cleanupStringForDisplay(s: String?): String? {
+  if (s == null) {
+    return null
+  }
+  val sb = StringBuilder(s.length)
+  for (c in s) {
+    if (Character.isLetterOrDigit(c)) {
+      sb.append(Character.toLowerCase(c))
+    } else {
+      sb.append('_')
+    }
+  }
+  return sb.toString()
+}
+
+private fun jdwpProcessToRpcClient(process: JdwpProcess): Service.Client {
+  val properties = process.properties
+  val packageName = properties.packageName.getOrNull()
+  val description = properties.processName.getOrNull()
 
   val builder = Service.Client.newBuilder()
-  builder.pid = client.clientData.pid
+  builder.pid = process.pid
   if (packageName != null) {
     builder.name = packageName
   }

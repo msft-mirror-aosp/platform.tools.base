@@ -97,6 +97,7 @@ kotlin_test(
         "//tools/base/adblib-ddmlibcompatibility:__subpackages__",
         "//tools/base/adblib-tools:__subpackages__",
         "//tools/base/deploy/deployer:__subpackages__",
+        "//tools/base/deploy/service:__subpackages__",
     ],
     deps = [
         ":adblib",
