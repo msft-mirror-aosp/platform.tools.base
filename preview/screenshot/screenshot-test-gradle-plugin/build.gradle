@@ -68,9 +68,9 @@ dependencies {
     compileOnly libs.com.android.tools.common
     testImplementation libs.junit
     testImplementation libs.truth
-    testImplementation libs.kotlin_test
-    testImplementation libs.mockito_core
-    testImplementation libs.mockito_kotlin
+    testImplementation libs.kotlin.test
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.kotlin
     testImplementation libs.com.android.tools.testutils
     testImplementation project(':base:gradle-api')
     testImplementation project(':base:builder-test-api')

@@ -3,5 +3,5 @@ apply plugin: 'com.android.tools.kotlin'
 
 dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1"
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
 }

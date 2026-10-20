@@ -25,5 +25,5 @@ project.ext.pomName = 'screenshot-validation-api'
 project.ext.pomDesc = 'API for screenshot testing.'
 
 dependencies {
-    implementation libs.junit_platform_commons
+    implementation libs.junit.platform.commons
 }

@@ -163,37 +163,37 @@ dependencies {
     implementation project(':base:utp:gradle-work-action-api')
 
     implementation gradleApi()
-    implementation libs.kotlin_stdlib
-    implementation libs.apache_httpmime
-    implementation libs.apache_commons_io
+    implementation libs.kotlin.stdlib
+    implementation libs.apache.httpmime
+    implementation libs.apache.commons.io
     implementation libs.asm
-    implementation libs.asm_analysis
-    implementation libs.asm_commons
-    implementation libs.asm_util
-    implementation libs.jaxb_runtime
+    implementation libs.asm.analysis
+    implementation libs.asm.commons
+    implementation libs.asm.util
+    implementation libs.jaxb.runtime
     implementation libs.jopt
-    implementation libs.bundle_tool
-    implementation libs.jetifier_core
-    implementation libs.jetifier_processor
+    implementation libs.bundle.tool
+    implementation libs.jetifier.core
+    implementation libs.jetifier.processor
     implementation libs.javapoet
-    implementation libs.kotlin_gradle_plugin
+    implementation libs.kotlin.gradle.plugin
     constraints {
         // AGP doesn't directly depend on KSP, but if KSP is used, it needs to match the KGP version
         //noinspection ForeignDelegate
-        implementation(libs.ksp_gradle_plugin) {
+        implementation(libs.ksp.gradle.plugin) {
             because("KSP version needs to match KGP version")
         }
     }
     implementation libs.protobuf
-    implementation libs.protobuf_util
+    implementation libs.protobuf.util
     implementation libs.gson
     implementation libs.tink
-    implementation libs.tensorflow_lite_metadata
+    implementation libs.tensorflow.lite.metadata
 
-    compileOnly libs.kotlin_gradle_plugin_idea
-    compileOnly libs.jacoco_core
-    compileOnly libs.jacoco_report
-    compileOnly libs.dokka_core
+    compileOnly libs.kotlin.gradle.plugin.idea
+    compileOnly libs.jacoco.core
+    compileOnly libs.jacoco.report
+    compileOnly libs.dokka.core
     // already packaged in (':base:builder')
     compileOnly project(':base:profile')
     // already packaged later
@@ -203,20 +203,20 @@ dependencies {
 
     testImplementation libs.junit
     testImplementation libs.truth
-    testImplementation libs.kotlin_test
-    testImplementation libs.mockito_core
-    testImplementation libs.mockito_kotlin
+    testImplementation libs.kotlin.test
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.kotlin
     testImplementation libs.guava
-    testImplementation libs.grpc_testing
+    testImplementation libs.grpc.testing
     testImplementation libs.jimfs
     testImplementation libs.equalsverifier
     testImplementation project(':base:project-test-lib')
     testImplementation libs.com.android.tools.testutils
-    testImplementation libs.intellij_annotations
+    testImplementation libs.intellij.annotations
     testImplementation libs.jsoup
-    testImplementation libs.jacoco_core
-    testImplementation libs.jacoco_report
-    testImplementation libs.kotlin_gradle_plugin
+    testImplementation libs.jacoco.core
+    testImplementation libs.jacoco.report
+    testImplementation libs.kotlin.gradle.plugin
     testImplementation externalTestFixtures.repository
     testImplementation testFixtures(project(":base:builder"))
     testImplementation libs.com.android.tools.fakeadbserver.fakeadbserver
@@ -270,7 +270,7 @@ dependencies {
 
 protobuf {
     protoc {
-        artifact = libs.proto_compiler
+        artifact = libs.proto.compiler.get().toString()
     }
 }
 

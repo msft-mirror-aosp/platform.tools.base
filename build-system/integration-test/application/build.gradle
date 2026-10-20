@@ -28,31 +28,31 @@ dependencies {
     testImplementation project(':base:preview:screenshot:screenshot-test-gradle-plugin')
     testImplementation project(':base:bazel:avd')
 
-    testImplementation libs.kotlin_stdlib
-    testImplementation libs.kotlin_test
-    testImplementation libs.kotlin_coroutines_core
+    testImplementation libs.kotlin.stdlib
+    testImplementation libs.kotlin.test
+    testImplementation libs.kotlin.coroutines.core
 
     testImplementation gradleApi()
-    testImplementation libs.asm_tree
-    testImplementation libs.smali_dexlib
-    testImplementation libs.apache_commons_io
-    testImplementation libs.apache_commons_lang
-    testImplementation libs.apache_compress
-    testImplementation libs.bundle_tool
-    testImplementation libs.google_api_client
-    testImplementation libs.google_storage_client
+    testImplementation libs.asm.tree
+    testImplementation libs.smali.dexlib
+    testImplementation libs.apache.commons.io
+    testImplementation libs.apache.commons.lang
+    testImplementation libs.apache.compress
+    testImplementation libs.bundle.tool
+    testImplementation libs.google.api.client
+    testImplementation libs.google.storage.client
     testImplementation libs.junit
     testImplementation 'org.junit.platform:junit-platform-engine:1.9.2'
-    testImplementation libs.junit_platform_reporting
+    testImplementation libs.junit.platform.reporting
     testImplementation libs.protobuf
-    testImplementation libs.protobuf_util
+    testImplementation libs.protobuf.util
     testImplementation libs.truth
-    testImplementation libs.ksp_gradle_plugin  // to acces the KSP extension in custom test project plugins
+    testImplementation libs.ksp.gradle.plugin  // to acces the KSP extension in custom test project plugins
 
-    testImplementation libs.kotlin_gradle_plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
-    testImplementation libs.compose_compiler_gradle_plugin // to get access to ComposeCompilerGradlePluginExtension
+    testImplementation libs.kotlin.gradle.plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
+    testImplementation libs.compose.compiler.gradle.plugin // to get access to ComposeCompilerGradlePluginExtension
 
-    testImplementation libs.mockito_core
+    testImplementation libs.mockito.core
 
     // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to
     // Groovy versions.

@@ -242,7 +242,7 @@ Find the existing library in `tools/base/bazel/maven/resolved_artifacts.bzl`
 and update it to the new version.
 
 For some dependencies (those used by AGP) you'll **also** need to go and update
-`tools/buildSrc/base/dependencies.properties`.
+`tools/buildSrc/base/libs.versions.toml`.
 
 Then run `tools/base/bazel/maven/maven_fetch.sh` to download the libraries into
 prebuilts. This will update `tools/base/bazel/maven/BUILD.maven`.

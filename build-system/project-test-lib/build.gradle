@@ -9,7 +9,7 @@ dependencies {
 
     // Need an SLF4J implementation at runtime
     testRuntimeOnly 'org.slf4j:slf4j-simple:1.7.2'
-    implementation libs.gradle_tooling_api
+    implementation libs.gradle.tooling.api
 
 }
 

@@ -45,19 +45,19 @@ dependencies {
     compileOnly project(':base:build-system:gradle-common-api')
     compileOnly project(':base:builder-test-api')
     implementation libs.gson
-    implementation libs.google_testing_client
-    implementation libs.google_toolresults_client
-    implementation libs.google_storage_client
-    implementation libs.android_test_result_proto
-    implementation libs.protobuf_util
+    implementation libs.google.testing.client
+    implementation libs.google.toolresults.client
+    implementation libs.google.storage.client
+    implementation libs.android.test.result.proto
+    implementation libs.protobuf.util
     testImplementation project(':base:gradle-api')
     testImplementation project(':base:builder-test-api')
     testImplementation libs.equalsverifier
     testImplementation libs.junit
     testImplementation libs.truth
-    testImplementation libs.kotlin_test
-    testImplementation libs.mockito_core
-    testImplementation libs.mockito_kotlin
+    testImplementation libs.kotlin.test
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.kotlin
     testImplementation libs.guava
 }
 

@@ -21,17 +21,17 @@ dependencies {
     api libs.com.android.tools.build.apksig
     api libs.com.android.tools.build.apkzlib
 
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
     api libs.javawriter
-    implementation libs.bouncycastle_pkix
-    implementation libs.bouncycastle_prov
-    implementation libs.javax_inject
-    implementation libs.asm_commons
+    implementation libs.bouncycastle.pkix
+    implementation libs.bouncycastle.prov
+    implementation libs.javax.inject
+    implementation libs.asm.commons
     implementation libs.gson
 
-    testImplementation libs.kotlin_test
+    testImplementation libs.kotlin.test
     testImplementation libs.junit
-    testImplementation libs.mockito_core
+    testImplementation libs.mockito.core
     testImplementation libs.truth
     testImplementation libs.equalsverifier
     testImplementation libs.jimfs

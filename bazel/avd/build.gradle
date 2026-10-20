@@ -16,7 +16,7 @@ sourceSets {
 
 protobuf {
     protoc {
-        artifact = libs.proto_compiler
+        artifact = libs.proto.compiler.get().toString()
     }
 }
 

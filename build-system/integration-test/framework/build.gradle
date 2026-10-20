@@ -4,7 +4,7 @@ apply plugin: 'com.google.protobuf'
 
 protobuf {
     protoc {
-        artifact = libs.proto_compiler
+        artifact = libs.proto.compiler.get().toString()
     }
 }
 
@@ -27,26 +27,26 @@ dependencies {
     implementation libs.com.android.tools.annotations
     implementation externalTestFixtures.repository
 
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
 
     implementation gradleApi()
-    implementation libs.apache_commons_io
-    implementation libs.apache_commons_lang
-    implementation libs.asm_tree
-    implementation libs.google_api_client
-    implementation libs.google_storage_client
-    implementation libs.smali_dexlib
+    implementation libs.apache.commons.io
+    implementation libs.apache.commons.lang
+    implementation libs.asm.tree
+    implementation libs.google.api.client
+    implementation libs.google.storage.client
+    implementation libs.smali.dexlib
     implementation libs.gson
-    implementation libs.jacoco_agent
+    implementation libs.jacoco.agent
     implementation libs.junit
     implementation libs.protobuf
-    implementation libs.protobuf_util
+    implementation libs.protobuf.util
     implementation libs.truth
-    implementation libs.kotlin_gradle_plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
-    implementation libs.bundle_tool
-    implementation libs.ksp_gradle_plugin // to acces the KSP extension in custom test project plugins
+    implementation libs.kotlin.gradle.plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
+    implementation libs.bundle.tool
+    implementation libs.ksp.gradle.plugin // to acces the KSP extension in custom test project plugins
 
-    testImplementation libs.mockito_core
+    testImplementation libs.mockito.core
     testImplementation libs.com.android.tools.common
 
     // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to
