@@ -36,7 +36,7 @@ import com.android.testing.utils.computeSystemImageHashFromDsl
 import com.android.testing.utils.getPageAlignmentSuffix
 import com.android.testing.utils.isTvOrAutoDevice
 import com.android.testing.utils.isTvOrAutoSource
-import com.android.utils.osArchitecture
+import com.android.utils.CpuArchitecture
 import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -461,7 +461,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask : NonIncrementalGlobalT
       val allImages = versionedSdkLoader.allSystemImageHashes() ?: listOf()
 
       return ManagedDeviceImageSuggestionGenerator(
-          osArchitecture,
+          CpuArchitecture.osArchitecture,
           deviceName,
           sdkVersion,
           sdkMinorVersion,

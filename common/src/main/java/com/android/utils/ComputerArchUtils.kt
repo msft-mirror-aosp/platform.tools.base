@@ -37,7 +37,61 @@ enum class CpuArchitecture {
   X86_64,
   ARM,
   X86_ON_ARM,
-  UNKNOWN,
+  UNKNOWN;
+
+  companion object {
+    @JvmStatic
+    val jvmArchitecture: CpuArchitecture
+      get() {
+        ensureInitialized()
+        val arch = Environment.instance.getSystemProperty(Environment.SystemProperty.OS_ARCH)
+        return architectureFromString(arch)
+      }
+
+    @JvmStatic
+    val osArchitecture: CpuArchitecture
+      get() {
+        val jvmArchitecture = jvmArchitecture
+
+        // When running the JVM in x86, then that means either we are running a 32 bit environment
+        // under a 64 bit OS or a 32 bit environment on a 32 bit OS. This can't happen on mac, as
+        // they always run in a 64 bit environment. So we need to take a look at Windows and Linux.
+        if (jvmArchitecture == X86) {
+          when {
+            OperatingSystem.isWindows() -> {
+              // When WOW64 emulates a 32 bit environment under a 64 bit,
+              // it sets PROCESSOR_ARCHITEW6432 to AMD64 or IA64.
+              // Ref: http://msdn.microsoft.com/en-us/library/aa384274(v=vs.85).aspx
+              val w6432 = Environment.instance.getVariable(Environment.EnvironmentVariable.PROCESSOR_ARCHITEW6432)
+              if (w6432 != null && w6432.contains("64")) {
+                return X86_64
+              }
+            }
+
+            OperatingSystem.isLinux() -> {
+              // Trying the obvious by querying HOSTTYPE, this works on debian and ubuntu
+              val hostType = Environment.instance.getVariable(Environment.EnvironmentVariable.HOST_TYPE)
+              return architectureFromString(hostType)
+            }
+          }
+        }
+
+        // An x86_64 jvm running on an ARM chip will be translated to ARM using Rosetta on Mac or
+        // WOW64 on Windows. In order to determine if running translated we need to use jna
+        // (see [computeIsRosetta] and [computeIsWindowsArm64]).
+        // Note: we check architecture first, as jna fails in an arm jvm.
+        if (jvmArchitecture == X86_64) {
+          if (
+            (OperatingSystem.isMac() && Environment.instance.isRosetta) ||
+              (OperatingSystem.isWindows() && Environment.instance.isWindowsArm64)
+          ) {
+            return X86_ON_ARM
+          }
+        }
+
+        return jvmArchitecture
+      }
+  }
 }
 
 /** Identifies the operating system based on the [Environment], which may be faked in tests. */
@@ -100,55 +154,6 @@ private fun ensureInitialized() {
     Environment.initialize()
   }
 }
-
-val jvmArchitecture: CpuArchitecture
-  get() {
-    ensureInitialized()
-    val arch = Environment.instance.getSystemProperty(Environment.SystemProperty.OS_ARCH)
-    return architectureFromString(arch)
-  }
-
-val osArchitecture: CpuArchitecture
-  get() {
-    val jvmArchitecture = jvmArchitecture
-
-    // When running the JVM in x86, then that means either we are running a 32 bit environment
-    // under a 64 bit OS or a 32 bit environment on a 32 bit OS. This can't happen on mac, as
-    // they always run in a 64 bit environment. So we need to take a look at Windows and Linux.
-    if (jvmArchitecture == CpuArchitecture.X86) {
-      when {
-        OperatingSystem.isWindows() -> {
-          // When WOW64 emulates a 32 bit environment under a 64 bit,
-          // it sets PROCESSOR_ARCHITEW6432 to AMD64 or IA64.
-          // Ref: http://msdn.microsoft.com/en-us/library/aa384274(v=vs.85).aspx
-          val w6432 = Environment.instance.getVariable(Environment.EnvironmentVariable.PROCESSOR_ARCHITEW6432)
-          if (w6432 != null && w6432.contains("64")) {
-            return CpuArchitecture.X86_64
-          }
-        }
-
-        OperatingSystem.isLinux() -> {
-          // Trying the obvious by querying HOSTTYPE, this works on debian and ubuntu
-          val hostType = Environment.instance.getVariable(Environment.EnvironmentVariable.HOST_TYPE)
-          return architectureFromString(hostType)
-        }
-      }
-    }
-
-    // An x86_64 jvm running on an ARM chip will be translated to ARM using Rosetta on Mac or
-    // WOW64 on Windows. In order to determine if running translated we need to use jna
-    // (see [computeIsRosetta] and [computeIsWindowsArm64]).
-    // Note: we check architecture first, as jna fails in an arm jvm.
-    if (jvmArchitecture == CpuArchitecture.X86_64) {
-      if (
-        (OperatingSystem.isMac() && Environment.instance.isRosetta) || (OperatingSystem.isWindows() && Environment.instance.isWindowsArm64)
-      ) {
-        return CpuArchitecture.X86_ON_ARM
-      }
-    }
-
-    return jvmArchitecture
-  }
 
 /**
  * Determines if the current process is being translated to ARM by Rosetta.

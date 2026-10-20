@@ -17,6 +17,8 @@
 package com.android.utils
 
 import com.android.testutils.SystemPropertyOverrides
+import com.android.utils.CpuArchitecture.Companion.jvmArchitecture
+import com.android.utils.CpuArchitecture.Companion.osArchitecture
 import junit.framework.TestCase.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -243,6 +245,6 @@ class ComputerArchUtilsTest {
 
   @Test
   fun operatingSystem() {
-    assertTrue("Unrecognized operating system", OperatingSystem.isWindows || OperatingSystem.isMac || OperatingSystem.isLinux)
+    assertTrue("Unrecognized operating system", OperatingSystem.isWindows() || OperatingSystem.isMac() || OperatingSystem.isLinux())
   }
 }
