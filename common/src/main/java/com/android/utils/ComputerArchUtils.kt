@@ -26,12 +26,9 @@ import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
 import com.sun.jna.win32.W32APIOptions
-import java.util.Locale
 
-private const val OS_MAC_PREFIX = "mac"
-private const val OS_WIN_PREFIX = "win"
-private const val OS_LINUX_PREFIX = "linux"
 private const val TRANSLATED = 1
+
 // https://learn.microsoft.com/en-us/windows/win32/sysinfo/image-file-machine-constants
 private const val IMAGE_FILE_MACHINE_ARM64 = 0xAA64
 
@@ -41,6 +38,18 @@ enum class CpuArchitecture {
   ARM,
   X86_ON_ARM,
   UNKNOWN,
+}
+
+/** Identifies the operating system based on the [Environment], which may be faked in tests. */
+object OperatingSystem {
+  val name: String
+    get() = Environment.instance.getSystemProperty(Environment.SystemProperty.OS_NAME) ?: "unknown"
+
+  fun isMac(): Boolean = name.startsWith("mac", ignoreCase = true)
+
+  fun isLinux(): Boolean = name.startsWith("linux", ignoreCase = true)
+
+  fun isWindows(): Boolean = name.startsWith("win", ignoreCase = true)
 }
 
 abstract class Environment {
@@ -103,14 +112,12 @@ val osArchitecture: CpuArchitecture
   get() {
     val jvmArchitecture = jvmArchitecture
 
-    val os = Environment.instance.getSystemProperty(Environment.SystemProperty.OS_NAME)?.lowercase(Locale.US) ?: return jvmArchitecture
-
     // When running the JVM in x86, then that means either we are running a 32 bit environment
     // under a 64 bit OS or a 32 bit environment on a 32 bit OS. This can't happen on mac, as
     // they always run in a 64 bit environment. So we need to take a look at Windows and Linux.
     if (jvmArchitecture == CpuArchitecture.X86) {
       when {
-        os.startsWith(OS_WIN_PREFIX) -> {
+        OperatingSystem.isWindows() -> {
           // When WOW64 emulates a 32 bit environment under a 64 bit,
           // it sets PROCESSOR_ARCHITEW6432 to AMD64 or IA64.
           // Ref: http://msdn.microsoft.com/en-us/library/aa384274(v=vs.85).aspx
@@ -119,7 +126,8 @@ val osArchitecture: CpuArchitecture
             return CpuArchitecture.X86_64
           }
         }
-        os.startsWith(OS_LINUX_PREFIX) -> {
+
+        OperatingSystem.isLinux() -> {
           // Trying the obvious by querying HOSTTYPE, this works on debian and ubuntu
           val hostType = Environment.instance.getVariable(Environment.EnvironmentVariable.HOST_TYPE)
           return architectureFromString(hostType)
@@ -133,8 +141,7 @@ val osArchitecture: CpuArchitecture
     // Note: we check architecture first, as jna fails in an arm jvm.
     if (jvmArchitecture == CpuArchitecture.X86_64) {
       if (
-        (os.startsWith(OS_MAC_PREFIX) && Environment.instance.isRosetta) ||
-          (os.startsWith(OS_WIN_PREFIX) && Environment.instance.isWindowsArm64)
+        (OperatingSystem.isMac() && Environment.instance.isRosetta) || (OperatingSystem.isWindows() && Environment.instance.isWindowsArm64)
       ) {
         return CpuArchitecture.X86_ON_ARM
       }
