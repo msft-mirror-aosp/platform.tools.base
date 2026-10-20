@@ -36,6 +36,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 /**
  * A {@link Downloader} implementation that uses the old {@link DownloadCache}.
@@ -86,9 +87,11 @@ public class LegacyDownloader implements Downloader {
     @Override
     public Path downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
             throws IOException {
-        Path target =
-                FileOpUtils.getNewTempDir("LegacyDownloader", mFileOp.getFileSystem())
-                        .resolve("download");
+        Path tempDir = FileOpUtils.getNewTempDir("LegacyDownloader", mFileOp.getFileSystem());
+        if (tempDir == null) {
+            throw new IOException("Failed to create temporary download directory");
+        }
+        Path target = tempDir.resolve("download");
         downloadFully(url, target, null, indicator);
         return target;
     }
@@ -116,35 +119,38 @@ public class LegacyDownloader implements Downloader {
             indicator = indicator.createSubProgress(1);
         }
         Files.createDirectories(target.getParent());
-        OutputStream out = Files.newOutputStream(target);
-        Pair<InputStream, URLConnection> downloadedResult =
-                mDownloadCache.openDirectUrl(getUrl(url));
-        URLConnection connection = downloadedResult.getSecond();
-        if (!(connection instanceof HttpURLConnection)
-                || ((HttpURLConnection) connection).getResponseCode() == 200) {
-            indicator.setText(
-                    String.format("Downloading %s...", new File(url.getFile()).getName()));
-            long total = connection.getContentLengthLong();
-            long done = 0;
-            InputStream from = downloadedResult.getFirst();
-            byte[] buf = new byte[BUF_SIZE];
-            int prevPercent = 0;
-            while (true) {
-                int r = from.read(buf);
-                if (r == -1) {
-                    break;
+        Files.deleteIfExists(target);
+        try (OutputStream out =
+                Files.newOutputStream(
+                        target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+            Pair<InputStream, URLConnection> downloadedResult =
+                    mDownloadCache.openDirectUrl(getUrl(url));
+            URLConnection connection = downloadedResult.getSecond();
+            if (!(connection instanceof HttpURLConnection)
+                    || ((HttpURLConnection) connection).getResponseCode() == 200) {
+                indicator.setText(
+                        String.format("Downloading %s...", new File(url.getFile()).getName()));
+                long total = connection.getContentLengthLong();
+                long done = 0;
+                InputStream from = downloadedResult.getFirst();
+                byte[] buf = new byte[BUF_SIZE];
+                int prevPercent = 0;
+                while (true) {
+                    int r = from.read(buf);
+                    if (r == -1) {
+                        break;
+                    }
+                    done += r;
+                    out.write(buf, 0, r);
+                    int percent = (int) (done * 100. / total);
+                    if (percent != prevPercent) {
+                        // Don't update too often
+                        indicator.setFraction((double) done / total);
+                        prevPercent = percent;
+                    }
                 }
-                done += r;
-                out.write(buf, 0, r);
-                int percent = (int) (done * 100. / total);
-                if (percent != prevPercent) {
-                    // Don't update too often
-                    indicator.setFraction((double) done / total);
-                    prevPercent = percent;
-                }
+                indicator.setFraction(1);
             }
-            indicator.setFraction(1);
-            out.close();
         }
     }
 

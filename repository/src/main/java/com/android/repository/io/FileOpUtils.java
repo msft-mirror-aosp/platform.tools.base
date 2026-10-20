@@ -228,24 +228,18 @@ public final class FileOpUtils {
     }
 
     /**
-     * Creates a new subdirectory of the system temp directory. The directory will be named {@code
-     * <base> + NN}, where NN makes the directory distinct from any existing directories.
+     * Creates a new temporary subdirectory of the system temp directory with the given {@code base}
+     * prefix.
      */
     @Nullable
     public static Path getNewTempDir(@NonNull String base, @NonNull FileSystem fileSystem) {
-        for (int i = 1; i < 100; i++) {
-            Path rootTempDir = fileSystem.getPath(System.getProperty("java.io.tmpdir"));
-            Path folder = rootTempDir.resolve(String.format(Locale.US, "%1$s%2$02d", base, i));
-            if (CancellableFileIo.notExists(folder)) {
-                try {
-                    Files.createDirectories(folder);
-                    return folder;
-                } catch (IOException e) {
-                    // keep trying
-                }
-            }
+        Path rootTempDir = fileSystem.getPath(System.getProperty("java.io.tmpdir"));
+        try {
+            Files.createDirectories(rootTempDir);
+            return Files.createTempDirectory(rootTempDir, base);
+        } catch (IOException e) {
+            return null;
         }
-        return null;
     }
 
     /**

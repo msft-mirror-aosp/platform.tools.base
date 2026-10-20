@@ -23,6 +23,9 @@ import static com.android.testutils.file.InMemoryFileSystems.getPlatformSpecific
 import static com.android.testutils.file.InMemoryFileSystems.recordExistingFile;
 import static com.android.testutils.truth.PathSubject.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -35,6 +38,7 @@ import java.nio.file.CopyOption;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Assume;
 import org.junit.Test;
@@ -684,5 +688,28 @@ public class FileOpUtilsTest {
         // Ensure backup is correct
         assertEquals("content3", new String(Files.readAllBytes(fs.getPath(backupPath, "a"))));
         assertEquals("content4", new String(Files.readAllBytes(fs.getPath(backupPath, "foo/b"))));
+    }
+
+    @Test
+    public void getNewTempDirCreatesUniqueDirectory() throws Exception {
+        FileSystem fs = createInMemoryFileSystem();
+        Path rootTempDir = fs.getPath(System.getProperty("java.io.tmpdir"));
+        // Pre-create predictable sequential directories <base>01..<base>99 to verify getNewTempDir
+        // does not use or return pre-existing predictable directories.
+        Files.createDirectories(rootTempDir);
+        for (int i = 1; i < 100; i++) {
+            Files.createDirectories(rootTempDir.resolve(String.format(Locale.ROOT, "LegacyDownloader%02d", i)));
+        }
+
+        Path dir1 = FileOpUtils.getNewTempDir("LegacyDownloader", fs);
+        Path dir2 = FileOpUtils.getNewTempDir("LegacyDownloader", fs);
+        assertNotNull(dir1);
+        assertNotNull(dir2);
+        assertNotEquals(dir1, dir2);
+        assertTrue(Files.isDirectory(dir1));
+        assertTrue(Files.isDirectory(dir2));
+        assertEquals(rootTempDir, dir1.getParent());
+        assertTrue(dir1.getFileName().toString().startsWith("LegacyDownloader"));
+        assertFalse(dir1.getFileName().toString().matches("LegacyDownloader\\d{2}"));
     }
 }
