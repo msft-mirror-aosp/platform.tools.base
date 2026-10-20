@@ -78,6 +78,10 @@ constructor(
 ) {
 
   constructor(
+    connectedDevice: ConnectedDevice
+  ) : this(iDevice = UnsupportedIDevice(), connectedDevice = Optional.of(connectedDevice), useConnectedDevice = true)
+
+  constructor(
     iDevice: IDevice,
     connectedDevice: ConnectedDevice?,
     session: AdbSession,
