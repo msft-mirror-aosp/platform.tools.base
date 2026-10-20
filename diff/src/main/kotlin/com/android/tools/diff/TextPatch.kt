@@ -457,8 +457,16 @@ data class TextPatch internal constructor(val chunks: List<DiffChunk>) {
      * - Implements Hirschberg's quadratic-time O(NM) but linear-space O(min(N, M)) divide-and-conquer DP algorithm.
      * - Recursively bisects string A, calculates the LCS boundary crossing index k on string B using only two rows of DP state
      *   (zero-allocation row reuse), and then reconstructs the optimal edit path recursively.
+     * - Normalizes contiguous non-context edit blocks so that all [LineType.REMOVED] lines precede all [LineType.ADDED] lines within each
+     *   edit block, matching standard unified diff convention even when inputs are transposed for space optimization.
      */
     private fun diffLinesLcs(
+      originalLines: List<String>,
+      newLines: List<String>,
+      lineMatcher: (String, String) -> Boolean,
+    ): List<DiffLine> = normalizeEditBlocks(diffLinesLcsInternal(originalLines, newLines, lineMatcher))
+
+    private fun diffLinesLcsInternal(
       originalLines: List<String>,
       newLines: List<String>,
       lineMatcher: (String, String) -> Boolean,
@@ -466,7 +474,7 @@ data class TextPatch internal constructor(val chunks: List<DiffChunk>) {
       // Strict O(min(N, M)) space optimization: transpose arguments if the second list
       // is larger, and invert the resulting diff line edits before returning.
       if (newLines.size > originalLines.size) {
-        val swappedEdits = diffLinesLcs(newLines, originalLines, lineMatcher)
+        val swappedEdits = diffLinesLcsInternal(newLines, originalLines, lineMatcher)
         return swappedEdits.map { line ->
           val invertedType =
             when (line.type) {
@@ -522,9 +530,38 @@ data class TextPatch internal constructor(val chunks: List<DiffChunk>) {
       }
 
       // Conquer step: recursively solve left and right partitions and concatenate
-      val leftEdits = diffLinesLcs(a1, newLines.subList(0, bestK), lineMatcher)
-      val rightEdits = diffLinesLcs(a2, newLines.subList(bestK, m), lineMatcher)
+      val leftEdits = diffLinesLcsInternal(a1, newLines.subList(0, bestK), lineMatcher)
+      val rightEdits = diffLinesLcsInternal(a2, newLines.subList(bestK, m), lineMatcher)
       return leftEdits + rightEdits
+    }
+
+    /**
+     * Normalizes contiguous non-context edit blocks so that all [LineType.REMOVED] lines precede all [LineType.ADDED] lines within each
+     * edit block, preserving relative line order within each type.
+     */
+    private fun normalizeEditBlocks(edits: List<DiffLine>): List<DiffLine> {
+      if (edits.isEmpty()) return edits
+      return buildList(edits.size) {
+        var i = 0
+        while (i < edits.size) {
+          val line = edits[i]
+          if (line.type == LineType.CONTEXT) {
+            add(line)
+            i++
+          } else {
+            val blockStart = i
+            while (i < edits.size && edits[i].type != LineType.CONTEXT) {
+              i++
+            }
+            for (j in blockStart until i) {
+              if (edits[j].type == LineType.REMOVED) add(edits[j])
+            }
+            for (j in blockStart until i) {
+              if (edits[j].type == LineType.ADDED) add(edits[j])
+            }
+          }
+        }
+      }
     }
 
     /** Calculates LCS DP table last row in linear space O(M) reusing buffer arrays. */
