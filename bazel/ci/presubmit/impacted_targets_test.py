@@ -33,8 +33,9 @@ class ImpactedTargetsTest(absltest.TestCase):
         path: str,
         deps_output_path: pathlib.Path | None = None,
         modified_files_path: pathlib.Path | None = None,
+        deleted_packages: Iterable[str] = (),
     ) -> None:
-      del build_env, external_repos, modified_files_path
+      del build_env, external_repos, modified_files_path, deleted_packages
       pathlib.Path(path).write_text(contents)
       if deps_output_path:
         deps_output_path.write_text(deps_contents)
@@ -172,6 +173,7 @@ class ImpactedTargetsTest(absltest.TestCase):
         mock.ANY,
         deps_output_path=None,
         modified_files_path=mock.ANY,
+        deleted_packages=impacted_targets._DELETED_PREBUILTS_PACKAGES,
     )
 
   def test_impacted_targets_info_with_real_bazel_diff(self):
@@ -244,6 +246,121 @@ class ImpactedTargetsTest(absltest.TestCase):
     with mock.patch.dict(os.environ, {'INCREMENTAL_BUILD': 'true'}):
       base_hash_path = impacted_targets.get_base_hash_file(self.build_env)
     self.assertEqual(pathlib.Path(base_hash_path).read_text(), 'parent-hash-file')
+
+  def test_prebuilts_and_m2_changes_opted_out(self):
+    mock_generate = self._mock_generate_hash_file('hash-file')
+    cases = [
+        [
+            gce.GerritChange(
+                change_id='c1',
+                change_number='1',
+                project='platform/tools/base',
+                project_path='tools/base',
+                patchset='1',
+                file_infos=[gce.FileInfo('foo/Bar.java', 'modified')],
+                owner='owner',
+                message='msg',
+                topic='topic1',
+                tags=[],
+            ),
+            gce.GerritChange(
+                change_id='c2',
+                change_number='2',
+                project='platform/prebuilts/tools',
+                project_path='prebuilts/tools',
+                patchset='1',
+                file_infos=[
+                    gce.FileInfo(
+                        'common/m2/repository/foo/bar.jar', 'modified'
+                    )
+                ],
+                owner='owner',
+                message='msg',
+                topic='topic1',
+                tags=[],
+            ),
+        ],
+        [
+            gce.GerritChange(
+                change_id='c3',
+                change_number='3',
+                project='platform/tools/base',
+                project_path='tools/base',
+                patchset='1',
+                file_infos=[
+                    gce.FileInfo('bazel/maven/BUILD.maven', 'modified')
+                ],
+                owner='owner',
+                message='msg',
+                topic='',
+                tags=[],
+            ),
+        ],
+        [
+            gce.GerritChange(
+                change_id='c4',
+                change_number='4',
+                project='platform/tools/base',
+                project_path='tools/base',
+                patchset='1',
+                file_infos=[
+                    gce.FileInfo(
+                        'bazel/sdk/prebuilts.studio.sdk.BUILD', 'modified'
+                    )
+                ],
+                owner='owner',
+                message='msg',
+                topic='',
+                tags=[],
+            ),
+        ],
+        [
+            gce.GerritChange(
+                change_id='c5',
+                change_number='5',
+                project=(
+                    'platform/tools/vendor/google_prebuilts/studio/sdk/linux'
+                ),
+                project_path='prebuilts/studio/sdk/linux',
+                patchset='1',
+                file_infos=[
+                    gce.FileInfo('platforms/android-35/android.jar', 'modified')
+                ],
+                owner='owner',
+                message='msg',
+                topic='',
+                tags=[],
+            ),
+        ],
+    ]
+    for changes in cases:
+      with self.subTest(changes=changes):
+        with self.assertRaises(impacted_targets.ImpactedTargetsNotFoundError):
+          impacted_targets.get_impacted_targets_info(
+              self.build_env,
+              gerrit.GerritInfo(
+                  _build_env=self.build_env,
+                  changes=changes,
+                  changes_hash='',
+              ),
+              [],
+              '',
+          )
+    mock_generate.assert_not_called()
+
+  def test_generate_hash_file_excludes_prebuilts_and_m2(self):
+    self.assertEqual(impacted_targets._LOCAL_REPOSITORIES, [])
+    with mock.patch.object(subprocess, 'run') as mock_run:
+      impacted_targets._generate_hash_file(self.build_env)
+    mock_run.assert_called_once()
+    cmd = mock_run.call_args[0][0]
+    self.assertNotIn('--fineGrainedHashExternalRepos', cmd)
+    cmd_options_idx = cmd.index('--bazelCommandOptions')
+    self.assertEqual(
+        cmd[cmd_options_idx + 1],
+        '--config=ci'
+        ' --deleted_packages=prebuilts/studio/sdk,prebuilts/tools/common/m2',
+    )
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ def generate_hash_file(
     output_path: pathlib.Path,
     deps_output_path: pathlib.Path | None = None,
     modified_files_path: pathlib.Path | None = None,
+    deleted_packages: Sequence[str] = (),
 ):
   """Generates the hash file for the current build."""
   start = time.time()
@@ -40,10 +41,18 @@ def generate_hash_file(
     args.extend(['--bazelStartupOptions', ' '.join(build_env.startup_options)])
   args.extend([
       '--bazelCommandOptions',
-      '--config=ci',
-      '--fineGrainedHashExternalRepos',
-      ','.join(external_repos),
+      '--config=ci'
+      + (
+          f' --deleted_packages={",".join(deleted_packages)}'
+          if deleted_packages
+          else ''
+      ),
   ])
+  if external_repos:
+    args.extend([
+        '--fineGrainedHashExternalRepos',
+        ','.join(external_repos),
+    ])
   if deps_output_path:
     args.extend(['--depEdgesFile', deps_output_path])
   if modified_files_path:

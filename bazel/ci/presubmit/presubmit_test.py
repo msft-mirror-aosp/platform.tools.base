@@ -32,8 +32,15 @@ class PresubmitTest(parameterized.TestCase):
         path: str,
         deps_output_path: pathlib.Path | None = None,
         modified_files_path: pathlib.Path | None = None,
+        deleted_packages: Iterable[str] = (),
     ) -> None:
-      del build_env, external_repos
+      del (
+          build_env,
+          external_repos,
+          deps_output_path,
+          modified_files_path,
+          deleted_packages,
+      )
       pathlib.Path(path).write_text(contents)
 
     return self.enter_context(
@@ -146,6 +153,19 @@ class PresubmitTest(parameterized.TestCase):
           failed_tests=[],
           impacted_targets=[],
           cquery_targets=[],
+          expected_targets=['base_target1', 'base_target2'],
+          expected_flags=[
+              '--build_metadata=selective_presubmit_strategy=default_fallback',
+              '--build_metadata=selective_presubmit_found=False',
+          ],
+      ),
+      dict(
+          testcase_name='with_sdk_prebuilt_project',
+          gerrit_project='platform/tools/vendor/google_prebuilts/studio/sdk/linux',
+          tags=[],
+          failed_tests=[],
+          impacted_targets=['target1'],
+          cquery_targets=['target1 (configA)'],
           expected_targets=['base_target1', 'base_target2'],
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=default_fallback',

@@ -17,20 +17,47 @@ from tools.base.bazel.ci.presubmit import gerrit
 
 _BUCKET = 'adt-byob'
 _FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
-_LOCAL_REPOSITORIES = [
-    '@maven',
-]
+_LOCAL_REPOSITORIES = []
 _INCREMENTAL_BAZEL_DIFF_HASH = 'out/bazel-diff-hashes.json'
 
-# Projects that are opted out of selective presubmit.
+# Bazel packages under prebuilts/ excluded from `bazel-diff generate-hashes` via
+# `--deleted_packages`.
 #
-# Selective presubmit is not enabled for these projects because they change
-# external bazel dependencies that are not recognized by bazel-diff, and not
-# tracked by impacted_targets._LOCAL_REPOSITORIES
+# `bazel-diff generate-hashes` queries `//...:all-targets` across the workspace.
+# `prebuilts/studio/sdk` (~191k targets) and `prebuilts/tools/common/m2` (~50k
+# targets) make up ~81% of all targets under `//prebuilts/...` and ~54% of
+# main-repo targets. Since changes to these packages opt out of selective
+# presubmit and run the full test suite, we don't need target hashes for them.
+#
+# `--deleted_packages` requires exact workspace-relative directories containing
+# a BUILD file (not top-level directory prefixes or Gerrit project names) and
+# instructs Bazel to pretend those packages do not exist during `bazel query`.
+# Other packages under `prebuilts/` (such as `prebuilts/studio/intellij-sdk` and
+# `prebuilts/tools/common/aapt`) must remain visible because `//tools/...` BUILD
+# files `load()` `.bzl` macros from them.
+#
+# Keep in sync with the SELECTIVE_PRESUBMIT_*_OPT_OUT lists below.
+_DELETED_PREBUILTS_PACKAGES = (
+    'prebuilts/studio/sdk',
+    'prebuilts/tools/common/m2',
+)
+
+# Gerrit projects and backing BUILD files that are opted out of selective
+# presubmit. Changes touching these or `_DELETED_PREBUILTS_PACKAGES` run the
+# full baseline test suite.
 SELECTIVE_PRESUBMIT_PROJECTS_OPT_OUT = [
     # Responsible for '@intellij' repo.
     'platform/tools/vendor/google_prebuilts/studio/intellij-sdk',
+    # Responsible for //prebuilts/studio/sdk.
+    'platform/tools/google_prebuilts/studio/sdk/remote',
+    'platform/tools/vendor/google_prebuilts/studio/sdk/darwin',
+    'platform/tools/vendor/google_prebuilts/studio/sdk/linux',
+    'platform/tools/vendor/google_prebuilts/studio/sdk/windows',
 ]
+SELECTIVE_PRESUBMIT_FILES_OPT_OUT = frozenset({
+    'tools/base/bazel/maven/BUILD.maven',
+    'tools/base/bazel/sdk/prebuilts.studio.sdk.BUILD',
+})
 
 
 class ImpactedTargetsNotFoundError(Exception):
@@ -84,6 +111,30 @@ class ImpactedTargetsInfo:
     ]
 
 
+def _check_selective_presubmit_opt_out(gerrit_info: gerrit.GerritInfo) -> None:
+  """Raises ImpactedTargetsNotFoundError if any change is opted out."""
+  deleted_prefixes = tuple(f'{pkg}/' for pkg in _DELETED_PREBUILTS_PACKAGES)
+  for change in gerrit_info.changes:
+    if change.project in SELECTIVE_PRESUBMIT_PROJECTS_OPT_OUT:
+      raise ImpactedTargetsNotFoundError(
+          f'Selective presubmit is disabled for project {change.project}'
+      )
+    project_path = change.project_path.strip('/')
+    for file_info in change.file_infos:
+      rel_path = (
+          f'{project_path}/{file_info.path}'.strip('/')
+          if project_path
+          else file_info.path.strip('/')
+      )
+      if (
+          rel_path.startswith(deleted_prefixes)
+          or rel_path in SELECTIVE_PRESUBMIT_FILES_OPT_OUT
+      ):
+        raise ImpactedTargetsNotFoundError(
+            f'Selective presubmit is disabled for file {rel_path}'
+        )
+
+
 def get_impacted_targets_info(
     build_env: bazel.BuildEnv,
     gerrit_info: gerrit.GerritInfo,
@@ -106,11 +157,7 @@ def get_impacted_targets_info(
   Raises:
     ImpactedTargetsNotFoundError: If impacted targets could not be determined.
   """
-  for change in gerrit_info.changes:
-    if change.project in SELECTIVE_PRESUBMIT_PROJECTS_OPT_OUT:
-      raise ImpactedTargetsNotFoundError(
-          f'Selective presubmit is disabled for project {change.project}'
-      )
+  _check_selective_presubmit_opt_out(gerrit_info)
   with tempfile.TemporaryDirectory() as temp_dir:
     modified_files = pathlib.Path(temp_dir) / 'modified-files.txt'
     write_modified_files(gerrit_info, modified_files)
@@ -195,6 +242,7 @@ def _generate_hash_file(
       hash_file_path,
       deps_output_path=deps_output_path,
       modified_files_path=modified_files_path,
+      deleted_packages=_DELETED_PREBUILTS_PACKAGES,
   )
   return hash_file_path
 
