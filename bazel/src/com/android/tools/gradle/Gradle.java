@@ -260,15 +260,16 @@ public class Gradle implements Closeable {
             zos.closeEntry();
         }
         String toAppend =
-                "\nallprojects {\n"
-                        + "  buildscript {\n"
-                        + "    dependencies {\n"
-                        + "      classpath(files(\""
-                        + FileUtils.toSystemIndependentPath(classpathJar.getAbsolutePath())
-                        + "\"))\n"
-                        + "    }\n"
-                        + "  }\n"
-                        + "}\n";
+                "\n"
+                        + beforeProject(
+                                "  buildscript {\n"
+                                        + "    dependencies {\n"
+                                        + "      classpath(files(\""
+                                        + FileUtils.toSystemIndependentPath(
+                                                classpathJar.getAbsolutePath())
+                                        + "\"))\n"
+                                        + "    }\n"
+                                        + "  }\n");
         try (FileWriter writer = new FileWriter(getInitScript().getAbsoluteFile(), true)) {
             writer.append(toAppend);
         }
@@ -348,6 +349,18 @@ public class Gradle implements Closeable {
         return new File(outDir, "_repo");
     }
 
+    private static String beforeProject(String configuration) {
+        return "if (org.gradle.util.GradleVersion.current() < org.gradle.util.GradleVersion.version(\"8.8\")) {\n"
+                + "  allprojects {\n"
+                + configuration
+                + "  }\n"
+                + "} else {\n"
+                + "  lifecycle.beforeProject {\n"
+                + configuration
+                + "  }\n"
+                + "}\n";
+    }
+
     private static void createInitScript(File initScript, File repoDir) throws IOException {
         String content =
                 "settingsEvaluated { settings ->\n"
@@ -359,26 +372,25 @@ public class Gradle implements Closeable {
                         + "    }\n"
                         + "  }\n"
                         + "}\n"
-                        + "allprojects {\n"
-                        + "  buildscript {\n"
-                        + "    repositories {\n"
-                        + "       maven { url = '"
-                        + repoDir.toURI().toString()
-                        + "'}\n"
-                        + "    }\n"
-                        + "  }\n"
-                        + "  repositories {\n"
-                        + "    maven {\n"
-                        + "      url = '"
-                        + repoDir.toURI().toString()
-                        + "'\n"
-                        + "      metadataSources {\n"
-                        + "        mavenPom()\n"
-                        + "        artifact()\n"
-                        + "      }\n"
-                        + "    }\n"
-                        + "  }\n"
-                        + "}\n";
+                        + beforeProject(
+                                "  buildscript {\n"
+                                        + "    repositories {\n"
+                                        + "       maven { url = '"
+                                        + repoDir.toURI().toString()
+                                        + "'}\n"
+                                        + "    }\n"
+                                        + "  }\n"
+                                        + "  repositories {\n"
+                                        + "    maven {\n"
+                                        + "      url = '"
+                                        + repoDir.toURI().toString()
+                                        + "'\n"
+                                        + "      metadataSources {\n"
+                                        + "        mavenPom()\n"
+                                        + "        artifact()\n"
+                                        + "      }\n"
+                                        + "    }\n"
+                                        + "  }\n");
 
         try (FileWriter writer = new FileWriter(initScript)) {
             writer.write(content);
