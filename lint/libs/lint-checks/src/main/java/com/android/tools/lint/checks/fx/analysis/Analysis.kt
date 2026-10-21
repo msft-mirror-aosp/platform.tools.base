@@ -1443,21 +1443,14 @@ internal open class Analysis<FX : Any>(
           }
             // A Java method reference knows its target type wherever it is (e.g. returned, assigned, cast, or a conditional's branch)
             ?: typeOf((e.sourcePsi as? PsiFunctionalExpression)?.functionalInterfaceType)
-      }
+      } ?: typeOf(site?.param?.type)
 
     if (site == null) return default()
     val param = site.param ?: return default()
-    val calleeRef = site.calleeRef ?: return typeOf(param.type)
-    val calleeHeader = module[calleeRef] ?: return typeOf(param.type)
-    val paramBound =
-      with(calleeHeader.initEnvironment) { types[boundParamNames[param.name] ?: return typeOf(param.type)] } ?: return typeOf(param.type)
-    return when {
-      paramBound.size == 1 -> {
-        val bound = paramBound.first() as? Type.Application ?: return typeOf(param.type)
-        bound.constructor as? ClassId.Guarded ?: typeOf(param.type)
-      }
-      else -> typeOf(param.type)
-    }
+    val calleeRef = site.calleeRef ?: return default()
+    val calleeHeader = module[calleeRef] ?: return default()
+    val bound = with(calleeHeader.initEnvironment) { types[boundParamNames[param.name] ?: return default()] }?.singleOrNull()
+    return (bound as? Type.Application)?.constructor as? ClassId.Guarded ?: default()
   }
 
   // Keyed on the overriding method's own descriptor, which also covers literals over abstract classes, where there's no SAM method to find

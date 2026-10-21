@@ -6244,6 +6244,74 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test functional arguments against their own interface`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+
+            public interface JCallback {
+              @UiThread void run();
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.WorkerThread;
+
+            class Varargs {
+              @WorkerThread static void work() { }
+
+              static void runAll(JCallback... cs) { }
+
+              static void methodRef() {
+                runAll(Varargs::work); // ERROR
+              }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun work() { }
+
+            fun takeAny(a: Any) { }
+
+            fun callableReference() = takeAny(JCallback(::work)) // ERROR
+            fun lambda() = takeAny(JCallback { work() }) // ERROR
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Varargs.java:11: Error: Call must be from @WorkerThread, but super method JCallback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+            runAll(Varargs::work); // ERROR
+                   ~~~~~~~~~~~~~
+        src/test/pkg/test.kt:9: Error: Call must be from @WorkerThread, but super method JCallback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+        fun callableReference() = takeAny(JCallback(::work)) // ERROR
+                                                    ~~~~~~
+        src/test/pkg/test.kt:10: Error: Call must be from @WorkerThread, but super method JCallback.run(…) is allowing @{Main,Ui}Thread [ThreadConstraint]
+        fun lambda() = takeAny(JCallback { work() }) // ERROR
+                                           ~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testFunctionalInterfacesKotlin_indirect() {
     lint()
       .files(
