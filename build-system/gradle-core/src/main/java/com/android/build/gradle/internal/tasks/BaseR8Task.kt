@@ -654,3 +654,5 @@ private fun toChildPartialShrinking(config: PartialShrinking?, classLoader: Clas
     }
   }
 }
+
+internal const val R8_SYSTEM_PROPERTIES_PREFIX = "com.android.tools.r8."

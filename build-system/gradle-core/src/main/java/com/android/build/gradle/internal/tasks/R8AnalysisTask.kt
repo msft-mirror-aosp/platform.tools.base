@@ -41,8 +41,11 @@ import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.workers.WorkAction
@@ -56,6 +59,10 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
   @get:OutputFile abstract val r8ConfigurationAnalyzerDataOutput: RegularFileProperty
 
   @get:OutputFile abstract val r8ConfigurationAnalyzerReportOutput: RegularFileProperty
+
+  @get:Input abstract val systemProperties: MapProperty<String, Any>
+
+  @get:Inject abstract val providerFactory: ProviderFactory
 
   class CreationAction(creationConfig: ConsumableCreationConfig, private val buildTypeName: String) :
     BaseR8Task.CreationAction<R8AnalysisTask, ConsumableCreationConfig>(
@@ -84,6 +91,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
     override fun configure(task: R8AnalysisTask) {
       super.configure(task)
       creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.ORIGINAL_MERGED_JAVA_RES, task.resourcesJar)
+      task.systemProperties.set(task.providerFactory.systemPropertiesPrefixedBy(R8_SYSTEM_PROPERTIES_PREFIX))
     }
   }
 
@@ -139,7 +147,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
         .processIsolation { spec ->
           spec.forkOptions { forkOptions ->
             forkOptions.jvmArgs(executionOptions.get().jvmArgs)
-            forkOptions.systemProperties(System.getProperties().mapKeys { it.key.toString() })
+            forkOptions.systemProperties(systemProperties.get().mapKeys { it.key.toString() })
           }
         }
         .submit(R8RunnableAnalysis::class.java, workerAction)

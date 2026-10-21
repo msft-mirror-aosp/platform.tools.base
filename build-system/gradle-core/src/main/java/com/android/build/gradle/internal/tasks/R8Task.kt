@@ -52,6 +52,7 @@ import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.CacheableTask
@@ -104,6 +105,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
   @get:OutputFile abstract val missingKeepRulesOutput: RegularFileProperty
 
   @get:OutputFile abstract val r8Metadata: RegularFileProperty
+
+  @get:Input abstract val systemProperties: MapProperty<String, Any>
 
   @get:Inject abstract val providerFactory: ProviderFactory
 
@@ -207,6 +210,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
       task.enableR8ConfigurationAnalyzerReport.setDisallowChanges(
         creationConfig.services.projectOptions.getProvider(BooleanOption.R8_ENABLE_KEEP_RADIUS_REPORT)
       )
+      task.systemProperties.set(task.providerFactory.systemPropertiesPrefixedBy(R8_SYSTEM_PROPERTIES_PREFIX))
     }
   }
 
@@ -328,7 +332,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
             // Once we have a list of R8-specific system properties (tracked at b/383727630),
             // we'll copy over those properties only (and also define those properties as
             // task inputs).
-            forkOptions.systemProperties(System.getProperties().mapKeys { it.key.toString() })
+            forkOptions.systemProperties(systemProperties.get().mapKeys { it.key.toString() })
           }
         }
         .submit(R8Runnable::class.java, workerAction)

@@ -247,6 +247,23 @@ class R8TaskTest {
     TruthHelper.assertThat(result.failureMessage)
       .contains("Expected value of com.android.tools.r8.synthesis.restrictrenaming to be a boolean, but was: invalid_value")
   }
+
+  @Test
+  fun `test system properties are part of cache key`() {
+    val build = rule.build
+
+    // First run with property set to val1
+    val result1 = build.executor.withArgument("-Dcom.android.tools.r8.custom.property=val1").run(":app:minifyReleaseWithR8")
+    result1.assertTask(":app:minifyReleaseWithR8").didWork()
+
+    // Second run with identical property should be UP-TO-DATE
+    val result2 = build.executor.withArgument("-Dcom.android.tools.r8.custom.property=val1").run(":app:minifyReleaseWithR8")
+    result2.assertTask(":app:minifyReleaseWithR8").wasUpToDate()
+
+    // Third run with different property value should NOT be UP-TO-DATE (didWork)
+    val result3 = build.executor.withArgument("-Dcom.android.tools.r8.custom.property=val2").run(":app:minifyReleaseWithR8")
+    result3.assertTask(":app:minifyReleaseWithR8").didWork()
+  }
 }
 
 private fun AndroidProjectDefinition<ApplicationExtension>.enableMultiDex() {
