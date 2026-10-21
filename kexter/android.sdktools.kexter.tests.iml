@@ -20,6 +20,7 @@
     <orderEntry type="module" module-name="android.sdktools.kexter" scope="TEST" />
     <orderEntry type="module" module-name="android.sdktools.zipflinger" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="junit4" level="project" />
+    <orderEntry type="library" scope="TEST" name="truth" level="project" />
   </component>
   <component name="TestModuleProperties" production-module="android.sdktools.kexter" />
 </module>

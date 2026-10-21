@@ -16,15 +16,21 @@
 
 package kexter.core
 
-import java.util.stream.Collectors
-import kexter.DexBytecode
 import kexter.DexMethodDebugInfo
 import kexter.Instruction
 import kexter.Logger
 import kexter.Opcode
 
-internal class DexBytecodeImpl(override val bytes: ByteArray, override val debugInfo: DexMethodDebugInfo, private val logger: Logger) :
-  DexBytecode {
+private const val NOOP_IDENTITY = 0x00u
+private const val PACKED_SWITCH_IDENTITY = 0x01u
+private const val SPARSE_SWITCH_IDENTITY = 0x02u
+private const val FILL_ARRAY_DATA_IDENTITY = 0x03u
+
+internal open class DexBytecodeImpl(
+  override val bytes: ByteArray,
+  override val debugInfo: DexMethodDebugInfo,
+  @Suppress("unused") private val logger: Logger,
+) : BaseDexBytecode(bytes, debugInfo) {
   override val instructions by lazy((LazyThreadSafetyMode.NONE)) { retrieveInstructions() }
 
   private fun retrieveInstructions(): List<Instruction> {
@@ -44,11 +50,6 @@ internal class DexBytecodeImpl(override val bytes: ByteArray, override val debug
     }
     return instrs
   }
-
-  private val NOOP_IDENTITY = 0x00u
-  private val PACKED_SWITCH_IDENTITY = 0x01u
-  private val SPARSE_SWITCH_IDENTITY = 0x02u
-  private val FILL_ARRAY_DATA_IDENTITY = 0x03u
 
   private fun pseudoCodeSize(reader: DexReader): UInt {
     val size =
@@ -77,28 +78,5 @@ internal class DexBytecodeImpl(override val bytes: ByteArray, override val debug
         else -> throw IllegalStateException("Bad pseudo-code identity  (${ "0x%02x".format( identity.toInt())})")
       }
     return size
-  }
-
-  override fun instructionsForLineNumber(lineNumber: Int): List<Instruction> {
-    val lineTable = debugInfo.lineTable
-    if (lineTable.isEmpty()) {
-      throw IllegalStateException("Unable to extract instruction without DebugInfo")
-    }
-
-    val startIndex = lineTable.indexOfFirst { e -> e.lineNumber == lineNumber }
-
-    if (startIndex == -1) {
-      throw IllegalStateException("Line $lineNumber not found in TableLine")
-    }
-    val startBc = lineTable[startIndex].index
-
-    val endIndex = startIndex + 1
-    val endBc =
-      if (endIndex < lineTable.size) {
-        lineTable[endIndex].index
-      } else {
-        UInt.MAX_VALUE
-      }
-    return instructions.stream().filter { e -> (startBc..<endBc).contains(e.index) }.collect(Collectors.toList())
   }
 }

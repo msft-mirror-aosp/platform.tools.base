@@ -66,6 +66,7 @@ iml_module(
         "//tools/base/kexter:studio.android.sdktools.kexter",
         "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
         "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
     ],
     test_friends = ["//tools/base/kexter:studio.android.sdktools.kexter"],
     test_srcs = [

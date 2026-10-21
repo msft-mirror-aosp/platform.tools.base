@@ -19,6 +19,7 @@ package kexter
 import kexter.core.DexReader
 
 sealed class Instruction(val opcode: Opcode, val index: UInt, val payload: ByteArray) {
+
   companion object {
     fun from(opcode: Opcode, index: UInt, payload: ByteArray): Instruction {
       if (opcode.name.startsWith("INVOKE")) {
@@ -27,6 +28,8 @@ sealed class Instruction(val opcode: Opcode, val index: UInt, val payload: ByteA
       return InstructionImpl(opcode, index, payload)
     }
   }
+
+  override fun toString() = "%04x: %s".format(index.toInt(), opcode.displayName)
 }
 
 class InstructionImpl(opcode: Opcode, index: UInt, payload: ByteArray) : Instruction(opcode, index, payload)
