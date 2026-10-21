@@ -19,7 +19,7 @@ dependencies {
     testImplementation project(':base:profgen')
     testImplementation libs.com.android.tools.sdkCommon
     testImplementation libs.com.android.tools.sdklib
-    testImplementation externalTestFixtures.repository
+    testImplementation rootProject.ext.externalTestFixtures.repository
     testImplementation libs.com.android.tools.testutils
     testImplementation libs.com.android.zipflinger
     testCompileOnly(project(':base:profile'))

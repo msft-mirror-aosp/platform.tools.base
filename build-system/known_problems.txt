@@ -1,3 +1,0 @@
-deprecation > implicit-lookup-of-properties-in-parent-projects | tools/base/build-system/builder/build.gradle:39 | Property 'externalTestFixtures' was not declared in project ':base:builder' and was resolved from root project 'tools-gradle'.
-deprecation > implicit-lookup-of-properties-in-parent-projects | tools/base/build-system/gradle-core/build.gradle:220 | Property 'externalTestFixtures' was not declared in project ':base:build-system:gradle-core' and was resolved from root project 'tools-gradle'.
-deprecation > implicit-lookup-of-properties-in-parent-projects | tools/base/build-system/gradle-core/build.gradle:225 | Property 'externalTestFixtures' was not declared in project ':base:build-system:gradle-core' and was resolved from root project 'tools-gradle'.

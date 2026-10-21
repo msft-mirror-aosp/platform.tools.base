@@ -25,7 +25,7 @@ dependencies {
     implementation libs.com.android.tools.sdklib
     implementation libs.com.android.tools.testutils
     implementation libs.com.android.tools.annotations
-    implementation externalTestFixtures.repository
+    implementation rootProject.ext.externalTestFixtures.repository
 
     implementation libs.kotlin.stdlib
 

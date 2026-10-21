@@ -36,7 +36,7 @@ dependencies {
     testImplementation libs.equalsverifier
     testImplementation libs.jimfs
     testImplementation libs.com.android.tools.testutils
-    testImplementation externalTestFixtures.repository
+    testImplementation rootProject.ext.externalTestFixtures.repository
 }
 
 test {
