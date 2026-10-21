@@ -1,0 +1,4 @@
+# R8 Team members for updating the R8 version.
+per-file r8-version.bzl = troels@google.com, sgjesse@google.com, christofferqa@google.com, jobay@google.com, clementbera@google.com, jonathanlist@google.com
+per-file BUILD.maven = troels@google.com, sgjesse@google.com, christofferqa@google.com, jobay@google.com, clementbera@google.com, jonathanlist@google.com
+

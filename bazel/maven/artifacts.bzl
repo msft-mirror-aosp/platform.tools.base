@@ -9,6 +9,8 @@ Only add things here if you need to use the artifact directly in the `deps` or `
 of a `(maven|kotlin|java)_library` rule, otherwise use DATA.
 """
 
+load("//tools/base/bazel:maven/r8-version.bzl", "R8_VERSION")
+
 # keep sorted
 ARTIFACTS = [
     "androidx.annotation:annotation:1.1.0",
@@ -43,7 +45,7 @@ ARTIFACTS = [
     "com.android.tools:desugar_jdk_libs_configuration_nio:2.0.2",
     "com.android.tools:desugar_jdk_libs_nio:2.0.2",
     "com.android.tools.fakeadbserver:fakeadbserver:31.13.0",  # Sherlock dependency
-    "com.android.tools:r8:9.6.0-alpha06",
+    "com.android.tools:r8:" + R8_VERSION,  # externalized to allow targeted OWNERS
     "com.android.tools.smali:smali-baksmali:3.0.9",
     "com.android.tools.smali:smali-dexlib2:3.0.9",
     "com.charleskorn.kaml:kaml-jvm:0.61.0",
