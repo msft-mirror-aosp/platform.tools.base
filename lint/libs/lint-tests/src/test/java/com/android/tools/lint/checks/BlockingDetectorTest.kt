@@ -130,6 +130,26 @@ class BlockingDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test annotation names`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            annotation class Blocking // TODO get rid of
+            annotation class NonBlocking // TODO get rid of
+            annotation class UsesNoBlocking // unrelated, not an effect
+
+            @UsesNoBlocking fun unrelated() { }
+
+            @NonBlocking fun callsUnrelated() = unrelated() // OK
+            """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   fun `test external assumptions available`() {
     getTempDir().absolutePath.let { assumptionsPath ->
       System.setProperty(BlockingDetector.ASSUMPTIONS_PATH, assumptionsPath)

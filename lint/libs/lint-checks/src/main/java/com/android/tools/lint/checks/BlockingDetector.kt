@@ -66,13 +66,13 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
     }
   }
 
-  // TODO use fully qualified name once we've decided. Below is for initial hacking.
-  private fun parse(ann: UAnnotation): Status? {
-    val fqn = ann.qualifiedName ?: return null
-    if (fqn.endsWith("NonBlocking")) return Status.DefinitelyNonBlocking
-    if (fqn.endsWith("Blocking")) return Status.MaybeBlocking
-    return null
-  }
+  private fun parse(ann: UAnnotation): Status? =
+    // Match the simple name exactly, so unrelated annotations (e.g. `@NoMerchantBlocking`) don't count.
+    when (ann.qualifiedName?.substringAfterLast('.')) {
+      "NonBlocking" -> Status.DefinitelyNonBlocking
+      "Blocking" -> Status.MaybeBlocking
+      else -> null
+    }
 
   override fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod) =
     parseAnnotations(evaluator.getAnnotations(method.javaPsi, false))
