@@ -27,7 +27,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-class ComputerArchUtilsTest {
+class CpuArchitectureTest {
   @Before
   fun setup() {
     Environment.initialize()
