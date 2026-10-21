@@ -258,7 +258,8 @@ public class GmavenZipTest {
 
         /**
          * The coordinates of an artifact. For the artifacts in gmaven.zip, {@code namedCoordinates}
-         * maps them to the coordinates with the version name, which this returns instead.
+         * maps them to the coordinates with the version name, which this returns instead. R8 is
+         * rolled frequently and only one version is used, so its version is omitted.
          */
         private static String coordinates(
                 String groupId,
@@ -266,7 +267,7 @@ public class GmavenZipTest {
                 String version,
                 Map<String, String> namedCoordinates) {
             String coordinates = groupId + ':' + artifactId;
-            if (version.isEmpty()) {
+            if (version.isEmpty() || coordinates.equals("com.android.tools:r8")) {
                 return coordinates;
             }
             coordinates = coordinates + ':' + version;
