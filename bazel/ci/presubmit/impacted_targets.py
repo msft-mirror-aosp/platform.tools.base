@@ -46,6 +46,8 @@ _DELETED_PREBUILTS_PACKAGES = (
 # presubmit. Changes touching these or `_DELETED_PREBUILTS_PACKAGES` run the
 # full baseline test suite.
 SELECTIVE_PRESUBMIT_PROJECTS_OPT_OUT = [
+    # Responsible for '@tools_idea' bzlmod repos.
+    'platform/tools/idea',
     # Responsible for '@intellij' repo.
     'platform/tools/vendor/google_prebuilts/studio/intellij-sdk',
     # Responsible for //prebuilts/studio/sdk.
@@ -55,6 +57,7 @@ SELECTIVE_PRESUBMIT_PROJECTS_OPT_OUT = [
     'platform/tools/vendor/google_prebuilts/studio/sdk/windows',
 ]
 SELECTIVE_PRESUBMIT_FILES_OPT_OUT = frozenset({
+    'tools/base/bazel/bzlmod/idea.MODULE.bazel',
     'tools/base/bazel/maven/BUILD.maven',
     'tools/base/bazel/sdk/prebuilts.studio.sdk.BUILD',
 })

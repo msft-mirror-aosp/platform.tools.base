@@ -1,4 +1,5 @@
-# Expose modules in //tools/idea and rename them to make it clear where they come from
+# Expose modules in //tools/idea and rename them to make it clear where they come from.
+# Keep local_path_override modules in sync with bazel_diff._EXCLUDED_BZLMOD_REPOS.
 bazel_dep(name = "community", repo_name = "tools_idea")
 local_path_override(
     module_name = "community",

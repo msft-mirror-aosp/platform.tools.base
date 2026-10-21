@@ -172,6 +172,19 @@ class PresubmitTest(parameterized.TestCase):
               '--build_metadata=selective_presubmit_found=False',
           ],
       ),
+      dict(
+          testcase_name='with_tools_idea_project',
+          gerrit_project='platform/tools/idea',
+          tags=[],
+          failed_tests=[],
+          impacted_targets=['target1'],
+          cquery_targets=['target1 (configA)'],
+          expected_targets=['base_target1', 'base_target2'],
+          expected_flags=[
+              '--build_metadata=selective_presubmit_strategy=default_fallback',
+              '--build_metadata=selective_presubmit_found=False',
+          ],
+      ),
   )
   def test_find_test_targets(
       self,

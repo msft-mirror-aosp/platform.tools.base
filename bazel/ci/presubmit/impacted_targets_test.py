@@ -332,6 +332,38 @@ class ImpactedTargetsTest(absltest.TestCase):
                 tags=[],
             ),
         ],
+        [
+            gce.GerritChange(
+                change_id='c6',
+                change_number='6',
+                project='platform/tools/idea',
+                project_path='tools/idea',
+                patchset='1',
+                file_infos=[gce.FileInfo('platform/util/Foo.java', 'modified')],
+                owner='owner',
+                message='msg',
+                topic='',
+                tags=[],
+            ),
+        ],
+        [
+            gce.GerritChange(
+                change_id='c7',
+                change_number='7',
+                project='platform/tools/base',
+                project_path='tools/base',
+                patchset='1',
+                file_infos=[
+                    gce.FileInfo(
+                        'bazel/bzlmod/idea.MODULE.bazel', 'modified'
+                    )
+                ],
+                owner='owner',
+                message='msg',
+                topic='',
+                tags=[],
+            ),
+        ],
     ]
     for changes in cases:
       with self.subTest(changes=changes):
@@ -360,6 +392,38 @@ class ImpactedTargetsTest(absltest.TestCase):
         cmd[cmd_options_idx + 1],
         '--config=ci'
         ' --deleted_packages=prebuilts/studio/sdk,prebuilts/tools/common/m2',
+    )
+
+  def test_bazel_wrapper_filters_excluded_bzlmod_repos(self):
+    if os.name == 'nt':
+      fake_bazel = self.build_env.tmp_path / 'echo_args.bat'
+      fake_bazel.write_text('@echo off\necho %*\n')
+    else:
+      fake_bazel = self.build_env.tmp_path / 'echo_args.sh'
+      fake_bazel.write_text('#!/bin/sh\necho "$*"\n')
+      fake_bazel.chmod(0o755)
+    wrapper = bazel_diff._make_bazel_wrapper(
+        self.build_env.tmp_path, str(fake_bazel)
+    )
+    res = subprocess.run(
+        [
+            str(wrapper),
+            'mod',
+            'show_repo',
+            '@@community+',
+            '@@rules_jvm+',
+            '@@lib+',
+            '@@jps_to_bazel+',
+            '@@+new_local_repository+maven',
+            '--output=streamed_proto',
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    self.assertEqual(
+        res.stdout.strip(),
+        'mod show_repo @@+new_local_repository+maven --output=streamed_proto',
     )
 
 
