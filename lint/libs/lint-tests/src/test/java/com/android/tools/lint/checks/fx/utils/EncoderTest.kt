@@ -99,6 +99,7 @@ class EncoderTest {
     Truth.assertThat(optPersonEncoder.encodingSize(data)).isLessThan(personEncoder.encodingSize(data))
   }
 
+  @Test
   fun `compressing encoder preserves information, and saves in obvious case`() {
     data class Data(
       val a: Map<String, Int> = persistentMapOf(),
