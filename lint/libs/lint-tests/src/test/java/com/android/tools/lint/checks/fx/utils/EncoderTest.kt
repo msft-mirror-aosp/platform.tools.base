@@ -20,9 +20,12 @@ import com.android.tools.lint.checks.fx.utils.Encoder.Companion.orNull
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.withDefault
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.zeroOrMore
 import com.google.common.truth.Truth
+import java.io.EOFException
+import java.util.Base64
 import kotlin.io.path.createTempDirectory
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class EncoderTest {
@@ -204,6 +207,19 @@ class EncoderTest {
       )
 
     outerEncoder.testEncodingThenDecodingPreservesValue(Outer3(inner1))
+  }
+
+  @Test
+  fun `decoding truncated input fails instead of returning garbage`() {
+    data class Data(val name: String, val count: Int, val flag: Boolean)
+
+    val encoder = Encoder.product(::Data, Encoder.string, Encoder.int, Encoder.boolean)
+    val (main, _) = encoder.encodeAsStrings(Data("foo", 42, false))
+    val bytes = Base64.getDecoder().decode(main)
+    for (n in bytes.indices) {
+      val truncated = Base64.getEncoder().encodeToString(bytes.copyOf(n))
+      assertThrows(EOFException::class.java) { encoder.decodeFromStrings(truncated) }
+    }
   }
 
   private fun <T> Encoder<T>.encodingSize(value: T): Int {

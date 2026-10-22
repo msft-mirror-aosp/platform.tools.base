@@ -19,6 +19,7 @@ import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.EOFException
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -425,22 +426,25 @@ interface Encoder<T> {
   }
 }
 
-private fun InputStream.readByte(): Byte = read().toByte()
+/** Read one byte as an unsigned [Int], throwing [EOFException] instead of returning `-1` at the end of stream */
+private fun InputStream.readUByte(): Int = read().also { if (it < 0) throw EOFException() }
+
+private fun InputStream.readByte(): Byte = readUByte().toByte()
 
 private fun OutputStream.writeByte(b: Byte) = write(b.toInt())
 
-private fun InputStream.readInt(): Int = (0 until Int.SIZE_BYTES).fold(0) { res, i -> res or (read() shl (i * Byte.SIZE_BITS)) }
+private fun InputStream.readInt(): Int = (0 until Int.SIZE_BYTES).fold(0) { res, i -> res or (readUByte() shl (i * Byte.SIZE_BITS)) }
 
 private fun OutputStream.writeInt(n: Int) {
   for (i in 0 until Int.SIZE_BYTES) write(n ushr (i * Byte.SIZE_BITS))
 }
 
-private fun InputStream.readBoolean(): Boolean = read() != 0
+private fun InputStream.readBoolean(): Boolean = readUByte() != 0
 
 private fun OutputStream.writeBoolean(b: Boolean) = write(if (b) 1 else 0)
 
 private fun InputStream.readLong(): Long =
-  (0 until Long.SIZE_BYTES).fold(0L) { res, i -> res or (read().toLong() shl (i * Byte.SIZE_BITS)) }
+  (0 until Long.SIZE_BYTES).fold(0L) { res, i -> res or (readUByte().toLong() shl (i * Byte.SIZE_BITS)) }
 
 private fun OutputStream.writeLong(l: Long) {
   for (i in 0 until Long.SIZE_BYTES) write((l ushr (i * Byte.SIZE_BITS)).toInt())
@@ -452,7 +456,12 @@ private fun OutputStream.writeString(s: String) {
   write(sBytes)
 }
 
-private fun InputStream.readString(): String = readNBytes(readInt()).decodeToString()
+private fun InputStream.readString(): String {
+  val n = readInt()
+  val bytes = readNBytes(n)
+  if (bytes.size != n) throw EOFException("Expected $n bytes, got ${bytes.size}")
+  return bytes.decodeToString()
+}
 
 /** Return a [String] encoding of the value, as well as an extra [String] for each interned [Encoder] */
 fun <T> Encoder<T>.encodeAsStrings(value: T, vararg internedEncoders: Encoder<*>): Pair<String, List<String>> {
