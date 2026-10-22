@@ -788,6 +788,7 @@ single_gradle_integration_test_per_source(
     srcs = [
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTestSuiteTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotExecuteCallbacksTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTestSuiteTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTest.kt",

@@ -19,10 +19,14 @@ package com.android.tools.render.compose
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
 import com.android.tools.render.common.ComponentTreeNode
+import com.android.tools.render.common.PreviewScreenshotResult
+import com.android.tools.render.common.ScreenshotError
 import com.android.tools.render.common.StandalonePreviewRenderer
 import com.android.tools.render.common.readComponentTreeFromJson
 import com.android.tools.render.common.readPreviewRenderingJson
 import com.android.tools.render.common.readPreviewRenderingResultJson
+import com.android.tools.render.common.writePreviewRenderingToJson
+import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Paths
 import javax.imageio.ImageIO
@@ -86,6 +90,149 @@ class ScreenshotRenderTest {
     assertTrue(stdout.contains("Options:"))
     assertTrue(stdout.contains("JSON Settings File Format:"))
     assertTrue(stdout.contains("Example JSON:"))
+  }
+
+  @Test
+  fun testPreviewsExecuteCallbacksWithoutAffectingEachOther() {
+    // Previews are rendered like Android Studio renders static previews, executing layoutlib callbacks between renders. All these
+    // previews share Compose's main dispatcher (static, per class loader) and layoutlib's Choreographer:
+    // - PreviewLaunchedEffect only looks like PreviewSmall once its LaunchedEffect has run.
+    // - The infinite animation leaves work scheduled on the dispatcher. That must not stop the coroutines of the previews rendered after
+    // it.
+    // - The exception thrown by a LaunchedEffect must fail that screenshot only.
+    // - A LaunchedEffect that keeps the main thread busy for too long must fail that screenshot with a clear error, and not the previews
+    // rendered after it.
+    // - The virtual time keeps increasing across previews, but the image of an animated preview must not depend on its position in the run.
+    // They are checked in a single test because each test builds the test project with Gradle, which is slow.
+    val screenshots =
+      listOf(
+        smallScreenshot,
+        infiniteAnimationScreenshot,
+        launchedEffectScreenshot,
+        launchedEffectThrowsScreenshot,
+        launchedEffectBusyScreenshot,
+        twoRoundLaunchedEffectScreenshot,
+      )
+    val outputFolder = tmpFolder.newFolder()
+    val resultsFile = tmpFolder.newFile("results.json")
+    val jsonSettings = gradleProject.createSettingsFile(outputFolder, resultsFile, tmpFolder.newFolder(), screenshots)
+
+    runComposeCliRender(
+      jsonSettings,
+      expectRenderErrors = true,
+      jvmArgs = listOf("-Dlayoutlib.callbacks.timeout.ms=1500"),
+    )
+
+    val result = readPreviewRenderingResultJson(resultsFile.bufferedReader())
+    assertNull(result.globalError)
+    val resultsByMethod = result.screenshotResults.associateBy { it.methodFQN }
+    assertEquals(screenshots.size, resultsByMethod.size)
+    assertErrorReported(resultsByMethod.getValue(launchedEffectThrowsScreenshot.methodFQN).error, "Thrown from LaunchedEffect")
+    assertErrorReported(resultsByMethod.getValue(launchedEffectBusyScreenshot.methodFQN).error, "did not complete within 1500ms")
+    (screenshots - launchedEffectThrowsScreenshot - launchedEffectBusyScreenshot).forEach {
+      assertNull(
+        "Unexpected error for ${it.methodFQN}: ${resultsByMethod.getValue(it.methodFQN).error}",
+        resultsByMethod.getValue(it.methodFQN).error,
+      )
+    }
+    ImageDiffUtil.assertImageSimilar(
+      launchedEffectScreenshot.methodFQN,
+      readImage(outputFolder, resultsByMethod.getValue(smallScreenshot.methodFQN)),
+      readImage(outputFolder, resultsByMethod.getValue(launchedEffectScreenshot.methodFQN)),
+      0.0,
+    )
+    ImageDiffUtil.assertImageSimilar(
+      twoRoundLaunchedEffectScreenshot.methodFQN,
+      readImage(outputFolder, resultsByMethod.getValue(smallScreenshot.methodFQN)),
+      readImage(outputFolder, resultsByMethod.getValue(twoRoundLaunchedEffectScreenshot.methodFQN)),
+      0.0,
+    )
+
+    // Render the infinite animation alone, reusing the same settings, and compare it with the image rendered after other previews.
+    val aloneOutputFolder = tmpFolder.newFolder()
+    val aloneResultsFile = tmpFolder.newFile("results-alone.json")
+    val aloneSettings = tmpFolder.newFile("settings-alone.json")
+    val aloneRendering =
+      readPreviewRenderingJson(jsonSettings.bufferedReader())
+        .copy(
+          screenshots = listOf(infiniteAnimationScreenshot),
+          outputFolder = aloneOutputFolder.absolutePath,
+          resultsFilePath = aloneResultsFile.absolutePath,
+        )
+    aloneSettings.bufferedWriter().use { writePreviewRenderingToJson(it, aloneRendering) }
+    runComposeCliRender(aloneSettings)
+    val aloneResult = readPreviewRenderingResultJson(aloneResultsFile.bufferedReader())
+    assertNull(aloneResult.globalError)
+    aloneResult.screenshotResults.forEach { assertNull(it.error) }
+    ImageDiffUtil.assertImageSimilar(
+      infiniteAnimationScreenshot.methodFQN,
+      readImage(aloneOutputFolder, aloneResult.screenshotResults.single()),
+      readImage(outputFolder, resultsByMethod.getValue(infiniteAnimationScreenshot.methodFQN)),
+      0.0,
+    )
+
+    // Stop the daemon otherwise it could keep the lock on the temporary folder
+    gradleProject.executeGradleTask("--stop")
+  }
+
+  private fun assertErrorReported(error: ScreenshotError?, expectedMessage: String) {
+    assertNotNull("Expected a screenshot error containing \"$expectedMessage\"", error)
+    assertTrue(
+      "Expected \"$expectedMessage\" in the reported problems, but was: $error",
+      error!!.problems.any { it.html.contains(expectedMessage) || it.stackTrace.orEmpty().contains(expectedMessage) },
+    )
+  }
+
+  private val smallScreenshot =
+    ComposeScreenshot(
+      "com.example.composeapplication.PreviewsKt.PreviewSmall",
+      emptyList(),
+      emptyMap(),
+      "com.example.composeapplication.PreviewsKt.PreviewSmall_screenshot",
+    )
+
+  private val launchedEffectScreenshot =
+    ComposeScreenshot(
+      "com.example.composeapplication.PreviewsKt.PreviewLaunchedEffect",
+      emptyList(),
+      emptyMap(),
+      "com.example.composeapplication.PreviewsKt.PreviewLaunchedEffect_screenshot",
+    )
+
+  private val twoRoundLaunchedEffectScreenshot =
+    ComposeScreenshot(
+      "com.example.composeapplication.PreviewsKt.PreviewTwoRoundLaunchedEffect",
+      emptyList(),
+      emptyMap(),
+      "com.example.composeapplication.PreviewsKt.PreviewTwoRoundLaunchedEffect_screenshot",
+    )
+
+  private val launchedEffectThrowsScreenshot =
+    ComposeScreenshot(
+      "com.example.composeapplication.PreviewsKt.PreviewLaunchedEffectThrows",
+      emptyList(),
+      emptyMap(),
+      "com.example.composeapplication.PreviewsKt.PreviewLaunchedEffectThrows_screenshot",
+    )
+
+  private val launchedEffectBusyScreenshot =
+    ComposeScreenshot(
+      "com.example.composeapplication.PreviewsKt.PreviewLaunchedEffectBusy",
+      emptyList(),
+      emptyMap(),
+      "com.example.composeapplication.PreviewsKt.PreviewLaunchedEffectBusy_screenshot",
+    )
+
+  private val infiniteAnimationScreenshot =
+    ComposeScreenshot(
+      "com.example.composeapplication.PreviewsKt.PreviewInfiniteAnimation",
+      emptyList(),
+      emptyMap(),
+      "com.example.composeapplication.PreviewsKt.PreviewInfiniteAnimation_screenshot",
+    )
+
+  private fun readImage(outputFolder: File, screenshotResult: PreviewScreenshotResult): BufferedImage {
+    return ImageIO.read(Paths.get(outputFolder.absolutePath, screenshotResult.imagePath).toFile())
   }
 
   private fun commonTest(screenshots: List<ComposeScreenshot>, goldenName: String, maxPercentDifferent: Double = 0.0) {

@@ -33,6 +33,7 @@ import com.android.tools.render.validation.PreviewValidator
 import com.android.tools.rendering.RenderLogger
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.RenderService
+import com.android.tools.rendering.RenderTask
 import com.android.tools.rendering.compose.ComposeViewInfo
 import com.android.tools.rendering.compose.parseViewInfo
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
@@ -48,12 +49,23 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.concurrent.CancellationException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-/** A renderer that can handle [RenderRequest]. */
+/**
+ * A renderer that can handle [RenderRequest].
+ *
+ * Previews ([render] with a [PreviewScreenshot]) are rendered like Android Studio renders static previews: layoutlib callbacks are executed
+ * between renders, so the image includes the work scheduled by the initial composition, such as `LaunchedEffect`s and animations (see
+ * [StaticPreviewCallbackRunner.renderExecutingCallbacks]). Plain layouts ([render] with a [RenderRequest]) are rendered once, like the
+ * Android Studio layout editor does.
+ *
+ * Note: A [Renderer] instance is intended to be used from a single caller thread at a time (matching layoutlib's single render thread).
+ */
 class Renderer(
   val project: Project,
   val module: StandaloneRenderModelModule,
@@ -64,6 +76,7 @@ class Renderer(
   private val logger = Logger.getLogger(Renderer::class.java.name)
   private val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
   private val previewValidator = PreviewValidator()
+  internal val callbackRunner = StaticPreviewCallbackRunner()
 
   /**
    * Refreshes the module classloader with updated [newClassPath] and [newProjectClassPath] so modified user `.class` files are loaded
@@ -71,6 +84,7 @@ class Renderer(
    */
   fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>) {
     moduleClassLoaderManager.refreshClassPath(newClassPath, newProjectClassPath)
+    callbackRunner.onRefreshClassPath()
   }
 
   companion object {
@@ -87,7 +101,10 @@ class Renderer(
    * @param screenshot The metadata of the Jetpack Compose `@Preview` to render.
    * @param outputFolderPath The root directory where the resulting PNG images will be saved.
    * @param includeComponentTree Whether to extract and write the component tree JSON.
-   * @param renderImage Whether to render and save the bitmap image.
+   * @param renderImage Whether to render and save the bitmap image. When `true`, layoutlib callbacks are executed before rendering and any
+   *   extracted component tree reflects the settled post-callback hierarchy. When `false` (component-tree-only mode), the layout is only
+   *   inflated without executing layoutlib callbacks or rendering a bitmap, so any extracted component tree reflects the initial
+   *   post-inflation hierarchy before `LaunchedEffect`s or animations run.
    * @return A list of [PreviewScreenshotResult]s, each detailing the outcome of a single render operation, including the output path and
    *   any potential errors.
    */
@@ -221,7 +238,13 @@ class Renderer(
       )
 
     val usedSuffixes = mutableSetOf<String>()
-    return renderResolvedLayouts(renderRequest, renderImage)
+    val previewName =
+      when {
+        screenshot.previewId.isEmpty() -> screenshot.methodFQN
+        screenshot.previewId.startsWith(screenshot.methodFQN) -> screenshot.previewId
+        else -> "${screenshot.methodFQN} (${screenshot.previewId})"
+      }
+    return renderResolvedLayouts(renderRequest, renderImage, previewName)
       .map { (config, renderResult, layout) ->
         val index = nextImageIndex()
         // If a custom display name is provided (e.g. from PreviewParameterProvider.getDisplayName),
@@ -374,6 +397,7 @@ class Renderer(
     return if (sanitized.isEmpty() || sanitized == "." || sanitized == "..") "preview" else sanitized
   }
 
+  /** Renders the layouts of [request] once, like the Android Studio layout editor does, without executing layoutlib callbacks. */
   fun render(request: RenderRequest, renderImage: Boolean = true): Sequence<Pair<Configuration, RenderResult>> {
     return request.xmlLayoutsProvider().map {
       val configuration = baseConfiguration.clone()
@@ -383,15 +407,28 @@ class Renderer(
   }
 
   /**
-   * Renders the given [RenderRequest] while preserving each layout's metadata (such as custom parameter display names in
-   * [ResolvedScreenshotLayout]).
+   * Renders the preview layouts of the given [RenderRequest] while preserving each layout's metadata (such as custom parameter display
+   * names in [ResolvedScreenshotLayout]).
+   *
+   * When [renderImage] is `true`, the layouts are rendered like Android Studio renders static previews, executing layoutlib callbacks
+   * between renders (see [StaticPreviewCallbackRunner.renderExecutingCallbacks]), so any extracted component tree reflects the settled
+   * post-callback hierarchy. When [renderImage] is `false` (component-tree-only mode), the layouts are only inflated without executing
+   * layoutlib callbacks or rendering a bitmap, so any extracted component tree reflects the initial post-inflation hierarchy.
    *
    * If [RenderRequest.resolvedLayoutsProvider] is null, falls back to rendering each layout from [RenderRequest.xmlLayoutsProvider] wrapped
    * in a [ResolvedScreenshotLayout] with null display name.
    */
+  @JvmOverloads
   fun renderResolvedLayouts(
     request: RenderRequest,
     renderImage: Boolean = true,
+  ): Sequence<Triple<Configuration, RenderResult, ResolvedScreenshotLayout>> =
+    renderResolvedLayouts(request, renderImage, previewName = "preview")
+
+  internal fun renderResolvedLayouts(
+    request: RenderRequest,
+    renderImage: Boolean,
+    previewName: String,
   ): Sequence<Triple<Configuration, RenderResult, ResolvedScreenshotLayout>> {
     val layoutsProvider =
       request.resolvedLayoutsProvider
@@ -401,23 +438,56 @@ class Renderer(
     return layoutsProvider().map {
       val configuration = baseConfiguration.clone()
       request.configurationModifier(configuration)
-      Triple(configuration, render(configuration, it.xmlLayout, renderImage), it)
+      val layoutPreviewName = it.displayName?.let { displayName -> "$previewName [$displayName]" } ?: previewName
+      Triple(configuration, render(configuration, it.xmlLayout, renderImage, executeCallbacks = true, previewName = layoutPreviewName), it)
     }
   }
 
-  private fun render(configuration: Configuration, xmlLayout: String, renderImage: Boolean): RenderResult {
+  /**
+   * Renders [xmlLayout]. When [renderImage] and [executeCallbacks] are `true`, layoutlib callbacks are executed between renders (see
+   * [StaticPreviewCallbackRunner.renderExecutingCallbacks]). When [renderImage] is `false`, the layout is only inflated.
+   */
+  private fun render(
+    configuration: Configuration,
+    xmlLayout: String,
+    renderImage: Boolean,
+    executeCallbacks: Boolean = false,
+    previewName: String? = null,
+  ): RenderResult {
     val disposable = Disposer.newCheckedDisposable()
     val logger = RenderLogger()
+    val composeViewAdapters: MutableSet<Any> = ConcurrentHashMap.newKeySet()
+    val recordAdapters: (RenderResult) -> Unit = { composeViewAdapters.addAll(findComposeViewAdapters(it.rootViews)) }
     return try {
+      var poisonedError: Throwable? = null
+      if (
+        !callbackRunner.ensureRenderThreadAvailable(
+          RenderService.getRenderAsyncActionExecutor()::runAsyncAction,
+          reportError = { message, throwable ->
+            poisonedError = throwable
+            // RenderLogger.error passes `message` to HtmlBuilder.add(String), which XML-escapes plain text automatically.
+            logger.error(null, message, throwable, null, null)
+          },
+        )
+      ) {
+        Disposer.dispose(disposable)
+        return createRenderTaskErrorResult(logger, poisonedError)
+      }
+
       val renderTask =
         renderService.taskBuilder(module, configuration, logger).build(disposable).get()
           ?: run {
             Disposer.dispose(disposable)
             return createRenderTaskErrorResult(logger)
           }
+      val moduleClassLoader: ClassLoader = moduleClassLoaderManager.getShared(null).classLoader
 
-      // b/469819154: Release render after use to avoid accumulating heap memory usage.
-      Disposer.register(disposable) { renderTask.releaseRender() }
+      // b/469819154: Release render and dispose Compose views after use to avoid accumulating heap memory usage
+      // and leaving effects or animations from this preview running on the shared AndroidUiDispatcher.Main.
+      // Note on Disposer order: RenderService.RenderTaskBuilder.build(disposable) only checks disposable.isDisposed() during task
+      // construction and does not register renderTask.disposeAsync() on disposable, so renderTask's session is still alive when
+      // releaseRender runs upon disposal of result -> disposable.
+      Disposer.register(disposable) { releaseRender(renderTask, composeViewAdapters, moduleClassLoader) }
 
       val xmlFile = RenderXmlFileSnapshot(project, "layout.xml", ResourceFolderType.LAYOUT, xmlLayout)
 
@@ -425,9 +495,17 @@ class Renderer(
 
       val result =
         if (renderImage) {
-          renderTask.render().get(100, TimeUnit.SECONDS)
+          if (executeCallbacks) {
+            callbackRunner.renderExecutingCallbacks(
+              RenderTaskPreviewSession(renderTask, logger, ::createRenderTaskErrorResult, moduleClassLoader),
+              previewName ?: "preview",
+              recordAdapters,
+            )
+          } else {
+            renderTask.render().get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS).also(recordAdapters)
+          }
         } else {
-          renderTask.inflate().get(100, TimeUnit.SECONDS) ?: createRenderTaskErrorResult(logger)
+          (renderTask.inflate().get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS) ?: createRenderTaskErrorResult(logger)).also(recordAdapters)
         }
       Disposer.register(result, disposable)
       result
@@ -436,6 +514,92 @@ class Renderer(
       createRenderTaskErrorResult(logger, t)
     }
   }
+
+  /**
+   * Disposes any [composeViewAdapters] inflated for this preview (cancelling their compositions, `LaunchedEffect`s, animations, and
+   * `Recomposer`s so they do not keep running on the shared `AndroidUiDispatcher.Main` during later previews), clears any work left queued
+   * in `AndroidUiDispatcher.Main` by unscoped coroutines or post-dispose callbacks (including on [moduleClassLoader] even if no
+   * `ComposeViewAdapter` was recorded), and releases the rendered image of [renderTask].
+   *
+   * Ordering guarantee: `runAsyncRenderActionWithSession` (with [DEFAULT_RENDER_THREAD_TIMEOUT_SECONDS], i.e. `RenderTask`'s default 10s
+   * render-thread timeout) and `RenderAsyncActionExecutor.runAsyncAction` submit on `RenderingTopic.NOT_SPECIFIED`. Because standalone
+   * rendering submits all render, callback, exception-handler, and `releaseRender` actions on `RenderingTopic.NOT_SPECIFIED` without
+   * calling `RenderAsyncActionExecutor.cancelActionsByTopic` or `cancelLowerPriorityActions`, this cleanup runs in FIFO order on the single
+   * render thread before the next preview's `inflate()`.
+   */
+  private fun releaseRender(renderTask: RenderTask, composeViewAdapters: Set<Any>, moduleClassLoader: ClassLoader) {
+    try {
+      logFailure("Unable to schedule ComposeViewAdapter disposal") {
+        disposeComposeViewsAndClearDispatcher(renderTask, composeViewAdapters, moduleClassLoader)
+      }
+    } finally {
+      renderTask.releaseRender()
+    }
+  }
+
+  private fun disposeComposeViewsAndClearDispatcher(
+    renderTask: RenderTask,
+    composeViewAdapters: Set<Any>,
+    moduleClassLoader: ClassLoader,
+  ) {
+    val composeClassLoaders =
+      composeViewAdapters.mapNotNullTo(linkedSetOf(moduleClassLoader)) {
+        it.javaClass.classLoader
+      }
+    val clearDispatcherWork = Runnable {
+      for (classLoader in composeClassLoaders) {
+        clearComposeUiDispatcherWork(classLoader)
+      }
+    }
+    val disposeActions = composeViewAdapters.mapNotNull { adapter ->
+      logFailure("Unable to look up ComposeViewAdapter.dispose") {
+        disposeMethodByClass.get(adapter.javaClass)?.let { method -> { method.invoke(adapter) } }
+      }
+    }
+    if (disposeActions.isNotEmpty()) {
+      val disposeFuture =
+        logFailure("Unable to schedule ComposeViewAdapter disposal") {
+          renderTask.runAsyncRenderActionWithSession(
+            {
+              try {
+                for (disposeAction in disposeActions) {
+                  logFailure("Unable to dispose ComposeViewAdapter") { disposeAction() }
+                }
+              } finally {
+                clearDispatcherWork.run()
+              }
+            },
+            DEFAULT_RENDER_THREAD_TIMEOUT_SECONDS,
+            TimeUnit.SECONDS,
+          )
+        }
+      if (disposeFuture != null) {
+        disposeFuture.whenComplete { _, t ->
+          if (t != null) {
+            if (t !is CancellationException && t.cause !is CancellationException) {
+              logger.log(Level.WARNING, "Unable to dispose ComposeViewAdapter", t)
+            }
+            RenderService.getRenderAsyncActionExecutor().runAsyncAction(clearDispatcherWork)
+          }
+        }
+      } else {
+        RenderService.getRenderAsyncActionExecutor().runAsyncAction(clearDispatcherWork)
+      }
+    } else {
+      RenderService.getRenderAsyncActionExecutor().runAsyncAction(clearDispatcherWork)
+    }
+  }
+
+  private inline fun <T> logFailure(message: String, block: () -> T): T? =
+    try {
+      block()
+    } catch (e: Exception) {
+      logger.log(Level.WARNING, message, e)
+      null
+    } catch (e: LinkageError) {
+      logger.log(Level.WARNING, message, e)
+      null
+    }
 
   private fun createRenderTaskErrorResult(logger: RenderLogger, throwable: Throwable? = null): RenderResult =
     RenderResult.createRenderTaskErrorResult(
