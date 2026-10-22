@@ -356,14 +356,15 @@ interface Encoder<T> {
       }
     }
 
-    fun finalize() {
+    /** Write out all interned values and close their streams */
+    fun flushInterns() {
       for ((i, record) in records.withIndex()) {
         lastFinalizingIndex = i
-        record.finalize()
+        record.flush()
       }
     }
 
-    private fun <T> Record<T>.finalize() {
+    private fun <T> Record<T>.flush() {
       try {
         val (rawEncoder, _, values, stream) = this
         stream.writeInt(values.size)
@@ -498,7 +499,7 @@ private fun <S : OutputStream, T> Encoder<T>.encodeAndFinalize(stream: S, state:
     encodeTo(stream, state, value)
   } finally {
     stream.close()
-    state.finalize()
+    state.flushInterns()
   }
 }
 
