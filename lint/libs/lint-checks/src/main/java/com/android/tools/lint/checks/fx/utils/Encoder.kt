@@ -15,6 +15,8 @@
  */
 package com.android.tools.lint.checks.fx.utils
 
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
@@ -475,7 +477,7 @@ fun <T> Encoder<T>.encodeToDir(value: T, dirPath: String, vararg internedEncoder
   fun outStream(fileName: String) =
     with(Paths.get(dirPath, fileName).toFile()) {
       if (!exists()) createNewFile()
-      FileOutputStream(this)
+      BufferedOutputStream(FileOutputStream(this))
     }
   val mainStream = outStream(PREFIX_DATA)
   val internStreams = List(internedEncoders.size) { outStream("$PREFIX_DATA$it") }
@@ -483,14 +485,14 @@ fun <T> Encoder<T>.encodeToDir(value: T, dirPath: String, vararg internedEncoder
 }
 
 fun <T> Encoder<T>.decodeFromDir(dirPath: String, vararg internEncoders: Encoder<*>): T {
-  fun inStream(fileName: String) = FileInputStream(Paths.get(dirPath, fileName).toFile())
+  fun inStream(fileName: String) = BufferedInputStream(FileInputStream(Paths.get(dirPath, fileName).toFile()))
   val mainStream = inStream(PREFIX_DATA)
   val internStreams = List(internEncoders.size) { inStream("$PREFIX_DATA$it") }
   try {
     return decodeFrom(mainStream, Encoder.DecodingState(internEncoders zip internStreams))
   } finally {
     mainStream.close()
-    internStreams.forEach(FileInputStream::close)
+    internStreams.forEach(InputStream::close)
   }
 }
 
