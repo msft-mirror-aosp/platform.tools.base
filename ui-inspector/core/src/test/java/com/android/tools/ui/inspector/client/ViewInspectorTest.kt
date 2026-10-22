@@ -161,6 +161,17 @@ class ViewInspectorTest {
     assertThat(exception).hasMessageThat().isEqualTo("Window at index 0 is missing its root")
   }
 
+  @Test
+  fun testDumpViews_throwsReportedError() {
+    val response =
+      ViewInspectorProtocol.Response.newBuilder()
+        .setDumpViewsResponse(ViewInspectorProtocol.DumpViewsResponse.newBuilder().setErrorMessage("The main thread did not respond"))
+        .build()
+
+    val exception = org.junit.Assert.assertThrows(IllegalStateException::class.java) { runBlocking { exchangeDumpResponse(response) } }
+    assertThat(exception).hasMessageThat().isEqualTo("The main thread did not respond")
+  }
+
   private suspend fun exchangeDumpResponse(viewResponse: ViewInspectorProtocol.Response): UiDump {
     val serverSocket = ServerSocket(0)
     val testScope = CoroutineScope(Dispatchers.Default + Job())

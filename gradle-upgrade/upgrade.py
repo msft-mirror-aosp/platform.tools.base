@@ -69,9 +69,9 @@ with open("../common/src/main/java/com/android/SdkConstants.java", "r+") as f:
 print("Updated tools/base")
 
 # tools/buildSrc changes
-with open("../../buildSrc/base/dependencies.properties", "r+") as f:
+with open("../../buildSrc/base/libs.versions.toml", "r+") as f:
     file = f.read()
-    oldVersion = r'org\.gradle:gradle-tooling-api:.*'
+    oldVersion = r'org\.gradle:gradle-tooling-api:[^"]*'
     newVersion = 'org.gradle:gradle-tooling-api:' + gradleVersion
     file = re.sub(oldVersion, newVersion, file)
     f.seek(0)

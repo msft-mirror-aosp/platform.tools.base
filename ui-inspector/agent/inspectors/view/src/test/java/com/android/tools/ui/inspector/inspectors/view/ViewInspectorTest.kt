@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.res.Configuration as AndroidResConfiguration
 import android.os.Build
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
@@ -37,8 +38,10 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
 import com.google.common.truth.Truth.assertThat
 import java.io.IOException
+import java.time.Duration
 import java.util.ArrayDeque
 import java.util.Locale
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -401,8 +404,90 @@ class ViewInspectorTest {
     assertThat(crashes.single().cause).isSameAs(sentinel)
   }
 
-  /** Returns an environment whose executors run tasks inline, on the thread that posts them. */
-  private fun inlineEnvironment(primary: Executor = Executor { it.run() }) =
+  @Test
+  fun testDumpViews_blockedMainThread_repliesWithErrorAfterTimeout() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(setupViews(activity))
+    withPrimaryHandlerThread { primaryLooper, inspector ->
+      val replies = CopyOnWriteArrayList<Response>()
+
+      // The main looper is not run, as if the main thread were blocked.
+      postDumpCommand(inspector) { replies.add(Response.parseFrom(it)) }
+      shadowOf(primaryLooper).idleFor(Duration.ofSeconds(59))
+      assertThat(replies).isEmpty()
+      shadowOf(primaryLooper).idleFor(Duration.ofSeconds(1))
+
+      val dumpResponse = replies.single().dumpViewsResponse
+      assertThat(dumpResponse.windowsList).isEmpty()
+      assertThat(dumpResponse.errorMessage).startsWith("The app's main thread did not respond within 60 seconds")
+      assertThat(dumpResponse.errorMessage).contains("Main thread state: ")
+      assertThat(dumpResponse.errorMessage).contains("\n    at ")
+
+      // When the main thread is unblocked, the dump it had queued does not reply again.
+      shadowOf(Looper.getMainLooper()).idle()
+      assertThat(replies).hasSize(1)
+    }
+  }
+
+  @Test
+  fun testDumpViews_mainThreadRespondsInTime_noTimeoutError() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(setupViews(activity))
+    withPrimaryHandlerThread { primaryLooper, inspector ->
+      val replies = CopyOnWriteArrayList<Response>()
+
+      sendDumpCommand(inspector) { replies.add(Response.parseFrom(it)) }
+      // The dump removed its timeout, so nothing is left scheduled on the primary thread.
+      assertThat(shadowOf(primaryLooper).nextScheduledTaskTime).isEqualTo(Duration.ZERO)
+      shadowOf(primaryLooper).idleFor(Duration.ofSeconds(60))
+
+      val dumpResponse = replies.single().dumpViewsResponse
+      assertThat(dumpResponse.errorMessage).isEmpty()
+      assertThat(dumpResponse.windowsList).isNotEmpty()
+    }
+  }
+
+  @Test
+  fun testDumpViews_slowDumpStartedInTime_isNotCutOff() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    withPrimaryHandlerThread { primaryLooper, inspector ->
+      // Reading this view takes longer than the timeout.
+      activity.setContentView(SlowView(activity) { shadowOf(primaryLooper).idleFor(Duration.ofSeconds(60)) })
+      val replies = CopyOnWriteArrayList<Response>()
+
+      sendDumpCommand(inspector) { replies.add(Response.parseFrom(it)) }
+
+      val dumpResponse = replies.single().dumpViewsResponse
+      assertThat(dumpResponse.errorMessage).isEmpty()
+      assertThat(dumpResponse.windowsList).isNotEmpty()
+    }
+  }
+
+  /**
+   * Runs [block] with an inspector whose [InspectorExecutors.handler] posts to the looper of a separate thread, which the test advances
+   * independently of the main looper.
+   */
+  private fun withPrimaryHandlerThread(block: (primaryLooper: Looper, inspector: ViewInspector) -> Unit) {
+    val primaryThread = HandlerThread("primary").apply { start() }
+    try {
+      val inspector =
+        ViewInspector(
+          object : Connection() {
+            override fun sendEvent(data: ByteArray) {}
+          },
+          inlineEnvironment(handler = Handler(primaryThread.looper)),
+        )
+      block(primaryThread.looper, inspector)
+    } finally {
+      primaryThread.quitSafely()
+    }
+  }
+
+  /**
+   * Returns an environment whose executors run tasks inline, on the thread that posts them. Its [InspectorExecutors.handler] posts to
+   * [handler], by default on the main looper, which tests never advance far enough to run delayed tasks.
+   */
+  private fun inlineEnvironment(primary: Executor = Executor { it.run() }, handler: Handler = Handler(Looper.getMainLooper())) =
     object : InspectorEnvironment {
       override fun executors(): InspectorExecutors {
         return object : InspectorExecutors {
@@ -410,7 +495,7 @@ class ViewInspectorTest {
 
           override fun io() = Executor { it.run() }
 
-          override fun handler() = Handler(Looper.getMainLooper())
+          override fun handler() = handler
         }
       }
 
@@ -434,6 +519,12 @@ class ViewInspectorTest {
 
   /** Sends a dump command that passes its reply to [onReply], and runs the tasks it posts to the main thread. */
   private fun sendDumpCommand(inspector: ViewInspector, onReply: (ByteArray) -> Unit = {}) {
+    postDumpCommand(inspector, onReply)
+    shadowOf(Looper.getMainLooper()).idle()
+  }
+
+  /** Sends a dump command that passes its reply to [onReply], without running the tasks it posts to the main thread. */
+  private fun postDumpCommand(inspector: ViewInspector, onReply: (ByteArray) -> Unit) {
     val callback =
       object : Inspector.CommandCallback {
         override fun reply(response: ByteArray) = onReply(response)
@@ -443,12 +534,19 @@ class ViewInspectorTest {
     val command =
       Command.newBuilder().setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.newBuilder().setIncludeAttributes(false)).build()
     inspector.onReceiveCommand(command.toByteArray(), callback)
-    shadowOf(Looper.getMainLooper()).idle()
   }
 
   /** A view whose layout resource, read for every view of a dump, cannot be read. */
   private class BrokenLayoutResView(context: Context, private val failure: Throwable) : View(context) {
     override fun getSourceLayoutResId(): Int = throw failure
+  }
+
+  /** A view that runs [onRead] when a dump reads its layout resource. */
+  private class SlowView(context: Context, private val onRead: () -> Unit) : View(context) {
+    override fun getSourceLayoutResId(): Int {
+      onRead()
+      return super.getSourceLayoutResId()
+    }
   }
 
   private fun setupViews(activity: Activity): View {

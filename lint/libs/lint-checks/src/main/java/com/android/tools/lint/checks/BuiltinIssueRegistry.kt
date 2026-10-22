@@ -248,6 +248,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           InefficientWeightDetector.NESTED_WEIGHTS,
           InefficientWeightDetector.ORIENTATION,
           InefficientWeightDetector.WRONG_0DP,
+          InferredThreadDetector.INITIALIZER,
           InferredThreadDetector.THREAD,
           InstantAppDetector.ISSUE,
           IntentDetector.ISSUE,

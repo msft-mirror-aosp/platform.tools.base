@@ -35,4 +35,10 @@ object AndroidTestReportKeys {
 
   /** The report entry key for the benchmark message path. */
   const val BENCHMARK_MESSAGE_PATH = "android-test.benchmark-message-path"
+
+  /**
+   * The report entry key for an error message describing why the test run on a device failed as a whole (e.g. the instrumentation crashed
+   * or the APKs could not be installed), as opposed to an individual test failure.
+   */
+  const val RUN_FAILURE = "android-test.run-failure"
 }

@@ -113,6 +113,8 @@ data class TextFilePatch(
 
       var oldFile = FileHeader()
       var newFile = FileHeader()
+      var hasOldHeader = false
+      var hasNewHeader = false
       val currentChunkText = StringBuilder()
 
       fun flushCurrentPatch() {
@@ -120,7 +122,13 @@ data class TextFilePatch(
         if (chunkStr.isNotBlank()) {
           val patch = TextPatch.parse(chunkStr, strict)
           add(TextFilePatch(oldFile, newFile, patch))
+        } else if (hasOldHeader && hasNewHeader) {
+          add(TextFilePatch(oldFile, newFile, TextPatch(emptyList())))
         }
+        oldFile = FileHeader()
+        newFile = FileHeader()
+        hasOldHeader = false
+        hasNewHeader = false
         currentChunkText.clear() // Always clear to prevent cross-file leakage
       }
 
@@ -130,21 +138,23 @@ data class TextFilePatch(
 
         val headerMatch = FILE_HEADER_REGEX.find(line)
         if (headerMatch != null) {
-          // Encountered a new file header! Flush the accumulated patch block from the previous file.
-          flushCurrentPatch()
-
           val marker = headerMatch.groupValues[1]
+          if ((marker == "---" && hasOldHeader) || hasNewHeader || currentChunkText.isNotEmpty()) {
+            flushCurrentPatch()
+          }
+
           val path = headerMatch.groupValues[2].trim()
           val remainder = headerMatch.groupValues[3].trim()
 
-          // Extract stamp and timestamp: split tokens and verify if the last one is a valid file size stamp.
-          // To prevent misinterpreting trailing numbers in timestamps (e.g. a year or day) as a stamp,
-          // we only capture the stamp if the preceding token looks like a timezone offset or time token.
+          // Extract stamp and timestamp: split tokens and verify if the last one is a valid non-negative file size/version stamp.
+          // To prevent misinterpreting trailing numbers in timestamps (e.g. a year, day, or timezone offset like +0000)
+          // as a stamp, we only capture the stamp if it consists strictly of digits and the preceding token
+          // looks like a timezone offset or time token.
           val tokens = remainder.split(" ").filter { it.isNotBlank() }
           val lastToken = tokens.lastOrNull()
-          val parsedStamp = lastToken?.toLongOrNull() ?: -1L
+          val parsedStamp = if (lastToken != null && lastToken.all { it.isDigit() }) lastToken.toLongOrNull() else null
           val timestamp =
-            if (parsedStamp >= 0) {
+            if (parsedStamp != null) {
               if (tokens.size > 1) {
                 val secondToLast = tokens[tokens.size - 2]
                 val isMetadataSeparator =
@@ -166,13 +176,15 @@ data class TextFilePatch(
             } else {
               remainder.takeIf { it.isNotBlank() }
             }
-          val stamp = if (timestamp == remainder) -1L else parsedStamp
+          val stamp = if (timestamp == remainder || parsedStamp == null) -1L else parsedStamp
 
           val header = FileHeader(path, timestamp, stamp)
           if (marker == "---") {
             oldFile = header
+            hasOldHeader = true
           } else if (marker == "+++") {
             newFile = header
+            hasNewHeader = true
           }
           i++
         } else if (line.startsWith("@@ -") || currentChunkText.isNotEmpty()) {

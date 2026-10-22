@@ -213,6 +213,76 @@ com/android/tools/analytics-library/tracker
   com/android/tools/
   com/android/tools/analytics/
 
+com/android/tools/androidtest/android-test-engine
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/services/org.junit.platform.engine.TestEngine
+  META-INF/unnamed.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/androidtest/
+  com/android/tools/androidtest/testengine/
+  com/android/tools/androidtest/testengine/adb/
+  com/android/tools/androidtest/testengine/collector/
+  com/android/tools/androidtest/testengine/config/
+  com/android/tools/androidtest/testengine/descriptor/
+  com/android/tools/androidtest/testengine/instrument/
+  com/android/tools/androidtest/testengine/report/
+  com/android/tools/androidtest/testengine/util/
+
+com/android/tools/androidtest/android-test-engine-result-listener
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/services/org.junit.platform.launcher.TestExecutionListener
+  META-INF/unnamed.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/androidtest/
+  com/android/tools/androidtest/listener/
+
+com/android/tools/androidtest/test-result-event-proto
+  META-INF/
+  META-INF/MANIFEST.MF
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/androidtest/
+  com/android/tools/androidtest/listener/
+  com/android/tools/androidtest/listener/proto/
+  com/android/tools/androidtest/listener/proto/test_result_event.proto
+
+com/android/tools/androidtest/test-result-proto
+  META-INF/
+  META-INF/MANIFEST.MF
+  NOTICE
+  com/
+  com/google/
+  com/google/testing/
+  com/google/testing/platform/
+  com/google/testing/platform/proto/
+  com/google/testing/platform/proto/api/
+  com/google/testing/platform/proto/api/core/
+  proto/
+  proto/api/
+  proto/api/core/
+  proto/api/core/android_test_device_info.proto
+  proto/api/core/error.proto
+  proto/api/core/error_detail.proto
+  proto/api/core/issue.proto
+  proto/api/core/label.proto
+  proto/api/core/path.proto
+  proto/api/core/platform_error.proto
+  proto/api/core/test_artifact.proto
+  proto/api/core/test_case.proto
+  proto/api/core/test_result.proto
+  proto/api/core/test_status.proto
+  proto/api/core/test_suite_result.proto
+
 com/android/tools/annotations
   META-INF/
   META-INF/MANIFEST.MF
@@ -962,8 +1032,6 @@ com/android/tools/emulator/proto
   com/
   com/android/
   com/android/emulation/
-  com/android/emulation/control/
-  com/android/emulation/control/incubating/
   com/android/emulation/remote/
   com/android/emulation/stats/
   com/android/emulator/
@@ -979,12 +1047,10 @@ com/android/tools/emulator/proto
   emulator_stats.proto
   grpc_endpoint_description.proto
   ice_config.proto
-  modem_service.proto
   rtc_service_v2.proto
   snapshot.proto
   snapshot_service.proto
   ui_controller_service.proto
-  virtual_scene_service.proto
   waterfall.proto
 
 com/android/tools/external/com-intellij/intellij-core
@@ -3333,21 +3399,11 @@ com/android/tools/layoutlib/layoutlib-api
 com/android/tools/lint/lint
   META-INF/
   META-INF/MANIFEST.MF
-  META-INF/dcl-lang.kotlin_module
-  META-INF/gradle-declarative-lang.xml
   META-INF/lint-cli.kotlin_module
   NOTICE
   com/
   com/android/
   com/android/tools/
-  com/android/tools/idea/
-  com/android/tools/idea/gradle/
-  com/android/tools/idea/gradle/dcl/
-  com/android/tools/idea/gradle/dcl/lang/
-  com/android/tools/idea/gradle/dcl/lang/lexer/
-  com/android/tools/idea/gradle/dcl/lang/parser/
-  com/android/tools/idea/gradle/dcl/lang/psi/
-  com/android/tools/idea/gradle/dcl/lang/psi/impl/
   com/android/tools/lint/
   com/android/tools/lint/gradle/
   com/android/tools/lint/renderer/

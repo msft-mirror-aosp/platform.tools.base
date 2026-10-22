@@ -51,7 +51,7 @@ suspend fun resolveSoleOnlineDevice(adbSession: AdbSession): String {
 /**
  * Returns the package name of the app hosting the top (foreground) activity on the device [serial].
  *
- * @throws IllegalStateException when the foreground app cannot be determined unambiguously.
+ * @throws IllegalStateException when the foreground app cannot be determined unambiguously, or is not debuggable.
  */
 suspend fun resolveForegroundPackage(adbSession: AdbSession, serial: String): String {
   val selector = DeviceSelector.fromSerialNumber(serial)
@@ -64,11 +64,20 @@ suspend fun resolveForegroundPackage(adbSession: AdbSession, serial: String): St
   val packagesByUid = uidResolver.allPackageUids().groupBy { it.uid }
   // Distinct UIDs always resolve to distinct packages: several foreground UIDs means several apps are in the foreground (split screen).
   val packages = foregroundUids.map { uid -> singlePackageForUid(uid, packagesByUid) }
-  return when {
-    packages.size == 1 -> packages.single()
-    else -> throw IllegalStateException("Multiple foreground apps found: ${packages.sorted().joinToString()}.")
+  val packageName =
+    packages.singleOrNull() ?: throw IllegalStateException("Multiple foreground apps found: ${packages.sorted().joinToString()}.")
+  if (!isDebuggable(adbSession, selector, packageName)) {
+    throw IllegalStateException(
+      "The app in the foreground, '$packageName', is not debuggable. It may be a system screen, such as the launcher, a permission" +
+        " request or a share sheet."
+    )
   }
+  return packageName
 }
+
+/** Returns whether [packageName] is debuggable: whether `run-as`, which the inspector relies on, accepts it. */
+private suspend fun isDebuggable(adbSession: AdbSession, selector: DeviceSelector, packageName: String): Boolean =
+  adbSession.deviceServices.shellAsText(selector, "run-as $packageName true").exitCode == 0
 
 /** Returns the UID of each app currently hosting a top (foreground) activity: one normally, several in split screen. */
 private suspend fun queryForegroundUids(adbSession: AdbSession, selector: DeviceSelector, uidResolver: UidResolver): List<Int> {
@@ -84,11 +93,19 @@ private suspend fun queryForegroundUids(adbSession: AdbSession, selector: Device
     .distinct()
 }
 
+/** The first UID of an app. Lower UIDs belong to the system, whose packages `run-as` never accepts. */
+private const val FIRST_APPLICATION_UID = 10000
+
 /**
- * Returns the single package that owns [uid], looked up in [packagesByUid]. Throws when no package owns the UID, or when several share it
- * (legacy sharedUserId): a UID alone cannot tell which of them is in the foreground.
+ * Returns the single package that owns [uid], looked up in [packagesByUid]. Throws when the UID belongs to the system, when no package owns
+ * it, or when several share it (legacy sharedUserId): a UID alone cannot tell which of them is in the foreground.
  */
 private fun singlePackageForUid(uid: Int, packagesByUid: Map<Int, List<PackageUid>>): String {
+  if (uid < FIRST_APPLICATION_UID) {
+    throw IllegalStateException(
+      "The app in the foreground runs as the system (UID $uid), so it is not debuggable. It may be a system screen, such as Settings."
+    )
+  }
   val candidates = packagesByUid[uid].orEmpty().map { it.packageName }.distinct().sorted()
   return when {
     candidates.isEmpty() -> throw foregroundAppResolutionException()

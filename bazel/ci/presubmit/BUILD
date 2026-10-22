@@ -68,6 +68,10 @@ py_library(
 py_test(
     name = "impacted_targets_test",
     srcs = ["impacted_targets_test.py"],
+    data = ["//tools/base/bazel:bazel-diff"],
+    env = {
+        "BAZEL_DIFF_BINARY": "$(rootpath //tools/base/bazel:bazel-diff)",
+    },
     deps = [
         ":bazel_diff",
         ":gerrit",

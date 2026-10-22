@@ -45,6 +45,9 @@ kotlin_test(
         "//prebuilts/studio/layoutlib:runtime",
         "//prebuilts/studio/layoutlib/data:framework_res.jar",
         "//tools/base/standalone-render/lib/testData",
+        "@maven//:androidx.compose.runtime.runtime-android_1.9.5",
+        "@maven//:androidx.compose.ui.ui-android_1.9.5",
+        "@maven//:androidx.core.core_1.15.0",
     ],
     friends = [":tools.standalone-render.lib"],
     jvm_flags = ["-Dtest.suite.jar=tools.standalone-render.lib.tests.jar"],
@@ -52,6 +55,7 @@ kotlin_test(
     deps = [
         ":tools.standalone-render.lib",
         "//prebuilts/tools/common/lint-psi/intellij-core",
+        "//tools/adt/idea/layoutlib:tools.layoutlib",
         "//tools/adt/idea/preview-elements:tools.preview-elements",
         "//tools/adt/idea/render-resources:tools.render-resources",
         "//tools/adt/idea/rendering:tools.rendering",

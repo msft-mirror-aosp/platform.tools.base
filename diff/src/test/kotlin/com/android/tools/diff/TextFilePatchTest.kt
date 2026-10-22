@@ -302,4 +302,164 @@ class TextFilePatchTest {
         .trimIndent()
     assertThat(patch.toUnifiedString()).isEqualTo(expectedFormatted)
   }
+
+  @Test
+  fun testParse_noHeaders() {
+    val diff = TextFilePatch.parse("")
+    assertThat(diff.toUnifiedString()).isEmpty()
+  }
+
+  @Test
+  fun testParseMultiPatch_noChunksDiff() {
+    val diffText =
+      """
+      --- oldPath 2020-03-07 00:11:22.111111 +0000 100
+      +++ newPath 2025-01-02 00:01:02.222222 +0000 200
+      --- oldPath 2020-03-07 00:11:22.333333 +0000 200
+      +++ newPath 2025-01-02 00:01:02.444444 +0000 300
+      @@ -1,3 +1,3 @@
+       line 1: unchanged
+      -line 2: to be changed
+      +line 2: has been changed
+       line 3: unchanged
+      \ No newline at end of file
+      --- oldPath 2020-03-07 00:11:22.555555 +0000 300
+      +++ newPath 2025-01-02 00:01:02.666666 +0000 400
+      --- oldPath 2020-03-07 00:11:22.777777 +0000 400
+      +++ newPath 2025-01-02 00:01:02.888888 +0000 500
+
+      """
+        .trimIndent()
+
+    val patches = TextFilePatch.parseMultiPatch(diffText)
+    assertThat(patches).hasSize(4)
+
+    val first = patches[0]
+    assertThat(first.oldFile.path).isEqualTo("oldPath")
+    assertThat(first.newFile.path).isEqualTo("newPath")
+    assertThat(first.oldFile.stamp).isEqualTo(100L)
+    assertThat(first.newFile.stamp).isEqualTo(200L)
+    assertThat(first.patch.chunks).isEmpty()
+
+    val second = patches[1]
+    assertThat(second.oldFile.stamp).isEqualTo(200L)
+    assertThat(second.newFile.stamp).isEqualTo(300L)
+    assertThat(second.patch.chunks).isNotEmpty()
+
+    val third = patches[2]
+    assertThat(third.oldFile.stamp).isEqualTo(300L)
+    assertThat(third.newFile.stamp).isEqualTo(400L)
+    assertThat(third.patch.chunks).isEmpty()
+
+    val fourth = patches[3]
+    assertThat(fourth.oldFile.stamp).isEqualTo(400L)
+    assertThat(fourth.newFile.stamp).isEqualTo(500L)
+    assertThat(fourth.patch.chunks).isEmpty()
+  }
+
+  @Test
+  fun testParse_fullHeadersOnEmptyChunkDiff() {
+    val diff =
+      TextFilePatch.parse(
+        """
+        --- oldPath 2020-03-07 00:11:22.123456 -0800 100
+        +++ newPath 2025-01-02 00:01:02.345678 -0800 999
+        """
+          .trimIndent()
+      )
+
+    assertThat(diff.oldFile.path).isEqualTo("oldPath")
+    assertThat(diff.oldFile.timestamp).isEqualTo("2020-03-07 00:11:22.123456 -0800")
+    assertThat(diff.oldFile.stamp).isEqualTo(100L)
+
+    assertThat(diff.newFile.path).isEqualTo("newPath")
+    assertThat(diff.newFile.timestamp).isEqualTo("2025-01-02 00:01:02.345678 -0800")
+    assertThat(diff.newFile.stamp).isEqualTo(999L)
+    assertThat(diff.patch.chunks).isEmpty()
+  }
+
+  @Test
+  fun testParse_noStamps() {
+    val diff =
+      TextFilePatch.parse(
+        """
+        --- oldPath 2020-03-07 00:11:22.123456 -0800
+        +++ newPath 2025-01-02 00:01:02.345678 +0000
+        """
+          .trimIndent()
+      )
+
+    assertThat(diff.oldFile.path).isEqualTo("oldPath")
+    assertThat(diff.oldFile.timestamp).isEqualTo("2020-03-07 00:11:22.123456 -0800")
+    assertThat(diff.oldFile.stamp).isEqualTo(-1L)
+
+    assertThat(diff.newFile.path).isEqualTo("newPath")
+    assertThat(diff.newFile.timestamp).isEqualTo("2025-01-02 00:01:02.345678 +0000")
+    assertThat(diff.newFile.stamp).isEqualTo(-1L)
+  }
+
+  @Test
+  fun testParse_noTimeOrStamp() {
+    val diff =
+      TextFilePatch.parse(
+        """
+        --- oldPath
+        +++ newPath
+        """
+          .trimIndent()
+      )
+    assertThat(diff.oldFile.path).isEqualTo("oldPath")
+    assertThat(diff.oldFile.timestamp).isNull()
+    assertThat(diff.oldFile.stamp).isEqualTo(-1L)
+
+    assertThat(diff.newFile.path).isEqualTo("newPath")
+    assertThat(diff.newFile.timestamp).isNull()
+    assertThat(diff.newFile.stamp).isEqualTo(-1L)
+  }
+
+  @Test
+  fun testForFileCreation_withAndWithoutTrailingNewline() {
+    val withNewline = "a\nb\nc\n"
+    val filePatchWithNewline =
+      TextFilePatch(
+        oldFile = FileHeader(FileHeader.NO_PATH),
+        newFile = FileHeader("new/file"),
+        patch = TextPatch.forFileCreation(withNewline),
+      )
+    assertThat(filePatchWithNewline.toUnifiedString().trimEnd())
+      .isEqualTo(
+        """
+        --- /dev/null
+        +++ new/file
+        @@ -0,0 +1,3 @@
+        +a
+        +b
+        +c
+        """
+          .trimIndent()
+      )
+    assertThat(filePatchWithNewline.patch.apply("")).isEqualTo(withNewline)
+
+    val withoutNewline = "a\nb\nc"
+    val filePatchWithoutNewline =
+      TextFilePatch(
+        oldFile = FileHeader(FileHeader.NO_PATH),
+        newFile = FileHeader("new/file"),
+        patch = TextPatch.forFileCreation(withoutNewline),
+      )
+    assertThat(filePatchWithoutNewline.toUnifiedString().trimEnd())
+      .isEqualTo(
+        """
+        --- /dev/null
+        +++ new/file
+        @@ -0,0 +1,3 @@
+        +a
+        +b
+        +c
+        \ No newline at end of file
+        """
+          .trimIndent()
+      )
+    assertThat(filePatchWithoutNewline.patch.apply("")).isEqualTo(withoutNewline)
+  }
 }

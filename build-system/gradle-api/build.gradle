@@ -17,9 +17,9 @@ dependencies {
     api project(':base:build-system:gradle-common-api')
     implementation project(':base:builder-test-api')
     implementation libs.guava
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
     api libs.asm
-    api libs.kotlin_gradle_plugin_api
+    api libs.kotlin.gradle.plugin.api
 
     compileOnly libs.com.android.tools.annotations
     compileOnly gradleApi()
@@ -34,18 +34,18 @@ dependencies {
     metalavaTestImplementation libs.com.android.tools.testutils
     metalavaTestImplementation libs.guava
     metalavaTestImplementation libs.junit
-    metalavaTestImplementation libs.kotlin_test
+    metalavaTestImplementation libs.kotlin.test
 
     testImplementation libs.junit
-    testImplementation libs.kotlin_test
-    testImplementation libs.kotlin_gradle_plugin
+    testImplementation libs.kotlin.test
+    testImplementation libs.kotlin.gradle.plugin
     testImplementation libs.com.android.tools.testutils
     testImplementation gradleApi()
     testImplementation project(':base:builder-model')
     testImplementation libs.com.android.tools.annotations
     testImplementation libs.com.android.tools.common
     testImplementation libs.com.android.tools.sdkCommon
-    testImplementation libs.mockito_core
+    testImplementation libs.mockito.core
     testImplementation libs.equalsverifier
     testImplementation libs.truth
     // Allow gradle-api to exist without aapt2-proto.

@@ -59,7 +59,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.LINT
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.MANIFEST
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.NAVIGATION_JSON
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PREFAB_PACKAGE
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_FROM_AAR
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PROCESSED_JAR
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PUBLIC_RES
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.RENDERSCRIPT
@@ -194,7 +194,7 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
       RES_SHARED_OEM_TOKEN_LIBRARY -> outputIfExists(PATH_SHARED_LIBRARY_RESOURCES_APK)
       DATA_BINDING_ARTIFACT -> outputIfExists(DATA_BINDING_ROOT_FOLDER_IN_AAR)
       DATA_BINDING_BASE_CLASS_LOG_ARTIFACT -> outputIfExists(DATA_BINDING_CLASS_LOG_ROOT_FOLDER_IN_AAR)
-      PREFAB_PACKAGE -> outputIfExists(FD_PREFAB_PACKAGE)
+      PREFAB_PACKAGE_FROM_AAR -> outputIfExists(FD_PREFAB_PACKAGE)
       AAR_METADATA -> outputIfExists(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
       ART_PROFILE -> outputIfExists(FN_ART_PROFILE)
       NAVIGATION_JSON -> outputIfExists(FN_NAVIGATION_JSON)
@@ -236,7 +236,7 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
         DATA_BINDING_BASE_CLASS_LOG_ARTIFACT,
         RES_STATIC_LIBRARY,
         RES_SHARED_STATIC_LIBRARY,
-        PREFAB_PACKAGE,
+        PREFAB_PACKAGE_FROM_AAR,
         AAR_METADATA,
         ART_PROFILE,
         NAVIGATION_JSON,

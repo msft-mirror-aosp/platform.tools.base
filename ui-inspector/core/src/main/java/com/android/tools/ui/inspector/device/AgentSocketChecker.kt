@@ -77,7 +77,10 @@ internal class AgentSocketChecker(private val adbSession: AdbSession, private va
       delay(delayMs)
       delayMs = (delayMs * 2).coerceAtMost(1000L)
     }
-    throw IllegalStateException("Timed out waiting for agent socket $socketName")
+    throw IllegalStateException(
+      "Timed out waiting for the UI Inspector agent to start (socket $socketName). The agent starts on the app's main thread, so it" +
+        " cannot start while that thread is blocked or the app is paused in a debugger. Otherwise, check logcat for errors."
+    )
   }
 
   /**

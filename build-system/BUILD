@@ -506,7 +506,6 @@ ANDROID_GRADLE_PLUGIN_SOURCE_FILES = [
     ":agp_gradle_build_files",
     "//prebuilts/tools/common/aapt/protos:agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
-    "//tools/base/android-test:agp_gradle_build_files",
     "//tools/base/build-analyzer/common:agp_gradle_build_files",
     "//tools/base/build-system/aapt2:agp_gradle_build_files",
     "//tools/base/build-system/aapt2-proto:agp_gradle_build_files",
@@ -741,7 +740,6 @@ gradle_test(
     data = [
         ":agp_gradle_build_files",
         "//tools:agp_gradle_build_files",
-        "//tools/base/android-test:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-api:agp_gradle_build_files",
@@ -826,7 +824,6 @@ gradle_test(
     data = [
         ":agp_gradle_build_files",
         "//tools:agp_gradle_build_files",
-        "//tools/base/android-test:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-api:agp_gradle_build_files",
@@ -857,7 +854,6 @@ gradle_test(
     data = [
         ":agp_gradle_build_files",
         "//tools:agp_gradle_build_files",
-        "//tools/base/android-test:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",
@@ -886,7 +882,6 @@ gradle_test(
     data = [
         ":agp_gradle_build_files",
         "//tools:agp_gradle_build_files",
-        "//tools/base/android-test:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",

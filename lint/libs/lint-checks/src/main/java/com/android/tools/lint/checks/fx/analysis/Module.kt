@@ -58,6 +58,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
@@ -115,7 +116,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           is MethodBody.Status.Abstract -> true
           is MethodBody.Status.ForChecking -> s.body == null
           is MethodBody.Status.ForInference,
-          is MethodBody.Status.BasicConstructor -> false
+          is MethodBody.Status.StaticInitializer -> false
         }
       }
     return when (val n = abstractMethods.size) {
@@ -282,10 +283,29 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           else -> PsiClassAdapter
         }
 
+      fun initBody(inits: List<UExpression>, status: (UExpression) -> MethodBody.Status<FX>, type: Type<Nothing>): MethodBody<FX>? {
+        if (inits.isEmpty()) return null
+        val status = status(InitializerBody(klass, inits, null, type))
+        return MethodBody(domains = listOf(), initEnvironment = env, returnTypeAnnotation = type, status = status, source = klass)
+      }
+
+      var methods = persistentMapOf<MethodId, MethodBody<FX>>()
+      run { // A Java class declaring no constructor has an implicit one running its initializers, which PSI doesn't list
+        if (klass.sourcePsi is KtElement || klass.methods.any { it.isConstructor }) return@run
+        val inits = klass.initializerExpressions(isStatic = false)
+        val body = initBody(inits, { MethodBody.Status.ForInference(it, EffectAnnotation.None) }, klassAsType) ?: return@run
+        methods = methods.putting(MethodId.implicitConstructor(klass.javaPsi), body)
+      }
+      run { // Adds a synthetic method running the static initializers of [klass], if it has any
+        val inits = klass.initializerExpressions(isStatic = true)
+        val body = initBody(inits, MethodBody.Status<FX>::StaticInitializer, Type.None) ?: return@run
+        methods = methods.putting(MethodId.StaticInitializer, body)
+      }
+
       return ClassBody<FX>(
         supers = klass.javaPsi.supers.map(ClassId::of),
         methods =
-          klass.methods.fold(persistentMapOf()) { methods, method ->
+          klass.methods.fold(methods) { methods, method ->
             val env = if (method.javaPsi.isStatic()) Env.empty else env
             val id = MethodId(method.javaPsi)
             val canonical = method.canonicalOverload()
@@ -318,19 +338,30 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
         }
       val env = paramDomains.foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
       val methodEnv = classEnv.copy(types = typeParams, vars = env)
-      val body = canonicalOverload?.let { OverloadBody(method, it, methodEnv) } ?: method.uastBody
+      val range = returnType<Nothing>(typeParams.paramNames(), method.javaPsi, classAdapter)
+      val body =
+        when {
+          // A generated overload just runs the canonical method, with defaults for the omitted arguments
+          canonicalOverload != null -> OverloadBody(method, canonicalOverload, methodEnv)
+          // A constructor runs the initializers too, even without a body of its own
+          method.isConstructor -> {
+            val inits =
+              if (method.delegatesToThis()) listOf() else method.getContainingUClass()?.initializerExpressions(isStatic = false).orEmpty()
+            InitializerBody(method, inits, method.uastBody, range)
+          }
+          else -> method.uastBody
+        }
 
       return MethodBody(
         domains = domains,
         initEnvironment = methodEnv,
-        returnTypeAnnotation = returnType(typeParams.paramNames(), method.javaPsi, classAdapter),
+        returnTypeAnnotation = range,
         status =
           when (val ann = annotationParser.parseMethodAnnotations(context, method)) {
             is EffectAnnotation.Implicit ->
-              when {
-                body != null -> MethodBody.Status.ForInference(body, ann)
-                method.isConstructor -> MethodBody.Status.BasicConstructor
-                else -> MethodBody.Status.Abstract
+              when (body) {
+                null -> MethodBody.Status.Abstract
+                else -> MethodBody.Status.ForInference(body, ann)
               }
             is EffectAnnotation.Explicit -> MethodBody.Status.ForChecking(ann, body)
           },
@@ -390,7 +421,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
             is MethodBody.Status.ForChecking -> s.copy(body = init)
             // Kotlin forbids default values on overrides, so there are no inherited annotations to honor
             is MethodBody.Status.Abstract,
-            is MethodBody.Status.BasicConstructor -> MethodBody.Status.ForInference(init, EffectAnnotation.None)
+            is MethodBody.Status.StaticInitializer -> MethodBody.Status.ForInference(init, EffectAnnotation.None)
           }
         val returnType = PsiTypeAdapter.translate(body.initEnvironment.boundParamNames, paramPsi.type)
         acc =
@@ -658,18 +689,21 @@ internal fun UMethod.isKtProperty() =
 
 internal data class LocalFun(val uast: ULambdaExpression, val sourcePsi: KtNamedFunction)
 
-/** The instance field initializers run directly by this constructor: none if it delegates to another */
-internal fun UMethod.fieldInitializers(): List<UExpression> {
-  if (!isConstructor) return emptyList()
-  val delegates =
-    canonicalOverload() != null ||
-      when (val ctor = sourcePsi) {
-        is KtSecondaryConstructor -> ctor.getDelegationCall().isCallToThis
-        is PsiMethod -> JavaPsiConstructorUtil.isChainedConstructorCall(JavaPsiConstructorUtil.findThisOrSuperCallInConstructor(ctor))
-        else -> false
-      }
-  if (delegates) return emptyList()
-  return getContainingUClass()?.fields.orEmpty().filter { !it.isStatic && it.sourcePsi !is KtParameter }.mapNotNull { it.uastInitializer }
+/** Whether [this] constructor delegates to another one of its class, which then runs the initializers */
+private fun UMethod.delegatesToThis(): Boolean =
+  when (val ctor = sourcePsi) {
+    is KtSecondaryConstructor -> ctor.getDelegationCall().isCallToThis
+    is PsiMethod -> JavaPsiConstructorUtil.isChainedConstructorCall(JavaPsiConstructorUtil.findThisOrSuperCallInConstructor(ctor))
+    else -> false
+  }
+
+/** The initializers that [this] class runs, in order: on construction if not [isStatic], or on static initialization otherwise */
+private fun UClass.initializerExpressions(isStatic: Boolean): List<UExpression> {
+  val fieldInits = fields.filter { it.isStatic == isStatic && it.sourcePsi !is KtParameter }.mapNotNull { it.uastInitializer }
+  if (sourcePsi is KtElement) return fieldInits // UAST already puts Kotlin's `init` blocks in the primary (or first) constructor's body
+  val blocks = initializers.filter { it.isStatic == isStatic }.map { it.uastBody }
+  if (blocks.isEmpty()) return fieldInits
+  return (fieldInits + blocks).sortedBy { it.sourcePsi?.textRange?.startOffset ?: 0 }
 }
 
 /** The reference under which [addLocalFunction] indexed the local function [fnUast] */

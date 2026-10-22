@@ -17,3 +17,9 @@ include("//tools/vendor/google/ml/aiplugin/android/eval:bench_repos.MODULE.bazel
 
 # Project baremetal golang configuration
 include("//tools/vendor/adt_infra_internal/baremetal:baremetal.MODULE.bazel")
+
+bazel_dep(name = "aemu")
+local_path_override(
+    module_name = "aemu",
+    path = "hardware/google/aemu",
+)

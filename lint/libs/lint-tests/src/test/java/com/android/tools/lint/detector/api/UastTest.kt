@@ -831,7 +831,29 @@ class UastTest : TestCase() {
         ),
       )
 
+    data class ExpectedResolvedMember(
+      val name: String,
+      val containingClassName: String,
+      val isField: Boolean = false,
+    )
+
+    val expectedMembers =
+      listOf(
+        ExpectedResolvedMember("JVM_FIELD_FLAG", "Dependency", isField = true),
+        ExpectedResolvedMember("getJVM_STATIC_FLAG", "Companion"),
+        ExpectedResolvedMember("getVAL_FLAG", "Companion"),
+        ExpectedResolvedMember("getVarFlag", "Companion"),
+        ExpectedResolvedMember("JVM_FIELD_FLAG", "OtherDependency", isField = true),
+        ExpectedResolvedMember("getJVM_STATIC_FLAG", "Named"),
+        ExpectedResolvedMember("getVAL_FLAG", "Named"),
+        ExpectedResolvedMember("getVarFlag", "Named"),
+        ExpectedResolvedMember("getVAL_FLAG", "DependencyObject"),
+        ExpectedResolvedMember("getVarFlag", "DependencyObject"),
+        ExpectedResolvedMember("getDEPENDENCY_TOP_LEVEL_VAL_FLAG", "FlagKt"),
+      )
+
     check(*testFiles) { file ->
+      var count = 0
       file.accept(
         object : AbstractUastVisitor() {
           override fun visitCallExpression(node: UCallExpression): Boolean {
@@ -843,10 +865,57 @@ class UastTest : TestCase() {
             val arg = node.valueArguments.singleOrNull()
             val selector = arg?.findSelector() as? USimpleNameReferenceExpression
             val resolved = selector?.resolve()
-            assertNotNull(resolved)
-            assertTrue(resolved is PsiField)
+            assertNotNull(node.asRenderString(), resolved)
+            val expectedMember = expectedMembers[count++]
+            if (expectedMember.isField) {
+              assertTrue("Expected PsiField but got $resolved", resolved is PsiField)
+              assertEquals(expectedMember.name, (resolved as PsiField).name)
+              assertEquals(expectedMember.containingClassName, resolved.containingClass?.name)
+            } else {
+              assertTrue("Expected PsiMethod but got $resolved", resolved is PsiMethod)
+              assertEquals(expectedMember.name, (resolved as PsiMethod).name)
+              assertEquals(expectedMember.containingClassName, resolved.containingClass?.name)
+            }
 
             return super.visitCallExpression(node)
+          }
+
+          override fun afterVisitFile(node: UFile) {
+            assertEquals(expectedMembers.size, count)
+            super.afterVisitFile(node)
+          }
+        }
+      )
+    }
+  }
+
+  fun testResolveCompiledKotlinProperty_pairFirst() {
+    // b/556855454
+    val testFiles =
+      arrayOf(
+        kotlin(
+            """
+          package test.pkg
+
+          fun test(pair: Pair<String, Int>) {
+            val x = pair.first
+          }
+        """
+          )
+          .indented()
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            if (node.identifier == "first") {
+              val resolved = node.resolve()
+              assertNotNull(resolved)
+              assertTrue("Expected PsiMethod, but got $resolved", resolved is PsiMethod)
+              assertEquals("getFirst", (resolved as PsiMethod).name)
+            }
+            return super.visitSimpleNameReferenceExpression(node)
           }
         }
       )
@@ -2974,6 +3043,74 @@ class UastTest : TestCase() {
             )
 
             return super.visitCallableReferenceExpression(node)
+          }
+        }
+      )
+    }
+  }
+
+  fun testResolveInlineReifiedPropertyFromLibrary() {
+    // b/400503220
+    val testFiles =
+      arrayOf(
+        bytecode(
+          "libs/lib1.jar",
+          kotlin(
+              "src/test/pkg/ReifiedProp.kt",
+              """
+              package test.pkg
+
+              inline val <reified T> T.reifiedVal: String get() = "test"
+              inline val <T> T.nonReifiedVal: String get() = "test"
+            """,
+            )
+            .indented(),
+          0xd7f89dd1,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgAmIWBijg4uJiEGILSS0u8S7hkuTiKAGy9Aqy
+                04V4g1Iz0zJTUwKK8gu8S5QYtBgAuyF2Zj8AAAA=
+                """,
+          """
+                test/pkg/ReifiedPropKt.class:
+                H4sIAAAAAAAA/4WRz28SQRTH38wuC0VLt9TWQmtVulZqotsaD2obozExEhFN
+                IVw4DTBdB5bZZmcgHjn5h/gXePZgiN78o4xvVlR+mHjYN+995/N+7JvvPz5/
+                AYAHcEhgS3Ol/Yt+4J9xcS54920cXbzSaSAE3B4bMT9kMvDftHu8g6pFYDXg
+                eso2WUjgoFxd5E4OZ6S6joUMTgjcPW08XkaflBuNf/O2GS0DGQJ5T3jn3kJf
+                UsEJPf1OKC+ekfPLLZDD3FokZ9P3q1Ec+D2u2zETUvlMykgzLSL0a5GuDcMQ
+                Ezd/d17I3vjVWM6r69V+pEMh/ddcsy7TDCvQwcjCZVNjbGMAR++j/l6Y6Ai9
+                7jGB+mSczeJH3VyWZlKlPXcyLtIjUnIyk7FLt8kd+pI+/PaBfv3oOEU7Y7l2
+                addNJYidIAuA49qm9H0C2dn1mO4NfMSFyXMzr3+vr3H5z6MuJ7BWFZLXhoM2
+                jxusHXKz36jDwiaLhYmn4kpdBJLpYYz+ztlQajHgFTkSSuD1s7+bxWHq0TDu
+                8BfCpBWmaHMJhGOgYJttAXULkAIH4xJGj/AHKJ4p6zS/8slcwz5aJ5Et8NDf
+                Qs/4WbiEKqJwGVbxvJXQaShADnnr/+XsuXLun3Lrc+UOpvxaEt9O7E0o4/kU
+                1TzyGy2wKnClApsVrHYVXdiu4BjFFhAFO7DbgrSCawr2FFxXkFLgKLihIPcT
+                d14pfqkDAAA=
+                """,
+        ),
+        kotlin(
+          """
+            import test.pkg.nonReifiedVal
+            import test.pkg.reifiedVal
+
+            fun test() {
+              val r = Any().reifiedVal
+              val nr = Any().nonReifiedVal
+            }
+          """
+        ),
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            if (node.identifier == "reifiedVal" || node.identifier == "nonReifiedVal") {
+              val txt = node.sourcePsi?.text
+              val resolved = node.resolve()
+              assertNotNull(txt, resolved)
+            }
+            return super.visitSimpleNameReferenceExpression(node)
           }
         }
       )
@@ -5562,8 +5699,8 @@ interface Callback {
               return super.visitSimpleNameReferenceExpression(node)
             }
             val resolved = node.resolve()
-            assertTrue(txt, resolved is PsiField)
-            assertEquals(txt, "internalVal", (resolved as? PsiField)?.name)
+            assertTrue(txt, resolved is PsiMethod)
+            assertEquals(txt, "getInternalVal\$main", (resolved as? PsiMethod)?.name)
             return super.visitSimpleNameReferenceExpression(node)
           }
         }

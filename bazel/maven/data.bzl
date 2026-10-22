@@ -328,16 +328,20 @@ _CLASS_JARS = [
     "androidx.databinding:databinding-adapters:8.5.0",
     "androidx.databinding:databinding-adapters:9.0.0",
     "androidx.databinding:databinding-adapters:9.1.0",
+    "androidx.databinding:databinding-adapters:9.4.1",
     "androidx.databinding:databinding-common:8.5.0",
     "androidx.databinding:databinding-compiler:8.5.0",
     "androidx.databinding:databinding-compiler:8.7.0",
     "androidx.databinding:databinding-ktx:8.5.0",
+    "androidx.databinding:databinding-ktx:9.4.1",
     "androidx.databinding:databinding-runtime:8.5.0",
+    "androidx.databinding:databinding-runtime:9.4.1",
     "androidx.databinding:viewbinding:7.2.0",
     "androidx.databinding:viewbinding:7.4.1",
     "androidx.databinding:viewbinding:8.0.0-beta04",
     "androidx.databinding:viewbinding:9.0.0",
     "androidx.databinding:viewbinding:9.1.0",
+    "androidx.databinding:viewbinding:9.4.1",
     "androidx.datastore:datastore-core-android:1.1.0-alpha04",
     "androidx.datastore:datastore-core-okio-jvm:1.1.0-alpha04",
     "androidx.datastore:datastore-jvm:1.1.7",
@@ -669,6 +673,7 @@ _CLASS_JARS = [
     "com.android.databinding:adapters:9.0.0",
     "com.android.databinding:adapters:9.1.0",
     "com.android.databinding:adapters:9.2.0",
+    "com.android.databinding:adapters:9.4.1",
     "com.android.databinding:viewbinding:7.0.0",
     "com.android.databinding:viewbinding:7.1.0",
     "com.android.databinding:viewbinding:7.2.0",
@@ -692,6 +697,7 @@ _CLASS_JARS = [
     "com.android.databinding:viewbinding:9.0.0",
     "com.android.databinding:viewbinding:9.1.0",
     "com.android.databinding:viewbinding:9.2.0",
+    "com.android.databinding:viewbinding:9.4.1",
     "com.android.fused-library:com.android.fused-library.gradle.plugin:pom:8.10.1",
     "com.android.fused-library:com.android.fused-library.gradle.plugin:pom:8.11.0",
     "com.android.fused-library:com.android.fused-library.gradle.plugin:pom:8.12.0",
@@ -1279,7 +1285,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.21",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.5.0-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.5.0-dev-9824",
-    "org.jetbrains.kotlin:jvm-abi-gen:2.3.20",  # Studio build
+    "org.jetbrains.kotlin:jvm-abi-gen:2.4.0",  # Studio build
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.20",
@@ -1328,8 +1334,9 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-compiler:1.9.23",
     "org.jetbrains.kotlin:kotlin-compiler:2.1.20",
     "org.jetbrains.kotlin:kotlin-compiler:2.3.10",
-    "org.jetbrains.kotlin:kotlin-compiler:2.3.20",  # Studio build
+    "org.jetbrains.kotlin:kotlin-compiler:2.3.20",  # Used by AGP build
     "org.jetbrains.kotlin:kotlin-compiler:2.3.21",
+    "org.jetbrains.kotlin:kotlin-compiler:2.4.0",  # Studio build
     "org.jetbrains.kotlin:kotlin-compiler:2.5.0-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
@@ -1337,7 +1344,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.0",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.20",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.2.10",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
-    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.3.20",  # Studio build
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.4.0",  # Studio build
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.0",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.2.10",  # Used by AGP Compose tests
@@ -1440,7 +1447,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.21",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.5.0-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-serialization:2.5.0-Beta1",
-    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.3.20",  # Studio build
+    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.4.0",  # Studio build
     "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.1.0",
     "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.2.10",
     "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.3.20",

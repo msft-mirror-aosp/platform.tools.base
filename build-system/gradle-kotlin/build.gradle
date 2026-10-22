@@ -46,8 +46,8 @@ configurations.apiElements.outgoing.artifact(apiJar)
 
 dependencies {
     implementation gradleApi()
-    implementation libs.kotlin_stdlib
-    implementation libs.kotlin_gradle_plugin
+    implementation libs.kotlin.stdlib
+    implementation libs.kotlin.gradle.plugin
 }
 
 group = 'com.android.tools.build'

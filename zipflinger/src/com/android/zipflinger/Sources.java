@@ -28,6 +28,11 @@ public class Sources {
     // The general maximum amount of memory (in bytes) a Source should hold onto.
     public static final int LARGE_LIMIT = 100_000_000;
 
+    // Stored files larger than this are not loaded into memory. They are read once to compute
+    // their CRC32 and then copied into the archive by the kernel (zero-copy). Unlike compressed
+    // entries, no temporary file is needed, so this limit can be much lower than LARGE_LIMIT.
+    static final int STORED_LARGE_LIMIT = 64 * 1024;
+
     public static Source from(File file, @NonNull String name, int compressionLevel)
             throws IOException {
         return from(file.toPath(), name, compressionLevel);
@@ -44,7 +49,9 @@ public class Sources {
 
     public static Source from(Path path, @NonNull String name, int compressionLevel)
             throws IOException {
-        if (Files.size(path) > LARGE_LIMIT) {
+        long largeLimit =
+                compressionLevel == Deflater.NO_COMPRESSION ? STORED_LARGE_LIMIT : LARGE_LIMIT;
+        if (Files.size(path) > largeLimit) {
             return new LargeFileSource(path, name, compressionLevel);
         } else {
             return new BytesSource(path, name, compressionLevel);

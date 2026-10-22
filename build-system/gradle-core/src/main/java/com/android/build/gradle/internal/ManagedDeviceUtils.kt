@@ -23,7 +23,6 @@ import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.prefs.AndroidLocationsProvider
 import com.android.testing.utils.computeVendorString
 import com.android.utils.CpuArchitecture
-import com.android.utils.osArchitecture
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ProviderFactory
@@ -82,7 +81,12 @@ fun managedDeviceGroupSingleVariantTaskName(creationConfig: InstrumentedTestCrea
 fun computeAbiFromArchitecture(device: ManagedVirtualDevice): String =
   computeAbiFromArchitecture(device.require64Bit, device.sdkVersion, device.systemImageSource)
 
-fun computeAbiFromArchitecture(require64Bit: Boolean, sdkVersion: Int, vendor: String, cpuArch: CpuArchitecture = osArchitecture): String =
+fun computeAbiFromArchitecture(
+  require64Bit: Boolean,
+  sdkVersion: Int,
+  vendor: String,
+  cpuArch: CpuArchitecture = CpuArchitecture.osArchitecture,
+): String =
   when {
     cpuArch == CpuArchitecture.ARM || cpuArch == CpuArchitecture.X86_ON_ARM -> "arm64-v8a"
     require64Bit -> "x86_64"

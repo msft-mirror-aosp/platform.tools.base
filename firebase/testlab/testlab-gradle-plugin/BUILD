@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
@@ -33,7 +34,6 @@ filegroup(
 FTL_GRADLE_PLUGIN_SOURCE_FILES = [
     ":agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
-    "//tools/base/android-test:agp_gradle_build_files",
     "//tools/base/build-system/builder-model:agp_gradle_build_files",
     "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-api:agp_gradle_build_files",
@@ -84,6 +84,7 @@ gradle_build(
     gradle_properties = GRADLE_PROPERTIES,
     output_file = "testlab-gradle-plugin.zip",
     output_file_source = "dist/repo.zip",
+    problems_report_path = "build/build/root/reports/problems/problems-report.html",
     repos = [
         ":maven_dependencies",
         "//tools/base:agp_artifacts",
@@ -95,6 +96,20 @@ gradle_build(
         "//tools/base/build-system/integration-test:__subpackages__",
         "//tools/base/gmaven:__pkg__",
     ],
+)
+
+diff_test(
+    name = "testlab-gradle-plugin_problems_test",
+    failure_message = """
+       Replace the known_problems.txt file in this directory with testlab-gradle-plugin_problems.txt from the artifacts of //tools/base/firebase/testlab/testlab-gradle-plugin:testlab-gradle-plugin target in this bazel invocation.
+
+       Alternatively, run the following command to update (make sure build is executed remotely by adding --config=remote, or --config=remote-exec):
+         bazel build --config=remote //tools/base/firebase/testlab/testlab-gradle-plugin:testlab-gradle-plugin_problems.txt && cp `bazel info bazel-genfiles`/tools/base/firebase/testlab/testlab-gradle-plugin/testlab-gradle-plugin_problems.txt `bazel info workspace`/tools/base/firebase/testlab/testlab-gradle-plugin/known_problems.txt
+    """,
+    file1 = ":testlab-gradle-plugin_problems.txt",
+    file2 = "known_problems.txt",
+    # Only run on linux, as the problems are uninterestingly different across platforms
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 gradle_test(

@@ -14,14 +14,14 @@ dependencies {
     implementation libs.com.android.tools.sdklib
     implementation libs.com.android.tools.sdkCommon
     implementation libs.gson
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
 
     testImplementation libs.junit
     testImplementation libs.truth
-    testImplementation libs.mockito_core
+    testImplementation libs.mockito.core
     testImplementation libs.com.android.tools.testutils
-    testImplementation libs.mockito_kotlin
-    testImplementation libs.aapt2_proto
+    testImplementation libs.mockito.kotlin
+    testImplementation libs.aapt2.proto
 }
 
 sourceSets {

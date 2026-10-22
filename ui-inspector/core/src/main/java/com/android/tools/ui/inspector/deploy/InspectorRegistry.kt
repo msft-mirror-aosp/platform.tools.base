@@ -29,7 +29,7 @@ import java.nio.file.Paths
 internal data class InspectorMetadata(val id: String, val localJarPath: Path)
 
 private const val PAYLOAD_DIR_PATH = "tools/base/ui-inspector/agent/inspectors/view"
-private const val VIEW_INSPECTOR_JAR_NAME = "view-inspector.jar"
+internal const val VIEW_INSPECTOR_JAR_NAME = "view-inspector.jar"
 
 internal object InspectorRegistry {
   val VIEW_INSPECTOR =

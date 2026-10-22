@@ -117,6 +117,7 @@ message Event {
     LEAKCANARY_PRESENCE_CHECK = 804;
     LEAKCANARY_THRESHOLD = 805;
     LEAKCANARY_DEVICE_ERROR = 806;
+    LEAKCANARY_ANALYSIS_PROGRESS = 807;
 
     // group_id: session id
     LIVE_VIEW_STATUS = 901;
@@ -238,6 +239,7 @@ message Event {
     LeakCanaryPresenceCheck leakcanary_presence_check = 804;
     LeakCanaryThresholdData leakcanary_threshold = 805;
     LeakCanaryDeviceError leakcanary_device_error = 806;
+    LeakCanaryAnalysisProgress leakcanary_analysis_progress = 807;
 
     // Echo Event Prefix = 1000
     echo.EchoData echo = 1000;
@@ -523,6 +525,15 @@ message LeakCanaryObjectCountData {
 
 message LeakCanaryThresholdData {
   int32 threshold = 1;
+  // Version of the studio-leakcanary library in the app (e.g. "1.1.0").
+  // Empty if the library is too old to report it.
+  string studio_leakcanary_version = 2;
+}
+
+/** Progress of LeakCanary's on-device heap analysis. */
+message LeakCanaryAnalysisProgress {
+  // From 0 to 100.
+  int32 percent = 1;
 }
 
 /** Error originating from the device side. */
@@ -532,6 +543,8 @@ message LeakCanaryDeviceError {
     LEAKCANARY_ERROR_APP_CONTEXT_NULL = 1;
     LEAKCANARY_ERROR_BROADCAST_DELIVERY_FAILED = 2;
     LEAKCANARY_ERROR_LOGCAT_PARSING_FAILURE = 3;
+    // The app's LeakCanary version isn't supported by studio-leakcanary.
+    LEAKCANARY_ERROR_UNSUPPORTED_VERSION = 4;
   }
   ErrorType error_type = 1;
 }

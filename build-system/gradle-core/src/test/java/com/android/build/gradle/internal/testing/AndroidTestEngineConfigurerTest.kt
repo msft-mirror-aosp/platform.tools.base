@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.testing
 
+import com.android.Version
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
@@ -115,6 +116,14 @@ class AndroidTestEngineConfigurerTest {
     assertThat(classpath.from).isNotEmpty()
     val configuration = classpath.from.first() as Configuration
     assertThat(configuration.dependencies.map { it.name }).contains("android-test-engine")
+    // The Android test engine is released in lockstep with AGP, so its artifacts must resolve
+    // to exactly the running plugin version.
+    val androidTestEngineDependencies = configuration.dependencies.filter { it.group == "com.android.tools.androidtest" }
+    assertThat(androidTestEngineDependencies.map { "${it.group}:${it.name}:${it.version}" })
+      .containsExactly(
+        "com.android.tools.androidtest:android-test-engine:${Version.ANDROID_GRADLE_PLUGIN_VERSION}",
+        "com.android.tools.androidtest:android-test-engine-result-listener:${Version.ANDROID_GRADLE_PLUGIN_VERSION}",
+      )
 
     // Verify JUnit Platform options
     val options = spyTask.options as JUnitPlatformOptions

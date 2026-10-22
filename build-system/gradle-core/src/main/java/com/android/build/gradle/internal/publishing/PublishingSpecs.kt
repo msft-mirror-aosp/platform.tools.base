@@ -246,7 +246,7 @@ class PublishingSpecs {
         api(RENDERSCRIPT_HEADERS, ArtifactType.RENDERSCRIPT)
         api(COMPILE_LIBRARY_CLASSES_JAR, ArtifactType.CLASSES_JAR)
         api(PREFAB_PACKAGE_CONFIGURATION, ArtifactType.PREFAB_PACKAGE_CONFIGURATION)
-        api(PREFAB_PACKAGE, ArtifactType.PREFAB_PACKAGE)
+        api(PREFAB_PACKAGE, ArtifactType.PREFAB_PACKAGE_FROM_MODULE)
         api(COMPILE_R_CLASS_JAR, ArtifactType.R_CLASS_JAR)
         runtime(VARIANT_TEST_RESULTS, ArtifactType.TEST_RESULTS)
 

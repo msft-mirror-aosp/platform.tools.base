@@ -36,6 +36,7 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
 
   override val violationIssue = THREAD
   override val unsatisfiableConstraintIssue = THREAD
+  override val staticInitializerIssue = INITIALIZER
 
   override fun parse(ann: UAnnotation) =
     when (ann.qualifiedName?.let(::toAndroidxAnnotation)) {
@@ -98,6 +99,26 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
           implementation = Impl,
         )
         .setAliases(listOf(ThreadDetector.THREAD.id, WrongThreadInterproceduralDetector.ISSUE.id))
+
+    @JvmField
+    val INITIALIZER =
+      Issue.create(
+        id = "StaticInitializerThreadConstraint",
+        briefDescription = "Static initializer with thread requirement",
+        explanation =
+          """
+          A static initializer runs on whichever thread first triggers it, so a call there that requires \
+          a specific thread may run on the wrong one. Consider initializing such state lazily (or triggering \
+          the initialization eagerly and suppressing this report) on the required thread.
+          """,
+        moreInfo = "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.WARNING,
+        enabledByDefault = true,
+        androidSpecific = true,
+        implementation = Impl,
+      )
 
     val lattice = ThreadConstraintLattice.of<Thread>()
 

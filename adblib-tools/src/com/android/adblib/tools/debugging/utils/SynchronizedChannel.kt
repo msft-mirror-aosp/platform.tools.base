@@ -139,12 +139,12 @@ value class SynchronizedChannelResult @PublishedApi internal constructor(@Publis
 
   fun exceptionOrNull(): Throwable? = (holder as? Closed)?.cause
 
-  internal open class Failed {
+  @PublishedApi internal open class Failed {
 
     override fun toString(): String = "Failed"
   }
 
-  internal class Closed(@JvmField val cause: Throwable?) : Failed() {
+  @PublishedApi internal class Closed(@JvmField val cause: Throwable?) : Failed() {
 
     override fun equals(other: Any?): Boolean = other is Closed && cause == other.cause
 

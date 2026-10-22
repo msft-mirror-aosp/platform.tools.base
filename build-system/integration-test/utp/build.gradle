@@ -30,8 +30,8 @@ dependencies {
     implementation libs.com.android.tools.testutils
     implementation libs.com.android.tools.sdklib
     implementation libs.protobuf
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
     implementation gradleApi()
     implementation(project(':base:build-system:gradle-core'))
-    implementation libs.android_test_result_proto
+    implementation libs.android.test.result.proto
 }

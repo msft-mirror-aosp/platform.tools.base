@@ -135,7 +135,8 @@ internal class UsageTrackingMap<K, V>(
     }
   }
 
-  private class MapEntry<K, V>(val key: K, val value: V, now: Instant) where K : Any {
+  // Note: not private because it is exposed (via [retain], [release] and [unwrapValue]) from the inline [withValue] function.
+  internal class MapEntry<K, V>(val key: K, val value: V, now: Instant) where K : Any {
 
     /** The number of active [UsageTrackingMap.withValue] calls */
     var refCount = 0

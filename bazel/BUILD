@@ -518,7 +518,7 @@ write_file(
 
 java_binary(
     name = "local_maven_repository_generator",
-    args = ["@$(location :maven_generator_args)"],
+    args = ["@$(rootpath :maven_generator_args)"],
     data = [":maven_generator_args"],
     main_class = "com.android.tools.binaries.LocalMavenRepositoryGenerator",
     visibility = ["//visibility:public"],
@@ -588,7 +588,7 @@ coverage_java_test(
 java_binary(
     name = "bazel-diff",
     main_class = "com.bazel_diff.Main",
-    visibility = ["//tools/base/bazel/ci:__pkg__"],
+    visibility = ["//tools/base/bazel/ci:__subpackages__"],
     runtime_deps = ["@bazel_diff//jar"],
 )
 

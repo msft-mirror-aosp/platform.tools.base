@@ -33,13 +33,13 @@ _LINT_ASPECT_ATTRS = ["deps", "exports", "library"]
 # standard rules, "java_srcs"/"kotlin_srcs" on _iml_module_.
 _LINT_SRC_ATTRS = ["srcs", "java_srcs", "kotlin_srcs"]
 
-# The lint configuration lint_partial_aspect uses to analyze every module. It matches what
-# the kotlin_library and iml_module macros pass to lint_test, so a module's own lint test
+# The lint configuration lint_partial_aspect uses to analyze every module. The
+# kotlin_library and iml_module macros pass it to lint_test too, so a module's own lint test
 # can normally report on the same analysis its dependents consume; a lint_test configured
 # differently (extra custom rules, extra args, ...) analyzes its own module itself, see
 # _uses_aspect_analysis. Partial state (e.g. inferred thread annotations) is only recorded
 # by detectors that run during analysis, so the custom checks must be present here.
-_LINT_CUSTOM_RULES = [
+LINT_CUSTOM_RULES = [
     Label("//tools/base/lint:studio-checks.lint-rules.jar"),
     Label("//tools/base/lint/studio-checks/compose-desktop-checks"),
 ]
@@ -47,7 +47,7 @@ _LINT_CUSTOM_RULES = [
 # External annotations (e.g. IntelliJ SDK threading annotations such as @RequiresEdt) are
 # always passed to analysis, whether or not the lint test passes them: without them,
 # dependency analysis records incomplete thread constraints.
-_LINT_EXTERNAL_ANNOTATIONS = [Label("//tools/base/external-annotations:annotations.zip")]
+LINT_EXTERNAL_ANNOTATIONS = [Label("//tools/base/external-annotations:annotations.zip")]
 
 def _aspect_dep_targets(rule_attr):
     """Returns the targets in _LINT_ASPECT_ATTRS, whether label list or single label."""
@@ -242,8 +242,8 @@ lint_partial_aspect = aspect(
             cfg = "exec",
             default = Label("//tools/base/bazel:BazelLintWrapper"),
         ),
-        "_lint_custom_rules": attr.label_list(allow_files = True, default = _LINT_CUSTOM_RULES),
-        "_lint_external_annotations": attr.label_list(allow_files = True, default = _LINT_EXTERNAL_ANNOTATIONS),
+        "_lint_custom_rules": attr.label_list(allow_files = True, default = LINT_CUSTOM_RULES),
+        "_lint_external_annotations": attr.label_list(allow_files = True, default = LINT_EXTERNAL_ANNOTATIONS),
     },
 )
 
@@ -268,7 +268,7 @@ def _write_launcher(ctx, partial_args):
 def _uses_aspect_analysis(ctx, module):
     """Whether the aspect's analysis of the tested module is what this test would produce.
 
-    The aspect analyzes with the default configuration (see _LINT_CUSTOM_RULES); a test
+    The aspect analyzes with the default configuration (see LINT_CUSTOM_RULES); a test
     with extra custom rules, extra lint arguments, extra partial_deps on its classpath or a
     different is_test_sources would report on an analysis that ran different checks, so it
     analyzes its module itself instead (at the cost of analyzing that module twice: once
@@ -460,8 +460,8 @@ lint_test = rule(
         # deps/exports (e.g. lint_classpath additions).
         "partial_deps": attr.label_list(allow_files = True, aspects = [lint_partial_aspect]),
         # The configuration lint_partial_aspect analyzes with; see _uses_aspect_analysis.
-        "_lint_custom_rules": attr.label_list(allow_files = True, default = _LINT_CUSTOM_RULES),
-        "_lint_external_annotations": attr.label_list(allow_files = True, default = _LINT_EXTERNAL_ANNOTATIONS),
+        "_lint_custom_rules": attr.label_list(allow_files = True, default = LINT_CUSTOM_RULES),
+        "_lint_external_annotations": attr.label_list(allow_files = True, default = LINT_EXTERNAL_ANNOTATIONS),
         "_binary": attr.label(
             executable = True,
             cfg = "target",

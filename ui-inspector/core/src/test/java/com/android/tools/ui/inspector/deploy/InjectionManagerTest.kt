@@ -28,12 +28,15 @@ import com.android.tools.ui.inspector.TestAdbDeviceServices
 import com.android.tools.ui.inspector.TestAdbHostServices
 import com.android.tools.ui.inspector.TestAdbSession
 import com.android.tools.ui.inspector.UiInspector
+import com.android.tools.ui.inspector.client.AGENT_RESPONSE_TIMEOUT
+import com.android.tools.ui.inspector.client.AgentNotRespondingException
 import com.android.tools.ui.inspector.client.CommandSender
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.PROCESS_PACKAGES_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
+import com.android.tools.ui.inspector.deviceArtifactsInjectionManagerFactory
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.resolveForegroundPackage
 import com.android.tools.ui.inspector.runWithConnectedInspectors
@@ -41,12 +44,16 @@ import com.android.tools.ui.inspector.statProbeCommand
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
+import java.io.File
+import java.io.IOException
 import java.io.OutputStream
 import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.concurrent.thread
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancelAndJoin
@@ -76,6 +83,12 @@ private val BASE_STAGING_PATHS =
     "$STAGING_DIR/libarttooling.$EMPTY_FILE_DIGEST.jar",
     "$STAGING_DIR/lib_ui_inspector_payload.$EMPTY_FILE_DIGEST.jar",
   )
+
+/** A downloader for runs that must not download anything: they detect no Compose or use a Compose inspector override jar. */
+private val NO_DOWNLOADS =
+  object : ArtifactDownloader {
+    override fun download(url: String, outputFile: File) = throw AssertionError("Unexpected download of $url")
+  }
 
 class InjectionManagerTest {
 
@@ -271,7 +284,8 @@ class InjectionManagerTest {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected timeout waiting for the digest-scoped socket")
     } catch (e: IllegalStateException) {
-      assertThat(e.message).contains("Timed out waiting for agent socket ${socketName("1234")}")
+      assertThat(e.message).contains("Timed out waiting for the UI Inspector agent to start (socket ${socketName("1234")})")
+      assertThat(e.message).contains("The agent starts on the app's main thread")
     }
   }
 
@@ -297,6 +311,7 @@ class InjectionManagerTest {
 
   @Test
   fun testInjectAndAttach_missingArtifactFailsBeforeDeviceMutation() = runTest {
+    val absentViewInspector = tempFolder.root.toPath().resolve("absent-view-inspector.jar")
     val injectionManager =
       InjectionManager(
         testSession,
@@ -307,7 +322,7 @@ class InjectionManagerTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
-        tempFolder.root.toPath().resolve("absent-view-inspector.jar"),
+        absentViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
     configureSuccessfulInjection()
@@ -318,13 +333,87 @@ class InjectionManagerTest {
       injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for a missing artifact")
     } catch (e: IllegalStateException) {
-      assertThat(e.message).contains("File not found on filesystem")
+      // An absolute path names a file on disk, never a classpath resource: the error names the file only.
+      assertThat(e.message).isEqualTo("UI Inspector file not found: $absentViewInspector")
     }
 
     assertThat(testDeviceServices.recordedSyncSends).isEmpty()
     val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
     assertThat(commands.filter { it.startsWith("settings put ") }).isEmpty()
     assertThat(commands.filter { it.startsWith("cmd activity attach-agent") }).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_deviceArtifactsDirectory_shipsEachOfItsFiles() = runTest {
+    // Distinct contents give each file its own digest, which names its staged copy and joins the server token: a file read from the
+    // wrong path changes them. Neither the classpath nor the runfiles of these tests have the bundled files, so the injection can only
+    // find them in the directory.
+    Files.write(dummyAgent, byteArrayOf(1))
+    Files.write(dummyJar, byteArrayOf(2))
+    Files.write(dummyPayload, byteArrayOf(3))
+    Files.write(dummyViewInspector, byteArrayOf(4))
+    val dir = createDeviceArtifactsDirectory(abis = listOf("arm64-v8a"))
+    val injectionManager =
+      deviceArtifactsInjectionManagerFactory(DeviceArtifactsDirectory(dir), tempFileSuffixGenerator = { "test.tmp" })(
+        testSession,
+        deviceSerial,
+        packageName,
+        null,
+        logger,
+      )
+    configureSuccessfulInjection(token = "1234_" + computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector).combined)
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+
+    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath })
+      .containsExactlyElementsIn(baseStagingPaths().map { "$it.test.tmp" })
+  }
+
+  @Test
+  fun testDump_deviceArtifactsDirectoryWithoutTheDeviceAbi_failsNamingTheAbi() = runTest {
+    val dir = createDeviceArtifactsDirectory(abis = listOf("x86_64"))
+    // Through the public constructor, which is how tools pass the directory.
+    val inspector = UiInspector(testSession, tempFolder.newFolder().toPath(), deviceArtifactsDir = dir)
+    configureSuccessfulInjection()
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { inspector.dump(deviceSerial, packageName) } }
+
+    // The device of configureSuccessfulInjection is arm64-v8a.
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo(
+        "The UI Inspector has no agent for the device ABI 'arm64-v8a': UI Inspector file not found: " +
+          dir.resolve("arm64-v8a/libarttooling_agent.so")
+      )
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+  }
+
+  @Test
+  fun testDump_missingDeviceArtifactsDirectory_failsNamingTheDirectory() = runTest {
+    val dir = tempFolder.root.toPath().resolve("absent-device-artifacts")
+    val inspector = UiInspector(testSession, tempFolder.newFolder().toPath(), deviceArtifactsDir = dir)
+    configureSuccessfulInjection()
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { inspector.dump(deviceSerial, packageName) } }
+
+    // Not as a missing agent for the device ABI, the first file looked up.
+    assertThat(exception).hasMessageThat().isEqualTo("UI Inspector files directory not found or not a directory: $dir")
+    assertThat(fakeSession.deviceServices.shellV2Requests).isEmpty()
+  }
+
+  /**
+   * Creates a directory laid out as [DeviceArtifactsDirectory] reads it, with copies of the dummy artifacts and an agent for each of
+   * [abis].
+   */
+  private fun createDeviceArtifactsDirectory(abis: List<String>): Path {
+    val dir = tempFolder.newFolder("device-artifacts").toPath()
+    for (artifact in listOf(dummyJar, dummyPayload, dummyViewInspector)) {
+      artifact.toFile().copyTo(dir.resolve(artifact.fileName).toFile())
+    }
+    for (abi in abis) {
+      dummyAgent.toFile().copyTo(Files.createDirectories(dir.resolve(abi)).resolve("libarttooling_agent.so").toFile())
+    }
+    return dir
   }
 
   @Test
@@ -1048,6 +1137,7 @@ class InjectionManagerTest {
     )
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -o UID= -p $pid", "10123\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$targetPackage uid:10123\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $targetPackage true", "")
     configureSuccessfulInjection(targetPackage = targetPackage, pid = pid, processName = processName)
 
     val resolvedPackage = resolveForegroundPackage(testSession, deviceSerial)
@@ -1624,7 +1714,7 @@ class InjectionManagerTest {
     class StopAfterCapture : Exception()
     for (overrideJar in listOf(Paths.get("/some/override.jar"), null)) {
       val inspector =
-        UiInspector(testSession, tempFolder.root.toPath(), overrideJar, logger) { _, _, _, overridePath, _ ->
+        UiInspector(testSession, tempFolder.root.toPath(), overrideJar, logger, artifactDownloader = null) { _, _, _, overridePath, _ ->
           capturedOverridePaths.add(overridePath)
           throw StopAfterCapture()
         }
@@ -1635,6 +1725,33 @@ class InjectionManagerTest {
     }
 
     assertThat(capturedOverridePaths).containsExactly(Paths.get("/some/override.jar"), null).inOrder()
+  }
+
+  @Test
+  fun testDump_downloadsTheComposeInspectorWithTheGivenDownloader() = runBlocking {
+    configureSuccessfulInjection()
+    val liveServer = ServerSocket(0)
+    val serverThread = startScriptedLiveAgent(liveServer, composeVersion = "1.6.0")
+    testHostServices.queuedForwardPorts.add(liveServer.localPort.toString())
+    val requestedUrls = mutableListOf<String>()
+    // The downloader records the request and fails it, like a network without access to Maven: only the threading is under test.
+    val downloader =
+      object : ArtifactDownloader {
+        override fun download(url: String, outputFile: File) {
+          requestedUrls.add(url)
+          throw IOException("Simulated download failure")
+        }
+      }
+    val inspector = uiInspectorWithDummyArtifacts(downloader)
+
+    val exception = assertThrows(IOException::class.java) { runBlocking { inspector.dump(deviceSerial, packageName) } }
+    serverThread.join(5000)
+    liveServer.close()
+
+    assertThat(requestedUrls).containsExactly("https://maven.google.com/androidx/compose/ui/ui-android/1.6.0/ui-android-1.6.0.aar")
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo("Could not resolve the Compose inspector for Compose 1.6.0: Simulated download failure")
   }
 
   @Test
@@ -1719,6 +1836,44 @@ class InjectionManagerTest {
     assertThat(testDeviceServices.recordedSyncSends).isEmpty()
     assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
       .isEmpty()
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_reusedServerNotResponding_isNotRetried() = runBlocking {
+    configureSuccessfulInjection()
+    // The reused server reads the first command and never answers, like a frozen app. It is alive, so the timeout must propagate instead
+    // of triggering a full injection, which could not succeed in a frozen app either.
+    val server = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        server.accept().use { socket ->
+          FramingProtocol.readMessage(socket.getInputStream())
+          socket.getInputStream().read()
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.add(server.localPort.toString())
+
+    var thrown: Exception? = null
+    val logged = loggedDuring {
+      try {
+        runWithConnectedInspectorsForTest(responseTimeout = 100.milliseconds) { _, _ ->
+          fail("The block must not run when the app is frozen")
+        }
+        fail("Expected the timeout to propagate")
+      } catch (e: Exception) {
+        thrown = e
+      }
+    }
+    serverThread.join(5000)
+    server.close()
+
+    assertThat(thrown).isInstanceOf(AgentNotRespondingException::class.java)
+    // The server saw the connection close.
+    assertThat(serverThread.isAlive).isFalse()
+    assertThat(logged).doesNotContain("attaching the agent again")
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
   }
 
   @Test
@@ -1950,6 +2105,7 @@ class InjectionManagerTest {
   /** Runs [runWithConnectedInspectors] with all facets off, routing [injectionManagerFactory] to this test's dummy artifact paths. */
   private suspend fun runWithConnectedInspectorsForTest(
     composeInspectorOverrideJarPath: Path? = null,
+    responseTimeout: Duration = AGENT_RESPONSE_TIMEOUT,
     block: suspend (CommandSender, Boolean) -> Unit,
   ) {
     runWithConnectedInspectors(
@@ -1959,6 +2115,7 @@ class InjectionManagerTest {
       needsDebugViewAttributes = false,
       composeInspectorOverrideJarPath = composeInspectorOverrideJarPath,
       composeInspectorCacheDir = tempFolder.root.toPath(),
+      composeInspectorDownloader = NO_DOWNLOADS,
       logger = logger,
       injectionManagerFactory = { session, serial, pkg, overridePath, logger ->
         InjectionManager(
@@ -1974,12 +2131,16 @@ class InjectionManagerTest {
           tempFileSuffixGenerator = { "test.tmp" },
         )
       },
+      responseTimeout = responseTimeout,
       block = block,
     )
   }
 
-  /** Starts a loopback agent that answers View inspector creation with success and Compose version detection with "no Compose". */
-  private fun startScriptedLiveAgent(serverSocket: ServerSocket): Thread = thread {
+  /**
+   * Starts a loopback agent that answers View inspector creation with success and Compose version detection with [composeVersion], or with
+   * "no Compose" if it is null.
+   */
+  private fun startScriptedLiveAgent(serverSocket: ServerSocket, composeVersion: String? = null): Thread = thread {
     runCatching {
       serverSocket.accept().use { socket ->
         val input = socket.getInputStream()
@@ -1994,12 +2155,14 @@ class InjectionManagerTest {
             .build(),
         )
         val getVersion = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+        val versions = UiInspectorProtocol.GetVersionResponse.newBuilder()
+        composeVersion?.let { versions.putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, it) }
         writeAgentResponse(
           output,
           UiInspectorProtocol.Response.newBuilder()
             .setCommandId(getVersion.commandId)
             .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
-            .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
+            .setGetVersion(versions)
             .build(),
         )
       }
@@ -2013,23 +2176,30 @@ class InjectionManagerTest {
 
   /** Dumps with all facets off, routing the [UiInspector] to this test's dummy artifact paths, and discards the result. */
   private suspend fun dumpWithDummyArtifacts() {
-    val inspector =
-      UiInspector(testSession, tempFolder.root.toPath(), composeInspectorJar = null, logger) { session, serial, pkg, overridePath, logger ->
-        InjectionManager(
-          session,
-          serial,
-          pkg,
-          composeInspectorOverrideJarPath = overridePath,
-          logger,
-          agentPathResolver,
-          dummyJar,
-          dummyPayload,
-          dummyViewInspector,
-          tempFileSuffixGenerator = { "test.tmp" },
-        )
-      }
-    inspector.dump(deviceSerial, packageName)
+    uiInspectorWithDummyArtifacts(NO_DOWNLOADS).dump(deviceSerial, packageName)
   }
+
+  /** Creates a [UiInspector] that downloads with [artifactDownloader] and is routed to this test's dummy artifact paths. */
+  private fun uiInspectorWithDummyArtifacts(artifactDownloader: ArtifactDownloader) =
+    UiInspector(testSession, tempFolder.root.toPath(), composeInspectorJar = null, logger, artifactDownloader) {
+      session,
+      serial,
+      pkg,
+      overridePath,
+      logger ->
+      InjectionManager(
+        session,
+        serial,
+        pkg,
+        composeInspectorOverrideJarPath = overridePath,
+        logger,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        dummyViewInspector,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+    }
 
   /** Returns a local TCP port that nothing is listening on. */
   private fun findClosedPort(): Int = ServerSocket(0).use { it.localPort }

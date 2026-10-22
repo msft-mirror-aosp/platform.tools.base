@@ -280,17 +280,21 @@ open class BasicModuleModelMock {
     doReturn(projectInfo).whenever(this.taskCreationServices).projectInfo
 
     val variantDependencies = mock<VariantDependencies>()
-    doReturn(prefabArtifactCollection)
-      .whenever(variantDependencies)
-      .getArtifactCollection(
-        AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
-        AndroidArtifacts.ArtifactScope.ALL,
-        AndroidArtifacts.ArtifactType.PREFAB_PACKAGE,
-      )
+    for (prefabArtifactType in
+      listOf(AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_FROM_MODULE, AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_FROM_AAR)) {
+      doReturn(prefabArtifactCollection)
+        .whenever(variantDependencies)
+        .getArtifactCollection(
+          AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+          AndroidArtifacts.ArtifactScope.ALL,
+          prefabArtifactType,
+        )
+    }
     doReturn(variantDependencies).whenever(this.variantImpl).variantDependencies
     doReturn(minSdkVersion).whenever(this.variantImpl).minSdkVersion
     doReturn(minSdkVersion).whenever(this.variantImpl).minSdk
     doReturn(prefabFileCollection).whenever(prefabArtifactCollection).artifactFiles
+    doReturn(prefabFileCollection).whenever(prefabFileCollection).plus(any())
     doReturn(emptyList<File>().iterator()).whenever(prefabFileCollection).iterator()
 
     doReturn(variantExternalNativeBuild).whenever(this.variantImpl).externalNativeBuild

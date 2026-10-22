@@ -23,21 +23,21 @@ dependencies {
     testImplementation project(':base:build-system:gradle-kotlin')
     testImplementation project(':base:build-system:gradle-settings-api')
 
-    testImplementation libs.kotlin_stdlib
+    testImplementation libs.kotlin.stdlib
 
     testImplementation gradleApi()
-    testImplementation libs.apache_commons_io
-    testImplementation libs.apache_commons_lang
-    testImplementation libs.google_api_client
-    testImplementation libs.google_storage_client
+    testImplementation libs.apache.commons.io
+    testImplementation libs.apache.commons.lang
+    testImplementation libs.google.api.client
+    testImplementation libs.google.storage.client
     testImplementation libs.junit
     testImplementation libs.protobuf
-    testImplementation libs.protobuf_util
+    testImplementation libs.protobuf.util
     testImplementation libs.truth
 
-    testImplementation libs.mockito_core
+    testImplementation libs.mockito.core
 
-    testImplementation libs.kotlin_gradle_plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
+    testImplementation libs.kotlin.gradle.plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
 
 }
 

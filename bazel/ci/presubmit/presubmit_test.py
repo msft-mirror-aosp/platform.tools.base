@@ -172,7 +172,7 @@ class PresubmitTest(parameterized.TestCase):
           'failed-tests/v1/15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b-studio-test.txt',
       )
 
-    self._mock_generate_hash_file('hash-file')
+    mock_generate = self._mock_generate_hash_file('hash-file')
     self._mock_get_impacted_targets(impacted_targets)
     self.build_env.bazel_cquery.return_value.stdout = '\n'.join(
         cquery_targets
@@ -207,7 +207,13 @@ class PresubmitTest(parameterized.TestCase):
         expected_flags,
     )
 
-    if result.strategy == 'impacted_targets':
+    if result.strategy in (
+        presubmit.SelectivePresubmitStrategy.DEFAULT_EXPLICIT,
+        presubmit.SelectivePresubmitStrategy.RETRY_FAILED,
+    ):
+      mock_generate.assert_not_called()
+
+    if result.strategy == presubmit.SelectivePresubmitStrategy.IMPACTED_TARGETS:
       self.build_env.bazel_cquery.assert_called_with(
           'base_target1 union attr(tags, "includefilter", base_target1) union'
           ' base_target2 union attr(tags, "includefilter", base_target2) except'
@@ -217,6 +223,7 @@ class PresubmitTest(parameterized.TestCase):
           ' "excludefilter", base_target2) except attr(tags, "manual",'
           ' base_target2) except attr(target_compatible_with,'
           ' "@platforms//:incompatible", base_target2)',
+          '--config=ci',
       )
 
 

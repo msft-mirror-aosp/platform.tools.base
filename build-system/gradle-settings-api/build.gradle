@@ -9,12 +9,12 @@ plugins {
 dependencies {
     api project(':base:build-system:gradle-common-api')
     implementation gradleApi()
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
 
     metalavaTestImplementation libs.com.android.tools.testutils
     metalavaTestImplementation libs.guava
     metalavaTestImplementation libs.junit
-    metalavaTestImplementation libs.kotlin_test
+    metalavaTestImplementation libs.kotlin.test
 }
 
 group = 'com.android.tools.build'

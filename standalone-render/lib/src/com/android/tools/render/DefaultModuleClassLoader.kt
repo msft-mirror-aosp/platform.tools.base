@@ -22,6 +22,7 @@ import com.android.tools.rendering.classloading.ModuleClassLoaderDiagnosticsRead
 import com.android.tools.rendering.classloading.NopModuleClassLoadedDiagnostics
 import java.net.URL
 import java.util.Enumeration
+import java.util.concurrent.ConcurrentHashMap
 
 /** Default implementation of [ModuleClassLoader] for standalone rendering. */
 class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private val loader: DefaultLoader) :
@@ -39,10 +40,10 @@ class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private
   override fun getResources(name: String): Enumeration<URL> {
     val localRes = loader.getResources(name).toList()
     val parentRes = super.getResources(name).toList()
-    return java.util.Collections.enumeration(localRes + parentRes)
+    return java.util.Collections.enumeration((localRes + parentRes).distinctBy { it.toString() })
   }
 
-  private val loadedClasses = mutableSetOf<String>()
+  private val loadedClasses: MutableSet<String> = ConcurrentHashMap.newKeySet()
   override val stats: ModuleClassLoaderDiagnosticsRead = NopModuleClassLoadedDiagnostics
   override val isUserCodeUpToDate: Boolean = true
 
@@ -55,9 +56,14 @@ class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private
   override val projectClassesTransform: ClassTransform = ClassTransform.identity
   override val nonProjectClassesTransform: ClassTransform = ClassTransform.identity
 
-  override fun dispose() {}
+  @Volatile private var _isDisposed: Boolean = false
+  override val isDisposed: Boolean
+    get() = _isDisposed
 
-  override val isDisposed: Boolean = false
+  override fun dispose() {
+    _isDisposed = true
+    loader.close()
+  }
 
   override fun isCompatibleParentClassLoader(parent: ClassLoader?): Boolean = true
 

@@ -18,6 +18,7 @@ package com.android.tools.render.compose
 
 import com.android.testutils.TestUtils
 import java.io.File
+import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.absolutePathString
 
@@ -38,29 +39,85 @@ private val ALLOWED_ERRORS =
     "Tracing Skia with Perfetto is not supported in this environment (host build?)",
   )
 
-fun runComposeCliRender(args: List<String>): String {
+/**
+ * Runs the CLI with [args] and returns its stdout.
+ *
+ * When [expectRenderErrors] is `false`, fails if the CLI exits with an error or writes anything to stderr other than [ALLOWED_ERRORS]. When
+ * it is `true`, fails unless the CLI reports that rendering failed with errors (exit code 1), which it does when any screenshot has an
+ * error. The caller is then expected to check the results file.
+ */
+fun runComposeCliRender(
+  args: List<String>,
+  expectRenderErrors: Boolean = false,
+  jvmArgs: List<String> = emptyList(),
+): String {
   val javaHome = System.getProperty("java.home")
   val composeCliRenderFolder = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli")
   val deployJar = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli/compose-preview-renderer-cli_deploy.jar")
-  val command = listOf("$javaHome/bin/java", "-Dlayoutlib.thread.profile.timeoutms=10000", "-jar", deployJar.absolutePathString()) + args
-  val procBuilder =
-    ProcessBuilder(command)
-      .directory(composeCliRenderFolder.toFile())
-      .redirectOutput(ProcessBuilder.Redirect.PIPE)
-      .redirectError(ProcessBuilder.Redirect.PIPE)
-  // We have to specify JAVA_HOME
-  procBuilder.environment()["JAVA_HOME"] = javaHome
-  val proc = procBuilder.start()
-  proc.waitFor(5, TimeUnit.MINUTES)
-  val error =
-    proc.errorStream.bufferedReader().readLines().filter { line -> ALLOWED_ERRORS.none { line.trim().startsWith(it) } }.joinToString("\n")
-  if (error.isNotEmpty() || proc.exitValue() != 0) {
-    val commandStr = command.joinToString(" ")
-    throw AssertionError("Error while executing gradle command \"$commandStr\" (exit code ${proc.exitValue()}):\n$error")
+  val command =
+    listOf("$javaHome/bin/java", "-Dlayoutlib.thread.profile.timeoutms=10000") +
+      jvmArgs +
+      listOf("-jar", deployJar.absolutePathString()) +
+      args
+  val commandStr = command.joinToString(" ")
+  // Redirect stdout and stderr to temp files so a full OS pipe buffer cannot deadlock the CLI process.
+  val stdoutFile = Files.createTempFile("compose-cli-stdout", ".log")
+  val stderrFile = Files.createTempFile("compose-cli-stderr", ".log")
+  val stdout: String
+  val error: String
+  val exitCode: Int
+  try {
+    val procBuilder =
+      ProcessBuilder(command)
+        .directory(composeCliRenderFolder.toFile())
+        .redirectOutput(stdoutFile.toFile())
+        .redirectError(stderrFile.toFile())
+    // We have to specify JAVA_HOME
+    procBuilder.environment()["JAVA_HOME"] = javaHome
+    val proc = procBuilder.start()
+    if (!proc.waitFor(5, TimeUnit.MINUTES)) {
+      proc.destroyForcibly()
+      proc.waitFor(10, TimeUnit.SECONDS)
+      val partialStderr = runCatching { Files.readString(stderrFile) }.getOrDefault("")
+      throw AssertionError("CLI command timed out after 5 minutes: \"$commandStr\"\nPartial stderr:\n$partialStderr")
+    }
+    stdout = Files.readString(stdoutFile)
+    error = Files.readAllLines(stderrFile).filter { line -> ALLOWED_ERRORS.none { line.trim().startsWith(it) } }.joinToString("\n")
+    exitCode = proc.exitValue()
+  } finally {
+    Files.deleteIfExists(stdoutFile)
+    Files.deleteIfExists(stderrFile)
   }
-  return proc.inputStream.bufferedReader().readText()
+  val failureReason =
+    if (expectRenderErrors) {
+      // When expectRenderErrors is true, the CLI writes "Error: Rendering failed with errors" to stderr (so stderr is non-empty),
+      // while per-screenshot errors are recorded in the results JSON rather than logged at WARNING/SEVERE. Checking for WARNING/SEVERE
+      // still catches unexpected internal renderer or reflection failures.
+      when {
+        exitCode != 1 -> "expected exit code 1 when expectRenderErrors=true, but got $exitCode"
+        !error.contains("Error: Rendering failed with errors") -> "expected stderr to contain \"Error: Rendering failed with errors\""
+        error.contains("Global error:") -> "unexpected \"Global error:\" in stderr"
+        error.contains("SEVERE:") -> "unexpected \"SEVERE:\" log line in stderr"
+        error.contains("WARNING:") -> "unexpected \"WARNING:\" log line in stderr"
+        else -> null
+      }
+    } else {
+      when {
+        exitCode != 0 -> "expected exit code 0, but got $exitCode"
+        error.isNotEmpty() -> "expected empty stderr, but found unexpected output"
+        else -> null
+      }
+    }
+  if (failureReason != null) {
+    throw AssertionError("Error while executing CLI command \"$commandStr\" ($failureReason, exit code $exitCode):\n$error")
+  }
+  return stdout
 }
 
-fun runComposeCliRender(settingsFile: File): String {
-  return runComposeCliRender(listOf(settingsFile.absolutePath))
+fun runComposeCliRender(
+  settingsFile: File,
+  expectRenderErrors: Boolean = false,
+  jvmArgs: List<String> = emptyList(),
+): String {
+  return runComposeCliRender(listOf(settingsFile.absolutePath), expectRenderErrors, jvmArgs)
 }

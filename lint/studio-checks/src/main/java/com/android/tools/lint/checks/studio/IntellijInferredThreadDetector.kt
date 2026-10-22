@@ -53,6 +53,7 @@ class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice,
 
   override val violationIssue = THREAD
   override val unsatisfiableConstraintIssue = UNSATISFIABLE_CONSTRAINT
+  override val staticInitializerIssue = INITIALIZER
 
   override fun parse(ann: UAnnotation) =
     when (ann.qualifiedName) {
@@ -129,6 +130,26 @@ class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice,
         // TODO(b/379742474) We make this low warning for now, since false positives are quite
         //  likely, especially from conditional branches
         priority = 3,
+        severity = Severity.WARNING,
+        enabledByDefault = true,
+        implementation = Impl,
+      )
+
+    @JvmField
+    val INITIALIZER =
+      Issue.create(
+        id = "StaticInitializerWrongThread",
+        briefDescription = "Static initializer with thread requirement",
+        explanation =
+          """
+                A static initializer runs on whichever thread first triggers it, so a call there that \
+                requires a specific thread may run on the wrong one. Consider initializing such state lazily \
+                (or triggering the initialization eagerly and suppressing this report) on the required thread.
+                """,
+        //noinspection LintImplUnexpectedDomain
+        moreInfo = "http://go/do-not-freeze",
+        category = UI_RESPONSIVENESS,
+        priority = 4,
         severity = Severity.WARNING,
         enabledByDefault = true,
         implementation = Impl,

@@ -67,6 +67,7 @@ import com.android.tools.lint.checks.fx.utils.possibilityLattice
 import com.android.tools.lint.checks.fx.utils.pure
 import com.android.tools.lint.checks.fx.utils.unionedWith
 import com.android.tools.lint.checks.isEffectivelyFinal
+import com.android.tools.lint.checks.isFunInterfaceConversion
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.android.tools.lint.detector.api.asCall
@@ -78,6 +79,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiEllipsisType
 import com.intellij.psi.PsiField
+import com.intellij.psi.PsiFunctionalExpression
 import com.intellij.psi.PsiIntersectionType
 import com.intellij.psi.PsiLambdaParameterType
 import com.intellij.psi.PsiLocalVariable
@@ -257,6 +259,9 @@ internal open class Analysis<FX : Any>(
   private fun checkingMode(ann: EffectAnnotation.Explicit<FX>) =
     Mode.Checking(ann.annotated, concreteEffect, fxCheckingLattice, constraintLattice)
 
+  private val staticInitializerMode = // reused common value
+    Mode.Checking(concreteEffect.bottom, concreteEffect, fxCheckingLattice, constraintLattice, Error<FX>::NontrivialStaticInitializer)
+
   // Make sure this is in sync with `invoke` below
   override fun latticeAt(point: Point<FX>): Lattice<Ans<FX>> {
     return when (point) {
@@ -264,7 +269,7 @@ internal open class Analysis<FX : Any>(
         val method = module[point] ?: return checkingLattice as Lattice<Ans<FX>>
         return when (method.status) {
           is MethodBody.Status.Abstract -> inapplicableLattice as Lattice<Ans<FX>>
-          is MethodBody.Status.BasicConstructor -> inferenceLattice as Lattice<Ans<FX>>
+          is MethodBody.Status.StaticInitializer,
           is MethodBody.Status.ForChecking -> checkingLattice as Lattice<Ans<FX>>
           is MethodBody.Status.ForInference -> inferenceLattice as Lattice<Ans<FX>>
         }
@@ -290,22 +295,15 @@ internal open class Analysis<FX : Any>(
         fun <R : EffectResult.Eval<FX>> Mode<FX, R>.eval(body: UExpression): Result<Type<FX>, R> =
           eval(rec, method.initEnvironment, body, persistentListOf(ReturnRecord(body.uastParent!!)))
 
-        fun <R : EffectResult.Eval<FX>> Mode<FX, R>.fieldInitializerEffects(): R =
-          forM(::eval, (method.source as? UMethod)?.fieldInitializers().orEmpty())
-
         when (val status = method.status) {
           is MethodBody.Status.Abstract -> Result(method.returnTypeAnnotation, Inapplicable)
-          is MethodBody.Status.BasicConstructor ->
-            with(unboundedInferenceMode) { inferenceLattice.catchError { Result(method.returnTypeAnnotation, fieldInitializerEffects()) } }
+          is MethodBody.Status.StaticInitializer -> with(staticInitializerMode) { checkingLattice.catchError { eval(status.body) } }
           is MethodBody.Status.ForChecking ->
             with(checkingMode(status.upperBound)) {
               checkingLattice.catchError {
                 when (val body = status.body) {
-                  null -> Result(method.returnTypeAnnotation, fieldInitializerEffects())
-                  else -> {
-                    val (t, fx) = eval(body)
-                    Result(t, merge(body, fieldInitializerEffects(), fx))
-                  }
+                  null -> pure(method.returnTypeAnnotation)
+                  else -> eval(body)
                 }
               }
             }
@@ -313,12 +311,7 @@ internal open class Analysis<FX : Any>(
             // Guards first: inference blames the first conflicting base, and the guards' call-anchored message should win
             val guards = assumedObjectLiteralGuards(method)
             val base = if (guards.isEmpty()) status.base else EffectAnnotation.Implicit(guards + status.base.nearestBaseAnnotations)
-            with(inferenceMode(base)) {
-              inferenceLattice.catchError {
-                val (t, fx) = eval(status.body)
-                Result(t, merge(status.body, fieldInitializerEffects(), fx))
-              }
-            }
+            with(inferenceMode(base)) { inferenceLattice.catchError { eval(status.body) } }
           }
         }
       }
@@ -541,7 +534,9 @@ internal open class Analysis<FX : Any>(
           // plain static
           else -> {
             val (appType, appFx) = restFx.subst!!.apply(rec, Type.MethodRef(method), restTypes)
-            Result(appType, restFx join onInvocationEffect(e, appFx))
+            // A default constructor takes no arguments, so the call's own type (with its type arguments) is exact
+            val t = if (method.isDefaultConstructor) getType(e) else appType
+            Result(t, restFx join onInvocationEffect(e, appFx))
           }
         }
       }
@@ -593,12 +588,12 @@ internal open class Analysis<FX : Any>(
 
       fun call(call: UCallExpression): Result<Type<FX>, R> {
         val method = call.resolveToUElement()
-        val samLambda = if (method == null) call.samConvertedLambda() else null
+        val samArg = if (method == null) call.samConvertedArgument() else null
         return when {
-          // Kotlin's `Intf { … }` is the lambda, as far as effects go
-          samLambda != null -> loop(samLambda)
-          // constructor call, with constructor definition missing or explicitly "default"
-          call.isConstructorCall() && (method?.javaPsi as? PsiMethod)?.isDefaultConstructor != false -> pure(getType(call))
+          // Kotlin's `Intf { … }` or `Intf(::f)` is its argument, as far as effects go
+          samArg != null -> loop(samArg)
+          // constructor call, with constructor definition missing
+          call.isConstructorCall() && method == null -> pure(getType(call))
           method is UMethod -> {
             val psiMethod = method.javaPsi
             val extReceiver = if (psiMethod.isExtension() && isJava(call.lang)) call.valueArguments.firstOrNull() else call.callReceiver()
@@ -764,6 +759,12 @@ internal open class Analysis<FX : Any>(
           Result(Type.Ellipsis(t), fx)
         }
         is OverloadBody -> callMethod(null, e.canonical, e.args)
+        is InitializerBody -> {
+          // Each initializer runs on its own, outside the constructor's scope
+          val initFx = forM({ eval(rec, initEnv, it, persistentListOf(ReturnRecord(it.uastParent!!))) }, e.initializers)
+          val (t, fx) = eval(rec, initEnv, e.body, returns)
+          Result(t, merge(e.body, initFx, fx))
+        }
         is UParenthesizedExpression -> loop(e.expression)
         is ULabeledExpression -> loop(e.expression)
         is UBreakExpression,
@@ -794,7 +795,7 @@ internal open class Analysis<FX : Any>(
               null,
               is MethodBody.Status.ForInference,
               is MethodBody.Status.Abstract -> emptyList()
-              is MethodBody.Status.BasicConstructor -> throw IllegalStateException()
+              is MethodBody.Status.StaticInitializer -> throw IllegalStateException()
             }
           // The SAM interface's own annotation is an obligation on the lambda itself, which no callee summary shadows, so the assumed
           // callee's bounds add to it rather than replace it.
@@ -1395,14 +1396,17 @@ internal open class Analysis<FX : Any>(
   /** [e]'s enclosing call, with the callee and the parameter [e] is passed as resolved once, for the resolution-hungry helpers to share */
   private fun argumentSiteOf(e: UExpression): ArgumentSite? {
     val call = e.uastParent as? UCallExpression ?: return null
-    return if (call.samConvertedLambda() == e) argumentSiteOf(call) else ArgumentSite(call, e)
+    return if (call.samConvertedArgument() == e) argumentSiteOf(call) else ArgumentSite(call, e)
   }
 
-  /** The lambda in Kotlin's `Intf { ... }`, which UAST presents as an unresolvable constructor call of the interface */
-  private fun UCallExpression.samConvertedLambda(): ULambdaExpression? {
-    if (!isConstructorCall() || resolve() != null) return null
-    val lambda = valueArguments.singleOrNull() as? ULambdaExpression ?: return null
-    return lambda.takeIf { (classReference?.resolve() as? PsiClass)?.isInterface == true }
+  /**
+   * The lambda or callable reference in Kotlin's `Intf { ... }` or `Intf(::f)`, which UAST presents as an unresolvable constructor call of
+   * the interface
+   */
+  private fun UCallExpression.samConvertedArgument(): UExpression? {
+    if (!isConstructorCall()) return null
+    val arg = valueArguments.singleOrNull()?.takeIf { it is ULambdaExpression || it is UCallableReferenceExpression } ?: return null
+    return arg.takeIf { isFunInterfaceConversion() }
   }
 
   private class ArgumentSite(val call: UCallExpression, arg: UExpression) {
@@ -1433,10 +1437,12 @@ internal open class Analysis<FX : Any>(
         e is ULambdaExpression -> typeOf(e.functionalInterfaceType)
         else ->
           when (val parent = e.uastParent) {
-            is UCallExpression -> typeOf(site?.param?.type)
+            is UCallExpression -> if (parent.samConvertedArgument() == e) typeOf(parent.getExpressionType()) else null
             is ULocalVariable -> if (e.isDelegateOf(parent)) null else typeOf((parent.javaPsi as PsiVariable).type)
             else -> null
           }
+            // A Java method reference knows its target type wherever it is (e.g. returned, assigned, cast, or a conditional's branch)
+            ?: typeOf((e.sourcePsi as? PsiFunctionalExpression)?.functionalInterfaceType)
       }
 
     if (site == null) return default()
@@ -1566,6 +1572,7 @@ internal open class Analysis<FX : Any>(
     val intfs = module[intfId] ?: return persistentSetOf()
     val impls = module[implId] ?: return persistentSetOf()
     return intfs.entries.flatMapToPersistentSet { (methodIntf, methodIntfHeader) ->
+      if (!methodIntf.isVirtual) return@flatMapToPersistentSet persistentSetOf() // only applicable to virtual methods
       val methodImplHeader = impls[methodIntf] ?: return@flatMapToPersistentSet persistentSetOf()
       guardImplAgainstStatus(rec, arg, methodIntfHeader.status, Type.MethodRef(implId, methodIntf), methodImplHeader)
     }
@@ -1611,7 +1618,7 @@ internal open class Analysis<FX : Any>(
       }
       is MethodBody.Status.ForInference,
       is MethodBody.Status.Abstract -> {}
-      is MethodBody.Status.BasicConstructor -> throw IllegalStateException()
+      is MethodBody.Status.StaticInitializer -> throw IllegalStateException()
     }
 
     return result
@@ -1692,12 +1699,15 @@ internal open class Analysis<FX : Any>(
       concreteEffects: Lattice<FX>,
       effects: Lattice<EffectResult.Checking<FX>>,
       constraintLattice: Lattice<Constraint<FX>>,
+      private val exceedingError: (calleeLowerBound: FX, site: UExpression) -> Error<FX> = { ee, site ->
+        Error.ExceedingAnnotation(annotation, ee, site)
+      },
     ) : Mode<FX, EffectResult.Checking<FX>>(concreteEffects, effects, constraintLattice) {
       override fun onInvocationEffect(source: UExpression, fxInst: Instantiation<FX>) =
         with(concreteEffects) {
           val (fx, failures, subst) = fxInst
           var errors = persistentSetOf<Error<FX>>()
-          if (!(fx.concrete precedes annotation)) errors += Error.ExceedingAnnotation(annotation, fx.concrete, source)
+          if (!(fx.concrete precedes annotation)) errors += exceedingError(fx.concrete, source)
           errors += failures.at(source)
           val generatedConstraints = Constraint.concrete(annotation, fx.invocations)
           Checking(constraintLattice.joinOf(fx.constraint, Constraint(generatedConstraints, persistentMapOf())), errors, subst)
@@ -1867,6 +1877,25 @@ internal class OverloadBody(override val uastParent: UMethod, val canonical: Psi
   override fun asRenderString() = asLogString()
 
   override fun asSourceString() = asLogString()
+
+  override fun toString() = asLogString()
+
+  override val uAnnotations
+    get() = listOf<UAnnotation>()
+}
+
+/** What an initialization method (e.g. constructor) runs: the [initializers] it's responsible for, then its own [body], if any. */
+internal class InitializerBody(
+  override val uastParent: UElement,
+  val initializers: List<UExpression>,
+  body: UExpression?,
+  type: Type<Nothing>,
+) : UExpression {
+  val body: UExpression = body ?: OpaqueConstant.Pure(type)
+
+  override val psi = null
+
+  override fun asLogString() = "⟨${(initializers + body).joinToString("; ", transform = UExpression::asLogString)}⟩"
 
   override fun toString() = asLogString()
 

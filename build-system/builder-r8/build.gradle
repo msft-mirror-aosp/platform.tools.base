@@ -23,8 +23,8 @@ dependencies {
     implementation libs.com.android.tools.sdkCommon
     implementation libs.protobuf
     implementation libs.guava
-    implementation libs.kotlin_stdlib
-    testImplementation libs.kotlin_test
+    implementation libs.kotlin.stdlib
+    testImplementation libs.kotlin.test
     testImplementation libs.junit
     testImplementation libs.truth
     testImplementation libs.com.android.tools.testutils

@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.dependency
 
+import android.databinding.tool.DataBindingBuilder
+import com.android.SdkConstants
 import com.android.Version
 import com.android.tools.build.jetifier.core.config.ConfigParser
 import com.android.tools.build.jetifier.processor.Processor
@@ -30,11 +32,22 @@ object AndroidXDependencySubstitution {
    * Mappings from old dependencies to AndroidX dependencies.
    *
    * Each entry maps "old-group:old-module" (without version) to "new-group:new-module:new-version" (with version).
+   *
+   * The data binding runtime libraries are not released with AGP, so they are mapped to the version that AGP adds to projects that use
+   * data binding (see [DataBindingBuilder.getLibraryVersion]) rather than to the AGP version.
    */
   @JvmStatic
   val androidXMappings: Map<String, String> =
     Processor.createProcessor3(config = ConfigParser.loadDefaultConfig()!!, dataBindingVersion = Version.ANDROID_GRADLE_PLUGIN_VERSION)
       .getDependenciesMap(filterOutBaseLibrary = false)
+      .mapValues { (oldModule, newModule) ->
+        when (oldModule) {
+          SdkConstants.DATA_BINDING_LIB_ARTIFACT,
+          SdkConstants.DATA_BINDING_ADAPTER_LIB_ARTIFACT ->
+            newModule.substringBeforeLast(':') + ":" + DataBindingBuilder().getLibraryVersion(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+          else -> newModule
+        }
+      }
 
   /** Replaces old support libraries with AndroidX. */
   fun replaceOldSupportLibraries(project: Project, reasonToReplace: String) {

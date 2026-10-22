@@ -47,10 +47,10 @@ tasks.register('perfTest', Test) {
 
 dependencies {
     implementation libs.asm
-    implementation libs.asm_tree
+    implementation libs.asm.tree
     testImplementation libs.truth
     perfTestImplementation project(':base:perf-logger')
     perfTestImplementation "com.android.tools:testutils:${rootProject.ext.baseVersion}"
     perfTestRuntimeOnly libs.asm
-    perfTestRuntimeOnly libs.asm_tree
+    perfTestRuntimeOnly libs.asm.tree
 }

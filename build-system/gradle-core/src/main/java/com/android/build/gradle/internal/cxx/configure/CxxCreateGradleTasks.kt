@@ -41,7 +41,8 @@ import com.android.build.gradle.internal.cxx.settings.calculateConfigurationArgu
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.JNI
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PREFAB_PACKAGE
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_FROM_AAR
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_FROM_MODULE
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
 import com.android.build.gradle.internal.tasks.factory.TaskFactory
@@ -103,6 +104,12 @@ fun createCxxTasks(
                 .artifactFiles
             )
             configureTask.dependsOn(variant.taskContainer.preBuildTask)
+            // The task action reads Prefab packages extracted from AARs. Declare them so that Gradle runs the
+            // transforms before the task instead of inside its action. Library module packages are deliberately
+            // not declared because configure only needs their location, not their built contents.
+            configureTask.dependsOn(
+              variant.variantDependencies.getArtifactCollection(COMPILE_CLASSPATH, ALL, PREFAB_PACKAGE_FROM_AAR).artifactFiles
+            )
           }
           is ConfigureGroup -> {
             taskFactory.register(name)
@@ -127,10 +134,13 @@ fun createCxxTasks(
             for (variant in task.coveredVariants) {
               val variantConfiguration = variantMap.getValue(task.representative.variant.variantName)
 
-              // Make sure any prefab dependencies are built first
-              buildTask.dependsOn(
-                variantConfiguration.variantDependencies.getArtifactCollection(COMPILE_CLASSPATH, ALL, PREFAB_PACKAGE).artifactFiles
-              )
+              // Make sure any prefab dependencies are built first. Unlike configure, build needs library modules'
+              // packages to have been built, so depend on both sources.
+              for (prefabPackageType in listOf(PREFAB_PACKAGE_FROM_MODULE, PREFAB_PACKAGE_FROM_AAR)) {
+                buildTask.dependsOn(
+                  variantConfiguration.variantDependencies.getArtifactCollection(COMPILE_CLASSPATH, ALL, prefabPackageType).artifactFiles
+                )
+              }
             }
           }
           is BuildGroup -> {

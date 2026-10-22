@@ -115,6 +115,6 @@ class AgpVersionConsistencyTest {
   }
 
   companion object {
-    private const val DIFFERENT_AGP = "9.1.0"
+    private const val DIFFERENT_AGP = "9.4.0"
   }
 }

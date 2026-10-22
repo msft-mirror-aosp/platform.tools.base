@@ -3,9 +3,9 @@ apply plugin: 'com.android.tools.kotlin'
 
 dependencies {
     implementation libs.asm
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
 
-    testImplementation libs.kotlin_test
+    testImplementation libs.kotlin.test
     testImplementation libs.truth
     testImplementation libs.junit
     testImplementation libs.com.android.tools.testutils

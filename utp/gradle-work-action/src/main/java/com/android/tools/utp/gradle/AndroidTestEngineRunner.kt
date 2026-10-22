@@ -43,13 +43,13 @@ import org.junit.platform.launcher.core.LauncherFactory
  * TODO(b/535331959): Remove this class in AGP 10.0 when we fully migrate to the Test Suite API.
  */
 class AndroidTestEngineRunner(
-  private val launcherExecutor: (LauncherDiscoveryRequest, TestExecutionListener) -> Map<String, Boolean> = { request, listener ->
+  private val launcherExecutor: (LauncherDiscoveryRequest, List<TestExecutionListener>) -> Map<String, Boolean> = { request, listeners ->
     val trackingListener = DeviceTrackingListener()
     val launcher =
       LauncherFactory.create(
         LauncherConfig.builder()
           .enableTestExecutionListenerAutoRegistration(false)
-          .addTestExecutionListeners(listener, trackingListener)
+          .addTestExecutionListeners(*listeners.toTypedArray(), trackingListener)
           .build()
       )
     launcher.execute(request)
@@ -92,8 +92,11 @@ class AndroidTestEngineRunner(
         }
       }
       val request = requestBuilder.build()
-      val listener = AndroidTestResultListener()
-      val perDeviceAllTestsPassed = launcherExecutor(request, listener)
+      // Use the device shard names for console messages so that they match the names used in
+      // the test reports.
+      val deviceNames = utpRunConfigs.associate { it.deviceSerialNumber.get() to it.deviceShardName.get() }
+      val listeners = listOf(AndroidTestResultListener(), ConsoleTestProgressListener(deviceNames))
+      val perDeviceAllTestsPassed = launcherExecutor(request, listeners)
       val serials = utpRunConfigs.map { it.deviceSerialNumber.get() }
       allPassed = serials.all { perDeviceAllTestsPassed[it] ?: false }
     } catch (t: Throwable) {

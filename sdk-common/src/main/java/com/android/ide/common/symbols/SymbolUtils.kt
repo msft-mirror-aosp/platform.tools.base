@@ -364,7 +364,9 @@ fun parseArrayLiteral(size: Int, valuesString: String): ImmutableList<Int> {
     // have a reference to the android.R here instead (e.g. android.R.attr.lStar). In that case
     // just parse it as a zero, and then re-create when writing the R.jar (the name matches the
     // child exactly, e.g. a child attr "android:foo" will reference android.R.attr.foo).
-    if (value.startsWith("android")) {
+    // Similarly, when aapt2 runs with --shared-lib, styleable arrays contain references to the
+    // package's R.attr (e.g. com.android.webview.R.attr.background).
+    if (value.startsWith("android") || value.contains("R.attr.")) {
       ints.add(0)
     } else {
       ints.add(valueStringToInt(value))

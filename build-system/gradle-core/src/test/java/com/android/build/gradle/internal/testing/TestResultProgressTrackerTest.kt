@@ -71,6 +71,21 @@ class TestResultProgressTrackerTest {
   }
 
   @Test
+  fun testSuiteStatus_getStatusIfChanged() {
+    val status = TestResultProgressTracker.TestSuiteStatus("myDevice")
+
+    assertThat(status.getStatusIfChanged()).isNull()
+
+    status.scheduleTests(2)
+    assertThat(status.getStatusIfChanged()).isEqualTo("myDevice Tests 0/2 completed. (0 skipped) (0 failed)")
+    assertThat(status.getStatusIfChanged()).isNull()
+
+    status.addCompletedTest()
+    assertThat(status.getStatusIfChanged()).isEqualTo("myDevice Tests 1/2 completed. (0 skipped) (0 failed)")
+    assertThat(status.getStatusIfChanged()).isNull()
+  }
+
+  @Test
   fun onTestSuiteStarted_startsTimer() {
     val progressTracker = TestResultProgressTracker("testDevice", 200L, mockLogger, ::timerFactory)
 
@@ -93,6 +108,21 @@ class TestResultProgressTrackerTest {
     progressTracker.onTestSuiteFinished()
 
     verify(mockTimer, times(1)).cancel()
+  }
+
+  @Test
+  fun timerActionAfterSuiteFinished_doesNotLogStatus() {
+    val progressTracker = TestResultProgressTracker("testDevice", 200L, mockLogger, ::timerFactory)
+
+    progressTracker.onTestSuiteStarted(1)
+    progressTracker.onTestPassed()
+    progressTracker.onTestSuiteFinished()
+
+    // Timer.cancel() does not stop a task which is already running, so the action may still run after the summary.
+    capturedAction!!.invoke()
+
+    verify(mockLogger).lifecycle("Finished 1 tests on testDevice")
+    verify(mockLogger, never()).lifecycle("testDevice Tests 1/1 completed. (0 skipped) (0 failed)")
   }
 
   @Test

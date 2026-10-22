@@ -128,6 +128,66 @@ class AndroidDeviceDescriptorTest {
   }
 
   @Test
+  fun `instrumentationFailed publishes run failure report entry`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val context = AndroidTestExecutionContext(executionRequest)
+
+    val listener = descriptor.Listener()
+
+    listener.instrumentationStarted(0)
+    listener.instrumentationFailed("Test run failed to complete. Process crashed.")
+    listener.finish()
+
+    descriptor.execute(context, mock<Node.DynamicTestExecutor>())
+
+    val reportEntryCaptor = argumentCaptor<ReportEntry>()
+    verify(engineExecutionListener, atLeastOnce()).reportingEntryPublished(eq(descriptor), reportEntryCaptor.capture())
+    val runFailures = reportEntryCaptor.allValues.mapNotNull { it.keyValuePairs[AndroidTestReportKeys.RUN_FAILURE] }
+    assertThat(runFailures).containsExactly("Test run failed to complete. Process crashed.")
+  }
+
+  @Test
+  fun `reportRunFailure after finish is ignored`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val context = AndroidTestExecutionContext(executionRequest)
+
+    val listener = descriptor.Listener()
+
+    listener.finish()
+    listener.reportRunFailure("too late")
+
+    descriptor.execute(context, mock<Node.DynamicTestExecutor>())
+
+    verify(engineExecutionListener, never()).reportingEntryPublished(any(), any())
+  }
+
+  @Test
+  fun `startRunner publishes run failure report entry when the test runner fails`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    whenever(mockAdbApkInstaller.preInstallationSetup(any())).thenThrow(RuntimeException("Failed to install APKs"))
+
+    val descriptor =
+      AndroidDeviceDescriptor(
+        uniqueId,
+        deviceSerial,
+        adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
+        instrumentationRunnerFactory = { _, _, _, _, _, _, _, _, _, _ -> mockAmInstrumentationRunner },
+      )
+
+    val context = AndroidTestExecutionContext(executionRequest)
+    descriptor.startRunner(context)
+    // Consumes the events sent by the runner thread until it finishes.
+    descriptor.execute(context, mock<Node.DynamicTestExecutor>())
+
+    val reportEntryCaptor = argumentCaptor<ReportEntry>()
+    verify(engineExecutionListener, atLeastOnce()).reportingEntryPublished(eq(descriptor), reportEntryCaptor.capture())
+    val runFailures = reportEntryCaptor.allValues.mapNotNull { it.keyValuePairs[AndroidTestReportKeys.RUN_FAILURE] }
+    assertThat(runFailures).isNotEmpty()
+  }
+
+  @Test
   fun `testStarted queues test without calling dynamicTestRegistered immediately`() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
     val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)

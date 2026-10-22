@@ -39,6 +39,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 
 public class ZipFlingerTest extends AbstractZipflingerTest {
@@ -1074,6 +1075,57 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
             Assert.assertEquals("FileBacked entry differ", ByteBuffer.wrap(bytes), buffer);
         }
         Assert.assertFalse("LargeSource tmp file was not deleted", Files.exists(tmpPath));
+    }
+
+    @Test
+    public void testLargeStoredSourceSpanningMultipleReads() throws IOException {
+        // Larger than LargeFileSource's read buffer, and not a multiple of it.
+        byte[] bytes = new byte[2 * 256 * 1024 + 123];
+        Path srcPath = createRandomFile("testLargeStoredSourceSpanningMultipleReads.txt", bytes);
+        CRC32 expectedCrc = new CRC32();
+        expectedCrc.update(bytes);
+
+        LargeFileSource s = new LargeFileSource(srcPath, null, "x", Deflater.NO_COMPRESSION);
+        Assert.assertEquals(Ints.longToUint(expectedCrc.getValue()), s.getCrc());
+        Assert.assertEquals(bytes.length, s.getCompressedSize());
+        Assert.assertEquals(bytes.length, s.getUncompressedSize());
+
+        Path dstFile = getTestPath("testLargeStoredSourceSpanningMultipleReads.zip");
+        try (ZipArchive zipArchive = new ZipArchive(dstFile)) {
+            zipArchive.add(s);
+        }
+        verifyArchive(dstFile);
+        try (ZipRepo zipRepo = new ZipRepo(dstFile)) {
+            Assert.assertEquals(ByteBuffer.wrap(bytes), zipRepo.getContent("x"));
+        }
+    }
+
+    @Test
+    public void testSourcesFromPathStoredUsesLargeFileSourceAboveLimit() throws IOException {
+        byte[] small = new byte[Sources.STORED_LARGE_LIMIT];
+        byte[] large = new byte[Sources.STORED_LARGE_LIMIT + 1];
+        Path smallPath = createRandomFile("testSourcesFromPathSmall.txt", small);
+        Path largePath = createRandomFile("testSourcesFromPathLarge.txt", large);
+
+        Source smallStored = Sources.from(smallPath, "small", Deflater.NO_COMPRESSION);
+        Source largeStored = Sources.from(largePath, "large", Deflater.NO_COMPRESSION);
+        Source largeDeflated = Sources.from(largePath, "deflated", Deflater.BEST_SPEED);
+        Assert.assertTrue(smallStored instanceof BytesSource);
+        Assert.assertTrue(largeStored instanceof LargeFileSource);
+        Assert.assertTrue(largeDeflated instanceof BytesSource);
+
+        Path dstFile = getTestPath("testSourcesFromPathStored.zip");
+        try (ZipArchive zipArchive = new ZipArchive(dstFile)) {
+            zipArchive.add(smallStored);
+            zipArchive.add(largeStored);
+            zipArchive.add(largeDeflated);
+        }
+        verifyArchive(dstFile);
+        try (ZipRepo zipRepo = new ZipRepo(dstFile)) {
+            Assert.assertEquals(ByteBuffer.wrap(small), zipRepo.getContent("small"));
+            Assert.assertEquals(ByteBuffer.wrap(large), zipRepo.getContent("large"));
+            Assert.assertEquals(ByteBuffer.wrap(large), zipRepo.getContent("deflated"));
+        }
     }
 
     @Test

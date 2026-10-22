@@ -6,6 +6,7 @@ import sys
 
 
 def find_pnpm_binary():
+  """Returns the path of the pnpm binary and the runfiles directory containing it, or (None, None)."""
   candidates = [
       'aspect_rules_js++pnpm+pnpm/pnpm_/pnpm.cmd',
       'aspect_rules_js++pnpm+pnpm/pnpm_/pnpm.exe',
@@ -29,15 +30,15 @@ def find_pnpm_binary():
     for candidate in candidates:
       p = os.path.join(runfiles_dir, candidate)
       if os.path.exists(p):
-        return p
+        return p, runfiles_dir
 
   for runfiles_dir in runfiles_dirs:
     for root, _, files in os.walk(runfiles_dir):
       for f in files:
         if f in ['pnpm', 'pnpm.cmd', 'pnpm.exe'] and 'pnpm_' in root:
-          return os.path.join(root, f)
+          return os.path.join(root, f), runfiles_dir
 
-  return None
+  return None, None
 
 
 def main():
@@ -46,7 +47,7 @@ def main():
     workspace = os.getcwd()
 
   pnpm_dir = os.path.join(workspace, 'tools', 'base', 'bazel')
-  pnpm_bin = find_pnpm_binary()
+  pnpm_bin, runfiles_dir = find_pnpm_binary()
 
   if not pnpm_bin:
     sys.exit('Error: Could not locate hermetic pnpm binary in runfiles.')
@@ -55,8 +56,9 @@ def main():
   if not args:
     args = ['install', '--lockfile-only']
 
+  env = dict(os.environ, RUNFILES_DIR=os.path.abspath(runfiles_dir))
   cmd = [pnpm_bin, '--dir', pnpm_dir] + args
-  sys.exit(subprocess.call(cmd))
+  sys.exit(subprocess.call(cmd, env=env))
 
 
 if __name__ == '__main__':

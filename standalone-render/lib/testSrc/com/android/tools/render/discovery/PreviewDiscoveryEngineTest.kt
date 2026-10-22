@@ -78,6 +78,14 @@ annotation class AnotherWrappedThemePreviews
 /** MultiPreview combining BranchThemePreviewA and BranchThemePreviewB (which both reference BaseThemePreview). */
 @BranchThemePreviewA @BranchThemePreviewB annotation class NestedMultiPreviewWithDuplicateDescendants
 
+/** MultiPreview branches that both reference WrappedThemePreviews, which declares a @PreviewWrapper. */
+@WrappedThemePreviews annotation class WrappedBranchPreviewA
+
+@WrappedThemePreviews annotation class WrappedBranchPreviewB
+
+/** Diamond: WrappedThemePreviews, and so its @PreviewWrapper, is reachable through both WrappedBranchPreviewA and WrappedBranchPreviewB. */
+@WrappedBranchPreviewA @WrappedBranchPreviewB annotation class WrappedDiamondPreviews
+
 /** Mock PreviewParameterProvider for user names. */
 class SampleUserProvider : PreviewParameterProvider<String> {
   override val values = sequenceOf("Alice", "Bob")
@@ -151,6 +159,10 @@ class SamplePreviewTarget {
   @Composable @WrappedThemePreviews @AnotherWrappedThemePreviews fun SampleMethodWithMultipleWrappersViaMultiPreview() {}
 
   @Composable @PreviewWrapper(SampleThemeWrapper::class) @WrappedThemePreviews fun SampleMethodWithDirectAndMultiPreviewWrapper() {}
+
+  @Composable @WrappedDiamondPreviews fun SampleMethodWithWrapperReachedThroughDiamond() {}
+
+  @Composable @WrappedBranchPreviewA @WrappedThemePreviews fun SampleMethodWithWrapperReachedDirectlyAndThroughBranch() {}
 
   @Composable @PreviewWrapper(SampleThemeWrapper::class) fun SampleComposableWrapperWithoutPreviewMethod() {}
 
@@ -582,6 +594,29 @@ class PreviewDiscoveryEngineTest {
       assertTrue("Discovered previews should be empty", result.previews.isEmpty())
       val error = result.methodValidationResult.errors.first()
       assertTrue("Error should mention multiple wrappers", error.message.contains("Multiple @PreviewWrapper annotations found"))
+    }
+  }
+
+  @Test
+  fun testPreviewWrapperReachedThroughDiamondIsCountedOnce() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithWrapperReachedThroughDiamond"
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      assertTrue("A wrapper declared once must not be reported as duplicated", result.methodValidationResult.isValid)
+      // WrappedThemePreviews' previews are still collected once per path (see testDiscoverNestedMultiPreviewWithDuplicateDescendants).
+      assertEquals(4, result.previews.size)
+      result.previews.forEach { assertEquals(SampleThemeWrapper::class.java.name, it.previewWrapperFqn) }
+    }
+  }
+
+  @Test
+  fun testPreviewWrapperReachedDirectlyAndThroughBranchIsCountedOnce() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithWrapperReachedDirectlyAndThroughBranch"
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      assertTrue("A wrapper declared once must not be reported as duplicated", result.methodValidationResult.isValid)
+      assertEquals(4, result.previews.size)
+      result.previews.forEach { assertEquals(SampleThemeWrapper::class.java.name, it.previewWrapperFqn) }
     }
   }
 

@@ -19,6 +19,7 @@ package com.android.tools.ui.inspector.client
 import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.deploy.ArtifactDownloader
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InspectorMetadata
 import com.android.tools.ui.inspector.deploy.MavenArtifactResolver
@@ -63,9 +64,9 @@ internal suspend fun createComposeInspector(
   return true
 }
 
-/** Resolves the Compose inspector jar for a Compose version from Google Maven, caching it under [cacheDir]. */
-internal fun mavenComposeInspectorResolver(cacheDir: Path): (version: String) -> File = { version ->
-  MavenArtifactResolver(cacheDir = cacheDir.toFile()).resolve(COMPOSE_UI_GROUP_ID, getComposeArtifactId(version), version)
+/** Resolves the Compose inspector jar for a Compose version from Google Maven with [downloader], caching it under [cacheDir]. */
+internal fun mavenComposeInspectorResolver(cacheDir: Path, downloader: ArtifactDownloader): (version: String) -> File = { version ->
+  MavenArtifactResolver(downloader, cacheDir.toFile()).resolve(COMPOSE_UI_GROUP_ID, getComposeArtifactId(version), version)
 }
 
 /** Queries the Compose inspector on the agent for the Composable tree of a specific root view. */

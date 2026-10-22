@@ -97,6 +97,7 @@ class StudioIssueRegistry : IssueRegistry() {
       HtmlPaneDetector.ISSUE,
       ImplicitExecutorDetector.ISSUE,
       IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL,
+      IntellijInferredThreadDetector.INITIALIZER,
       IntellijInferredThreadDetector.THREAD,
       IntellijInferredThreadDetector.UNSATISFIABLE_CONSTRAINT,
       LintDetectorDetector.CHECK_URL,

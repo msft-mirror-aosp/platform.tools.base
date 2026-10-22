@@ -179,6 +179,33 @@ public class SymbolIoTest {
     }
 
     @Test
+    public void testStyleableWithSharedLibAttrReferences() throws Exception {
+        String r =
+                "int attr background 0x00010000\n"
+                        + "int attr backgroundSplit 0x00010001\n"
+                        + "int[] styleable ActionBar { com.android.webview.R.attr.background,"
+                        + " com.android.webview.R.attr.backgroundSplit }\n"
+                        + "int styleable ActionBar_background 0\n"
+                        + "int styleable ActionBar_backgroundSplit 1\n";
+        File file = mTemporaryFolder.newFile();
+        Files.asCharSink(file, StandardCharsets.UTF_8).write(r);
+
+        SymbolTable table = SymbolIo.readFromAapt(file, null);
+
+        SymbolTable expected =
+                SymbolTable.builder()
+                        .add(Symbol.attributeSymbol("background", 0x00010000))
+                        .add(Symbol.attributeSymbol("backgroundSplit", 0x00010001))
+                        .add(
+                                Symbol.styleableSymbol(
+                                        "ActionBar",
+                                        ImmutableList.of(0, 0),
+                                        ImmutableList.of("background", "backgroundSplit")))
+                        .build();
+        assertEquals(expected, table);
+    }
+
+    @Test
     public void testDoesNotThrowNumberFormatExeption() throws Exception {
         String r =
                 "int[] styleable LimitedSizeLinearLayout { 0x7f010000, 0x7f010001 }\n"

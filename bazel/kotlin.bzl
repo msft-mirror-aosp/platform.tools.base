@@ -6,7 +6,7 @@ load("@rules_java//java:defs.bzl", "JavaInfo", "JavaPluginInfo")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file")
 load(":kotlin_common.bzl", "KtJvmToolchainInfo", "add_jvm_target_opts", "select_java_compile_toolchain", "select_java_runtime")
-load(":lint.bzl", "lint_test")
+load(":lint.bzl", "LINT_CUSTOM_RULES", "lint_test")
 load(":merge_archives.bzl", "run_singlejar")
 
 # buildifier: disable=native-java-common
@@ -306,7 +306,7 @@ def kotlin_library(
             srcs = srcs,
             baseline = lint_baseline,
             deps = collections.uniq((deps or []) + (exports or []) + (lint_classpath or [])),
-            custom_rules = ["//tools/base/lint:studio-checks.lint-rules.jar", "//tools/base/lint/studio-checks/compose-desktop-checks"] + lint_custom_rules,
+            custom_rules = LINT_CUSTOM_RULES + lint_custom_rules,
             tags = ["noci:studio-win"],
             is_test_sources = lint_is_test_sources,
             extra_args = ["--java-language-level", jvm_target] + lint_extra_args,

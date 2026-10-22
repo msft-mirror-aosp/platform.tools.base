@@ -1,17 +1,17 @@
-load("//tools/base/android-test:version.bzl", "ANDROID_TEST_ENGINE_VERSION")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "maven_proto_library")
+load("//tools/base/common:version.bzl", "BUILD_VERSION")
 
 maven_proto_library(
     name = "test_result_event_proto",
     srcs = glob(["proto/**/*.proto"]),
     coordinates = "com.android.tools.androidtest:test-result-event-proto",
     description = "A protobuf messages used to listen test results",
-    notice = "LICENSE",
+    notice = "NOTICE",
     resource_strip_prefix = "tools/base/android-test/android-test-engine-result-listener/proto",
     resources = glob(["proto/**/*.proto"]),
-    version = ANDROID_TEST_ENGINE_VERSION,
+    version = BUILD_VERSION,
     visibility = ["//visibility:public"],
 )
 
@@ -23,10 +23,10 @@ maven_library(
     ]),
     coordinates = "com.android.tools.androidtest:android-test-engine-result-listener",
     description = "A JUnit Platform TestExecutionListener that emits test results as base64 encoded protos.",
-    notice = "LICENSE",
+    notice = "NOTICE",
     resource_strip_prefix = "tools/base/android-test/android-test-engine-result-listener/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
-    version = ANDROID_TEST_ENGINE_VERSION,
+    version = BUILD_VERSION,
     visibility = ["//visibility:public"],
     deps = [
         ":test_result_event_proto",

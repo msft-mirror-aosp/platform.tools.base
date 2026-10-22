@@ -29,6 +29,7 @@ import com.android.sdklib.AndroidApiLevel
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.collect
@@ -879,13 +880,172 @@ class AiGlassesPairingTest {
     assertTrue(executedCommands.contains("cmd bluetooth_manager enable"))
   }
 
-  private fun setupDeviceMocks() {
+  @Test
+  fun pairToGlasses_refreshesCdmAssociationBeforeAssistedPair() = runBlockingWithTimeout {
+    // CDM disassociate and associate must run after UNPAIR teardown and before ASSISTED_PAIR. The positional forms also succeed here (as
+    // they silently do on images with android.companion.cmd_options), so they must not run when the options form works.
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+    setupPairedFlowMocks(glassesAddress)
+    val positionalDisassociate = "cmd companiondevice disassociate 0 com.google.android.glasses.companion $glassesAddress"
+    val positionalAssociate =
+      "cmd companiondevice associate 0 com.google.android.glasses.companion $glassesAddress android.app.role.COMPANION_DEVICE_GLASSES"
+    registerBroadcastResponse(positionalDisassociate, "")
+    registerBroadcastResponse(positionalAssociate, "")
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    val states = mutableListOf<String>()
+    pairing.run { device.pairToGlasses(glassesAddress, true) }.collect { states.add(it) }
+
+    assertEquals(listOf(AiGlassesPairing.AWAITING_FOREGROUND, "POLLING", "PAIRED"), states)
+    val expectedOrder =
+      listOf(
+        "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+        "cmd companiondevice disassociate 0 com.google.android.glasses.companion --mac-address $glassesAddress",
+        "cmd companiondevice associate 0 com.google.android.glasses.companion --mac-address $glassesAddress --profile android.app.role.COMPANION_DEVICE_GLASSES",
+        "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
+      )
+    assertEquals(expectedOrder, executedCommands.filter { it in expectedOrder })
+    assertFalse(executedCommands.contains(positionalDisassociate))
+    assertFalse(executedCommands.contains(positionalAssociate))
+  }
+
+  @Test
+  fun pairToGlasses_fallsBackToPositionalCdmSyntaxWhenOptionsRejected() = runBlockingWithTimeout {
+    // Images without android.companion.cmd_options (such as API 37 release images) reject --mac-address and need positional arguments.
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+    setupPairedFlowMocks(glassesAddress)
+    val positionalDisassociate = "cmd companiondevice disassociate 0 com.google.android.glasses.companion $glassesAddress"
+    val positionalAssociate =
+      "cmd companiondevice associate 0 com.google.android.glasses.companion $glassesAddress android.app.role.COMPANION_DEVICE_GLASSES"
+    registerBroadcastResponse(positionalDisassociate, "")
+    registerBroadcastResponse(positionalAssociate, "")
+    listOf(ShellProtocolType.SHELL, ShellProtocolType.SHELL_V2).forEach { type ->
+      fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+        0,
+        object : ShellHandler(type) {
+          override fun shouldExecute(shellCommand: String, shellCommandArgs: String?): Boolean =
+            shellCommand == "cmd" && shellCommandArgs?.contains("--mac-address") == true
+
+          override fun execute(
+            fakeAdbServer: FakeAdbServer,
+            statusWriter: StatusWriter,
+            shellCommandOutput: ShellCommandOutput,
+            device: DeviceState,
+            shellCommand: String,
+            shellCommandArgs: String?,
+          ) {
+            statusWriter.writeOk()
+            shellCommandOutput.writeStderr("java.lang.IllegalArgumentException: --mac-address was not a valid MAC address\n")
+            shellCommandOutput.writeExitCode(1)
+          }
+        },
+      )
+    }
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    val states = mutableListOf<String>()
+    pairing.run { device.pairToGlasses(glassesAddress, true) }.collect { states.add(it) }
+
+    assertEquals(listOf(AiGlassesPairing.AWAITING_FOREGROUND, "POLLING", "PAIRED"), states)
+    val expectedOrder =
+      listOf(
+        positionalDisassociate,
+        positionalAssociate,
+        "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
+      )
+    assertEquals(expectedOrder, executedCommands.filter { it in expectedOrder })
+  }
+
+  @Test
+  fun pairToGlasses_withUseCdmFalse_disassociatesCdmWithoutAssociating() = runBlockingWithTimeout {
+    // When useCdm is false, clear any old CDM association without pre-creating a new one.
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+    setupPairedFlowMocks(glassesAddress, useCdm = false)
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    val states = mutableListOf<String>()
+    pairing.run { device.pairToGlasses(glassesAddress, false) }.collect { states.add(it) }
+
+    assertEquals(listOf(AiGlassesPairing.AWAITING_FOREGROUND, "POLLING", "PAIRED"), states)
+    assertTrue(
+      executedCommands.contains("cmd companiondevice disassociate 0 com.google.android.glasses.companion --mac-address $glassesAddress")
+    )
+    assertFalse(executedCommands.any { it.startsWith("cmd companiondevice associate") })
+  }
+
+  @Test
+  fun pairToGlasses_proceedsWhenCdmCommandsFail() = runBlockingWithTimeout {
+    // CDM shell failures are best-effort and must not abort the pairing flow.
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+    setupPairedFlowMocks(glassesAddress)
+    val failedCdmCommands = AtomicInteger()
+    listOf(ShellProtocolType.SHELL, ShellProtocolType.SHELL_V2).forEach { type ->
+      fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+        0,
+        object : ShellHandler(type) {
+          override fun shouldExecute(shellCommand: String, shellCommandArgs: String?): Boolean =
+            shellCommand == "cmd" && shellCommandArgs?.startsWith("companiondevice") == true
+
+          override fun execute(
+            fakeAdbServer: FakeAdbServer,
+            statusWriter: StatusWriter,
+            shellCommandOutput: ShellCommandOutput,
+            device: DeviceState,
+            shellCommand: String,
+            shellCommandArgs: String?,
+          ) {
+            failedCdmCommands.incrementAndGet()
+            throw IOException("Simulated companiondevice shell failure")
+          }
+        },
+      )
+    }
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    val states = mutableListOf<String>()
+    pairing.run { device.pairToGlasses(glassesAddress, true) }.collect { states.add(it) }
+
+    // Both syntaxes of disassociate and associate failed, yet pairing still completed.
+    assertEquals(4, failedCdmCommands.get())
+    assertEquals(listOf(AiGlassesPairing.AWAITING_FOREGROUND, "POLLING", "PAIRED"), states)
+  }
+
+  private fun setupPairedFlowMocks(glassesAddress: String, useCdm: Boolean = true) {
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
+      "state=PAIRED\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm $useCdm --ez force true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+    setupDeviceMocks(glassesAddress)
+  }
+
+  private fun setupDeviceMocks(glassesAddress: String = "AA:BB:CC:DD:EE:FF") {
     registerBroadcastResponse("settings get global bluetooth_on", "1")
     registerBroadcastResponse("cmd location set-location-enabled true", "")
     registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.NEARBY_WIFI_DEVICES", "")
     registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.BLUETOOTH_CONNECT", "")
     registerBroadcastResponse("pm grant com.google.android.glasses.core android.permission.ACCESS_FINE_LOCATION", "")
     registerBroadcastResponse("monkey -p com.google.android.glasses.companion -c android.intent.category.LAUNCHER 1", "")
+    registerBroadcastResponse("cmd companiondevice disassociate 0 com.google.android.glasses.companion --mac-address $glassesAddress", "")
+    registerBroadcastResponse(
+      "cmd companiondevice associate 0 com.google.android.glasses.companion --mac-address $glassesAddress --profile android.app.role.COMPANION_DEVICE_GLASSES",
+      "",
+    )
   }
 
   private val executedCommands = CopyOnWriteArrayList<String>()

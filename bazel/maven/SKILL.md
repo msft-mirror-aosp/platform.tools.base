@@ -2,7 +2,7 @@
 name: maven-dependency-upgrade
 description: |
   Use this skill when upgrading or updating third-party Maven dependency versions across the studio-main monorepo, regenerating Bazel BUILD.maven targets, syncing local prebuilts, or resolving Bzlmod rules_android lockfile conflicts and NOTICE files.
-  Use when: Upgrading Maven artifacts in artifacts.bzl or dependencies.properties, running maven_fetch.sh or local_maven_repository_generator, or fixing missing NOTICE file errors and Bzlmod JSON syntax issues in rules_android.
+  Use when: Upgrading Maven artifacts in artifacts.bzl or libs.versions.toml, running maven_fetch.sh or local_maven_repository_generator, or fixing missing NOTICE file errors and Bzlmod JSON syntax issues in rules_android.
   Don't use when: Upgrading Gradle plugins or non-Maven external dependencies that do not use artifacts.bzl or local_maven_repository_generator.
 ---
 
@@ -11,7 +11,7 @@ description: |
 This skill provides step-by-step instructions for updating third-party Maven dependency versions across the `studio-main` monorepo, regenerating Bazel definitions (`BUILD.maven`), updating Gradle dependency properties, handling `NOTICE` files, and synchronizing Bzlmod external lockfiles.
 
 ## When to use this skill
-- Use this when upgrading external Maven libraries pinned in `tools/base/bazel/maven/artifacts.bzl`, exact test fixtures / multi-version plugins in `tools/base/bazel/maven/data.bzl`, or `tools/buildSrc/base/dependencies.properties`.
+- Use this when upgrading external Maven libraries pinned in `tools/base/bazel/maven/artifacts.bzl`, exact test fixtures / multi-version plugins in `tools/base/bazel/maven/data.bzl`, or `tools/buildSrc/base/libs.versions.toml`.
 - Use this when running `local_maven_repository_generator` (`maven_fetch.sh`) to download prebuilt artifacts into `prebuilts/tools/common/m2/repository/`.
 - This is helpful for resolving Bzlmod lockfile conflicts in `rules_android_lock_maven_install.patch` or diagnosing missing `NOTICE` file errors (`Creating symlink ..._license.NOTICE failed`) when building SDK packages.
 
@@ -49,11 +49,10 @@ As explained in [`tools/base/bazel/README.md`](file:///usr/local/google/home/hme
        ...
    ]
    ```
-3. **Gradle Build Properties (`dependencies.properties`)**
-   If the dependency is also used during `buildSrc` or Gradle builds, locate `tools/buildSrc/base/dependencies.properties` and update the version strings so Gradle builds stay aligned with Bazel:
-   ```properties
-   bouncycastle_pkix = org.bouncycastle:bcpkix-jdk18on:1.80.2
-   bouncycastle_prov = org.bouncycastle:bcprov-jdk18on:1.80.2
+3. **Gradle Build Properties (`libs.versions.toml`)**
+   If the dependency is also used during `buildSrc` or Gradle builds, locate `tools/buildSrc/base/libs.versions.toml` and update the version strings so Gradle builds stay aligned with Bazel:
+   ```toml
+   bouncycastle = "1.80.2"
    ```
 
 ### 2. Synchronize Prebuilts & Regenerate `BUILD.maven`
@@ -133,7 +132,7 @@ grep -rn "navigation-safe-args-gradle-plugin_2.5.3" tools/
 3. **Git Tracked Files Checklist**
    When committing dependency updates across repositories, ensure the following files are tracked and staged:
    - `tools/base/bazel/maven/artifacts.bzl`
-   - `tools/buildSrc/base/dependencies.properties`
+   - `tools/buildSrc/base/libs.versions.toml`
    - `tools/base/bazel/maven/BUILD.maven`
    - `tools/base/bazel/bzlmod/rules_android_lock_maven_install.patch`
    - `prebuilts/tools/common/m2/repository/<group>/<artifact>/<version>/` (all newly downloaded `.jar`, `.pom`, `.sha1`, `NOTICE`, etc. files)

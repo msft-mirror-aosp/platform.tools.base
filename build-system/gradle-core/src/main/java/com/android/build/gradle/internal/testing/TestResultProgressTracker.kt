@@ -23,13 +23,22 @@ import org.gradle.api.logging.Logging
 
 private const val DEFAULT_LOG_STATUS_DELAY_MS = 10 * 1000L
 
+/**
+ * Tracks the progress of a test suite running on a single device and periodically logs a status line to the Gradle console.
+ *
+ * A port of this class exists in `com.android.tools.utp.gradle.TestResultProgressTracker` (gradle-work-action) for the Android Test Engine
+ * runner, which runs in an isolated class loader. Consider applying fixes to both copies.
+ */
 class TestResultProgressTracker
 @JvmOverloads
 constructor(
   deviceName: String,
   val logStatusDelayMS: Long = DEFAULT_LOG_STATUS_DELAY_MS,
   val logger: Logger = Logging.getLogger(TestResultProgressTracker::class.java),
-  val timerFactory: (Long, () -> Unit) -> Timer = { delay, action -> timer(initialDelay = delay, period = delay) { action() } },
+  val timerFactory: (Long, () -> Unit) -> Timer = { delay, action ->
+    // Use a daemon thread so that a test suite which never finishes cannot keep the Gradle process alive.
+    timer(name = "TestResultProgressTracker", daemon = true, initialDelay = delay, period = delay) { action() }
+  },
 ) {
 
   private var logTimer: Timer? = null
@@ -46,11 +55,12 @@ constructor(
     val finishedTests: Int
       get() = synchronized(this) { testsCompletedCount }
 
-    fun hasChanged(): Boolean =
+    /** Returns the current status and clears the changed flag if the status has changed since the last call, or null otherwise. */
+    fun getStatusIfChanged(): String? =
       synchronized(this) {
-        val hasChange = statusChanged
+        if (!statusChanged) return null
         statusChanged = false
-        hasChange
+        getStatus()
       }
 
     fun addCompletedTest() {
@@ -91,14 +101,25 @@ constructor(
   }
 
   fun logStatus() {
-    if (status.hasChanged()) {
-      logger.lifecycle(status.getStatus())
+    status.getStatusIfChanged()?.let { logger.lifecycle(it) }
+  }
+
+  /**
+   * Called by the timer. [Timer.cancel] does not stop a task which is already running, so check under the lock that the timer has not been
+   * cancelled to make sure that no status line is logged after the summary.
+   */
+  @Synchronized
+  private fun logStatusIfRunning() {
+    if (logTimer != null) {
+      logStatus()
     }
   }
 
+  @Synchronized
   fun onTestSuiteStarted(scheduledTestCaseCount: Int) {
     status.scheduleTests(scheduledTestCaseCount)
-    logTimer = timerFactory(logStatusDelayMS, ::logStatus)
+    logTimer?.cancel()
+    logTimer = timerFactory(logStatusDelayMS, ::logStatusIfRunning)
   }
 
   fun onTestFailed() = status.addFailedTest()
@@ -107,8 +128,10 @@ constructor(
 
   fun onTestSkipped() = status.addSkippedTest()
 
+  @Synchronized
   fun onTestSuiteFinished() {
     logTimer?.cancel()
+    logTimer = null
     logger.lifecycle("Finished ${status.finishedTests} tests on ${status.deviceName}")
   }
 }

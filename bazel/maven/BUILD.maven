@@ -4338,10 +4338,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.android.tools.r8_9.5.26",
-    pom = "com/android/tools/r8/9.5.26/r8-9.5.26.pom",
+    name = "com.android.tools.r8_9.6.0-alpha06",
+    pom = "com/android/tools/r8/9.6.0-alpha06/r8-9.6.0-alpha06.pom",
     repo_root_path = "",
-    repo_path = "com/android/tools/r8/9.5.26",
+    repo_path = "com/android/tools/r8/9.6.0-alpha06",
     visibility = ["//visibility:public"],
 )
 
@@ -4349,12 +4349,12 @@ maven_import(
     name = "com.android.tools.r8",
     classifiers = [],
     jars = [
-        "com/android/tools/r8/9.5.26/r8-9.5.26.jar"
+        "com/android/tools/r8/9.6.0-alpha06/r8-9.6.0-alpha06.jar"
     ],
     original_deps = [],
-    pom = "com/android/tools/r8/9.5.26/r8-9.5.26.pom",
+    pom = "com/android/tools/r8/9.6.0-alpha06/r8-9.6.0-alpha06.pom",
     repo_root_path = "",
-    repo_path = "com/android/tools/r8/9.5.26",
+    repo_path = "com/android/tools/r8/9.6.0-alpha06",
     visibility = ["//visibility:public"],
 )
 
@@ -15064,10 +15064,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bc-jdk18on-bom_1.80.2",
-    pom = "org/bouncycastle/bc-jdk18on-bom/1.80.2/bc-jdk18on-bom-1.80.2.pom",
+    name = "org.bouncycastle.bc-jdk18on-bom_1.86",
+    pom = "org/bouncycastle/bc-jdk18on-bom/1.86/bc-jdk18on-bom-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.80.2",
+    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.86",
     visibility = ["//visibility:public"],
 )
 
@@ -15075,19 +15075,19 @@ maven_import(
     name = "org.bouncycastle.bc-jdk18on-bom",
     classifiers = [],
     original_deps = [],
-    pom = "org/bouncycastle/bc-jdk18on-bom/1.80.2/bc-jdk18on-bom-1.80.2.pom",
+    pom = "org/bouncycastle/bc-jdk18on-bom/1.86/bc-jdk18on-bom-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.80.2",
+    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.86",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bcpkix-jdk18on_1.80.2",
-    pom = "org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.pom",
+    name = "org.bouncycastle.bcpkix-jdk18on_1.86",
+    pom = "org/bouncycastle/bcpkix-jdk18on/1.86/bcpkix-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.86",
     deps = [
-        "org.bouncycastle.bcutil-jdk18on_1.80.2",
+        "org.bouncycastle.bcutil-jdk18on_1.86",
     ],
     visibility = ["//visibility:public"],
 )
@@ -15096,25 +15096,25 @@ maven_import(
     name = "org.bouncycastle.bcpkix-jdk18on",
     classifiers = [],
     jars = [
-        "org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.jar"
+        "org/bouncycastle/bcpkix-jdk18on/1.86/bcpkix-jdk18on-1.86.jar"
     ],
     exports = [
         "org.bouncycastle.bcutil-jdk18on",
     ],
     original_deps = [
-        "org.bouncycastle.bcutil-jdk18on_1.80.2",
+        "org.bouncycastle.bcutil-jdk18on_1.86",
     ],
-    pom = "org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.pom",
+    pom = "org/bouncycastle/bcpkix-jdk18on/1.86/bcpkix-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.86",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bcprov-jdk18on_1.80.2",
-    pom = "org/bouncycastle/bcprov-jdk18on/1.80.2/bcprov-jdk18on-1.80.2.pom",
+    name = "org.bouncycastle.bcprov-jdk18on_1.86",
+    pom = "org/bouncycastle/bcprov-jdk18on/1.86/bcprov-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcprov-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcprov-jdk18on/1.86",
     visibility = ["//visibility:public"],
 )
 
@@ -15122,22 +15122,22 @@ maven_import(
     name = "org.bouncycastle.bcprov-jdk18on",
     classifiers = [],
     jars = [
-        "org/bouncycastle/bcprov-jdk18on/1.80.2/bcprov-jdk18on-1.80.2.jar"
+        "org/bouncycastle/bcprov-jdk18on/1.86/bcprov-jdk18on-1.86.jar"
     ],
     original_deps = [],
-    pom = "org/bouncycastle/bcprov-jdk18on/1.80.2/bcprov-jdk18on-1.80.2.pom",
+    pom = "org/bouncycastle/bcprov-jdk18on/1.86/bcprov-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcprov-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcprov-jdk18on/1.86",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bcutil-jdk18on_1.80.2",
-    pom = "org/bouncycastle/bcutil-jdk18on/1.80.2/bcutil-jdk18on-1.80.2.pom",
+    name = "org.bouncycastle.bcutil-jdk18on_1.86",
+    pom = "org/bouncycastle/bcutil-jdk18on/1.86/bcutil-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcutil-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcutil-jdk18on/1.86",
     deps = [
-        "org.bouncycastle.bcprov-jdk18on_1.80.2",
+        "org.bouncycastle.bcprov-jdk18on_1.86",
     ],
     visibility = ["//visibility:public"],
 )
@@ -15146,17 +15146,17 @@ maven_import(
     name = "org.bouncycastle.bcutil-jdk18on",
     classifiers = [],
     jars = [
-        "org/bouncycastle/bcutil-jdk18on/1.80.2/bcutil-jdk18on-1.80.2.jar"
+        "org/bouncycastle/bcutil-jdk18on/1.86/bcutil-jdk18on-1.86.jar"
     ],
     exports = [
         "org.bouncycastle.bcprov-jdk18on",
     ],
     original_deps = [
-        "org.bouncycastle.bcprov-jdk18on_1.80.2",
+        "org.bouncycastle.bcprov-jdk18on_1.86",
     ],
-    pom = "org/bouncycastle/bcutil-jdk18on/1.80.2/bcutil-jdk18on-1.80.2.pom",
+    pom = "org/bouncycastle/bcutil-jdk18on/1.86/bcutil-jdk18on-1.86.pom",
     repo_root_path = "",
-    repo_path = "org/bouncycastle/bcutil-jdk18on/1.80.2",
+    repo_path = "org/bouncycastle/bcutil-jdk18on/1.86",
     visibility = ["//visibility:public"],
 )
 
@@ -44737,6 +44737,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.databinding.databinding-adapters_9.4.1",
+    pom = "androidx/databinding/databinding-adapters/9.4.1/databinding-adapters-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/databinding-adapters/9.4.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "androidx.databinding.databinding-common_9.4.1",
+        "androidx.databinding.databinding-runtime_9.4.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.databinding.databinding-common_3.5.0",
     pom = "androidx/databinding/databinding-common/3.5.0/databinding-common-3.5.0.pom",
     repo_root_path = "",
@@ -44973,6 +44986,14 @@ maven_artifact(
     pom = "androidx/databinding/databinding-common/9.4.0/databinding-common-9.4.0.pom",
     repo_root_path = "",
     repo_path = "androidx/databinding/databinding-common/9.4.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.databinding.databinding-common_9.4.1",
+    pom = "androidx/databinding/databinding-common/9.4.1/databinding-common-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/databinding-common/9.4.1",
     visibility = ["//visibility:public"],
 )
 
@@ -45673,6 +45694,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.databinding.databinding-ktx_9.4.1",
+    pom = "androidx/databinding/databinding-ktx/9.4.1/databinding-ktx-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/databinding-ktx/9.4.1",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-android_1.4.1",
+        "androidx.lifecycle.lifecycle-runtime-ktx_2.6.1",
+        "androidx.lifecycle.lifecycle-livedata_2.6.1",
+        "androidx.lifecycle.lifecycle-process_2.6.1",
+        "androidx.lifecycle.lifecycle-service_2.6.1",
+        "androidx.lifecycle.lifecycle-viewmodel_2.6.1",
+        "androidx.databinding.databinding-runtime_9.4.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.databinding.databinding-runtime_8.5.0",
     pom = "androidx/databinding/databinding-runtime/8.5.0/databinding-runtime-8.5.0.pom",
     repo_root_path = "",
@@ -45709,6 +45748,21 @@ maven_artifact(
     deps = [
         "androidx.databinding.databinding-common_9.1.0",
         "androidx.databinding.viewbinding_9.1.0",
+        "androidx.lifecycle.lifecycle-runtime_2.6.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "androidx.collection.collection_1.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.databinding.databinding-runtime_9.4.1",
+    pom = "androidx/databinding/databinding-runtime/9.4.1/databinding-runtime-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/databinding-runtime/9.4.1",
+    deps = [
+        "androidx.databinding.databinding-common_9.4.1",
+        "androidx.databinding.viewbinding_9.4.1",
         "androidx.lifecycle.lifecycle-runtime_2.6.1",
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
         "androidx.collection.collection_1.0.0",
@@ -45777,6 +45831,18 @@ maven_artifact(
     pom = "androidx/databinding/viewbinding/9.1.0/viewbinding-9.1.0.pom",
     repo_root_path = "",
     repo_path = "androidx/databinding/viewbinding/9.1.0",
+    deps = [
+        "androidx.annotation.annotation_1.0.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.databinding.viewbinding_9.4.1",
+    pom = "androidx/databinding/viewbinding/9.4.1/viewbinding-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "androidx/databinding/viewbinding/9.4.1",
     deps = [
         "androidx.annotation.annotation_1.0.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
@@ -57293,6 +57359,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.databinding.adapters_9.4.1",
+    pom = "com/android/databinding/adapters/9.4.1/adapters-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "com/android/databinding/adapters/9.4.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.android.databinding.baseLibrary_9.4.1",
+        "com.android.databinding.library_9.4.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.databinding.baseLibrary_3.1.4",
     pom = "com/android/databinding/baseLibrary/3.1.4/baseLibrary-3.1.4.pom",
     repo_root_path = "",
@@ -57537,6 +57616,14 @@ maven_artifact(
     pom = "com/android/databinding/baseLibrary/9.4.0/baseLibrary-9.4.0.pom",
     repo_root_path = "",
     repo_path = "com/android/databinding/baseLibrary/9.4.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.databinding.baseLibrary_9.4.1",
+    pom = "com/android/databinding/baseLibrary/9.4.1/baseLibrary-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "com/android/databinding/baseLibrary/9.4.1",
     visibility = ["//visibility:public"],
 )
 
@@ -57885,6 +57972,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.databinding.library_9.4.1",
+    pom = "com/android/databinding/library/9.4.1/library-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "com/android/databinding/library/9.4.1",
+    deps = [
+        "com.android.databinding.viewbinding_9.4.1",
+        "android.arch.lifecycle.runtime_1.0.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.android.support.support-core-utils_26.1.0",
+        "com.android.databinding.baseLibrary_9.4.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.databinding.viewbinding_7.0.0",
     pom = "com/android/databinding/viewbinding/7.0.0/viewbinding-7.0.0.pom",
     repo_root_path = "",
@@ -58133,6 +58235,18 @@ maven_artifact(
     pom = "com/android/databinding/viewbinding/9.2.0/viewbinding-9.2.0.pom",
     repo_root_path = "",
     repo_path = "com/android/databinding/viewbinding/9.2.0",
+    deps = [
+        "com.android.support.support-annotations_26.1.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.databinding.viewbinding_9.4.1",
+    pom = "com/android/databinding/viewbinding/9.4.1/viewbinding-9.4.1.pom",
+    repo_root_path = "",
+    repo_path = "com/android/databinding/viewbinding/9.4.1",
     deps = [
         "com.android.support.support-annotations_26.1.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
@@ -93115,6 +93229,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.bouncycastle.bcpkix-jdk18on_1.80.2",
+    pom = "org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.pom",
+    repo_root_path = "",
+    repo_path = "org/bouncycastle/bcpkix-jdk18on/1.80.2",
+    deps = [
+        "org.bouncycastle.bcutil-jdk18on_1.80.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.bouncycastle.bcprov-jdk15on_1.56",
     pom = "org/bouncycastle/bcprov-jdk15on/1.56/bcprov-jdk15on-1.56.pom",
     repo_root_path = "",
@@ -93171,6 +93296,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.bouncycastle.bcprov-jdk18on_1.80.2",
+    pom = "org/bouncycastle/bcprov-jdk18on/1.80.2/bcprov-jdk18on-1.80.2.pom",
+    repo_root_path = "",
+    repo_path = "org/bouncycastle/bcprov-jdk18on/1.80.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.bouncycastle.bcutil-jdk18on_1.77",
     pom = "org/bouncycastle/bcutil-jdk18on/1.77/bcutil-jdk18on-1.77.pom",
     repo_root_path = "",
@@ -93188,6 +93321,17 @@ maven_artifact(
     repo_path = "org/bouncycastle/bcutil-jdk18on/1.79",
     deps = [
         "org.bouncycastle.bcprov-jdk18on_1.79",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.bouncycastle.bcutil-jdk18on_1.80.2",
+    pom = "org/bouncycastle/bcutil-jdk18on/1.80.2/bcutil-jdk18on-1.80.2.pom",
+    repo_root_path = "",
+    repo_path = "org/bouncycastle/bcutil-jdk18on/1.80.2",
+    deps = [
+        "org.bouncycastle.bcprov-jdk18on_1.80.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -97010,10 +97154,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.jvm-abi-gen_2.3.20",
-    pom = "org/jetbrains/kotlin/jvm-abi-gen/2.3.20/jvm-abi-gen-2.3.20.pom",
+    name = "org.jetbrains.kotlin.jvm-abi-gen_2.4.0",
+    pom = "org/jetbrains/kotlin/jvm-abi-gen/2.4.0/jvm-abi-gen-2.4.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/kotlin/jvm-abi-gen/2.3.20",
+    repo_path = "org/jetbrains/kotlin/jvm-abi-gen/2.4.0",
     visibility = ["//visibility:public"],
 )
 
@@ -97846,6 +97990,14 @@ maven_artifact(
     pom = "org/jetbrains/kotlin/kotlin-build-tools-api/2.3.21/kotlin-build-tools-api-2.3.21.pom",
     repo_root_path = "",
     repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.3.21",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0",
+    pom = "org/jetbrains/kotlin/kotlin-build-tools-api/2.4.0/kotlin-build-tools-api-2.4.0.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.4.0",
     visibility = ["//visibility:public"],
 )
 
@@ -98890,6 +99042,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-compiler_2.4.0",
+    pom = "org/jetbrains/kotlin/kotlin-compiler/2.4.0/kotlin-compiler-2.4.0.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.4.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.4.0",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.4.0",
+        "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-compiler_2.5.0-Beta1",
     pom = "org/jetbrains/kotlin/kotlin-compiler/2.5.0-Beta1/kotlin-compiler-2.5.0-Beta1.pom",
     repo_root_path = "",
@@ -98964,12 +99131,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin_2.3.20",
-    pom = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.3.20/kotlin-compose-compiler-plugin-2.3.20.pom",
+    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin_2.4.0",
+    pom = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.4.0/kotlin-compose-compiler-plugin-2.4.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.3.20",
+    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.4.0",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -102647,6 +102814,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.4.0",
+    pom = "org/jetbrains/kotlin/kotlin-script-runtime/2.4.0/kotlin-script-runtime-2.4.0.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.4.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-script-runtime_2.5.0-Beta1",
     pom = "org/jetbrains/kotlin/kotlin-script-runtime/2.5.0-Beta1/kotlin-script-runtime-2.5.0-Beta1.pom",
     repo_root_path = "",
@@ -103706,10 +103881,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-serialization-compiler-plugin_2.3.20",
-    pom = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.3.20/kotlin-serialization-compiler-plugin-2.3.20.pom",
+    name = "org.jetbrains.kotlin.kotlin-serialization-compiler-plugin_2.4.0",
+    pom = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.4.0/kotlin-serialization-compiler-plugin-2.4.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.3.20",
+    repo_path = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.4.0",
     visibility = ["//visibility:public"],
 )
 
@@ -104614,6 +104789,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.4.0",
+    pom = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.4.0/kotlin-stdlib-jdk7-2.4.0.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.4.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.5.0-Beta1",
     pom = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.5.0-Beta1/kotlin-stdlib-jdk7-2.5.0-Beta1.pom",
     repo_root_path = "",
@@ -105111,6 +105297,18 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.3.21",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.4.0",
+    pom = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.4.0/kotlin-stdlib-jdk8-2.4.0.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.4.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.4.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -105896,6 +106094,17 @@ maven_artifact(
     pom = "org/jetbrains/kotlin/kotlin-stdlib/2.3.21/kotlin-stdlib-2.3.21.pom",
     repo_root_path = "",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.3.21",
+    deps = [
+        "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib_2.4.0",
+    pom = "org/jetbrains/kotlin/kotlin-stdlib/2.4.0/kotlin-stdlib-2.4.0.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.4.0",
     deps = [
         "org.jetbrains.annotations_13.0",
     ],

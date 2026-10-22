@@ -3,9 +3,9 @@ apply plugin: 'com.android.tools.kotlin'
 apply plugin: 'com.google.protobuf'
 
 dependencies {
-    compileOnly libs.kotlin_gradle_plugin_idea
+    compileOnly libs.kotlin.gradle.plugin.idea
 
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
     implementation libs.protobuf
 }
 
@@ -15,7 +15,7 @@ sourceSets {
 
 protobuf {
     protoc {
-        artifact = libs.proto_compiler
+        artifact = libs.proto.compiler.get().toString()
     }
 }
 

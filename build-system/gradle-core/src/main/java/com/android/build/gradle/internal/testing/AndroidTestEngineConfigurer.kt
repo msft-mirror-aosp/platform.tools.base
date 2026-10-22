@@ -41,7 +41,9 @@ fun configureAndroidTestEngine(
   val globalConfig = creationConfig.global
   val testedConfig = (creationConfig as? DeviceTestCreationConfig)?.mainVariant
 
-  val androidTestEngineVersion = Version.ANDROID_TEST_ENGINE_VERSION
+  // The Android test engine is built and released in lockstep with the Android Gradle plugin
+  // (same version, same gmaven release), so it always resolves to the exact AGP version.
+  val androidTestEngineVersion = Version.ANDROID_GRADLE_PLUGIN_VERSION
 
   task.classpath =
     creationConfig.services.fileCollection().also {

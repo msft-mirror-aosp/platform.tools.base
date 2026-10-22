@@ -98,9 +98,9 @@ class AbstractAndroidLocationsTest {
   @Test
   fun `existing XDG_CONFIG_HOME usage`() {
     val testLocation = folder.newFolder()
-    // If it already exists and is not empty use it
-    val dotAndroid = testLocation.toPath().resolve(".android").createDirectories()
-    dotAndroid.resolve("repositories.cfg").createFile()
+    // If it already exists and contains files under "avd", use it.
+    val avdFolder = testLocation.toPath().resolve(".android/avd").createDirectories()
+    avdFolder.resolve("Pixel_8.ini").createFile()
     val provider = FakeProvider(sysProp = mapOf(), envVar = mapOf("XDG_CONFIG_HOME" to testLocation.absolutePath, "HOME" to "do/not/use"))
     val logger = RecordingLogger()
 
@@ -116,7 +116,9 @@ class AbstractAndroidLocationsTest {
   @Test
   fun `empty XDG_CONFIG_HOME usage`() {
     val xdgLocation = folder.newFolder()
-    xdgLocation.toPath().resolve(".android/avd").createDirectories()
+    val dotAndroid = xdgLocation.toPath().resolve(".android").createDirectories()
+    dotAndroid.resolve("analytics.settings").createFile()
+    dotAndroid.resolve("avd").createDirectories()
     val homeLocation = folder.newFolder()
     val provider =
       FakeProvider(

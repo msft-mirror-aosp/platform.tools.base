@@ -303,6 +303,9 @@ message DumpViewsResponse {
     repeated StringEntry strings = 2;
 
     repeated Display displays = 3;
+
+    // Why the dump failed, if it did. The other fields are then empty.
+    string error_message = 4;
 }
 
 message Command {

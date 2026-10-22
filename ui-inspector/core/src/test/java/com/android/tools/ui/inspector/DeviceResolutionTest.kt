@@ -49,6 +49,10 @@ class DeviceResolutionTest {
     fakeSession.deviceServices.configureShellCommand(selector, "pm list packages -U --user 0", output)
   }
 
+  private fun configureDebuggable(packageName: String, debuggable: Boolean = true) {
+    fakeSession.deviceServices.configureShellCommand(selector, "run-as $packageName true", "", exitCode = if (debuggable) 0 else 1)
+  }
+
   @Test
   fun testResolveSoleOnlineDeviceReturnsItsSerial() {
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList())
@@ -103,6 +107,7 @@ class DeviceResolutionTest {
     configureTopActivityOutput("    APP  UID 1234:com.example.uiprocess/u0a123 (top-activity)\n")
     configureProcessUid("1234", "10123")
     configurePackageUids(PackageUid("com.example.qaviews", 10123))
+    configureDebuggable("com.example.qaviews")
 
     val packageName = runBlocking { resolveForegroundPackage(fakeSession, "abc") }
 
@@ -114,6 +119,7 @@ class DeviceResolutionTest {
     configureTopActivityOutput("    APP  UID 1234:com.example:ui/u0a123 (top-activity)\n")
     configureProcessUid("1234", "10123")
     configurePackageUids(PackageUid("com.example", 10123))
+    configureDebuggable("com.example")
 
     val packageName = runBlocking { resolveForegroundPackage(fakeSession, "abc") }
 
@@ -128,10 +134,45 @@ class DeviceResolutionTest {
     configureProcessUid("1234", "10123")
     configureProcessUid("5678", "10123")
     configurePackageUids(PackageUid("com.example", 10123))
+    configureDebuggable("com.example")
 
     val packageName = runBlocking { resolveForegroundPackage(fakeSession, "abc") }
 
     assertThat(packageName).isEqualTo("com.example")
+  }
+
+  @Test
+  fun testResolveForegroundPackageFailsWhenForegroundAppIsNotDebuggable() {
+    // A share sheet shown over the app to inspect.
+    configureTopActivityOutput("    APP  UID 1234:com.android.intentresolver/u0a122 (top-activity)\n")
+    configureProcessUid("1234", "10122")
+    configurePackageUids(PackageUid("com.android.intentresolver", 10122))
+    configureDebuggable("com.android.intentresolver", debuggable = false)
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { resolveForegroundPackage(fakeSession, "abc") } }
+
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo(
+        "The app in the foreground, 'com.android.intentresolver', is not debuggable. It may be a system screen, such as the launcher, a" +
+          " permission request or a share sheet."
+      )
+  }
+
+  @Test
+  fun testResolveForegroundPackageFailsWhenForegroundAppHasSystemUid() {
+    // Settings runs as the system UID, which many packages share.
+    configureTopActivityOutput("    APP  UID 1234:com.android.settings/1000 (top-activity)\n")
+    configureProcessUid("1234", "1000")
+    configurePackageUids(PackageUid("android", 1000), PackageUid("com.android.settings", 1000))
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { resolveForegroundPackage(fakeSession, "abc") } }
+
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo(
+        "The app in the foreground runs as the system (UID 1000), so it is not debuggable. It may be a system screen, such as Settings."
+      )
   }
 
   @Test

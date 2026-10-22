@@ -44,14 +44,14 @@ dependencies {
     api project(':base:build-system:gradle-settings-api')
 
     implementation gradleApi()
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
 
     testImplementation libs.com.android.tools.sdkCommon
     testImplementation libs.com.android.tools.common
     testImplementation libs.junit
     testImplementation libs.truth
-    testImplementation libs.kotlin_test
-    testImplementation libs.mockito_core
+    testImplementation libs.kotlin.test
+    testImplementation libs.mockito.core
 }
 
 group = 'com.android.tools.build'

@@ -17,6 +17,8 @@
 package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbSession
+import com.android.tools.ui.inspector.client.AGENT_RESPONSE_TIMEOUT
+import com.android.tools.ui.inspector.client.AgentNotRespondingException
 import com.android.tools.ui.inspector.client.CommandSender
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.client.createComposeInspector
@@ -26,6 +28,7 @@ import com.android.tools.ui.inspector.client.mavenComposeInspectorResolver
 import com.android.tools.ui.inspector.client.queryComposeParameters
 import com.android.tools.ui.inspector.client.queryComposeTree
 import com.android.tools.ui.inspector.client.queryParameterDetails
+import com.android.tools.ui.inspector.deploy.ArtifactDownloader
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InjectionMode
 import com.android.tools.ui.inspector.deploy.InjectionResult
@@ -39,6 +42,7 @@ import com.android.tools.ui.inspector.tree.stripSystemComposables
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
+import kotlin.time.Duration
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
@@ -62,14 +66,16 @@ internal suspend fun <T> runWithConnectedInspectors(
   needsDebugViewAttributes: Boolean,
   composeInspectorOverrideJarPath: Path?,
   composeInspectorCacheDir: Path,
+  composeInspectorDownloader: ArtifactDownloader,
   logger: Logger,
   injectionManagerFactory: InjectionManagerFactory,
+  responseTimeout: Duration = AGENT_RESPONSE_TIMEOUT,
   block: suspend (CommandSender, Boolean) -> T,
 ): T {
   val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath, logger)
   val resolveComposeInspectorJar =
     composeInspectorOverrideJarPath?.let { path -> { _: String -> path.toFile() } }
-      ?: mavenComposeInspectorResolver(composeInspectorCacheDir)
+      ?: mavenComposeInspectorResolver(composeInspectorCacheDir, composeInspectorDownloader)
   return try {
     try {
       connectAndRunInspectors(
@@ -78,6 +84,7 @@ internal suspend fun <T> runWithConnectedInspectors(
         needsDebugViewAttributes,
         resolveComposeInspectorJar,
         logger,
+        responseTimeout,
         block,
       )
     } catch (stale: StaleReconnectException) {
@@ -89,6 +96,7 @@ internal suspend fun <T> runWithConnectedInspectors(
           needsDebugViewAttributes,
           resolveComposeInspectorJar,
           logger,
+          responseTimeout,
           block,
         )
       } catch (e: Throwable) {
@@ -117,6 +125,8 @@ internal suspend fun <T> runWithConnectedInspectors(
  * successful TCP connect proves nothing. A transport failure ([IOException]) up to and including that first round trip is therefore
  * reported as [StaleReconnectException]. Anything after the first response, and any [InspectorCrashException] (an explicit agent-side
  * report, so the server is alive), propagates unchanged. A freshly injected server ([InjectionResult.Injected]) never reports staleness.
+ * Neither does a first round trip that times out ([AgentNotRespondingException]): the server is alive but the app is frozen, and a new
+ * injection would need the app's main thread too.
  */
 private suspend fun <T> connectAndRunInspectors(
   injectionManager: InjectionManager,
@@ -124,13 +134,14 @@ private suspend fun <T> connectAndRunInspectors(
   needsDebugViewAttributes: Boolean,
   resolveComposeInspectorJar: (version: String) -> File,
   logger: Logger,
+  responseTimeout: Duration,
   block: suspend (CommandSender, Boolean) -> T,
 ): T = coroutineScope {
   try {
     val injection = injectionManager.injectAndAttach(needsDebugViewAttributes, mode)
     val commandSender =
       try {
-        CommandSender.connect(host = "127.0.0.1", port = injection.forwardedPort.toInt(), scope = this)
+        CommandSender.connect(host = "127.0.0.1", port = injection.forwardedPort.toInt(), scope = this, responseTimeout = responseTimeout)
       } catch (e: IOException) {
         // A cancelled scope can surface as an IOException from the connection; cancellation must propagate, not trigger a retry.
         ensureActive()
@@ -271,7 +282,7 @@ internal suspend fun fetchParameter(
     // another name or value, or is no longer a collection.
     val isStillCollection = page is UiNode.ComposeParameter.Group && page.isCollection
     if (page == null || !pageReference.matches(page) || (mustBeCollection && !isStillCollection)) {
-      error("The parameter is no longer available: the UI changed since the dump, or its window closed. Run dump-ui again.")
+      error("The parameter is no longer available: the UI changed since the dump, or its window closed. Dump the UI again.")
     }
     return page
   }

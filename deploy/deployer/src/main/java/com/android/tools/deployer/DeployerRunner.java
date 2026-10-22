@@ -42,7 +42,6 @@ import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.common.InstallOptions;
 import com.android.tools.deployer.common.Installer;
 import com.android.tools.deployer.common.UIService;
-import com.android.tools.deployer.common.UnsupportedIDevice;
 import com.android.tools.deployer.install.InstallMode;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.component.ApkParserException;
@@ -524,10 +523,7 @@ public class DeployerRunner {
             Map<String, DeviceHolder> deviceHolders = new HashMap<>();
             for (ConnectedDevice connectedDevice : connectedDevices) {
                 String serial = ConnectedDeviceKt.getSerialNumber(connectedDevice);
-                deviceHolders.put(
-                        serial,
-                        new DeviceHolder(
-                                new UnsupportedIDevice(), Optional.of(connectedDevice), true));
+                deviceHolders.put(serial, new DeviceHolder(connectedDevice));
             }
 
             return WaitForDevicesResult.of(deviceHolders, session, logger);

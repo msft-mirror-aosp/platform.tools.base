@@ -8,7 +8,7 @@ configurations {
 
 dependencies {
     implementation libs.com.android.tools.annotations
-    implementation libs.kotlin_stdlib
+    implementation libs.kotlin.stdlib
     versionPropertiesSource libs.com.android.tools.common
     testImplementation 'junit:junit:4.12'
     testImplementation libs.guava

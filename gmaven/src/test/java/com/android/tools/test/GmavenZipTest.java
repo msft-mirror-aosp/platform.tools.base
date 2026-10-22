@@ -21,6 +21,7 @@ import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import com.google.common.truth.Expect;
@@ -47,8 +48,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -80,25 +83,26 @@ public class GmavenZipTest {
 
     private static final String GMAVEN_ZIP = "tools/base/gmaven/gmaven.zip";
 
+    /**
+     * Artifacts whose versions gmaven-poms.txt refers to by name.
+     *
+     * <p>The versions of the artifacts built here change with every release, and differ between
+     * release and dev builds. So that gmaven-poms.txt only changes when what we publish changes, it
+     * writes the version of each of these artifacts as the given name. It only does that for the
+     * artifacts in gmaven.zip and the dependencies on them, so dependencies from elsewhere keep
+     * their versions, even if one of them is the same as one of ours.
+     */
+    private static final ImmutableMap<String, String> VERSION_NAMES =
+            ImmutableMap.of(
+                    "com.android.tools.build:gradle", "$BUILD_VERSION",
+                    "com.android.tools:common", "$BASE_VERSION",
+                    "com.android.tools.build:aapt2-proto", "$AAPT2_VERSION");
+
     private static final String R8_NAMESPACE = "com/android/tools/r8/";
     private static final String R8_PACKAGE_PREFIX = "com.android.tools.r8";
 
     private static final Set<String> MISSING_LICENSE =
             ImmutableSet.of(
-                    "androidx/databinding/databinding-adapters",
-                    "androidx/databinding/databinding-adapters:sources",
-                    "androidx/databinding/databinding-ktx",
-                    "androidx/databinding/databinding-ktx:sources",
-                    "androidx/databinding/databinding-runtime",
-                    "androidx/databinding/databinding-runtime:sources",
-                    "androidx/databinding/viewbinding",
-                    "androidx/databinding/viewbinding:sources",
-                    "com/android/databinding/library",
-                    "com/android/databinding/library:sources",
-                    "com/android/databinding/viewbinding",
-                    "com/android/databinding/viewbinding:sources",
-                    "com/android/databinding/adapters",
-                    "com/android/databinding/adapters:sources",
                     "com/android/signflinger",
                     "com/android/signflinger:sources",
                     "com/android/tools/emulator/proto",
@@ -135,6 +139,7 @@ public class GmavenZipTest {
         private static final XPathExpression projectPath;
         private static final XPathExpression groupIdPath;
         private static final XPathExpression artifactIdPath;
+        private static final XPathExpression versionPath;
         private static final XPathExpression pomNamePath;
         private static final XPathExpression descriptionPath;
         private static final XPathExpression dependenciesPath;
@@ -146,6 +151,7 @@ public class GmavenZipTest {
                 projectPath = xPathFactory.newXPath().compile("/project");
                 groupIdPath = xPathFactory.newXPath().compile("groupId");
                 artifactIdPath = xPathFactory.newXPath().compile("artifactId");
+                versionPath = xPathFactory.newXPath().compile("version");
                 pomNamePath = xPathFactory.newXPath().compile("name");
                 descriptionPath = xPathFactory.newXPath().compile("description");
                 dependenciesPath = xPathFactory.newXPath().compile("dependencies/dependency");
@@ -158,27 +164,36 @@ public class GmavenZipTest {
         private static class Dependency {
             private final String groupId;
             private final String artifactId;
+            private final String version;
             private final String scope;
 
-            private Dependency(String groupId, String artifactId, String scope) {
+            private Dependency(String groupId, String artifactId, String version, String scope) {
                 this.groupId = groupId;
                 this.artifactId = artifactId;
+                this.version = version;
                 this.scope = scope;
             }
 
             static Dependency fromNode(Node n) throws XPathExpressionException {
                 return new Dependency(
-                        groupIdPath.evaluate(n), artifactIdPath.evaluate(n), scopePath.evaluate(n));
+                        groupIdPath.evaluate(n),
+                        artifactIdPath.evaluate(n),
+                        versionPath.evaluate(n),
+                        scopePath.evaluate(n));
             }
 
-            @Override
-            public String toString() {
-                return groupId + ':' + artifactId + " (" + scope + ")";
+            /** The dependency as gmaven-poms.txt lists it. */
+            String describe(Map<String, String> namedCoordinates) {
+                return coordinates(groupId, artifactId, version, namedCoordinates)
+                        + " ("
+                        + scope
+                        + ")";
             }
         }
 
         private final String groupId;
         private final String artifactId;
+        private final String version;
         private final String pomName;
         private final String description;
         private final List<Dependency> dependencies;
@@ -186,11 +201,13 @@ public class GmavenZipTest {
         PomInfo(
                 String artifactAddress,
                 String artifactId,
+                String version,
                 String pomName,
                 String description,
                 List<Dependency> dependencies) {
             this.groupId = artifactAddress;
             this.artifactId = artifactId;
+            this.version = version;
             this.pomName = pomName;
             this.description = description;
             this.dependencies = dependencies;
@@ -216,6 +233,7 @@ public class GmavenZipTest {
                 return new PomInfo(
                         groupIdPath.evaluate(project),
                         artifactIdPath.evaluate(project),
+                        versionPath.evaluate(project),
                         pomNamePath.evaluate(project),
                         descriptionPath.evaluate(project),
                         dependencies);
@@ -224,13 +242,29 @@ public class GmavenZipTest {
             }
         }
 
-        @Override
-        public String toString() {
+        /**
+         * The coordinates of an artifact. For the artifacts in gmaven.zip, {@code namedCoordinates}
+         * maps them to the coordinates with the version name, which this returns instead. R8 is
+         * rolled frequently and only one version is used, so its version is omitted.
+         */
+        private static String coordinates(
+                String groupId,
+                String artifactId,
+                String version,
+                Map<String, String> namedCoordinates) {
+            String coordinates = groupId + ':' + artifactId;
+            if (version.isEmpty() || coordinates.equals("com.android.tools:r8")) {
+                return coordinates;
+            }
+            coordinates = coordinates + ':' + version;
+            return namedCoordinates.getOrDefault(coordinates, coordinates);
+        }
+
+        /** The artifact as gmaven-poms.txt lists it. */
+        String describe(Map<String, String> namedCoordinates) {
             StringBuilder stringBuilder =
                     new StringBuilder()
-                            .append(groupId)
-                            .append(':')
-                            .append(artifactId)
+                            .append(coordinates(groupId, artifactId, version, namedCoordinates))
                             .append('\n')
                             .append("  pomName=")
                             .append(pomName)
@@ -241,7 +275,10 @@ public class GmavenZipTest {
             if (!dependencies.isEmpty()) {
                 stringBuilder.append("  dependencies:\n");
                 for (Dependency dependency : dependencies) {
-                    stringBuilder.append("    ").append(dependency.toString()).append("\n");
+                    stringBuilder
+                            .append("    ")
+                            .append(dependency.describe(namedCoordinates))
+                            .append("\n");
                 }
             }
             return stringBuilder.toString();
@@ -381,11 +418,34 @@ public class GmavenZipTest {
                         .map(ZipInfo::toString)
                         .collect(Collectors.joining("\n"));
         check("gmaven-jars.txt", jarsContent);
+        List<PomInfo> pomInfos =
+                poms.stream().map(PomInfo::fromFile).sorted().collect(Collectors.toList());
+        Map<String, String> versionNames = new HashMap<>();
+        for (PomInfo pomInfo : pomInfos) {
+            String name = VERSION_NAMES.get(pomInfo.groupId + ':' + pomInfo.artifactId);
+            if (name != null) {
+                versionNames.put(pomInfo.version, name);
+            }
+        }
+        expect.withMessage("Names of the versions of %s", VERSION_NAMES.keySet())
+                .that(versionNames.values())
+                .containsExactlyElementsIn(VERSION_NAMES.values());
+        // The coordinates of the artifacts in gmaven.zip that have one of these versions, mapped to
+        // the coordinates with the version name. Artifacts from elsewhere aren't in this map, so
+        // they keep their versions, even if one of them is the same as one of ours.
+        Map<String, String> namedCoordinates = new HashMap<>();
+        for (PomInfo pomInfo : pomInfos) {
+            String name = versionNames.get(pomInfo.version);
+            if (name != null) {
+                String groupAndArtifactId = pomInfo.groupId + ':' + pomInfo.artifactId;
+                namedCoordinates.put(
+                        groupAndArtifactId + ':' + pomInfo.version,
+                        groupAndArtifactId + ':' + name);
+            }
+        }
         String pomContent =
-                poms.stream()
-                        .map(PomInfo::fromFile)
-                        .sorted()
-                        .map(PomInfo::toString)
+                pomInfos.stream()
+                        .map(pomInfo -> pomInfo.describe(namedCoordinates))
                         .collect(Collectors.joining("\n"));
         check("gmaven-poms.txt", pomContent);
 

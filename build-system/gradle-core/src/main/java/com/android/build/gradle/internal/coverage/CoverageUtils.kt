@@ -62,6 +62,30 @@ internal fun generateOnTheFlyXml(
     )
 }
 
+/** The files the on-device coverage agent writes in one test run. */
+internal data class OnDeviceCoverageFiles(val metadata: File, val hits: File)
+
+// File names written by the native on-device coverage agent in
+// tools/base/android-test/coverage/agent/native/metadata_collector.cc and hits_extractor.cc.
+internal const val ON_DEVICE_COVERAGE_METADATA_FILE = "coverage_metadata.pb"
+internal const val ON_DEVICE_COVERAGE_HITS_FILE = "coverage_hits.pb"
+
+/**
+ * Finds the files of every on-device coverage run under [roots], sorted by directory.
+ *
+ * The block ids in a hits file only match the metadata file of the same run, so the two files are paired by directory, and a directory
+ * without both files is skipped.
+ */
+internal fun findOnDeviceCoverageFiles(roots: Collection<File>): List<OnDeviceCoverageFiles> =
+  roots
+    .filter { it.isDirectory }
+    .flatMap { root -> root.walkTopDown().filter { it.isFile && it.name == ON_DEVICE_COVERAGE_METADATA_FILE } }
+    .mapNotNull { metadata ->
+      File(metadata.parentFile, ON_DEVICE_COVERAGE_HITS_FILE).takeIf { it.isFile }?.let { OnDeviceCoverageFiles(metadata, it) }
+    }
+    .distinct()
+    .sortedBy { it.metadata.path }
+
 /** Computes automated exclusions by scanning test class files. */
 internal fun computeAutomatedExclusions(testClassFiles: Set<File>): Set<String> {
   val automatedExclusions = mutableSetOf<String>()

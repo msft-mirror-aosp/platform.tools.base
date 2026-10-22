@@ -18,6 +18,7 @@ package com.android.resources.aar;
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.FN_PUBLIC_TXT;
 import static com.android.SdkConstants.FN_RESOURCE_TEXT;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.android.ProgressManagerAdapter;
@@ -25,8 +26,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.TestOnly;
 import com.android.ide.common.rendering.api.ResourceNamespace;
+import com.android.ide.common.resources.AbstractResourceRepository;
 import com.android.ide.common.resources.AndroidManifestPackageNameUtils;
 import com.android.ide.common.resources.ResourceItem;
+import com.android.ide.common.resources.ResourceItemWithVisibility;
+import com.android.ide.common.resources.ResourceVisitor;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.symbols.Symbol;
 import com.android.ide.common.symbols.SymbolIo;
@@ -45,10 +49,16 @@ import com.android.resources.base.ResourceSourceFileImpl;
 import com.android.tools.environment.Logger;
 import com.android.utils.Base128InputStream;
 import com.android.utils.Base128OutputStream;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -57,6 +67,9 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -72,7 +85,7 @@ import java.util.zip.ZipEntry;
  * obtained from R.txt instead, when it is available. This means that
  * {@link ResourceItem#getOriginalSource()} method may return null for such ID resources.
  */
-public class AarSourceResourceRepository extends AbstractAarResourceRepository {
+public class AarSourceResourceRepository extends AbstractResourceRepository implements AarResourceRepository {
   /**
    * Increment when making changes that may affect content of repository cache files.
    * Used together with CachingData.codeVersion. Important for developer builds.
@@ -81,6 +94,10 @@ public class AarSourceResourceRepository extends AbstractAarResourceRepository {
   private static final byte[] CACHE_FILE_HEADER = "Resource cache".getBytes(UTF_8);
   private static final Logger LOG = Logger.getInstance(AarSourceResourceRepository.class);
 
+  @NonNull protected final ResourceNamespace myNamespace;
+  @NonNull protected final Map<ResourceType, ListMultimap<String, ResourceItem>> myResources = new EnumMap<>(ResourceType.class);
+  @NonNull private final Map<ResourceType, Set<ResourceItem>> myPublicResources = new EnumMap<>(ResourceType.class);
+  @Nullable protected final String myLibraryName;
   @NonNull protected final Path myResourceDirectoryOrFile;
   protected boolean myLoadedFromCache;
   /**
@@ -102,7 +119,8 @@ public class AarSourceResourceRepository extends AbstractAarResourceRepository {
 
   protected AarSourceResourceRepository(@NonNull RepositoryLoader<? extends AarSourceResourceRepository> loader,
                                         @Nullable String libraryName) {
-    super(loader.getNamespace(), libraryName);
+    myNamespace = loader.getNamespace();
+    myLibraryName = libraryName;
     myResourceDirectoryOrFile = loader.getResourceDirectoryOrFile();
     mySourceFileProtocol = loader.getSourceFileProtocol();
     myResourcePathPrefix = loader.getResourcePathPrefix();
@@ -231,6 +249,116 @@ public class AarSourceResourceRepository extends AbstractAarResourceRepository {
   @NonNull
   public String getResourceUrl(@NonNull String relativeResourcePath) {
     return myResourceUrlPrefix + relativeResourcePath;
+  }
+
+  @Override
+  @NonNull
+  protected final ListMultimap<String, ResourceItem> getResourcesInternal(
+    @NonNull ResourceNamespace namespace, @NonNull ResourceType resourceType) {
+    if (!namespace.equals(myNamespace)) {
+      return ImmutableListMultimap.of();
+    }
+    return myResources.getOrDefault(resourceType, ImmutableListMultimap.of());
+  }
+
+  @NonNull
+  private ListMultimap<String, ResourceItem> getOrCreateMap(@NonNull ResourceType resourceType) {
+    return myResources.computeIfAbsent(resourceType, type -> ArrayListMultimap.create());
+  }
+
+  protected final void addResourceItem(@NonNull ResourceItem item) {
+    ListMultimap<String, ResourceItem> multimap = getOrCreateMap(item.getType());
+    multimap.put(item.getName(), item);
+  }
+
+  /**
+   * Populates the {@link #myPublicResources} map. Has to be called after {@link #myResources} has been populated.
+   */
+  protected final void populatePublicResourcesMap() {
+    for (Map.Entry<ResourceType, ListMultimap<String, ResourceItem>> entry : myResources.entrySet()) {
+      ResourceType resourceType = entry.getKey();
+      ImmutableSet.Builder<ResourceItem> setBuilder = null;
+      ListMultimap<String, ResourceItem> items = entry.getValue();
+      for (ResourceItem item : items.values()) {
+        if (((ResourceItemWithVisibility)item).getVisibility() == ResourceVisibility.PUBLIC) {
+          if (setBuilder == null) {
+            setBuilder = ImmutableSet.builder();
+          }
+          setBuilder.add(item);
+        }
+      }
+      myPublicResources.put(resourceType, setBuilder == null ? ImmutableSet.of() : setBuilder.build());
+    }
+  }
+
+  /**
+   * Makes resource maps immutable.
+   */
+  protected void freezeResources() {
+    for (Map.Entry<ResourceType, ListMultimap<String, ResourceItem>> entry : myResources.entrySet()) {
+      myResources.put(entry.getKey(), ImmutableListMultimap.copyOf(entry.getValue()));
+    }
+  }
+
+  @Override
+  @NonNull
+  public ResourceVisitor.VisitResult accept(@NonNull ResourceVisitor visitor) {
+    if (visitor.shouldVisitNamespace(myNamespace)) {
+      if (AbstractResourceRepository.acceptByResources(myResources, visitor) == ResourceVisitor.VisitResult.ABORT) {
+        return ResourceVisitor.VisitResult.ABORT;
+      }
+    }
+
+    return ResourceVisitor.VisitResult.CONTINUE;
+
+  }
+
+  @Override
+  @NonNull
+  public List<ResourceItem> getResources(@NonNull ResourceNamespace namespace, @NonNull ResourceType resourceType,
+                                         @NonNull String resourceName) {
+    ListMultimap<String, ResourceItem> map = getResourcesInternal(namespace, resourceType);
+    List<ResourceItem> items = map.get(resourceName);
+    return items == null ? ImmutableList.of() : items;
+  }
+
+  @Override
+  @NonNull
+  public ListMultimap<String, ResourceItem> getResources(@NonNull ResourceNamespace namespace, @NonNull ResourceType resourceType) {
+    return getResourcesInternal(namespace, resourceType);
+  }
+
+  @Override
+  @NonNull
+  public Collection<ResourceItem> getPublicResources(@NonNull ResourceNamespace namespace, @NonNull ResourceType type) {
+    if (!namespace.equals(myNamespace)) {
+      return Collections.emptySet();
+    }
+    Set<ResourceItem> resourceItems = myPublicResources.get(type);
+    return resourceItems == null ? Collections.emptySet() : resourceItems;
+  }
+
+  @Override
+  @NonNull
+  public final ResourceNamespace getNamespace() {
+    return myNamespace;
+  }
+
+  @Override
+  @Nullable
+  public final String getLibraryName() {
+    return myLibraryName;
+  }
+
+  @Override
+  @NonNull
+  public final String getDisplayName() {
+    return myLibraryName == null ? "Android Framework" : myLibraryName;
+  }
+
+  @Override
+  public final boolean containsUserDefinedResources() {
+    return false;
   }
 
   /**

@@ -16,6 +16,9 @@
 
 package com.android.tools.ui.inspector.inspectors.view;
 
+import android.os.Debug;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -38,8 +41,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class ViewInspector extends Inspector {
+    /** How long a dump waits for the main thread to start it before failing. */
+    private static final long MAIN_THREAD_TIMEOUT_SECONDS = 60;
+
+    /** How many frames of the main thread's stack a timeout error shows. */
+    private static final int MAX_MAIN_THREAD_FRAMES = 15;
+
     // Instantiate marker class and hold strong reference so Compose Inspector's reflection contract
     // (matching the class name "com.android.tools.agent.appinspection.ViewLayoutInspector")
     // locates this agent's ClassLoader to find XrHelper on the heap without being garbage
@@ -48,6 +59,7 @@ public final class ViewInspector extends Inspector {
     private final ViewLayoutInspector viewLayoutInspector;
 
     private final Executor primaryExecutor;
+    private final Handler primaryHandler;
     private final Executor mainThreadExecutor = new MainThreadExecutor();
     private final XrHelper xrHelper;
     private final PropertyCache<View> viewPropertyCache = PropertyCache.createViewPropertyCache();
@@ -58,6 +70,7 @@ public final class ViewInspector extends Inspector {
         super(connection);
         viewLayoutInspector = new ViewLayoutInspector(connection);
         primaryExecutor = environment.executors().primary();
+        primaryHandler = environment.executors().handler();
         xrHelper = new XrHelper(environment);
     }
 
@@ -85,8 +98,27 @@ public final class ViewInspector extends Inspector {
         primaryExecutor.execute(
                 () -> {
                     StringTable stringTable = new StringTable();
+                    // Ensures the command gets a single reply: the dump if it starts within the
+                    // timeout, otherwise the timeout error. A dump that has started is never cut
+                    // off.
+                    AtomicBoolean claimed = new AtomicBoolean();
+                    Runnable timeout =
+                            () -> {
+                                if (claimed.compareAndSet(false, true)) {
+                                    replyMainThreadTimeout(callback);
+                                }
+                            };
+                    // Posted before the dump, so that the dump can always remove it.
+                    primaryHandler.postDelayed(
+                            timeout, TimeUnit.SECONDS.toMillis(MAIN_THREAD_TIMEOUT_SECONDS));
                     mainThreadExecutor.execute(
                             () -> {
+                                if (!claimed.compareAndSet(false, true)) {
+                                    // The main thread was blocked past the timeout and only now
+                                    // runs this dump. The timeout has already replied.
+                                    return;
+                                }
+                                primaryHandler.removeCallbacks(timeout);
                                 List<WindowInfo> windows;
                                 List<Display> displays;
                                 try {
@@ -128,6 +160,33 @@ public final class ViewInspector extends Inspector {
                         .addAllDisplays(displays)
                         .addAllStrings(stringTable.toStringEntries())
                         .build();
+        callback.reply(Response.newBuilder().setDumpViewsResponse(response).build().toByteArray());
+    }
+
+    /**
+     * Replies with an error describing what the main thread is doing, so that the host does not
+     * wait for a dump that may never start, for example while the app is paused at a breakpoint.
+     */
+    private static void replyMainThreadTimeout(CommandCallback callback) {
+        Thread mainThread = Looper.getMainLooper().getThread();
+        StringBuilder error = new StringBuilder();
+        error.append("The app's main thread did not respond within ")
+                .append(MAIN_THREAD_TIMEOUT_SECONDS)
+                .append(" seconds.");
+        if (Debug.isDebuggerConnected()) {
+            error.append(" A debugger is attached; the app may be paused at a breakpoint.");
+        }
+        error.append("\nMain thread state: ").append(mainThread.getState());
+        StackTraceElement[] frames = mainThread.getStackTrace();
+        int shownFrames = Math.min(frames.length, MAX_MAIN_THREAD_FRAMES);
+        for (int i = 0; i < shownFrames; i++) {
+            error.append("\n    at ").append(frames[i]);
+        }
+        if (frames.length > shownFrames) {
+            error.append("\n    ...");
+        }
+        DumpViewsResponse response =
+                DumpViewsResponse.newBuilder().setErrorMessage(error.toString()).build();
         callback.reply(Response.newBuilder().setDumpViewsResponse(response).build().toByteArray());
     }
 

@@ -21,6 +21,15 @@ importers:
 
   .: {}
 
+  ../../vendor/google/android-sidecars:
+    devDependencies:
+      '@tailwindcss/cli':
+        specifier: 4.2.4
+        version: 4.2.4
+      esbuild:
+        specifier: 0.28.1
+        version: 0.28.1
+
   ../../vendor/google/android-sidecars/compose-preview/web:
     dependencies:
       '@android-sidecars/ui':
@@ -33,9 +42,6 @@ importers:
         specifier: 19.2.7
         version: 19.2.7(react@19.2.7)
     devDependencies:
-      '@tailwindcss/cli':
-        specifier: 4.2.4
-        version: 4.2.4
       '@testing-library/react':
         specifier: 16.3.0
         version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -48,9 +54,6 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.17)
-      esbuild:
-        specifier: 0.28.1
-        version: 0.28.1
       happy-dom:
         specifier: 18.0.1
         version: 18.0.1
@@ -76,9 +79,6 @@ importers:
         specifier: 19.2.7
         version: 19.2.7(react@19.2.7)
     devDependencies:
-      '@tailwindcss/cli':
-        specifier: 4.2.4
-        version: 4.2.4
       '@testing-library/react':
         specifier: 16.3.0
         version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -91,9 +91,6 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.17)
-      esbuild:
-        specifier: 0.28.1
-        version: 0.28.1
       happy-dom:
         specifier: 18.0.1
         version: 18.0.1
@@ -128,18 +125,12 @@ importers:
         specifier: 4.2.4
         version: 4.2.4
     devDependencies:
-      '@tailwindcss/cli':
-        specifier: 4.2.4
-        version: 4.2.4
       '@testing-library/react':
         specifier: 16.3.0
         version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@types/node':
         specifier: ^18.16.0
         version: 18.19.130
-      esbuild:
-        specifier: 0.28.1
-        version: 0.28.1
       happy-dom:
         specifier: 18.0.1
         version: 18.0.1

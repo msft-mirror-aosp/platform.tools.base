@@ -24,13 +24,13 @@ class BuildConfigurationLanguageTest {
   fun buildConfigurationLanguageForNewProjectDoesNotContainGroovy() {
     val names = BuildConfigurationLanguageForNewProject.values().map { it.name }
     assertThat(names).doesNotContain("Groovy")
-    assertThat(names).containsExactly("KTS", "DCL")
+    assertThat(names).containsExactly("KTS")
   }
 
   @Test
   fun buildConfigurationLanguageForNewModuleDoesNotContainGroovy() {
     val names = BuildConfigurationLanguageForNewModule.values().map { it.name }
     assertThat(names).doesNotContain("Groovy")
-    assertThat(names).containsExactly("KTS", "DCL")
+    assertThat(names).containsExactly("KTS")
   }
 }

@@ -21,11 +21,13 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.testutils.file.InMemoryFileSystems;
+
+import org.junit.Test;
+
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.Test;
 
 /**
  * Tests for {@link License}
@@ -106,5 +108,37 @@ public class LicenseTest {
         } finally {
             Charset_defaultCharset.set(null, oldValue);
         }
+    }
+
+    @Test
+    public void testInvalidLicenseIdRejected() throws Exception {
+        CommonFactory factory = RepoManager.getCommonModule().createLatestFactory();
+        Path root = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
+        Path outsideFile = root.getParent().resolve("outside");
+
+        String[] invalidIds = {
+            "",
+            ".",
+            "..",
+            "../outside",
+            "../../outside",
+            "foo/bar",
+            "foo\\bar",
+            "..\\outside",
+            outsideFile.toString(),
+        };
+        for (String id : invalidIds) {
+            License license = factory.createLicenseType("my license", id);
+            assertFalse("Expected setAccepted to fail for id: " + id, license.setAccepted(root));
+            assertFalse(
+                    "Expected checkAccepted to fail for id: " + id, license.checkAccepted(root));
+        }
+        assertFalse(Files.exists(outsideFile));
+
+        // Even if the target file outside the SDK root already exists with a matching hash,
+        // checkAccepted must return false.
+        License traversalLicense = factory.createLicenseType("my license", "../../outside");
+        Files.writeString(outsideFile, "\n" + traversalLicense.getLicenseHash());
+        assertFalse(traversalLicense.checkAccepted(root));
     }
 }

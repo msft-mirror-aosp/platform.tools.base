@@ -1,8 +1,3 @@
-load(
-    "//tools/base/android-test:version.bzl",
-    "DEV_ANDROID_TEST_ENGINE_VERSION",
-    "RELEASE_ANDROID_TEST_ENGINE_VERSION",
-)
 load("//tools/base/bazel:expand_template.bzl", "expand_template")
 load(
     "//tools/base/common:release_version.bzl",
@@ -24,7 +19,6 @@ expand_template(
     out = "version.properties",
     substitutions = select({
         "//tools/base/bazel:release": {
-            "{ANDROID_TEST_ENGINE_VERSION}": RELEASE_ANDROID_TEST_ENGINE_VERSION,
             "{BASE_VERSION}": RELEASE_BASE_VERSION,
             "{BUILD_VERSION}": RELEASE_BUILD_VERSION,
             "{COMMANDLINE_TOOLS_VERSION}": RELEASE_COMMANDLINE_TOOLS_VERSION,
@@ -32,7 +26,6 @@ expand_template(
             "{LAST_STABLE_BUILD_VERSION}": LAST_STABLE_BUILD_VERSION,
         },
         "//conditions:default": {
-            "{ANDROID_TEST_ENGINE_VERSION}": DEV_ANDROID_TEST_ENGINE_VERSION,
             "{BASE_VERSION}": DEV_BASE_VERSION,
             "{BUILD_VERSION}": DEV_BUILD_VERSION,
             "{COMMANDLINE_TOOLS_VERSION}": DEV_COMMANDLINE_TOOLS_VERSION,

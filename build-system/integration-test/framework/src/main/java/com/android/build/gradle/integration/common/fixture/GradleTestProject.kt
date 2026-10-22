@@ -1362,7 +1362,8 @@ buildCache {
         "version('kotlinVersionForCompose', '%s')%n" +
         "version('composeVersion', '%s')%n" +
         "version('composeCompilerVersion', '%s')%n" +
-        "version('kspVersion', '%s')%n",
+        "version('kspVersion', '%s')%n" +
+        "version('dataBindingRuntimeVersion', '%s')%n",
       Version.ANDROID_GRADLE_PLUGIN_VERSION,
       Version.ANDROID_TOOLS_BASE_VERSION,
       SUPPORT_LIB_VERSION,
@@ -1378,6 +1379,7 @@ buildCache {
       TaskManager.COMPOSE_UI_VERSION,
       TestUtils.COMPOSE_COMPILER_FOR_TESTS,
       TestUtils.KSP_VERSION_FOR_TESTS,
+      DATA_BINDING_RUNTIME_VERSION,
     )
   }
 
