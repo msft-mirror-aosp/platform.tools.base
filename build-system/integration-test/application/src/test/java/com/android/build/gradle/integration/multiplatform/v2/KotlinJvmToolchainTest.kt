@@ -75,7 +75,6 @@ class KotlinJvmToolchainTest {
     val build = rule.build { androidKotlinMultiplatformLibrary(":library") { kotlin { jvmToolchain(25) } } }
     val result =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run("clean", ":library:assemble")
     ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=25")
     ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=25")
@@ -91,7 +90,6 @@ class KotlinJvmToolchainTest {
     }
     val result =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run("clean", ":library:assemble")
     ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
     ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=11")
@@ -107,7 +105,6 @@ class KotlinJvmToolchainTest {
     }
     val result =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run("clean", ":library:assemble")
     ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
     ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=11")
@@ -124,7 +121,6 @@ class KotlinJvmToolchainTest {
     }
     val result =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run("clean", ":library:assemble")
     ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
     ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=17")

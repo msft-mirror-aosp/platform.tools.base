@@ -69,7 +69,6 @@ class KotlinMultiplatformAndroidConnectedTest {
     project
       .executor()
       .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      .withFailOnWarning(false) // b/455891987
       .run("androidUninstallAll")
   }
 
@@ -78,7 +77,6 @@ class KotlinMultiplatformAndroidConnectedTest {
     project
       .executor()
       .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      .withFailOnWarning(false) // b/455891987
       .run(":kmpFirstLib:androidConnectedCheck")
 
     val testResultFolder =

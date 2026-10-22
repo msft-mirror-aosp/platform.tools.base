@@ -62,7 +62,6 @@ class SettingsSdkTest {
       androidKotlinMultiplatformLibrary(":library") { pluginCallbacks += KmpLibVersionCheck::class.java }
     }
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":help")
     checkDslSetUpInModel(build, "$COMPILE_SDK_VERSION.$COMPILE_SDK_MINOR_VERSION")
   }
@@ -88,7 +87,6 @@ class SettingsSdkTest {
       build.modelBuilder
         // sdk with minor api level might not exist in our test set up
         .ignoreSyncIssues()
-        .withFailOnWarning(false) // b/455891987
         .fetchModels()
         .container
         .getProject(DEFAULT_APP_PATH)
@@ -111,7 +109,6 @@ class SettingsSdkTest {
     val libModelInfo =
       build.modelBuilder
         .ignoreSyncIssues()
-        .withFailOnWarning(false) // b/455891987
         .fetchModels()
         .container
         .getProject(DEFAULT_LIB_PATH)

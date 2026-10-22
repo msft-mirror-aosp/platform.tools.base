@@ -83,7 +83,6 @@ class KotlinMultiplatformComposeTest {
       .configure()
       .build
       .executor
-      .withFailOnWarning(false) // b/455891987
       .run(":lib:assemble")
   }
 }

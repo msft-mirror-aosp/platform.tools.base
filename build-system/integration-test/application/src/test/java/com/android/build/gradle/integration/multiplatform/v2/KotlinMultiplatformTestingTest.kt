@@ -140,5 +140,5 @@ class KotlinMultiplatformTestingTest {
     result.assertOutputContains("-Xmx2g")
   }
 
-  private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
+  private fun executor() = project.executor()
 }

@@ -35,7 +35,6 @@ class KotlinMultiplatformAarMetadataTest {
   @Test
   fun testBasic() {
     rule.build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":shared:assembleAndroidMain")
     rule.build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
       aarMetadata {
@@ -53,7 +52,6 @@ class KotlinMultiplatformAarMetadataTest {
   @Test
   fun testBasicWithMinAgpAutoEncoding() {
     rule.build.executor
-      .withFailOnWarning(false) // b/455891987
       .with(BooleanOption.AUTO_ENCODE_MINIMUM_AGP_VERSION_IN_AAR_METADATA, true)
       .run(":shared:assembleAndroidMain")
     rule.build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
@@ -82,7 +80,6 @@ class KotlinMultiplatformAarMetadataTest {
     }
 
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":shared:assembleAndroidMain")
     build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
       aarMetadata {
@@ -100,7 +97,6 @@ class KotlinMultiplatformAarMetadataTest {
     val build = rule.build { androidKotlinMultiplatformLibrary(":shared") { android { compileSdkPreview = "Tiramisu" } } }
 
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":shared:writeAndroidMainAarMetadata")
 
     val aarMetadataFile =
@@ -126,7 +122,6 @@ class KotlinMultiplatformAarMetadataTest {
     }
 
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":shared:assembleAndroidMain")
     build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
       aarMetadata {

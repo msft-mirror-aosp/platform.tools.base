@@ -146,7 +146,6 @@ class AllDslMethodsTest(
   fun configureAllProjects() {
     project
       .executor()
-      .withFailOnWarning(false) // b/455891987
       // Workaround for b/382709449
       .withAdhocJvmArgument("-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::simpleType")
       .withAdhocJvmArgument("-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::toAttributes")

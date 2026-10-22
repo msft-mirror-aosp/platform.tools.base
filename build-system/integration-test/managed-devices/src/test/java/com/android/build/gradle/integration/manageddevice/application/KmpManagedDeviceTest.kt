@@ -105,7 +105,6 @@ class KmpManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
   @Test
   fun runManagedDeviceTest() {
     executor
-      .withFailOnWarning(false) // b/455891987
       .run(":kmpLibrary:device1AndroidDeviceTest")
 
     val reportDir =

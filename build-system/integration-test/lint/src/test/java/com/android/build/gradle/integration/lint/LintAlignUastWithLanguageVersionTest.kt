@@ -72,11 +72,9 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
     }
 
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run("clean", "lint")
     val result =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run("clean", "lint")
     result.assertConfigurationCacheHit()
   }
@@ -111,7 +109,6 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
 
     build.executor
       .withArgument("-Pkotlin.experimental.tryNext=true")
-      .withFailOnWarning(false) // b/455891987
       .run("clean", "lint")
   }
 

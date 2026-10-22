@@ -78,7 +78,6 @@ class KotlinMultiplatformGeneratedKotlinSourcesTest {
   fun testGeneratedKotlinSources() {
     val build = rule.build
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":kmpLib:assembleAndroidMain")
 
     val action: AarSubject.() -> Unit = { mainJar { classes().containsExactly("com/mylibrary/foo/Bar", "com/mylibrary/foo/Foo") } }

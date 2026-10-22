@@ -50,7 +50,6 @@ class KotlinMultiplatformAndroidDslTest {
     }
 
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":library:assembleAndroidMain")
   }
 
@@ -75,7 +74,6 @@ class KotlinMultiplatformAndroidDslTest {
     }
 
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":library:assembleAndroidMain")
 
     build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
@@ -95,7 +93,6 @@ class KotlinMultiplatformAndroidDslTest {
     }
 
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":library:assembleAndroidMain")
 
     build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) { manifest().contains("android:minSdkVersion=\"S\"") }

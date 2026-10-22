@@ -59,7 +59,7 @@ class KmpModelComparator(
   private val buildMap = project.getBuildMap()
 
   private fun fetchModels(projectPath: String, executor: GradleTaskExecutor, printModelToStdout: Boolean = true): Map<String, String> {
-    executor.withFailOnWarning(false).run("$projectPath:$modelSnapshotTask")
+    executor.run("$projectPath:$modelSnapshotTask")
 
     val outputs = taskOutputsLocator(projectPath)
 
@@ -149,7 +149,6 @@ class KmpModelComparator(
     // They are needed in order to resolve project dependencies
     val executor = project.executor().withConfigurationCaching(configCacheMode)
     executor
-      .withFailOnWarning(false) // b/455891987
       .run("generateProjectStructureMetadata")
 
     projects.forEach { projectPath ->

@@ -116,5 +116,4 @@ class KotlinMultiplatformHostTestIncludesAndroidResourcesTest(private val enable
     project
       .executor()
       .with(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableJavaResourceOptimizations)
-      .withFailOnWarning(false) // b/455891987
 }

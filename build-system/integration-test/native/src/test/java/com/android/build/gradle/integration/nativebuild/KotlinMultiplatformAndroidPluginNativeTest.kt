@@ -241,6 +241,6 @@ class KotlinMultiplatformAndroidPluginNativeTest {
   }
 
   private fun executor(): GradleTaskExecutor {
-    return project.executor().withFailOnWarning(false) // b/455891987
+    return project.executor()
   }
 }

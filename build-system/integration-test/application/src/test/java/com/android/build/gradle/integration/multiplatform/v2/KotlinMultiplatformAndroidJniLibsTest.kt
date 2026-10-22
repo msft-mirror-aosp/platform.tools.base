@@ -36,7 +36,6 @@ class KotlinMultiplatformAndroidJniLibsTest {
   fun testLibraryAarContents() {
     project
       .executor()
-      .withFailOnWarning(false) // b/455891987
       .run(":kmpFirstLib:bundleAndroidMainAar")
 
     project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {

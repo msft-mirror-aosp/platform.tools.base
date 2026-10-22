@@ -53,13 +53,10 @@ class KotlinMultiplatformKspTest {
   fun testRunningKsp() {
     val build = rule.build
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":shared:kspAndroidMain")
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":shared:kspAndroidDeviceTest")
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":shared:kspAndroidHostTest")
   }
 }

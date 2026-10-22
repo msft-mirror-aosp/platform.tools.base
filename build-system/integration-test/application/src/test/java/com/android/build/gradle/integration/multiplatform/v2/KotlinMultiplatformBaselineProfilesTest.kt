@@ -60,5 +60,5 @@ class KotlinMultiplatformBaselineProfilesTest {
     Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(listOf(":kmpFirstLib:prepareAndroidMainArtProfile"))
   }
 
-  private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
+  private fun executor() = project.executor()
 }

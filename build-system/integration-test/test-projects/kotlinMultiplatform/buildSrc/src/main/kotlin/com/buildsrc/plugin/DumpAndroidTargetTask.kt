@@ -27,12 +27,15 @@ import java.lang.reflect.Type
 @OptIn(ExternalKotlinTargetApi::class)
 abstract class DumpAndroidTargetTask: DefaultTask() {
     private val outputDirectory = project.layout.buildDirectory.dir("ide/targets")
+    @Transient
+    private val configuredProject = project
 
     @TaskAction
     fun dump() {
         val outputDirectory = outputDirectory.get().asFile
         outputDirectory.deleteRecursively()
 
+        val project = configuredProject ?: project
         val kotlinExtension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
         val kotlinIdeMultiplatformImport = IdeMultiplatformImport.instance(project)
 

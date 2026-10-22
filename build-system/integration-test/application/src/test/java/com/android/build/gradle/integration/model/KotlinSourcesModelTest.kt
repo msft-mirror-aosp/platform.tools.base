@@ -145,7 +145,6 @@ class KotlinSourcesModelTest {
     val basicProject =
       project
         .modelV2()
-        .withFailOnWarning(false) // b/455891987
         .with(BooleanOption.BUILT_IN_KOTLIN, false)
         .with(BooleanOption.USE_NEW_DSL, false)
         .fetchModels()

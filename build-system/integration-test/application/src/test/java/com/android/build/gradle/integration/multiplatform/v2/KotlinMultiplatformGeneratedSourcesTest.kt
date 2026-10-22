@@ -56,7 +56,6 @@ class KotlinMultiplatformGeneratedSourcesTest {
   fun testGeneratedKotlinSources() {
     val build = rule.build
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":library:assembleAndroidMain")
 
     build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {

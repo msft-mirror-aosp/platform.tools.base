@@ -71,11 +71,9 @@ class KotlinMultiplatformPublishingTest {
       }
     }
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
     var buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":consumer:dependencyInsight",
           "--configuration",
@@ -88,7 +86,6 @@ class KotlinMultiplatformPublishingTest {
     simulateDifferentProducerArtifact(build)
     buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":consumer:dependencyInsight",
           "--configuration",
@@ -115,11 +112,9 @@ class KotlinMultiplatformPublishingTest {
       }
     }
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
     var buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":modernKmpConsumer:dependencyInsight",
           "--configuration",
@@ -132,7 +127,6 @@ class KotlinMultiplatformPublishingTest {
     simulateDifferentProducerArtifact(build)
     buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":modernKmpConsumer:dependencyInsight",
           "--configuration",
@@ -165,11 +159,9 @@ class KotlinMultiplatformPublishingTest {
         }
       }
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
     var buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":oldKmpConsumer:dependencyInsight",
           "--configuration",
@@ -182,7 +174,6 @@ class KotlinMultiplatformPublishingTest {
     simulateDifferentProducerArtifact(build)
     buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":oldKmpConsumer:dependencyInsight",
           "--configuration",
@@ -206,11 +197,9 @@ class KotlinMultiplatformPublishingTest {
       }
     }
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
     var buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":plainAndroidLibConsumer:dependencyInsight",
           "--configuration",
@@ -222,7 +211,6 @@ class KotlinMultiplatformPublishingTest {
     simulateDifferentProducerArtifact(build)
     buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":plainAndroidLibConsumer:dependencyInsight",
           "--configuration",
@@ -246,12 +234,10 @@ class KotlinMultiplatformPublishingTest {
       }
     }
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
     // the build succeeds but the Gradle resolution actually fails here
     val buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":kmpWithoutAndroidTargetConsumer:dependencyInsight",
           "--configuration",
@@ -276,11 +262,9 @@ class KotlinMultiplatformPublishingTest {
       }
     }
     build.executor
-      .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
     val buildResult =
       build.executor
-        .withFailOnWarning(false) // b/455891987
         .run(
           ":kmpWithJvmTargetConsumer:dependencyInsight",
           "--configuration",

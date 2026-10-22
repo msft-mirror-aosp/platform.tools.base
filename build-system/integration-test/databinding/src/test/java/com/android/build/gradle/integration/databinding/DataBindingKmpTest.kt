@@ -146,7 +146,6 @@ class DataBindingKmpTest {
   @Test
   fun testCompilation() {
     rule.build.executor
-      .withFailOnWarning(false) // b/455891987
       .run("clean", "compileDebugJavaWithJavac")
   }
 }

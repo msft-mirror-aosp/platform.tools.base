@@ -340,5 +340,5 @@ class KotlinMultiplatformAndroidVariantApiTest {
       .contains("Android Kotlin multiplatform plugin has a single variant (androidMain). Disabling that variant is not permitted.")
   }
 
-  private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
+  private fun executor() = project.executor()
 }
