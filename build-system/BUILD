@@ -62,6 +62,28 @@ maven_repository(
     visibility = ["//visibility:public"],
 )
 
+# Gradle's bundled Kotlin plugins and their dependencies, for projects that
+# apply `kotlin-dsl`.
+# See https://docs.gradle.org/current/userguide/compatibility.html#kotlin
+maven_repository(
+    name = "gradle-bundled-kotlin-plugins",
+    # keep sorted
+    artifacts = [
+        "@maven//:org.gradle.kotlin.kotlin-dsl.org.gradle.kotlin.kotlin-dsl.gradle.plugin_6.7.3",
+        "@maven//:org.jetbrains.kotlin.kotlin-assignment-compiler-plugin-embeddable_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-cri-impl_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-sam-with-receiver-compiler-plugin-embeddable_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-common_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-jvm_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "gradle-distrib-9.7.1",
     srcs = ["//tools/external/gradle:gradle-distrib-9.7.1"],
