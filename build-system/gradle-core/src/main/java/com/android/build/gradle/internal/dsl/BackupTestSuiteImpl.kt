@@ -255,7 +255,7 @@ constructor(
     const val BACKUP_TEST_ENGINE_ID = "junit-jupiter"
 
     /** Default fallback version for the AndroidX backup testing framework artifacts. */
-    const val DEFAULT_BACKUP_VERSION = "1.0.0-alpha02"
+    const val DEFAULT_BACKUP_VERSION = "1.0.0-alpha03"
 
     /** Prefix of the system properties that the backup library reads to select devices. */
     private const val DEVICE_PROPERTY_PREFIX = "androidx.test.backup.device."
