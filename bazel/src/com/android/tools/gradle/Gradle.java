@@ -1,6 +1,7 @@
 package com.android.tools.gradle;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.testutils.RepoLinker;
 import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
@@ -19,9 +20,11 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +35,10 @@ import java.util.zip.ZipOutputStream;
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
+import org.gradle.tooling.events.OperationType;
+import org.gradle.tooling.events.problems.ProblemAggregationEvent;
+import org.gradle.tooling.events.problems.ProblemDefinition;
+import org.gradle.tooling.events.problems.SingleProblemEvent;
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
 
 /**
@@ -58,6 +65,7 @@ public class Gradle implements Closeable {
     @NonNull private final File repoDir;
     @NonNull private final Set<File> usedGradleUserHomes = new HashSet<>();
     private final boolean useInitScript;
+    @Nullable private Set<String> allowedWarnings = null;
 
     public Gradle(@NonNull File project, @NonNull File outDir, @NonNull File distribution, File javaHome)
             throws IOException {
@@ -109,6 +117,10 @@ public class Gradle implements Closeable {
 
     public void addArgument(@NonNull String argument) {
         arguments.add(argument);
+    }
+
+    public void setAllowedWarnings(@NonNull Collection<String> allowedWarnings) {
+        this.allowedWarnings = new HashSet<>(allowedWarnings);
     }
 
     public void withProfiler() {
@@ -224,6 +236,7 @@ public class Gradle implements Closeable {
 
         arguments.addAll(this.arguments);
 
+        Set<String> unexpectedWarnings = Collections.synchronizedSet(new LinkedHashSet<>());
         ProjectConnection projectConnection = getProjectConnection(homeDir, project, distribution);
         try {
             BuildLauncher launcher =
@@ -235,6 +248,23 @@ public class Gradle implements Closeable {
             if (javaHome != null) {
                 launcher.setJavaHome(canonicalizeJavaHome(javaHome));
             }
+            if (allowedWarnings != null) {
+                launcher.addProgressListener(
+                        event -> {
+                            if (event instanceof SingleProblemEvent) {
+                                recordIfUnexpectedDeprecation(
+                                        ((SingleProblemEvent) event).getProblem().getDefinition(),
+                                        unexpectedWarnings);
+                            } else if (event instanceof ProblemAggregationEvent) {
+                                recordIfUnexpectedDeprecation(
+                                        ((ProblemAggregationEvent) event)
+                                                .getProblemAggregation()
+                                                .getDefinition(),
+                                        unexpectedWarnings);
+                            }
+                        },
+                        OperationType.PROBLEMS);
+            }
             launcher.setStandardOutput(out);
             launcher.setStandardError(err);
             launcher.run();
@@ -242,6 +272,24 @@ public class Gradle implements Closeable {
             throw new RuntimeException("Gradle invocation failed: " + this.toString(), e);
         } finally {
             projectConnection.close();
+        }
+        if (!unexpectedWarnings.isEmpty()) {
+            throw new RuntimeException(
+                    "Unexpected Gradle deprecation warnings:\n"
+                            + String.join("\n", unexpectedWarnings));
+        }
+    }
+
+    private void recordIfUnexpectedDeprecation(
+            @NonNull ProblemDefinition definition, @NonNull Set<String> unexpectedWarnings) {
+        // --warning-mode=fail only fails on Gradle deprecation warnings, whereas
+        // OperationType.PROBLEMS also receives compiler/plugin warnings.
+        if (!"deprecation".equals(definition.getId().getGroup().getName())) {
+            return;
+        }
+        String displayName = definition.getId().getDisplayName();
+        if (allowedWarnings != null && !allowedWarnings.contains(displayName)) {
+            unexpectedWarnings.add(displayName);
         }
     }
 

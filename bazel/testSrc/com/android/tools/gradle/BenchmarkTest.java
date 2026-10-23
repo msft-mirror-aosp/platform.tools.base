@@ -70,6 +70,7 @@ public class BenchmarkTest {
     private boolean fromStudio = false;
     @Nullable private String agpVersion = null;
     private boolean failOnWarning = true;
+    private List<String> allowedWarnings = new ArrayList<>();
     private boolean reuseTransformCache = true;
     private boolean useSeparateGradleHome = false;
     private boolean enableYourKit = false;
@@ -169,6 +170,10 @@ public class BenchmarkTest {
         value = System.getProperty("fail_on_warning");
         if (value != null && !value.isEmpty()) {
             failOnWarning = Boolean.parseBoolean(value);
+        }
+        value = System.getProperty("allowed_warnings");
+        if (value != null && !value.isEmpty()) {
+            allowedWarnings.addAll(Splitter.on(';').splitToList(value));
         }
         value = System.getProperty("reuse_transform_cache");
         if (value != null && !value.isEmpty()) {
@@ -340,7 +345,12 @@ public class BenchmarkTest {
             gradle.addArgument("-Pandroid.uniquePackageNames=false");
 
             if (failOnWarning) {
-                gradle.addArgument("--warning-mode=fail");
+                if (allowedWarnings.isEmpty()) {
+                    gradle.addArgument("--warning-mode=fail");
+                } else {
+                    gradle.addArgument("--warning-mode=all");
+                    gradle.setAllowedWarnings(allowedWarnings);
+                }
             }
             if (enableYourKit) {
                 gradle.withYourKit(new File(yourKitLibraryPath), new File(yourKitSettingsPath));
