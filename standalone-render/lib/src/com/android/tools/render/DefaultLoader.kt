@@ -75,6 +75,7 @@ private val PROJECT_CLASS_TRANSFORMS =
   toClassTransform(
     { CodeExecutionTrackerTransform(it, CLASSES_TRACKER_KEY) },
     ::SdkIntReplacer,
+    { StringReplaceTransform(it, STRING_REPLACEMENTS) },
     { RepackageTransform(it, PACKAGES_TO_RENAME, INTERNAL_PACKAGE) },
   )
 

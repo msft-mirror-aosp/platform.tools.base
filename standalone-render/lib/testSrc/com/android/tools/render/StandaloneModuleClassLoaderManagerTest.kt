@@ -25,6 +25,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 
 class StandaloneModuleClassLoaderManagerTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
@@ -323,6 +324,160 @@ class StandaloneModuleClassLoaderManagerTest {
     } finally {
       manager.close()
     }
+  }
+
+  @Test
+  fun testFastServiceLoaderStringReplacementsResolveRepackagedMainDispatcherFactories() {
+    LibraryClassBinaryCache.clearForTest()
+    val depsDir = temporaryFolder.newFolder("deps-coroutines")
+    val projectDir = temporaryFolder.newFolder("project-coroutines")
+
+    // FastServiceLoader.loadMainDispatcherFactory() resolves AndroidDispatcherFactory and
+    // TestMainDispatcherFactory via 3-arg Class.forName(name, true, clz.getClassLoader()). Because
+    // clz.getClassLoader() executes between the LDC string constant and Class.forName,
+    // RepackageTransform's ClassForNameRepackageMethodTransform clears lastLoadedLdc before
+    // visiting Class.forName. StringReplaceTransform rewrites the string literals so 3-arg
+    // Class.forName resolves the repackaged _layoutlib_._internal_.kotlinx.coroutines.* classes.
+    writeValueClass(depsDir, "kotlinx/coroutines/android/AndroidDispatcherFactory", "android-dispatcher")
+    writeValueClass(depsDir, "kotlinx/coroutines/test/internal/TestMainDispatcherFactory", "test-dispatcher")
+    writeClassForNameProbe(
+      depsDir,
+      "kotlinx/coroutines/internal/FastServiceLoader",
+      "kotlinx.coroutines.android.AndroidDispatcherFactory",
+      "kotlinx.coroutines.test.internal.TestMainDispatcherFactory",
+    )
+
+    val classPath = listOf(depsDir.absolutePath, projectDir.absolutePath)
+    val manager = StandaloneModuleClassLoaderManager(classPath, listOf(projectDir.absolutePath))
+    try {
+      manager.getShared(null).use { ref ->
+        val cl = ref.classLoader
+        val fastServiceLoaderClass = cl.loadClass("${INTERNAL_PACKAGE}kotlinx.coroutines.internal.FastServiceLoader")
+        val resolvedNames = fastServiceLoaderClass.getMethod("resolveFactories").invoke(null) as String
+        assertThat(resolvedNames)
+          .isEqualTo(
+            "${INTERNAL_PACKAGE}kotlinx.coroutines.android.AndroidDispatcherFactory," +
+              "${INTERNAL_PACKAGE}kotlinx.coroutines.test.internal.TestMainDispatcherFactory"
+          )
+      }
+
+      // Also verify when FastServiceLoader is loaded through PROJECT_CLASS_TRANSFORMS.
+      writeClassForNameProbe(
+        projectDir,
+        "kotlinx/coroutines/internal/FastServiceLoader",
+        "kotlinx.coroutines.android.AndroidDispatcherFactory",
+        "kotlinx.coroutines.test.internal.TestMainDispatcherFactory",
+      )
+      manager.refreshClassPath(
+        listOf(depsDir.absolutePath, projectDir.absolutePath),
+        listOf(depsDir.absolutePath, projectDir.absolutePath),
+      )
+      manager.getShared(null).use { ref ->
+        val cl = ref.classLoader
+        val fastServiceLoaderClass = cl.loadClass("${INTERNAL_PACKAGE}kotlinx.coroutines.internal.FastServiceLoader")
+        val resolvedNames = fastServiceLoaderClass.getMethod("resolveFactories").invoke(null) as String
+        assertThat(resolvedNames)
+          .isEqualTo(
+            "${INTERNAL_PACKAGE}kotlinx.coroutines.android.AndroidDispatcherFactory," +
+              "${INTERNAL_PACKAGE}kotlinx.coroutines.test.internal.TestMainDispatcherFactory"
+          )
+      }
+    } finally {
+      manager.close()
+      LibraryClassBinaryCache.clearForTest()
+    }
+  }
+
+  /**
+   * Generates a `.class` file whose static `resolveFactories()` method calls 3-arg `Class.forName(name, true,
+   * <ClassName>.class.getClassLoader()).getName()` on each entry in [classNames] and joins their runtime class names with `","`.
+   */
+  private fun writeClassForNameProbe(
+    rootDir: File,
+    internalName: String,
+    vararg classNames: String,
+  ) {
+    val cw = ClassWriter(ClassWriter.COMPUTE_MAXS)
+    cw.visit(
+      Opcodes.V17,
+      Opcodes.ACC_PUBLIC or Opcodes.ACC_SUPER or Opcodes.ACC_FINAL,
+      internalName,
+      null,
+      "java/lang/Object",
+      null,
+    )
+    val mv =
+      cw.visitMethod(
+        Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
+        "resolveFactories",
+        "()Ljava/lang/String;",
+        null,
+        arrayOf("java/lang/ClassNotFoundException"),
+      )
+    mv.visitCode()
+    mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder")
+    mv.visitInsn(Opcodes.DUP)
+    mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false)
+
+    for ((index, targetName) in classNames.withIndex()) {
+      if (index > 0) {
+        mv.visitLdcInsn(",")
+        mv.visitMethodInsn(
+          Opcodes.INVOKEVIRTUAL,
+          "java/lang/StringBuilder",
+          "append",
+          "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+          false,
+        )
+      }
+      mv.visitLdcInsn(targetName)
+      mv.visitInsn(Opcodes.ICONST_1)
+      mv.visitLdcInsn(Type.getObjectType(internalName))
+      mv.visitMethodInsn(
+        Opcodes.INVOKEVIRTUAL,
+        "java/lang/Class",
+        "getClassLoader",
+        "()Ljava/lang/ClassLoader;",
+        false,
+      )
+      mv.visitMethodInsn(
+        Opcodes.INVOKESTATIC,
+        "java/lang/Class",
+        "forName",
+        "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;",
+        false,
+      )
+      mv.visitMethodInsn(
+        Opcodes.INVOKEVIRTUAL,
+        "java/lang/Class",
+        "getName",
+        "()Ljava/lang/String;",
+        false,
+      )
+      mv.visitMethodInsn(
+        Opcodes.INVOKEVIRTUAL,
+        "java/lang/StringBuilder",
+        "append",
+        "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+        false,
+      )
+    }
+
+    mv.visitMethodInsn(
+      Opcodes.INVOKEVIRTUAL,
+      "java/lang/StringBuilder",
+      "toString",
+      "()Ljava/lang/String;",
+      false,
+    )
+    mv.visitInsn(Opcodes.ARETURN)
+    mv.visitMaxs(0, 0)
+    mv.visitEnd()
+    cw.visitEnd()
+
+    val outFile = File(rootDir, "$internalName.class")
+    outFile.parentFile.mkdirs()
+    outFile.writeBytes(cw.toByteArray())
   }
 
   /**

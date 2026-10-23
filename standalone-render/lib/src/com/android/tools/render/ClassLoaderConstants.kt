@@ -59,7 +59,13 @@ internal val STRING_REPLACEMENTS =
         "kotlin.jvm.internal" to "${INTERNAL_PACKAGE}kotlin.jvm.internal",
         "kotlin.jvm.internal.EnhancedNullability" to "${INTERNAL_PACKAGE}kotlin.jvm.internal.EnhancedNullability",
         "kotlin.jvm.internal.SerializedIr" to "${INTERNAL_PACKAGE}kotlin.jvm.internal.SerializedIr",
-      )
+      ),
+    INTERNAL_PACKAGE + "kotlinx.coroutines.internal.FastServiceLoader" to
+      mapOf(
+        "kotlinx.coroutines.android.AndroidDispatcherFactory" to "${INTERNAL_PACKAGE}kotlinx.coroutines.android.AndroidDispatcherFactory",
+        "kotlinx.coroutines.test.internal.TestMainDispatcherFactory" to
+          "${INTERNAL_PACKAGE}kotlinx.coroutines.test.internal.TestMainDispatcherFactory",
+      ),
   )
 
 /**
