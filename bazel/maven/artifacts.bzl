@@ -92,6 +92,7 @@ ARTIFACTS = [
     "com.google.protobuf:protobuf-gradle-plugin:0.10.0",
     "com.google.protobuf:protobuf-java:3.25.5",
     "com.google.protobuf:protobuf-java-util:3.25.5",
+    "com.google.protobuf:protobuf-javalite:3.25.5",
     "com.google.protobuf:protobuf-parent:pom:3.25.5",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.25.5",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.25.5",

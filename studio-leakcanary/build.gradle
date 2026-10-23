@@ -38,6 +38,49 @@ file("release_version.bzl").withReader { versionProperties.load(it) }
 // Set the project-wide version (always DEV for local Gradle development)
 project.version = versionProperties.getProperty('STUDIO_LEAKCANARY_VERSION_DEV').replaceAll('"', '').trim()
 
+// Version of protoc and protobuf-javalite, from the shared .bzl file (same as the Bazel build).
+def protobufProperties = new Properties()
+file("protobuf_version.bzl").withReader { protobufProperties.load(it) }
+def protobufVersion = protobufProperties.getProperty('STUDIO_LEAKCANARY_PROTOBUF_VERSION').replaceAll('"', '').trim()
+
+/** Returns the protoc program for this computer, from the repo (same one Bazel uses). */
+def protocExecutable(String version) {
+    def dir = file(
+            "../../../prebuilts/tools/common/m2/repository/com/google/protobuf/protoc/$version")
+    def os = System.getProperty('os.name').toLowerCase()
+    def arch = System.getProperty('os.arch')
+    def platform
+    if (os.contains('win') && arch in ['amd64', 'x86_64']) {
+        platform = 'windows-x86_64'
+    } else if (os.contains('mac') && arch == 'aarch64') {
+        platform = 'osx-aarch_64'
+    } else if (os.contains('mac') && arch in ['amd64', 'x86_64']) {
+        platform = 'osx-x86_64'
+    } else if (os.contains('linux') && arch in ['amd64', 'x86_64']) {
+        platform = 'linux-x86_64'
+    } else {
+        throw new GradleException("No prebuilt protoc for host '$os' / '$arch'.")
+    }
+    return new File(dir, "protoc-$version-${platform}.exe")
+}
+
+// Makes the same lite Java classes as the Bazel build, from leakcanary_data.proto only.
+def protoFile = file('../transport/proto/leakcanary_data.proto')
+def generatedProtoDir =
+        layout.buildDirectory.dir('generated/source/leakcanaryProto').get().asFile
+def generateLeakCanaryLiteProto = tasks.register('generateLeakCanaryLiteProto', Exec) {
+    def protoc = protocExecutable(protobufVersion)
+    inputs.file(protoFile)
+    inputs.file(protoc)
+    outputs.dir(generatedProtoDir)
+    doFirst {
+        generatedProtoDir.deleteDir()
+        generatedProtoDir.mkdirs()
+    }
+    executable protoc
+    args "--proto_path=${protoFile.parentFile}", "--java_out=lite:${generatedProtoDir}", protoFile
+}
+
 android {
     namespace 'com.android.tools.studio.leakcanary'
     compileSdkVersion 34
@@ -61,9 +104,24 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    sourceSets {
+        main {
+            java.srcDir generatedProtoDir
+        }
+    }
+}
+
+// Make the proto classes before the build starts. (AGP 8.2.2 doesn't do this by itself.)
+tasks.named('preBuild') {
+    dependsOn generateLeakCanaryLiteProto
 }
 
 dependencies {
+    // Needed by the generated proto classes. compileOnly because this Gradle build makes no POM:
+    // apps add protobuf-javalite themselves, like leakcanary-android. The Bazel build's POM has it.
+    compileOnly "com.google.protobuf:protobuf-javalite:$protobufVersion"
+
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:4.11.0'
     testImplementation 'com.google.truth:truth:1.1.5'

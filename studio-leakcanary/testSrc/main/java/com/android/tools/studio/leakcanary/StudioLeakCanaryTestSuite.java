@@ -26,6 +26,7 @@ import org.junit.runners.Suite;
     StudioLeakCanaryManagerTest.class,
     BroadcastReceiversTest.class,
     HelperInitializerTest.class,
-    ProguardRulesTest.class
+    ProguardRulesTest.class,
+    LeakCanaryProtoTest.class
 })
 public class StudioLeakCanaryTestSuite {}

@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.android.testutils.TestUtils;
+import com.android.tools.profiler.proto.LeakCanary;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,6 +41,9 @@ import java.util.regex.Pattern;
  * <p>The class names are read from the {@code *_CLASS} constants in {@link HelperConfig}, so a new
  * constant without a matching rule fails this test. Each rule must keep all members ({@code { *;
  * }}), because the reflection needs the fields and methods, not only the class name.
+ *
+ * <p>It also checks the rule for the generated proto classes. These tests only read the rules file;
+ * they don't run R8.
  */
 @RunWith(JUnit4.class)
 public class ProguardRulesTest {
@@ -64,6 +68,23 @@ public class ProguardRulesTest {
                     .that(keepRule.matcher(rules).find())
                     .isTrue();
         }
+    }
+
+    @Test
+    public void rulesKeepFieldsOfGeneratedProtoMessages() throws Exception {
+        // The rule names the generated proto class, so it must match that class's real name.
+        Pattern keepRule =
+                Pattern.compile(
+                        "^-keepclassmembers\\s+class\\s+"
+                                + Pattern.quote(LeakCanary.class.getName() + "$*")
+                                + "\\s+extends\\s+"
+                                + Pattern.quote("com.google.protobuf.GeneratedMessageLite")
+                                + "\\s*\\{\\s*<fields>;\\s*\\}",
+                        Pattern.MULTILINE);
+
+        assertWithMessage("proguard-rules.pro must keep the fields of the generated proto messages")
+                .that(keepRule.matcher(readRules()).find())
+                .isTrue();
     }
 
     /** Every LeakCanary class this library reflects on, read from HelperConfig's *_CLASS fields. */

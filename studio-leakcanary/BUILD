@@ -28,13 +28,18 @@ android_library(
     name = "studio-leakcanary_lib",
     srcs = glob([
         "src/main/java/com/android/tools/studio/leakcanary/*.java",
-    ]),
+    ]) + [
+        # Java classes made from leakcanary_data.proto. They are packed into the AAR.
+        "//tools/base/transport/proto:leakcanary_data_java_lite_srcjar",
+    ],
     custom_package = "com.android.tools.studio.leakcanary",
     javacopts = [
         "-source",
         "8",
         "-target",
         "8",
+        # Skip Error Prone checks for the generated proto code only
+        "-XepExcludedPaths:.*/com/android/tools/profiler/proto/LeakCanary\\.java",
     ],
     manifest = "src/main/AndroidManifest.xml",
     # Consumer R8/ProGuard rules, packaged into the AAR as proguard.txt.
@@ -43,6 +48,8 @@ android_library(
     deps = [
         # Dependency on the STUB, so it goes into the POM
         "//tools/base/studio-leakcanary/lib:com.squareup.leakcanary.leakcanary-android",
+        # Needed by the generated proto classes.
+        "@maven//:com.google.protobuf.protobuf-javalite",
     ],
 )
 
@@ -65,6 +72,8 @@ custom_maven_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/studio-leakcanary/lib:com.squareup.leakcanary.leakcanary-android",
+        # Listed in the POM, so apps download it automatically.
+        "@maven//:com.google.protobuf.protobuf-javalite",
     ],
 )
 
@@ -90,6 +99,7 @@ robolectric_test(
         "//prebuilts/studio/sdk:platforms/latest_jar",
         "//tools/base/fakeandroid",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.protobuf.protobuf-javalite",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.mockito.mockito-core",

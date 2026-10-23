@@ -46,3 +46,11 @@
 
 # GcTrigger.Default.INSTANCE, runGc()
 -keep class leakcanary.GcTrigger$Default { *; }
+
+# Proto classes made from leakcanary_data.proto. Protobuf reads their fields by name, so R8 must not
+# remove or rename those fields. protobuf-javalite has no such rule of its own. Only our classes
+# are kept; the app's own protos are not affected.
+-keepclassmembers class com.android.tools.profiler.proto.LeakCanary$*
+        extends com.google.protobuf.GeneratedMessageLite {
+    <fields>;
+}
