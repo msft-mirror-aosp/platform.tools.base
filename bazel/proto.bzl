@@ -41,14 +41,15 @@ def _gen_proto_impl(ctx):
     args.set_param_file_format("multiline")
 
     proto_paths = []
+    workspace_roots = []
     for src_target in ctx.attr.srcs:
-        prefix = []
-        if src_target.label.workspace_root:
-            prefix.append(src_target.label.workspace_root)
         if ctx.attr.strip_prefix:
-            prefix.append(ctx.attr.strip_prefix)
-        if prefix:
-            proto_paths.append("/".join(prefix))
+            if src_target.label.workspace_root:
+                proto_paths.append(src_target.label.workspace_root + "/" + ctx.attr.strip_prefix)
+            else:
+                proto_paths.append(ctx.attr.strip_prefix)
+        elif src_target.label.workspace_root:
+            workspace_roots.append(src_target.label.workspace_root)
         if ProtoPackageInfo in src_target:
             for path in src_target[ProtoPackageInfo].proto_paths:
                 proto_paths.append(path)
@@ -56,6 +57,7 @@ def _gen_proto_impl(ctx):
             # if src_target doesn't have ProtoPackageInfo provider that should be used to look up proto files
             # then we're going to path where the proto file is placed.
             proto_paths.append(label_workspace_path(src_target.label))
+    proto_paths.extend(workspace_roots)
 
     label_dir = label_workspace_path(ctx.label)
     for dep in ctx.attr.deps:

@@ -1,17 +1,9 @@
-load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "maven_proto_library")
+load("//tools/base/bazel:proto.bzl", "maven_proto_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
-
-maven_proto_srcs = glob(
-    ["*.proto"],
-    exclude = [
-        "modem_service.proto",
-        "virtual_scene_service.proto",
-    ],
-)
 
 maven_proto_library(
     name = "proto",
-    srcs = maven_proto_srcs,
+    srcs = glob(["*.proto"]),
     coordinates = "com.android.tools.emulator:proto",
     description = "A protobuf messages to control Android Emulator",
     grpc_support = True,
@@ -25,24 +17,7 @@ maven_proto_library(
     ],
     pom_name = "Emulator protos for Android Tools",
     resource_strip_prefix = "tools/base/emulator/proto",
-    resources = maven_proto_srcs,
+    resources = glob(["*.proto"]),
     version = BASE_VERSION,
-    visibility = ["//visibility:public"],
-)
-
-android_java_proto_library(
-    name = "emulator_java_proto",
-    srcs = [
-        "emulator_controller.proto",
-        "ice_config.proto",
-        "modem_service.proto",
-        "rtc_service_v2.proto",
-        "snapshot.proto",
-        "snapshot_service.proto",
-        "ui_controller_service.proto",
-        "virtual_scene_service.proto",
-    ],
-    grpc_support = True,
-    java_deps = ["@maven//:io.grpc.grpc-all"],
     visibility = ["//visibility:public"],
 )
