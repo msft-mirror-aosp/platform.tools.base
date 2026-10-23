@@ -49,6 +49,15 @@ internal val ALLOWED_PACKAGES_FROM_PARENT =
     "junit.",
   )
 
+/**
+ * Map of classes whose string constants (`LDC` instructions and constant field values) must be rewritten by [StringReplaceTransform],
+ * structured as `className -> mapOf(oldString to newString)`.
+ *
+ * Because [RepackageTransform] renames [PACKAGES_TO_RENAME] into [INTERNAL_PACKAGE], hardcoded string literals referencing those packages
+ * or classes that are not rewritten by [RepackageTransform] (for example, reflective annotation lookups in `JvmAnnotationNames` or
+ * 3-argument `Class.forName(name, true, clz.getClassLoader())` calls in `FastServiceLoader`) must be explicitly replaced so they point to
+ * the repackaged classes.
+ */
 internal val STRING_REPLACEMENTS =
   mapOf(
     INTERNAL_PACKAGE + "kotlin.reflect.jvm.internal.impl.load.java.JvmAnnotationNames" to
