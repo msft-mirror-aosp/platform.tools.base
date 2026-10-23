@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_android//rules:rules.bzl", "android_library")
 load("//tools/base/bazel:maven.bzl", "custom_maven_library", "maven_repository")
 load("//tools/base/bazel:robolectric.bzl", "robolectric_test")
@@ -23,6 +24,24 @@ STUDIO_LEAKCANARY_VERSION = select({
     "//conditions:default": STUDIO_LEAKCANARY_VERSION_DEV,
 })
 
+# Makes LibraryVersion.java. Always the release version, also in dev builds: Gradle version
+# order puts "1.1.0-dev" below "1.1.0", so a dev string would fail Studio's minimum check.
+write_file(
+    name = "library_version_java",
+    out = "LibraryVersion.java",
+    content = [
+        "package com.android.tools.studio.leakcanary;",
+        "",
+        "/** Made by the build from release_version.bzl. Do not edit. */",
+        "final class LibraryVersion {",
+        "    static final String VERSION = \"%s\";" % STUDIO_LEAKCANARY_VERSION_RELEASE,
+        "",
+        "    private LibraryVersion() {}",
+        "}",
+        "",
+    ],
+)
+
 # Compiles the Android code and resources into an AAR
 android_library(
     name = "studio-leakcanary_lib",
@@ -31,6 +50,8 @@ android_library(
     ]) + [
         # Java classes made from leakcanary_data.proto. They are packed into the AAR.
         "//tools/base/transport/proto:leakcanary_data_java_lite_srcjar",
+        # The library version, made from release_version.bzl.
+        ":library_version_java",
     ],
     custom_package = "com.android.tools.studio.leakcanary",
     javacopts = [

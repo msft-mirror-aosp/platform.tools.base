@@ -87,5 +87,13 @@ public class BroadcastReceiversTest {
         assertThat(sentIntent.getAction()).isEqualTo(HelperConfig.THRESHOLD_RESULT_INTENT);
         assertThat(sentIntent.getIntExtra(HelperConfig.THRESHOLD_EXTRA, -999))
                 .isEqualTo(HelperConfig.REFLECTION_FAILED_THRESHOLD);
+        assertThat(sentIntent.getStringExtra(HelperConfig.VERSION_EXTRA))
+                .isEqualTo(HelperConfig.LIBRARY_VERSION);
+    }
+
+    /** Tests that the version made by the build is a real release version, like "1.1.0". */
+    @Test
+    public void testLibraryVersionIsReleaseVersion() {
+        assertThat(HelperConfig.LIBRARY_VERSION).matches("\\d+\\.\\d+\\.\\d+(-[a-z]+\\d+)?");
     }
 }

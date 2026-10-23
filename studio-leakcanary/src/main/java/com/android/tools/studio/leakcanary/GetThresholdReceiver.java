@@ -34,9 +34,16 @@ public class GetThresholdReceiver extends BroadcastReceiver {
 
             Intent resultIntent = new Intent(HelperConfig.THRESHOLD_RESULT_INTENT);
             resultIntent.putExtra(HelperConfig.THRESHOLD_EXTRA, threshold);
+            // Sent so Studio can check whether this library supports the features it needs.
+            resultIntent.putExtra(HelperConfig.VERSION_EXTRA, HelperConfig.LIBRARY_VERSION);
             resultIntent.setPackage(context.getPackageName());
             context.sendBroadcast(resultIntent);
-            Log.d(HelperConfig.LOG_TAG, "Sent threshold result broadcast with value: " + threshold);
+            Log.d(
+                    HelperConfig.LOG_TAG,
+                    "Sent threshold result broadcast with value: "
+                            + threshold
+                            + ", library version: "
+                            + HelperConfig.LIBRARY_VERSION);
         }
     }
 }

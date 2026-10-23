@@ -81,6 +81,30 @@ def generateLeakCanaryLiteProto = tasks.register('generateLeakCanaryLiteProto', 
     args "--proto_path=${protoFile.parentFile}", "--java_out=lite:${generatedProtoDir}", protoFile
 }
 
+// Makes LibraryVersion.java, same as the Bazel build. Always the release version.
+def releaseVersion =
+        versionProperties.getProperty('STUDIO_LEAKCANARY_VERSION_RELEASE').replaceAll('"', '').trim()
+def generatedVersionDir =
+        layout.buildDirectory.dir('generated/source/libraryVersion').get().asFile
+def generateLibraryVersion = tasks.register('generateLibraryVersion') {
+    inputs.property('releaseVersion', releaseVersion)
+    outputs.dir(generatedVersionDir)
+    doLast {
+        def file = new File(
+                generatedVersionDir, 'com/android/tools/studio/leakcanary/LibraryVersion.java')
+        file.parentFile.mkdirs()
+        file.text = """package com.android.tools.studio.leakcanary;
+
+/** Made by the build from release_version.bzl. Do not edit. */
+final class LibraryVersion {
+    static final String VERSION = "${releaseVersion}";
+
+    private LibraryVersion() {}
+}
+"""
+    }
+}
+
 android {
     namespace 'com.android.tools.studio.leakcanary'
     compileSdkVersion 34
@@ -108,13 +132,15 @@ android {
     sourceSets {
         main {
             java.srcDir generatedProtoDir
+            java.srcDir generatedVersionDir
         }
     }
 }
 
-// Make the proto classes before the build starts. (AGP 8.2.2 doesn't do this by itself.)
+// Make the generated Java files before the build starts. (AGP 8.2.2 doesn't do this by itself.)
 tasks.named('preBuild') {
     dependsOn generateLeakCanaryLiteProto
+    dependsOn generateLibraryVersion
 }
 
 dependencies {

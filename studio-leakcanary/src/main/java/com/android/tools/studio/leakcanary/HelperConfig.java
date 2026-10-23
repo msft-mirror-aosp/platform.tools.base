@@ -31,6 +31,12 @@ final class HelperConfig {
     static final String LOG_TAG = "StudioLeakCanary";
 
     /**
+     * This library's version, made from release_version.bzl. Studio and this library ship
+     * separately, so Studio uses it to ask users with an old library to update.
+     */
+    static final String LIBRARY_VERSION = LibraryVersion.VERSION;
+
+    /**
      * The fully qualified class name of LeakCanary's internal listener. Used for reflection to swap
      * the default listener with our custom one.
      */
@@ -68,6 +74,9 @@ final class HelperConfig {
 
     /** The key for the threshold extra in the result intent. */
     static final String THRESHOLD_EXTRA = "threshold";
+
+    /** The key for the library version extra in the threshold result intent. */
+    static final String VERSION_EXTRA = "studio_leakcanary_version";
 
     /**
      * Suffix for the internal permission used to protect broadcast receivers on API < 33. The full
