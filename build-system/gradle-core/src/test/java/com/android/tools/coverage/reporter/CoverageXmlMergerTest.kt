@@ -53,6 +53,31 @@ class CoverageXmlMergerTest {
   }
 
   @Test
+  fun higherPartialCoverageRatioWinsOverLargerTotalCount() {
+    val lowCoverageLargerTotal =
+      report(
+        method("add", line = 5, instructions = Counter(covered = 1, missed = 9)),
+        lines = listOf(line(5, mi = 9, ci = 1), line(6, mi = 2, ci = 2)),
+      )
+    val highCoverageSmallerTotal =
+      report(
+        method("add", line = 5, instructions = Counter(covered = 7, missed = 1)),
+        lines = listOf(line(5, mi = 1, ci = 7), line(6, mi = 1, ci = 1)),
+      )
+
+    for (merged in
+      listOf(
+        merge(lowCoverageLargerTotal, highCoverageSmallerTotal),
+        merge(highCoverageSmallerTotal, lowCoverageLargerTotal),
+      )) {
+      // Line 5: 7/8 (87.5%) beats 1/10 (10%) even though 10 > 8.
+      // Line 6: 2/4 (50%) and 1/2 (50%) have equal coverage ratio, so larger total (2/4) wins.
+      assertThat(merged.lines()).containsExactly(5, "mi=1 ci=7", 6, "mi=2 ci=2")
+      assertThat(merged.counter("method[@name='add']", "INSTRUCTION")).isEqualTo("missed=1 covered=7")
+    }
+  }
+
+  @Test
   fun countersAreSummedUpFromTheMergedMethodsAndLines() {
     val jacoco = report(method("add", line = 5, instructions = Counter(covered = 4, missed = 0)), lines = listOf(line(5, mi = 0, ci = 4)))
     val onDevice =
@@ -93,7 +118,7 @@ class CoverageXmlMergerTest {
   }
 
   private fun merge(vararg reports: File): Element {
-    val output = tempFolder.newFile("merged.xml")
+    val output = tempFolder.newFile()
     CoverageXmlMerger().merge(reports.toList(), "Aggregated", output)
     val factory = DocumentBuilderFactory.newInstance()
     factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)

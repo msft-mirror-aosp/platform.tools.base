@@ -181,7 +181,16 @@ class CoverageXmlMerger {
   }
 
   private fun Counter.mergeMax(other: Counter) {
-    if (compareValuesBy(other, this, { it.covered > 0 }, { it.covered > 0 && it.missed == 0 }, Counter::total, Counter::covered) > 0) {
+    if (
+      compareValuesBy(
+        other,
+        this,
+        { it.covered > 0 },
+        { it.covered > 0 && it.missed == 0 },
+        { if (it.total == 0) 0.0 else it.covered.toDouble() / it.total },
+        Counter::total,
+      ) > 0
+    ) {
       covered = other.covered
       missed = other.missed
     }
