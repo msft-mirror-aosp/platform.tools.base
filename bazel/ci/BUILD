@@ -185,10 +185,11 @@ py_binary(
     data = glob(["data/*"]) + [
         "//tools/base/bazel:bazel-diff",
         "//tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector",
+        "//tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector_deploy.jar",
     ],
     env = {
-        "BAZEL_DIFF_BINARY": "$(location //tools/base/bazel:bazel-diff)",
-        "LOGS_COLLECTOR_BINARY": "$(location //tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector)",
+        "BAZEL_DIFF_BINARY": "$(rootpath //tools/base/bazel:bazel-diff)",
+        "LOGS_COLLECTOR_BINARY": "$(rootpath //tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector)",
     },
     deps = [":ci_lib"],
 )

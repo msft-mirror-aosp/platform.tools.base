@@ -213,6 +213,7 @@ def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path, logs_collect
 
   args = [
       os.environ['LOGS_COLLECTOR_BINARY'],
+      '--singlejar',
       '-bes',
       str(bes_path),
       '-error_log',
