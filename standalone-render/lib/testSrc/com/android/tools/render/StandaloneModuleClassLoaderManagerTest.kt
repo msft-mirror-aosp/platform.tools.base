@@ -344,10 +344,7 @@ class StandaloneModuleClassLoaderManagerTest {
     return outFile
   }
 
-  /**
-   * Packages a generated `.class` file (see [writeValueClass]) into [jarFile] with the given
-   * [lastModifiedMs] timestamp.
-   */
+  /** Packages a generated `.class` file (see [writeValueClass]) into [jarFile] with the given [lastModifiedMs] timestamp. */
   private fun writeJarWithValueClass(jarFile: File, internalName: String, returnValue: String, lastModifiedMs: Long) {
     val bytes = generateValueClassBytes(internalName, returnValue)
     JarOutputStream(FileOutputStream(jarFile)).use { jos ->

@@ -53,9 +53,9 @@ import org.objectweb.asm.ClassWriter
 /**
  * Bytecode transforms applied to external library classes (`classPath - projectClassPath`).
  *
- * Unlike [PROJECT_CLASS_TRANSFORMS], library classes do not need [CodeExecutionTrackerTransform]
- * (which tracks which user classes were executed during rendering), allowing their transformed
- * bytecode to be cached across renders via [ClassBinaryCacheManager] and [ClassBinaryCacheLoader].
+ * Unlike [PROJECT_CLASS_TRANSFORMS], library classes do not need [CodeExecutionTrackerTransform] (which tracks which user classes were
+ * executed during rendering), allowing their transformed bytecode to be cached across renders via [ClassBinaryCacheManager] and
+ * [ClassBinaryCacheLoader].
  */
 private val DEPS_CLASS_TRANSFORMS =
   toClassTransform(
@@ -68,8 +68,8 @@ private val DEPS_CLASS_TRANSFORMS =
 /**
  * Bytecode transforms applied to user project classes (`projectClassPath`).
  *
- * These classes are loaded uncached on every render RPC so that incremental `.kt` / `.java` edits
- * compiled to disk are picked up immediately.
+ * These classes are loaded uncached on every render RPC so that incremental `.kt` / `.java` edits compiled to disk are picked up
+ * immediately.
  */
 private val PROJECT_CLASS_TRANSFORMS =
   toClassTransform(
@@ -79,17 +79,16 @@ private val PROJECT_CLASS_TRANSFORMS =
   )
 
 /**
- * Maps internal repackaged class names (e.g. `_layoutlib_._internal_.kotlin.Unit`) back to their
- * original on-disk class names (`kotlin.Unit`) before looking up `.class` files in JARs or output
- * directories.
+ * Maps internal repackaged class names (e.g. `_layoutlib_._internal_.kotlin.Unit`) back to their original on-disk class names
+ * (`kotlin.Unit`) before looking up `.class` files in JARs or output directories.
  */
 private val ON_DISK_LOOKUP: (String) -> String = { fqcn ->
   if (fqcn.startsWith(INTERNAL_PACKAGE)) fqcn.removePrefix(INTERNAL_PACKAGE) else fqcn
 }
 
 /**
- * Snapshot of the warm external-library state for a [DefaultLoader] instance, backed by Android
- * Studio's shared [ExternalLibraryClassLoaderPool] and [ClassBinaryCacheManager].
+ * Snapshot of the warm external-library state for a [DefaultLoader] instance, backed by Android Studio's shared
+ * [ExternalLibraryClassLoaderPool] and [ClassBinaryCacheManager].
  */
 internal data class LibraryLoaderState(
   val externalLibraryEntry: ExternalLibraryClassLoaderEntry,
@@ -98,18 +97,16 @@ internal data class LibraryLoaderState(
 )
 
 /**
- * Coordinates external library caching for standalone preview rendering using Android Studio's
- * shared classloading infrastructure ([ExternalLibraryClassLoaderPool], [ClassBinaryCacheManager],
- * and [ClassBinaryCacheLoader]):
+ * Coordinates external library caching for standalone preview rendering using Android Studio's shared classloading infrastructure
+ * ([ExternalLibraryClassLoaderPool], [ClassBinaryCacheManager], and [ClassBinaryCacheLoader]):
  *
- * 1. **[ExternalLibraryClassLoaderPool]**: Reuses the warm external-library [UrlClassLoader]
- *    (backed by the shared `ourLoaderCachePool`) and `missingClasses` negative-lookup set across
- *    [DefaultLoader] instances, keyed by `libraryPath -> "$libraryPath@$modificationTime"`.
- * 2. **[ClassBinaryCacheManager] + [ClassBinaryCacheLoader]**: Caches ASM-transformed library
- *    bytecode keyed by `"$libraryPath@$modificationTime"` via [ClassBinaryCache.setDependencies],
- *    automatically invalidating stale library classes when a dependency JAR or directory updates.
- * 3. **[serviceUrlCache]**: Caches rewritten `META-INF/services/` files with `kotlin.*` and
- *    `kotlinx.*` implementation names prefixed with [INTERNAL_PACKAGE].
+ * 1. **[ExternalLibraryClassLoaderPool]**: Reuses the warm external-library [UrlClassLoader] (backed by the shared `ourLoaderCachePool`)
+ *    and `missingClasses` negative-lookup set across [DefaultLoader] instances, keyed by `libraryPath -> "$libraryPath@$modificationTime"`.
+ * 2. **[ClassBinaryCacheManager] + [ClassBinaryCacheLoader]**: Caches ASM-transformed library bytecode keyed by
+ *    `"$libraryPath@$modificationTime"` via [ClassBinaryCache.setDependencies], automatically invalidating stale library classes when a
+ *    dependency JAR or directory updates.
+ * 3. **[serviceUrlCache]**: Caches rewritten `META-INF/services/` files with `kotlin.*` and `kotlinx.*` implementation names prefixed with
+ *    [INTERNAL_PACKAGE].
  */
 object LibraryClassBinaryCache {
   private val lock = Any()
@@ -130,12 +127,11 @@ object LibraryClassBinaryCache {
   }
 
   /**
-   * Computes the external dependency classpath by subtracting [projectClassPath] from [classPath]
-   * while preserving classpath order and deduplicating entries.
+   * Computes the external dependency classpath by subtracting [projectClassPath] from [classPath] while preserving classpath order and
+   * deduplicating entries.
    *
-   * Deduplication (`.distinct()`) is necessary because callers such as `Main.kt` append extracted
-   * `rClassJars` (`classPath + rClassJars`) when constructing [StandaloneModuleClassLoaderManager],
-   * and those `R.jar` paths may already be present in [classPath].
+   * Deduplication (`.distinct()`) is necessary because callers such as `Main.kt` append extracted `rClassJars` (`classPath + rClassJars`)
+   * when constructing [StandaloneModuleClassLoaderManager], and those `R.jar` paths may already be present in [classPath].
    */
   fun computeStableDepsClassPath(classPath: List<String>, projectClassPath: List<String>): List<String> {
     val projectClassPathSet = projectClassPath.toSet()
@@ -143,19 +139,16 @@ object LibraryClassBinaryCache {
   }
 
   /**
-   * Returns the last-modified timestamp for [path], walking subdirectories if [path] is a
-   * directory.
+   * Returns the last-modified timestamp for [path], walking subdirectories if [path] is a directory.
    *
    * Why directory walking + TTL caching is needed:
-   * - On POSIX/Linux filesystems, a directory's own `mtime` ([File.lastModified]) only updates when
-   *   direct child entries are created, renamed, or deleted — it does NOT update when a file nested
-   *   inside a package subdirectory (e.g. `com/example/Foo.class` or `res/layout/main.xml`) is
-   *   modified in place or replaced in a nested directory. Walking the directory tree with
-   *   [File.walkTopDown] ensures nested file edits are detected.
-   * - Because both `WarmEnvironmentKey` (in `Main.kt`) and [prepareState] inspect classpath
-   *   timestamps during the same render RPC, [directoryTimestampCache] caches directory walk
-   *   results for [maxCacheAgeMs] (default 1 second) to avoid walking the same directory tree twice
-   *   per RPC.
+   * - On POSIX/Linux filesystems, a directory's own `mtime` ([File.lastModified]) only updates when direct child entries are created,
+   *   renamed, or deleted — it does NOT update when a file nested inside a package subdirectory (e.g. `com/example/Foo.class` or
+   *   `res/layout/main.xml`) is modified in place or replaced in a nested directory. Walking the directory tree with [File.walkTopDown]
+   *   ensures nested file edits are detected.
+   * - Because both `WarmEnvironmentKey` (in `Main.kt`) and [prepareState] inspect classpath timestamps during the same render RPC,
+   *   [directoryTimestampCache] caches directory walk results for [maxCacheAgeMs] (default 1 second) to avoid walking the same directory
+   *   tree twice per RPC.
    */
   fun computePathTimestamp(path: String, maxCacheAgeMs: Long = 1000L): Long {
     val file = File(path)
@@ -174,8 +167,8 @@ object LibraryClassBinaryCache {
   }
 
   /**
-   * Prepares and returns the [LibraryLoaderState] for [classPath] and [projectClassPath], acquiring
-   * the shared [ExternalLibraryClassLoaderEntry] and updating [ClassBinaryCache.setDependencies].
+   * Prepares and returns the [LibraryLoaderState] for [classPath] and [projectClassPath], acquiring the shared
+   * [ExternalLibraryClassLoaderEntry] and updating [ClassBinaryCache.setDependencies].
    */
   internal fun prepareState(classPath: List<String>, projectClassPath: List<String>): LibraryLoaderState {
     val stableDepsPaths = computeStableDepsClassPath(classPath, projectClassPath).map { Path(it) }
@@ -200,18 +193,14 @@ object LibraryClassBinaryCache {
   }
 
   /**
-   * Wraps a `META-INF/services/` resource [originalUrl] in a synthetic `metainfservices:` [URL]
-   * whose stream rewrites `kotlin.*` and `kotlinx.*` service provider implementation class names to
-   * start with [INTERNAL_PACKAGE] (`_layoutlib_._internal_.`).
+   * Wraps a `META-INF/services/` resource [originalUrl] in a synthetic `metainfservices:` [URL] whose stream rewrites `kotlin.*` and
+   * `kotlinx.*` service provider implementation class names to start with [INTERNAL_PACKAGE] (`_layoutlib_._internal_.`).
    *
-   * Why this is needed:
-   * [DEPS_CLASS_TRANSFORMS] and [PROJECT_CLASS_TRANSFORMS] apply [RepackageTransform] to rename all
-   * `kotlin.*` and `kotlinx.*` classes loaded from the module classpath into
-   * `_layoutlib_._internal_.kotlin(x).*` so they do not clash with the Kotlin stdlib/coroutines
-   * bundled in the host JVM. When repackaged code calls `ServiceLoader.load(...)` (for example,
-   * `kotlinx.coroutines` loading `MainDispatcherFactory`), `ServiceLoader` reads the text file
-   * under `META-INF/services/` and instantiates the listed implementation classes by name; without
-   * prefixing those class names with [INTERNAL_PACKAGE], `ServiceLoader` would fail with
+   * Why this is needed: [DEPS_CLASS_TRANSFORMS] and [PROJECT_CLASS_TRANSFORMS] apply [RepackageTransform] to rename all `kotlin.*` and
+   * `kotlinx.*` classes loaded from the module classpath into `_layoutlib_._internal_.kotlin(x).*` so they do not clash with the Kotlin
+   * stdlib/coroutines bundled in the host JVM. When repackaged code calls `ServiceLoader.load(...)` (for example, `kotlinx.coroutines`
+   * loading `MainDispatcherFactory`), `ServiceLoader` reads the text file under `META-INF/services/` and instantiates the listed
+   * implementation classes by name; without prefixing those class names with [INTERNAL_PACKAGE], `ServiceLoader` would fail with
    * `ClassNotFoundException` or `ServiceConfigurationError`.
    */
   fun wrapServiceUrl(originalUrl: URL): URL {
@@ -267,18 +256,14 @@ object LibraryClassBinaryCache {
 /**
  * Returns `true` if [fqcn] is a top-level or inner Android resource (`R` or `R$*`) class.
  *
- * Resource classes must always be resolved in strict `projectLoader` -> `depsLoader` order rather
- * than via [MultiLoaderWithAffinity]:
- * 1. In Android builds (e.g., library screenshot tests), AGP places the linked `R.jar` (containing
- *    finalized `0x7f...` resource IDs for both project and transitive library packages such as
- *    `androidx.compose.ui.R$id`) on `projectClassPath` (`projectLoader`), while unlinked
- *    compile-time `R.jar`s (where all resource IDs are `0`) remain on `depsClassPath`
- *    (`depsLoader`). Using package-affinity dispatch for `R` classes would cause `depsLoader`
- *    (which has affinity for `androidx.compose.ui` after loading Compose library code) to shadow
- *    the linked `R.jar` in `projectLoader` with uninitialized `0` resource IDs.
- * 2. Conversely, scanning `rClassJars` (on `depsClassPath`) during bootstrap loads `R` classes in
- *    the module's own package from `depsLoader`, which would otherwise assign `depsLoader` affinity
- *    to the user module's package before user project classes are loaded.
+ * Resource classes must always be resolved in strict `projectLoader` -> `depsLoader` order rather than via [MultiLoaderWithAffinity]:
+ * 1. In Android builds (e.g., library screenshot tests), AGP places the linked `R.jar` (containing finalized `0x7f...` resource IDs for
+ *    both project and transitive library packages such as `androidx.compose.ui.R$id`) on `projectClassPath` (`projectLoader`), while
+ *    unlinked compile-time `R.jar`s (where all resource IDs are `0`) remain on `depsClassPath` (`depsLoader`). Using package-affinity
+ *    dispatch for `R` classes would cause `depsLoader` (which has affinity for `androidx.compose.ui` after loading Compose library code) to
+ *    shadow the linked `R.jar` in `projectLoader` with uninitialized `0` resource IDs.
+ * 2. Conversely, scanning `rClassJars` (on `depsClassPath`) during bootstrap loads `R` classes in the module's own package from
+ *    `depsLoader`, which would otherwise assign `depsLoader` affinity to the user module's package before user project classes are loaded.
  */
 private fun isResourceClass(fqcn: String): Boolean {
   val simpleName = fqcn.substringAfterLast('.')
@@ -286,21 +271,17 @@ private fun isResourceClass(fqcn: String): Boolean {
 }
 
 /**
- * [DelegatingClassLoader.Loader] responsible for loading both user project classes and external
- * library classes into a single out-of-studio [DefaultModuleClassLoader].
+ * [DelegatingClassLoader.Loader] responsible for loading both user project classes and external library classes into a single out-of-studio
+ * [DefaultModuleClassLoader].
  *
- * Shares the same classloading components as Android Studio's `ModuleClassLoaderImpl`
- * (`ModuleClassLoaderUtil.kt`):
- * 1. **Project tier (`projectClassPath`)**: Uses a per-RPC [projectClassLoader] built with
- *    `useCache(false)` so newly recompiled user `.class` files on disk are always read freshly on
- *    every render RPC and transformed via [PROJECT_CLASS_TRANSFORMS].
- * 2. **Library tier (`classPath - projectClassPath`)**: Reuses the warm external-library
- *    [UrlClassLoader] and negative-lookup set from [ExternalLibraryClassLoaderPool] (backed by the
- *    shared `ourLoaderCachePool`) and caches ASM-transformed library class bytes in
+ * Shares the same classloading components as Android Studio's `ModuleClassLoaderImpl` (`ModuleClassLoaderUtil.kt`):
+ * 1. **Project tier (`projectClassPath`)**: Uses a per-RPC [projectClassLoader] built with `useCache(false)` so newly recompiled user
+ *    `.class` files on disk are always read freshly on every render RPC and transformed via [PROJECT_CLASS_TRANSFORMS].
+ * 2. **Library tier (`classPath - projectClassPath`)**: Reuses the warm external-library [UrlClassLoader] and negative-lookup set from
+ *    [ExternalLibraryClassLoaderPool] (backed by the shared `ourLoaderCachePool`) and caches ASM-transformed library class bytes in
  *    [ClassBinaryCacheManager] via [ClassBinaryCacheLoader].
- * 3. **Package-affinity dispatch**: Combines `projectLoader` and `depsLoader` using
- *    [MultiLoaderWithAffinity] so once a package prefix is resolved in `depsLoader`, subsequent
- *    classes in that package check `depsLoader` first without probing `projectClassLoader` on disk.
+ * 3. **Package-affinity dispatch**: Combines `projectLoader` and `depsLoader` using [MultiLoaderWithAffinity] so once a package prefix is
+ *    resolved in `depsLoader`, subsequent classes in that package check `depsLoader` first without probing `projectClassLoader` on disk.
  */
 internal class DefaultLoader(parent: ClassLoader?, classPath: List<String>, projectClassPath: List<String>) :
   DelegatingClassLoader.Loader, AutoCloseable {
