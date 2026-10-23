@@ -19,6 +19,7 @@ package com.android.tools.render
 import com.android.SdkConstants
 import com.android.ide.common.rendering.api.Result
 import com.android.ide.common.resources.Locale
+import com.android.resources.ResourceType
 import com.android.testutils.TestUtils
 import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.ConfigurablePreviewElement
@@ -27,6 +28,7 @@ import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.render.common.ResolvedScreenshotLayout
 import com.android.tools.render.common.ScreenshotPreviewElement
+import com.android.tools.render.common.UnsupportedResourceScreenshot
 import com.android.tools.render.common.readComponentTreeFromJson
 import com.android.tools.render.common.toScreenshotError
 import com.android.tools.render.compose.ComposeScreenshot
@@ -3106,6 +3108,33 @@ class RendererTest {
 
   private fun captureSharedClassLoaderRef(renderer: Renderer): WeakReference<ClassLoader> =
     WeakReference(renderer.module.environment.moduleClassLoaderManager.getShared(null).classLoader)
+
+
+  @Test
+  fun testRenderUnsupportedResourceScreenshot_returnsError() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example.app",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_unsupported_resource").absolutePath
+    val screenshot =
+      UnsupportedResourceScreenshot(methodFQN = "R.drawable.ic_logo", previewId = "ic_logo", resourceType = ResourceType.DRAWABLE)
+
+    val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
+
+    assertEquals(1, results.size)
+    val result = results[0]
+    assertEquals("ic_logo", result.previewId)
+    assertEquals("drawable${File.separator}ic_logo_0.png", result.imagePath)
+    assertNotNull(result.error)
+    assertTrue(result.error?.message?.contains("Previews of drawable resources are not supported") == true)
+  }
 }
 
 /** A [PreviewScreenshot] whose preview element cannot be created: [toPreviewElement] throws the result of [failure]. */

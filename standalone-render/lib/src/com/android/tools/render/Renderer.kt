@@ -28,6 +28,7 @@ import com.android.tools.render.common.ComponentTreeExtractor
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.render.common.ResolvedScreenshotLayout
+import com.android.tools.render.common.ResourceTarget
 import com.android.tools.render.common.toScreenshotError
 import com.android.tools.render.common.writeComponentTreeToJson
 import com.android.tools.render.compose.ComposeScreenshot
@@ -382,8 +383,14 @@ class Renderer(
     allowShowDecorations: Boolean = false,
     detectAnimations: Boolean = false,
   ): List<PreviewScreenshotResult> {
-    val packagePath = sanitizePackagePath(screenshot.methodFQN)
-    val baseResultId = sanitizeBaseResultId(screenshot.previewId)
+    // Resource targets (for example R.layout.activity_main) are written to <resource type>/<resource name>_<n>.png.
+    val resourceTarget = ResourceTarget.parse(screenshot.methodFQN) as? ResourceTarget.Valid
+    val packagePath = resourceTarget?.type?.getName()?.replace(invalidPathCharsRegex, "_") ?: sanitizePackagePath(screenshot.methodFQN)
+    // A preview ID that is itself a resource target, for example R.layout.activity_main, is replaced by the resource name.
+    val previewTarget =
+      if (screenshot.previewId == screenshot.methodFQN) resourceTarget
+      else ResourceTarget.parse(screenshot.previewId) as? ResourceTarget.Valid
+    val baseResultId = sanitizeBaseResultId(previewTarget?.name ?: screenshot.previewId)
     val validationResult = previewValidator.validate(screenshot)
     return if (validationResult.hasErrors) {
       val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_0.png" else ""
