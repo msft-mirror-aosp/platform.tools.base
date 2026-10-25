@@ -189,7 +189,6 @@ com.android.tools:repository:$BASE_VERSION
   dependencies:
     com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
-    com.google.jimfs:jimfs:1.1 (runtime)
     org.apache.commons:commons-compress:1.27.1 (runtime)
     org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)

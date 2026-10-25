@@ -81,7 +81,6 @@ kotlin_library(
     deps = [
         "//tools/analytics-library/shared:tools.analytics-shared",
         "//tools/base/common:tools.common",
-        "@maven//:com.google.jimfs.jimfs",
         "@maven//:org.apache.commons.commons-compress",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
@@ -112,7 +111,6 @@ maven_library(
     deps = [
         "//tools/analytics-library/shared:tools.analytics-shared",
         "//tools/base/common:tools.common",
-        "@maven//:com.google.jimfs.jimfs",
         "@maven//:org.apache.commons.commons-compress",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
