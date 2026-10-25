@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbSession
+import com.android.tools.ui.inspector.client.ComposeInspectorResolution
 import com.android.tools.ui.inspector.deploy.ArtifactDownloader
 import com.android.tools.ui.inspector.deploy.DEFAULT_TEMP_FILE_SUFFIX_GENERATOR
 import com.android.tools.ui.inspector.deploy.DeviceArtifactsDirectory
@@ -30,27 +31,26 @@ import java.nio.file.Path
 /**
  * Dumps the UI tree of a debuggable app on a device: Views and Composables in one tree, read from inside the app's process by an agent the
  * inspector attaches over adb.
- *
- * @param adbSession The session to the adb server.
- * @param cacheDir Where the Compose inspector jars downloaded from Maven are kept.
- * @param composeInspectorJar An optional local Compose inspector jar to use instead of the one Maven has for the app's Compose version.
- * @param logger An optional logger the ui inspector can use to log its progress.
- * @param artifactDownloader An optional downloader for the Compose inspector jars, e.g. to use the HTTP stack of the tool embedding the
- *   inspector. Defaults to [java.net.URL] connections.
- * @param deviceArtifactsDir An optional directory with the files the inspector pushes to the device, for tools that don't bundle them in
- *   their classpath, e.g. the Android CLI, which downloads them in a pack: the directory where the files of the
- *   `//tools/base/ui-inspector/core:device_artifacts_pkg_files` target were extracted. When null, the files are read from the classpath,
- *   where the standalone CLI bundles them.
  */
 class UiInspector
 internal constructor(
   private val adbSession: AdbSession,
-  private val cacheDir: Path,
-  private val composeInspectorJar: Path?,
+  private val composeInspectorResolution: ComposeInspectorResolution,
   logger: Logger?,
-  artifactDownloader: ArtifactDownloader?,
   private val injectionManagerFactory: InjectionManagerFactory,
 ) {
+  /**
+   * @param adbSession The session to the adb server.
+   * @param cacheDir Where the Compose inspector jars downloaded from Maven are kept.
+   * @param composeInspectorJar An optional local Compose inspector jar to use instead of the one Maven has for the app's Compose version.
+   * @param logger An optional logger the ui inspector can use to log its progress.
+   * @param artifactDownloader An optional downloader for the Compose inspector jars, e.g. to use the HTTP stack of the tool embedding the
+   *   inspector. Defaults to [java.net.URL] connections.
+   * @param deviceArtifactsDir An optional directory with the files the inspector pushes to the device, for tools that don't bundle them in
+   *   their classpath, e.g. the Android CLI, which downloads them in a pack: the directory where the files of the
+   *   `//tools/base/ui-inspector/core:device_artifacts_pkg_files` target were extracted. When null, the files are read from the classpath,
+   *   where the standalone CLI bundles them.
+   */
   constructor(
     adbSession: AdbSession,
     cacheDir: Path,
@@ -58,10 +58,14 @@ internal constructor(
     logger: Logger? = null,
     artifactDownloader: ArtifactDownloader? = null,
     deviceArtifactsDir: Path? = null,
-  ) : this(adbSession, cacheDir, composeInspectorJar, logger, artifactDownloader, defaultInjectionManagerFactory(deviceArtifactsDir))
+  ) : this(
+    adbSession,
+    ComposeInspectorResolution(composeInspectorJar, cacheDir, artifactDownloader ?: HttpArtifactDownloader()),
+    logger,
+    defaultInjectionManagerFactory(deviceArtifactsDir),
+  )
 
   private val logger: Logger = logger ?: Logger { _, _ -> }
-  private val artifactDownloader: ArtifactDownloader = artifactDownloader ?: HttpArtifactDownloader()
 
   /** Captures the UI of [packageName] on the device [serial]. */
   suspend fun dump(serial: String, packageName: String, facets: Set<Facet> = emptySet()): UiDump {
@@ -71,9 +75,7 @@ internal constructor(
       serial,
       packageName,
       options.resolutionStack,
-      composeInspectorJar,
-      cacheDir,
-      artifactDownloader,
+      composeInspectorResolution,
       logger,
       injectionManagerFactory,
     ) { commandSender, composeInspectorConnected ->
@@ -99,9 +101,7 @@ internal constructor(
       serial,
       packageName,
       needsDebugViewAttributes = false,
-      composeInspectorJar,
-      cacheDir,
-      artifactDownloader,
+      composeInspectorResolution,
       logger,
       injectionManagerFactory,
     ) { commandSender, composeInspectorConnected ->

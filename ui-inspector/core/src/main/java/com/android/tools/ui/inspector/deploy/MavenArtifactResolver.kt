@@ -20,10 +20,6 @@ import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.util.zip.ZipInputStream
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -77,13 +73,12 @@ internal class HttpArtifactDownloader(
 internal class MavenArtifactResolver(
   private val downloader: ArtifactDownloader = HttpArtifactDownloader(),
   private val cacheDir: File,
-  private val fileMover: (File, File) -> Unit = ::defaultMoveFile,
+  private val fileMover: (File, File) -> Unit = ::moveFileReplacing,
 ) {
 
   companion object {
     // TODO: support downloading from other sources too, for example a company's own Maven repository.
     private const val GOOGLE_MAVEN_BASE_URL = "https://maven.google.com"
-    private const val PAYLOAD_JAR_ENTRY_NAME = "inspector.jar"
 
     /**
      * The versions [resolve] accepts. The version comes from the inspected app (the Compose version file the app ships), so it can be any
@@ -119,22 +114,9 @@ internal class MavenArtifactResolver(
 
     val url = "$GOOGLE_MAVEN_BASE_URL/${groupId.replace('.', '/')}/$artifactId/$version/$artifactId-$version.aar"
     val tempAar = downloadFromMaven(url, groupId, artifactId, version)
-    var tempInspectorJar: File? = null
     try {
-      Files.createDirectories(cacheDir.toPath())
-      tempInspectorJar = extractInspectorJar(tempAar, cacheDir) ?: throw IOException("$PAYLOAD_JAR_ENTRY_NAME not found in $url")
-
-      try {
-        fileMover(tempInspectorJar, cachedJar)
-      } catch (e: Exception) {
-        if (!cachedJar.isFile) {
-          // If the destination file was successfully written by another thread, we can safely ignore the exception if the file now exists.
-          throw e
-        }
-      }
-      return cachedJar
+      return installInspectorJar(tempAar, cachedJar, fileMover) ?: throw IOException("$INSPECTOR_JAR_ENTRY_NAME not found in $url")
     } finally {
-      tempInspectorJar?.delete()
       tempAar.delete()
     }
   }
@@ -177,37 +159,5 @@ internal class MavenArtifactResolver(
     if (!header.contentEquals(ZIP_LOCAL_FILE_HEADER_SIGNATURE)) {
       throw IOException("$url is not an AAR: the response is not a zip archive (a proxy or firewall may have returned an HTML page)")
     }
-  }
-
-  /** Extracts the nested "inspector.jar" from the downloaded [aarFile] to the [destinationDir]. */
-  private fun extractInspectorJar(aarFile: File, destinationDir: File): File? {
-    val prefix = "${aarFile.nameWithoutExtension}-extracted-"
-    val inspectorJar = File.createTempFile(prefix, ".jar", destinationDir)
-
-    try {
-      ZipInputStream(aarFile.inputStream()).use { zipInputStream ->
-        var entry = zipInputStream.nextEntry
-        while (entry != null) {
-          if (entry.name == PAYLOAD_JAR_ENTRY_NAME) {
-            inspectorJar.outputStream().use { output -> zipInputStream.copyTo(output) }
-            return inspectorJar
-          }
-          entry = zipInputStream.nextEntry
-        }
-      }
-      inspectorJar.delete()
-      return null
-    } catch (t: Throwable) {
-      inspectorJar.delete()
-      throw t
-    }
-  }
-}
-
-private fun defaultMoveFile(source: File, destination: File) {
-  try {
-    Files.move(source.toPath(), destination.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-  } catch (e: AtomicMoveNotSupportedException) {
-    Files.move(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
   }
 }

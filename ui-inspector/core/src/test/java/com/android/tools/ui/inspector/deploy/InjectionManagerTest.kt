@@ -22,6 +22,7 @@ import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.tools.ui.inspector.InjectionManagerFactory
 import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.RecordingLogger
 import com.android.tools.ui.inspector.TestAdbDeviceServices
@@ -31,6 +32,7 @@ import com.android.tools.ui.inspector.UiInspector
 import com.android.tools.ui.inspector.client.AGENT_RESPONSE_TIMEOUT
 import com.android.tools.ui.inspector.client.AgentNotRespondingException
 import com.android.tools.ui.inspector.client.CommandSender
+import com.android.tools.ui.inspector.client.ComposeInspectorResolution
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
@@ -1712,12 +1714,13 @@ class InjectionManagerTest {
     val capturedOverridePaths = mutableListOf<Path?>()
     // The factory records what it was handed and aborts the run: only the threading is under test.
     class StopAfterCapture : Exception()
+    val capturingFactory: InjectionManagerFactory = { _, _, _, overridePath, _ ->
+      capturedOverridePaths.add(overridePath)
+      throw StopAfterCapture()
+    }
     for (overrideJar in listOf(Paths.get("/some/override.jar"), null)) {
-      val inspector =
-        UiInspector(testSession, tempFolder.root.toPath(), overrideJar, logger, artifactDownloader = null) { _, _, _, overridePath, _ ->
-          capturedOverridePaths.add(overridePath)
-          throw StopAfterCapture()
-        }
+      val resolution = ComposeInspectorResolution(overrideJar, tempFolder.root.toPath(), NO_DOWNLOADS)
+      val inspector = UiInspector(testSession, resolution, logger, capturingFactory)
       try {
         inspector.dump(deviceSerial, packageName)
         fail("Expected the capturing factory to abort the run")
@@ -2113,9 +2116,7 @@ class InjectionManagerTest {
       serial = deviceSerial,
       packageName = packageName,
       needsDebugViewAttributes = false,
-      composeInspectorOverrideJarPath = composeInspectorOverrideJarPath,
-      composeInspectorCacheDir = tempFolder.root.toPath(),
-      composeInspectorDownloader = NO_DOWNLOADS,
+      composeInspectorResolution = ComposeInspectorResolution(composeInspectorOverrideJarPath, tempFolder.root.toPath(), NO_DOWNLOADS),
       logger = logger,
       injectionManagerFactory = { session, serial, pkg, overridePath, logger ->
         InjectionManager(
@@ -2181,7 +2182,7 @@ class InjectionManagerTest {
 
   /** Creates a [UiInspector] that downloads with [artifactDownloader] and is routed to this test's dummy artifact paths. */
   private fun uiInspectorWithDummyArtifacts(artifactDownloader: ArtifactDownloader) =
-    UiInspector(testSession, tempFolder.root.toPath(), composeInspectorJar = null, logger, artifactDownloader) {
+    UiInspector(testSession, ComposeInspectorResolution(overrideJar = null, tempFolder.root.toPath(), artifactDownloader), logger) {
       session,
       serial,
       pkg,

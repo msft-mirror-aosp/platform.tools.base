@@ -20,15 +20,14 @@ import com.android.adblib.AdbSession
 import com.android.tools.ui.inspector.client.AGENT_RESPONSE_TIMEOUT
 import com.android.tools.ui.inspector.client.AgentNotRespondingException
 import com.android.tools.ui.inspector.client.CommandSender
+import com.android.tools.ui.inspector.client.ComposeInspectorResolution
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.client.createComposeInspector
 import com.android.tools.ui.inspector.client.createViewInspector
 import com.android.tools.ui.inspector.client.dumpViews
-import com.android.tools.ui.inspector.client.mavenComposeInspectorResolver
 import com.android.tools.ui.inspector.client.queryComposeParameters
 import com.android.tools.ui.inspector.client.queryComposeTree
 import com.android.tools.ui.inspector.client.queryParameterDetails
-import com.android.tools.ui.inspector.deploy.ArtifactDownloader
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InjectionMode
 import com.android.tools.ui.inspector.deploy.InjectionResult
@@ -64,18 +63,14 @@ internal suspend fun <T> runWithConnectedInspectors(
   serial: String,
   packageName: String,
   needsDebugViewAttributes: Boolean,
-  composeInspectorOverrideJarPath: Path?,
-  composeInspectorCacheDir: Path,
-  composeInspectorDownloader: ArtifactDownloader,
+  composeInspectorResolution: ComposeInspectorResolution,
   logger: Logger,
   injectionManagerFactory: InjectionManagerFactory,
   responseTimeout: Duration = AGENT_RESPONSE_TIMEOUT,
   block: suspend (CommandSender, Boolean) -> T,
 ): T {
-  val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath, logger)
-  val resolveComposeInspectorJar =
-    composeInspectorOverrideJarPath?.let { path -> { _: String -> path.toFile() } }
-      ?: mavenComposeInspectorResolver(composeInspectorCacheDir, composeInspectorDownloader)
+  val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorResolution.overrideJar, logger)
+  val resolveComposeInspectorJar = composeInspectorResolution.jarResolver()
   return try {
     try {
       connectAndRunInspectors(
