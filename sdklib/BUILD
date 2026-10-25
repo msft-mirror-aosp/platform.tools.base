@@ -5,6 +5,7 @@ load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
+load("//tools/base/bazel:utils.bzl", "is_release")
 load(
     "//tools/base/common:version.bzl",
     "BASE_VERSION",
@@ -83,6 +84,7 @@ kotlin_library(
             "src/main/java/**/tool/**/*.java",
         ],
     ),
+    compress_resources = is_release(),
     lint_baseline = "lint_baseline_core.xml",
     module_name = "sdklib",
     resource_strip_prefix = "tools/base/sdklib/src/main/resources",
