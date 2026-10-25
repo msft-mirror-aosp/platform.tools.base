@@ -18,8 +18,10 @@ package com.android.tools.ui.inspector.deploy
 
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.sun.net.httpserver.HttpServer
 import java.io.File
 import java.io.IOException
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.SocketTimeoutException
 import java.util.concurrent.Callable
@@ -73,6 +75,30 @@ class MavenArtifactResolverTest {
       val output = tempFolder.newFile("stalled.aar")
 
       assertThrows(SocketTimeoutException::class.java) { downloader.download("http://127.0.0.1:${server.localPort}/x.aar", output) }
+    }
+  }
+
+  @Test
+  fun testHttpArtifactDownloader_writesTheResponseBody() {
+    withServer(200, "aar bytes") { url ->
+      val output = tempFolder.newFile("downloaded.aar")
+
+      HttpArtifactDownloader().download(url, output)
+
+      assertThat(output.readText()).isEqualTo("aar bytes")
+    }
+  }
+
+  @Test
+  fun testHttpArtifactDownloader_reportsHttpErrorStatuses() {
+    for (status in listOf(404, 403, 500)) {
+      withServer(status, "error page") { url ->
+        val exception =
+          assertThrows(ArtifactHttpStatusException::class.java) { HttpArtifactDownloader().download(url, tempFolder.newFile()) }
+
+        assertThat(exception.statusCode).isEqualTo(status)
+        assertThat(exception).hasMessageThat().isEqualTo("HTTP $status for $url")
+      }
     }
   }
 
@@ -257,5 +283,21 @@ class MavenArtifactResolverTest {
     assertThat(jarFile.exists()).isTrue()
     assertThat(jarFile.isFile).isTrue()
     assertThat(jarFile.readText()).isEqualTo("concurrently written correct jar content")
+  }
+
+  /** Runs [block] with the URL of a local HTTP server that answers every request with [status] and [body]. */
+  private fun withServer(status: Int, body: String, block: (url: String) -> Unit) {
+    val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+    server.createContext("/") { exchange ->
+      val bytes = body.toByteArray()
+      exchange.sendResponseHeaders(status, bytes.size.toLong())
+      exchange.responseBody.use { it.write(bytes) }
+    }
+    server.start()
+    try {
+      block("http://127.0.0.1:${server.address.port}/x.aar")
+    } finally {
+      server.stop(0)
+    }
   }
 }

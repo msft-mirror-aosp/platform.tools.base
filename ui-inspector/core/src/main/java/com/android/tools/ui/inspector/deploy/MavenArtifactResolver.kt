@@ -36,6 +36,9 @@ interface ArtifactDownloader {
   @Throws(IOException::class) fun download(url: String, outputFile: File)
 }
 
+/** Thrown by [HttpArtifactDownloader] when the server answers [url] with the HTTP error status [statusCode]. */
+internal class ArtifactHttpStatusException(val statusCode: Int, url: String) : IOException("HTTP $statusCode for $url")
+
 /** Default connect timeout for artifact downloads. */
 private val DEFAULT_CONNECT_TIMEOUT = 30.seconds
 
@@ -45,7 +48,7 @@ private val DEFAULT_READ_TIMEOUT = 30.seconds
 /**
  * Default implementation of [ArtifactDownloader] that downloads files over standard HTTP. Connect and read timeouts prevent an unresponsive
  * server from hanging the CLI forever; a read timeout bounds each stall rather than the total transfer, so large artifacts on slow
- * connections still complete.
+ * connections still complete. An HTTP error status is reported with an [ArtifactHttpStatusException].
  */
 internal class HttpArtifactDownloader(
   private val connectTimeout: Duration = DEFAULT_CONNECT_TIMEOUT,
@@ -56,6 +59,15 @@ internal class HttpArtifactDownloader(
     connection.connectTimeout = connectTimeout.inWholeMilliseconds.toInt()
     connection.readTimeout = readTimeout.inWholeMilliseconds.toInt()
     try {
+      if (connection is HttpURLConnection) {
+        val statusCode = connection.responseCode
+        if (statusCode == -1) {
+          throw IOException("the server did not answer with an HTTP response")
+        }
+        if (statusCode !in 200..299) {
+          throw ArtifactHttpStatusException(statusCode, url)
+        }
+      }
       connection.getInputStream().use { input -> outputFile.outputStream().use { output -> input.copyTo(output) } }
     } finally {
       (connection as? HttpURLConnection)?.disconnect()
