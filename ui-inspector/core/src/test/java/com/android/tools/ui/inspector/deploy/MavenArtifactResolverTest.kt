@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector.deploy
 
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
@@ -51,6 +52,16 @@ class MavenArtifactResolverTest {
         zos.write(jarContent.toByteArray())
         zos.closeEntry()
       }
+    }
+  }
+
+  /** A downloader that writes the response with [writeResponse] and records the file it wrote. */
+  private class RecordingDownloader(private val writeResponse: (File) -> Unit) : ArtifactDownloader {
+    var outputFile: File? = null
+
+    override fun download(url: String, outputFile: File) {
+      this.outputFile = outputFile
+      writeResponse(outputFile)
     }
   }
 
@@ -92,8 +103,84 @@ class MavenArtifactResolverTest {
       }
     val resolver = MavenArtifactResolver(emptyDownloader, tempFolder.newFolder())
 
-    val exception = assertThrows(IllegalStateException::class.java) { resolver.resolve("androidx.compose.ui", "ui", "1.5.4") }
-    assertThat(exception.message).contains("inspector.jar not found in ui-1.5.4.aar")
+    val exception = assertThrows(IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui", "1.5.4") }
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo("inspector.jar not found in https://maven.google.com/androidx/compose/ui/ui/1.5.4/ui-1.5.4.aar")
+  }
+
+  @Test
+  fun testResolve_nonZipResponse_throwsAndCachesNothing() {
+    val downloader = RecordingDownloader { outputFile -> outputFile.writeText("<html>Blocked by your network administrator</html>") }
+    val cacheDir = tempFolder.newFolder()
+    val resolver = MavenArtifactResolver(downloader, cacheDir)
+
+    val exception = assertThrows(IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4") }
+
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo(
+        "https://maven.google.com/androidx/compose/ui/ui-android/1.5.4/ui-android-1.5.4.aar is not an AAR: the response is not a zip " +
+          "archive (a proxy or firewall may have returned an HTML page)"
+      )
+    assertThat(cacheDir.listFiles()).isEmpty()
+    assertThat(downloader.outputFile!!.exists()).isFalse()
+  }
+
+  @Test
+  fun testResolve_emptyResponse_throwsAndCachesNothing() {
+    val downloader = RecordingDownloader { _ -> }
+    val cacheDir = tempFolder.newFolder()
+    val resolver = MavenArtifactResolver(downloader, cacheDir)
+
+    val exception = assertThrows(IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4") }
+
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo("https://maven.google.com/androidx/compose/ui/ui-android/1.5.4/ui-android-1.5.4.aar is not an AAR: the response is empty")
+    assertThat(cacheDir.listFiles()).isEmpty()
+    assertThat(downloader.outputFile!!.exists()).isFalse()
+  }
+
+  @Test
+  fun testResolve_invalidVersion_rejectedBeforeDownload() {
+    val failingDownloader =
+      object : ArtifactDownloader {
+        override fun download(url: String, outputFile: File) {
+          throw AssertionError("An invalid version must not be downloaded: $url")
+        }
+      }
+    val cacheDir = tempFolder.newFolder()
+    val resolver = MavenArtifactResolver(failingDownloader, cacheDir)
+
+    // "1.0\n" cannot come from the agent, which trims the version it reads, but nothing else stops it before the version becomes a path.
+    for (version in listOf("../x", "1.0/2", "1.0\\2", "1.0 2", ".1", "-1", "1.0\n", "1.0\u0000")) {
+      val exception =
+        assertThrows("version=$version", IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui-android", version) }
+      assertWithMessage("version=$version")
+        .that(exception)
+        .hasMessageThat()
+        .startsWith("The version the app reports is not a valid Maven version: ")
+    }
+    val emptyVersionException = assertThrows(IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui-android", "") }
+    assertThat(emptyVersionException).hasMessageThat().isEqualTo("The app reports an empty version")
+    assertThat(cacheDir.listFiles()).isEmpty()
+  }
+
+  @Test
+  fun testResolve_acceptsTypicalVersions() {
+    val versions = listOf("1.10.4", "1.11.0-alpha05", "1.0.0-beta01", "1.7.0-SNAPSHOT", "1.2.3+build_4")
+    for (version in versions) {
+      val fakeDownloader = FakeArtifactDownloader("fake pre-compiled dex classes")
+      val resolver = MavenArtifactResolver(fakeDownloader, tempFolder.newFolder())
+
+      val jarFile = resolver.resolve("androidx.compose.ui", "ui-android", version)
+
+      assertWithMessage("version=$version").that(jarFile.readText()).isEqualTo("fake pre-compiled dex classes")
+      assertWithMessage("version=$version")
+        .that(fakeDownloader.recordedUrl)
+        .isEqualTo("https://maven.google.com/androidx/compose/ui/ui-android/$version/ui-android-$version.aar")
+    }
   }
 
   @Test

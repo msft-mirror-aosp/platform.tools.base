@@ -28,6 +28,7 @@ import com.android.tools.ui.inspector.TestAdbHostServices
 import com.android.tools.ui.inspector.TestAdbSession
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.deploy.ArtifactDownloader
 import com.android.tools.ui.inspector.deploy.CONTENT_DIGEST_PATTERN
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InjectionMode
@@ -42,6 +43,7 @@ import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.statProbeCommand
 import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
 import java.util.Collections
@@ -1431,6 +1433,34 @@ class ComposeInspectorTest {
     assertThat(exception).hasMessageThat().contains("Compose 1.6.0")
     assertThat(exception).hasMessageThat().contains("maven.google.com unreachable")
     assertThat(Throwables.getRootCause(exception)).isSameAs(downloadFailure)
+  }
+
+  @Test
+  fun testCreateComposeInspector_nonAarDownload_failsWithComposeVersion() {
+    val injectionManager = unusedInjectionManager()
+    // A proxy that answers the AAR download with an HTML page.
+    val htmlDownloader =
+      object : ArtifactDownloader {
+        override fun download(url: String, outputFile: File) {
+          outputFile.writeText("<html>Blocked by your network administrator</html>")
+        }
+      }
+    val resolveJar = mavenComposeInspectorResolver(tempFolder.newFolder().toPath(), htmlDownloader)
+    val exception =
+      assertThrows(IOException::class.java) {
+        runBlocking {
+          respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar)
+          }
+        }
+      }
+
+    assertThat(exception)
+      .hasMessageThat()
+      .startsWith(
+        "Could not resolve the Compose inspector for Compose 1.6.0: " +
+          "https://maven.google.com/androidx/compose/ui/ui-android/1.6.0/ui-android-1.6.0.aar is not an AAR"
+      )
   }
 
   @Test
