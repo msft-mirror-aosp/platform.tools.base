@@ -198,8 +198,10 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     createAssembleTask(creationConfig)
   }
 
-  override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope>
-    get() = setOf()
+  // Packages the Java resources of the suite's subproject and external library runtime dependencies into its test APK.
+  // TestSuiteApkCreationConfig.variantDependencies subtracts those a tested application APK already packages.
+  override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope> =
+    setOf(InternalScopedArtifacts.InternalScope.SUB_PROJECTS, InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS)
 
   fun createTasks(creationConfig: TestSuiteCreationConfig) {
     val isHostSuite = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }

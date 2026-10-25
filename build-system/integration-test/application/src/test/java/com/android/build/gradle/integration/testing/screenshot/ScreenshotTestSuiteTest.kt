@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.testing.screenshot
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
@@ -361,6 +362,289 @@ class ScreenshotTestSuiteTest {
     assertThat(diffFiles.none { it.endsWith("_duplicate_name_6.png") }).isTrue()
     assertThat(diffFiles.none { it.endsWith("_duplicate_name_7.png") }).isTrue()
   }
+
+  @Test
+  fun previewsCanReadTheSuiteAndModuleJavaResources() {
+    val build = rule.build {
+      androidLibrary {
+        files {
+          add("src/screenshotTest/resources/suite_label.txt", "Label from the suite's Java resources")
+          add("src/main/resources/main_label.txt", "Label from the library's Java resources")
+          add(
+            "src/screenshotTest/java/com/SuiteJavaResourceTest.kt",
+            """
+            package pkg.name
+
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.tooling.preview.Preview
+            import com.android.tools.screenshot.PreviewTest
+
+            class SuiteJavaResourceTest {
+                @PreviewTest
+                @Preview(showBackground = true)
+                @Composable
+                fun suiteJavaResourceTest() {
+                    SimpleComposable(readLabel("/suite_label.txt"))
+                }
+
+                @PreviewTest
+                @Preview(showBackground = true)
+                @Composable
+                fun mainJavaResourceTest() {
+                    SimpleComposable(readLabel("/main_label.txt"))
+                }
+
+                private fun readLabel(name: String): String =
+                    checkNotNull(SuiteJavaResourceTest::class.java.getResourceAsStream(name)) {
+                        "${'$'}name is not visible to the preview"
+                    }.bufferedReader().use { it.readText() }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+    val libProject = build.androidLibrary()
+
+    build.updateReferenceImageWithTestSuite(projectName = "lib")
+
+    val referenceDir = getTestSuiteReferenceDir(libProject, "pkg.name.SuiteJavaResourceTest")
+    assertThat(referenceDir.listDirectoryEntries().map { it.name })
+      .containsExactly("suiteJavaResourceTest_748aa731_0.png", "mainJavaResourceTest_748aa731_0.png")
+    build.validateScreenshotTestWithTestSuite(projectName = "lib")
+  }
+
+  /**
+   * Previews of a library that use what a design system or feature module typically has: a multipreview annotation, an `internal`
+   * composable, a string and a drawable of the library's own R class, an asset of the library, and, from a dependency, a Java resource, a
+   * multipreview annotation and a preview parameter provider. And previews of an application whose main code uses its own strings and the
+   * strings of a library it depends on.
+   */
+  @Test
+  fun previewsUseTheTestedModuleAndItsDependencies() {
+    val build = rule.build {
+      // A library with strings, Java resources and preview helpers: a UI module that features share.
+      androidLibrary(":ui") {
+        dependencies { implementation("androidx.compose.ui:ui-tooling-preview:${TaskManager.COMPOSE_UI_VERSION}") }
+        kotlin { jvmToolchain(17) }
+        files {
+          add("src/main/res/values/strings.xml", "<resources><string name=\"feature_title\">Feature</string></resources>")
+          add("src/main/resources/dependency_label.txt", "Label from a dependency's Java resources")
+          add(
+            "src/main/java/com/PreviewHelpers.kt",
+            """
+            package pkg.name.ui
+
+            import androidx.compose.ui.tooling.preview.Preview
+            import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+
+            @Preview(name = "phone", widthDp = 360, heightDp = 120, showBackground = true)
+            @Preview(name = "tablet", widthDp = 840, heightDp = 120, showBackground = true)
+            annotation class DevicePreviews
+
+            class FeatureTitlesPreviewParameterProvider : PreviewParameterProvider<String> {
+                override val values = sequenceOf("First title", "Second title")
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+      androidLibrary {
+        dependencies { implementation(project(":ui")) }
+        files {
+          add("src/main/res/values/strings.xml", "<resources><string name=\"lib_title\">Library</string></resources>")
+          add("src/main/assets/lib_asset.txt", "Text from the library's assets")
+          add(
+            "src/main/res/drawable/lib_square.xml",
+            """
+            <vector xmlns:android="http://schemas.android.com/apk/res/android"
+                android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+                <path android:fillColor="#FF0000" android:pathData="M0,0h24v24h-24z" />
+            </vector>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/com/LibComponents.kt",
+            """
+            package pkg.name.lib
+
+            import android.content.res.Configuration
+            import androidx.compose.foundation.Image
+            import androidx.compose.material.Text
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.res.painterResource
+            import androidx.compose.ui.res.stringResource
+            import androidx.compose.ui.tooling.preview.Preview
+
+            @Preview(name = "light", showBackground = true)
+            @Preview(name = "dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+            annotation class LibThemePreviews
+
+            @Composable
+            internal fun LibTitle() {
+                Text(stringResource(R.string.lib_title))
+            }
+
+            @Composable
+            fun LibIcon() {
+                Image(painter = painterResource(R.drawable.lib_square), contentDescription = null)
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/screenshotTest/java/com/LibraryModuleTest.kt",
+            """
+            package pkg.name
+
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.platform.LocalContext
+            import androidx.compose.ui.tooling.preview.Preview
+            import androidx.compose.ui.tooling.preview.PreviewParameter
+            import com.android.tools.screenshot.PreviewTest
+            import pkg.name.lib.LibIcon
+            import pkg.name.lib.LibThemePreviews
+            import pkg.name.lib.LibTitle
+            import pkg.name.ui.DevicePreviews
+            import pkg.name.ui.FeatureTitlesPreviewParameterProvider
+
+            class LibraryModuleTest {
+                @PreviewTest
+                @LibThemePreviews
+                @Composable
+                fun internalComposableWithLibraryStringTest() {
+                    LibTitle()
+                }
+
+                @PreviewTest
+                @Preview(showBackground = true)
+                @Composable
+                fun libraryDrawableTest() {
+                    LibIcon()
+                }
+
+                @PreviewTest
+                @Preview(showBackground = true)
+                @Composable
+                fun dependencyJavaResourceTest() {
+                    val label = checkNotNull(LibraryModuleTest::class.java.getResourceAsStream("/dependency_label.txt")) {
+                        "dependency_label.txt is not visible to the preview"
+                    }.bufferedReader().use { it.readText() }
+                    SimpleComposable(label)
+                }
+
+                @PreviewTest
+                @Preview(showBackground = true)
+                @Composable
+                fun libraryAssetTest() {
+                    val text = LocalContext.current.assets.open("lib_asset.txt").bufferedReader().use { it.readText() }
+                    SimpleComposable(text)
+                }
+
+                @PreviewTest
+                @DevicePreviews
+                @Composable
+                fun dependencyMultipreviewTest() {
+                    SimpleComposable("Multipreview of a dependency")
+                }
+
+                @PreviewTest
+                @Preview(showBackground = true)
+                @Composable
+                fun dependencyPreviewParameterTest(@PreviewParameter(FeatureTitlesPreviewParameterProvider::class) title: String) {
+                    SimpleComposable(title)
+                }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+      androidApplication {
+        dependencies { implementation(project(":ui")) }
+        files {
+          add("src/main/res/values/strings.xml", "<resources><string name=\"app_title\">App</string></resources>")
+          add(
+            "src/main/java/com/AppTitle.kt",
+            """
+            package pkg.name.app
+
+            import androidx.compose.material.Text
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.res.stringResource
+
+            @Composable
+            fun AppTitle() {
+                Text(stringResource(R.string.app_title) + " / " + stringResource(pkg.name.ui.R.string.feature_title))
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/screenshotTest/java/com/AppModuleTest.kt",
+            """
+            package pkg.name
+
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.tooling.preview.Preview
+            import com.android.tools.screenshot.PreviewTest
+            import pkg.name.app.AppTitle
+
+            class AppModuleTest {
+                @PreviewTest
+                @Preview(showBackground = true)
+                @Composable
+                fun appAndDependencyStringsTest() {
+                    AppTitle()
+                }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    for ((projectName, project, testClass, imagesPerPreview) in
+      listOf(
+        PreviewsOfProject(
+          "lib",
+          build.androidLibrary(),
+          "pkg.name.LibraryModuleTest",
+          mapOf(
+            "internalComposableWithLibraryStringTest" to 2,
+            "libraryDrawableTest" to 1,
+            "dependencyJavaResourceTest" to 1,
+            "libraryAssetTest" to 1,
+            "dependencyMultipreviewTest" to 2,
+            "dependencyPreviewParameterTest" to 2,
+          ),
+        ),
+        PreviewsOfProject("app", build.androidApplication(), "pkg.name.AppModuleTest", mapOf("appAndDependencyStringsTest" to 1)),
+      )) {
+      val updateResult = build.updateReferenceImageWithTestSuite(projectName = projectName)
+      updateResult.assertOutputDoesNotContain("ScreenshotError")
+      // A preview that fails to render has no reference image. Each multipreview and parameter value has its own.
+      assertThat(
+          getTestSuiteReferenceDir(project, testClass).listDirectoryEntries().groupingBy { it.name.substringBefore('_') }.eachCount()
+        )
+        .containsExactlyEntriesIn(imagesPerPreview)
+
+      // Fails if any preview fails to render or doesn't match its reference image.
+      build.validateScreenshotTestWithTestSuite(projectName = projectName).assertOutputDoesNotContain("ScreenshotError")
+    }
+  }
+
+  private data class PreviewsOfProject(
+    val projectName: String,
+    val project: com.android.build.gradle.integration.common.fixture.project.GradleProject<*>,
+    val testClass: String,
+    /** The number of reference images of each preview function. */
+    val imagesPerPreview: Map<String, Int>,
+  )
 
   private fun createVerifier(appProject: com.android.build.gradle.integration.common.fixture.project.GradleProject<*>) =
     ScreenshotTestVerifier(

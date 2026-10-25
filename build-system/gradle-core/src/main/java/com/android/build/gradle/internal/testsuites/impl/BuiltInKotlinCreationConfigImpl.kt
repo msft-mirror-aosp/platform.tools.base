@@ -27,9 +27,6 @@ import com.android.build.gradle.internal.component.ComponentBasedBuiltInKotlinCr
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
-import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
@@ -81,22 +78,7 @@ internal class BuiltInKotlinCreationConfigImpl(
     configType: AndroidArtifacts.ConsumedConfigType,
     classesType: AndroidArtifacts.ArtifactType,
     generatedBytecodeKey: Any?,
-  ): FileCollection {
-    val spec =
-      PublishingSpecs.getVariantPublishingSpec(testedVariant.componentType)
-        .getSpec(CLASSES_JAR, ConsumedConfigType.COMPILE_CLASSPATH.publishedTo)
-        ?: error("No CLASSES_JAR spec found for ${testedVariant.componentType}")
-    val mainComponentClassesJar = spec.outputType
-    return services
-      .fileCollection()
-      .from(
-        sourceContainer.suiteSourceClasspath
-          .getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactType.CLASSES)
-          .artifactFiles,
-        testedVariant.artifacts.get(mainComponentClassesJar),
-        testedVariant.androidResourcesCreationConfig?.getCompiledRClasses(ConsumedConfigType.COMPILE_CLASSPATH),
-      )
-  }
+  ): FileCollection = getTestSuiteCompileClasses(sourceContainer.suiteSourceClasspath, services)
 
   override val builtInKotlinSupportMode: BuiltInKotlinSupportMode
     get() = testSuite.testedVariant.builtInKotlinSupportMode

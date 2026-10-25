@@ -60,6 +60,8 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
   ConsumableCreationConfig by testSuite.testedVariant,
   TargetSdkAwareConfig by (testSuite.testedVariant as TargetSdkAwareConfig) {
 
+  // The suite's APK is a test-only APK with no TestComponentCreationConfig, which TEST_APK describes. The tasks that build a TEST_APK
+  // treat its classes as test code: for example, R8 keeps all of them (ProguardConfigurableTask).
   override val componentType: ComponentType
     get() = ComponentTypeImpl.TEST_APK
 
@@ -127,7 +129,10 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
     val classpath = sourceContainer.suiteSourceClasspath
     VariantDependencies(
       variantName = name,
-      componentType = ComponentTypeImpl.TEST_APK,
+      // The suite's test APK is a test component of testedVariant, which ANDROID_TEST describes. For a tested application or dynamic
+      // feature, VariantDependencies.getArtifactCollection subtracts the classes, Java resources and manifests already packaged in the
+      // tested APK from the runtime classpath.
+      componentType = ComponentTypeImpl.ANDROID_TEST,
       compileClasspath = classpath.compileClasspath,
       runtimeClasspath = classpath.runtimeClasspath,
       lintChecksClasspath = testSuite.testedVariant.variantDependencies.lintChecksClasspath,

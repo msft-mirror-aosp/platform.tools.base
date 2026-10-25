@@ -43,9 +43,7 @@ import com.android.build.gradle.internal.coverage.getTestSuiteJacocoVersion
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.R_CLASS_JAR
-import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -63,6 +61,7 @@ import com.android.build.gradle.internal.testing.INSTRUMENTATION_ARGS_KEY
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.configureAndroidTestEngine
 import com.android.build.gradle.internal.testing.formatInstrumentationArgs
+import com.android.build.gradle.internal.testsuites.impl.HostJarTestSuiteTaskManager
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -622,7 +621,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.group = JavaBasePlugin.VERIFICATION_GROUP
       task.outputs.upToDateWhen { false }
 
-      val hasHostJar = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }
+      val hostJarSourceContainers = creationConfig.sourceContainers.filter { it.source is TestSuiteSourceSet.HostJar }
+      val hasHostJar = hostJarSourceContainers.isNotEmpty()
       val testedVariant = creationConfig.testedVariant
       val testSuiteName = creationConfig.name
       val targetName = testSuiteTarget.name
@@ -646,38 +646,46 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.testClassesDirs =
         creationConfig.services.fileCollection().also { fileCollection ->
           fileCollection.from(classesDir)
-          creationConfig.sourceContainers.forEach { sourceContainer ->
-            if (sourceContainer.source is TestSuiteSourceSet.HostJar) {
-              fileCollection.from(
-                sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-              )
-            }
+          hostJarSourceContainers.forEach { sourceContainer ->
+            fileCollection.from(
+              sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+            )
           }
         }
       task.classpath =
         creationConfig.services.fileCollection().also { fileCollection ->
           if (hasHostJar) {
             fileCollection.from(classesDir)
-            fileCollection.from(getLinkedRClassJars())
-            val testedVariant = creationConfig.testedVariant
-            val spec =
-              PublishingSpecs.getVariantPublishingSpec(testedVariant.componentType)
-                .getSpec(CLASSES_JAR, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH.publishedTo)
-                ?: error("No CLASSES_JAR spec found for ${testedVariant.componentType}")
-            val mainComponentClassesJar = spec.outputType
-            fileCollection.from(testedVariant.artifacts.get(mainComponentClassesJar))
-            creationConfig.sourceContainers
-              .filter { it.source is TestSuiteSourceSet.HostJar }
-              .forEach { sourceContainer ->
-                fileCollection.from(
-                  sourceContainer.suiteSourceClasspath.getHostRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR)
-                )
-                fileCollection.from(
-                  sourceContainer.artifacts
-                    .forScope(ScopedArtifacts.Scope.PROJECT)
-                    .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-                )
+            // The suite's compiled classes and Java resources (src/<suite>/resources) come first.
+            hostJarSourceContainers.forEach { sourceContainer ->
+              fileCollection.from(
+                sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+              )
+              fileCollection.from(sourceContainer.artifacts.get(InternalArtifactType.JAVA_RES))
+            }
+            // The R classes linked for the suite precede the tested module's runtime classes, so the linked IDs are the ones loaded.
+            fileCollection.from(getLinkedRClassJars(hostJarSourceContainers))
+            // Classes and Java resources of the runtime dependencies, which include the tested module (see
+            // TestSuiteDependenciesBuilder.addTestedModuleDependencies). Classes come from the host runtime classpath, which also holds the
+            // test engines. Java resources come from the runtime classpath, which holds the suite's dependencies: the engine jars carry
+            // their own Java resources.
+            hostJarSourceContainers.forEach { sourceContainer ->
+              fileCollection.from(
+                sourceContainer.suiteSourceClasspath.getHostRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR)
+              )
+              fileCollection.from(
+                sourceContainer.suiteSourceClasspath
+                  .getArtifactCollection(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH, AndroidArtifacts.ArtifactType.JAVA_RES)
+                  .artifactFiles
+              )
+            }
+            // Generated runtime R classes of a tested library and its dependencies, for a suite that links no Android resources (see
+            // HostJarTestSuiteTaskManager.hasRuntimeStubRClasses).
+            if (HostJarTestSuiteTaskManager.hasRuntimeStubRClasses(creationConfig)) {
+              hostJarSourceContainers.forEach { sourceContainer ->
+                fileCollection.from(sourceContainer.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR))
               }
+            }
           } else {
             creationConfig.sourceContainers.forEach { sourceContainer ->
               fileCollection.from(
@@ -782,6 +790,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             val testClasspath =
               task.project.objects.fileCollection().also { fc ->
                 creationConfig.sourceContainers.forEach { sc ->
+                  // The suite's Java resources (src/<suite>/resources) come first. Engines that load the test code in their own class
+                  // loader (for example the screenshot renderer) read them from this input.
+                  if (sc.source is TestSuiteSourceSet.HostJar) {
+                    fc.from(sc.artifacts.get(InternalArtifactType.JAVA_RES))
+                  }
                   fc.from(
                     sc.suiteSourceClasspath.getRuntimeClasspathArtifacts(
                       com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
@@ -819,9 +832,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           AgpTestSuiteInputParameters.R_CLASS_JARS -> {
             val testRClassJars =
               task.project.objects.fileCollection().also { fc ->
-                val linkedRClassJars = getLinkedRClassJars()
+                val linkedRClassJars = getLinkedRClassJars(hostJarSourceContainers)
                 fc.from(linkedRClassJars)
-                if (linkedRClassJars.isEmpty() && !testedVariant.componentType.isAar) {
+                if (HostJarTestSuiteTaskManager.hasRuntimeStubRClasses(creationConfig)) {
+                  hostJarSourceContainers.forEach { sc ->
+                    fc.from(sc.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR))
+                  }
+                } else if (linkedRClassJars.isEmpty() && !testedVariant.componentType.isAar) {
                   testedVariant.androidResourcesCreationConfig?.compiledRClassArtifact?.let { fc.from(it) }
                 }
                 // Only the compile classpath: R class jars of dependencies are published as api artifacts (see
@@ -859,12 +876,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           }
 
           AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR -> {
-            creationConfig.sourceContainers.forEach { sc ->
-              if (sc.source is TestSuiteSourceSet.HostJar) {
-                // setFrom, not from: the rendering engine reads LAYOUTLIB_DATA_DIR as a single directory, so these must not accumulate
-                // across source containers.
-                task.layoutlibDataDir.setFrom(sc.suiteSourceClasspath.getExtractedLayoutlibDataDir())
-              }
+            hostJarSourceContainers.forEach { sc ->
+              // setFrom: the rendering engine reads LAYOUTLIB_DATA_DIR as a single directory, so it holds one source container's value.
+              task.layoutlibDataDir.setFrom(sc.suiteSourceClasspath.getExtractedLayoutlibDataDir())
             }
             task.engineInputParameters.add(
               AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR, task.layoutlibDataDir)
@@ -1030,17 +1044,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
      * variant only holds placeholder IDs for a library, and misses the resources of the dependencies that only the test suite has for an
      * application.
      */
-    private fun getLinkedRClassJars() =
+    private fun getLinkedRClassJars(hostJarSourceContainers: List<TestSuiteSourceContainer>) =
       if (
         creationConfig.androidResourcesIncluded &&
           creationConfig.testedVariant.buildFeatures.androidResources &&
           (creationConfig.testedVariant.componentType.isAar || creationConfig.testedVariant is ApplicationCreationConfig)
       ) {
-        creationConfig.sourceContainers
-          .filter { it.source is TestSuiteSourceSet.HostJar }
-          .mapNotNull { sc ->
-            (sc.creationConfig as? HostTestCreationConfig)?.artifacts?.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
-          }
+        hostJarSourceContainers.mapNotNull { sc ->
+          (sc.creationConfig as? HostTestCreationConfig)?.artifacts?.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
+        }
       } else {
         emptyList()
       }

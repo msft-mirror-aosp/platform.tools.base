@@ -118,7 +118,6 @@ class TestEngineWiringTest(
               }
               it.hostJar {
                 dependencies.apply {
-                  implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
                   implementation.add("com.google.code.gson:gson:2.11.0")
                 }
               }

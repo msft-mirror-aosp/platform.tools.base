@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.integration.testing.suites
 
+import com.android.Version
+import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
 import java.io.File
@@ -116,12 +118,7 @@ class VerifyingJunitEngine : TestEngine {
         return
       }
 
-      val expectedClassesStr =
-        try {
-          inputParams.getInputParameter("com.android.junit.engine.expected.classes")
-        } catch (e: Exception) {
-          ""
-        }
+      val expectedClassesStr = inputParams.getOptionalParameter("com.android.junit.engine.expected.classes")
       if (expectedClassesStr.isNotEmpty()) {
         val expectedClassesArray = expectedClassesStr.split(',')
         for (c in expectedClassesArray) {
@@ -136,6 +133,58 @@ class VerifyingJunitEngine : TestEngine {
           }
         }
         logger.info("All expected classes found and loaded: $expectedClassesStr")
+      }
+
+      val expectedResourcesStr = inputParams.getOptionalParameter("com.android.junit.engine.expected.resources")
+      if (expectedResourcesStr.isNotEmpty()) {
+        for (r in expectedResourcesStr.split(',')) {
+          val trimmed = r.trim()
+          if (trimmed.isEmpty()) continue
+          val resource = this.javaClass.classLoader.getResource(trimmed)
+          if (resource == null) {
+            reportFailure(listener, test, root, Exception("Expected resource $trimmed not found on the classpath"))
+            return
+          }
+          logger.info("Found expected resource: $resource")
+        }
+      }
+
+      // Resources that must be on the classpath exactly once, for example a Java resource of an engine jar.
+      val uniqueResourcesStr = inputParams.getOptionalParameter("com.android.junit.engine.unique.resources")
+      if (uniqueResourcesStr.isNotEmpty()) {
+        for (r in uniqueResourcesStr.split(',')) {
+          val trimmed = r.trim()
+          if (trimmed.isEmpty()) continue
+          val resources = this.javaClass.classLoader.getResources(trimmed).toList()
+          if (resources.size != 1) {
+            reportFailure(
+              listener,
+              test,
+              root,
+              Exception("Expected resource $trimmed exactly once on the classpath, found ${resources.size}: $resources"),
+            )
+            return
+          }
+        }
+      }
+
+      // Static methods with no parameters, as `class#method`, that must return without throwing.
+      val invokedMethodsStr = inputParams.getOptionalParameter("com.android.junit.engine.invoked.methods")
+      if (invokedMethodsStr.isNotEmpty()) {
+        for (m in invokedMethodsStr.split(',')) {
+          val trimmed = m.trim()
+          if (trimmed.isEmpty()) continue
+          val className = trimmed.substringBefore('#')
+          val methodName = trimmed.substringAfter('#')
+          try {
+            val result = Class.forName(className, true, this.javaClass.classLoader).getMethod(methodName).invoke(null)
+            logger.info("Invoked $trimmed: $result")
+          } catch (t: Throwable) {
+            val cause = if (t is java.lang.reflect.InvocationTargetException) t.targetException else t
+            reportFailure(listener, test, root, Exception("Failed to invoke $trimmed: $cause", cause))
+            return
+          }
+        }
       }
 
       if (test !== root) {
@@ -181,8 +230,32 @@ class VerifyingJunitEngine : TestEngine {
     }
     listener.executionFinished(root, TestExecutionResult.successful())
   }
+
+  private fun TestSuiteExecutionClient.getOptionalParameter(key: String): String =
+    try {
+      getInputParameter(key)
+    } catch (e: Exception) {
+      ""
+    }
 }
 
 class VerifyingTestDescriptor(uniqueId: UniqueId) : AbstractTestDescriptor(uniqueId, "verifying descriptor") {
   override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
+}
+
+/**
+ * Runs the test suite with the [VerifyingJunitEngine]. The test project needs a Maven repository with the engine jar
+ * (`com.android.build.gradle.integration.testing.suites:verifying-junit-engine:1.0`) and the JUnit Platform jars added here.
+ */
+fun AgpTestSuite.useVerifyingJunitEngine() {
+  useJunitEngine.apply {
+    includeEngines.add("verifying-junit-engine")
+    enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+    enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.13.3")
+    enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+    enginesDependencies.add("org.junit.platform:junit-platform-commons:1.13.3")
+    enginesDependencies.add("org.opentest4j:opentest4j:1.3.0")
+    enginesDependencies.add("org.apiguardian:apiguardian-api:1.1.2")
+    enginesDependencies.add("com.android.build.gradle.integration.testing.suites:verifying-junit-engine:1.0")
+  }
 }

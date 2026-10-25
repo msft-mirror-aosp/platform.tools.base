@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.TestSuiteTaskManager
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -118,6 +119,10 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
 
     if (testSuite.androidResourcesIncluded) {
       setupAndroidResourceTasks(testSuite, taskFactory, hostJarConfig)
+    } else if (hasRuntimeStubRClasses(testSuite)) {
+      // A library's runtime classes hold no R class. This generates R classes with non-zero IDs for the library and its runtime
+      // dependencies, which TestSuiteTestTask.CreationAction adds to the test runtime classpath.
+      taskFactory.register(GenerateLibraryRFileTask.TestRuntimeStubRClassCreationAction(hostJarConfig))
     }
 
     setupAssembleTasks(testSuite, hostJarConfig, task)
@@ -212,7 +217,21 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
       task.dependsOn(javaResTask)
       if (testSuite.androidResourcesIncluded) {
         task.dependsOn(testSuite.artifacts.get(InternalArtifactType.APK_FOR_LOCAL_TEST))
+      } else if (hasRuntimeStubRClasses(testSuite)) {
+        task.dependsOn(hostJarConfig.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR))
       }
     }
+  }
+
+  companion object {
+    /**
+     * Whether the test runtime classpath of [testSuite] gets generated `R` classes
+     * ([InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR]): the tested variant is an Android library with Android resources enabled,
+     * and the suite links no Android resources.
+     */
+    internal fun hasRuntimeStubRClasses(testSuite: TestSuiteCreationConfig): Boolean =
+      !testSuite.androidResourcesIncluded &&
+        testSuite.testedVariant.componentType.isAar &&
+        testSuite.testedVariant.buildFeatures.androidResources
   }
 }
