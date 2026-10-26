@@ -61,15 +61,14 @@ class RClassResourceResolver(private val classLoaderManager: StandaloneModuleCla
   }
 
   @VisibleForTesting
-  fun mapCompiledIdsToRClass(className: String, pkg: String, classLoader: ClassLoader, apkIdManager: ApkResourceIdManager) {
+  fun mapCompiledIdsToRClass(className: String, classLoader: ClassLoader, apkIdManager: ApkResourceIdManager) {
     val typeName = className.substringAfterLast("$")
     val resType = ResourceType.fromClassName(typeName)
     if (resType != null && resType != ResourceType.STYLEABLE) {
-      val namespace = ResourceNamespace.fromPackageName(pkg)
       val rClass = classLoader.loadClass(className)
       for (field in rClass.declaredFields) {
         if (field.type == Int::class.java && Modifier.isStatic(field.modifiers) && !Modifier.isFinal(field.modifiers)) {
-          val resRef = ResourceReference(namespace, resType, field.name)
+          val resRef = ResourceReference(ResourceNamespace.RES_AUTO, resType, field.name)
           val apkId = apkIdManager.getCompiledId(resRef)
           if (apkId != null && apkId != 0) {
             field.isAccessible = true
@@ -104,7 +103,7 @@ class RClassResourceResolver(private val classLoaderManager: StandaloneModuleCla
               if (innerFile.exists()) innerFile.readBytes() else ByteArray(0)
             }
           } else {
-            mapCompiledIdsToRClass(className, pkg, classLoader, apkIdManager)
+            mapCompiledIdsToRClass(className, classLoader, apkIdManager)
           }
         } catch (e: Exception) {
           logger.log(Level.FINE, "Failed to load R class $className. Resource IDs for this package may not be resolved.", e)
@@ -143,7 +142,7 @@ class RClassResourceResolver(private val classLoaderManager: StandaloneModuleCla
                   if (innerEntry != null) jar.getInputStream(innerEntry).use { it.readBytes() } else ByteArray(0)
                 }
               } else {
-                mapCompiledIdsToRClass(className, pkg, classLoader, apkIdManager)
+                mapCompiledIdsToRClass(className, classLoader, apkIdManager)
               }
             } catch (e: Exception) {
               logger.log(Level.FINE, "Failed to load R class $className from JAR $path.", e)

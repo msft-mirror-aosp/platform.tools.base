@@ -57,7 +57,6 @@ class RendererClassResolutionTest {
     // This should run without throwing any exceptions
     resolver.mapCompiledIdsToRClass(
       className = DummyRId::class.java.name,
-      pkg = "com.android.tools.render",
       classLoader = classLoader,
       apkIdManager = apkIdManager,
     )
