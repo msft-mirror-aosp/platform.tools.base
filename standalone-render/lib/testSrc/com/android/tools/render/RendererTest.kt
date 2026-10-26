@@ -1612,8 +1612,6 @@ class RendererTest {
             package androidx.compose.ui.tooling;
             import android.content.Context;
             import android.graphics.Canvas;
-            import android.os.Handler;
-            import android.os.Looper;
             import android.util.AttributeSet;
             import android.widget.TextView;
             import androidx.compose.ui.platform.AndroidUiDispatcher;
@@ -1640,7 +1638,7 @@ class RendererTest {
                   // and advance the simulated clock past callbacksTimeoutMs so renderExecutingCallbacks returns before session.render()
                   // is ever called.
                   AndroidUiDispatcher.getMain();
-                  new Handler(Looper.getMainLooper()).post(() -> {
+                  post(() -> {
                     @SuppressWarnings("unchecked")
                     List<String> events = (List<String>) System.getProperties().get("$eventsKey");
                     Thread current = Thread.currentThread();
@@ -1679,7 +1677,7 @@ class RendererTest {
                   if (!"Round 1".equals(getText().toString())) {
                     if (!postedRound1) {
                       postedRound1 = true;
-                      new Handler(Looper.getMainLooper()).post(() -> setText("Round 1"));
+                      post(() -> setText("Round 1"));
                     }
                   } else {
                     if (!leakedInRound1) {
@@ -1713,8 +1711,6 @@ class RendererTest {
             package com.example;
             import android.content.Context;
             import android.graphics.Canvas;
-            import android.os.Handler;
-            import android.os.Looper;
             import android.util.AttributeSet;
             import android.widget.TextView;
             import androidx.compose.ui.platform.AndroidUiDispatcher;
@@ -1732,7 +1728,7 @@ class RendererTest {
                 if (!"Round 1".equals(getText().toString())) {
                   if (!postedRound1) {
                     postedRound1 = true;
-                    new Handler(Looper.getMainLooper()).post(() -> setText("Round 1"));
+                    post(() -> setText("Round 1"));
                   }
                 } else {
                   if (!leakedInRound1) {
