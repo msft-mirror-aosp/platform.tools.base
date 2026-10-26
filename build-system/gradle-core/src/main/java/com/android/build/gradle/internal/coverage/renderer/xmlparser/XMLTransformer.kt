@@ -63,8 +63,8 @@ import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.calcu
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.elements
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.findProperty
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.parseSingleCounter
+import com.android.utils.XmlUtils
 import java.io.File
-import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Element
 
 /**
@@ -103,13 +103,8 @@ object XMLTransformer {
   ) {
     if (!xmlFile.exists()) return
 
-    val factory = DocumentBuilderFactory.newInstance()
+    val factory = XmlUtils.createDocumentBuilderFactory()
     factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
-    factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
-    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-    factory.isXIncludeAware = false
-    factory.isExpandEntityReferences = false
 
     val doc = factory.newDocumentBuilder().parse(xmlFile)
     val rootElement = doc.documentElement.apply { normalize() }

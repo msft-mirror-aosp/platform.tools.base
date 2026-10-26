@@ -18,6 +18,7 @@ package com.android.ide.common.symbols;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import com.android.ide.common.xml.AndroidManifestParser;
@@ -478,5 +479,31 @@ public class SymbolUtilsTest {
                                                         "android_max_width", "android_max_height"),
                                                 true))
                                 .build());
+    }
+
+    @Test
+    public void testGenerateMinifyKeepRulesRejectsDoctypeInLayout() throws Exception {
+        File manifestFile = Files.createTempFile("AndroidManifest", ".xml").toFile();
+        FileUtils.writeToFile(
+                manifestFile,
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " package=\"com.example.app\"/>");
+        ManifestData manifestData = SymbolUtils.parseManifest(manifestFile);
+
+        File resDir = Files.createTempDirectory("res").toFile();
+        File layoutXml = new File(new File(resDir, "layout"), "main.xml");
+        FileUtils.createFile(
+                layoutXml,
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<!DOCTYPE LinearLayout [\n"
+                        + "  <!ENTITY xxe SYSTEM \"file:///nonexistent\">\n"
+                        + "]>\n"
+                        + "<LinearLayout/>");
+
+        IOException expected =
+                assertThrows(
+                        IOException.class,
+                        () -> SymbolUtils.generateMinifyKeepRules(manifestData, resDir));
+        assertThat(expected).hasMessageThat().contains("Failed to parse XML resource file");
     }
 }

@@ -45,9 +45,9 @@ import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_MET
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.UNIT_TEST_TEST_SUITE_NAME
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.tools.coverage.reporter.CoverageXmlMerger
+import com.android.utils.XmlUtils
 import java.io.File
 import java.nio.file.Files
-import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
@@ -533,9 +533,8 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
        */
       fun injectMetadataInXmlReport(xmlFile: File, properties: Map<String, String>, sourceFolders: List<String>) {
         try {
-          val docFactory = DocumentBuilderFactory.newInstance()
-          docFactory.isValidating = false
-          docFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+          val docFactory = XmlUtils.createDocumentBuilderFactory()
+          docFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
           docFactory.isIgnoringElementContentWhitespace = true
 
           val docBuilder = docFactory.newDocumentBuilder()

@@ -23,6 +23,7 @@ import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_MET
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_TARGET_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
 import com.android.utils.FileUtils
+import com.android.utils.XmlUtils
 import java.io.File
 import java.io.IOException
 import java.math.BigInteger
@@ -100,7 +101,7 @@ private fun injectPropertiesToXmlResults(directory: File, properties: Map<String
   val hashString = calculateHash(properties)
 
   try {
-    val docFactory = DocumentBuilderFactory.newInstance()
+    val docFactory = XmlUtils.createDocumentBuilderFactory()
     val transformerFactory = TransformerFactory.newInstance()
 
     Files.walk(directory.toPath()).use { allPaths ->

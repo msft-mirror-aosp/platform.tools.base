@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableList
 import com.google.common.io.Files
 import java.io.File
 import java.io.IOException
-import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 import org.w3c.dom.Node
 
@@ -44,7 +43,7 @@ class ResValueGenerator(genFolder: File, private val requests: Map<ResValue.Key,
       }
     }
     val resFile = File(pkgFolder, RES_VALUE_FILENAME_XML)
-    val factory = DocumentBuilderFactory.newInstance()
+    val factory = XmlUtils.createDocumentBuilderFactory()
     factory.isNamespaceAware = true
     factory.isValidating = false
     factory.isIgnoringComments = true

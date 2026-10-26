@@ -65,7 +65,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     private final List<S> mDataSets = new ArrayList<>();
 
     public DataMerger() {
-        mFactory = DocumentBuilderFactory.newInstance();
+        mFactory = XmlUtils.createDocumentBuilderFactory();
         mFactory.setNamespaceAware(true);
         mFactory.setValidating(false);
         mFactory.setIgnoringComments(true);

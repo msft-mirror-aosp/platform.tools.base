@@ -74,6 +74,7 @@ import com.android.ide.common.workers.WorkerExecutorFacade
 import com.android.resources.Density
 import com.android.utils.FileUtils
 import com.android.utils.ILogger
+import com.android.utils.XmlUtils
 import com.google.common.base.Preconditions
 import com.google.common.collect.Iterables
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
@@ -82,7 +83,6 @@ import java.io.IOException
 import java.util.Locale
 import java.util.function.Supplier
 import javax.xml.bind.JAXBException
-import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.GradleException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -214,7 +214,7 @@ abstract class MergeResources : NewIncrementalTask() {
     val resourceSets = getConfiguredResourceSets(preprocessor, aaptEnv.orNull)
 
     // create a new merger and populate it with the sets.
-    val documentBuilderFactory = DocumentBuilderFactory.newInstance()
+    val documentBuilderFactory = XmlUtils.createDocumentBuilderFactory()
     val merger = ResourceMerger(minSdk.get(), documentBuilderFactory)
     var mergingLog: MergingLog? = null
     if (blameLogOutputFolder.isPresent) {

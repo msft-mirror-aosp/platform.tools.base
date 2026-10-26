@@ -16,8 +16,8 @@
 
 package com.android.tools.coverage.reporter
 
+import com.android.utils.XmlUtils
 import java.io.File
-import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Element
 
 /**
@@ -55,11 +55,9 @@ class CoverageXmlMerger {
   private class PackageInput(val name: String, val classes: List<ClassInput>, val sourceFiles: List<SourceFileInput>)
 
   private fun readReport(file: File): List<PackageInput> {
-    val factory = DocumentBuilderFactory.newInstance()
+    val factory = XmlUtils.createDocumentBuilderFactory()
     // JaCoCo's XML declares a DTD, which must not be loaded.
-    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-    factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
-    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
     val root = factory.newDocumentBuilder().parse(file).documentElement
     return root.childElements("package").map { pkg ->
       PackageInput(

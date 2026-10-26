@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.internal.test.report;
 
+import com.android.utils.XmlUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 
@@ -36,7 +37,6 @@ import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.List;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
@@ -98,7 +98,7 @@ public class TestReport {
             inputStream = new FileInputStream(file);
             Document document;
             try {
-                document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
+                document = XmlUtils.createDocumentBuilderFactory().newDocumentBuilder().parse(
                         new InputSource(inputStream));
             } finally {
                 inputStream.close();

@@ -20,6 +20,7 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.blame.Message;
 import com.android.utils.HashCodes;
 import com.android.utils.ILogger;
+import com.android.utils.XmlUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
@@ -244,7 +245,7 @@ public abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>>
     }
 
     public void loadFromFiles(ILogger logger) throws MergingException {
-        loadFromFiles(logger, DocumentBuilderFactory.newInstance());
+        loadFromFiles(logger, XmlUtils.createDocumentBuilderFactory());
     }
 
     /**
@@ -532,11 +533,11 @@ public abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>>
         switch (fileStatus) {
             case NEW:
                 handleNewFile(
-                        sourceFolder, changedFile, logger, DocumentBuilderFactory.newInstance());
+                        sourceFolder, changedFile, logger, XmlUtils.createDocumentBuilderFactory());
                 return true;
             case CHANGED:
                 return handleChangedFile(
-                        sourceFolder, changedFile, logger, DocumentBuilderFactory.newInstance());
+                        sourceFolder, changedFile, logger, XmlUtils.createDocumentBuilderFactory());
             case REMOVED:
                 return handleRemovedFile(changedFile);
         }

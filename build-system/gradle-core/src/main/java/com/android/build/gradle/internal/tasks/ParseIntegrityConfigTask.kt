@@ -23,11 +23,11 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.bundle.AppIntegrityConfigOuterClass.AppIntegrityConfig
+import com.android.utils.XmlUtils
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.file.Files
-import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.CacheableTask
@@ -78,7 +78,7 @@ abstract class ParseIntegrityConfigTask : NonIncrementalTask() {
     }
 
     private fun loadXML(xmlFile: File): Document {
-      val documentFactory = DocumentBuilderFactory.newInstance()
+      val documentFactory = XmlUtils.createDocumentBuilderFactory()
       documentFactory.isNamespaceAware = true
       val documentBuilder = documentFactory.newDocumentBuilder()
       return documentBuilder.parse(xmlFile)

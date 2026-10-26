@@ -706,4 +706,35 @@ We meet
 
     assertThat(processTest(input)).isNull()
   }
+
+  @Test
+  fun testIgnoresExternalDtd() {
+    val input =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <!DOCTYPE View SYSTEM "http://invalid.invalid/does-not-exist.dtd">
+      <View xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/foo"/>
+      """
+        .trimIndent()
+
+    assertThat(processTest(input)).isNotNull()
+    assertThat(processor.primaryFile.exportedSymbols).hasSize(1)
+  }
+
+  @Test
+  fun failExternalEntityExpansion() {
+    val input =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <!DOCTYPE View [
+        <!ENTITY xxe SYSTEM "http://invalid.invalid/does-not-exist.txt">
+      ]>
+      <View xmlns:android="http://schemas.android.com/apk/res/android"
+        android:text="&xxe;"/>
+      """
+        .trimIndent()
+
+    assertThat(processTest(input)).isNull()
+  }
 }

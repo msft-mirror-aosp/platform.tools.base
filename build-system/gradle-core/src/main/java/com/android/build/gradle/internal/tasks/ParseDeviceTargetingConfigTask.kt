@@ -23,10 +23,10 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.bundle.DeviceGroupConfig
+import com.android.utils.XmlUtils
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Files
-import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputFile
@@ -71,7 +71,7 @@ abstract class ParseDeviceTargetingConfigTask : NonIncrementalTask() {
     }
 
     private fun loadXML(xmlFile: File): Document {
-      val documentFactory = DocumentBuilderFactory.newInstance()
+      val documentFactory = XmlUtils.createDocumentBuilderFactory()
       documentFactory.isNamespaceAware = true
       val documentBuilder = documentFactory.newDocumentBuilder()
       return documentBuilder.parse(xmlFile)

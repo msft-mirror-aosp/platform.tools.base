@@ -23,6 +23,7 @@ import com.android.ide.common.xml.AndroidManifestParser
 import com.android.ide.common.xml.ManifestData
 import com.android.io.FileWrapper
 import com.android.resources.ResourceType
+import com.android.utils.XmlUtils
 import com.android.xml.AndroidManifest
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.base.CharMatcher
@@ -37,7 +38,6 @@ import java.io.InputStream
 import java.io.Writer
 import java.util.SortedSet
 import javax.xml.parsers.DocumentBuilder
-import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -248,7 +248,7 @@ fun generateKeepRules(manifest: ManifestData, isMainDex: Boolean, mergedResource
   // Now go through all the layout files and find classes that need to be kept
   if (mergedResources != null) {
     try {
-      val documentBuilderFactory = DocumentBuilderFactory.newInstance()
+      val documentBuilderFactory = XmlUtils.createDocumentBuilderFactory()
       val documentBuilder = documentBuilderFactory.newDocumentBuilder()
 
       for (typeDir in mergedResources.listFiles()) {

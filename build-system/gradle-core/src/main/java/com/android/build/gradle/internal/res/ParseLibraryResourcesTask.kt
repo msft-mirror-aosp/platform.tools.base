@@ -44,12 +44,12 @@ import com.android.resources.FolderTypeRelationship
 import com.android.resources.ResourceFolderType
 import com.android.utils.FileUtils
 import com.android.utils.ILogger
+import com.android.utils.XmlUtils
 import java.io.File
 import java.io.IOException
 import java.util.SortedSet
 import java.util.TreeSet
 import javax.xml.parsers.DocumentBuilder
-import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -198,7 +198,7 @@ internal fun doFullTaskAction(parseResourcesParams: ParseLibraryResourcesTask.Pa
     // 1. Partial R files, which are used for incremental task runs.
     // 2. A merged SymbolTable which is used to generate the librarySymbolsFile.
     val androidPlatformAttrSymbolTable = getAndroidAttrSymbols(parseResourcesParams.platformAttrsRTxt.asFile.get())
-    val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+    val documentBuilder = XmlUtils.createDocumentBuilderFactory().newDocumentBuilder()
     val resourceFileSymbolTables: SortedSet<SymbolTableWithContextPath> =
       parseResourcesParams.inputResDirs
         .get()
@@ -248,7 +248,7 @@ internal fun doIncrementalRDefTaskAction(parseResourcesParams: ParseLibraryResou
   val currentSymbols = SymbolIo.readRDef(librarySymbolFile)
   val newSymbols = SymbolTable.builder().tablePackage("local")
 
-  val documentBuilderFactory = DocumentBuilderFactory.newInstance()
+  val documentBuilderFactory = XmlUtils.createDocumentBuilderFactory()
   val documentBuilder =
     try {
       documentBuilderFactory.newDocumentBuilder()
@@ -300,7 +300,7 @@ internal fun doIncrementalPartialRTaskAction(
   val platformSymbols = getAndroidAttrSymbols(parseResourcesParams.platformAttrsRTxt.asFile.get())
   var updateLibrarySymbolsFile = false
   val existingPartialRFiles = partialRDir.walkTopDown()
-  val documentBuilderFactory = DocumentBuilderFactory.newInstance()
+  val documentBuilderFactory = XmlUtils.createDocumentBuilderFactory()
   for (incrementalRes in parseResourcesParams.changedResources.get()) {
     val incrementalResAsPartialRFileName = getPartialRFileName(incrementalRes.file)
     val documentBuilder = documentBuilderFactory.newDocumentBuilder()

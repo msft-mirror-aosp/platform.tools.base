@@ -26,12 +26,12 @@ import com.android.resources.FolderTypeRelationship
 import com.android.resources.ResourceFolderType
 import com.android.utils.ILogger
 import com.android.utils.SdkUtils
+import com.android.utils.XmlUtils
 import com.google.common.base.Preconditions
 import com.google.common.io.Files
 import java.io.File
 import java.io.InputStream
 import javax.xml.parsers.DocumentBuilder
-import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 import org.w3c.dom.Document
 import org.xml.sax.SAXParseException
@@ -82,7 +82,7 @@ fun parseResourceSourceSetDirectory(
   val builder = SymbolTable.builder()
   val resourceDirectories = directory.listFiles()!!.sortedBy { it.name }
 
-  val documentBuilderFactory = DocumentBuilderFactory.newInstance()
+  val documentBuilderFactory = XmlUtils.createDocumentBuilderFactory()
   val documentBuilder =
     try {
       documentBuilderFactory.newDocumentBuilder()

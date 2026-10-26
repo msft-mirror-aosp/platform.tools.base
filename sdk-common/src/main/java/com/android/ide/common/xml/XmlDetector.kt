@@ -15,26 +15,11 @@
  */
 package com.android.ide.common.xml
 
+import com.android.utils.XmlUtils
 import java.io.StringReader
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
 import org.xml.sax.InputSource
 
-private val XML =
-  DocumentBuilderFactory.newInstance()
-    .apply {
-      // isXml() only needs well-formedness — never DTD semantics. Disable DTDs entirely.
-      runCatching {
-        setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-        setFeature("http://xml.org/sax/features/external-general-entities", false)
-        setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-        setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-        setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-      }
-      isXIncludeAware = false
-      isExpandEntityReferences = false
-    }
-    .newDocumentBuilder()
+private val XML = XmlUtils.createDocumentBuilderFactory().newDocumentBuilder()
 
 object XmlDetector {
   // TODO(b/235501148): Detect partial XML. See LintSyntaxHighlighter#tokenizeXml() for a starting
