@@ -239,6 +239,28 @@ class BackupTestSuiteDeclarationTest {
   }
 
   @Test
+  fun testSuiteWithoutTestsWarns() {
+    // A class for the device, which isn't a test
+    val build = rule.build {
+      androidApplication {
+        files { add("src/myBackup/androidTest/java/com/example/SeedAction.java", "package com.example;\npublic class SeedAction {}") }
+      }
+    }
+    val task = ":app:testDebugMyBackupDefaultTestSuite"
+    val warning = "Backup test suite 'myBackup' has no tests. Add JUnit 5 tests to src/myBackup/test/kotlin/ or src/myBackup/test/java/."
+    val testFile = build.subProject(":app").resolve("src/myBackup/test/java/com/example/MyBackupTest.java").toFile()
+    val test = testFile.readText()
+    Truth.assertThat(testFile.delete()).isTrue()
+
+    val result = build.executor.run(task)
+    result.assertOutputContains(warning)
+    Truth.assertThat(result.skippedTasks).contains(task)
+
+    testFile.writeText(test)
+    build.executor.run(task).assertOutputDoesNotContain(warning)
+  }
+
+  @Test
   fun testBackupLibrariesAreOnlyAddedToSuiteClasspaths() {
     // Applying a Kotlin compiler plugin makes AGP create compiler plugin classpaths for the suite's compilations.
     val build = rule.build { androidApplication { applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN) } }

@@ -37,6 +37,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestKeyValueDataEvent
 import org.gradle.api.tasks.testing.TestListener
@@ -221,6 +222,18 @@ constructor(
       // Fail the run when JUnit finds tests that it can't run, such as a @Test method that returns a value, instead of skipping them with
       // a logged warning.
       task.systemProperty("junit.platform.discovery.issue.severity.critical", "WARNING")
+      // Only the host tests run, so the device helpers of the test APK mustn't keep Gradle from skipping a suite without tests.
+      task.testDefinitionDirs.setFrom()
+      // Gradle skips a suite without tests (NO-SOURCE) without saying so in the console. It evaluates onlyIf before that check.
+      val suiteName = context.suiteName
+      task.onlyIf { suiteTask ->
+        if ((suiteTask as Test).testClassesDirs.asFileTree.isEmpty) {
+          suiteTask.logger.warn(
+            "Backup test suite '$suiteName' has no tests. Add JUnit 5 tests to src/$suiteName/test/kotlin/ or src/$suiteName/test/java/."
+          )
+        }
+        true
+      }
     }
   }
 

@@ -48,6 +48,7 @@ import org.gradle.api.tasks.testing.TestResult
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.process.CommandLineArgumentProvider
 import org.junit.Test
+import org.mockito.Answers.RETURNS_MOCKS
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
@@ -178,7 +179,7 @@ class BackupTestSuiteImplTest {
     val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
     val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
     val argumentProviders = mutableListOf<CommandLineArgumentProvider>()
-    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
+    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>(defaultAnswer = RETURNS_MOCKS)
     whenever(mockTestTask.jvmArgumentProviders).thenReturn(argumentProviders)
     suite.testTaskConfigActions.forEach { it(mockTestTask, mock<TestTaskContext>()) }
 
@@ -212,6 +213,20 @@ class BackupTestSuiteImplTest {
     suite.testTaskConfigActions.forEach { it(task, mock<TestTaskContext>()) }
 
     assertThat(task.systemProperties).containsEntry("junit.platform.discovery.issue.severity.critical", "WARNING")
+  }
+
+  @Test
+  fun testTestApkClassesDoNotCountAsTests() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+    val task = project.tasks.register("backupTestSuiteTestDefinitions", org.gradle.api.tasks.testing.Test::class.java).get()
+    // Test suite tasks look for the tests of their test APK in its test list.
+    task.testDefinitionDirs.from(project.layout.buildDirectory.dir("testApkTestList"))
+
+    suite.testTaskConfigActions.forEach { it(task, mock<TestTaskContext>()) }
+
+    // Without host tests, Gradle skips the task (NO-SOURCE).
+    assertThat(task.testDefinitionDirs.from).isEmpty()
   }
 
   @Test
@@ -312,7 +327,7 @@ class BackupTestSuiteImplTest {
 
     assertThat(suite.testTaskConfigActions).isNotEmpty()
 
-    val mockTestTask = mock<TestSuiteTestTask>()
+    val mockTestTask = mock<TestSuiteTestTask>(defaultAnswer = RETURNS_MOCKS)
     val mockContext = mock<TestTaskContext>()
     suite.testTaskConfigActions.first().invoke(mockTestTask, mockContext)
 
@@ -342,7 +357,7 @@ class BackupTestSuiteImplTest {
     // The DSL block sets backupTestLibraryVersion after the suite is created
     dslSuite.backupTestLibraryVersion = CUSTOM_BACKUP_VERSION
 
-    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
+    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>(defaultAnswer = RETURNS_MOCKS)
     suite.testTaskConfigActions.forEach { it(mockTestTask, mock<TestTaskContext>()) }
     val listenerCaptor = argumentCaptor<TestListener>()
     verify(mockTestTask).addTestListener(listenerCaptor.capture())
@@ -544,7 +559,7 @@ class BackupTestSuiteImplTest {
     val dslSuite = services.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", services)
     val suite = services.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, services, dependencyHandler, providers)
 
-    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
+    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>(defaultAnswer = RETURNS_MOCKS)
     suite.testTaskConfigActions.forEach { it(mockTestTask, mock<TestTaskContext>()) }
     val listenerCaptor = argumentCaptor<TestListener>()
     verify(mockTestTask).addTestListener(listenerCaptor.capture())
