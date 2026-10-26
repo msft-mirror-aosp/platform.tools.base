@@ -29,12 +29,14 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
+import com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl
 import com.android.build.gradle.internal.manifest.ManifestData
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.services.createVariantPropertiesApiServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
@@ -48,7 +50,6 @@ import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.MapProperty
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -61,33 +62,25 @@ class TestSuiteImplTest {
 
   @Test
   fun testAndroidResourcesIncluded() {
-    val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
-    val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
+    val dslServices = createDslServices()
+    val variantServices = createVariantPropertiesApiServices()
     val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
-    `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
-    `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
-    `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
-    `when`(agpTestSuite.androidResourcesIncluded).thenReturn(true)
+    val mapProp = variantServices.mapPropertyOf(String::class.java, String::class.java, emptyMap())
+    `when`(junitEngineSpec.inputProperties).thenReturn(mapProp)
 
     val testedVariantComponent =
       mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
     val global = mock(GlobalTaskCreationConfig::class.java)
-    val variantServices = mock(VariantServices::class.java)
-    val mapProperty = mock(MapProperty::class.java) as MapProperty<String, String>
-    `when`(variantServices.mapPropertyOf(String::class.java, String::class.java, mapOf())).thenReturn(mapProperty)
-    val booleanProperty = mock(Property::class.java) as Property<Boolean>
-    `when`(booleanProperty.get()).thenReturn(true)
-    `when`(variantServices.propertyOf(Boolean::class.java, false)).thenReturn(booleanProperty)
-    `when`(variantServices.propertyOf(Boolean::class.java, true)).thenReturn(booleanProperty)
-    val booleanProvider = mock(Provider::class.java) as Provider<Boolean>
-    `when`(booleanProvider.get()).thenReturn(false)
-    `when`(variantServices.provider<Boolean>(any())).thenReturn(booleanProvider)
     val services = mock(TaskCreationServices::class.java)
     val artifacts = mock(ArtifactsImpl::class.java)
     val defaultConfig = mock(DefaultConfig::class.java)
 
-    val testSuiteImpl =
-      TestSuiteImpl(
+    fun createTestSuiteImpl(suite: AgpTestSuiteImpl): TestSuiteImpl {
+      val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+      `when`(testSuiteBuilder.name).thenReturn(suite.name)
+      `when`(testSuiteBuilder.testSuite).thenReturn(suite)
+      `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+      return TestSuiteImpl(
         testSuiteBuilder = testSuiteBuilder,
         sourceContainers = emptyList(),
         testedVariantComponent = testedVariantComponent,
@@ -98,8 +91,27 @@ class TestSuiteImplTest {
         defaultConfig = defaultConfig,
         manifestDataProviderBuilder = { mock(ManifestDataProvider::class.java) },
       )
+    }
 
-    assertEquals(true, testSuiteImpl.androidResourcesIncluded)
+    // When no TestSuiteHostJarSpecImpl container exists, TestSuiteImpl.androidResourcesIncluded falls back to
+    // AgpTestSuiteImpl.androidResourcesIncluded.
+    val suiteWithDefaultTrue = dslServices.newInstance(AgpTestSuiteImpl::class.java, "screenshot", dslServices, true)
+    assertThat(createTestSuiteImpl(suiteWithDefaultTrue).androidResourcesIncluded).isTrue()
+
+    val customSuite = dslServices.newInstance(AgpTestSuiteImpl::class.java, "unit", dslServices, false)
+    assertThat(createTestSuiteImpl(customSuite).androidResourcesIncluded).isFalse()
+
+    // Initial hostJar {} seeds enableAndroidResources from AgpTestSuiteImpl.androidResourcesIncluded (false).
+    customSuite.hostJar {}
+    val hostJarSpec = customSuite.getSourceContainers().filterIsInstance<TestSuiteHostJarSpecImpl>().single()
+    assertThat(hostJarSpec.enableAndroidResources).isFalse()
+    assertThat(createTestSuiteImpl(customSuite).androidResourcesIncluded).isFalse()
+
+    // Configuring enableAndroidResources = true and then invoking a second hostJar {} block preserves enableAndroidResources == true.
+    customSuite.hostJar { enableAndroidResources = true }
+    customSuite.hostJar {}
+    assertThat(hostJarSpec.enableAndroidResources).isTrue()
+    assertThat(createTestSuiteImpl(customSuite).androidResourcesIncluded).isTrue()
   }
 
   @Test

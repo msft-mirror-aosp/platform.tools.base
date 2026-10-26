@@ -160,8 +160,6 @@ class HostJarTestSuiteAndroidResourcesTest {
           android {
             namespace = "com.example.test"
 
-            testOptions.unitTests.isIncludeAndroidResources = true
-
             // Android Resources Suite
             testOptions.customSuites.create("androidResSuite") {
               it.useJunitEngine.apply {
@@ -176,7 +174,7 @@ class HostJarTestSuiteAndroidResourcesTest {
                 enginesDependencies.add("com.android.build.gradle.integration.testing.suites:verifying-junit-engine:1.0")
                 addInputProperty("com.android.junit.engine.expected.classes", "some.androidres.TestClass")
               }
-              it.hostJar {}
+              it.hostJar { enableAndroidResources = true }
               it.targetVariants.add("debug")
               it.targets.apply { create("t1") {} }
             }
@@ -211,8 +209,6 @@ class HostJarTestSuiteAndroidResourcesTest {
           android {
             namespace = "com.example.lib"
 
-            testOptions.unitTests.isIncludeAndroidResources = true
-
             // Android Resources Suite for Library
             testOptions.customSuites.create("libAndroidResSuite") {
               it.useJunitEngine.apply {
@@ -227,7 +223,7 @@ class HostJarTestSuiteAndroidResourcesTest {
                 enginesDependencies.add("com.android.build.gradle.integration.testing.suites:verifying-junit-engine:1.0")
                 addInputProperty("com.android.junit.engine.expected.classes", "some.lib.androidres.LibTestClass")
               }
-              it.hostJar {}
+              it.hostJar { enableAndroidResources = true }
               it.targetVariants.add("debug")
               it.targets.apply { create("t1") {} }
             }

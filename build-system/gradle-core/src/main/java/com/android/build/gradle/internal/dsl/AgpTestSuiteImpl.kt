@@ -38,7 +38,9 @@ import org.gradle.api.tasks.testing.Test
  *
  * @param name the Test Suite Name
  * @param dslServices internal services
- * @param androidResourcesIncluded DSL declaration on whether the android resources should be included.
+ * @param androidResourcesIncluded whether Android resources are enabled by default for this suite type, used to seed
+ *   [TestSuiteHostJarSpecImpl.enableAndroidResources] when a `hostJar {}` source container is first created and as the fallback when no
+ *   `hostJar {}` container is configured.
  */
 abstract class AgpTestSuiteImpl
 @Inject
@@ -99,10 +101,7 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
   }
 
   override fun hostJar(action: TestSuiteHostJarSpec.() -> Unit) {
-    addSource<TestSuiteHostJarSpecImpl> {
-      this.enableAndroidResources = androidResourcesIncluded
-      action(this)
-    }
+    addSource<TestSuiteHostJarSpecImpl>(action, onCreate = { this.enableAndroidResources = androidResourcesIncluded })
   }
 
   fun hostJar(action: Action<TestSuiteHostJarSpec>) {
@@ -136,7 +135,17 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
   internal val testTaskProviderConfigActions = mutableListOf<TaskProvider<out Test>.(TestTaskContext) -> Unit>()
 
   /** Private APIs */
-  private inline fun <reified T : TestSuiteSourceCreationConfig> addSource(initializationBlock: T.() -> Unit) {
+  /**
+   * Creates the source container of type [T] on first invocation or reuses the existing instance on subsequent DSL blocks.
+   *
+   * @param initializationBlock user configuration block applied on every invocation.
+   * @param onCreate one-time initialization run only when the source container is first instantiated, before [initializationBlock], so that
+   *   subsequent DSL blocks for the same source container do not overwrite values configured by earlier blocks.
+   */
+  private inline fun <reified T : TestSuiteSourceCreationConfig> addSource(
+    initializationBlock: T.() -> Unit,
+    onCreate: T.() -> Unit = {},
+  ) {
     val existingSource = sources.filterIsInstance<T>().firstOrNull()
     if (existingSource != null) {
       initializationBlock.invoke(existingSource)
@@ -145,6 +154,7 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
     dslServices.newInstance(T::class.java, name, dslServices.projectInfo.projectDirectory, dslServices.projectInfo.buildDirectory).also {
       newSources ->
       sources.add(newSources)
+      onCreate.invoke(newSources)
       initializationBlock.invoke(newSources)
     }
   }

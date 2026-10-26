@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.getDefaultInstrumentationTestRunner
 import com.android.build.gradle.internal.core.dsl.impl.getInstrumentationRunner
 import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
+import com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
@@ -106,7 +107,16 @@ internal constructor(
 
   override val codeCoverageEnabled: Boolean = testSuiteBuilder._enableCodeCoverage
 
-  override val androidResourcesIncluded: Boolean = testSuiteBuilder.testSuite.androidResourcesIncluded
+  /**
+   * Whether Android resources are enabled for this test suite.
+   *
+   * When the suite declares a `hostJar {}` source container, [TestSuiteHostJarSpecImpl.enableAndroidResources] is authoritative so that
+   * user configuration in `hostJar { enableAndroidResources = ... }` takes effect; otherwise this falls back to the suite type's default
+   * ([com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.androidResourcesIncluded]).
+   */
+  override val androidResourcesIncluded: Boolean =
+    _testSuite.getSourceContainers().filterIsInstance<TestSuiteHostJarSpecImpl>().firstOrNull()?.enableAndroidResources
+      ?: _testSuite.androidResourcesIncluded
 
   override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> {
     // Backup tests require BackupRestoreTestRunner (which survives app process
