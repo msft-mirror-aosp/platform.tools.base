@@ -87,66 +87,68 @@ class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
     val librariesToBuild = findLibrariesToBuild(config)
     if (librariesToBuild.isEmpty()) {
       infoln("no libraries to build")
-      return
-    }
-
-    if (config.buildTargetsCommandComponents?.isNotEmpty() == true) {
-      // Build all libraries together in one step, using the names of the artifacts.
-      val artifactNames = librariesToBuild.mapNotNull { library -> library.artifactName }.distinct().sorted()
-      val buildTargetsCommand = substituteBuildTargetsCommand(config.buildTargetsCommandComponents!!, artifactNames)
-      buildSteps.add(BuildStep(buildTargetsCommand, librariesToBuild))
-      infoln("about to build targets " + artifactNames.joinToString(", "))
     } else {
-      // Build each library separately using multiple steps.
-      for (libraryValue in librariesToBuild) {
-        buildSteps.add(BuildStep(libraryValue.buildCommandComponents!!, listOf(libraryValue)))
-        infoln("about to build ${libraryValue.buildCommandComponents!!.joinToString(" ")}")
+
+      if (config.buildTargetsCommandComponents?.isNotEmpty() == true) {
+        // Build all libraries together in one step, using the names of the artifacts.
+        val artifactNames = librariesToBuild.mapNotNull { library -> library.artifactName }.distinct().sorted()
+        val buildTargetsCommand = substituteBuildTargetsCommand(config.buildTargetsCommandComponents!!, artifactNames)
+        buildSteps.add(BuildStep(buildTargetsCommand, librariesToBuild))
+        infoln("about to build targets " + artifactNames.joinToString(", "))
+      } else {
+        // Build each library separately using multiple steps.
+        for (libraryValue in librariesToBuild) {
+          buildSteps.add(BuildStep(libraryValue.buildCommandComponents!!, listOf(libraryValue)))
+          infoln("about to build ${libraryValue.buildCommandComponents!!.joinToString(" ")}")
+        }
+      }
+
+      executeProcessBatch(providers, buildSteps)
+
+      infoln("check expected build outputs")
+      for (library in config.libraries.values) {
+        Preconditions.checkState(!Strings.isNullOrEmpty(library.artifactName))
+        if (targets.isNotEmpty() && !targets.contains(library.artifactName)) {
+          continue
+        }
+        if (buildSteps.stream().noneMatch { step -> step.libraries.contains(library) }) {
+          // Only need to check existence of output files we expect to create
+          continue
+        }
+        val output = library.output ?: continue
+        if (!output.exists()) {
+          throw GradleException("Expected output file at $output for target ${library.artifactName} but there was none")
+        }
+
+        // If the build chose to write the library output somewhere besides objFolder
+        // then link or copy to objFolder (reference b.android.com/256515)
+        //
+        // Since there is now a hard link outside of the standard build/ folder we have to
+        // make sure `clean` deletes both the original .so file and the hard link to so
+        // that the ref count on the inode goes down from two to zero. Here's how the two
+        // files are covered.
+        // (1) Gradle plugin deletes the build/ folder. This covers the destination of the
+        //     copy.
+        // (2) ExternalNativeCleanTask calls the individual clean targets for everything
+        //     that was built. This is expected to delete the .so file but it is up to the
+        //     CMakeLists.txt or Android.mk author to ensure this.
+        val expectedOutputFile = FileUtils.join(abi.soFolder, output.name)
+
+        if (!FileUtils.isSameFile(output, expectedOutputFile)) {
+          infoln("external build set its own library output location for " + "'${output.name}', hard link or copy to expected location")
+          // Use synchronizeFile so that libs removed from the build will
+          // also be deleted.
+          synchronizeFile(output, expectedOutputFile)
+        }
+
+        for (runtimeFile in library.runtimeFiles) {
+          val dest = FileUtils.join(abi.soFolder, runtimeFile.name)
+          synchronizeFile(runtimeFile, dest)
+        }
       }
     }
 
-    executeProcessBatch(providers, buildSteps)
-
-    infoln("check expected build outputs")
-    for (library in config.libraries.values) {
-      Preconditions.checkState(!Strings.isNullOrEmpty(library.artifactName))
-      if (targets.isNotEmpty() && !targets.contains(library.artifactName)) {
-        continue
-      }
-      if (buildSteps.stream().noneMatch { step -> step.libraries.contains(library) }) {
-        // Only need to check existence of output files we expect to create
-        continue
-      }
-      val output = library.output ?: continue
-      if (!output.exists()) {
-        throw GradleException("Expected output file at $output for target ${library.artifactName} but there was none")
-      }
-
-      // If the build chose to write the library output somewhere besides objFolder
-      // then link or copy to objFolder (reference b.android.com/256515)
-      //
-      // Since there is now a hard link outside of the standard build/ folder we have to
-      // make sure `clean` deletes both the original .so file and the hard link to so
-      // that the ref count on the inode goes down from two to zero. Here's how the two
-      // files are covered.
-      // (1) Gradle plugin deletes the build/ folder. This covers the destination of the
-      //     copy.
-      // (2) ExternalNativeCleanTask calls the individual clean targets for everything
-      //     that was built. This is expected to delete the .so file but it is up to the
-      //     CMakeLists.txt or Android.mk author to ensure this.
-      val expectedOutputFile = FileUtils.join(abi.soFolder, output.name)
-
-      if (!FileUtils.isSameFile(output, expectedOutputFile)) {
-        infoln("external build set its own library output location for " + "'${output.name}', hard link or copy to expected location")
-        // Use synchronizeFile so that libs removed from the build will
-        // also be deleted.
-        synchronizeFile(output, expectedOutputFile)
-      }
-
-      for (runtimeFile in library.runtimeFiles) {
-        val dest = FileUtils.join(abi.soFolder, runtimeFile.name)
-        synchronizeFile(runtimeFile, dest)
-      }
-    }
+    linkOrCopyImportedPrefabLibraries(config)
 
     if (!abi.soFolder.isDirectory) {
       // A build failure can leave the obj/abi folder missing. Just note that case
@@ -160,6 +162,30 @@ class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
     }
 
     infoln("build complete")
+  }
+
+  private fun linkOrCopyImportedPrefabLibraries(config: NativeBuildConfigValueMini) {
+    for (library in config.libraries.values) {
+      if (library.imported == true && variant.implicitBuildTargetSet.contains(library.artifactName)) {
+        val output = library.output
+        if (output != null) {
+          if (!output.isFile) {
+            throw GradleException("Imported library file $output of target ${library.artifactName} does not exist")
+          }
+          if (output.extension.equals("so", ignoreCase = true)) {
+            synchronizeFile(output, FileUtils.join(abi.soFolder, output.name))
+          }
+        }
+        for (runtimeFile in library.runtimeFiles) {
+          if (!runtimeFile.isFile) {
+            throw GradleException("Imported library runtime file $runtimeFile of target ${library.artifactName} does not exist")
+          }
+          if (runtimeFile.extension.equals("so", ignoreCase = true)) {
+            synchronizeFile(runtimeFile, FileUtils.join(abi.soFolder, runtimeFile.name))
+          }
+        }
+      }
+    }
   }
 
   /** Verifies that all targets provided by the user will be built. Throws GradleException if it detects an unexpected target. */
@@ -199,6 +225,11 @@ class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
     val implicitTargets = variant.implicitBuildTargetSet.toMutableSet()
     loop@ for (libraryValue in config.libraries.values) {
       infoln("evaluate library ${libraryValue.artifactName} (${libraryValue.abi})")
+      if (libraryValue.imported == true) {
+        infoln("not building target ${libraryValue.artifactName} because it is an imported library")
+        implicitTargets.remove(libraryValue.artifactName)
+        continue
+      }
       if (targets.isNotEmpty() && !targets.contains(libraryValue.artifactName)) {
         infoln("not building target ${libraryValue.artifactName!!} because it isn't in targets set")
         continue
