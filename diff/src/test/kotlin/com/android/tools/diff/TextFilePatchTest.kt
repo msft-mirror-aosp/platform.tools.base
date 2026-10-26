@@ -114,6 +114,17 @@ class TextFilePatchTest {
   }
 
   @Test
+  fun testIsDelete() {
+    val filePatch =
+      TextFilePatch(
+        oldFile = FileHeader("deleted.txt"),
+        newFile = FileHeader(FileHeader.NO_PATH),
+        patch = TextPatch.forFileCreation("content"),
+      )
+    assertThat(filePatch.isDelete()).isTrue()
+  }
+
+  @Test
   fun testParse_headersWithSpaces() {
     // Case A: Git-like paths with spaces, without timestamps
     val spacesDiff =

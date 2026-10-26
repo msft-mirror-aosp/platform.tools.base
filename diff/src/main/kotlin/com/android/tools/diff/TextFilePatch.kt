@@ -80,6 +80,9 @@ data class TextFilePatch(
   /** Returns true if this patch represents a file creation. */
   fun isCreate(): Boolean = oldFile.path == FileHeader.NO_PATH
 
+  /** Returns true if this patch represents a file deletion. */
+  fun isDelete(): Boolean = newFile.path == FileHeader.NO_PATH
+
   companion object {
     private val FILE_HEADER_REGEX = Regex("""^(---|\+\+\+)\s+(.+?)(?:\s+(\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2}:\d{2}.*)?|\d+))?$""")
 
