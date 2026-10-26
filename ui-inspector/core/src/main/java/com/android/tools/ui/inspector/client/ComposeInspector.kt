@@ -19,20 +19,17 @@ package com.android.tools.ui.inspector.client
 import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
-import com.android.tools.ui.inspector.deploy.ArtifactDownloader
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InspectorMetadata
-import com.android.tools.ui.inspector.deploy.MavenArtifactResolver
 import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.proto.parseTreeResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
-import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.io.IOException
-import java.nio.file.Path
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
-private const val COMPOSE_UI_GROUP_ID = "androidx.compose.ui"
+/** The Maven group of the Compose UI library, whose AAR holds the Compose inspector. */
+internal const val COMPOSE_UI_GROUP_ID = "androidx.compose.ui"
 
 /**
  * How deep the Compose inspector expands parameter values, and how many elements of each collection it sends. These are the agent defaults,
@@ -62,11 +59,6 @@ internal suspend fun createComposeInspector(
     }
   launchComposeInspector(commandSender, injectionManager, jarFile, logger)
   return true
-}
-
-/** Resolves the Compose inspector jar for a Compose version from Google Maven with [downloader], caching it under [cacheDir]. */
-internal fun mavenComposeInspectorResolver(cacheDir: Path, downloader: ArtifactDownloader): (version: String) -> File = { version ->
-  MavenArtifactResolver(downloader, cacheDir.toFile()).resolve(COMPOSE_UI_GROUP_ID, getComposeArtifactId(version), version)
 }
 
 /** Queries the Compose inspector on the agent for the Composable tree of a specific root view. */
@@ -257,7 +249,6 @@ private suspend fun launchComposeInspector(
  * artifact. From 1.5.0 onwards, they were split into platform-specific modules, with the Android-specific classes packaged inside the
  * "ui-android" artifact.
  */
-@VisibleForTesting
 internal fun getComposeArtifactId(version: String): String {
   val parts = version.split('.')
   if (parts.size < 2) return "ui" // Fallback to legacy

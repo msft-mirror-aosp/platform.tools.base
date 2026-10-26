@@ -1445,7 +1445,7 @@ class ComposeInspectorTest {
           outputFile.writeText("<html>Blocked by your network administrator</html>")
         }
       }
-    val resolveJar = mavenComposeInspectorResolver(tempFolder.newFolder().toPath(), htmlDownloader)
+    val resolveJar = ComposeInspectorResolution(overrideJar = null, tempFolder.newFolder().toPath(), htmlDownloader).jarResolver(logger)
     val exception =
       assertThrows(IOException::class.java) {
         runBlocking {

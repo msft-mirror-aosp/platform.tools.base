@@ -75,8 +75,20 @@ internal class HttpArtifactDownloader(
   }
 }
 
+/** The outcome of looking for an inspector jar in one place. */
+internal sealed interface JarLookup {
+  /** The inspector jar was found at [location], e.g. a URL, and is now in the local file [jar], e.g. extracted into the cache. */
+  data class Found(val jar: File, val location: String) : JarLookup
+
+  /** The place at [location] did not have the inspector jar, for [reason]. */
+  data class NotFound(val location: String, val reason: String) : JarLookup
+}
+
 /**
- * Resolves and downloads library artifacts from Google's Maven repository and extracts their nested payload jars.
+ * Finds the inspector jars of libraries in Google's Maven repository: downloads a library's AAR and extracts its nested "inspector.jar"
+ * into [cacheDir], where later runs find it.
+ *
+ * The versions passed to it must be valid Maven versions, without path separators: they become part of a file name and a URL.
  *
  * @param downloader The downloader used to download remote AAR artifacts.
  * @param cacheDir The local directory where resolved payload JARs are cached.
@@ -93,14 +105,6 @@ internal class MavenArtifactResolver(
     private const val GOOGLE_MAVEN_BASE_URL = "https://maven.google.com"
 
     /**
-     * The versions [resolve] accepts. The version comes from the inspected app (the Compose version file the app ships), so it can be any
-     * string, and [resolve] puts it in the name of the cached jar and in the download URL. A '/' or '\' would make the cached jar a path
-     * outside the cache directory (e.g. "../../x") and change which URL is downloaded; spaces and control characters don't belong in a URL.
-     * Released Maven versions, e.g. "1.10.4", "1.11.0-alpha05" or "1.7.0-SNAPSHOT", only use the characters allowed here.
-     */
-    private val VALID_VERSION = Regex("[0-9A-Za-z][0-9A-Za-z._+-]*")
-
-    /**
      * The 4 bytes every AAR starts with. An AAR is a zip archive, and a zip archive with entries starts with the signature of its first
      * local file header: 0x04034b50 stored little-endian, i.e. "PK" followed by the bytes 3 and 4. The ZIP format specification (PKWARE
      * APPNOTE.TXT, section 4.3.7) fixes this value, so it never changes.
@@ -108,56 +112,38 @@ internal class MavenArtifactResolver(
     private val ZIP_LOCAL_FILE_HEADER_SIGNATURE = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
   }
 
-  /**
-   * Resolves the given artifact (e.g. "androidx.compose.ui", "ui-android", "1.5.4") from Google Maven, downloads its AAR, and extracts the
-   * nested "inspector.jar".
-   *
-   * @return The local cached file containing the extracted "inspector.jar".
-   * @throws IOException when [version] cannot be used in a file name and a URL, when the download fails, or when the downloaded file is not
-   *   an AAR containing "inspector.jar".
-   */
-  fun resolve(groupId: String, artifactId: String, version: String): File {
-    checkVersion(version)
-    val cachedJarName = "$groupId-$artifactId-$version-inspector.jar"
-    val cachedJar = File(cacheDir, cachedJarName)
-    if (cachedJar.isFile) {
-      return cachedJar
-    }
+  /** Returns the inspector jar of the given artifact (e.g. "androidx.compose.ui", "ui-android", "1.5.4") in [cacheDir], or null. */
+  fun cachedJar(groupId: String, artifactId: String, version: String): File? =
+    cachedJarFile(groupId, artifactId, version).takeIf { it.isFile }
 
+  /**
+   * Downloads the AAR of the given artifact (e.g. "androidx.compose.ui", "ui-android", "1.5.4") from Google Maven and extracts its nested
+   * "inspector.jar" into [cacheDir].
+   *
+   * @return [JarLookup.Found] with the cached jar, or [JarLookup.NotFound] with why the AAR could not be downloaded or has no inspector
+   *   jar.
+   * @throws IOException when the AAR cannot be read, the extracted jar cannot be written to [cacheDir], or the temporary file for the
+   *   download cannot be created.
+   */
+  fun download(groupId: String, artifactId: String, version: String): JarLookup {
     val url = "$GOOGLE_MAVEN_BASE_URL/${groupId.replace('.', '/')}/$artifactId/$version/$artifactId-$version.aar"
-    val tempAar = downloadFromMaven(url, groupId, artifactId, version)
+    val tempAar = File.createTempFile("$groupId-$artifactId-$version-", ".aar")
     try {
-      return installInspectorJar(tempAar, cachedJar, fileMover) ?: throw IOException("$INSPECTOR_JAR_ENTRY_NAME not found in $url")
+      try {
+        downloader.download(url, tempAar)
+        checkIsZipArchive(tempAar, url)
+      } catch (e: IOException) {
+        return JarLookup.NotFound(url, e.message ?: e.javaClass.simpleName)
+      }
+      val jar = installInspectorJar(tempAar, cachedJarFile(groupId, artifactId, version), fileMover)
+      return if (jar != null) JarLookup.Found(jar, url) else JarLookup.NotFound(url, "$INSPECTOR_JAR_ENTRY_NAME not found in $url")
     } finally {
       tempAar.delete()
     }
   }
 
-  /** Throws an [IOException] when [version] is not one of the [VALID_VERSION]s. */
-  private fun checkVersion(version: String) {
-    if (version.isEmpty()) {
-      throw IOException("The app reports an empty version")
-    }
-    if (!VALID_VERSION.matches(version)) {
-      throw IOException(
-        "The version the app reports is not a valid Maven version: it must start with a letter or a digit, and contain only letters, " +
-          "digits, '.', '_', '+' and '-'"
-      )
-    }
-  }
-
-  /** Downloads the AAR at [url] to a local temporary file, and checks that it is a zip archive. */
-  private fun downloadFromMaven(url: String, groupId: String, artifactId: String, version: String): File {
-    val tempAar = File.createTempFile("$groupId-$artifactId-$version-", ".aar")
-    try {
-      downloader.download(url, tempAar)
-      checkIsZipArchive(tempAar, url)
-      return tempAar
-    } catch (e: Exception) {
-      tempAar.delete()
-      throw e
-    }
-  }
+  private fun cachedJarFile(groupId: String, artifactId: String, version: String) =
+    File(cacheDir, "$groupId-$artifactId-$version-inspector.jar")
 
   /**
    * Throws an [IOException] when the file downloaded from [url] is not a zip archive. Reading a file that is not one, e.g. the HTML page a

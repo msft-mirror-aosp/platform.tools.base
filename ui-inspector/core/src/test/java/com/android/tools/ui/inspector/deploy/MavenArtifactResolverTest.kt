@@ -17,7 +17,6 @@
 package com.android.tools.ui.inspector.deploy
 
 import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import com.sun.net.httpserver.HttpServer
 import java.io.File
 import java.io.IOException
@@ -37,33 +36,23 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+private const val AAR_URL = "https://maven.google.com/androidx/compose/ui/ui-android/1.5.4/ui-android-1.5.4.aar"
+
 class MavenArtifactResolverTest {
 
   @get:Rule val tempFolder = TemporaryFolder()
 
-  /** A fake downloader that creates a valid ZIP file representing the AAR, containing "inspector.jar". */
+  /** A fake downloader that writes an AAR containing an "inspector.jar" with [jarContent], and records what it was asked. */
   private class FakeArtifactDownloader(private val jarContent: String) : ArtifactDownloader {
     var recordedUrl: String? = null
+    var outputFile: File? = null
     var downloadCalls = 0
 
     override fun download(url: String, outputFile: File) {
       recordedUrl = url
-      downloadCalls++
-      ZipOutputStream(outputFile.outputStream()).use { zos ->
-        zos.putNextEntry(ZipEntry("inspector.jar"))
-        zos.write(jarContent.toByteArray())
-        zos.closeEntry()
-      }
-    }
-  }
-
-  /** A downloader that writes the response with [writeResponse] and records the file it wrote. */
-  private class RecordingDownloader(private val writeResponse: (File) -> Unit) : ArtifactDownloader {
-    var outputFile: File? = null
-
-    override fun download(url: String, outputFile: File) {
       this.outputFile = outputFile
-      writeResponse(outputFile)
+      downloadCalls++
+      writeAar(outputFile, jarContent)
     }
   }
 
@@ -103,128 +92,56 @@ class MavenArtifactResolverTest {
   }
 
   @Test
-  fun testResolve_extractsInspectorJarSuccessfully() {
+  fun testDownload_extractsInspectorJarIntoTheCache() {
     val fakeDownloader = FakeArtifactDownloader("fake pre-compiled dex classes")
-    val resolver = MavenArtifactResolver(fakeDownloader, tempFolder.newFolder())
-
-    val jarFile = resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4")
-
-    assertThat(jarFile.exists()).isTrue()
-    assertThat(jarFile.readText()).isEqualTo("fake pre-compiled dex classes")
-    assertThat(fakeDownloader.recordedUrl).isEqualTo("https://maven.google.com/androidx/compose/ui/ui-android/1.5.4/ui-android-1.5.4.aar")
-  }
-
-  @Test
-  fun testResolve_throwsIfInspectorJarMissing() {
-    val emptyDownloader =
-      object : ArtifactDownloader {
-        override fun download(url: String, outputFile: File) {
-          // Create an empty zip archive with NO "inspector.jar"
-          ZipOutputStream(outputFile.outputStream()).use { zos ->
-            zos.putNextEntry(ZipEntry("AndroidManifest.xml"))
-            zos.write("<manifest/>".toByteArray())
-            zos.closeEntry()
-          }
-        }
-      }
-    val resolver = MavenArtifactResolver(emptyDownloader, tempFolder.newFolder())
-
-    val exception = assertThrows(IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui", "1.5.4") }
-    assertThat(exception)
-      .hasMessageThat()
-      .isEqualTo("inspector.jar not found in https://maven.google.com/androidx/compose/ui/ui/1.5.4/ui-1.5.4.aar")
-  }
-
-  @Test
-  fun testResolve_nonZipResponse_throwsAndCachesNothing() {
-    val downloader = RecordingDownloader { outputFile -> outputFile.writeText("<html>Blocked by your network administrator</html>") }
     val cacheDir = tempFolder.newFolder()
-    val resolver = MavenArtifactResolver(downloader, cacheDir)
+    val resolver = MavenArtifactResolver(fakeDownloader, cacheDir)
 
-    val exception = assertThrows(IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4") }
+    val lookup = resolver.download("androidx.compose.ui", "ui-android", "1.5.4")
 
-    assertThat(exception)
-      .hasMessageThat()
-      .isEqualTo(
-        "https://maven.google.com/androidx/compose/ui/ui-android/1.5.4/ui-android-1.5.4.aar is not an AAR: the response is not a zip " +
-          "archive (a proxy or firewall may have returned an HTML page)"
-      )
-    assertThat(cacheDir.listFiles()).isEmpty()
-    assertThat(downloader.outputFile!!.exists()).isFalse()
+    val expectedJar = File(cacheDir, "androidx.compose.ui-ui-android-1.5.4-inspector.jar")
+    assertThat(lookup).isEqualTo(JarLookup.Found(expectedJar, AAR_URL))
+    assertThat(expectedJar.readText()).isEqualTo("fake pre-compiled dex classes")
+    assertThat(fakeDownloader.recordedUrl).isEqualTo(AAR_URL)
+    // The downloaded AAR is a temporary file.
+    assertThat(fakeDownloader.outputFile!!.exists()).isFalse()
   }
 
   @Test
-  fun testResolve_emptyResponse_throwsAndCachesNothing() {
-    val downloader = RecordingDownloader { _ -> }
-    val cacheDir = tempFolder.newFolder()
-    val resolver = MavenArtifactResolver(downloader, cacheDir)
-
-    val exception = assertThrows(IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4") }
-
-    assertThat(exception)
-      .hasMessageThat()
-      .isEqualTo("https://maven.google.com/androidx/compose/ui/ui-android/1.5.4/ui-android-1.5.4.aar is not an AAR: the response is empty")
-    assertThat(cacheDir.listFiles()).isEmpty()
-    assertThat(downloader.outputFile!!.exists()).isFalse()
-  }
-
-  @Test
-  fun testResolve_invalidVersion_rejectedBeforeDownload() {
+  fun testDownload_failure_isNotFoundAndLeavesNoFiles() {
     val failingDownloader =
       object : ArtifactDownloader {
+        var outputFile: File? = null
+
         override fun download(url: String, outputFile: File) {
-          throw AssertionError("An invalid version must not be downloaded: $url")
+          this.outputFile = outputFile
+          outputFile.writeText("partial")
+          throw ArtifactHttpStatusException(404, url)
         }
       }
     val cacheDir = tempFolder.newFolder()
-    val resolver = MavenArtifactResolver(failingDownloader, cacheDir)
 
-    // "1.0\n" cannot come from the agent, which trims the version it reads, but nothing else stops it before the version becomes a path.
-    for (version in listOf("../x", "1.0/2", "1.0\\2", "1.0 2", ".1", "-1", "1.0\n", "1.0\u0000")) {
-      val exception =
-        assertThrows("version=$version", IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui-android", version) }
-      assertWithMessage("version=$version")
-        .that(exception)
-        .hasMessageThat()
-        .startsWith("The version the app reports is not a valid Maven version: ")
-    }
-    val emptyVersionException = assertThrows(IOException::class.java) { resolver.resolve("androidx.compose.ui", "ui-android", "") }
-    assertThat(emptyVersionException).hasMessageThat().isEqualTo("The app reports an empty version")
+    val lookup = MavenArtifactResolver(failingDownloader, cacheDir).download("androidx.compose.ui", "ui-android", "1.5.4")
+
+    assertThat((lookup as JarLookup.NotFound).location).isEqualTo(AAR_URL)
     assertThat(cacheDir.listFiles()).isEmpty()
+    assertThat(failingDownloader.outputFile!!.exists()).isFalse()
   }
 
   @Test
-  fun testResolve_acceptsTypicalVersions() {
-    val versions = listOf("1.10.4", "1.11.0-alpha05", "1.0.0-beta01", "1.7.0-SNAPSHOT", "1.2.3+build_4")
-    for (version in versions) {
-      val fakeDownloader = FakeArtifactDownloader("fake pre-compiled dex classes")
-      val resolver = MavenArtifactResolver(fakeDownloader, tempFolder.newFolder())
-
-      val jarFile = resolver.resolve("androidx.compose.ui", "ui-android", version)
-
-      assertWithMessage("version=$version").that(jarFile.readText()).isEqualTo("fake pre-compiled dex classes")
-      assertWithMessage("version=$version")
-        .that(fakeDownloader.recordedUrl)
-        .isEqualTo("https://maven.google.com/androidx/compose/ui/ui-android/$version/ui-android-$version.aar")
-    }
-  }
-
-  @Test
-  fun testResolve_servesFromCacheOnSecondCall() {
+  fun testCachedJar_isNullUntilTheJarIsDownloaded() {
     val fakeDownloader = FakeArtifactDownloader("fake pre-compiled dex classes")
     val resolver = MavenArtifactResolver(fakeDownloader, tempFolder.newFolder())
 
-    val jarFile1 = resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4")
-    val jarFile2 = resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4")
+    assertThat(resolver.cachedJar("androidx.compose.ui", "ui-android", "1.5.4")).isNull()
+    val lookup = resolver.download("androidx.compose.ui", "ui-android", "1.5.4") as JarLookup.Found
 
-    assertThat(jarFile1).isEqualTo(jarFile2)
-    assertThat(jarFile2.exists()).isTrue()
-    assertThat(jarFile2.readText()).isEqualTo("fake pre-compiled dex classes")
+    assertThat(resolver.cachedJar("androidx.compose.ui", "ui-android", "1.5.4")).isEqualTo(lookup.jar)
     assertThat(fakeDownloader.downloadCalls).isEqualTo(1)
   }
 
   @Test
-  fun testResolve_concurrentResolutions() {
+  fun testDownload_concurrentDownloads() {
     val jarContent = "fake pre-compiled dex classes"
     val threadCount = 10
     val barrier = CyclicBarrier(threadCount)
@@ -237,20 +154,16 @@ class MavenArtifactResolverTest {
           } catch (e: Exception) {
             throw RuntimeException(e)
           }
-          ZipOutputStream(outputFile.outputStream()).use { zos ->
-            zos.putNextEntry(ZipEntry("inspector.jar"))
-            zos.write(jarContent.toByteArray())
-            zos.closeEntry()
-          }
+          writeAar(outputFile, jarContent)
         }
       }
     val resolver = MavenArtifactResolver(fakeDownloader, tempFolder.newFolder())
 
     val executor = Executors.newFixedThreadPool(threadCount)
-    val futures = (1..threadCount).map { executor.submit(Callable { resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4") }) }
+    val futures = (1..threadCount).map { executor.submit(Callable { resolver.download("androidx.compose.ui", "ui-android", "1.5.4") }) }
 
     futures.forEach { future ->
-      val jarFile = future.get()
+      val jarFile = (future.get() as JarLookup.Found).jar
       assertThat(jarFile.exists()).isTrue()
       assertThat(jarFile.readText()).isEqualTo(jarContent)
     }
@@ -258,7 +171,7 @@ class MavenArtifactResolverTest {
   }
 
   @Test
-  fun testResolve_ignoresMoveExceptionIfDestinationExists() {
+  fun testDownload_ignoresMoveExceptionIfDestinationExists() {
     val fakeDownloader = FakeArtifactDownloader("fake jar content")
     val cacheDir = tempFolder.newFolder()
 
@@ -275,12 +188,10 @@ class MavenArtifactResolverTest {
         },
       )
 
-    // Call resolve. Since the destination file is concurrently written and exists,
-    // this should return successfully despite the move exception.
-    val jarFile = resolver.resolve("androidx.compose.ui", "ui-android", "1.5.4")
+    // Since the destination file is concurrently written and exists, this should succeed despite the move exception.
+    val jarFile = (resolver.download("androidx.compose.ui", "ui-android", "1.5.4") as JarLookup.Found).jar
 
     assertThat(moveAttempted).isTrue()
-    assertThat(jarFile.exists()).isTrue()
     assertThat(jarFile.isFile).isTrue()
     assertThat(jarFile.readText()).isEqualTo("concurrently written correct jar content")
   }
@@ -299,5 +210,14 @@ class MavenArtifactResolverTest {
     } finally {
       server.stop(0)
     }
+  }
+}
+
+/** Writes an AAR containing an "inspector.jar" with [jarContent] to [file]. */
+private fun writeAar(file: File, jarContent: String) {
+  ZipOutputStream(file.outputStream()).use { zos ->
+    zos.putNextEntry(ZipEntry("inspector.jar"))
+    zos.write(jarContent.toByteArray())
+    zos.closeEntry()
   }
 }

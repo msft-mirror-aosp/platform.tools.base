@@ -70,7 +70,7 @@ internal suspend fun <T> runWithConnectedInspectors(
   block: suspend (CommandSender, Boolean) -> T,
 ): T {
   val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorResolution.overrideJar, logger)
-  val resolveComposeInspectorJar = composeInspectorResolution.jarResolver()
+  val resolveComposeInspectorJar = composeInspectorResolution.jarResolver(logger)
   return try {
     try {
       connectAndRunInspectors(
