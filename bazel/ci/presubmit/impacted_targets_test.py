@@ -99,11 +99,12 @@ class ImpactedTargetsTest(absltest.TestCase):
         '--config=ci',
         '--//tools/base/bazel/ci:ab_target=studio-test',
     )
+    self.assertIsInstance(info.baseline_targets, set)
     self.assertEqual(
         info,
         impacted_targets.ImpactedTargetsInfo(
             all_targets=expected_impacted_targets,
-            baseline_targets=['target2', 'target3'],
+            baseline_targets={'target2', 'target3'},
             base_hashes_source='gcs',
         ),
     )

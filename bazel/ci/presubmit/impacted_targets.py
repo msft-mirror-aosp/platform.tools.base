@@ -374,7 +374,7 @@ def query_baseline_targets(
     build_env: bazel.BuildEnv,
     base_targets: Sequence[str],
     test_flag_filters: str,
-) -> List[str]:
+) -> Set[str]:
   """Queries the targets that match the given filters.
 
   The cquery command is used to resolve select() clauses with platform
@@ -387,7 +387,7 @@ def query_baseline_targets(
     test_flag_filters: The test flag filters used for filtering.
 
   Returns:
-    A list of target labels.
+    A set of target labels.
   """
   filters = test_flag_filters.split(',') if test_flag_filters else []
   filters.append('-manual')
@@ -430,7 +430,4 @@ def query_baseline_targets(
       .splitlines()
   )
   # Filter out the configuration suffix from the target labels.
-  baseline_targets = []
-  for line in output:
-    baseline_targets.append(line.split(' ', 1)[0])
-  return baseline_targets
+  return {line.split(' ', 1)[0] for line in output}
