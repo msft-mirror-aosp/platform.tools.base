@@ -18,6 +18,8 @@ package com.android.build.gradle.tasks
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
+import com.android.builder.testing.api.DeviceConnector
+import com.android.builder.testing.api.DeviceException
 import com.google.common.truth.Truth.assertThat
 import java.util.Properties
 import java.util.concurrent.ExecutionException
@@ -26,6 +28,8 @@ import org.gradle.api.tasks.VerificationException
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class TestSuiteTestTaskTest {
 
@@ -118,5 +122,20 @@ class TestSuiteTestTaskTest {
     val thrown = assertFailsWith<ExecutionException> { runUnwrappingVerificationFailures { throw otherFailure } }
 
     assertThat(thrown).isSameInstanceAs(otherFailure)
+  }
+
+  @Test
+  fun connectedDeviceTargets_offlineDevice_failsOnlyWhenItsConfigIsRead() {
+    val onlineDevice = mock<DeviceConnector>()
+    whenever(onlineDevice.serialNumber).thenReturn("emulator-5554")
+    val offlineDevice = mock<DeviceConnector>()
+    whenever(offlineDevice.serialNumber).thenReturn("emulator-5560")
+    whenever(offlineDevice.deviceConfig).thenThrow(DeviceException("device offline"))
+
+    // Only app bundle tests read the configuration, so a device that went offline doesn't fail other test suites.
+    val targets = TestSuiteTestTask.connectedDeviceTargets(listOf(onlineDevice, offlineDevice))
+
+    assertThat(targets.map { it.serialNumber }).containsExactly("emulator-5554", "emulator-5560").inOrder()
+    assertFailsWith<DeviceException> { targets.last().deviceConfigProvider }
   }
 }

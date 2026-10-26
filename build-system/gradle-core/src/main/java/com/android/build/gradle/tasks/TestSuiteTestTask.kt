@@ -72,6 +72,7 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.ComponentType
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
+import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
 import java.io.File
 import java.util.Locale
@@ -303,11 +304,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   ) {
     val deviceProvider = deviceProviderFactory.getDeviceProvider(buildTools.adbExecutable(), androidDeviceSerials.orNull)
     try {
-      deviceProvider.use {
-        val targets =
-          deviceProvider.devices.map { connector -> DeviceTestTarget(connector.serialNumber, DeviceConfigProviderImpl(connector)) }
-        onDevicesReady(targets, null)
-      }
+      deviceProvider.use { onDevicesReady(connectedDeviceTargets(deviceProvider.devices), null) }
     } catch (e: DeviceException) {
       onDevicesReady(listOf(), e)
     }
@@ -343,7 +340,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           onlineDevices.add(
             DeviceTestTarget(
               serial,
-              DslDeviceConfigProvider(device),
+              { DslDeviceConfigProvider(device) },
               "${device.name}_$index",
               numShards = devicesAcquired,
               shardIndex = index,
@@ -351,7 +348,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           )
         }
       } else {
-        onlineDevices.add(DeviceTestTarget(onlineDeviceSerials.first(), DslDeviceConfigProvider(device), device.name))
+        onlineDevices.add(DeviceTestTarget(onlineDeviceSerials.first(), { DslDeviceConfigProvider(device) }, device.name))
       }
       provisionManagedDevicesAndExecute(iterator, onlineDevices, onDevicesReady)
     }
@@ -1330,11 +1327,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   class DeviceTestTarget(
     val serialNumber: String,
-    val deviceConfigProvider: DeviceConfigProvider,
+    deviceConfigProvider: () -> DeviceConfigProvider,
     val deviceName: String? = null,
     val numShards: Int? = null,
     val shardIndex: Int? = null,
-  )
+  ) {
+    /** Read on first use: only app bundle tests need it, and reading it fails if a connected device went offline. */
+    val deviceConfigProvider: DeviceConfigProvider by lazy(deviceConfigProvider)
+  }
 
   /**
    * Implementation of [DeviceConfigProvider] that resolves device characteristics directly from the [ManagedVirtualDevice] DSL. This
@@ -1382,6 +1382,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     const val UNIT_TEST_TEST_SUITE_NAME = "UnitTest"
 
     const val CONNECTED_TEST_TEST_SUITE_TARGET_NAME = "connected"
+
+    /** Returns the test targets for the [devices] connected through adb. */
+    internal fun connectedDeviceTargets(devices: List<DeviceConnector>): List<DeviceTestTarget> = devices.map { device ->
+      DeviceTestTarget(device.serialNumber, { DeviceConfigProviderImpl(device) })
+    }
 
     fun parseMetadata(metadataFile: File): Map<String, String> {
       val metadata =
