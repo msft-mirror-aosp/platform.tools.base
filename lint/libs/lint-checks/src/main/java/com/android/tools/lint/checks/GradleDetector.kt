@@ -605,7 +605,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
     } else if (
       parent == "dependencies" ||
-        parent == "declarativeDependencies" ||
         // KMP dependencies?
         parentParent == "dependencies" && property == "implementation"
     ) {
@@ -683,7 +682,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             if (
               tomlLibraries != null &&
                 !context.file.name.startsWith("settings.gradle") &&
-                !context.file.name.endsWith(".gradle.dcl") &&
                 !dependencyString.contains("+") &&
                 (!dependencyString.contains("$") || isResolved) &&
                 dependency.group?.isNotBlank() == true
@@ -1230,7 +1228,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       val replaceFix = fix().name("Replace with mavenCentral").replace().text("jcenter").with("mavenCentral").build()
       val deleteFix = fix().name("Delete this repository declaration").replace().all().with("").build()
       report(context, cookie, JCENTER_REPOSITORY_OBSOLETE, message, fix().alternatives(replaceFix, deleteFix))
-    } else if (parent == "dependencies" || parent == "declarativeDependencies") {
+    } else if (parent == "dependencies") {
       if (statement != "files" && cookie is UCallExpression && cookie.valueArgumentCount >= 3) {
         val (dependency, versionElement) = getKtsDependency(cookie) ?: return
         context.driver.runLaterOutsideReadAction { checkDependency(context, dependency, false, versionElement, cookie) }

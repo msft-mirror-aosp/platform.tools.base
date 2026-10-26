@@ -399,10 +399,6 @@ public abstract class LintDetectorTest extends BaseLintDetectorTest {
         return TestFiles.kts(to, source);
     }
 
-    @NonNull
-    public static TestFile dcl(@NonNull String to, @NonNull @Language("dcl") String source) {
-        return TestFiles.dcl(to, source);
-    }
 
     @NonNull
     public static TestFile xml(@NonNull String to, @NonNull @Language("XML") String source) {

@@ -162,7 +162,7 @@ abstract class DependencyDetector<T : DependencyDetector.DependencyIssue> : Dete
     if (!context.driver.isIsolated() && targets == null) {
       return
     }
-    if (parent == "dependencies" || parent == "declarativeDependencies") {
+    if (parent == "dependencies") {
       val dependencyString = getStringLiteralValue(value, valueCookie) ?: getNamedDependency(value)
       if (dependencyString != null) {
         val dependency = Dependency.parse(dependencyString)

@@ -1541,11 +1541,7 @@ fun findGradleRootDir(projectDir: File): File? {
   while (true) {
     // The settings file is the best marker for the root of the
     // Gradle project.
-    if (
-      File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() ||
-        File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists() ||
-        File(parent, SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE).exists()
-    ) {
+    if (File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() || File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists()) {
       return parent
     }
     parent = parent.parentFile ?: break

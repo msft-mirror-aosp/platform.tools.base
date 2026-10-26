@@ -65,11 +65,7 @@ fun Project.isDesignatedGradleRootHolder(client: LintClient): Boolean {
   val moduleDirs = root.listFiles()?.sorted()
   if (moduleDirs != null) {
     for (moduleDir in moduleDirs) {
-      if (
-        File(moduleDir, SdkConstants.FN_BUILD_GRADLE).exists() ||
-          File(moduleDir, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
-          File(moduleDir, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists()
-      ) {
+      if (File(moduleDir, SdkConstants.FN_BUILD_GRADLE).exists() || File(moduleDir, SdkConstants.FN_BUILD_GRADLE_KTS).exists()) {
         return dir.path.equals(moduleDir.path, ignoreCase = true)
       }
     }

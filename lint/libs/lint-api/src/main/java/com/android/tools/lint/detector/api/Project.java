@@ -30,14 +30,12 @@ import static com.android.SdkConstants.DOT_VERSIONS_DOT_TOML;
 import static com.android.SdkConstants.FD_GRADLE;
 import static com.android.SdkConstants.FD_GRADLE_WRAPPER;
 import static com.android.SdkConstants.FN_BUILD_GRADLE;
-import static com.android.SdkConstants.FN_BUILD_GRADLE_DECLARATIVE;
 import static com.android.SdkConstants.FN_BUILD_GRADLE_KTS;
 import static com.android.SdkConstants.FN_GRADLE_PROPERTIES;
 import static com.android.SdkConstants.FN_GRADLE_WRAPPER_PROPERTIES;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
 import static com.android.SdkConstants.FN_SETTINGS_GRADLE;
-import static com.android.SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE;
 import static com.android.SdkConstants.FN_SETTINGS_GRADLE_KTS;
 import static com.android.SdkConstants.OLD_PROGUARD_FILE;
 import static com.android.SdkConstants.PROGUARD_CONFIG;
@@ -1403,19 +1401,11 @@ public class Project {
                 if (build.exists()) {
                     gradleFiles.add(build);
                 }
-                build = new File(dir, FN_BUILD_GRADLE_DECLARATIVE);
-                if (build.exists()) {
-                    gradleFiles.add(build);
-                }
                 File settings = new File(dir, FN_SETTINGS_GRADLE);
                 if (settings.exists()) {
                     gradleFiles.add(settings);
                 }
                 settings = new File(dir, FN_SETTINGS_GRADLE_KTS);
-                if (settings.exists()) {
-                    gradleFiles.add(settings);
-                }
-                settings = new File(dir, FN_SETTINGS_GRADLE_DECLARATIVE);
                 if (settings.exists()) {
                     gradleFiles.add(settings);
                 }

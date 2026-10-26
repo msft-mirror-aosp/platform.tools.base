@@ -21,7 +21,6 @@ import com.android.SdkConstants.ATTR_IGNORE
 import com.android.SdkConstants.CLASS_CONSTRUCTOR
 import com.android.SdkConstants.CONSTRUCTOR_NAME
 import com.android.SdkConstants.DOT_CLASS
-import com.android.SdkConstants.DOT_DECLARATIVE
 import com.android.SdkConstants.DOT_GRADLE
 import com.android.SdkConstants.DOT_GRADLE_KTS
 import com.android.SdkConstants.DOT_JAR
@@ -1363,7 +1362,7 @@ class LintDriver(
       while (queue.isNotEmpty()) {
         val file = queue.removeFirst()
         val path = file.path
-        if (path.endsWith(DOT_GRADLE_KTS) || path.endsWith(DOT_DECLARATIVE)) {
+        if (path.endsWith(DOT_GRADLE_KTS)) {
           val context =
             fileToKts[file]
               ?: run {
@@ -1929,11 +1928,7 @@ class LintDriver(
 
     // build.gradle.kts files.
     val gradleKtsContexts =
-      project.gradleBuildScripts
-        .asSequence()
-        .filter { it.name.endsWith(DOT_KTS) || it.name.endsWith(DOT_DECLARATIVE) }
-        .map { JavaContext(this, project, main, it) }
-        .toList()
+      project.gradleBuildScripts.asSequence().filter { it.name.endsWith(DOT_KTS) }.map { JavaContext(this, project, main, it) }.toList()
 
     return findUastSources(
       contexts,
@@ -2065,12 +2060,12 @@ class LintDriver(
     val generatedFolders = project.generatedSourceFolders
     for (file in files) {
       val path = file.path
-      if (path.endsWith(DOT_JAVA) || path.endsWith(DOT_KT) || path.endsWith(DOT_KTS) || path.endsWith(DOT_DECLARATIVE)) {
+      if (path.endsWith(DOT_JAVA) || path.endsWith(DOT_KT) || path.endsWith(DOT_KTS)) {
         val context = JavaContext(this, project, main, file)
 
         when {
           // Figure out if this file is a Gradle .kts context
-          path.endsWith(DOT_KTS) || path.endsWith(DOT_DECLARATIVE) -> {
+          path.endsWith(DOT_KTS) -> {
             gradleKtsContexts.add(context)
           }
           // instrumented test context
