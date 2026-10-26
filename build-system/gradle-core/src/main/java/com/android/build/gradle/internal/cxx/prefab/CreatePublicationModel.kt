@@ -41,7 +41,7 @@ fun createPrefabPublication(
   nativeBuildCreationConfig: NativeBuildCreationConfig,
 ): PrefabPublication {
 
-  val abis =
+  val abis by lazy {
     configurationModel.activeAbis.map { abi ->
       PrefabAbiPublication(
         abiName = abi.name,
@@ -52,6 +52,7 @@ fun createPrefabPublication(
         abiAndroidGradleBuildJsonFile = abi.jsonFile.absoluteFile,
       )
     }
+  }
   val modules =
     libraryVariant.global.prefab.map { options ->
       val experimentalSettings = nativeBuildCreationConfig.getPrefabExperimentalPackagingOptions(options.name)
@@ -62,7 +63,7 @@ fun createPrefabPublication(
         moduleHeaders =
           options.headers?.let { headers -> libraryVariant.services.projectInfo.projectDirectory.dir(headers).asFile.absoluteFile },
         moduleExportLibraries = experimentalSettings.exportLibraries ?: listOf(),
-        abis = abis,
+        abis = if (options.headerOnly) listOf() else abis,
       )
     }
   return PrefabPublication(

@@ -150,14 +150,17 @@ class PrefabPublishingTest(private val buildType: String, private val buildSyste
 
   private fun verifyLibrariesForAbi(abi: CxxAbiModel, moduleDir: File, moduleName: String, libraryName: String?, libraryType: LibraryType) {
     val prefix = libraryName ?: "lib$moduleName"
+    val abiDir = moduleDir.resolve("libs/android.${abi.name}")
     val suffix =
       when (libraryType) {
         LibraryType.Static -> ".a"
         LibraryType.Shared -> ".so"
-        LibraryType.HeaderOnly -> return
+        LibraryType.HeaderOnly -> {
+          Truth.assertThat(abiDir.exists()).isFalse()
+          return
+        }
       }
 
-    val abiDir = moduleDir.resolve("libs/android.${abi.name}")
     val abiMetadata = abiDir.resolve("abi.json").readText()
     val apiLevel = abi.minSdkVersion
 
@@ -553,6 +556,220 @@ class PrefabPublishingTest(private val buildType: String, private val buildSyste
     val packageDir = project.getSubproject(gradleModuleName).getIntermediateFile("prefab_package", buildType, "prefab")
 
     verifyModule(project, packageDir, gradleModuleName, libraryType = LibraryType.HeaderOnly)
+  }
+
+  @Test
+  fun `simultaneous publishing of built library and header only library`() {
+    val subproject = project.getSubproject(gradleModuleName)
+
+    subproject.buildFile.appendText(
+      """
+
+      android.prefab.create("headeronly") {
+          headers = "src/main/cpp/include"
+          headerOnly = true
+      }
+      """
+        .trimIndent()
+    )
+
+    subproject
+      .getMainSrcDir("cpp")
+      .resolve("CMakeLists.txt")
+      .appendText(
+        """
+
+        add_library(headeronly INTERFACE)
+        target_include_directories(headeronly INTERFACE include)
+        """
+          .trimIndent()
+      )
+    subproject
+      .getMainSrcDir("cpp")
+      .resolve("Android.mk")
+      .appendText(
+        """
+
+        include $(CLEAR_VARS)
+        LOCAL_MODULE := headeronly
+        LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
+        include $(BUILD_STATIC_LIBRARY)
+        """
+          .trimIndent()
+      )
+
+    executor().run("assemble$buildType")
+
+    val packageDir = project.getSubproject(gradleModuleName).getIntermediateFile("prefab_package", buildType, "prefab")
+
+    verifyModule(project, packageDir, gradleModuleName, libraryType = LibraryType.Shared)
+    verifyModule(project, packageDir, "${gradleModuleName}_static", libraryType = LibraryType.Static)
+    verifyModule(project, packageDir, "headeronly", libraryType = LibraryType.HeaderOnly)
+  }
+
+  @Test
+  fun `imported libraries packaging into aar`() {
+    Assume.assumeTrue(buildSystem == NativeBuildSystem.CMAKE)
+
+    val subproject = project.getSubproject(gradleModuleName)
+    subproject.buildFile.writeText(
+      """
+      plugins {
+          id 'com.android.library'
+      }
+
+      android {
+          namespace = "com.example.foo"
+          compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
+          buildToolsVersion = libs.versions.buildToolsVersion.get()
+
+          defaultConfig {
+              minSdkVersion 21
+              targetSdkVersion libs.versions.latestCompileSdk.get()
+              ndk {
+                  abiFilters "x86_64"
+              }
+              externalNativeBuild {
+                  cmake {
+                      arguments "-DANDROID_STL=c++_shared"
+                  }
+              }
+          }
+
+          externalNativeBuild {
+              cmake {
+                  path "src/main/cpp/CMakeLists.txt"
+                  version = "$cmakeVersion"
+              }
+          }
+
+          buildFeatures {
+              prefabPublishing = true
+          }
+
+          prefab {
+              imported_lib {
+                  headers = "src/main/cpp/include"
+              }
+              imported_static {
+                  headers = "src/main/cpp/include"
+              }
+          }
+      }
+      """
+        .trimIndent()
+    )
+
+    subproject
+      .getMainSrcDir("cpp")
+      .resolve("CMakeLists.txt")
+      .writeText(
+        """
+        cmake_minimum_required(VERSION 3.6)
+        project(dummy LANGUAGES CXX)
+        """
+          .trimIndent()
+      )
+
+    val includeDir = subproject.getMainSrcDir("cpp").resolve("include")
+    includeDir.mkdirs()
+    includeDir.resolve("imported_lib.h").writeText("// header\n")
+
+    val configureTask = if (buildType == "debug") "configureCMakeDebug" else "configureCMakeRelWithDebInfo"
+    executor().run(":$gradleModuleName:$configureTask[x86_64]")
+
+    val prebuiltDir = subproject.projectDir.resolve("prebuilts/x86_64")
+    prebuiltDir.mkdirs()
+    val prebuiltSo = prebuiltDir.resolve("libimported_lib.so")
+    prebuiltSo.writeBytes("dummy elf shared object content".toByteArray())
+    val prebuiltDep = prebuiltDir.resolve("libdep.so")
+    prebuiltDep.writeBytes("dummy dep shared object content".toByteArray())
+    val prebuiltStatic = prebuiltDir.resolve("libimported_static.a")
+    prebuiltStatic.writeBytes("dummy archive content".toByteArray())
+    val prebuiltUnrelated = prebuiltDir.resolve("libunrelated.so")
+    prebuiltUnrelated.writeBytes("dummy unrelated content".toByteArray())
+
+    fun jsonPath(file: File) = file.absolutePath.replace("\\", "\\\\")
+    val importedEntry =
+      """
+      "imported_lib": {
+        "artifactName": "imported_lib",
+        "abi": "x86_64",
+        "output": "${jsonPath(prebuiltSo)}",
+        "runtimeFiles": ["${jsonPath(prebuiltDep)}"],
+        "imported": true
+      },
+      "imported_static": {
+        "artifactName": "imported_static",
+        "abi": "x86_64",
+        "output": "${jsonPath(prebuiltStatic)}",
+        "imported": true
+      },
+      "unrelated": {
+        "artifactName": "unrelated",
+        "abi": "x86_64",
+        "output": "${jsonPath(prebuiltUnrelated)}",
+        "imported": true
+      }
+      """
+        .trimIndent()
+
+    val cxxFolder = subproject.projectDir.resolve(".cxx")
+    val allJsonFiles =
+      cxxFolder
+        .walkTopDown()
+        .filter {
+          it.name == "android_gradle_build.json" || it.name == "android_gradle_build_mini.json"
+        }
+        .toList()
+    Truth.assertThat(allJsonFiles).isNotEmpty()
+
+    for (file in allJsonFiles) {
+      val text = file.readText()
+      val augmented =
+        if (text.contains("\"libraries\": {}")) {
+          text.replace("\"libraries\": {}", "\"libraries\": {\n$importedEntry\n}")
+        } else {
+          text.replace("\"libraries\": {", "\"libraries\": {\n$importedEntry,\n")
+        }
+      file.writeText(augmented)
+    }
+
+    executor()
+      .withArgument("-x")
+      .withArgument(":$gradleModuleName:$configureTask[x86_64]")
+      .withArgument("-x")
+      .withArgument(":$gradleModuleName:$configureTask")
+      .run("assemble$buildType")
+
+    val packageDir = subproject.getIntermediateFile("prefab_package", buildType, "prefab")
+    Truth.assertThat(packageDir.resolve("modules/imported_lib/libs/android.x86_64/libimported_lib.so").isFile).isTrue()
+    Truth.assertThat(packageDir.resolve("modules/imported_static/libs/android.x86_64/libimported_static.a").isFile).isTrue()
+
+    subproject.assertAar(AarSelector.of(buildType)) {
+      folder("prefab") {
+        contains("modules/imported_lib/module.json")
+        contains("modules/imported_lib/libs/android.x86_64/libimported_lib.so")
+        contains("modules/imported_static/module.json")
+        contains("modules/imported_static/libs/android.x86_64/libimported_static.a")
+        entries().doesNotContain("modules/unrelated/module.json")
+      }
+      folder("jni/x86_64") {
+        containsExactly("libimported_lib.so", "libdep.so", "libc++_shared.so")
+      }
+    }
+
+    prebuiltSo.delete()
+    val failure =
+      executor()
+        .withArgument("-x")
+        .withArgument(":$gradleModuleName:$configureTask[x86_64]")
+        .withArgument("-x")
+        .withArgument(":$gradleModuleName:$configureTask")
+        .expectFailure()
+        .run("assemble$buildType")
+    failure.assertErrorContains("Imported library file")
+    failure.assertErrorContains("of target imported_lib does not exist")
   }
 
   private fun executor(): GradleTaskExecutor {

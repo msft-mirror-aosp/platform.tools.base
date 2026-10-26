@@ -209,7 +209,7 @@ fun tryCreateConfigurationParameters(projectOptions: ProjectOptions, variant: Va
     } else {
       null
     }
-  val prefabTargets = globalConfig.prefabOrEmpty.map { it.name }.toSet()
+  val prefabTargets = globalConfig.prefabOrEmpty.filterNot { it.headerOnly }.map { it.name }.toSet()
 
   /** Prefab settings. */
   val prefabPackageDirectoryList =
