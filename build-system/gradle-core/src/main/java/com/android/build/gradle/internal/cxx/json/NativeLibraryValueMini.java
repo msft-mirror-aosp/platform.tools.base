@@ -35,4 +35,5 @@ public class NativeLibraryValueMini {
     @Nullable public String abi;
     @Nullable public File output;
     @NonNull public List<File> runtimeFiles = Lists.newArrayList();
+    @Nullable public Boolean imported;
 }

@@ -20,8 +20,12 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.gson.stream.JsonReader;
 import com.google.wireless.android.sdk.stats.GradleBuildVariant;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.HashMap;
 import org.junit.Test;
 
 public class AndroidBuildGradleJsonsTest {
@@ -110,6 +114,88 @@ public class AndroidBuildGradleJsonsTest {
                                 + "}");
 
         GradleBuildVariant.NativeLibraryInfo library = stats.getLibraries(0);
+    }
+
+    @Test
+    public void testParseToMiniConfigReadsImported() throws IOException {
+        NativeBuildConfigValueMini config =
+                AndroidBuildGradleJsons.parseToMiniConfig(
+                        new JsonReader(
+                                new StringReader(
+                                        "{\n"
+                                                + "  \"libraries\": {\n"
+                                                + "    \"built\": {\n"
+                                                + "      \"artifactName\": \"built\"\n"
+                                                + "    },\n"
+                                                + "    \"prebuilt\": {\n"
+                                                + "      \"artifactName\": \"prebuilt\",\n"
+                                                + "      \"imported\": true\n"
+                                                + "    }\n"
+                                                + "  }\n"
+                                                + "}")));
+        assertThat(config.libraries.get("built").imported).isNull();
+        assertThat(config.libraries.get("prebuilt").imported).isTrue();
+    }
+
+    @Test
+    public void testMiniConfigSerializationOmitsNullImported() throws IOException {
+        NativeBuildConfigValueMini mini = new NativeBuildConfigValueMini();
+        NativeLibraryValueMini built = new NativeLibraryValueMini();
+        built.artifactName = "built";
+        NativeLibraryValueMini prebuilt = new NativeLibraryValueMini();
+        prebuilt.artifactName = "prebuilt";
+        prebuilt.imported = true;
+        mini.libraries.put("built", built);
+        mini.libraries.put("prebuilt", prebuilt);
+
+        File tempFile = File.createTempFile("mini_config", ".json");
+        try {
+            AndroidBuildGradleJsons.writeNativeBuildMiniConfigValueToJsonFile(tempFile, mini);
+            String jsonContent =
+                    new String(Files.readAllBytes(tempFile.toPath()), StandardCharsets.UTF_8);
+            assertThat(jsonContent).doesNotContain("\"imported\": false");
+            assertThat(jsonContent).contains("\"imported\": true");
+
+            NativeBuildConfigValueMini parsed =
+                    AndroidBuildGradleJsons.parseToMiniConfig(
+                            new JsonReader(new StringReader(jsonContent)));
+            assertThat(parsed.libraries.get("built").imported).isNull();
+            assertThat(parsed.libraries.get("prebuilt").imported).isTrue();
+        } finally {
+            tempFile.delete();
+        }
+    }
+
+    @Test
+    public void testWriteFullConfigAndCompositeVisitorPreservesImported() throws IOException {
+        NativeBuildConfigValue config = new NativeBuildConfigValue();
+        config.libraries = new HashMap<>();
+        NativeLibraryValue built = new NativeLibraryValue();
+        built.artifactName = "built";
+        NativeLibraryValue prebuilt = new NativeLibraryValue();
+        prebuilt.artifactName = "prebuilt";
+        prebuilt.imported = true;
+        config.libraries.put("built", built);
+        config.libraries.put("prebuilt", prebuilt);
+
+        File tempFile = File.createTempFile("full_config", ".json");
+        try {
+            AndroidBuildGradleJsons.writeNativeBuildConfigValueToJsonFile(tempFile, config);
+            String jsonContent =
+                    new String(Files.readAllBytes(tempFile.toPath()), StandardCharsets.UTF_8);
+            assertThat(jsonContent).doesNotContain("\"imported\": false");
+            assertThat(jsonContent).doesNotContain("\"imported\": null");
+            assertThat(jsonContent).contains("\"imported\": true");
+
+            GradleBuildVariant.Builder stats = GradleBuildVariant.newBuilder();
+            NativeBuildConfigValueMini parsed =
+                    AndroidBuildGradleJsons.parseToMiniConfigAndGatherStatistics(
+                            new JsonReader(new StringReader(jsonContent)), stats);
+            assertThat(parsed.libraries.get("built").imported).isNull();
+            assertThat(parsed.libraries.get("prebuilt").imported).isTrue();
+        } finally {
+            tempFile.delete();
+        }
     }
 
     private GradleBuildVariant.NativeBuildConfigInfo parseAndApplyStatistics(String text)

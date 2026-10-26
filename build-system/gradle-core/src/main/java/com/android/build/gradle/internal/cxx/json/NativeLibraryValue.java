@@ -42,4 +42,5 @@ public class NativeLibraryValue {
      */
     @Nullable public File output;
     @Nullable public Collection<File> runtimeFiles;
+    @Nullable public Boolean imported;
 }

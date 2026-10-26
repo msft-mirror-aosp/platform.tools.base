@@ -103,6 +103,11 @@ public class AndroidBuildGradleJsonCompositeVisitor extends AndroidBuildGradleJs
     }
 
     @Override
+    protected void visitLibraryImported(boolean imported) {
+        visitors.forEach(parser -> parser.visitLibraryImported(imported));
+    }
+
+    @Override
     protected void visitLibraryToolchain(@NonNull String toolchain) {
         visitors.forEach(parser -> parser.visitLibraryToolchain(toolchain));
     }

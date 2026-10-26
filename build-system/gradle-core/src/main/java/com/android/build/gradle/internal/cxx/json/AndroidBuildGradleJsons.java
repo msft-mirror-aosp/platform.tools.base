@@ -224,5 +224,11 @@ public class AndroidBuildGradleJsons {
             super.visitLibraryRuntimeFile(runtimeFile);
             miniConfig.libraries.get(libraryName).runtimeFiles.add(new File(runtimeFile));
         }
+
+        @Override
+        protected void visitLibraryImported(boolean imported) {
+            super.visitLibraryImported(imported);
+            miniConfig.libraries.get(libraryName).imported = imported;
+        }
     }
 }

@@ -18,10 +18,30 @@ package com.android.build.gradle.internal.cxx.cmake
 
 data class CmakeFileApiCodeModelDataV2(val configurations: List<ConfigurationDataV2>)
 
-data class ConfigurationDataV2(val targets: List<ConfigurationTargetDataV2>)
+data class ConfigurationDataV2(
+  val targets: List<ConfigurationTargetDataV2>,
+  val abstractTargets: List<ConfigurationTargetDataV2>? = null,
+  val name: String? = null,
+)
 
 /**
  * "directoryIndex" : 0, "id" : "hello-jni::@6890427a1f51a3e7e1df", "jsonFile" : "target-hello-jni-Debug-071fc3242d06c7a40797.json", "name"
  * : "hello-jni", "projectIndex" : 0
  */
 data class ConfigurationTargetDataV2(val id: String, val name: String, val jsonFile: String)
+
+data class ArtifactDataV2(val path: String? = null)
+
+data class InterfaceLinkLibraryDataV2(
+  val id: String? = null,
+  val fragment: String? = null,
+)
+
+data class AbstractTargetDataV2(
+  val name: String? = null,
+  val id: String? = null,
+  val type: String? = null,
+  val imported: Boolean? = null,
+  val artifacts: List<ArtifactDataV2>? = null,
+  val interfaceLinkLibraries: List<InterfaceLinkLibraryDataV2>? = null,
+)

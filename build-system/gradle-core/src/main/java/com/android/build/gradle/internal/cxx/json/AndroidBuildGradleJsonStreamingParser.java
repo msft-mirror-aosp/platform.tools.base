@@ -167,6 +167,9 @@ public class AndroidBuildGradleJsonStreamingParser implements Closeable {
                 case "runtimeFiles":
                     parseLibraryRuntimeFiles();
                     break;
+                case "imported":
+                    visitor.visitLibraryImported(reader.nextBoolean());
+                    break;
                 default:
                     parseUnknown();
                     break;

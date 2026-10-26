@@ -84,4 +84,5 @@ public abstract class AndroidBuildGradleJsonStreamingVisitor {
 
     protected void visitLibraryRuntimeFile(@NonNull String runtimeFile) {}
 
+    protected void visitLibraryImported(boolean imported) {}
 }
