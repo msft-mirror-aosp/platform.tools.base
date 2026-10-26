@@ -18,7 +18,6 @@ package com.android.tools.ui.inspector.deploy
 
 import com.google.common.base.Throwables
 import java.io.EOFException
-import java.io.File
 import java.io.IOException
 import java.net.ConnectException
 import java.net.HttpURLConnection
@@ -28,6 +27,9 @@ import java.net.URL
 import java.net.UnknownHostException
 import java.net.http.HttpTimeoutException
 import java.nio.channels.UnresolvedAddressException
+import java.nio.file.FileSystemException
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.zip.ZipException
 import javax.net.ssl.SSLException
 import kotlin.time.Duration
@@ -43,7 +45,7 @@ interface ArtifactDownloader {
    * @param outputFile The local file where the downloaded bytes will be written.
    * @throws IOException when the artifact cannot be downloaded. Other exceptions are reported as defects, not as download failures.
    */
-  @Throws(IOException::class) fun download(url: String, outputFile: File)
+  @Throws(IOException::class) fun download(url: String, outputFile: Path)
 }
 
 /** Thrown by [HttpArtifactDownloader] when the server answers [url] with the HTTP error status [statusCode]. */
@@ -64,7 +66,7 @@ internal class HttpArtifactDownloader(
   private val connectTimeout: Duration = DEFAULT_CONNECT_TIMEOUT,
   private val readTimeout: Duration = DEFAULT_READ_TIMEOUT,
 ) : ArtifactDownloader {
-  override fun download(url: String, outputFile: File) {
+  override fun download(url: String, outputFile: Path) {
     val connection = URL(url).openConnection()
     connection.connectTimeout = connectTimeout.inWholeMilliseconds.toInt()
     connection.readTimeout = readTimeout.inWholeMilliseconds.toInt()
@@ -78,7 +80,7 @@ internal class HttpArtifactDownloader(
           throw ArtifactHttpStatusException(statusCode, url)
         }
       }
-      connection.getInputStream().use { input -> outputFile.outputStream().use { output -> input.copyTo(output) } }
+      connection.getInputStream().use { input -> Files.newOutputStream(outputFile).use { output -> input.copyTo(output) } }
     } finally {
       (connection as? HttpURLConnection)?.disconnect()
     }
@@ -88,7 +90,7 @@ internal class HttpArtifactDownloader(
 /** The outcome of looking for an inspector jar in one place. */
 internal sealed interface JarLookup {
   /** The inspector jar was found at [location], e.g. a URL, and is now in the local file [jar], e.g. extracted into the cache. */
-  data class Found(val jar: File, val location: String) : JarLookup
+  data class Found(val jar: Path, val location: String) : JarLookup
 
   /** The place at [location] did not have the inspector jar, for [reason]. */
   data class NotFound(val location: String, val reason: String) : JarLookup
@@ -106,8 +108,8 @@ internal sealed interface JarLookup {
  */
 internal class MavenArtifactResolver(
   private val downloader: ArtifactDownloader = HttpArtifactDownloader(),
-  private val cacheDir: File,
-  private val fileMover: (File, File) -> Unit = ::moveFileReplacing,
+  private val cacheDir: Path,
+  private val fileMover: (Path, Path) -> Unit = ::moveFileReplacing,
 ) {
 
   companion object {
@@ -122,8 +124,8 @@ internal class MavenArtifactResolver(
   }
 
   /** Returns the inspector jar of the given artifact (e.g. "androidx.compose.ui", "ui-android", "1.5.4") in [cacheDir], or null. */
-  fun cachedJar(groupId: String, artifactId: String, version: String): File? =
-    cachedJarFile(groupId, artifactId, version).takeIf { it.isFile }
+  fun cachedJar(groupId: String, artifactId: String, version: String): Path? =
+    cachedJarFile(groupId, artifactId, version).takeIf { Files.isRegularFile(it) }
 
   /**
    * Downloads the AAR of the given artifact (e.g. "androidx.compose.ui", "ui-android", "1.5.4") from Google Maven and extracts its nested
@@ -137,7 +139,7 @@ internal class MavenArtifactResolver(
     val url = "$GOOGLE_MAVEN_BASE_URL/${groupId.replace('.', '/')}/$artifactId/$version/$artifactId-$version.aar"
     val tempAar =
       try {
-        File.createTempFile("$groupId-$artifactId-$version-", ".aar")
+        Files.createTempFile("$groupId-$artifactId-$version-", ".aar")
       } catch (e: IOException) {
         throw IOException("Could not create a temporary file for the download of $url: ${e.messageOrClassName()}", e)
       }
@@ -161,19 +163,19 @@ internal class MavenArtifactResolver(
         }
       return if (jar != null) JarLookup.Found(jar, url) else JarLookup.NotFound(url, "the AAR has no $INSPECTOR_JAR_ENTRY_NAME")
     } finally {
-      tempAar.delete()
+      tempAar.deleteQuietly()
     }
   }
 
   private fun cachedJarFile(groupId: String, artifactId: String, version: String) =
-    File(cacheDir, "$groupId-$artifactId-$version-inspector.jar")
+    cacheDir.resolve("$groupId-$artifactId-$version-inspector.jar")
 
   /**
    * Throws a [NotAnAarException] when the downloaded [file] is not a zip archive. Reading a file that is not one, e.g. the HTML page a
    * proxy returns instead of the AAR, would otherwise just find no "inspector.jar" in it.
    */
-  private fun checkIsAar(file: File) {
-    val header = file.inputStream().use { it.readNBytes(ZIP_LOCAL_FILE_HEADER_SIGNATURE.size) }
+  private fun checkIsAar(file: Path) {
+    val header = Files.newInputStream(file).use { it.readNBytes(ZIP_LOCAL_FILE_HEADER_SIGNATURE.size) }
     if (header.isEmpty()) {
       throw NotAnAarException("not an AAR: the response is empty")
     }
@@ -235,4 +237,12 @@ private fun httpStatusReason(statusCode: Int): String =
     else -> "HTTP $statusCode"
   }
 
-private fun Throwable.messageOrClassName(): String = message ?: javaClass.simpleName
+/**
+ * Returns what went wrong, for a message. A [FileSystemException] often has no reason and its message is just the file, e.g. an
+ * [java.nio.file.AccessDeniedException], so its class name stands in for the reason.
+ */
+private fun Throwable.messageOrClassName(): String =
+  when (this) {
+    is FileSystemException -> "${reason ?: javaClass.simpleName} (${listOfNotNull(file, otherFile).joinToString(" -> ")})"
+    else -> message ?: javaClass.simpleName
+  }

@@ -38,7 +38,6 @@ import com.android.tools.ui.inspector.model.UiWindow
 import com.android.tools.ui.inspector.proto.convertParameterDetails
 import com.android.tools.ui.inspector.tree.attachComposeTree
 import com.android.tools.ui.inspector.tree.stripSystemComposables
-import java.io.File
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.time.Duration
@@ -127,7 +126,7 @@ private suspend fun <T> connectAndRunInspectors(
   injectionManager: InjectionManager,
   mode: InjectionMode,
   needsDebugViewAttributes: Boolean,
-  resolveComposeInspectorJar: (version: String) -> File,
+  resolveComposeInspectorJar: (version: String) -> Path,
   logger: Logger,
   responseTimeout: Duration,
   block: suspend (CommandSender, Boolean) -> T,

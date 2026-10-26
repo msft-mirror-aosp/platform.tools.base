@@ -21,7 +21,6 @@ import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.deploy.ArtifactDownloader
 import com.android.tools.ui.inspector.deploy.JarLookup
 import com.android.tools.ui.inspector.deploy.MavenArtifactResolver
-import java.io.File
 import java.io.IOException
 import java.nio.file.Path
 
@@ -46,7 +45,7 @@ internal class ComposeInspectorResolution(val overrideJar: Path?, val cacheDir: 
    * Returns the function that resolves the jar for a Compose version, logging where it comes from to [logger]: [overrideJar] when set, else
    * the jar kept in [cacheDir], else the jar from Google Maven. The function throws an [IOException] when there is none.
    */
-  fun jarResolver(logger: Logger): (version: String) -> File = { version -> resolve(version, logger) }
+  fun jarResolver(logger: Logger): (version: String) -> Path = { version -> resolve(version, logger) }
 
   /**
    * Returns the Compose inspector jar for the Compose [version] the app reports, and logs where it comes from to [logger]: [overrideJar]
@@ -55,10 +54,10 @@ internal class ComposeInspectorResolution(val overrideJar: Path?, val cacheDir: 
    * @throws IOException when [version] is not a valid Maven version, when the jar cannot be found (the message says why), or when it cannot
    *   be written to [cacheDir].
    */
-  private fun resolve(version: String, logger: Logger): File {
+  private fun resolve(version: String, logger: Logger): Path {
     if (overrideJar != null) {
       logger.log(LogLevel.PROGRESS, "Using the Compose inspector $overrideJar")
-      return overrideJar.toFile()
+      return overrideJar
     }
     val versionProblem = invalidVersionProblem(version)
     if (versionProblem != null) {
@@ -66,7 +65,7 @@ internal class ComposeInspectorResolution(val overrideJar: Path?, val cacheDir: 
     }
     val artifactId = getComposeArtifactId(version)
 
-    val maven = MavenArtifactResolver(downloader, cacheDir.toFile())
+    val maven = MavenArtifactResolver(downloader, cacheDir)
     val cachedJar = maven.cachedJar(COMPOSE_UI_GROUP_ID, artifactId, version)
     if (cachedJar != null) {
       logger.log(LogLevel.PROGRESS, "Using the cached Compose inspector $cachedJar")

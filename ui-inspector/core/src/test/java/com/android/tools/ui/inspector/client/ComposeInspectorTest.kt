@@ -43,10 +43,11 @@ import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.statProbeCommand
 import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
-import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
+import java.nio.file.Path
 import java.util.Collections
+import kotlin.io.path.writeText
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -221,7 +222,7 @@ class ComposeInspectorTest {
         injectionManager = injectionManager,
         logger = logger,
         resolveJar = {
-          val fixedJar = tempFolder.newFile("compose-inspector.jar")
+          val fixedJar = tempFolder.newFile("compose-inspector.jar").toPath()
           fixedJar.writeText("fake pre-compiled compose dex classes")
           fixedJar
         },
@@ -293,9 +294,9 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     // The staged copy of the resolved Compose jar already matches its content and has the exact staged mode.
-    val fixedJar = tempFolder.newFile("compose-inspector.jar")
+    val fixedJar = tempFolder.newFile("compose-inspector.jar").toPath()
     fixedJar.writeText("fake pre-compiled compose dex classes")
-    val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-inspector.jar", computeContentDigest(fixedJar.toPath()))}"
+    val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-inspector.jar", computeContentDigest(fixedJar))}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
 
     val injectionManager =
@@ -595,7 +596,7 @@ class ComposeInspectorTest {
             injectionManager = injectionManager,
             logger = logger,
             resolveJar = {
-              val fixedJar = tempFolder.newFile("compose-inspector.jar")
+              val fixedJar = tempFolder.newFile("compose-inspector.jar").toPath()
               fixedJar.writeText("fake pre-compiled compose dex classes")
               fixedJar
             },
@@ -910,7 +911,7 @@ class ComposeInspectorTest {
             injectionManager = injectionManager,
             logger = logger,
             resolveJar = {
-              val fixedJar = tempFolder.newFile("compose-inspector.jar")
+              val fixedJar = tempFolder.newFile("compose-inspector.jar").toPath()
               fixedJar.writeText("fake pre-compiled compose dex classes")
               fixedJar
             },
@@ -1236,7 +1237,7 @@ class ComposeInspectorTest {
             injectionManager = injectionManager,
             logger = logger,
             resolveJar = {
-              val fixedJar = tempFolder.newFile("compose-inspector.jar")
+              val fixedJar = tempFolder.newFile("compose-inspector.jar").toPath()
               fixedJar.writeText("fake pre-compiled compose dex classes")
               fixedJar
             },
@@ -1441,7 +1442,7 @@ class ComposeInspectorTest {
     // A proxy that answers the AAR download with an HTML page.
     val htmlDownloader =
       object : ArtifactDownloader {
-        override fun download(url: String, outputFile: File) {
+        override fun download(url: String, outputFile: Path) {
           outputFile.writeText("<html>Blocked by your network administrator</html>")
         }
       }
@@ -1489,9 +1490,9 @@ class ComposeInspectorTest {
     testDeviceServices.session = testSession
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     // The jar is already staged, so the only device work left is the agent's answer to the create command.
-    val fixedJar = tempFolder.newFile("compose-inspector.jar")
+    val fixedJar = tempFolder.newFile("compose-inspector.jar").toPath()
     fixedJar.writeText("fake pre-compiled compose dex classes")
-    val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-inspector.jar", computeContentDigest(fixedJar.toPath()))}"
+    val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-inspector.jar", computeContentDigest(fixedJar))}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
     val injectionManager = unusedInjectionManager(testSession)
 

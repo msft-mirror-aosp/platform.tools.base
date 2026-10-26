@@ -24,8 +24,8 @@ import com.android.tools.ui.inspector.deploy.InspectorMetadata
 import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.proto.parseTreeResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
-import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
 /** The Maven group of the Compose UI library, whose AAR holds the Compose inspector. */
@@ -47,17 +47,17 @@ internal suspend fun createComposeInspector(
   commandSender: CommandSender,
   injectionManager: InjectionManager,
   logger: Logger,
-  resolveJar: (version: String) -> File,
+  resolveJar: (version: String) -> Path,
 ): Boolean {
   val composeVersion = getComposeVersion(commandSender, logger) ?: return false
 
-  val jarFile =
+  val jar =
     try {
       resolveJar(composeVersion)
     } catch (e: IOException) {
       throw IOException("Could not resolve the Compose inspector for Compose $composeVersion: ${e.message}", e)
     }
-  launchComposeInspector(commandSender, injectionManager, jarFile, logger)
+  launchComposeInspector(commandSender, injectionManager, jar, logger)
   return true
 }
 
@@ -218,10 +218,10 @@ private suspend fun getComposeVersion(commandSender: CommandSender, logger: Logg
 private suspend fun launchComposeInspector(
   commandSender: CommandSender,
   injectionManager: InjectionManager,
-  jarFile: File,
+  jar: Path,
   logger: Logger,
 ) {
-  val inspectorMetadata = InspectorMetadata(id = ProtocolConstants.COMPOSE_INSPECTOR_ID, localJarPath = jarFile.toPath())
+  val inspectorMetadata = InspectorMetadata(id = ProtocolConstants.COMPOSE_INSPECTOR_ID, localJarPath = jar)
   val dexPath = injectionManager.stageInspectorPayload(inspectorMetadata)
 
   val createCommand =

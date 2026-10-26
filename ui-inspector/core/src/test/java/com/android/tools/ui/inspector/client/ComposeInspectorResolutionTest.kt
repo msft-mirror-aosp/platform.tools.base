@@ -16,6 +16,7 @@
 
 package com.android.tools.ui.inspector.client
 
+import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.RecordingLogger
 import com.android.tools.ui.inspector.deploy.ArtifactDownloader
@@ -23,16 +24,21 @@ import com.android.tools.ui.inspector.deploy.ArtifactHttpStatusException
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.net.http.HttpConnectTimeoutException
 import java.nio.channels.UnresolvedAddressException
+import java.nio.file.AccessDeniedException
+import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import javax.net.ssl.SSLHandshakeException
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.readText
+import kotlin.io.path.writeBytes
+import kotlin.io.path.writeText
 import kotlin.random.Random
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -51,16 +57,16 @@ class ComposeInspectorResolutionTest {
   /** A downloader that fails the test: the case under test must not download. */
   private val noDownloads =
     object : ArtifactDownloader {
-      override fun download(url: String, outputFile: File) {
+      override fun download(url: String, outputFile: Path) {
         throw AssertionError("Unexpected download of $url")
       }
     }
 
   /** A downloader that answers every URL with [respond], which writes the response to the file or throws, and records the URLs. */
-  private class FakeDownloader(private val respond: (File) -> Unit) : ArtifactDownloader {
+  private class FakeDownloader(private val respond: (Path) -> Unit) : ArtifactDownloader {
     val urls = mutableListOf<String>()
 
-    override fun download(url: String, outputFile: File) {
+    override fun download(url: String, outputFile: Path) {
       urls += url
       respond(outputFile)
     }
@@ -74,15 +80,15 @@ class ComposeInspectorResolutionTest {
     // Even a version that could not be looked up is fine: the override is used as is.
     val jar = resolution.jarResolver(logger)("../x")
 
-    assertThat(jar).isEqualTo(overrideJar.toFile())
+    assertThat(jar).isEqualTo(overrideJar)
     assertThat(logger.messages).containsExactly(LogLevel.PROGRESS to "Using the Compose inspector $overrideJar")
   }
 
   @Test
   fun testResolve_cachedJar_isUsedWithoutDownloading() {
-    val cacheDir = tempFolder.newFolder()
-    val cachedJar = File(cacheDir, "androidx.compose.ui-ui-android-$VERSION-inspector.jar").apply { writeText("cached") }
-    val resolution = ComposeInspectorResolution(overrideJar = null, cacheDir.toPath(), noDownloads)
+    val cacheDir = tempFolder.newFolder().toPath()
+    val cachedJar = cacheDir.resolve("androidx.compose.ui-ui-android-$VERSION-inspector.jar").apply { writeText("cached") }
+    val resolution = ComposeInspectorResolution(overrideJar = null, cacheDir, noDownloads)
 
     val jar = resolution.jarResolver(logger)(VERSION)
 
@@ -93,13 +99,13 @@ class ComposeInspectorResolutionTest {
   @Test
   fun testResolve_downloadsAndCachesTheJar() {
     val downloader = FakeDownloader { it.writeBytes(aarWithInspectorJar("downloaded")) }
-    val cacheDir = tempFolder.newFolder()
-    val resolution = ComposeInspectorResolution(overrideJar = null, cacheDir.toPath(), downloader)
+    val cacheDir = tempFolder.newFolder().toPath()
+    val resolution = ComposeInspectorResolution(overrideJar = null, cacheDir, downloader)
 
     val jar = resolution.jarResolver(logger)(VERSION)
 
     assertThat(jar.readText()).isEqualTo("downloaded")
-    assertThat(jar.parentFile).isEqualTo(cacheDir)
+    assertThat(jar.parent).isEqualTo(cacheDir)
     assertThat(downloader.urls).containsExactly(AAR_URL)
     assertThat(logger.messages).containsExactly(LogLevel.PROGRESS to "Using the Compose inspector downloaded from $AAR_URL")
   }
@@ -117,53 +123,55 @@ class ComposeInspectorResolutionTest {
   @Test
   fun testResolve_failedDownload_explainsWhy() {
     // Each failure, with causes wrapped the way java.net.http and android-cli's downloader wrap them, and the reason it is reported with.
-    val cases: List<Pair<(File) -> Unit, String>> =
+    val cases: List<Pair<(Path) -> Unit, String>> =
       listOf(
-        { _: File ->
+        { _: Path ->
           throw ArtifactHttpStatusException(404, AAR_URL)
         } to "not found (HTTP 404): this version is not on Google Maven",
-        { _: File ->
+        { _: Path ->
           throw ArtifactHttpStatusException(410, AAR_URL)
         } to "not found (HTTP 410): this version is not on Google Maven",
-        { _: File -> throw ArtifactHttpStatusException(401, AAR_URL) } to "authentication required (HTTP 401)",
-        { _: File -> throw ArtifactHttpStatusException(403, AAR_URL) } to "access denied (HTTP 403)",
-        { _: File -> throw ArtifactHttpStatusException(407, AAR_URL) } to "proxy authentication required (HTTP 407)",
-        { _: File -> throw ArtifactHttpStatusException(302, AAR_URL) } to "redirected (HTTP 302); a proxy may require signing in",
-        { _: File -> throw ArtifactHttpStatusException(503, AAR_URL) } to "server error (HTTP 503)",
-        { _: File -> throw ArtifactHttpStatusException(418, AAR_URL) } to "HTTP 418",
-        { _: File -> throw UnknownHostException("maven.google.com") } to "cannot connect: unknown host maven.google.com",
-        { _: File ->
+        { _: Path -> throw ArtifactHttpStatusException(401, AAR_URL) } to "authentication required (HTTP 401)",
+        { _: Path -> throw ArtifactHttpStatusException(403, AAR_URL) } to "access denied (HTTP 403)",
+        { _: Path -> throw ArtifactHttpStatusException(407, AAR_URL) } to "proxy authentication required (HTTP 407)",
+        { _: Path -> throw ArtifactHttpStatusException(302, AAR_URL) } to "redirected (HTTP 302); a proxy may require signing in",
+        { _: Path -> throw ArtifactHttpStatusException(503, AAR_URL) } to "server error (HTTP 503)",
+        { _: Path -> throw ArtifactHttpStatusException(418, AAR_URL) } to "HTTP 418",
+        { _: Path -> throw UnknownHostException("maven.google.com") } to "cannot connect: unknown host maven.google.com",
+        { _: Path ->
           throw IOException("Failed to connect to $AAR_URL", ConnectException().initCause(UnresolvedAddressException()))
         } to "cannot connect: unknown host maven.google.com",
-        { _: File -> throw SocketTimeoutException("Read timed out") } to "timed out",
-        { _: File ->
+        { _: Path -> throw SocketTimeoutException("Read timed out") } to "timed out",
+        { _: Path ->
           throw IOException(
             "Failed to connect to $AAR_URL",
             HttpConnectTimeoutException("HTTP connect timed out").initCause(ConnectException()),
           )
         } to "timed out",
-        { _: File ->
+        { _: Path ->
           throw IOException("Failed to connect to $AAR_URL", SSLHandshakeException("PKIX path building failed"))
         } to "TLS error (PKIX path building failed); a proxy may be intercepting HTTPS",
-        { _: File -> throw ConnectException("Connection refused") } to "cannot connect (Connection refused)",
-        { _: File -> throw IOException("Failed to connect to $AAR_URL", ConnectException()) } to "cannot connect",
-        { _: File ->
+        { _: Path -> throw ConnectException("Connection refused") } to "cannot connect (Connection refused)",
+        // A FileSystemException often has no reason, and its message is only the file.
+        { _: Path -> throw AccessDeniedException("/tmp/x.aar") } to "download failed: AccessDeniedException (/tmp/x.aar)",
+        { _: Path -> throw IOException("Failed to connect to $AAR_URL", ConnectException()) } to "cannot connect",
+        { _: Path ->
           throw IOException("Unable to tunnel through proxy. Proxy returns \"HTTP/1.1 407\"")
         } to "download failed: Unable to tunnel through proxy. Proxy returns \"HTTP/1.1 407\"",
-        { file: File ->
+        { file: Path ->
           file.writeText("<html>Blocked by your network administrator</html>")
         } to "not an AAR: the response is not a zip archive (a proxy or firewall may have returned an HTML page)",
-        { _: File -> } to "not an AAR: the response is empty",
-        { file: File -> file.writeBytes(zipOf("AndroidManifest.xml" to "<manifest/>".toByteArray())) } to "the AAR has no inspector.jar",
+        { _: Path -> } to "not an AAR: the response is empty",
+        { file: Path -> file.writeBytes(zipOf("AndroidManifest.xml" to "<manifest/>".toByteArray())) } to "the AAR has no inspector.jar",
       )
     for ((respond, reason) in cases) {
-      val cacheDir = tempFolder.newFolder()
-      val resolution = ComposeInspectorResolution(overrideJar = null, cacheDir.toPath(), FakeDownloader(respond))
+      val cacheDir = tempFolder.newFolder().toPath()
+      val resolution = ComposeInspectorResolution(overrideJar = null, cacheDir, FakeDownloader(respond))
 
       val exception = assertThrows(reason, IOException::class.java) { resolution.jarResolver(logger)(VERSION) }
 
       assertWithMessage(reason).that(exception).hasMessageThat().isEqualTo("$AAR_URL: $reason")
-      assertWithMessage(reason).that(cacheDir.listFiles()).isEmpty()
+      assertWithMessage(reason).that(cacheDir.listDirectoryEntries()).isEmpty()
     }
   }
 
@@ -185,9 +193,8 @@ class ComposeInspectorResolutionTest {
   @Test
   fun testResolve_cacheThatCannotBeWritten_failsWithTheCacheDirectory() {
     // A file where the cache directory should be: extracting the jar there fails, which says nothing about the download.
-    val cacheDir = tempFolder.newFile("not-a-directory")
-    val resolution =
-      ComposeInspectorResolution(overrideJar = null, cacheDir.toPath(), FakeDownloader { it.writeBytes(aarWithInspectorJar("x")) })
+    val cacheDir = tempFolder.newFile("not-a-directory").toPath()
+    val resolution = ComposeInspectorResolution(overrideJar = null, cacheDir, FakeDownloader { it.writeBytes(aarWithInspectorJar("x")) })
 
     val exception = assertThrows(IOException::class.java) { resolution.jarResolver(logger)(VERSION) }
 

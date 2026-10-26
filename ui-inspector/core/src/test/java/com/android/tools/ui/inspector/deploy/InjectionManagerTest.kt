@@ -46,7 +46,6 @@ import com.android.tools.ui.inspector.statProbeCommand
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
-import java.io.File
 import java.io.IOException
 import java.io.OutputStream
 import java.net.ServerSocket
@@ -89,7 +88,7 @@ private val BASE_STAGING_PATHS =
 /** A downloader for runs that must not download anything: they detect no Compose or use a Compose inspector override jar. */
 private val NO_DOWNLOADS =
   object : ArtifactDownloader {
-    override fun download(url: String, outputFile: File) = throw AssertionError("Unexpected download of $url")
+    override fun download(url: String, outputFile: Path) = throw AssertionError("Unexpected download of $url")
   }
 
 class InjectionManagerTest {
@@ -1740,7 +1739,7 @@ class InjectionManagerTest {
     // The downloader records the request and fails it, like a network without access to Maven: only the threading is under test.
     val downloader =
       object : ArtifactDownloader {
-        override fun download(url: String, outputFile: File) {
+        override fun download(url: String, outputFile: Path) {
           requestedUrls.add(url)
           throw IOException("Simulated download failure")
         }

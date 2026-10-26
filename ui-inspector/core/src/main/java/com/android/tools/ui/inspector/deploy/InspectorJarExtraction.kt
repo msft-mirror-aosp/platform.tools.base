@@ -16,11 +16,13 @@
 
 package com.android.tools.ui.inspector.deploy
 
-import java.io.File
+import java.io.IOException
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.zip.ZipInputStream
+import kotlin.io.path.nameWithoutExtension
 
 /** The name of the entry of a library's AAR that holds the library's inspector. */
 internal const val INSPECTOR_JAR_ENTRY_NAME = "inspector.jar"
@@ -32,54 +34,63 @@ internal const val INSPECTOR_JAR_ENTRY_NAME = "inspector.jar"
  *
  * @return [destination], or null when the AAR has no "inspector.jar".
  */
-internal fun installInspectorJar(aar: File, destination: File, fileMover: (File, File) -> Unit = ::moveFileReplacing): File? {
-  val destinationDir = destination.absoluteFile.parentFile
-  Files.createDirectories(destinationDir.toPath())
+internal fun installInspectorJar(aar: Path, destination: Path, fileMover: (Path, Path) -> Unit = ::moveFileReplacing): Path? {
+  val destinationDir = destination.toAbsolutePath().parent
+  Files.createDirectories(destinationDir)
   val tempInspectorJar = extractInspectorJar(aar, destinationDir) ?: return null
   try {
     try {
       fileMover(tempInspectorJar, destination)
     } catch (e: Exception) {
-      if (!destination.isFile) {
+      if (!Files.isRegularFile(destination)) {
         // If the destination file was successfully written by another thread, we can safely ignore the exception if the file now exists.
         throw e
       }
     }
     return destination
   } finally {
-    tempInspectorJar.delete()
+    tempInspectorJar.deleteQuietly()
   }
 }
 
 /** Moves [source] to [destination], replacing it, atomically when the file system supports it. */
-internal fun moveFileReplacing(source: File, destination: File) {
+internal fun moveFileReplacing(source: Path, destination: Path) {
   try {
-    Files.move(source.toPath(), destination.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    Files.move(source, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
   } catch (e: AtomicMoveNotSupportedException) {
-    Files.move(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
+    Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING)
   }
 }
 
-/** Extracts the nested "inspector.jar" from the [aarFile] to a temporary file in [destinationDir]. */
-private fun extractInspectorJar(aarFile: File, destinationDir: File): File? {
-  val prefix = "${aarFile.nameWithoutExtension}-extracted-"
-  val inspectorJar = File.createTempFile(prefix, ".jar", destinationDir)
+/**
+ * Deletes this file if it exists, ignoring failures: it is a temporary file deleted on a success or failure path, whose result or exception
+ * must not be replaced by a failed deletion.
+ */
+internal fun Path.deleteQuietly() {
+  try {
+    Files.deleteIfExists(this)
+  } catch (_: IOException) {}
+}
+
+/** Extracts the nested "inspector.jar" from the [aar] to a temporary file in [destinationDir]. */
+private fun extractInspectorJar(aar: Path, destinationDir: Path): Path? {
+  val inspectorJar = Files.createTempFile(destinationDir, "${aar.nameWithoutExtension}-extracted-", ".jar")
 
   try {
-    ZipInputStream(aarFile.inputStream()).use { zipInputStream ->
+    ZipInputStream(Files.newInputStream(aar)).use { zipInputStream ->
       var entry = zipInputStream.nextEntry
       while (entry != null) {
         if (entry.name == INSPECTOR_JAR_ENTRY_NAME) {
-          inspectorJar.outputStream().use { output -> zipInputStream.copyTo(output) }
+          Files.newOutputStream(inspectorJar).use { output -> zipInputStream.copyTo(output) }
           return inspectorJar
         }
         entry = zipInputStream.nextEntry
       }
     }
-    inspectorJar.delete()
+    inspectorJar.deleteQuietly()
     return null
   } catch (t: Throwable) {
-    inspectorJar.delete()
+    inspectorJar.deleteQuietly()
     throw t
   }
 }
