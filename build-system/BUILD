@@ -616,38 +616,6 @@ gradle_build(
     visibility = ["//visibility:public"],
 )
 
-DECLARATIVE_ANDROID_GRADLE_PLUGIN_SOURCE_FILES = ANDROID_GRADLE_PLUGIN_SOURCE_FILES + [
-    "//tools/base/build-system/gradle-dcl-ecosystem:agp_gradle_build_files",
-]
-
-gradle_build(
-    name = "declarative_android_gradle_plugin",
-    build_file = "//tools:agp_gradle_build_root_build_file",
-    data = DECLARATIVE_ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
-    gradle_properties = GRADLE_PROPERTIES,
-    output_file = "declarative_android_gradle_plugin.zip",
-    output_file_source = "dist/repo.zip",
-    repos = [
-        "//tools/base:agp_dependencies",
-        "//tools/base:agp_artifacts",
-        ":declarative_gradle_runtime",
-    ],
-    tasks = [":zipPlugin"],
-    visibility = ["//visibility:public"],
-)
-
-maven_repository(
-    name = "declarative_gradle_runtime",
-    # b/490330486: We should remove this dependency once we have a better idea at displaying plugins
-    # in declarative.
-    artifacts = [
-        "@maven//:org.gradle.experimental.plugin-ecosystem.org.gradle.experimental.plugin-ecosystem.gradle.plugin_0.1.62",
-        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
-        "@maven//:org.junit.junit-bom_5.10.1",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 maven_repository(
     name = "android_gradle_plugin_runtime_dependencies",
     # keep sorted
