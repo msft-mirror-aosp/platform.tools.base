@@ -19,20 +19,30 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.component.impl.ComponentIdentityImpl
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
+import com.android.build.gradle.internal.services.createProjectServices
 import com.android.build.gradle.internal.test.recordBackupTestRun
+import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.ProjectOptions
+import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.testutils.SystemPropertyOverrides
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.TestRun
+import com.google.wireless.android.sdk.stats.TestRun.BackupTestRun.BackupFailureReason
+import com.google.wireless.android.sdk.stats.TestRun.BackupTestRun.BackupTransportMode
+import java.time.Instant
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.services.BuildServiceRegistry
 import org.gradle.api.tasks.testing.TestDescriptor
+import org.gradle.api.tasks.testing.TestKeyValueDataEvent
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
@@ -54,6 +64,12 @@ class BackupTestSuiteImplTest {
   private val project = ProjectFactory.project
   private val dependencyHandler = project.dependencies
   private val providers = project.providers
+
+  /** A suite without a parent, like the root suite of a test run. */
+  private val rootSuite = mock<TestDescriptor>()
+
+  private val passed = testResult(TestResult.ResultType.SUCCESS)
+  private val failed = testResult(TestResult.ResultType.FAILURE)
 
   @Test
   fun testInitializationDefaults() {
@@ -296,25 +312,23 @@ class BackupTestSuiteImplTest {
 
     assertThat(suite.testTaskConfigActions).isNotEmpty()
 
-    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
+    val mockTestTask = mock<TestSuiteTestTask>()
     val mockContext = mock<TestTaskContext>()
     suite.testTaskConfigActions.first().invoke(mockTestTask, mockContext)
 
     val listenerCaptor = argumentCaptor<TestListener>()
     verify(mockTestTask).addTestListener(listenerCaptor.capture())
-    assertThat(listenerCaptor.firstValue).isInstanceOf(BackupAgpTestSuiteImpl.BackupTestListener::class.java)
+    val listener = listenerCaptor.firstValue
+    assertThat(listener).isInstanceOf(BackupAgpTestSuiteImpl.BackupTestListener::class.java)
+    // The same listener receives the JUnit report entries of the backup library, and runs without a device.
+    verify(mockTestTask).addTestMetadataListener(listener as BackupAgpTestSuiteImpl.BackupTestListener)
+    verify(mockTestTask).addNoDeviceListener(listener)
   }
 
   @Test
   fun testBackupTestListenerReportsConfiguredLibraryVersion() {
     val analyticsService = mock<AnalyticsService>()
-    val registry = mock<BuildServiceRegistry>()
-    whenever(registry.registerIfAbsent(any(), eq(AnalyticsService::class.java), any())).thenReturn(project.provider { analyticsService })
-    val servicesWithAnalytics =
-      object : DslServices by dslServices {
-        override val buildServiceRegistry: BuildServiceRegistry
-          get() = registry
-      }
+    val servicesWithAnalytics = dslServicesWithAnalytics(analyticsService)
     val dslSuite = servicesWithAnalytics.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", servicesWithAnalytics)
     val suite =
       servicesWithAnalytics.newDecoratedInstance(
@@ -350,6 +364,7 @@ class BackupTestSuiteImplTest {
       BackupAgpTestSuiteImpl.BackupTestListener(
         analyticsServiceProvider = provider,
         backupTestLibraryVersion = CUSTOM_BACKUP_VERSION,
+        invocationType = TestRun.TestInvocationType.GRADLE_TEST,
       )
 
     val rootSuiteDescriptor = mock<TestDescriptor>()
@@ -378,6 +393,218 @@ class BackupTestSuiteImplTest {
     assertThat(event.testRun.backupTestRun.totalRunTimeMs).isEqualTo(1500L)
     assertThat(event.testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
     assertThat(event.testRun.backupTestRun.hasIsCi()).isFalse()
+  }
+
+  @Test
+  fun testBackupTestListenerReportsBackupResults() {
+    val testRun = recordedRun {
+      test(passed, "BackupRestore.transportMode" to "LOCAL", "BackupRestore.storageDomainCount" to "2")
+      test(
+        failed,
+        "BackupRestore.transportMode" to "CLOUD_ENCRYPTED",
+        "BackupRestore.storageDomainCount" to "5",
+        "BackupRestore.errorCode" to "VERIFICATION_FAILED",
+      )
+      test(
+        failed,
+        "BackupRestore.transportMode" to "CLOUD_UNENCRYPTED",
+        "BackupRestore.storageDomainCount" to "1",
+        "BackupRestore.errorCode" to "RESTORE_POLL_TIMEOUT",
+      )
+      afterSuite(rootSuite, failed)
+    }
+
+    // The transport that most tests used, the largest storage domain count and the reason of the first failure
+    assertThat(testRun.backupTestRun.transportMode).isEqualTo(BackupTransportMode.GMS_TRANSPORT)
+    assertThat(testRun.backupTestRun.storageDomainCount).isEqualTo(5)
+    assertThat(testRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.ASSERTION_FAILURE)
+  }
+
+  @Test
+  fun testBackupTestListenerIgnoresRecoveredErrors() {
+    // A test can expect a restore to fail.
+    val passedRun = recordedRun {
+      test(passed, "BackupRestore.errorCode" to "RESTORE_FAILED")
+      afterSuite(rootSuite, passed)
+    }
+    assertThat(passedRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.NO_FAILURE)
+
+    // A test that backs up and restores successfully after an error fails for another reason.
+    val recoveredRun = recordedRun {
+      test(failed, "BackupRestore.errorCode" to "RESTORE_FAILED", "BackupRestore.status" to "SUCCESS")
+      afterSuite(rootSuite, failed)
+    }
+    assertThat(recoveredRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.UNKNOWN_FAILURE_REASON)
+
+    // The reason is that of the first failed test with an error.
+    val failedRun = recordedRun {
+      test(passed, "BackupRestore.errorCode" to "RESTORE_FAILED")
+      test(failed)
+      test(failed, "BackupRestore.errorCode" to "RESTORE_POLL_TIMEOUT")
+      afterSuite(rootSuite, failed)
+    }
+    assertThat(failedRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.TIMEOUT)
+  }
+
+  @Test
+  fun testBackupTestListenerReportsErrorsOfTestClasses() {
+    // A controller that a test class constructor receives reports its errors for the class, while each test of the class runs.
+    val testClass = mock<TestDescriptor>()
+    whenever(testClass.parent).thenReturn(rootSuite)
+    fun BackupAgpTestSuiteImpl.BackupTestListener.testOfClass(result: TestResult, vararg classEntries: Pair<String, String>) {
+      classEntries.forEach { onMetadata(testClass, reportEntries(it)) }
+      afterTest(mock<TestDescriptor>().also { whenever(it.parent).thenReturn(testClass) }, result)
+    }
+
+    // The test fails because the controller finds no device.
+    val noDeviceRun = recordedRun {
+      testOfClass(failed, "BackupRestore.errorCode" to "NO_MATCHING_DEVICE")
+      afterSuite(rootSuite, failed)
+    }
+    assertThat(noDeviceRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.NO_DEVICE_AVAILABLE)
+
+    // An error that a passed test expected doesn't explain a later failure.
+    val unexplainedRun = recordedRun {
+      testOfClass(passed, "BackupRestore.errorCode" to "RESTORE_FAILED")
+      testOfClass(failed)
+      afterSuite(rootSuite, failed)
+    }
+    assertThat(unexplainedRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.UNKNOWN_FAILURE_REASON)
+
+    // An error that a later test expected doesn't replace the reason of an earlier failure.
+    val failedRun = recordedRun {
+      testOfClass(failed, "BackupRestore.errorCode" to "VERIFICATION_FAILED")
+      testOfClass(passed, "BackupRestore.errorCode" to "RESTORE_FAILED")
+      afterSuite(rootSuite, failed)
+    }
+    assertThat(failedRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.ASSERTION_FAILURE)
+  }
+
+  @Test
+  fun testBackupTestListenerReportsRunsWithoutBackupResults() {
+    val passingRun = recordedRun { afterSuite(rootSuite, passed) }
+    assertThat(passingRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.NO_FAILURE)
+    assertThat(passingRun.backupTestRun.hasTransportMode()).isFalse()
+    assertThat(passingRun.backupTestRun.hasStorageDomainCount()).isFalse()
+
+    assertThat(recordedRun { afterSuite(rootSuite, failed) }.backupTestRun.failureReason)
+      .isEqualTo(BackupFailureReason.UNKNOWN_FAILURE_REASON)
+  }
+
+  @Test
+  fun testBackupTestListenerMapsBackupLibraryValues() {
+    val transportModes =
+      mapOf(
+        "LOCAL" to BackupTransportMode.LOCAL_TRANSPORT,
+        "LOCAL_DEVICE_TO_DEVICE" to BackupTransportMode.LOCAL_TRANSPORT,
+        "LOCAL_ENCRYPTED" to BackupTransportMode.LOCAL_TRANSPORT,
+        "CLOUD_ENCRYPTED" to BackupTransportMode.GMS_TRANSPORT,
+        "CLOUD_UNENCRYPTED" to BackupTransportMode.GMS_TRANSPORT,
+        "DEVICE_TO_DEVICE" to BackupTransportMode.D2D_TRANSPORT,
+        "OTHER" to BackupTransportMode.UNKNOWN_TRANSPORT_MODE,
+      )
+    for ((name, transportMode) in transportModes) {
+      val testRun = recordedRun {
+        test(passed, "BackupRestore.transportMode" to name)
+        afterSuite(rootSuite, passed)
+      }
+      assertWithMessage(name).that(testRun.backupTestRun.transportMode).isEqualTo(transportMode)
+    }
+
+    val failureReasons =
+      mapOf(
+        "NO_ONLINE_DEVICE" to BackupFailureReason.NO_DEVICE_AVAILABLE,
+        "NO_MATCHING_DEVICE" to BackupFailureReason.NO_DEVICE_AVAILABLE,
+        "UNSUPPORTED_API_LEVEL" to BackupFailureReason.API_LEVEL_UNSUPPORTED,
+        "GMSCORE_OUTDATED_OR_MISSING" to BackupFailureReason.GMS_CORE_OUTDATED,
+        "BMGR_INIT_FAILED" to BackupFailureReason.BMGR_FAILURE,
+        "BACKUP_FAILED" to BackupFailureReason.BMGR_FAILURE,
+        "RESTORE_FAILED" to BackupFailureReason.BMGR_FAILURE,
+        "SEEDING_FAILED" to BackupFailureReason.SETUP_PRECONDITION_FAILURE,
+        "CLEAR_DATA_FAILED" to BackupFailureReason.SETUP_PRECONDITION_FAILURE,
+        "VERIFICATION_FAILED" to BackupFailureReason.ASSERTION_FAILURE,
+        "RESTORE_POLL_TIMEOUT" to BackupFailureReason.TIMEOUT,
+        "UNKNOWN_ERROR" to BackupFailureReason.UNKNOWN_FAILURE_REASON,
+      )
+    for ((errorCode, failureReason) in failureReasons) {
+      val testRun = recordedRun {
+        test(failed, "BackupRestore.errorCode" to errorCode)
+        afterSuite(rootSuite, failed)
+      }
+      assertWithMessage(errorCode).that(testRun.backupTestRun.failureReason).isEqualTo(failureReason)
+    }
+  }
+
+  @Test
+  fun testBackupTestListenerReportsIdeRuns() {
+    val analyticsService = mock<AnalyticsService>()
+    val projectOptions =
+      ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, mapOf(BooleanOption.IDE_INVOKED_FROM_IDE.propertyName to "true")))
+    val services = dslServicesWithAnalytics(analyticsService, createDslServices(createProjectServices(projectOptions = projectOptions)))
+    val dslSuite = services.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", services)
+    val suite = services.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, services, dependencyHandler, providers)
+
+    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
+    suite.testTaskConfigActions.forEach { it(mockTestTask, mock<TestTaskContext>()) }
+    val listenerCaptor = argumentCaptor<TestListener>()
+    verify(mockTestTask).addTestListener(listenerCaptor.capture())
+    listenerCaptor.firstValue.afterSuite(rootSuite, mock())
+
+    val eventCaptor = argumentCaptor<AndroidStudioEvent.Builder>()
+    verify(analyticsService).recordEvent(eventCaptor.capture())
+    assertThat(eventCaptor.firstValue.build().testRun.testInvocationType)
+      .isEqualTo(TestRun.TestInvocationType.ANDROID_STUDIO_THROUGH_GRADLE_TEST)
+  }
+
+  @Test
+  fun testBackupTestListenerRecordsRunsWithoutDevice() {
+    val testRun = recordedRun { onNoDevice() }
+
+    assertThat(testRun.testKind).isEqualTo(TestRun.TestKind.BACKUP_TEST)
+    assertThat(testRun.crashed).isTrue()
+    assertThat(testRun.numberOfTestsExecuted).isEqualTo(0)
+    assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
+    assertThat(testRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.NO_DEVICE_AVAILABLE)
+  }
+
+  /** Returns the run that a backup test listener records for the test [events]. */
+  private fun recordedRun(events: BackupAgpTestSuiteImpl.BackupTestListener.() -> Unit): TestRun {
+    val analyticsService = mock<AnalyticsService>()
+    BackupAgpTestSuiteImpl.BackupTestListener(
+        project.provider { analyticsService },
+        CUSTOM_BACKUP_VERSION,
+        TestRun.TestInvocationType.GRADLE_TEST,
+      )
+      .events()
+    val eventCaptor = argumentCaptor<AndroidStudioEvent.Builder>()
+    verify(analyticsService).recordEvent(eventCaptor.capture())
+    return eventCaptor.firstValue.build().testRun
+  }
+
+  private fun reportEntries(vararg entries: Pair<String, String>) =
+    object : TestKeyValueDataEvent {
+      override fun getValues() = mapOf(*entries)
+
+      override fun getLogTime(): Instant = Instant.EPOCH
+    }
+
+  /** Reports a test that publishes the JUnit report [entries], one at a time like the backup library, and ends with [result]. */
+  private fun BackupAgpTestSuiteImpl.BackupTestListener.test(result: TestResult, vararg entries: Pair<String, String>) {
+    val test = mock<TestDescriptor>()
+    entries.forEach { onMetadata(test, reportEntries(it)) }
+    afterTest(test, result)
+  }
+
+  private fun testResult(resultType: TestResult.ResultType): TestResult =
+    mock<TestResult>().also { whenever(it.resultType).thenReturn(resultType) }
+
+  private fun dslServicesWithAnalytics(analyticsService: AnalyticsService, services: DslServices = dslServices): DslServices {
+    val registry = mock<BuildServiceRegistry>()
+    whenever(registry.registerIfAbsent(any(), eq(AnalyticsService::class.java), any())).thenReturn(project.provider { analyticsService })
+    return object : DslServices by services {
+      override val buildServiceRegistry: BuildServiceRegistry
+        get() = registry
+    }
   }
 
   private fun DependencyCollector.notations(): List<String> = dependencies.get().map { "${it.group}:${it.name}:${it.version}" }

@@ -33,6 +33,8 @@ import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.TestRun
+import com.google.wireless.android.sdk.stats.TestRun.BackupTestRun.BackupFailureReason
+import com.google.wireless.android.sdk.stats.TestRun.BackupTestRun.BackupTransportMode
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
@@ -113,23 +115,88 @@ class BackupTestSuiteDeclarationTest {
 
   @Test
   fun testBackupTestSuiteExecutionAndAnalytics() {
-    val build = rule.build
+    // Tests that publish the JUnit report entries of the backup library, like its backups and restores do
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/myBackup/test/java/com/example/BackupRestoreTest.java",
+            """
+            package com.example;
+
+            import org.junit.jupiter.api.Test;
+            import org.junit.jupiter.api.TestReporter;
+
+            public class BackupRestoreTest {
+              @Test
+              public void backupAndRestore(TestReporter reporter) {
+                reporter.publishEntry("BackupRestore.transportMode", "LOCAL");
+                reporter.publishEntry("BackupRestore.storageDomainCount", "2");
+              }
+
+              @Test
+              public void expectedRestoreFailure(TestReporter reporter) {
+                reporter.publishEntry("BackupRestore.errorCode", "RESTORE_FAILED");
+              }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
     val capturer = ProfileCapturer(build.profileDirectory!!, ".trk")
     val events = capturer.captureAndroidEvent {
       build.executor.run(":app:testDebugMyBackupDefaultTestSuite")
     }
 
-    val backupEvents = events.filter {
-      it.category == AndroidStudioEvent.EventCategory.TESTS &&
-        it.kind == AndroidStudioEvent.EventKind.TEST_RUN &&
-        it.testRun.testKind == TestRun.TestKind.BACKUP_TEST
-    }
-    Truth.assertThat(backupEvents).hasSize(1)
-    val testRun = backupEvents.single().testRun
-    Truth.assertThat(testRun.numberOfTestsExecuted).isEqualTo(1)
-    Truth.assertThat(testRun.backupTestRun.passedTestCount).isEqualTo(1)
+    val testRun = backupTestRun(events)
+    Truth.assertThat(testRun.testInvocationType).isEqualTo(TestRun.TestInvocationType.GRADLE_TEST)
+    // The test of the toy engine and the two tests above
+    Truth.assertThat(testRun.numberOfTestsExecuted).isEqualTo(3)
+    Truth.assertThat(testRun.backupTestRun.passedTestCount).isEqualTo(3)
     Truth.assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(0)
     Truth.assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
+    Truth.assertThat(testRun.backupTestRun.transportMode).isEqualTo(BackupTransportMode.LOCAL_TRANSPORT)
+    Truth.assertThat(testRun.backupTestRun.storageDomainCount).isEqualTo(2)
+    // The error of a test that passes isn't a failure.
+    Truth.assertThat(testRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.NO_FAILURE)
+  }
+
+  @Test
+  fun testFailedRunReportsBackupFailureReason() {
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/myBackup/test/java/com/example/BackupRestoreTest.java",
+            """
+            package com.example;
+
+            import org.junit.jupiter.api.Test;
+            import org.junit.jupiter.api.TestReporter;
+
+            public class BackupRestoreTest {
+              @Test
+              public void restoreTimesOut(TestReporter reporter) {
+                reporter.publishEntry("BackupRestore.errorCode", "RESTORE_POLL_TIMEOUT");
+                throw new AssertionError("Restore timed out");
+              }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+    val capturer = ProfileCapturer(build.profileDirectory!!, ".trk")
+    val events = capturer.captureAndroidEvent {
+      build.executor.expectFailure().run(":app:testDebugMyBackupDefaultTestSuite")
+    }
+
+    val testRun = backupTestRun(events)
+    Truth.assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(1)
+    Truth.assertThat(testRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.TIMEOUT)
   }
 
   @Test
@@ -187,6 +254,17 @@ class BackupTestSuiteDeclarationTest {
     for (configuration in compilerPluginClasspaths) {
       build.executor.run(":app:dependencies", "--configuration", configuration).assertOutputDoesNotContain("androidx.test.backup")
     }
+  }
+
+  /** Returns the backup test run that [events] report. */
+  private fun backupTestRun(events: Collection<AndroidStudioEvent>): TestRun {
+    val backupEvents = events.filter {
+      it.category == AndroidStudioEvent.EventCategory.TESTS &&
+        it.kind == AndroidStudioEvent.EventKind.TEST_RUN &&
+        it.testRun.testKind == TestRun.TestKind.BACKUP_TEST
+    }
+    Truth.assertThat(backupEvents).hasSize(1)
+    return backupEvents.single().testRun
   }
 }
 

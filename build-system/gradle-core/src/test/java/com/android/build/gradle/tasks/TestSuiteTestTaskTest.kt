@@ -18,8 +18,11 @@ package com.android.build.gradle.tasks
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
+import com.android.build.gradle.internal.fixtures.ProjectFactory
+import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
+import com.android.builder.testing.api.DeviceProvider
 import com.google.common.truth.Truth.assertThat
 import java.util.Properties
 import java.util.concurrent.ExecutionException
@@ -137,5 +140,42 @@ class TestSuiteTestTaskTest {
 
     assertThat(targets.map { it.serialNumber }).containsExactly("emulator-5554", "emulator-5560").inOrder()
     assertFailsWith<DeviceException> { targets.last().deviceConfigProvider }
+  }
+
+  @Test
+  fun executeTests_noDevice_notifiesNoDeviceListeners() {
+    val project = ProjectFactory.project
+    val task = project.tasks.register("testSuiteTestTaskWithoutDevice", TestSuiteTestTask::class.java).get()
+    task.resultsDir.set(folder.newFolder())
+    task.coverageDir.set(folder.newFolder())
+    task.logFile.set(folder.newFile())
+    task.streamingOutputFile.set(folder.newFile())
+    task.engineInputParameters.add(TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, project.files()))
+    DeviceProviderInstrumentTestTask.DeviceProviderFactory::class
+      .java
+      .getDeclaredField("deviceProvider")
+      .apply { isAccessible = true }
+      .set(task.deviceProviderFactory, NoDeviceProvider())
+    var notified = false
+    task.addNoDeviceListener { notified = true }
+
+    assertFailsWith<DeviceException> { task.executeTests() }
+
+    assertThat(notified).isTrue()
+  }
+
+  /** Finds no device, as when none is connected. */
+  private class NoDeviceProvider : DeviceProvider() {
+    override fun getName() = "noDevice"
+
+    override fun init(): Unit = throw DeviceException("No connected devices!")
+
+    override fun terminate() {}
+
+    override fun getDevices(): List<DeviceConnector> = emptyList()
+
+    override fun getTimeoutInMs() = 0
+
+    override fun isConfigured() = true
   }
 }

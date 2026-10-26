@@ -238,6 +238,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Internal abstract val jacocoHostDestinationFile: RegularFileProperty
 
+  private val noDeviceListeners = mutableListOf<NoDeviceListener>()
+
+  /** Adds a [listener] to notify when the tests can't start because no device is available. */
+  internal fun addNoDeviceListener(listener: NoDeviceListener) {
+    noDeviceListeners += listener
+  }
+
   @TaskAction
   override fun executeTests() {
 
@@ -292,6 +299,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       provisionManagedDevicesAndExecute { managedDevices ->
         val onlineDevices = connectedDevices + managedDevices
         if (onlineDevices.isEmpty()) {
+          noDeviceListeners.forEach { it.onNoDevice() }
           throw deviceException ?: DeviceException("No connected devices!")
         }
         onDevicesReady(onlineDevices)
@@ -1324,6 +1332,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     @get:Input val type: AgpTestSuiteInputParameters,
     @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) val fileCollection: FileCollection,
   )
+
+  /** Notified when the tests of a [TestSuiteTestTask] can't start because no device is available. */
+  internal fun interface NoDeviceListener {
+    fun onNoDevice()
+  }
 
   class DeviceTestTarget(
     val serialNumber: String,

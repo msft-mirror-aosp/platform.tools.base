@@ -128,6 +128,9 @@ fun recordBackupTestRun(
   totalRunTimeMs: Long? = null,
   infrastructureCrashed: Boolean = false,
   invocationType: TestRun.TestInvocationType = TestRun.TestInvocationType.GRADLE_TEST,
+  transportMode: TestRun.BackupTestRun.BackupTransportMode? = null,
+  failureReason: TestRun.BackupTestRun.BackupFailureReason? = null,
+  storageDomainCount: Int? = null,
 ) {
   val backupRun =
     TestRun.BackupTestRun.newBuilder()
@@ -138,6 +141,9 @@ fun recordBackupTestRun(
         if (totalRunTimeMs != null) {
           this.totalRunTimeMs = totalRunTimeMs
         }
+        transportMode?.let { this.transportMode = it }
+        failureReason?.let { this.failureReason = it }
+        storageDomainCount?.let { this.storageDomainCount = it }
       }
       .build()
 
