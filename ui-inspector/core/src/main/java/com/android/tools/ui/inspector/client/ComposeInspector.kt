@@ -41,24 +41,57 @@ private const val MAX_COLLECTION_ELEMENTS = 5
 /**
  * Creates the Compose Inspector on the agent if Jetpack Compose is detected in the target application process. Returns false when the app
  * does not use Compose. When it does, the inspector is created or the dump fails: a Compose app dumped without its Compose tree would be
- * silently incomplete, so a jar that cannot be resolved or an agent that refuses to load it fails the dump.
+ * silently incomplete, so a jar that cannot be resolved, an unknown Compose version without [overrideJar] or an agent that refuses to load
+ * the jar fails the dump.
+ *
+ * @param resolveJar Resolves the Compose inspector jar for the app's Compose version.
+ * @param overrideJar The Compose inspector jar given explicitly, or null. It is used when the app's Compose version is unknown, since the
+ *   version is only needed to resolve a jar. When the version is known, [resolveJar] already returns this jar.
  */
 internal suspend fun createComposeInspector(
   commandSender: CommandSender,
   injectionManager: InjectionManager,
   logger: Logger,
   resolveJar: (version: String) -> Path,
+  overrideJar: Path?,
 ): Boolean {
-  val composeVersion = getComposeVersion(commandSender, logger) ?: return false
-
   val jar =
-    try {
-      resolveJar(composeVersion)
-    } catch (e: IOException) {
-      throw IOException("Could not resolve the Compose inspector for Compose $composeVersion: ${e.message}", e)
+    when (val compose = detectCompose(commandSender, logger)) {
+      ComposeDetection.Absent -> return false
+      is ComposeDetection.Present ->
+        try {
+          resolveJar(compose.version)
+        } catch (e: IOException) {
+          throw IOException("Could not resolve the Compose inspector for Compose ${compose.version}: ${e.message}", e)
+        }
+      ComposeDetection.PresentWithoutVersion -> {
+        if (overrideJar == null) {
+          throw IOException(COMPOSE_VERSION_UNKNOWN_MESSAGE)
+        }
+        logger.log(LogLevel.PROGRESS, "Using the Compose inspector $overrideJar")
+        overrideJar
+      }
     }
   launchComposeInspector(commandSender, injectionManager, jar, logger)
   return true
+}
+
+/** The failure when the app uses Compose but its Compose version is unknown, and no Compose inspector jar was given. */
+private const val COMPOSE_VERSION_UNKNOWN_MESSAGE =
+  "Compose inspection unavailable: the app uses Compose, but its APK has no readable META-INF/androidx.compose.ui_ui.version file, so " +
+    "its androidx.compose.ui:ui version is unknown. Was the file excluded, e.g. by a \"/META-INF/*\" or \"META-INF/*.version\" pattern " +
+    "in the packaging (packagingOptions) resources excludes of the app's build file? Keep the file, then rebuild and reinstall the app."
+
+/** Whether the app uses Compose, as the agent reports it. */
+private sealed interface ComposeDetection {
+  /** The app does not use Compose. */
+  data object Absent : ComposeDetection
+
+  /** The app uses Compose UI [version]. */
+  data class Present(val version: String) : ComposeDetection
+
+  /** The app uses Compose, but its version file is missing, unreadable or blank. */
+  data object PresentWithoutVersion : ComposeDetection
 }
 
 /** Queries the Compose inspector on the agent for the Composable tree of a specific root view. */
@@ -188,8 +221,8 @@ private fun LayoutInspectorComposeProtocol.Response.requireVariant(
   return this
 }
 
-/** Queries the target application agent for its installed Jetpack Compose version; null when the app does not use Compose. */
-private suspend fun getComposeVersion(commandSender: CommandSender, logger: Logger): String? {
+/** Queries the target application agent for whether the app uses Compose, and which version. */
+private suspend fun detectCompose(commandSender: CommandSender, logger: Logger): ComposeDetection {
   val getVersionCommand =
     UiInspectorProtocol.Command.newBuilder()
       .setGetVersion(UiInspectorProtocol.GetVersionCommand.newBuilder().addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID).build())
@@ -201,17 +234,22 @@ private suspend fun getComposeVersion(commandSender: CommandSender, logger: Logg
     "Failed to query the Compose version: ${versionResponse.errorMessage}"
   }
 
-  val composeVersion =
-    versionResponse
-      .requireVariant(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION)
-      .getVersion
-      .versionsMap[ProtocolConstants.COMPOSE_UI_LIBRARY_ID]
-  if (composeVersion == null) {
-    logger.log(LogLevel.PROGRESS, "Compose not detected in target application.")
-    return null
+  val getVersion = versionResponse.requireVariant(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION).getVersion
+  val composeVersion = getVersion.versionsMap[ProtocolConstants.COMPOSE_UI_LIBRARY_ID]
+  return when {
+    composeVersion != null -> {
+      logger.log(LogLevel.PROGRESS, "Compose detected: $composeVersion")
+      ComposeDetection.Present(composeVersion)
+    }
+    ProtocolConstants.COMPOSE_UI_LIBRARY_ID in getVersion.librariesWithoutVersionList -> {
+      logger.log(LogLevel.PROGRESS, "Compose detected, but its version is unknown (the version file is missing, empty or unreadable)")
+      ComposeDetection.PresentWithoutVersion
+    }
+    else -> {
+      logger.log(LogLevel.PROGRESS, "Compose not detected in target application.")
+      ComposeDetection.Absent
+    }
   }
-  logger.log(LogLevel.PROGRESS, "Compose detected: $composeVersion")
-  return composeVersion
 }
 
 /** Deploys the Compose Inspector JAR to the device sandbox and requests the agent to load it dynamically. */

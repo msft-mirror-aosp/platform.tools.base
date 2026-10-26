@@ -27,12 +27,24 @@ public final class ComposeInspectionUtils {
     private static final String COMPOSE_UI_VERSION_RESOURCE_PATH =
             "META-INF/androidx.compose.ui_ui.version";
 
-    public static String detectComposeVersion(ClassLoader classLoader) {
+    /**
+     * Returns whether the app uses Compose: whether {@code classLoader} has Compose UI's Modifier
+     * class.
+     */
+    public static boolean isComposePresent(ClassLoader classLoader) {
         try {
             classLoader.loadClass("androidx.compose.ui.Modifier");
+            return true;
         } catch (ClassNotFoundException e) {
-            return null;
+            return false;
         }
+    }
+
+    /**
+     * Returns the Compose UI version the app's version file declares, or null when the file is
+     * missing (e.g. excluded from the APK), unreadable or blank.
+     */
+    public static String readComposeVersion(ClassLoader classLoader) {
         try (InputStream is = classLoader.getResourceAsStream(COMPOSE_UI_VERSION_RESOURCE_PATH)) {
             if (is == null) {
                 return null;
@@ -44,7 +56,8 @@ public final class ComposeInspectionUtils {
                 while ((line = reader.readLine()) != null) {
                     sb.append(line);
                 }
-                return sb.toString().trim();
+                String version = sb.toString().trim();
+                return version.isEmpty() ? null : version;
             }
         } catch (Exception e) {
             return null;

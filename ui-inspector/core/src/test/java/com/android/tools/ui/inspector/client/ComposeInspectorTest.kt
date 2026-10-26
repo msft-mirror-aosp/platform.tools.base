@@ -226,6 +226,7 @@ class ComposeInspectorTest {
           fixedJar.writeText("fake pre-compiled compose dex classes")
           fixedJar
         },
+        overrideJar = null,
       )
     }
 
@@ -320,6 +321,7 @@ class ComposeInspectorTest {
           injectionManager = injectionManager,
           logger = logger,
           resolveJar = { fixedJar },
+          overrideJar = null,
         )
       }
 
@@ -600,6 +602,7 @@ class ComposeInspectorTest {
               fixedJar.writeText("fake pre-compiled compose dex classes")
               fixedJar
             },
+            overrideJar = null,
           )
         assertThat(composeInspectorConnected).isTrue()
 
@@ -915,6 +918,7 @@ class ComposeInspectorTest {
               fixedJar.writeText("fake pre-compiled compose dex classes")
               fixedJar
             },
+            overrideJar = null,
           )
         assertThat(composeInspectorConnected).isTrue()
 
@@ -1241,6 +1245,7 @@ class ComposeInspectorTest {
               fixedJar.writeText("fake pre-compiled compose dex classes")
               fixedJar
             },
+            overrideJar = null,
           )
         assertThat(composeInspectorConnected).isTrue()
 
@@ -1366,6 +1371,7 @@ class ComposeInspectorTest {
               injectionManager,
               logger,
               resolveJar = { throw AssertionError("no jar resolution expected") },
+              overrideJar = null,
             )
           }
         }
@@ -1393,6 +1399,7 @@ class ComposeInspectorTest {
               injectionManager,
               logger,
               resolveJar = { throw AssertionError("no jar resolution expected") },
+              overrideJar = null,
             )
           }
         }
@@ -1412,10 +1419,86 @@ class ComposeInspectorTest {
           .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
           .build()
       }) { commandSender ->
-        createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw AssertionError("no jar resolution expected") })
+        createComposeInspector(
+          commandSender,
+          injectionManager,
+          logger,
+          resolveJar = { throw AssertionError("no jar resolution expected") },
+          overrideJar = null,
+        )
       }
 
     assertThat(connected).isFalse()
+  }
+
+  @Test
+  fun testCreateComposeInspector_composeVersionUnknown_failsWithoutOverride() {
+    // Any device work, such as staging a jar, fails on this session, which has nothing configured.
+    val injectionManager = unusedInjectionManager()
+    val exception =
+      assertThrows(IOException::class.java) {
+        runBlocking {
+          respondingWith({ command -> composeVersionUnknownResponse(command) }) { commandSender ->
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { throw AssertionError("no jar resolution expected") },
+              overrideJar = null,
+            )
+          }
+        }
+      }
+
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo(
+        "Compose inspection unavailable: the app uses Compose, but its APK has no readable META-INF/androidx.compose.ui_ui.version file, " +
+          "so its androidx.compose.ui:ui version is unknown. Was the file excluded, e.g. by a \"/META-INF/*\" or \"META-INF/*.version\" " +
+          "pattern in the packaging (packagingOptions) resources excludes of the app's build file? Keep the file, then rebuild and " +
+          "reinstall the app."
+      )
+  }
+
+  @Test
+  fun testCreateComposeInspector_composeVersionUnknown_usesOverride(): Unit = runBlocking {
+    val fakeSession = FakeAdbSession()
+    val testDeviceServices = TestAdbDeviceServices(fakeSession.deviceServices)
+    val testSession = TestAdbSession(fakeSession, testDeviceServices, TestAdbHostServices(fakeSession.hostServices))
+    testDeviceServices.session = testSession
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    // The override jar is already staged, so the only device work left is the agent's answer to the create command.
+    val overrideJar = tempFolder.newFile("compose-override.jar").toPath()
+    overrideJar.writeText("fake pre-compiled compose dex classes")
+    val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-override.jar", computeContentDigest(overrideJar))}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
+    val injectionManager = unusedInjectionManager(testSession)
+    val createCommands = Collections.synchronizedList(mutableListOf<UiInspectorProtocol.CreateInspectorCommand>())
+
+    val connected =
+      respondingWith({ command ->
+        if (command.hasGetVersion()) {
+          composeVersionUnknownResponse(command)
+        } else {
+          createCommands.add(command.createInspector)
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(command.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+            .build()
+        }
+      }) { commandSender ->
+        createComposeInspector(
+          commandSender,
+          injectionManager,
+          logger,
+          resolveJar = { throw AssertionError("no jar resolution expected") },
+          overrideJar = overrideJar,
+        )
+      }
+
+    assertThat(connected).isTrue()
+    assertThat(createCommands.map { it.dexPath }).containsExactly(stagedJarPath)
   }
 
   @Test
@@ -1426,7 +1509,7 @@ class ComposeInspectorTest {
       assertThrows(IOException::class.java) {
         runBlocking {
           respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw downloadFailure })
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw downloadFailure }, overrideJar = null)
           }
         }
       }
@@ -1451,7 +1534,7 @@ class ComposeInspectorTest {
       assertThrows(IOException::class.java) {
         runBlocking {
           respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, logger, resolveJar)
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar, overrideJar = null)
           }
         }
       }
@@ -1473,7 +1556,7 @@ class ComposeInspectorTest {
       assertThrows(NullPointerException::class.java) {
         runBlocking {
           respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw defect })
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw defect }, overrideJar = null)
           }
         }
       }
@@ -1510,7 +1593,7 @@ class ComposeInspectorTest {
                 .build()
             }
           }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { fixedJar })
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { fixedJar }, overrideJar = null)
           }
         }
       }
@@ -1939,6 +2022,16 @@ class ComposeInspectorTest {
       .setCommandId(command.commandId)
       .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
       .setGetVersion(UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, version))
+      .build()
+
+  /** A successful version answer to [command] reporting that the app uses Compose, but without its version. */
+  private fun composeVersionUnknownResponse(command: UiInspectorProtocol.Command): UiInspectorProtocol.Response =
+    UiInspectorProtocol.Response.newBuilder()
+      .setCommandId(command.commandId)
+      .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+      .setGetVersion(
+        UiInspectorProtocol.GetVersionResponse.newBuilder().addLibrariesWithoutVersion(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
+      )
       .build()
 
   /** An [InjectionManager] for flows that never stage anything, or stage against [session] alone. */

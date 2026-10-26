@@ -32,7 +32,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -228,26 +227,33 @@ public final class SessionHandler {
 
     private UiInspectorProtocol.Response.Builder handleGetVersion(
             UiInspectorProtocol.GetVersionCommand command) {
-        Map<String, String> versions = new HashMap<>();
+        UiInspectorProtocol.GetVersionResponse.Builder versionResponse =
+                UiInspectorProtocol.GetVersionResponse.newBuilder();
         for (String libraryId : command.getLibraryIdsList()) {
-            String version = performVersionDetection(libraryId);
-            if (version != null) {
-                versions.put(libraryId, version);
-            }
+            performVersionDetection(libraryId, versionResponse);
         }
 
-        return UiInspectorProtocol.Response.newBuilder()
-                .setGetVersion(
-                        UiInspectorProtocol.GetVersionResponse.newBuilder()
-                                .putAllVersions(versions)
-                                .build());
+        return UiInspectorProtocol.Response.newBuilder().setGetVersion(versionResponse.build());
     }
 
-    private String performVersionDetection(String libraryId) {
-        if (ProtocolConstants.COMPOSE_UI_LIBRARY_ID.equals(libraryId)) {
-            return ComposeInspectionUtils.detectComposeVersion(classLoader);
-        } else {
+    /**
+     * Records {@code libraryId} in {@code versionResponse}: in its versions when the library is
+     * present and its version can be read, in its libraries without version when the library is
+     * present but its version can't be read, and nowhere when the library is absent.
+     */
+    private void performVersionDetection(
+            String libraryId, UiInspectorProtocol.GetVersionResponse.Builder versionResponse) {
+        if (!ProtocolConstants.COMPOSE_UI_LIBRARY_ID.equals(libraryId)) {
             throw new IllegalArgumentException("Unsupported library ID: " + libraryId);
+        }
+        if (!ComposeInspectionUtils.isComposePresent(classLoader)) {
+            return;
+        }
+        String version = ComposeInspectionUtils.readComposeVersion(classLoader);
+        if (version != null) {
+            versionResponse.putVersions(libraryId, version);
+        } else {
+            versionResponse.addLibrariesWithoutVersion(libraryId);
         }
     }
 

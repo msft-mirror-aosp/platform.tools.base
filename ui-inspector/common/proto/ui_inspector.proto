@@ -69,6 +69,9 @@ message GetVersionResponse {
     // A map of library IDs to their discovered version string on the agent's classpath.
     // Example: {"androidx.compose.ui:ui" : "1.5.4"}
     map<string, string> versions = 1;
+    // IDs of the requested libraries whose classes are present but whose version could not be read, e.g. because the app excluded the
+    // version file from its APK. A library is in at most one of versions and libraries_without_version.
+    repeated string libraries_without_version = 2;
 }
 
 // Top-level envelope for all commands sent from host to agent.

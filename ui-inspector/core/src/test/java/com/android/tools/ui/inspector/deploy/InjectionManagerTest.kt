@@ -1760,7 +1760,26 @@ class InjectionManagerTest {
   }
 
   @Test
-  fun testRunWithConnectedInspectors_warmReconnectWithOverride_transfersNothingAndUsesOverridePath() = runBlocking {
+  fun testRunWithConnectedInspectors_warmReconnectWithOverride_transfersNothingAndUsesOverridePath() {
+    assertWarmReconnectUsesStagedOverride(
+      UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
+    )
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_composeVersionUnknownWithOverride_usesOverridePath() {
+    // The app uses Compose but its version file is missing: the override jar is still used, as it needs no version.
+    assertWarmReconnectUsesStagedOverride(
+      UiInspectorProtocol.GetVersionResponse.newBuilder().addLibrariesWithoutVersion(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
+    )
+  }
+
+  /**
+   * Runs [runWithConnectedInspectors] with an override jar against a running server where that jar is already staged, the agent answering
+   * the version query with [versionResponse], and asserts that the Compose inspector is created from the staged override without
+   * transferring any file.
+   */
+  private fun assertWarmReconnectUsesStagedOverride(versionResponse: UiInspectorProtocol.GetVersionResponse.Builder): Unit = runBlocking {
     val overrideJar = tempFolder.newFile("compose-override.jar").toPath()
     Files.write(overrideJar, byteArrayOf(1, 2, 3))
     val overrideToken = "1234_" + computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector, overrideJar).combined
@@ -1792,9 +1811,7 @@ class InjectionManagerTest {
             UiInspectorProtocol.Response.newBuilder()
               .setCommandId(getVersion.commandId)
               .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
-              .setGetVersion(
-                UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
-              )
+              .setGetVersion(versionResponse)
               .build(),
           )
           val composeCreate = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))

@@ -77,6 +77,7 @@ internal suspend fun <T> runWithConnectedInspectors(
         InjectionMode.RECONNECT_IF_AVAILABLE,
         needsDebugViewAttributes,
         resolveComposeInspectorJar,
+        composeInspectorResolution.overrideJar,
         logger,
         responseTimeout,
         block,
@@ -89,6 +90,7 @@ internal suspend fun <T> runWithConnectedInspectors(
           InjectionMode.FORCE_FULL_INJECTION,
           needsDebugViewAttributes,
           resolveComposeInspectorJar,
+          composeInspectorResolution.overrideJar,
           logger,
           responseTimeout,
           block,
@@ -127,6 +129,7 @@ private suspend fun <T> connectAndRunInspectors(
   mode: InjectionMode,
   needsDebugViewAttributes: Boolean,
   resolveComposeInspectorJar: (version: String) -> Path,
+  composeInspectorOverrideJar: Path?,
   logger: Logger,
   responseTimeout: Duration,
   block: suspend (CommandSender, Boolean) -> T,
@@ -155,7 +158,8 @@ private suspend fun <T> connectAndRunInspectors(
         throw e
       }
 
-      val composeInspectorConnected = createComposeInspector(commandSender, injectionManager, logger, resolveComposeInspectorJar)
+      val composeInspectorConnected =
+        createComposeInspector(commandSender, injectionManager, logger, resolveComposeInspectorJar, composeInspectorOverrideJar)
 
       block(commandSender, composeInspectorConnected)
     }

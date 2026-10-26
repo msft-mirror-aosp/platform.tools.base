@@ -580,67 +580,81 @@ public final class SessionHandlerTest {
 
     @Test
     public void testHandle_getVersion_composeAbsent() throws Exception {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        UiInspectorProtocol.GetVersionResponse versionResponse =
+                getComposeVersion(
+                        appClassLoader(/* usesCompose= */ false, /* versionFileContent= */ null));
 
-        UiInspectorProtocol.Command command =
-                UiInspectorProtocol.Command.newBuilder()
-                        .setCommandId(1)
-                        .setGetVersion(
-                                UiInspectorProtocol.GetVersionCommand.newBuilder()
-                                        .addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
-                                        .build())
-                        .build();
-
-        ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
-        FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
-
-        ClassLoader mockAbsentClassLoader =
-                new ClassLoader(SessionHandlerTest.class.getClassLoader()) {
-                    @Override
-                    public Class<?> loadClass(String name, boolean resolve)
-                            throws ClassNotFoundException {
-                        if ("androidx.compose.ui.Modifier".equals(name)) {
-                            throw new ClassNotFoundException("androidx.compose.ui.Modifier");
-                        }
-                        return super.loadClass(name, resolve);
-                    }
-                };
-
-        CountDownLatch shutdownLatch = new CountDownLatch(1);
-        SessionHandler sessionHandler =
-                new SessionHandler(
-                        inputStream,
-                        outputStream,
-                        t -> {
-                            throw new RuntimeException(t);
-                        },
-                        shutdownLatch,
-                        new HashMap<>(),
-                        mockAbsentClassLoader);
-
-        sessionHandler.processCommands();
-
-        byte[] writtenBytes = outputStream.toByteArray();
-        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
-        UiInspectorProtocol.AgentMessage agentMessage =
-                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
-        assertThat(agentMessage.hasResponse()).isTrue();
-        UiInspectorProtocol.Response response = agentMessage.getResponse();
-
-        assertThat(response.getCommandId()).isEqualTo(1);
-        assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
-        assertThat(response.getSpecializedCase())
-                .isEqualTo(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION);
-
-        UiInspectorProtocol.GetVersionResponse versionResponse = response.getGetVersion();
         assertThat(versionResponse.getVersionsMap()).isEmpty();
+        assertThat(versionResponse.getLibrariesWithoutVersionList()).isEmpty();
     }
 
     @Test
     public void testHandle_getVersion_composePresent() throws Exception {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        UiInspectorProtocol.GetVersionResponse versionResponse =
+                getComposeVersion(appClassLoader(/* usesCompose= */ true, "1.5.4\n"));
 
+        assertThat(versionResponse.getVersionsMap())
+                .containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.5.4");
+        assertThat(versionResponse.getLibrariesWithoutVersionList()).isEmpty();
+    }
+
+    @Test
+    public void testHandle_getVersion_composePresentWithoutVersionFile() throws Exception {
+        // E.g. an app that excludes "/META-INF/*" from its APK.
+        UiInspectorProtocol.GetVersionResponse versionResponse =
+                getComposeVersion(
+                        appClassLoader(/* usesCompose= */ true, /* versionFileContent= */ null));
+
+        assertThat(versionResponse.getVersionsMap()).isEmpty();
+        assertThat(versionResponse.getLibrariesWithoutVersionList())
+                .containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID);
+    }
+
+    @Test
+    public void testHandle_getVersion_composePresentWithBlankVersionFile() throws Exception {
+        UiInspectorProtocol.GetVersionResponse versionResponse =
+                getComposeVersion(appClassLoader(/* usesCompose= */ true, " \n"));
+
+        assertThat(versionResponse.getVersionsMap()).isEmpty();
+        assertThat(versionResponse.getLibrariesWithoutVersionList())
+                .containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID);
+    }
+
+    /**
+     * Returns a class loader for an app that uses Compose or not, whose Compose version file has
+     * {@code versionFileContent}, or is missing when it is null.
+     */
+    private static ClassLoader appClassLoader(boolean usesCompose, String versionFileContent) {
+        return new ClassLoader(SessionHandlerTest.class.getClassLoader()) {
+            @Override
+            public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                if ("androidx.compose.ui.Modifier".equals(name)) {
+                    if (usesCompose) {
+                        return Object.class;
+                    }
+                    throw new ClassNotFoundException(name);
+                }
+                return super.loadClass(name, resolve);
+            }
+
+            @Override
+            public InputStream getResourceAsStream(String name) {
+                if ("META-INF/androidx.compose.ui_ui.version".equals(name)) {
+                    return versionFileContent == null
+                            ? null
+                            : new ByteArrayInputStream(versionFileContent.getBytes());
+                }
+                return super.getResourceAsStream(name);
+            }
+        };
+    }
+
+    /**
+     * Sends a GetVersion command for Compose UI to a session using {@code classLoader}, checks that
+     * it succeeds, and returns its response.
+     */
+    private static UiInspectorProtocol.GetVersionResponse getComposeVersion(ClassLoader classLoader)
+            throws Exception {
         UiInspectorProtocol.Command command =
                 UiInspectorProtocol.Command.newBuilder()
                         .setCommandId(1)
@@ -649,60 +663,33 @@ public final class SessionHandlerTest {
                                         .addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
                                         .build())
                         .build();
-
         ByteArrayOutputStream inputStreamData = new ByteArrayOutputStream();
         FramingProtocol.writeMessage(inputStreamData, command.toByteArray());
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(inputStreamData.toByteArray());
-
-        ClassLoader mockClassLoader =
-                new ClassLoader(SessionHandlerTest.class.getClassLoader()) {
-                    @Override
-                    public Class<?> loadClass(String name, boolean resolve)
-                            throws ClassNotFoundException {
-                        if ("androidx.compose.ui.Modifier".equals(name)) {
-                            return Object.class;
-                        }
-                        return super.loadClass(name, resolve);
-                    }
-
-                    @Override
-                    public InputStream getResourceAsStream(String name) {
-                        if ("META-INF/androidx.compose.ui_ui.version".equals(name)) {
-                            return new ByteArrayInputStream("1.5.4".getBytes());
-                        }
-                        return super.getResourceAsStream(name);
-                    }
-                };
-
-        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         SessionHandler sessionHandler =
                 new SessionHandler(
-                        inputStream,
+                        new ByteArrayInputStream(inputStreamData.toByteArray()),
                         outputStream,
                         t -> {
                             throw new RuntimeException(t);
                         },
-                        shutdownLatch,
+                        new CountDownLatch(1),
                         new HashMap<>(),
-                        mockClassLoader);
+                        classLoader);
 
         sessionHandler.processCommands();
 
-        byte[] writtenBytes = outputStream.toByteArray();
-        byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
+        byte[] responseBytes =
+                FramingProtocol.readMessage(new ByteArrayInputStream(outputStream.toByteArray()));
         UiInspectorProtocol.AgentMessage agentMessage =
                 UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
         assertThat(agentMessage.hasResponse()).isTrue();
         UiInspectorProtocol.Response response = agentMessage.getResponse();
-
         assertThat(response.getCommandId()).isEqualTo(1);
         assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
         assertThat(response.getSpecializedCase())
                 .isEqualTo(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION);
-
-        UiInspectorProtocol.GetVersionResponse versionResponse = response.getGetVersion();
-        assertThat(versionResponse.getVersionsMap())
-                .containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.5.4");
+        return response.getGetVersion();
     }
 
     @Test
