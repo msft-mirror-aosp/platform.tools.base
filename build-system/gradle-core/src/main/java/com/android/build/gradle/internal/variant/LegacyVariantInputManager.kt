@@ -22,10 +22,6 @@ import com.android.build.gradle.internal.api.LazyAndroidSourceSet
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
-import com.android.build.gradle.internal.dsl.DeclarativeBuildType
-import com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory
-import com.android.build.gradle.internal.dsl.DeclarativeProductFlavor
-import com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.ProductFlavorFactory
@@ -46,20 +42,10 @@ class LegacyVariantInputManager(dslServices: DslServices, componentType: Compone
   AbstractVariantInputManager<DefaultConfig, BuildType, ProductFlavor, SigningConfig>(dslServices, componentType, sourceSetManager) {
 
   override val buildTypeContainer: NamedDomainObjectContainer<BuildType> =
-    if (dslServices.projectOptions[BooleanOption.USE_DECLARATIVE_INTERFACES]) {
-      dslServices.domainObjectContainer(DeclarativeBuildType::class.java, DeclarativeBuildTypeFactory(dslServices, componentType))
-        as NamedDomainObjectContainer<BuildType>
-    } else {
-      dslServices.domainObjectContainer(BuildType::class.java, BuildTypeFactory(dslServices, componentType))
-    }
+    dslServices.domainObjectContainer(BuildType::class.java, BuildTypeFactory(dslServices, componentType))
 
   override val productFlavorContainer: NamedDomainObjectContainer<ProductFlavor> =
-    if (dslServices.projectOptions[BooleanOption.USE_DECLARATIVE_INTERFACES]) {
-      dslServices.domainObjectContainer(DeclarativeProductFlavor::class.java, DeclarativeProductFlavorFactory(dslServices))
-        as NamedDomainObjectContainer<ProductFlavor>
-    } else {
-      dslServices.domainObjectContainer(ProductFlavor::class.java, ProductFlavorFactory(dslServices))
-    }
+    dslServices.domainObjectContainer(ProductFlavor::class.java, ProductFlavorFactory(dslServices))
 
   override val signingConfigContainer: NamedDomainObjectContainer<SigningConfig> =
     dslServices.domainObjectContainer(

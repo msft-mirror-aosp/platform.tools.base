@@ -95,7 +95,6 @@ class BooleanOptionTest {
         BooleanOption.ENABLE_BUILD_CONFIG_AS_BYTECODE,
         BooleanOption.RUN_LINT_IN_PROCESS,
         BooleanOption.ENABLE_TEST_FIXTURES,
-        BooleanOption.USE_DECLARATIVE_INTERFACES,
         BooleanOption.FORCE_DETERMINISTIC_APK,
         BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE,
         BooleanOption.MISSING_LINT_BASELINE_IS_EMPTY_BASELINE,

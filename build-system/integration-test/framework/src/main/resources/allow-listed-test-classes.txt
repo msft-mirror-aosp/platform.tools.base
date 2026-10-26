@@ -289,7 +289,6 @@ com.android.build.gradle.integration.databinding.incremental.DataBindingIncremen
 com.android.build.gradle.integration.databinding.incremental.DataBindingIncrementalTest
 com.android.build.gradle.integration.databinding.incremental.ViewBindingIncrementalTest
 com.android.build.gradle.integration.databinding.ViewBindingBasicTest
-com.android.build.gradle.integration.declarative.GradleDeclarativeTest
 com.android.build.gradle.integration.dependencies.AarApiJarTest
 com.android.build.gradle.integration.dependencies.AarWithLocalJarsTest
 com.android.build.gradle.integration.dependencies.AndroidXJetifierMatrixTest

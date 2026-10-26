@@ -17,28 +17,14 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationProductFlavor
-import com.android.build.api.dsl.DeclarativeApplicationFlavor
-import com.android.build.api.dsl.DeclarativeLibraryFlavor
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
 import com.android.build.api.dsl.LibraryProductFlavor
-import com.android.build.api.dsl.ProductFlavorDependenciesExtension
 import com.android.build.api.dsl.TestProductFlavor
 import com.android.build.gradle.internal.services.DslServices
 import com.android.builder.model.BaseConfig
 import javax.inject.Inject
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
-
-abstract class DeclarativeProductFlavor @Inject constructor(name: String, dslServices: DslServices) :
-  ProductFlavor(name, dslServices), DeclarativeApplicationFlavor, DeclarativeLibraryFlavor {
-  override val dependencies: ProductFlavorDependenciesExtension by lazy {
-    dslServices.newInstance(ProductFlavorDependenciesExtension::class.java)
-  }
-
-  fun dependencies(configure: ProductFlavorDependenciesExtension.() -> Unit) {
-    configure.invoke(dependencies)
-  }
-}
 
 abstract class ProductFlavor @Inject constructor(name: String, dslServices: DslServices) :
   BaseFlavor(name, dslServices),

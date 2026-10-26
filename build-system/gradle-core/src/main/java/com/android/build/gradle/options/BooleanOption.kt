@@ -264,7 +264,6 @@ enum class BooleanOption(
   /** Whether lint should be run in process; the default is true. */
   RUN_LINT_IN_PROCESS("android.experimental.runLintInProcess", true, FeatureStage.Experimental),
   ENABLE_TEST_FIXTURES("android.experimental.enableTestFixtures", false, FeatureStage.Experimental),
-  USE_DECLARATIVE_INTERFACES("android.experimental.declarative", false, FeatureStage.Experimental),
 
   /** Whether to force the APK to be deterministic. */
   FORCE_DETERMINISTIC_APK("android.experimental.forceDeterministicApk", false, FeatureStage.Experimental),

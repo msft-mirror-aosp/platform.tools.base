@@ -22,8 +22,6 @@ import com.android.build.gradle.internal.api.AndroidSourceSetName
 import com.android.build.gradle.internal.api.LazyAndroidSourceSet
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.DeclarativeBuildType
-import com.android.build.gradle.internal.dsl.DeclarativeProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
@@ -136,25 +134,6 @@ abstract class AbstractVariantInputManager<
         screenshotTestSourceSet = screenshotTestSourceSet,
         lazySourceSetCreation = dslServices.projectOptions[BooleanOption.ENABLE_NEW_TEST_DSL],
       )
-
-    if (dslServices.projectOptions[BooleanOption.USE_DECLARATIVE_INTERFACES]) {
-      wireDependenciesToConfigurations(buildType.name, (buildType as DeclarativeBuildType).dependencies)
-    }
-  }
-
-  private fun wireDependenciesToConfigurations(name: String, dependencies: VariantDimensionDependenciesExtension) {
-    val sourceSetName = AndroidSourceSetName(name)
-    val apiName = sourceSetName.apiConfigurationName
-    val implementationName = sourceSetName.implementationConfigurationName
-    val runtimeOnlyName = sourceSetName.runtimeOnlyConfigurationName
-    val compileOnlyName = sourceSetName.compileOnlyConfigurationName
-    val compileOnlyApiName = sourceSetName.compileOnlyApiConfigurationName
-
-    dslServices.configurations.getByName(apiName).fromDependencyCollector(dependencies.api)
-    dslServices.configurations.getByName(implementationName).fromDependencyCollector(dependencies.implementation)
-    dslServices.configurations.getByName(compileOnlyName).fromDependencyCollector(dependencies.compileOnly)
-    dslServices.configurations.getByName(compileOnlyApiName).fromDependencyCollector(dependencies.compileOnlyApi)
-    dslServices.configurations.getByName(runtimeOnlyName).fromDependencyCollector(dependencies.runtimeOnly)
   }
 
   /**
@@ -207,10 +186,6 @@ abstract class AbstractVariantInputManager<
         lazySourceSetCreation = dslServices.projectOptions[BooleanOption.ENABLE_NEW_TEST_DSL],
       )
     productFlavors[productFlavor.name] = productFlavorData
-
-    if (dslServices.projectOptions[BooleanOption.USE_DECLARATIVE_INTERFACES]) {
-      wireDependenciesToConfigurations(productFlavor.name, (productFlavor as DeclarativeProductFlavor).dependencies)
-    }
   }
 
   companion object {

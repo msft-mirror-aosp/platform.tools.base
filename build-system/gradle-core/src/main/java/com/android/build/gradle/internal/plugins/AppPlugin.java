@@ -16,11 +16,8 @@
 
 package com.android.build.gradle.internal.plugins;
 
-import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID;
-import static com.android.build.gradle.internal.utils.KgpUtils.COMPOSE_COMPILER_PLUGIN_ID;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.dsl.ApplicationDeclarativeDefinition;
 import com.android.build.api.dsl.ApplicationExtension;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.ApplicationAndroidComponentsExtensionImpl;
@@ -35,15 +32,10 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo;
-import com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl;
 import com.android.build.gradle.internal.dsl.ApplicationExtensionImpl;
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension;
 import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension;
-import com.android.build.gradle.internal.dsl.DeclarativeApplicationExtensionImpl;
-import com.android.build.gradle.internal.dsl.DeclarativeServices;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
-import com.android.build.gradle.internal.dsl.DslBindingUtils;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
 import com.android.build.gradle.internal.dsl.SigningConfig;
@@ -66,23 +58,15 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
-import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
-import org.gradle.features.annotations.BindsProjectType;
-import org.gradle.features.binding.ProjectFeatureApplicationContext;
-import org.gradle.features.binding.ProjectTypeApplyAction;
-import org.gradle.features.binding.ProjectTypeBinding;
-import org.gradle.features.binding.ProjectTypeBindingBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.util.Collection;
-import java.util.Objects;
 
 import javax.inject.Inject;
 
 /** Gradle plugin class for 'application' projects, applied on the base application module */
-@BindsProjectType(AppPlugin.Binding.class)
 public class AppPlugin
         extends AbstractAppPlugin<
                 com.android.build.api.dsl.ApplicationExtension,
@@ -102,45 +86,6 @@ public class AppPlugin
 
     @Override
     protected void pluginSpecificApply(@NonNull Project project) {
-    }
-
-    static class AppProjectTypeApplyAction
-            implements ProjectTypeApplyAction<
-                    ApplicationDeclarativeDefinition, AndroidApplicationModuleModel> {
-        private final ObjectFactory objectFactory;
-
-        @Inject
-        public AppProjectTypeApplyAction(ObjectFactory objectFactory) {
-            this.objectFactory = objectFactory;
-        }
-
-        @Override
-        public void apply(
-                ProjectFeatureApplicationContext context,
-                ApplicationDeclarativeDefinition definition,
-                AndroidApplicationModuleModel buildModel) {
-            DeclarativeServices services = objectFactory.newInstance(DeclarativeServices.class);
-
-            DeclarativeApplicationExtension extension =
-                    (DeclarativeApplicationExtension)
-                            Objects.requireNonNull(services)
-                                    .getProject()
-                                    .getExtensions()
-                                    .getByName("android");
-            DslBindingUtils.copyProperties(definition, extension);
-        }
-    }
-
-    static class Binding implements ProjectTypeBinding {
-        public void bind(ProjectTypeBindingBuilder builder) {
-            builder.bindProjectType(
-                            "androidApp",
-                            ApplicationDeclarativeDefinition.class,
-                            AppProjectTypeApplyAction.class)
-                    .withUnsafeDefinitionImplementationType(
-                            ApplicationDeclarativeDefinitionImpl.class)
-                    .withUnsafeApplyAction();
-        }
     }
 
     @NonNull
@@ -170,45 +115,6 @@ public class AppPlugin
                         versionedSdkLoaderService,
                         applicationExtension,
                         forUnitTesting);
-
-        if (getProjectServices()
-                .getProjectOptions()
-                .get(BooleanOption.USE_DECLARATIVE_INTERFACES)) {
-
-            project.getPlugins().apply(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID);
-
-            DeclarativeApplicationExtensionImpl android =
-                    dslServices.newDecoratedInstance(DeclarativeApplicationExtensionImpl.class, dslServices, dslContainers);
-
-            project.getExtensions().add(new TypeOf<>() {}, "android", android);
-
-            bootClasspathConfig =
-                    new BootClasspathConfigImpl(
-                            project,
-                            getProjectServices(),
-                            versionedSdkLoaderService,
-                            android,
-                            forUnitTesting);
-
-            BaseAppModuleExtension internalOnly =
-                    dslServices.newInstance(
-                            BaseAppModuleExtension.class,
-                            dslServices,
-                            bootClasspathConfig,
-                            buildOutputs,
-                            dslContainers.getSourceSetManager(),
-                            android,
-                            stats != null ? stats : GradleBuildProject.newBuilder());
-
-            initExtensionFromSettings(android);
-
-            // b/502576941: Apply the compose plugin in studio project instead of through the
-            // Gradle ecosystem plugin.
-            project.getPlugins().apply(COMPOSE_COMPILER_PLUGIN_ID);
-
-            setupDependencies(android);
-            return new ExtensionData<>(internalOnly, android, bootClasspathConfig);
-        }
 
         if (getProjectServices().getProjectOptions().useNewDsl(project.getPath())) {
             // This was already done correctly in AGP 9.0, so no need to check
@@ -274,24 +180,6 @@ public class AppPlugin
                                 stats);
         initExtensionFromSettings(android);
         return new ExtensionData<>(android, applicationExtension, bootClasspathConfig);
-    }
-
-    private void setupDependencies(DeclarativeApplicationExtension android) {
-        project.getConfigurations()
-                .getByName("api")
-                .fromDependencyCollector(android.getDependencies().getApi());
-        project.getConfigurations()
-                .getByName("implementation")
-                .fromDependencyCollector(android.getDependencies().getImplementation());
-
-        project.getConfigurations()
-                .getByName("testImplementation")
-                .fromDependencyCollector(android.getDependencies().getTestImplementation());
-
-        project.getConfigurations()
-                .getByName("androidTestImplementation")
-                .fromDependencyCollector(
-                        android.getDependencies().getAndroidTestImplementation());
     }
 
     /**

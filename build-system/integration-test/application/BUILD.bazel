@@ -107,7 +107,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/genFolderApi2",
     "//tools/base/build-system/integration-test:test-projects/genFolderApi2Old",
     "//tools/base/build-system/integration-test:test-projects/genFolderApiOld",
-    "//tools/base/build-system/integration-test:test-projects/gradleDeclarative",
     "//tools/base/build-system/integration-test:test-projects/jacocoOnlySubprojectBuildScriptDependency",
     "//tools/base/build-system/integration-test:test-projects/jarjarIntegration",
     "//tools/base/build-system/integration-test:test-projects/jetifier",
@@ -279,7 +278,6 @@ single_gradle_integration_test_per_source(
             "src/test/java/com/android/build/gradle/integration/application/ComposeHelloWorldTest.kt",
             "src/test/java/com/android/build/gradle/integration/compose/**",
             "src/test/java/com/android/build/gradle/integration/api/R8VersionCheckTest.kt",
-            "src/test/java/com/android/build/gradle/integration/declarative/GradleDeclarativeTest.kt",
         ],
     ),
     data = AUTOMATIC_TEST_DATA,
@@ -301,29 +299,6 @@ single_gradle_integration_test_per_source(
         "//tools/base/build-system/previous-versions:3.5.0",
     ],
     resources = [":repo_map"] + glob(["src/test/resources/**"]),
-    deps = TEST_DEPS,
-)
-
-DECLARATIVE_TESTS = [
-    "src/test/java/com/android/build/gradle/integration/declarative/GradleDeclarativeTest.kt",
-]
-
-gradle_integration_test(
-    name = "declarative-tests",
-    srcs = glob(
-        include = DECLARATIVE_TESTS,
-    ),
-    data = AUTOMATIC_TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:declarative_android_gradle_plugin",
-    ],
-    maven_repos = [
-        "//tools/base/build-system:gradle-runtime-maven",
-        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
-        "//tools/base/build-system/integration-test/application:prebuilts",
-        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
-    ],
-    resources = glob(["src/test/resources/**"]),
     deps = TEST_DEPS,
 )
 

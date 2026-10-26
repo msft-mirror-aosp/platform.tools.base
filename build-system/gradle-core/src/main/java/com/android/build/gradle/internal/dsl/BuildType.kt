@@ -18,9 +18,6 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.BaselineProfile
-import com.android.build.api.dsl.BuildTypeDependenciesExtension
-import com.android.build.api.dsl.DeclarativeApplicationBuildType
-import com.android.build.api.dsl.DeclarativeLibraryBuildType
 import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.Ndk
@@ -48,21 +45,6 @@ import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
 
-abstract class DeclarativeBuildType
-@Inject
-constructor(name: String, private val dslServices: DslServices, componentType: ComponentType, objectFactory: ObjectFactory) :
-  BuildType(name, dslServices, componentType, objectFactory), DeclarativeApplicationBuildType, DeclarativeLibraryBuildType {
-
-  override val dependencies: BuildTypeDependenciesExtension by lazy { dslServices.newInstance(BuildTypeDependenciesExtension::class.java) }
-
-  fun dependencies(configure: BuildTypeDependenciesExtension.() -> Unit) {
-    configure.invoke(dependencies)
-  }
-
-  override val isUseProguard: Boolean?
-    get() = false
-}
-
 /** DSL object to configure build types. */
 abstract class BuildType
 @Inject
@@ -87,7 +69,6 @@ constructor(
     renderscriptOptimLevel = 3
     enableUnitTestCoverage =
       try {
-        // this information may not available for declarative definition
         dslServices.projectInfo.hasPlugin(JacocoPlugin.PLUGIN_EXTENSION_NAME)
       } catch (_: Exception) {
         false

@@ -35,7 +35,6 @@ import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.plugins.ExtensionContainer
-import org.gradle.declarative.dsl.model.annotations.Configuring
 
 /**
  * An intermediate implementation class of the previous `android` extension for the `com.android.application` plugin
@@ -138,12 +137,10 @@ constructor(
   override val compileOptions: CompileOptions
     get() = publicExtensionImpl.compileOptions as CompileOptions
 
-  @Configuring
   override fun defaultConfig(action: ApplicationDefaultConfig.() -> Unit) {
     action.invoke(defaultConfig)
   }
 
-  @Configuring
   override fun buildFeatures(action: ApplicationBuildFeatures.() -> Unit) {
     action.invoke(buildFeatures)
   }

@@ -15,19 +15,14 @@
  */
 package com.android.build.gradle.internal.plugins;
 
-import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID;
-import static com.android.build.gradle.internal.utils.KgpUtils.COMPOSE_COMPILER_PLUGIN_ID;
 
 import com.android.AndroidProjectTypes;
 import com.android.annotations.NonNull;
-import com.android.build.api.dsl.DeclarativeLibraryExtension;
-import com.android.build.api.dsl.LibraryDeclarativeDefinition;
 import com.android.build.api.dsl.LibraryExtension;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.LibraryAndroidComponentsExtensionImpl;
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar;
 import com.android.build.api.variant.AndroidComponentsExtension;
-import com.android.build.api.variant.AndroidLibraryModuleModel;
 import com.android.build.api.variant.LibraryAndroidComponentsExtension;
 import com.android.build.api.variant.LibraryVariant;
 import com.android.build.api.variant.LibraryVariantBuilder;
@@ -39,11 +34,7 @@ import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo;
 import com.android.build.gradle.internal.dependency.LibrarySourceSetManager;
 import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtensionImpl;
-import com.android.build.gradle.internal.dsl.DeclarativeServices;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
-import com.android.build.gradle.internal.dsl.DslBindingUtils;
-import com.android.build.gradle.internal.dsl.LibraryDeclarativeDefinitionImpl;
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
@@ -69,23 +60,15 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
-import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
-import org.gradle.features.annotations.BindsProjectType;
-import org.gradle.features.binding.ProjectFeatureApplicationContext;
-import org.gradle.features.binding.ProjectTypeApplyAction;
-import org.gradle.features.binding.ProjectTypeBinding;
-import org.gradle.features.binding.ProjectTypeBindingBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.util.Collection;
-import java.util.Objects;
 
 import javax.inject.Inject;
 
 /** Gradle plugin class for 'library' projects. */
-@BindsProjectType(LibraryPlugin.Binding.class)
 public class LibraryPlugin
         extends BasePlugin<
                 LibraryExtension,
@@ -94,44 +77,6 @@ public class LibraryPlugin
                 LibraryVariantDslInfo,
                 LibraryCreationConfig,
                 LibraryVariant> {
-
-    static class LibraryProjectTypeApplyAction
-            implements ProjectTypeApplyAction<
-                    LibraryDeclarativeDefinition, AndroidLibraryModuleModel> {
-        private final ObjectFactory objectFactory;
-
-        @Inject
-        public LibraryProjectTypeApplyAction(ObjectFactory objectFactory) {
-            this.objectFactory = objectFactory;
-        }
-
-        @Override
-        public void apply(
-                ProjectFeatureApplicationContext context,
-                LibraryDeclarativeDefinition definition,
-                AndroidLibraryModuleModel buildModel) {
-            DeclarativeServices services = objectFactory.newInstance(DeclarativeServices.class);
-            DeclarativeLibraryExtension extension =
-                    (DeclarativeLibraryExtension)
-                            Objects.requireNonNull(services)
-                                    .getProject()
-                                    .getExtensions()
-                                    .getByName("android");
-
-            DslBindingUtils.copyProperties(definition, extension);
-        }
-    }
-
-    static class Binding implements ProjectTypeBinding {
-        public void bind(ProjectTypeBindingBuilder builder) {
-            builder.bindProjectType(
-                            "androidLibrary",
-                            LibraryDeclarativeDefinition.class,
-                            LibraryProjectTypeApplyAction.class)
-                    .withUnsafeDefinitionImplementationType(LibraryDeclarativeDefinitionImpl.class)
-                    .withUnsafeApplyAction();
-        }
-    }
 
     @Inject
     public LibraryPlugin(
@@ -193,44 +138,6 @@ public class LibraryPlugin
 
         GradleBuildProject.Builder stats =
                 getConfiguratorService().getProjectBuilder(project.getPath());
-
-        if (getProjectServices()
-                .getProjectOptions()
-                .get(BooleanOption.USE_DECLARATIVE_INTERFACES)) {
-
-            project.getPlugins().apply(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID);
-
-            DeclarativeLibraryExtensionImpl android =
-                    dslServices.newDecoratedInstance(
-                            DeclarativeLibraryExtensionImpl.class, dslServices, dslContainers);
-
-            project.getExtensions().add(new TypeOf<>() {}, "android", android);
-
-            bootClasspathConfig =
-                    new BootClasspathConfigImpl(
-                            project,
-                            getProjectServices(),
-                            versionedSdkLoaderService,
-                            android,
-                            forUnitTesting);
-
-            com.android.build.gradle.LibraryExtension internalOnly =
-                    dslServices.newInstance(
-                            com.android.build.gradle.LibraryExtension.class,
-                            dslServices,
-                            bootClasspathConfig,
-                            buildOutputs,
-                            dslContainers.getSourceSetManager(),
-                            android,
-                            stats != null ? stats : GradleBuildProject.newBuilder());
-            // b/502576941: Apply the compose plugin in studio project instead of through the
-            // Gradle ecosystem plugin.
-            project.getPlugins().apply(COMPOSE_COMPILER_PLUGIN_ID);
-
-            initExtensionFromSettings(android);
-            setupDependencies(android);
-            return new ExtensionData<>(internalOnly, android, bootClasspathConfig);
-        }
 
         if (getProjectServices().getProjectOptions().useNewDsl(project.getPath())) {
             if (getProjectServices()
@@ -306,24 +213,6 @@ public class LibraryPlugin
         initExtensionFromSettings(android);
 
         return new ExtensionData<>(android, libraryExtension, bootClasspathConfig);
-    }
-
-    private void setupDependencies(DeclarativeLibraryExtension android) {
-        project.getConfigurations()
-                .getByName("api")
-                .fromDependencyCollector(android.getDependencies().getApi());
-        project.getConfigurations()
-                .getByName("implementation")
-                .fromDependencyCollector(android.getDependencies().getImplementation());
-
-        project.getConfigurations()
-                .getByName("testImplementation")
-                .fromDependencyCollector(android.getDependencies().getTestImplementation());
-
-        project.getConfigurations()
-                .getByName("androidTestImplementation")
-                .fromDependencyCollector(
-                        android.getDependencies().getAndroidTestImplementation());
     }
 
     /**

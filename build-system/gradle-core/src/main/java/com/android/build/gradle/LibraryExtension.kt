@@ -50,7 +50,6 @@ import org.gradle.api.DomainObjectSet
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.plugins.ExtensionContainer
-import org.gradle.declarative.dsl.model.annotations.Configuring
 
 /**
  * An intermediate implementation class of the previous `android` extension for the android library plugin.
@@ -187,12 +186,10 @@ constructor(
   override val buildFeatures: LibraryBuildFeatures
     get() = publicExtensionImpl.buildFeatures
 
-  @Configuring
   override fun defaultConfig(action: LibraryDefaultConfig.() -> Unit) {
     action.invoke(defaultConfig)
   }
 
-  @Configuring
   override fun buildFeatures(action: LibraryBuildFeatures.() -> Unit) {
     action.invoke(buildFeatures)
   }
