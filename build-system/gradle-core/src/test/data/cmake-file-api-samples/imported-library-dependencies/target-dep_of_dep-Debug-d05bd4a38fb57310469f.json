@@ -1,0 +1,71 @@
+{
+	"abstract" : true,
+	"artifacts" :
+	[
+		{
+			"path" : "/{PROJECT}/CPP_module/src/main/cpp/../jniLibs/x86_64/libdep_of_dep.so"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" :
+	{
+		"commands" :
+		[
+			"add_library",
+			"set_target_properties"
+		],
+		"files" :
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" :
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 12,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 13,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" :
+	{
+		"major" : 2,
+		"minor" : 11
+	},
+	"id" : "dep_of_dep::@6890427a1f51a3e7e1df",
+	"imported" : true,
+	"interfaceCompileDependencies" :
+	[
+		{
+			"backtrace" : 2,
+			"id" : "target_dep::@6890427a1f51a3e7e1df"
+		}
+	],
+	"interfaceLinkLibraries" :
+	[
+		{
+			"backtrace" : 2,
+			"id" : "target_dep::@6890427a1f51a3e7e1df"
+		}
+	],
+	"local" : true,
+	"name" : "dep_of_dep",
+	"nameOnDisk" : "libdep_of_dep.so",
+	"paths" :
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sources" : [],
+	"type" : "SHARED_LIBRARY"
+}

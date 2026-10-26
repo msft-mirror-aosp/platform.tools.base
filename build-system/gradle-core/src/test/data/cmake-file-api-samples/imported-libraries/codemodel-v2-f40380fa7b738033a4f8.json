@@ -1,0 +1,79 @@
+{
+	"configurations" :
+	[
+		{
+			"abstractTargets" :
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "CPP_module::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-CPP_module-Debug-14c03f0c498a538f868c.json",
+					"name" : "CPP_module",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "CPP_module_static::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-CPP_module_static-Debug-b71e3690959116307760.json",
+					"name" : "CPP_module_static",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "prebuilt_tool::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-prebuilt_tool-Debug-0f2264ac519bbf347c58.json",
+					"name" : "prebuilt_tool",
+					"projectIndex" : 0
+				}
+			],
+			"directories" :
+			[
+				{
+					"abstractTargetIndexes" :
+					[
+						0,
+						1,
+						2
+					],
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-b23a0b23c080df4d29ba.json",
+					"minimumCMakeVersion" :
+					{
+						"string" : "3.10.0"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				}
+			],
+			"name" : "Debug",
+			"projects" :
+			[
+				{
+					"abstractTargetIndexes" :
+					[
+						0,
+						1,
+						2
+					],
+					"directoryIndexes" :
+					[
+						0
+					],
+					"name" : "CPP_module"
+				}
+			],
+			"targets" : []
+		}
+	],
+	"kind" : "codemodel",
+	"paths" :
+	{
+		"build" : "/{PROJECT}/CPP_module/.cxx/Debug/1p5l5i27/x86_64",
+		"source" : "/{PROJECT}/CPP_module/src/main/cpp"
+	},
+	"version" :
+	{
+		"major" : 2,
+		"minor" : 11
+	}
+}

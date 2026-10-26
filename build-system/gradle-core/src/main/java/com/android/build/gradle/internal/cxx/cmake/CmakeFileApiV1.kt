@@ -32,6 +32,7 @@ import com.android.build.gradle.internal.cxx.json.NativeLibraryValue
 import com.android.build.gradle.internal.cxx.json.NativeToolchainValue
 import com.android.build.gradle.internal.cxx.logging.errorln
 import com.android.build.gradle.internal.cxx.logging.warnln
+import com.android.utils.FileUtils
 import com.android.utils.cxx.CxxDiagnosticCode.EXTRA_OUTPUT
 import com.google.gson.GsonBuilder
 import com.google.gson.stream.JsonReader
@@ -39,6 +40,7 @@ import com.google.gson.stream.JsonToken
 import java.io.Closeable
 import java.io.File
 import java.io.FileReader
+import java.util.Locale
 
 /**
  * CMake file-api reply directory is laid out as follows:
@@ -210,6 +212,115 @@ fun readCmakeFileApiReply(
         }
         .map { File(cmakeFiles.paths.build).resolve(it.fragment).normalize() }
         .toList()
+  }
+
+  val systemRoots =
+    listOfNotNull(
+        cache.getCacheString(CmakeProperty.CMAKE_ANDROID_NDK),
+        cache.getCacheString(CmakeProperty.ANDROID_NDK),
+        cache.entries.firstOrNull { it.name == "CMAKE_SYSROOT" }?.value,
+        cache.entries.firstOrNull { it.name == "ANDROID_SYSROOT" }?.value,
+      )
+      .plus(targetIdToLink.values.mapNotNull { it.sysroot })
+      .map { it.replace("\\", "/").trimEnd('/') }
+      .filter { it.isNotEmpty() }
+      .distinct()
+
+  fun isSystemOrNdkPath(path: String): Boolean {
+    val normalized = path.replace("\\", "/")
+    return systemRoots.any { root ->
+      normalized.equals(root, ignoreCase = true) || normalized.startsWith("$root/", ignoreCase = true)
+    }
+  }
+
+  fun buildFile(path: String) = File(cmakeFiles.paths.build).resolve(path.replace("\\", "/")).normalize()
+
+  val concreteSharedLibrariesById = targetIdToNativeLibraryValue.filter { (id, _) -> targetIdToType[id] == "SHARED_LIBRARY" }
+
+  for (conf in codeModel.configurations) {
+    val configName = conf.name ?: "Debug"
+    val confAbstractTargets =
+      conf.abstractTargets.orEmpty().mapNotNull { targetRef ->
+        val file = replyFolder.resolve(targetRef.jsonFile)
+        if (!file.isFile) return@mapNotNull null
+        val data = file.bufferedReader(Charsets.UTF_8).use { GSON.fromJson(it, AbstractTargetDataV2::class.java) } ?: return@mapNotNull null
+        targetRef to data
+      }
+
+    val abstractTargetsById = confAbstractTargets.associate { (targetRef, data) ->
+      data.id.orEmpty().ifEmpty { targetRef.id } to data
+    }
+
+    fun collectSharedRuntimeFiles(
+      abstractTarget: AbstractTargetDataV2,
+      rootTargetId: String,
+    ): List<File> {
+      val visited = mutableSetOf(rootTargetId)
+      val result = mutableListOf<File>()
+
+      fun dfs(data: AbstractTargetDataV2) {
+        for (entry in data.interfaceLinkLibraries.orEmpty()) {
+          val id = entry.id
+          if (id != null && visited.add(id)) {
+            val dep = abstractTargetsById[id]
+            if (dep != null) {
+              if (dep.type == "SHARED_LIBRARY") {
+                val depPath = dep.artifacts?.firstOrNull()?.path
+                if (depPath != null && !isSystemOrNdkPath(depPath) && !isSystemOrNdkPath(buildFile(depPath).path)) {
+                  result.add(buildFile(depPath))
+                }
+              }
+              dfs(dep)
+            } else {
+              val concreteLib = concreteSharedLibrariesById[id]
+              if (concreteLib != null) {
+                concreteLib.output?.let { result.add(it) }
+                result.addAll(concreteLib.runtimeFiles.orEmpty())
+              }
+            }
+          }
+          val fragment = entry.fragment
+          if (fragment != null && !fragment.startsWith("-") && fragment.endsWith(".so")) {
+            val file = buildFile(fragment)
+            if (!isSystemOrNdkPath(fragment) && !isSystemOrNdkPath(file.path)) {
+              result.add(file)
+            }
+          }
+        }
+      }
+
+      dfs(abstractTarget)
+      return result
+    }
+
+    for ((targetRef, data) in confAbstractTargets) {
+      if (data.imported != true || (data.type != "SHARED_LIBRARY" && data.type != "STATIC_LIBRARY")) {
+        continue
+      }
+      val targetId = data.id.orEmpty().ifEmpty { targetRef.id }
+      val targetName = data.name.orEmpty().ifEmpty { targetRef.name }
+      val artifactPaths = data.artifacts.orEmpty().mapNotNull { it.path }
+      if (artifactPaths.size > 1) {
+        errorln(
+          EXTRA_OUTPUT,
+          "Target $targetId produces multiple outputs ${artifactPaths.joinToString()}",
+        )
+      }
+      val output = artifactPaths.firstOrNull()?.let { buildFile(it) } ?: continue
+
+      val runtimeFiles =
+        collectSharedRuntimeFiles(data, targetId).distinct().filter {
+          !FileUtils.isSameFile(it, output)
+        }
+
+      val library = targetIdToNativeLibraryValue.computeIfAbsent(targetId) { NativeLibraryValue() }
+      library.abi = abi
+      library.artifactName = targetName
+      library.buildType = configName.lowercase(Locale.US)
+      library.imported = true
+      library.output = output
+      library.runtimeFiles = runtimeFiles
+    }
   }
 
   config.libraries = targetIdToNativeLibraryValue

@@ -1,0 +1,50 @@
+{
+	"abstract" : true,
+	"artifacts" :
+	[
+		{
+			"path" : "/{PROJECT}/CPP_module/src/main/cpp/../jniLibs/x86_64/prebuilt_tool"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" :
+	{
+		"commands" :
+		[
+			"add_executable"
+		],
+		"files" :
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" :
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 8,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" :
+	{
+		"major" : 2,
+		"minor" : 11
+	},
+	"id" : "prebuilt_tool::@6890427a1f51a3e7e1df",
+	"imported" : true,
+	"local" : true,
+	"name" : "prebuilt_tool",
+	"nameOnDisk" : "prebuilt_tool",
+	"paths" :
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sources" : [],
+	"type" : "EXECUTABLE"
+}

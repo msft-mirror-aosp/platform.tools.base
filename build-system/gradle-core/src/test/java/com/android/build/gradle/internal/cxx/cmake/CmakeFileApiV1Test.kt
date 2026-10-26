@@ -420,4 +420,157 @@ class CmakeFileApiV1Test {
     val result = readCmakeFileApiReply(replyFolder, ::createNinjaCommand) {}
     assertThat(result.libraries!!.getValue("myapplication::@6890427a1f51a3e7e1df").runtimeFiles!!.size).isEqualTo(0)
   }
+
+  @Test
+  fun `bug 491158080 IMPORTED shared and static libraries are read from abstractTargets`() {
+    // Reply from CMake 4.4 (codemodel 2.11) for SHARED, STATIC and EXECUTABLE IMPORTED targets.
+    val replyFolder = prepareReplyFolder("imported-libraries")
+    val librariesById = readCmakeFileApiReply(replyFolder, ::createNinjaCommand) {}.libraries!!
+    assertThat(librariesById.keys).containsExactly("CPP_module::@6890427a1f51a3e7e1df", "CPP_module_static::@6890427a1f51a3e7e1df")
+    val libraries = librariesById.values
+    assertThat(libraries.map { it.artifactName }).containsExactly("CPP_module", "CPP_module_static")
+    assertThat(libraries.map { it.imported }).containsExactly(true, true)
+    assertThat(libraries.map { it.buildCommandComponents }).containsExactly(null, null)
+    assertThat(libraries.map { it.abi }).containsExactly("x86_64", "x86_64")
+    assertThat(libraries.map { it.buildType }).containsExactly("debug", "debug")
+    assertThat(libraries.map { it.output!!.path.replace("\\", "/") })
+      .containsExactly(
+        "/{PROJECT}/CPP_module/src/main/jniLibs/x86_64/libCPP_module.so",
+        "/{PROJECT}/CPP_module/src/main/jniLibs/x86_64/libCPP_module_static.a",
+      )
+  }
+
+  @Test
+  fun `bug 491158080 runtime files of an IMPORTED library are its shared library dependencies`() {
+    // Reply from CMake 4.4 for an IMPORTED library that links to a target like the ones from pkg_check_modules(... IMPORTED_TARGET ...),
+    // to two IMPORTED libraries that link to each other, and to a static library. Static libraries, "log", libraries of the NDK and the
+    // library itself aren't runtime files, and libdep_of_dep.so is reached twice.
+    val replyFolder = prepareReplyFolder("imported-library-dependencies")
+    val libraries = readCmakeFileApiReply(replyFolder, ::createNinjaCommand) {}.libraries!!.values.associateBy { it.artifactName }
+    fun runtimeFiles(name: String) = libraries.getValue(name).runtimeFiles!!.map { it.path.replace("\\", "/") }
+    val prebuilt = "/{PROJECT}/CPP_module/src/main/jniLibs/x86_64"
+    assertThat(runtimeFiles("CPP_module"))
+      .containsExactly("$prebuilt/libdep.so", "$prebuilt/libdep_of_dep.so", "$prebuilt/libtarget_dep.so")
+    assertThat(runtimeFiles("target_dep")).containsExactly("$prebuilt/libdep_of_dep.so")
+    assertThat(runtimeFiles("dep_of_dep")).containsExactly("$prebuilt/libtarget_dep.so")
+    // pkgconfig_deps (INTERFACE_LIBRARY) is not emitted into libraries, but static_target_dep (STATIC_LIBRARY) is
+    assertThat(libraries.keys).containsExactly("CPP_module", "target_dep", "dep_of_dep", "static_target_dep")
+  }
+
+  @Test
+  fun `bug 491158080 abstractTargets handles EXTRA_OUTPUT concrete shared deps non-imported targets and Windows sysroot slashes`() {
+    val replyFolder = temporaryFolder.newFolder("reply")
+    val srcReply = prepareReplyFolder("imported-libraries")
+    srcReply.listFiles()!!.forEach { file -> file.copyTo(replyFolder.resolve(file.name)) }
+
+    // Overwrite cache with Windows backslash NDK/sysroot paths to verify slash-normalized exclusion.
+    val cacheFile = replyFolder.listFiles()!!.single { it.name.startsWith("cache-v2-") }
+    cacheFile.writeText(
+      cacheFile
+        .readText()
+        .replace(
+          "\"name\" : \"CMAKE_ANDROID_NDK\",\n\t\t\t\"properties\" :",
+          "\"name\" : \"CMAKE_SYSROOT\",\n\t\t\t\"type\" : \"PATH\",\n\t\t\t\"value\" : \"C:\\\\Sdk\\\\ndk\\\\sysroot\"\n\t\t},\n\t\t{\n\t\t\t\"name\" : \"CMAKE_ANDROID_NDK\",\n\t\t\t\"properties\" :",
+        )
+    )
+
+    // Add a concrete SHARED_LIBRARY target + non-imported abstract SHARED_LIBRARY + multi-artifact imported target.
+    replyFolder
+      .resolve("target-built_shared-Debug.json")
+      .writeText(
+        """
+        {
+          "artifacts": [{ "path": "libbuilt_shared.so" }],
+          "id": "built_shared::@1",
+          "name": "built_shared",
+          "type": "SHARED_LIBRARY"
+        }
+        """
+          .trimIndent()
+      )
+    replyFolder
+      .resolve("target-not_imported_shared-Debug.json")
+      .writeText(
+        """
+        {
+          "artifacts": [{ "path": "libnot_imported.so" }],
+          "id": "not_imported::@1",
+          "imported": false,
+          "name": "not_imported",
+          "type": "SHARED_LIBRARY"
+        }
+        """
+          .trimIndent()
+      )
+    replyFolder
+      .resolve("target-multi_out-Debug.json")
+      .writeText(
+        """
+        {
+          "artifacts": [{ "path": "libmulti1.so" }, { "path": "libmulti2.so" }],
+          "imported": true,
+          "interfaceLinkLibraries": [
+            { "id": "built_shared::@1" },
+            { "fragment": "c:/Sdk/ndk/sysroot/usr/lib/x86_64-linux-android/libandroid.so" },
+            { "fragment": "-Wl,--no-undefined" },
+            { "fragment": "custom\\libextra.so" }
+          ],
+          "type": "SHARED_LIBRARY"
+        }
+        """
+          .trimIndent()
+      )
+
+    replyFolder.resolve("target-empty-Debug.json").writeText("")
+    val codemodelFile = replyFolder.listFiles()!!.single { it.name.startsWith("codemodel-v2-") }
+    codemodelFile.writeText(
+      """
+      {
+        "configurations": [
+          {
+            "name": "Debug",
+            "targets": [
+              { "id": "built_shared::@1", "jsonFile": "target-built_shared-Debug.json", "name": "built_shared" }
+            ],
+            "abstractTargets": [
+              { "id": "not_imported::@1", "jsonFile": "target-not_imported_shared-Debug.json", "name": "not_imported" },
+              { "id": "multi_out::@1", "jsonFile": "target-multi_out-Debug.json", "name": "multi_out" },
+              { "id": "empty_json::@1", "jsonFile": "target-empty-Debug.json", "name": "empty_json" },
+              { "id": "missing_json::@1", "jsonFile": "target-does-not-exist.json", "name": "missing_json" }
+            ]
+          }
+        ],
+        "kind": "codemodel",
+        "version": { "major": 2, "minor": 11 }
+      }
+      """
+        .trimIndent()
+    )
+
+    val recordedErrors = mutableListOf<String>()
+    val recordingLogger =
+      object : ThreadLoggingEnvironment() {
+        override fun log(message: LoggingMessage) {
+          if (message.level == LoggingMessage.LoggingLevel.ERROR) {
+            recordedErrors.add(message.text())
+          }
+        }
+      }
+
+    val result = recordingLogger.use { readCmakeFileApiReply(replyFolder, ::createNinjaCommand) {} }
+
+    assertThat(recordedErrors).hasSize(1)
+    assertThat(recordedErrors.single()).contains("Target multi_out::@1 produces multiple outputs libmulti1.so, libmulti2.so")
+
+    val byName = result.libraries!!.values.associateBy { it.artifactName }
+    assertThat(byName.keys).containsExactly("built_shared", "multi_out")
+    assertThat(byName.getValue("built_shared").imported).isNull()
+    val multiOut = byName.getValue("multi_out")
+    assertThat(multiOut.imported).isTrue()
+    assertThat(multiOut.output!!.path.replace("\\", "/")).endsWith("/libmulti1.so")
+    val multiOutRuntimes = multiOut.runtimeFiles!!.map { it.path.replace("\\", "/") }
+    assertThat(multiOutRuntimes.any { it.endsWith("/libbuilt_shared.so") }).isTrue()
+    assertThat(multiOutRuntimes.any { it.endsWith("/custom/libextra.so") }).isTrue()
+    assertThat(multiOutRuntimes.none { it.contains("libandroid.so") }).isTrue()
+  }
 }

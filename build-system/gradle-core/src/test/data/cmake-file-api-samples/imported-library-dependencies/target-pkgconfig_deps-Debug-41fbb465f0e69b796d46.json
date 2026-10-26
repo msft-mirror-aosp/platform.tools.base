@@ -1,0 +1,77 @@
+{
+	"abstract" : true,
+	"backtrace" : 1,
+	"backtraceGraph" :
+	{
+		"commands" :
+		[
+			"add_library",
+			"set_target_properties"
+		],
+		"files" :
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" :
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 8,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 9,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" :
+	{
+		"major" : 2,
+		"minor" : 11
+	},
+	"id" : "pkgconfig_deps::@6890427a1f51a3e7e1df",
+	"imported" : true,
+	"interfaceLinkLibraries" :
+	[
+		{
+			"backtrace" : 2,
+			"fragment" : "/{PROJECT}/CPP_module/src/main/cpp/../jniLibs/x86_64/libCPP_module.so"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "/{PROJECT}/CPP_module/src/main/cpp/../jniLibs/x86_64/libdep.so"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "/{PROJECT}/CPP_module/src/main/cpp/../jniLibs/x86_64/libdep_of_dep.so"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "/{PROJECT}/CPP_module/src/main/cpp/../jniLibs/x86_64/libstatic_dep.a"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "log"
+		},
+		{
+			"backtrace" : 2,
+			"fragment" : "/{NDK}/28.1.13356709/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/24/libz.so"
+		}
+	],
+	"local" : true,
+	"name" : "pkgconfig_deps",
+	"paths" :
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sources" : [],
+	"type" : "INTERFACE_LIBRARY"
+}

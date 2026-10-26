@@ -1,0 +1,97 @@
+{
+	"configurations" :
+	[
+		{
+			"abstractTargets" :
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "CPP_module::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-CPP_module-Debug-098325c497e218d407fe.json",
+					"name" : "CPP_module",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "dep_of_dep::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-dep_of_dep-Debug-d05bd4a38fb57310469f.json",
+					"name" : "dep_of_dep",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "pkgconfig_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pkgconfig_deps-Debug-41fbb465f0e69b796d46.json",
+					"name" : "pkgconfig_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "static_target_dep::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-static_target_dep-Debug-05796f96175ddf347932.json",
+					"name" : "static_target_dep",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "target_dep::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-target_dep-Debug-1c43d14cc1bc81ac61e8.json",
+					"name" : "target_dep",
+					"projectIndex" : 0
+				}
+			],
+			"directories" :
+			[
+				{
+					"abstractTargetIndexes" :
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					],
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-b23a0b23c080df4d29ba.json",
+					"minimumCMakeVersion" :
+					{
+						"string" : "3.10.0"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				}
+			],
+			"name" : "Debug",
+			"projects" :
+			[
+				{
+					"abstractTargetIndexes" :
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					],
+					"directoryIndexes" :
+					[
+						0
+					],
+					"name" : "CPP_module"
+				}
+			],
+			"targets" : []
+		}
+	],
+	"kind" : "codemodel",
+	"paths" :
+	{
+		"build" : "/{PROJECT}/CPP_module/.cxx/Debug/1p5l5i27/x86_64",
+		"source" : "/{PROJECT}/CPP_module/src/main/cpp"
+	},
+	"version" :
+	{
+		"major" : 2,
+		"minor" : 11
+	}
+}

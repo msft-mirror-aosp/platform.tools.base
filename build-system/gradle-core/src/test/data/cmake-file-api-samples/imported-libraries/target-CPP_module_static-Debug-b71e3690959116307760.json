@@ -1,0 +1,50 @@
+{
+	"abstract" : true,
+	"artifacts" :
+	[
+		{
+			"path" : "/{PROJECT}/CPP_module/src/main/cpp/../jniLibs/x86_64/libCPP_module_static.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" :
+	{
+		"commands" :
+		[
+			"add_library"
+		],
+		"files" :
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" :
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 6,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" :
+	{
+		"major" : 2,
+		"minor" : 11
+	},
+	"id" : "CPP_module_static::@6890427a1f51a3e7e1df",
+	"imported" : true,
+	"local" : true,
+	"name" : "CPP_module_static",
+	"nameOnDisk" : "libCPP_module_static.a",
+	"paths" :
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sources" : [],
+	"type" : "STATIC_LIBRARY"
+}
