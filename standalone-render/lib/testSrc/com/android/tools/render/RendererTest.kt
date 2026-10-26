@@ -35,6 +35,7 @@ import com.android.tools.rendering.compose.PxBounds
 import com.android.tools.rendering.compose.SourceLocationImpl
 import com.android.tools.res.FrameworkOverlay
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import com.intellij.openapi.util.Disposer
 import com.intellij.util.concurrency.AppExecutorUtil
 import java.awt.image.BufferedImage
@@ -43,12 +44,14 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import java.lang.reflect.InvocationTargetException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -64,6 +67,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -1980,6 +1984,243 @@ class RendererTest {
         }
       }
     }
+
+  @Test
+  fun testCloseDisposesModuleAndProjectIdempotently() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val renderer =
+      RenderEnvironmentBootstrapper(
+          fontsPath = null,
+          resourceApkPath = null,
+          namespace = "",
+          classPath = emptyList(),
+          projectClassPath = emptyList(),
+          layoutlibPath = layoutlibPath.absolutePathString(),
+        )
+        .bootstrap()
+
+    var moduleChildDisposed = false
+    Disposer.register(renderer.module.parentDisposable) { moduleChildDisposed = true }
+    assertThat(renderer.module.isDisposed).isFalse()
+    assertThat(renderer.project.isDisposed).isFalse()
+
+    renderer.close()
+
+    assertThat(renderer.module.isDisposed).isTrue()
+    assertThat(moduleChildDisposed).isTrue()
+    assertThat(renderer.project.isDisposed).isTrue()
+
+    // A second close() (or closing after module/project was already disposed) must be a safe no-op.
+    renderer.close()
+  }
+
+  @Test
+  fun testRenderPropagatesInterruptedExceptionAndFatalVirtualMachineError() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val enteredKey = "renderer.test.interrupt.entered.${System.nanoTime()}"
+    val releaseKey = "renderer.test.interrupt.release.${System.nanoTime()}"
+    val secondInflatedKey = "renderer.test.interrupt.second.${System.nanoTime()}"
+    val enteredLatch = CountDownLatch(1)
+    val releaseLatch = CountDownLatch(1)
+    val secondInflated = AtomicInteger(0)
+    System.getProperties()[enteredKey] = enteredLatch
+    System.getProperties()[releaseKey] = releaseLatch
+    System.getProperties()[secondInflatedKey] = secondInflated
+
+    val customDir =
+      compileCustomClasses(
+        Triple(
+          "com.example.custom",
+          "OomView",
+          """
+          package com.example.custom;
+          import android.content.Context;
+          import android.graphics.Canvas;
+          import android.util.AttributeSet;
+          import android.view.View;
+          public class OomView extends View {
+            public OomView(Context context, AttributeSet attrs) { super(context, attrs); }
+            @Override protected void onDraw(Canvas canvas) {
+              throw new OutOfMemoryError("simulated render-thread OOM");
+            }
+          }
+          """
+            .trimIndent(),
+        ),
+        Triple(
+          "com.example.custom",
+          "BlockingView",
+          """
+          package com.example.custom;
+          import android.content.Context;
+          import android.util.AttributeSet;
+          import android.view.View;
+          import java.util.concurrent.CountDownLatch;
+          import java.util.concurrent.TimeUnit;
+          public class BlockingView extends View {
+            public BlockingView(Context context, AttributeSet attrs) {
+              super(context, attrs);
+              CountDownLatch entered = (CountDownLatch) System.getProperties().get("$enteredKey");
+              CountDownLatch release = (CountDownLatch) System.getProperties().get("$releaseKey");
+              entered.countDown();
+              try {
+                release.await(10, TimeUnit.SECONDS);
+              } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+              }
+            }
+          }
+          """
+            .trimIndent(),
+        ),
+        Triple(
+          "com.example.custom",
+          "TrackingView",
+          """
+          package com.example.custom;
+          import android.content.Context;
+          import android.util.AttributeSet;
+          import android.view.View;
+          import java.util.concurrent.atomic.AtomicInteger;
+          public class TrackingView extends View {
+            public TrackingView(Context context, AttributeSet attrs) {
+              super(context, attrs);
+              ((AtomicInteger) System.getProperties().get("$secondInflatedKey")).incrementAndGet();
+            }
+          }
+          """
+            .trimIndent(),
+        ),
+      )
+
+    val oomLayout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <com.example.custom.OomView xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="40dp"
+          android:layout_height="40dp" />
+      """
+        .trimIndent()
+    val blockingLayout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <com.example.custom.BlockingView xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="40dp"
+          android:layout_height="40dp" />
+      """
+        .trimIndent()
+    val trackingLayout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <com.example.custom.TrackingView xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="40dp"
+          android:layout_height="40dp" />
+      """
+        .trimIndent()
+
+    val executor = Executors.newSingleThreadExecutor()
+    try {
+      RenderEnvironmentBootstrapper(
+          fontsPath = null,
+          resourceApkPath = null,
+          namespace = "com.example.custom",
+          classPath = emptyList(),
+          projectClassPath = listOf(customDir.absolutePath),
+          layoutlibPath = layoutlibPath.absolutePathString(),
+        )
+        .bootstrap()
+        .use { renderer ->
+          val outputDir = tmpFolder.newFolder().absolutePath
+
+          // 1. Recoverable Errors (StackOverflowError, LinkageError) remain isolated per-preview errors.
+          val stackOverflowResults =
+            renderer.render(
+              FailingPreviewScreenshot("com.example.PreviewKt.Recursive", "Recursive") { StackOverflowError("unbounded recursion") },
+              outputDir,
+            )
+          assertThat(stackOverflowResults.single().error).isNotNull()
+
+          val linkageResults =
+            renderer.render(
+              FailingPreviewScreenshot("com.example.PreviewKt.Linkage", "Linkage") { LinkageError("missing symbol") },
+              outputDir,
+            )
+          assertThat(linkageResults.single().error).isNotNull()
+
+          // 2. Direct and reflection-wrapped OutOfMemoryErrors during preview setup propagate out of Renderer.render().
+          assertThrows(OutOfMemoryError::class.java) {
+            renderer.render(FailingPreviewScreenshot("com.example.PreviewKt.Oom", "Oom") { OutOfMemoryError("direct OOM") }, outputDir)
+          }
+          assertThrows(OutOfMemoryError::class.java) {
+            renderer.render(
+              FailingPreviewScreenshot("com.example.PreviewKt.WrappedOom", "WrappedOom") {
+                InvocationTargetException(OutOfMemoryError("wrapped OOM"))
+              },
+              outputDir,
+            )
+          }
+
+          // 3. OutOfMemoryError thrown on the Layoutlib render thread propagates out of Renderer.render() instead of being swallowed.
+          val renderThreadOom =
+            assertThrows(OutOfMemoryError::class.java) {
+              renderer.render(xmlPreviewScreenshot("com.example.PreviewKt.RenderThreadOom", oomLayout), outputDir)
+            }
+          assertThat(renderThreadOom).hasMessageThat().contains("simulated render-thread OOM")
+
+          // 4. Interrupting the caller thread aborts multi-layout rendering immediately and preserves the thread's interrupt status.
+          val multiLayoutScreenshot =
+            object : PreviewScreenshot {
+              override val methodFQN = "com.example.PreviewKt.Multi"
+              override val previewParams = emptyMap<String, String>()
+              override val previewId = "Multi"
+              override val previewWrapperFqn: String? = null
+
+              override fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement {
+                val delegate = ComposeScreenshot(methodFQN, emptyList(), previewParams, previewId).toPreviewElement(module)
+                return object : ScreenshotPreviewElement, ConfigurablePreviewElement<Unit> by delegate {
+                  override fun resolveXmlLayouts(): Sequence<String> = sequenceOf(blockingLayout, trackingLayout)
+
+                  override fun resolveLayouts(): Sequence<ResolvedScreenshotLayout> =
+                    sequenceOf(ResolvedScreenshotLayout(blockingLayout, "first"), ResolvedScreenshotLayout(trackingLayout, "second"))
+                }
+              }
+            }
+
+          val callerThreadRef = AtomicReference<Thread>(null)
+          val callerInterruptedFlag = AtomicReference<Boolean>(null)
+          val renderFuture =
+            executor.submit(
+              Callable<Throwable?> {
+                callerThreadRef.set(Thread.currentThread())
+                try {
+                  renderer.render(multiLayoutScreenshot, outputDir)
+                  null
+                } catch (t: Throwable) {
+                  callerInterruptedFlag.set(Thread.currentThread().isInterrupted)
+                  Thread.interrupted()
+                  t
+                }
+              }
+            )
+
+          assertWithMessage("Render thread did not enter BlockingView").that(enteredLatch.await(5, TimeUnit.SECONDS)).isTrue()
+          callerThreadRef.get()!!.interrupt()
+          val thrown = renderFuture.get(5, TimeUnit.SECONDS)
+          assertThat(thrown).isInstanceOf(InterruptedException::class.java)
+          assertWithMessage("Caller thread interrupt status must remain set").that(callerInterruptedFlag.get()).isTrue()
+          releaseLatch.countDown()
+          RenderService.getRenderAsyncActionExecutor().runAsyncAction {}.get(10, TimeUnit.SECONDS)
+          assertWithMessage("Second layout must not be inflated after interruption").that(secondInflated.get()).isEqualTo(0)
+        }
+    } finally {
+      releaseLatch.countDown()
+      executor.shutdownNow()
+      RenderService.getRenderAsyncActionExecutor().runAsyncAction {}.get(10, TimeUnit.SECONDS)
+      System.getProperties().remove(enteredKey)
+      System.getProperties().remove(releaseKey)
+      System.getProperties().remove(secondInflatedKey)
+    }
+  }
 
   private fun renderFailingScreenshot(screenshot: FailingPreviewScreenshot): PreviewScreenshotResult {
     val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")

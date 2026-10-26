@@ -19,4 +19,29 @@ data class PreviewRenderingResult(
   // Exception that is not bound to a particular screenshot
   val globalError: String?,
   val screenshotResults: List<PreviewScreenshotResult>,
-)
+) {
+  /**
+   * Class name of a fatal [VirtualMachineError] (other than [StackOverflowError], such as `"OutOfMemoryError"`) caught during rendering, or
+   * `null` when no fatal JVM error occurred.
+   *
+   * Declared outside the `data class` primary constructor to preserve binary compatibility of generated `copy` and `componentN` methods and
+   * JSON round-trip equality.
+   */
+  var fatalJvmError: String? = null
+    private set
+
+  /**
+   * `true` when rendering failed due to a fatal [VirtualMachineError] (other than [StackOverflowError]), indicating that the hosting JVM
+   * should retire instead of serving further requests.
+   */
+  val isFatalJvmError: Boolean
+    get() = fatalJvmError != null
+
+  constructor(
+    globalError: String?,
+    screenshotResults: List<PreviewScreenshotResult>,
+    fatalJvmError: String?,
+  ) : this(globalError, screenshotResults) {
+    this.fatalJvmError = fatalJvmError
+  }
+}

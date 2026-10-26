@@ -37,6 +37,7 @@ import com.android.tools.rendering.RenderTask
 import com.android.tools.rendering.compose.ComposeViewInfo
 import com.android.tools.rendering.compose.parseViewInfo
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import java.awt.AlphaComposite
@@ -217,6 +218,7 @@ class Renderer(
         val element = screenshot.toPreviewElement(module)
         element to element.resolveLayouts().toList()
       } catch (t: Throwable) {
+        rethrowIfFatalOrCancelled(t)
         // Catch Throwable rather than Exception: class loading failures surface as Errors (e.g. NoClassDefFoundError, LinkageError).
         val index = nextImageIndex()
         val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
@@ -314,6 +316,7 @@ class Renderer(
             savedComponentTreePath,
           )
         } catch (t: Throwable) {
+          rethrowIfFatalOrCancelled(t)
           PreviewScreenshotResult(
             screenshot.previewId,
             screenshot.methodFQN,
@@ -508,9 +511,16 @@ class Renderer(
           (renderTask.inflate().get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS) ?: createRenderTaskErrorResult(logger)).also(recordAdapters)
         }
       Disposer.register(result, disposable)
+      try {
+        result.rethrowIfFatalVirtualMachineError()
+      } catch (e: VirtualMachineError) {
+        Disposer.dispose(result)
+        throw e
+      }
       result
     } catch (t: Throwable) {
       Disposer.dispose(disposable)
+      rethrowIfFatalOrCancelled(t)
       createRenderTaskErrorResult(logger, t)
     }
   }
@@ -634,9 +644,70 @@ class Renderer(
   }
 
   override fun close() {
-    moduleClassLoaderManager.close()
-    if (!project.isDisposed) {
-      Disposer.dispose(project)
+    try {
+      if (!module.isDisposed) {
+        module.dispose()
+      }
+    } finally {
+      try {
+        moduleClassLoaderManager.close()
+      } finally {
+        if (!project.isDisposed) {
+          Disposer.dispose(project)
+        }
+      }
     }
+  }
+}
+
+/** Maximum number of causes inspected by [findFatalVirtualMachineError], guarding against cyclic cause chains. */
+private const val MAX_CAUSE_CHAIN_DEPTH = 16
+
+/**
+ * Returns the first [VirtualMachineError] other than [StackOverflowError] in [this] cause chain, or `null` if none is present.
+ *
+ * Reflection (`InvocationTargetException`), class initialization (`ExceptionInInitializerError`), and async futures (`ExecutionException` /
+ * `CompletionException`) wrap fatal JVM errors such as [OutOfMemoryError], so walking the cause chain ensures they are not mistaken for
+ * recoverable per-preview errors.
+ */
+private fun Throwable?.findFatalVirtualMachineError(): VirtualMachineError? {
+  var current = this
+  var depth = 0
+  while (current != null && depth < MAX_CAUSE_CHAIN_DEPTH) {
+    if (current is VirtualMachineError && current !is StackOverflowError) {
+      return current
+    }
+    current = current.cause
+    depth++
+  }
+  return null
+}
+
+/**
+ * Rethrows [t] when it represents caller-thread interruption/cancellation or wraps a fatal [VirtualMachineError] (other than
+ * [StackOverflowError]), restoring the thread's interrupt flag on [InterruptedException].
+ */
+private fun rethrowIfFatalOrCancelled(t: Throwable) {
+  when (t) {
+    is InterruptedException -> {
+      Thread.currentThread().interrupt()
+      throw t
+    }
+    is ProcessCanceledException,
+    is CancellationException -> throw t
+  }
+  t.findFatalVirtualMachineError()?.let { throw it }
+}
+
+/**
+ * Rethrows any fatal [VirtualMachineError] (other than [StackOverflowError]) that `RenderTask`, Layoutlib, or the render-thread uncaught
+ * exception handler captured inside [RenderResult] instead of propagating directly.
+ */
+private fun RenderResult.rethrowIfFatalVirtualMachineError() {
+  val allThrowables =
+    sequenceOf(renderResult.exception) + logger.messages.asSequence().map { it.throwable } + logger.brokenClasses.values.asSequence()
+  val fatal = allThrowables.mapNotNull { it.findFatalVirtualMachineError() }.firstOrNull()
+  if (fatal != null) {
+    throw fatal
   }
 }

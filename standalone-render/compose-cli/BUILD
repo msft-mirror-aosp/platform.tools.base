@@ -160,6 +160,7 @@ kotlin_test(
         "//tools/base/build-system:gradle-distrib-9.5.0",  # This is actually "tools/external/gradle",
         "//tools/base/standalone-render/compose-cli/testData",
     ],
+    friends = [":tools.compose-preview-renderer"],
     tags = [
         "ci:perfgate-linux",
         "noci:studio-linux",
@@ -172,6 +173,7 @@ kotlin_test(
         "//tools/base/perf-logger:studio.perf-logger_testlib",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
     ],
 )
@@ -193,6 +195,7 @@ kotlin_test(
         "//tools/base/build-system:gradle-distrib-9.5.0",  # This is actually "tools/external/gradle",
         "//tools/base/standalone-render/compose-cli/testData",
     ],
+    friends = [":tools.compose-preview-renderer"],
     jvm_flags = ["-Dtest.suite.jar=compose-cli-render-tests.jar"],
     tags = [
         "noci:studio-win",
@@ -204,6 +207,7 @@ kotlin_test(
         "//tools/base/perf-logger:studio.perf-logger_testlib",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
     ],
 )

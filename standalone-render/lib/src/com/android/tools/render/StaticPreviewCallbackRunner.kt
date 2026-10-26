@@ -615,7 +615,9 @@ internal class StaticPreviewCallbackRunner(
     } catch (e: CancellationException) {
       logger.log(Level.FINE, "Resetting Compose UI dispatcher was cancelled before executing layoutlib callbacks", e)
     } catch (e: ExecutionException) {
-      logger.log(Level.FINE, "Unable to reset the Compose UI dispatcher before executing layoutlib callbacks", e.cause ?: e)
+      val cause = e.cause ?: e
+      if (cause is VirtualMachineError && cause !is StackOverflowError) throw cause
+      logger.log(Level.FINE, "Unable to reset the Compose UI dispatcher before executing layoutlib callbacks", cause)
     }
     return CallbacksOutcome.Settled(hasMoreWork = false, sessionTimeNanos = sessionTimeNanos)
   }
@@ -685,6 +687,7 @@ internal class StaticPreviewCallbackRunner(
           hasMoreWork = true
           logger.log(Level.FINE, "Executing layoutlib callbacks took longer than expected", cause)
         } else {
+          if (cause is VirtualMachineError && cause !is StackOverflowError) throw cause
           session.reportError("Error while executing layoutlib callbacks: $cause", cause)
           return CallbacksOutcome.Failed
         }
@@ -713,6 +716,7 @@ internal class StaticPreviewCallbackRunner(
           return CallbacksOutcome.Failed
         } catch (e: ExecutionException) {
           val cause = e.cause ?: e
+          if (cause is VirtualMachineError && cause !is StackOverflowError) throw cause
           session.reportError("Error while executing layoutlib callbacks: $cause", cause)
           return CallbacksOutcome.Failed
         }
@@ -747,6 +751,7 @@ internal class StaticPreviewCallbackRunner(
       CallbacksOutcome.Failed
     } catch (e: ExecutionException) {
       val cause = e.cause ?: e
+      if (cause is VirtualMachineError && cause !is StackOverflowError) throw cause
       session.reportError("Error while executing layoutlib callbacks: $cause", cause)
       CallbacksOutcome.Failed
     }
@@ -814,6 +819,7 @@ internal class StaticPreviewCallbackRunner(
           thread.uncaughtExceptionHandler = handler
         }
       )
+    var blockCompleted = false
     var installTimedOut = false
     try {
       try {
@@ -825,6 +831,7 @@ internal class StaticPreviewCallbackRunner(
         throw e
       }
       block(uncaughtExceptionReported::get)
+      blockCompleted = true
     } finally {
       active.set(false)
       try {
@@ -835,7 +842,7 @@ internal class StaticPreviewCallbackRunner(
               if (thread.uncaughtExceptionHandler === handler) thread.uncaughtExceptionHandler = previousHandler.get()
             }
           )
-        if (installTimedOut || renderThreadMayBeBusy()) {
+        if (installTimedOut || !blockCompleted || renderThreadMayBeBusy()) {
           restored.whenComplete { _, t ->
             if (t != null) logger.log(Level.FINE, "Unable to restore the uncaught exception handler of the render thread", t)
           }
@@ -843,6 +850,9 @@ internal class StaticPreviewCallbackRunner(
           restored.get(RENDER_THREAD_ACTION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         }
       } catch (e: Exception) {
+        if (e is InterruptedException) {
+          Thread.currentThread().interrupt()
+        }
         logger.log(Level.FINE, "Unable to restore the uncaught exception handler of the render thread", e)
       }
     }
