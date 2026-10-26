@@ -75,6 +75,7 @@ class PresubmitTest(parameterized.TestCase):
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=impacted_targets',
               '--build_metadata=selective_presubmit_found=True',
+              '--build_metadata=selective_presubmit_base_hashes_source=gcs',
               '--build_metadata=selective_presubmit_impacted_target_count=2',
               '--build_metadata=selective_presubmit_target_distance=(0:2)',
               '--build_metadata=selective_presubmit_package_distance=(0:2)',
@@ -104,6 +105,7 @@ class PresubmitTest(parameterized.TestCase):
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=impacted_targets',
               '--build_metadata=selective_presubmit_found=True',
+              '--build_metadata=selective_presubmit_base_hashes_source=gcs',
               '--build_metadata=selective_presubmit_impacted_target_count=1',
               '--build_metadata=selective_presubmit_target_distance=(0:1)',
               '--build_metadata=selective_presubmit_package_distance=(0:1)',
@@ -123,6 +125,7 @@ class PresubmitTest(parameterized.TestCase):
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=impacted_targets',
               '--build_metadata=selective_presubmit_found=True',
+              '--build_metadata=selective_presubmit_base_hashes_source=gcs',
               '--build_metadata=selective_presubmit_impacted_target_count=1',
               '--build_metadata=selective_presubmit_target_distance=(0:1)',
               '--build_metadata=selective_presubmit_package_distance=(0:1)',
@@ -257,6 +260,7 @@ class PresubmitTest(parameterized.TestCase):
           ' base_target2) except attr(target_compatible_with,'
           ' "@platforms//:incompatible", base_target2)',
           '--config=ci',
+          '--//tools/base/bazel/ci:ab_target=studio-test',
       )
 
 

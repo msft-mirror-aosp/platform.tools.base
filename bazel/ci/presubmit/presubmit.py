@@ -105,8 +105,8 @@ def find_test_targets(
         base_targets,
         test_flag_filters,
     )
-  except impacted_targets.ImpactedTargetsNotFoundError as e:
-    logging.warning('Failed to find impacted test targets: %s', e)
+  except (impacted_targets.ImpactedTargetsNotFoundError, ExceptionGroup) as e:
+    logging.warning('Failed to find impacted test targets', exc_info=True)
     impacted_targets_info = None
 
   if impacted_targets_info:

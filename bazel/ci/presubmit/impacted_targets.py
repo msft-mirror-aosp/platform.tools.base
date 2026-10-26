@@ -7,7 +7,7 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
-from typing import List, Sequence, Set
+from typing import List, Sequence, Set, Tuple
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import gce
@@ -84,6 +84,7 @@ class ImpactedTargetsInfo:
   # baseline_targets is the set of all targets for a CI target, and
   # has gone through target and tag filtering.
   baseline_targets: Set[str]
+  base_hashes_source: str
 
   def get_direct_targets(self) -> List[ImpactedTarget]:
     return [t for t in self.all_targets if t.target_distance == 0]
@@ -101,6 +102,7 @@ class ImpactedTargetsInfo:
         t.package_distance for t in filtered_targets
     )
     return [
+        f'--build_metadata=selective_presubmit_base_hashes_source={self.base_hashes_source}',
         f'--build_metadata=selective_presubmit_impacted_target_count={len(labels)}',
         f'--build_metadata=selective_presubmit_target_distance='
         + ','.join(
@@ -161,16 +163,23 @@ def get_impacted_targets_info(
     ImpactedTargetsNotFoundError: If impacted targets could not be determined.
   """
   _check_selective_presubmit_opt_out(gerrit_info)
+  # Resolve the base hash file before running generate-hashes (which is a
+  # long-running operation taking several minutes) so we fail fast when the
+  # base hash file is unavailable.
+  base_hashes, base_hashes_source = get_base_hash_file(build_env)
   with tempfile.TemporaryDirectory() as temp_dir:
     modified_files = pathlib.Path(temp_dir) / 'modified-files.txt'
     write_modified_files(gerrit_info, modified_files)
     impacted_targets_info = ImpactedTargetsInfo(
-        all_targets=_find_impacted_targets(build_env, modified_files),
+        all_targets=_find_impacted_targets(
+            build_env, base_hashes, modified_files
+        ),
         baseline_targets=query_baseline_targets(
             build_env,
             base_targets,
             test_flag_filters,
         ),
+        base_hashes_source=base_hashes_source,
     )
 
   direct_impacted_targets_path = (
@@ -250,19 +259,8 @@ def _generate_hash_file(
   return hash_file_path
 
 
-def get_base_hash_file(build_env: bazel.BuildEnv) -> str:
-  """Returns the base hash file for the current build."""
-  if os.environ.get('INCREMENTAL_BUILD') == 'true':
-    base_hashes_path = (
-        pathlib.Path(build_env.workspace_dir) / _INCREMENTAL_BAZEL_DIFF_HASH
-    )
-    if base_hashes_path.exists():
-      logging.info('Found base hash file in incremental out/')
-      return str(base_hashes_path)
-    logging.warning(
-        'Base hash file not found in incremental out/, falling back to GCS'
-    )
-
+def _base_hash_file_from_gcs(build_env: bazel.BuildEnv) -> str:
+  """Downloads and returns the base hash file from GCS."""
   reference_bid = gce.get_reference_build_id(
       build_env.build_number,
       build_env.build_target_name,
@@ -277,26 +275,57 @@ def get_base_hash_file(build_env: bazel.BuildEnv) -> str:
       target=build_env.build_target_name,
   )
   base_hashes = pathlib.Path(build_env.dist_dir) / 'base-hashes.json'
-  exists = gce.download_from_gcs(
-      _BUCKET,
-      object_name,
-      str(base_hashes),
-  )
-  if not exists:
+  if not gce.download_from_gcs(_BUCKET, object_name, str(base_hashes)):
     raise ImpactedTargetsNotFoundError(
-        f'Base hash file {object_name} not found'
+        f'Base hash file {object_name} not found in GCS'
     )
   return str(base_hashes)
 
 
+def _base_hash_file_from_trident(build_env: bazel.BuildEnv) -> str:
+  """Returns the base hash file from the incremental out/ directory."""
+  if os.environ.get('INCREMENTAL_BUILD') != 'true':
+    raise ImpactedTargetsNotFoundError('Not an incremental build')
+  base_hashes_path = (
+      pathlib.Path(build_env.workspace_dir) / _INCREMENTAL_BAZEL_DIFF_HASH
+  )
+  if not base_hashes_path.exists():
+    raise ImpactedTargetsNotFoundError(
+        f'Base hash file {base_hashes_path} not found in incremental out/'
+    )
+  logging.info('Falling back to base hash file in incremental out/')
+  return str(base_hashes_path)
+
+
+def get_base_hash_file(build_env: bazel.BuildEnv) -> Tuple[str, str]:
+  """Returns the base hash file path and source ('gcs' or 'out')."""
+  errors = []
+  try:
+    return _base_hash_file_from_gcs(build_env), 'gcs'
+  except (
+      ImpactedTargetsNotFoundError,
+      subprocess.CalledProcessError,
+      json.JSONDecodeError,
+  ) as e:
+    errors.append(e)
+  try:
+    return _base_hash_file_from_trident(build_env), 'out'
+  except ImpactedTargetsNotFoundError as e:
+    errors.append(e)
+  raise ExceptionGroup('Base hash file not found.', errors)
+
+
 def _find_impacted_targets(
     build_env: bazel.BuildEnv,
+    base_hashes: str,
     modified_files_path: pathlib.Path,
 ) -> List[ImpactedTarget]:
   """Finds the targets impacted by the current change.
 
   Args:
     build_env: The build environment.
+    base_hashes: Path to the base hash file.
+    modified_files_path: Path to the modified files list.
 
   Returns:
     The list of impacted targets.
@@ -304,10 +333,6 @@ def _find_impacted_targets(
   Raises:
     ImpactedTargetsNotFoundError: If impacted targets could not be determined.
   """
-  # Resolve the base hash file before running generate-hashes (which is a
-  # long-running operation taking several minutes) so we fail fast when the
-  # base hash file is unavailable.
-  base_hashes = get_base_hash_file(build_env)
   with tempfile.TemporaryDirectory() as temp_dir:
     temp_path = pathlib.Path(temp_dir)
     dep_edges = temp_path / 'dep-edges.json'
@@ -388,9 +413,19 @@ def query_baseline_targets(
       + ' except '
       + ' except '.join(exclude_query)
   )
-  output = build_env.bazel_cquery(
-    query, "--config=ci"
-  ).stdout.decode('utf-8').splitlines()
+  # Workaround for https://github.com/bazelbuild/bazel/issues/30800: keep the
+  # build configuration identical to studio.run_tests() so subsequent
+  # bazel test calls reuse the analysis cache instead of discarding it and
+  # losing @windows_sdk package roots during C++ header discovery on Windows.
+  output = (
+      build_env.bazel_cquery(
+          query,
+          '--config=ci',
+          f'--//tools/base/bazel/ci:ab_target={build_env.build_target_name}',
+      )
+      .stdout.decode('utf-8')
+      .splitlines()
+  )
   # Filter out the configuration suffix from the target labels.
   baseline_targets = []
   for line in output:

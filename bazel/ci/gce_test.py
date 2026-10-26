@@ -1,5 +1,8 @@
 """Tests for gce."""
 
+import os
+from unittest import mock
+
 from absl.testing import absltest
 
 from tools.base.bazel.ci import fake_build_env
@@ -23,6 +26,21 @@ class GceTest(absltest.TestCase):
   def test_get_reference_build_id(self):
     self.gce.reference_build_id = '789'
     self.assertEqual(gce.get_reference_build_id('P123', 'studio-test'), '789')
+
+  def test_get_reference_build_id_from_ref_build_file(self):
+    logs_dir = self.build_env.dist_path / 'logs'
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    (logs_dir / 'REF-BUILD').write_text('456\n')
+    with (
+        mock.patch.dict(
+            os.environ, {'DIST_DIR': str(self.build_env.dist_path)}
+        ),
+        mock.patch.object(gce, '_curl') as mock_curl,
+    ):
+      self.assertEqual(
+          gce.get_reference_build_id('P123', 'studio-test'), '456'
+      )
+      mock_curl.assert_not_called()
 
   def test_upload_download(self):
     src = self.build_env.tmp_path / 'src.txt'

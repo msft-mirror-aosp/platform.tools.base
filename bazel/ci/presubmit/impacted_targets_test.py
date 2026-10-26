@@ -94,11 +94,17 @@ class ImpactedTargetsTest(absltest.TestCase):
     info = impacted_targets.get_impacted_targets_info(
         self.build_env, gerrit.GerritInfo(_build_env=self.build_env, changes=[], changes_hash=''), [], ''
     )
+    self.build_env.bazel_cquery.assert_called_once_with(
+        mock.ANY,
+        '--config=ci',
+        '--//tools/base/bazel/ci:ab_target=studio-test',
+    )
     self.assertEqual(
         info,
         impacted_targets.ImpactedTargetsInfo(
             all_targets=expected_impacted_targets,
             baseline_targets=['target2', 'target3'],
+            base_hashes_source='gcs',
         ),
     )
 
@@ -121,6 +127,7 @@ class ImpactedTargetsTest(absltest.TestCase):
     self.assertEqual(
         info.get_bazel_flags(),
         [
+            '--build_metadata=selective_presubmit_base_hashes_source=gcs',
             '--build_metadata=selective_presubmit_impacted_target_count=2',
             '--build_metadata=selective_presubmit_target_distance=(0:1),(1:1)',
             '--build_metadata=selective_presubmit_package_distance=(1:1),(2:1)',
@@ -224,7 +231,7 @@ class ImpactedTargetsTest(absltest.TestCase):
 
   def test_missing_base_hash_skips_generate_hashes(self):
     mock_generate = self._mock_generate_hash_file('hash-file')
-    with self.assertRaises(impacted_targets.ImpactedTargetsNotFoundError):
+    with self.assertRaises(ExceptionGroup):
       impacted_targets.get_impacted_targets_info(
           self.build_env,
           gerrit.GerritInfo(
@@ -244,8 +251,48 @@ class ImpactedTargetsTest(absltest.TestCase):
         'bazel-diff-hashes/v8/789-studio-test.json',
     )
     with mock.patch.dict(os.environ, {'INCREMENTAL_BUILD': 'true'}):
-      base_hash_path = impacted_targets.get_base_hash_file(self.build_env)
+      base_hash_path, source = impacted_targets.get_base_hash_file(
+          self.build_env
+      )
     self.assertEqual(pathlib.Path(base_hash_path).read_text(), 'parent-hash-file')
+    self.assertEqual(source, 'gcs')
+
+  def test_incremental_build_prefers_gcs_over_local_out(self):
+    parent_hash_path = self.build_env.tmp_path / 'parent.json'
+    parent_hash_path.write_text('gcs-hash-file')
+    gce.upload_to_gcs(
+        parent_hash_path,
+        'adt-byob',
+        'bazel-diff-hashes/v8/789-studio-test.json',
+    )
+    local_out_hash = (
+        pathlib.Path(self.build_env.workspace_dir)
+        / 'out/bazel-diff-hashes.json'
+    )
+    local_out_hash.parent.mkdir(parents=True, exist_ok=True)
+    local_out_hash.write_text('stale-local-hash-file')
+    with mock.patch.dict(os.environ, {'INCREMENTAL_BUILD': 'true'}):
+      base_hash_path, source = impacted_targets.get_base_hash_file(
+          self.build_env
+      )
+    self.assertEqual(pathlib.Path(base_hash_path).read_text(), 'gcs-hash-file')
+    self.assertEqual(source, 'gcs')
+
+  def test_incremental_build_falls_back_to_local_out_when_gcs_missing(self):
+    local_out_hash = (
+        pathlib.Path(self.build_env.workspace_dir)
+        / 'out/bazel-diff-hashes.json'
+    )
+    local_out_hash.parent.mkdir(parents=True, exist_ok=True)
+    local_out_hash.write_text('local-hash-file')
+    with mock.patch.dict(os.environ, {'INCREMENTAL_BUILD': 'true'}):
+      base_hash_path, source = impacted_targets.get_base_hash_file(
+          self.build_env
+      )
+    self.assertEqual(
+        pathlib.Path(base_hash_path).read_text(), 'local-hash-file'
+    )
+    self.assertEqual(source, 'out')
 
   def test_prebuilts_and_m2_changes_opted_out(self):
     mock_generate = self._mock_generate_hash_file('hash-file')

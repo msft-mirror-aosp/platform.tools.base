@@ -3,6 +3,7 @@ import functools
 import json
 import logging
 import os
+import pathlib
 import re
 import subprocess
 from typing import List, Tuple
@@ -94,6 +95,12 @@ def download_from_gcs(bucket: str, name: str, dst: str) -> bool:
 @functools.cache
 def get_reference_build_id(bid: str, target: str) -> str:
   """Returns the reference build ID for the current build."""
+  dist_dir = os.environ.get('DIST_DIR')
+  if dist_dir:
+    ref_build_path = pathlib.Path(dist_dir) / 'logs' / 'REF-BUILD'
+    if ref_build_path.exists():
+      logging.info('Reading reference build ID from %s', ref_build_path)
+      return ref_build_path.read_text().strip()
   result = _curl(
       'GET',
       get_auth_header(),
