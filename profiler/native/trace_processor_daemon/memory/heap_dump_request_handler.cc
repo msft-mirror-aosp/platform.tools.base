@@ -339,12 +339,14 @@ void HeapDumpRequestHandler::PopulateReferences(
   std::string array_index_sql =
       "IIF(r.field_name IS NULL OR r.field_name = '', r.id - "
       "r.reference_set_id, -1) AS array_index";
+  // A trace bundled with the app's R8 mapping has each field's name in the
+  // source in deobfuscated_field_name. Other traces leave it null.
   if (request.fetch_forward()) {
     ref_query += R"(
       SELECT
         r.owner_id,
         r.owned_id,
-        r.field_name,
+        COALESCE(r.deobfuscated_field_name, r.field_name),
         )" + array_index_sql +
                  R"(
       FROM heap_graph_reference r
@@ -361,7 +363,7 @@ void HeapDumpRequestHandler::PopulateReferences(
       SELECT
         r.owner_id,
         r.owned_id,
-        r.field_name,
+        COALESCE(r.deobfuscated_field_name, r.field_name),
         )" + array_index_sql +
                  R"(
       FROM heap_graph_reference r

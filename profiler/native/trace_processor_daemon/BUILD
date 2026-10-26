@@ -74,6 +74,7 @@ cc_test(
     data = [
         "testdata/bitmap-duplicates.hprof",
         "testdata/deobfuscated.heapprofd",
+        "testdata/deobfuscated.perfetto-java-heap-dump.gz",
         "testdata/garbage.trace",
         "testdata/profilertester.perfetto-java-heap-dump",
         "testdata/tank.trace",

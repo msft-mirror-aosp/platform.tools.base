@@ -42,6 +42,14 @@ const std::string PERFETTO_JAVA_HEAP_DUMP_PATH(
     "tools/base/profiler/native/trace_processor_daemon/testdata/"
     "profilertester.perfetto-java-heap-dump");
 
+// A Perfetto heap graph of ProfilerTester built with R8, recorded with the
+// config Android Studio uses, then bundled by traceconv with the app's classes
+// from the R8 mapping, as Android Studio does before opening it. Gzipped to
+// keep it small.
+const std::string DEOBFUSCATED_JAVA_HEAP_DUMP_PATH(
+    "tools/base/profiler/native/trace_processor_daemon/testdata/"
+    "deobfuscated.perfetto-java-heap-dump.gz");
+
 std::unique_ptr<TraceProcessor> LoadTrace(const std::string& trace_path) {
   Config config;
   config.ingest_ftrace_in_raw_table = false;
@@ -209,6 +217,49 @@ TEST(HeapDumpRequestHandlerTest, TestPopulateReferences) {
   }
   EXPECT_TRUE(found_klass_ref);
   EXPECT_TRUE(found_drawcanvas_ref);
+}
+
+// Validates that class and reference field names read as in the source when an
+// R8 heap graph is bundled with the app's R8 mapping. R8 renamed
+// AudioTaskCategory to d.c, and its field mTasks to b.
+TEST(HeapDumpRequestHandlerTest, TestDeobfuscatedNames) {
+  const std::string class_name =
+      "android.com.java.profilertester.taskcategory.AudioTaskCategory";
+  auto tp = LoadTrace(DEOBFUSCATED_JAVA_HEAP_DUMP_PATH);
+  HeapDumpRequestHandler handler{tp.get()};
+
+  proto::HeapDumpResult events_result;
+  handler.PopulateEvents(&events_result);
+  bool found_class = false;
+  for (const auto& class_overview : events_result.class_overview()) {
+    EXPECT_NE(class_overview.class_name(), "d.c");
+    if (class_overview.class_name() == class_name) {
+      found_class = true;
+    }
+  }
+  EXPECT_TRUE(found_class);
+
+  proto::QueryParameters::HeapDumpInstancesParameters instances_request;
+  instances_request.add_class_names(class_name);
+  instances_request.set_heap_name("app");
+  proto::HeapDumpInstancesResult instances_result;
+  handler.PopulateInstances(instances_request, &instances_result);
+  ASSERT_GT(instances_result.instance_size(), 0);
+
+  proto::QueryParameters::GetReferencesParameters refs_request;
+  refs_request.add_instance_ids(instances_result.instance(0).id());
+  refs_request.set_fetch_forward(true);
+  proto::GetReferencesResult refs_result;
+  handler.PopulateReferences(refs_request, &refs_result);
+
+  bool found_field = false;
+  for (const auto& ref : refs_result.reference()) {
+    EXPECT_NE(ref.field_name(), "d.c.b");
+    if (ref.field_name() == class_name + ".mTasks") {
+      found_field = true;
+    }
+  }
+  EXPECT_TRUE(found_field);
 }
 
 // Capture format under test, and whether that format is expected to contain
