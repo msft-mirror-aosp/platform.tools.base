@@ -32,7 +32,7 @@ object CoverageAgentConfigurations {
    * The agent is built and released in lockstep with the Android Gradle plugin (same version, same gmaven release), so by default it
    * resolves to the exact AGP version. A project can pin a different release of the agent with the
    * [StringOption.COVERAGE_AGENT_VERSION_OVERRIDE] gradle property ([versionOverride]), e.g. to pick up an agent fix without changing its
-   * AGP version.
+   * AGP version, as long as AGP supports that release (see [isAgentVersionSupported]).
    *
    * Either way, the coordinate is added to the androidTest runtime classpath and forced on both the compile and runtime classpaths of the
    * test component (see `TaskManager.handleOnTheFlyCoverageDependencies`), so a different version declared by the build author cannot win
@@ -44,8 +44,8 @@ object CoverageAgentConfigurations {
   }
 
   /**
-   * Returns the version of the on-device coverage agent to use: [versionOverride] if it is set and valid, otherwise [agpVersion]. Problems
-   * with the override are reported to [issueReporter] as a side effect.
+   * Returns the version of the on-device coverage agent to use: [versionOverride] if it is set, valid and supported by [agpVersion] (see
+   * [isAgentVersionSupported]), otherwise [agpVersion]. Problems with the override are reported to [issueReporter] as a side effect.
    */
   @JvmStatic
   @JvmOverloads
@@ -70,7 +70,20 @@ object CoverageAgentConfigurations {
       )
       return agpVersion
     }
-    if (parsedOverride < AgpVersion.parse(agpVersion)) {
+    val parsedAgpVersion = AgpVersion.parse(agpVersion)
+    if (!isAgentVersionSupported(parsedOverride, parsedAgpVersion)) {
+      val supportedVersions = "${parsedAgpVersion.major}.${parsedAgpVersion.minor}.x"
+      issueReporter?.reportError(
+        IssueReporter.Type.GENERIC,
+        """
+        The on-device coverage agent version override '$override' is not compatible with the Android Gradle plugin version ($agpVersion), which only supports $supportedVersions versions of the agent.
+        Recommendation: Remove the gradle property ${StringOption.COVERAGE_AGENT_VERSION_OVERRIDE.propertyName} or set it to a $supportedVersions version; without it the agent version defaults to the Android Gradle plugin version ($agpVersion).
+        """
+          .trimIndent(),
+      )
+      return agpVersion
+    }
+    if (parsedOverride < parsedAgpVersion) {
       issueReporter?.reportWarning(
         IssueReporter.Type.GENERIC,
         """
@@ -82,4 +95,15 @@ object CoverageAgentConfigurations {
     }
     return override
   }
+
+  /**
+   * Returns whether the Android Gradle plugin at [agpVersion] supports the on-device coverage agent at [agentVersion].
+   *
+   * The agent is released in lockstep with the plugin, and a plugin version only supports the agent versions with its own major and minor
+   * version: AGP 9.6.x supports agent 9.6.y for any y, from 9.6.0-alpha01 (the first release of the series) up to the last 9.6 release, and
+   * no agent of an older (e.g. 9.5) or newer (e.g. 9.7 or 10.6) series.
+   */
+  @JvmStatic
+  fun isAgentVersionSupported(agentVersion: AgpVersion, agpVersion: AgpVersion): Boolean =
+    agentVersion.major == agpVersion.major && agentVersion.minor == agpVersion.minor
 }

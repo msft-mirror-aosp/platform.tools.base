@@ -29,6 +29,7 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.coverage.JacocoConfigurations;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.StringOption;
+import com.android.ide.common.repository.AgpVersion;
 import com.android.testutils.MavenRepoGenerator;
 import com.android.testutils.TestInputsGenerator;
 import com.android.testutils.apk.Apk;
@@ -91,11 +92,16 @@ public class JacocoTest {
     private static final String AGENT_ATTACHER_CLASS =
             "Lcom/android/tools/coverage/CoverageAgentAttacher;";
 
-    // A fake release of the on-device coverage agent, newer than any real AGP version, that exists
-    // only in the test project's additional Maven repository. It contains a marker class instead
-    // of the real attacher, so the content of an androidTest APK built against it tells which
-    // release was used.
-    private static final String NEWER_FAKE_AGENT_VERSION = "99.0.0";
+    private static final AgpVersion AGP_VERSION =
+            AgpVersion.parse(Version.ANDROID_GRADLE_PLUGIN_VERSION);
+
+    // A fake release of the on-device coverage agent, from the running plugin's major.minor series
+    // (the only agent versions the plugin supports) but newer than any real release of it, that
+    // exists only in the test project's additional Maven repository. It contains a marker class
+    // instead of the real attacher, so the content of an androidTest APK built against it tells
+    // which release was used.
+    private static final String NEWER_FAKE_AGENT_VERSION =
+            AGP_VERSION.getMajor() + "." + AGP_VERSION.getMinor() + ".99";
     private static final String FAKE_AGENT_MARKER_CLASS_NAME =
             "com/android/tools/coverage/FakeCoverageAgentMarker";
     private static final String FAKE_AGENT_MARKER_CLASS_TYPE =
@@ -118,8 +124,12 @@ public class JacocoTest {
 
     private File getCoverageDir() {
         return runWithBuiltInPlatform
-                ? new File(project.getProjectDir(), "build/intermediates/test_suite_code_coverage/debug/connectedDebugAndroidTest")
-                : new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+                ? new File(
+                        project.getProjectDir(),
+                        "build/intermediates/test_suite_code_coverage/debug/connectedDebugAndroidTest")
+                : new File(
+                        project.getProjectDir(),
+                        "build/outputs/code_coverage/debugAndroidTest/connected");
     }
 
     @Before
@@ -305,8 +315,10 @@ public void testOnTheFlyRequiresReportAggregation() throws Exception {
             .expectFailure()
             .run("createDebugAndroidTestCoverageReport");
 
-    assertThat(result.getFailureMessage()).contains(
-            "On-the-fly coverage requires 'android.experimental.reportAggregationSupport' to be enabled.");
+        assertThat(result.getFailureMessage())
+                .contains(
+                        "On-the-fly coverage requires"
+                            + " 'android.experimental.reportAggregationSupport' to be enabled.");
 }
 
 @Test
@@ -326,8 +338,11 @@ public void testOnTheFlySuccessWithEmptyPbFiles() throws Exception {
             .withArgument("connectedDebugAndroidTest")
             .run("createDebugAndroidTestCoverageReport");
 
-    // Verify report.xml was successfully generated
-    File reportXml = new File(project.getProjectDir(), "build/reports/coverage/androidTest/debug/connected/report.xml");
+        // Verify report.xml was successfully generated
+        File reportXml =
+                new File(
+                        project.getProjectDir(),
+                        "build/reports/coverage/androidTest/debug/connected/report.xml");
     assertThat(reportXml.isFile()).isTrue();
     String content = new String(java.nio.file.Files.readAllBytes(reportXml.toPath()), Charsets.UTF_8);
     assertThat(content).contains("<?xml");
@@ -351,8 +366,11 @@ public void testOnTheFlyAnchorTaskIsRegisteredAndRuns() throws Exception {
             .withArgument("connectedDebugAndroidTest")
             .run("createDebugCoverageReport");
 
-    // Verify report.xml was successfully generated via the anchor task flow
-    File reportXml = new File(project.getProjectDir(), "build/reports/coverage/androidTest/debug/connected/report.xml");
+        // Verify report.xml was successfully generated via the anchor task flow
+        File reportXml =
+                new File(
+                        project.getProjectDir(),
+                        "build/reports/coverage/androidTest/debug/connected/report.xml");
     assertThat(reportXml.isFile()).isTrue();
 }
 
@@ -569,8 +587,8 @@ public void testLegacyFailsIfNoLegacyFilesFoundEvenWithPb() throws Exception {
                         + "'\n"
                         + "}\n");
 
-        // A project can pin the agent to another release than the one bundled with its AGP
-        // version, e.g. to pick up an agent fix without upgrading the plugin. The override, not
+        // A project can pin the agent to another release of its AGP version's major.minor series,
+        // e.g. to pick up an agent fix without upgrading the plugin. The override, not
         // the AGP version, is then what both androidTest classpaths resolve, and the force follows
         // it: the stale version declared by the build author is substituted with the override...
         for (String configuration :
@@ -593,6 +611,28 @@ public void testLegacyFailsIfNoLegacyFilesFoundEvenWithPb() throws Exception {
             assertThat(androidTestApk).containsClass(FAKE_AGENT_MARKER_CLASS_TYPE);
             assertThat(androidTestApk).doesNotContainClass(AGENT_ATTACHER_CLASS);
         }
+    }
+
+    @Test
+    public void onTheFlyAgentVersionOverrideOfAnotherSeriesFailsTheBuild() throws Exception {
+        // The plugin only supports agent releases of its own major.minor series (e.g. AGP 9.6.x
+        // supports 9.6.y agents only), so pinning a release of another series fails the build.
+        String nextSeriesAgentVersion =
+                AGP_VERSION.getMajor() + "." + (AGP_VERSION.getMinor() + 1) + ".0";
+        GradleBuildResult result =
+                project.executor()
+                        .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                        .with(StringOption.COVERAGE_AGENT_VERSION_OVERRIDE, nextSeriesAgentVersion)
+                        .expectFailure()
+                        .run("assembleDebugAndroidTest");
+
+        result.assertFailureMessage()
+                .contains(
+                        "The on-device coverage agent version override '"
+                                + nextSeriesAgentVersion
+                                + "' is not compatible with the Android Gradle plugin version ("
+                                + Version.ANDROID_GRADLE_PLUGIN_VERSION
+                                + ")");
     }
 
     /**

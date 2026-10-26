@@ -19,7 +19,9 @@ package com.android.build.gradle.internal.coverage
 import com.android.Version
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.options.StringOption
+import com.android.ide.common.repository.AgpVersion
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 class CoverageAgentConfigurationsTest {
@@ -42,9 +44,13 @@ class CoverageAgentConfigurationsTest {
 
   @Test
   fun agentCoordinateUsesTheOverriddenVersion() {
-    val coordinate = CoverageAgentConfigurations.getAgentRuntimeDependency(versionOverride = "99.0.0", issueReporter = issueReporter)
+    // A newer release of the running plugin's major.minor series, the only agent versions it supports.
+    val runningAgpVersion = AgpVersion.parse(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+    val override = "${runningAgpVersion.major}.${runningAgpVersion.minor}.99"
 
-    assertThat(coordinate).isEqualTo("com.android.tools.test:coverage-agent:99.0.0")
+    val coordinate = CoverageAgentConfigurations.getAgentRuntimeDependency(versionOverride = override, issueReporter = issueReporter)
+
+    assertThat(coordinate).isEqualTo("com.android.tools.test:coverage-agent:$override")
     assertThat(issueReporter.messages).isEmpty()
   }
 
@@ -57,9 +63,9 @@ class CoverageAgentConfigurationsTest {
   }
 
   @Test
-  fun newerOverrideIsUsed() {
+  fun newerOverrideOfTheSameSeriesIsUsed() {
     assertThat(CoverageAgentConfigurations.getAgentVersion("9.5.0-alpha12", issueReporter, agpVersion)).isEqualTo("9.5.0-alpha12")
-    assertThat(CoverageAgentConfigurations.getAgentVersion("9.6.0", issueReporter, agpVersion)).isEqualTo("9.6.0")
+    assertThat(CoverageAgentConfigurations.getAgentVersion("9.5.3", issueReporter, agpVersion)).isEqualTo("9.5.3")
     assertThat(issueReporter.messages).isEmpty()
   }
 
@@ -76,13 +82,30 @@ class CoverageAgentConfigurationsTest {
   }
 
   @Test
-  fun olderOverrideIsUsedWithAWarning() {
-    assertThat(CoverageAgentConfigurations.getAgentVersion("9.4.2", issueReporter, agpVersion)).isEqualTo("9.4.2")
+  fun overrideOfAnotherSeriesIsReportedAndFallsBackToTheAgpVersion() {
+    // AGP 9.5.x only supports 9.5.y agents: releases of older and newer series are rejected.
+    for (override in listOf("9.4.2", "9.4.99", "8.5.0", "9.6.0-alpha01", "9.6.0", "10.5.0", "99.0.0")) {
+      val fakeIssueReporter = FakeSyncIssueReporter(throwOnError = false)
 
-    assertThat(issueReporter.errors).isEmpty()
-    val warning = issueReporter.warnings.single()
-    assertThat(warning).contains("'9.4.2' is older than the Android Gradle plugin version (9.5.0-alpha09)")
-    assertThat(warning).contains(propertyName)
+      assertThat(CoverageAgentConfigurations.getAgentVersion(override, fakeIssueReporter, agpVersion)).isEqualTo(agpVersion)
+
+      assertThat(fakeIssueReporter.warnings).isEmpty()
+      val error = fakeIssueReporter.errors.single()
+      assertThat(error)
+        .contains("override '$override' is not compatible with the Android Gradle plugin version ($agpVersion), which only supports 9.5.x")
+      assertThat(error).contains("Remove the gradle property $propertyName or set it to a 9.5.x version")
+    }
+  }
+
+  @Test
+  fun agpSupportsTheAgentVersionsOfItsOwnMajorAndMinorVersionOnly() {
+    val agp = AgpVersion.parse("9.6.0-alpha05")
+    for (agent in listOf("9.6.0-alpha01", "9.6.0-alpha05", "9.6.0-dev", "9.6.0", "9.6.3", "9.6.10-rc02")) {
+      assertWithMessage(agent).that(CoverageAgentConfigurations.isAgentVersionSupported(AgpVersion.parse(agent), agp)).isTrue()
+    }
+    for (agent in listOf("9.5.0-alpha01", "9.5.9", "9.7.0-alpha01", "9.7.0", "8.6.0", "10.6.0", "9.0.6")) {
+      assertWithMessage(agent).that(CoverageAgentConfigurations.isAgentVersionSupported(AgpVersion.parse(agent), agp)).isFalse()
+    }
   }
 
   @Test
@@ -90,7 +113,9 @@ class CoverageAgentConfigurationsTest {
     assertThat(CoverageAgentConfigurations.getAgentVersion("9.5.0-alpha08", issueReporter, agpVersion)).isEqualTo("9.5.0-alpha08")
 
     assertThat(issueReporter.errors).isEmpty()
-    assertThat(issueReporter.warnings).hasSize(1)
+    val warning = issueReporter.warnings.single()
+    assertThat(warning).contains("'9.5.0-alpha08' is older than the Android Gradle plugin version (9.5.0-alpha09)")
+    assertThat(warning).contains(propertyName)
   }
 
   @Test
