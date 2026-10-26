@@ -18,10 +18,8 @@
 package com.android.utils
 
 import com.android.SdkConstants.FN_BUILD_GRADLE
-import com.android.SdkConstants.FN_BUILD_GRADLE_DECLARATIVE
 import com.android.SdkConstants.FN_BUILD_GRADLE_KTS
 import com.android.SdkConstants.FN_SETTINGS_GRADLE
-import com.android.SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE
 import com.android.SdkConstants.FN_SETTINGS_GRADLE_KTS
 import java.io.File
 
@@ -41,8 +39,6 @@ fun findGradleBuildFile(dirPath: File): File {
   if (groovyBuildFile.isFile) return groovyBuildFile
   val kotlinBuildFile = File(dirPath, FN_BUILD_GRADLE_KTS)
   if (kotlinBuildFile.isFile) return kotlinBuildFile
-  val declarativeBuildFile = File(dirPath, FN_BUILD_GRADLE_DECLARATIVE)
-  if (declarativeBuildFile.isFile) return declarativeBuildFile
 
   // Default to Groovy if none exist.
   return groovyBuildFile
@@ -61,8 +57,6 @@ fun findGradleSettingsFile(dirPath: File): File {
   if (groovySettingsFile.isFile) return groovySettingsFile
   val kotlinSettingsFile = File(dirPath, FN_SETTINGS_GRADLE_KTS)
   if (kotlinSettingsFile.isFile) return kotlinSettingsFile
-  val declarativeSettingsFile = File(dirPath, FN_SETTINGS_GRADLE_DECLARATIVE)
-  if (declarativeSettingsFile.isFile) return declarativeSettingsFile
 
   // Default to Groovy if none exist.
   return groovySettingsFile

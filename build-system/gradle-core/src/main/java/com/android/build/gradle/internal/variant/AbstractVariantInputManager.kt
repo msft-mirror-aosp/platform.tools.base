@@ -15,10 +15,8 @@
  */
 package com.android.build.gradle.internal.variant
 
-import com.android.build.api.dsl.VariantDimensionDependenciesExtension
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
-import com.android.build.gradle.internal.api.AndroidSourceSetName
 import com.android.build.gradle.internal.api.LazyAndroidSourceSet
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.BuildType
