@@ -189,4 +189,14 @@ class DeployerRunnerUtilsTest {
         }
       }
   }
+
+  @Test
+  fun testGetAdbPath_returnsAbsolutePathWhenExplicitPathProvided() {
+    // Act
+    val result = getAdbPath("relative/path/to/adb")
+
+    // Assert
+    assertTrue(result.isAbsolute)
+    assertEquals(Paths.get("relative/path/to/adb").toAbsolutePath(), result)
+  }
 }

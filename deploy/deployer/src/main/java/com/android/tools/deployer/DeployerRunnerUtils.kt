@@ -23,11 +23,10 @@ import com.android.adblib.AdbSessionHost
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
+import com.android.adblib.utils.AdbServerStartupUtils
 import com.android.adblib.waitUntilOnline
 import com.android.utils.ILogger
 import com.android.utils.StdLogger
-import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.time.Duration.Companion.milliseconds
@@ -89,22 +88,13 @@ fun createAdbSession(controller: AdbServerController, logLevel: StdLogger.Level)
   return AdbSession.create(host = host, channelProvider = controller.channelProvider)
 }
 
-/** Returns the resolved absolute [Path] for the adb executable, or searches on `PATH` if not specified. */
-fun getAdbPath(adbExecutablePath: String?): Path? {
-  return adbExecutablePath?.takeIf { it.isNotBlank() }?.let { Paths.get(it).toAbsolutePath() } ?: findAdbOnPath()
-}
-
-private fun findAdbOnPath(): Path? {
-  val os = System.getProperty("os.name") ?: ""
-  val executableName = if (os.startsWith("Windows", ignoreCase = true)) "adb.exe" else "adb"
-  val pathEnv = System.getenv("PATH") ?: return null
-  for (dir in pathEnv.split(File.pathSeparator)) {
-    val file = Paths.get(dir).resolve(executableName).toAbsolutePath()
-    if (Files.isRegularFile(file)) {
-      return file
-    }
-  }
-  return null
+/**
+ * Returns the resolved absolute [Path] for the adb executable, or searches on `PATH` if not specified.
+ *
+ * @throws java.io.IOException if [adbExecutablePath] is not specified and `adb` cannot be found on `PATH`
+ */
+fun getAdbPath(adbExecutablePath: String?): Path {
+  return adbExecutablePath?.takeIf { it.isNotBlank() }?.let { Paths.get(it).toAbsolutePath() } ?: AdbServerStartupUtils.findAdbOnPath()
 }
 
 /**
