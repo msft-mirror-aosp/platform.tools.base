@@ -296,6 +296,13 @@ class ImpactedTargetsTest(absltest.TestCase):
 
   def test_prebuilts_and_m2_changes_opted_out(self):
     mock_generate = self._mock_generate_hash_file('hash-file')
+    parent_hash_path = self.build_env.tmp_path / 'parent.json'
+    parent_hash_path.write_text('parent-hash-file')
+    gce.upload_to_gcs(
+        parent_hash_path,
+        'adt-byob',
+        'bazel-diff-hashes/v8/789-studio-test.json',
+    )
     cases = [
         [
             gce.GerritChange(
@@ -411,6 +418,38 @@ class ImpactedTargetsTest(absltest.TestCase):
                 tags=[],
             ),
         ],
+        [
+            gce.GerritChange(
+                change_id='c8',
+                change_number='8',
+                project='platform/hardware/google/aemu',
+                project_path='hardware/google/aemu',
+                patchset='1',
+                file_infos=[gce.FileInfo('base/Foo.cpp', 'modified')],
+                owner='owner',
+                message='msg',
+                topic='',
+                tags=[],
+            ),
+        ],
+        [
+            gce.GerritChange(
+                change_id='c9',
+                change_number='9',
+                project='platform/tools/base',
+                project_path='tools/base',
+                patchset='1',
+                file_infos=[
+                    gce.FileInfo(
+                        'bazel/bzlmod/vendor/vendor.MODULE.bazel', 'modified'
+                    )
+                ],
+                owner='owner',
+                message='msg',
+                topic='',
+                tags=[],
+            ),
+        ],
     ]
     for changes in cases:
       with self.subTest(changes=changes):
@@ -457,6 +496,7 @@ class ImpactedTargetsTest(absltest.TestCase):
             str(wrapper),
             'mod',
             'show_repo',
+            '@@aemu+',
             '@@community+',
             '@@rules_jvm+',
             '@@lib+',

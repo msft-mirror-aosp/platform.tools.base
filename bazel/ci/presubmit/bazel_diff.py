@@ -12,11 +12,12 @@ from typing import Sequence
 from tools.base.bazel.ci import bazel
 
 
-# Bzlmod local_repository targets pointing to tools/idea. Excluding them from
-# `bazel mod show_repo` prevents bazel-diff v26.0.0's
-# computeLocalRepoContentHash() from walking and hashing ~274k files in
-# tools/idea on every run.
+# Bzlmod local_repository targets pointing to tools/idea and hardware/google/aemu.
+# Excluding them from `bazel mod show_repo` prevents bazel-diff v26.0.0's
+# computeLocalRepoContentHash() from walking and hashing their file trees
+# (including .git metadata) on every run.
 _EXCLUDED_BZLMOD_REPOS = (
+    '@@aemu+',
     '@@community+',
     '@@rules_jvm+',
     '@@lib+',
