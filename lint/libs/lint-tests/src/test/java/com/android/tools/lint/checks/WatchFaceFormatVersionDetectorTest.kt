@@ -158,6 +158,129 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
     lint().files(manifestWith(watchFaceFormatVersionProperty(value = "\${wff_version}"))).run().expectClean()
   }
 
+  fun `test WFF version 1 is accepted when minSdk is 30`() {
+    lint()
+      .files(manifestWith(watchFaceFormatVersionProperty(value = "1"), minSdkVersion = "30"), declarativeWatchFaceFile())
+      .run()
+      .expectClean()
+  }
+
+  fun `test WFF version 1 reports error when minSdk is less than 30`() {
+    lint()
+      .files(manifestWith(watchFaceFormatVersionProperty(value = "1"), minSdkVersion = "29"))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:9: Error: Watch Face Format version 1 requires a minSdkVersion of at least 33 [WatchFaceFormatRequiresHigherMinSdk]
+                <property android:name="com.google.wear.watchface.format.version" android:value="1" />
+                                                                                  ~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test WFF version 2 reports error when minSdk is 33`() {
+    lint()
+      .files(manifestWith(watchFaceFormatVersionProperty(value = "2"), minSdkVersion = "33"))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:9: Error: Watch Face Format version 2 requires a minSdkVersion of at least 34 [WatchFaceFormatRequiresHigherMinSdk]
+                <property android:name="com.google.wear.watchface.format.version" android:value="2" />
+                                                                                  ~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 9: Lower version to 1:
+        @@ -15 +15 @@
+        -            android:value="2" />
+        +            android:value="1" />
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test WFF version 5 reports error when minSdk is 34`() {
+    lint()
+      .files(manifestWith(watchFaceFormatVersionProperty(value = "5"), minSdkVersion = "34"))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:9: Error: Watch Face Format version 5 requires a minSdkVersion of at least 37 [WatchFaceFormatRequiresHigherMinSdk]
+                <property android:name="com.google.wear.watchface.format.version" android:value="5" />
+                                                                                  ~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 9: Lower version to 2:
+        @@ -15 +15 @@
+        -            android:value="5" />
+        +            android:value="2" />
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test WFF version 5 is clean when minSdk is 37`() {
+    lint()
+      .files(manifestWith(watchFaceFormatVersionProperty(value = "5"), minSdkVersion = "37"), declarativeWatchFaceFile())
+      .run()
+      .expectClean()
+  }
+
+  fun `test placeholder WFF version reports error when minSdk is too low`() {
+    lint()
+      .files(
+        manifestWith(watchFaceFormatVersionProperty(value = "\${wff_version}"), minSdkVersion = "34"),
+        gradle(
+            """
+                android {
+                    flavorDimensions "wff_version"
+                    productFlavors {
+                        wff5 {
+                            dimension = "wff_version"
+                            manifestPlaceholders = [ wff_version:"5"]
+                        }
+                    }
+                }
+                """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/main/AndroidManifest.xml:9: Error: Watch Face Format version 5 requires a minSdkVersion of at least 37 [WatchFaceFormatRequiresHigherMinSdk]
+                <property android:name="com.google.wear.watchface.format.version" android:value="＄{wff_version}" />
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test error is reported when minSdk is not specified`() {
+    lint()
+      .files(manifestWith(watchFaceFormatVersionProperty(value = "2"), minSdkVersion = null))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:9: Error: Watch Face Format version 2 requires a minSdkVersion of at least 34 [WatchFaceFormatRequiresHigherMinSdk]
+                <property android:name="com.google.wear.watchface.format.version" android:value="2" />
+                                                                                  ~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
   private fun declarativeWatchFaceFile() =
     xml(
       "res/raw/watch_face.xml",
@@ -168,12 +291,12 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
 
   private fun manifestWithoutProperty() = manifestWith(null)
 
-  private fun manifestWith(watchFaceFormatVersionProperty: String?): TestFile =
+  private fun manifestWith(watchFaceFormatVersionProperty: String?, minSdkVersion: String? = "33"): TestFile =
     manifest(
         """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="test.pkg">
-              <uses-sdk android:minSdkVersion="33" />
+              ${minSdkVersion?.let { "<uses-sdk android:minSdkVersion=\"$it\" />" } ?: ""}
               <uses-feature android:name="android.hardware.type.watch" />
               <application
                   android:icon="@mipmap/ic_launcher"

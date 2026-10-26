@@ -537,6 +537,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           WatchFaceFormatDeclaresHasNoCodeDetector.ISSUE,
           WatchFaceFormatVersionDetector.INVALID_VERSION_ISSUE,
           WatchFaceFormatVersionDetector.MISSING_VERSION_ISSUE,
+          WatchFaceFormatVersionDetector.VERSION_REQUIRES_HIGHER_MIN_SDK_ISSUE,
           WatchFaceForAndroidXDetector.ISSUE,
           WatchFaceEditorDetector.ISSUE,
           WearMaterialThemeDetector.ISSUE,
