@@ -193,6 +193,9 @@ def _resources(ctx, resources, notice, resources_jar):
         rel_paths.append((notice.basename, notice))
     for res in resources:
         short = res.short_path
+        if short.startswith("../"):
+            # Paths in an external repository start with "../<canonical repository name>/".
+            short = short[short.find("/", 3) + 1:]
         if short.startswith(prefix):
             short = short[len(prefix):]
             if short.startswith("/"):
