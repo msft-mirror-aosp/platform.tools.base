@@ -116,6 +116,8 @@ internal interface PreviewRenderSession<R> {
 
   fun isSuccess(result: R): Boolean
 
+  fun failureException(result: R): Throwable? = null
+
   fun disposeResult(result: R)
 
   fun composeClassLoader(result: R): ClassLoader?
@@ -139,12 +141,167 @@ internal interface PreviewRenderSession<R> {
   fun createErrorResult(throwable: Throwable? = null): R
 }
 
+/** Decision returned by [RenderThreadTimeoutState.evaluateBeforeRender] before a preview runs on the render thread. */
+internal sealed interface ProbeDecision {
+  /** No timed-out work is known to be blocking the render thread. */
+  data object Ready : ProbeDecision
+
+  /**
+   * The render thread is still poisoned by [culprit], whose work exceeded [budgetMs]. The caller should fail fast without submitting a new
+   * probe.
+   */
+  data class Poisoned(val culprit: String, val budgetMs: Long) : ProbeDecision
+
+  /**
+   * [culprit] timed out after exceeding [budgetMs] (the culprit's budget, not the probe timeout) and the render thread must be probed
+   * before the next preview runs. [generation] is the [RenderThreadTimeoutState] generation at decision time, used to discard the probe
+   * outcome if another timeout was recorded while the probe was in flight.
+   */
+  data class NeedsProbe(val culprit: String, val budgetMs: Long, val generation: Long) : ProbeDecision
+}
+
+/** Whether this future completed without an exception (cancellation also counts as an exceptional completion). */
+private fun CompletableFuture<*>.completedNormally(): Boolean = isDone && !isCompletedExceptionally
+
+/**
+ * Mutable timeout and poison bookkeeping for Layoutlib's single render thread ([RenderService.getRenderAsyncActionExecutor]).
+ *
+ * Because the render thread is a process-wide static singleton, a preview whose callback, inflation, or render step wedges the render
+ * thread leaves it blocked even if the warm [Renderer] is later evicted and re-bootstrapped for updated resources or dependencies. Sharing
+ * a single default [RenderThreadTimeoutState] across [StaticPreviewCallbackRunner] instances ensures that a newly bootstrapped [Renderer]
+ * probes the render thread via [StaticPreviewCallbackRunner.ensureRenderThreadAvailable] instead of assuming the thread is idle and
+ * blocking for [RENDER_TIMEOUT_SECONDS].
+ *
+ * This class is thread-safe: every method is atomic, and it may be used concurrently by several [Renderer]s (for example, concurrent
+ * renders in daemon mode). The probe sequence in [StaticPreviewCallbackRunner.ensureRenderThreadAvailable] ([evaluateBeforeRender], waiting
+ * on the probe, then [onProbeSucceeded] or [markPoisoned]) is not atomic as a whole. A [generation] counter, bumped whenever a timeout is
+ * recorded or the thread is marked poisoned, lets [onProbeSucceeded] skip clearing state that changed while the probe was in flight.
+ */
+internal class RenderThreadTimeoutState {
+  /**
+   * Name of the preview whose main-thread work most recently timed out and may still be running on the single layoutlib render thread, or
+   * `null` if the render thread is known to be idle.
+   */
+  private var timedOutPreview: String? = null
+
+  /** Wall-time budget (in milliseconds) exceeded by [timedOutPreview] or [poisonedByPreview]. Set whenever either of them is set. */
+  private var timedOutBudgetMs: Long = 0L
+
+  /**
+   * Name of the preview that wedged the single layoutlib render thread (verified when the recovery probe timed out), or `null` if the
+   * render thread is not currently poisoned.
+   */
+  private var poisonedByPreview: String? = null
+
+  /**
+   * In-flight recovery probe that timed out waiting on the render thread. Kept uncancelled so that if the slow work eventually finishes
+   * during the same batch, a subsequent preview in the batch can observe `probe.isDone` and recover automatically.
+   */
+  private var pendingProbe: CompletableFuture<Void?>? = null
+
+  /** Incremented on every [recordTimeout] and [markPoisoned] so that a probe started before them does not clear their record. */
+  private var generation = 0L
+
+  @Synchronized
+  fun recordTimeout(previewName: String, budgetMs: Long) {
+    generation++
+    if (poisonedByPreview != null) {
+      if (pendingProbe?.completedNormally() == true) {
+        pendingProbe = null
+        poisonedByPreview = null
+      } else {
+        // Preserve the original culprit and timeout budget while the render thread remains poisoned.
+        return
+      }
+    }
+    timedOutPreview = previewName
+    timedOutBudgetMs = budgetMs
+  }
+
+  /**
+   * Returns whether the render thread is ready, poisoned, or needs to be probed before the next preview.
+   *
+   * @param probeIfPoisoned when `true` and the render thread is poisoned by an unfinished probe, returns [ProbeDecision.NeedsProbe] instead
+   *   of [ProbeDecision.Poisoned] so a new render request probes the render thread once before failing fast. This does not demote the
+   *   poisoned state, so other in-flight batches keep failing fast and keep observing the existing pending probe.
+   */
+  @Synchronized
+  fun evaluateBeforeRender(probeIfPoisoned: Boolean = false): ProbeDecision {
+    poisonedByPreview?.let { poisonedCulprit ->
+      if (pendingProbe?.completedNormally() == true) {
+        clearLocked()
+        return ProbeDecision.Ready
+      }
+      return if (probeIfPoisoned) {
+        ProbeDecision.NeedsProbe(poisonedCulprit, timedOutBudgetMs, generation)
+      } else {
+        ProbeDecision.Poisoned(poisonedCulprit, timedOutBudgetMs)
+      }
+    }
+    val culprit = timedOutPreview ?: return ProbeDecision.Ready
+    return ProbeDecision.NeedsProbe(culprit, timedOutBudgetMs, generation)
+  }
+
+  /**
+   * Clears the timeout record after the probe of [decision] completed, unless a timeout was recorded or the thread was marked poisoned
+   * since [decision] was made (in which case that newer work may still be running and the next preview must probe again).
+   *
+   * This is deliberately conservative: if another runner marked the thread poisoned without a pending probe while this probe was in flight,
+   * the thread stays poisoned (and previews fail fast) until a runner probes again after [StaticPreviewCallbackRunner.onRefreshClassPath].
+   */
+  @Synchronized
+  fun onProbeSucceeded(decision: ProbeDecision.NeedsProbe) {
+    if (generation == decision.generation) clearLocked()
+  }
+
+  /**
+   * Marks the render thread poisoned by the culprit of [decision] after [probe] timed out or failed to run.
+   *
+   * If an earlier probe (for example, the one of a concurrent batch) is still pending, it is kept and [probe] is cancelled instead: the
+   * earlier probe is ahead of [probe] in the render thread FIFO queue, so it completes first once the render thread frees up, and keeping
+   * it preserves the automatic in-batch recovery of the batches observing it. Otherwise [probe] is kept as the pending probe when
+   * [keepPendingProbe] is `true`. When no pending probe is left (the probe was evicted or timed out in the queue), every runner fails fast
+   * until a runner probes again after [StaticPreviewCallbackRunner.onRefreshClassPath].
+   */
+  @Synchronized
+  fun markPoisoned(decision: ProbeDecision.NeedsProbe, probe: CompletableFuture<Void?>, keepPendingProbe: Boolean) {
+    generation++
+    val existingProbe = pendingProbe
+    if (existingProbe != null && existingProbe !== probe && !existingProbe.isCompletedExceptionally) {
+      probe.cancel(false)
+    } else if (keepPendingProbe) {
+      pendingProbe = probe
+    } else {
+      probe.cancel(false)
+      pendingProbe = null
+    }
+    poisonedByPreview = decision.culprit
+    timedOutBudgetMs = decision.budgetMs
+    timedOutPreview = null
+  }
+
+  @VisibleForTesting
+  @Synchronized
+  fun reset() {
+    pendingProbe?.cancel(false)
+    clearLocked()
+  }
+
+  private fun clearLocked() {
+    pendingProbe = null
+    timedOutPreview = null
+    timedOutBudgetMs = 0L
+    poisonedByPreview = null
+  }
+}
+
 /**
  * Runs the static-preview callback stepping loop, timeout bookkeeping, render-thread uncaught exception scoping, and poisoned render-thread
  * recovery for [Renderer].
  *
- * Note: A [StaticPreviewCallbackRunner] instance is used by a single [Renderer] from one caller thread at a time (matching layoutlib's
- * single render thread).
+ * Note: A [StaticPreviewCallbackRunner] instance is used by a single [Renderer] from one caller thread at a time, but its default
+ * [RenderThreadTimeoutState] is shared by all runners in the process because layoutlib uses a single static render thread. Several
+ * [Renderer]s (and therefore runners) may use that shared state concurrently.
  */
 internal class StaticPreviewCallbackRunner(
   /** Per-preview wall-time budget for callback execution, overridable by unit tests. */
@@ -153,26 +310,16 @@ internal class StaticPreviewCallbackRunner(
   @set:VisibleForTesting var renderThreadRecoveryTimeoutMs: Long = DEFAULT_RENDER_THREAD_RECOVERY_TIMEOUT_MS,
   /** Monotonic wall-clock source in nanoseconds, overridable by unit tests. */
   @set:VisibleForTesting var nanoTime: () -> Long = System::nanoTime,
+  /** Shared render-thread timeout and poison state; defaults to [globalRenderThreadTimeoutState]. */
+  private val timeoutState: RenderThreadTimeoutState = globalRenderThreadTimeoutState,
 ) {
-  /**
-   * Name of the preview whose callback execution most recently timed out and may still be running on the single layoutlib render thread, or
-   * `null` if the render thread is known to be idle.
-   */
-  @Volatile private var timedOutPreview: String? = null
-
-  /**
-   * Name of the preview that wedged the single layoutlib render thread (verified when the recovery probe timed out after
-   * [renderThreadRecoveryTimeoutMs]), or `null` if the render thread is not currently poisoned.
-   */
-  @Volatile private var poisonedByPreview: String? = null
-
-  /**
-   * In-flight recovery probe that timed out waiting on the render thread. Kept uncancelled so that if the slow callback eventually finishes
-   * during the same batch, a subsequent preview in the batch can observe `probe.isDone` and recover automatically.
-   */
-  @Volatile private var pendingProbe: CompletableFuture<Void?>? = null
-
   companion object {
+    /**
+     * Process-wide timeout and poison state for Layoutlib's single static render thread ([RenderService.getRenderAsyncActionExecutor]),
+     * shared across [Renderer] re-bootstraps.
+     */
+    @VisibleForTesting internal val globalRenderThreadTimeoutState = RenderThreadTimeoutState()
+
     /**
      * Cumulative virtual time offset, in nanoseconds, across all [Renderer] instances and [RenderTask] sessions on the layoutlib render
      * thread.
@@ -194,34 +341,31 @@ internal class StaticPreviewCallbackRunner(
   }
 
   /**
-   * Called when a warm [Renderer] refreshes its project classpath for a new render request.
-   *
-   * If a previous request's preview marked the render thread poisoned (because its callback did not finish within the initial
-   * [renderThreadRecoveryTimeoutMs] probe window), checks whether the uncancelled [pendingProbe] has already completed (recovering
-   * immediately if so) or cancels it and demotes [poisonedByPreview] back to [timedOutPreview] so the new request probes the render thread
-   * once before its first preview.
+   * Whether the next [ensureRenderThreadAvailable] call should probe the render thread once even if it is poisoned, instead of failing
+   * fast. Starts as `true` so a freshly bootstrapped [Renderer] probes once, and is set again by [onRefreshClassPath] for each new request.
+   * Kept per runner (rather than in [timeoutState]) so a new request does not cancel the pending probe of, or lift the fail-fast for, a
+   * concurrent batch rendered by another [Renderer].
    */
-  fun onRefreshClassPath() {
-    val probe = pendingProbe
-    if (probe != null) {
-      if (probe.isDone && !probe.isCompletedExceptionally && !probe.isCancelled) {
-        pendingProbe = null
-        poisonedByPreview = null
-        timedOutPreview = null
-        return
-      }
-      probe.cancel(false)
-      pendingProbe = null
-    }
-    val culprit = poisonedByPreview
-    if (culprit != null) {
-      timedOutPreview = culprit
-      poisonedByPreview = null
-    }
+  private val probeOnceIfPoisoned = AtomicBoolean(true)
+
+  private fun recordTimeout(previewName: String, budgetMs: Long) {
+    timeoutState.recordTimeout(previewName, budgetMs)
   }
 
   /**
-   * Checks whether a previous preview's timed-out callback is still blocking the single layoutlib render thread.
+   * Called when a warm [Renderer] refreshes its project classpath for a new render request.
+   *
+   * If a previous request's preview marked the render thread poisoned (because its work did not finish within the initial
+   * [renderThreadRecoveryTimeoutMs] probe window), the next [ensureRenderThreadAvailable] call of this runner probes the render thread once
+   * before failing fast (or recovers immediately if the pending probe has already completed). The shared [timeoutState] is not modified, so
+   * concurrent batches of other runners are not affected.
+   */
+  fun onRefreshClassPath() {
+    probeOnceIfPoisoned.set(true)
+  }
+
+  /**
+   * Checks whether a previous preview's timed-out work is still blocking the single layoutlib render thread.
    *
    * If a previous preview timed out, submits a no-op probe via [runAsyncOnRenderThread] and waits up to [renderThreadRecoveryTimeoutMs]
    * before allowing the next preview to inflate. Because the probe is submitted on `RenderingTopic.NOT_SPECIFIED` after the timed-out
@@ -229,8 +373,9 @@ internal class StaticPreviewCallbackRunner(
    * have finished before the next preview starts. If the probe times out or fails to execute (for example due to `RenderExecutor` queue
    * timeout or queue eviction while the render thread is blocked), the render thread is marked poisoned by the culprit preview and
    * subsequent previews fail fast without waiting `RENDER_TIMEOUT_SECONDS` (100s) each. When the probe times out, it is left queued in
-   * [pendingProbe] without cancelling it so that if the slow callback eventually finishes during the batch, later previews observe
-   * `probe.isDone` and recover automatically.
+   * [timeoutState] without cancelling it so that if the slow work eventually finishes during the batch, later previews observe
+   * `probe.isDone` and recover automatically. If another timeout is recorded while the probe is in flight, a successful probe does not
+   * clear it, so the next preview probes again.
    *
    * @return `true` if the render thread is ready to run the next preview, or `false` if it is poisoned (in which case an error naming the
    *   culprit preview has been reported to [reportError]).
@@ -239,35 +384,26 @@ internal class StaticPreviewCallbackRunner(
     runAsyncOnRenderThread: (Runnable) -> CompletableFuture<Void?>,
     reportError: (String, Throwable) -> Unit,
   ): Boolean {
-    poisonedByPreview?.let { culprit ->
-      val existingProbe = pendingProbe
-      if (existingProbe != null && existingProbe.isDone && !existingProbe.isCompletedExceptionally && !existingProbe.isCancelled) {
-        pendingProbe = null
-        poisonedByPreview = null
-        timedOutPreview = null
-        return true
+    val decision = timeoutState.evaluateBeforeRender(probeIfPoisoned = probeOnceIfPoisoned.getAndSet(false))
+    // Errors are reported outside of the timeoutState monitor so that no logger callback runs while holding it.
+    val needsProbe =
+      when (decision) {
+        ProbeDecision.Ready -> return true
+        is ProbeDecision.Poisoned -> {
+          reportPoisonedRenderThread(decision.culprit, decision.budgetMs, reportError)
+          return false
+        }
+        is ProbeDecision.NeedsProbe -> decision
       }
-      reportPoisonedRenderThread(culprit, reportError)
-      return false
-    }
-    val culprit = timedOutPreview ?: return true
     val probe = runAsyncOnRenderThread(Runnable {})
     fun markPoisoned(keepPendingProbe: Boolean): Boolean {
-      if (keepPendingProbe) {
-        pendingProbe = probe
-      } else {
-        probe.cancel(false)
-        pendingProbe = null
-      }
-      poisonedByPreview = culprit
-      timedOutPreview = null
-      reportPoisonedRenderThread(culprit, reportError)
+      timeoutState.markPoisoned(needsProbe, probe, keepPendingProbe)
+      reportPoisonedRenderThread(needsProbe.culprit, needsProbe.budgetMs, reportError)
       return false
     }
     return try {
       probe.get(maxOf(renderThreadRecoveryTimeoutMs, 0L), TimeUnit.MILLISECONDS)
-      pendingProbe = null
-      timedOutPreview = null
+      timeoutState.onProbeSucceeded(needsProbe)
       true
     } catch (_: TimeoutException) {
       // Keep `probe` queued on the render thread without cancelling it: if the slow callback finishes while the batch is still running,
@@ -284,8 +420,12 @@ internal class StaticPreviewCallbackRunner(
     }
   }
 
-  private fun reportPoisonedRenderThread(culpritPreview: String, reportError: (String, Throwable) -> Unit) {
-    val effectiveTimeoutMs = callbacksTimeoutMs.coerceAtLeast(1L)
+  private fun reportPoisonedRenderThread(
+    culpritPreview: String,
+    budgetMs: Long,
+    reportError: (String, Throwable) -> Unit,
+  ) {
+    val effectiveTimeoutMs = budgetMs.coerceAtLeast(1L)
     val message =
       "The layoutlib render thread is still blocked by a previous preview ($culpritPreview) whose main thread work did not complete " +
         "within ${effectiveTimeoutMs}ms."
@@ -308,8 +448,8 @@ internal class StaticPreviewCallbackRunner(
    * Each callback execution step is given 500ms by [RenderTask.executeCallbacks] before the render thread is interrupted (failing
    * interruptible blocking work such as `Thread.sleep` or `runBlocking`), and total callback wall time across all steps and rounds of a
    * preview is bounded at [callbacksTimeoutMs] (excluding the time spent in [PreviewRenderSession.render], which has its own
-   * [RENDER_TIMEOUT_SECONDS] timeout). If executing the callbacks exceeds [callbacksTimeoutMs], an error is reported, the preview is not
-   * rendered again, and [timedOutPreview] is recorded so [ensureRenderThreadAvailable] probes the render thread before the next preview.
+   * [RENDER_TIMEOUT_SECONDS] timeout). If executing the callbacks, inflating, or rendering times out, the timeout is recorded in
+   * [RenderThreadTimeoutState] so [ensureRenderThreadAvailable] probes the render thread before the next preview.
    *
    * @param onResult Invoked synchronously on the calling thread immediately after [PreviewRenderSession.inflate] (before any callback step)
    *   and after each [PreviewRenderSession.render] pass, before the previous intermediate result is disposed.
@@ -319,10 +459,22 @@ internal class StaticPreviewCallbackRunner(
     previewName: String,
     onResult: (R) -> Unit,
   ): R {
-    var result: R = session.inflate() ?: return session.createErrorResult()
+    val renderTimeoutMs = TimeUnit.SECONDS.toMillis(RENDER_TIMEOUT_SECONDS)
+    var result: R =
+      try {
+        session.inflate()
+      } catch (e: TimeoutException) {
+        recordTimeout(previewName, extractTimeoutBudgetMs(e, renderTimeoutMs))
+        throw e
+      } ?: return session.createErrorResult()
     onResult(result)
     try {
-      if (!session.isSuccess(result)) return result
+      if (!session.isSuccess(result)) {
+        session.failureException(result).findTimeoutException()?.let { timeout ->
+          recordTimeout(previewName, extractTimeoutBudgetMs(timeout, renderTimeoutMs))
+        }
+        return result
+      }
       val composeClassLoader = session.composeClassLoader(result)
       session.setElapsedFrameTimeNanos(INITIAL_ELAPSED_FRAME_TIME_NANOS + virtualTimeNanos.get())
       var sessionTimeNanos = 0L
@@ -342,7 +494,7 @@ internal class StaticPreviewCallbackRunner(
               is CallbacksOutcome.Settled -> {}
               CallbacksOutcome.TimedOut -> {
                 callbacksCompleted = false
-                timedOutPreview = previewName
+                recordTimeout(previewName, effectiveCallbacksTimeoutMs)
                 return@reportingUncaughtRenderThreadExceptions
               }
               CallbacksOutcome.Failed -> {
@@ -368,7 +520,7 @@ internal class StaticPreviewCallbackRunner(
               }
               CallbacksOutcome.TimedOut -> {
                 callbacksCompleted = false
-                timedOutPreview = previewName
+                recordTimeout(previewName, effectiveCallbacksTimeoutMs)
                 return@reportingUncaughtRenderThreadExceptions
               }
               CallbacksOutcome.Failed -> {
@@ -382,11 +534,25 @@ internal class StaticPreviewCallbackRunner(
           }
           remainingCallbackBudgetNanos = roundDeadlineNanos - nanoTime()
           val previousResult = result
-          result = session.render()
+          result =
+            try {
+              session.render()
+            } catch (e: TimeoutException) {
+              callbacksCompleted = false
+              recordTimeout(previewName, extractTimeoutBudgetMs(e, renderTimeoutMs))
+              throw e
+            }
           try {
             onResult(result)
           } finally {
             session.disposeResult(previousResult)
+          }
+          if (!session.isSuccess(result)) {
+            session.failureException(result).findTimeoutException()?.let { timeout ->
+              callbacksCompleted = false
+              recordTimeout(previewName, extractTimeoutBudgetMs(timeout, renderTimeoutMs))
+            }
+            return@reportingUncaughtRenderThreadExceptions
           }
           if (round < CALLBACK_ROUNDS - 1) {
             val hasPendingWork =
@@ -408,7 +574,7 @@ internal class StaticPreviewCallbackRunner(
                   is CallbacksOutcome.Settled -> checkOutcome.hasMoreWork
                   CallbacksOutcome.TimedOut -> {
                     callbacksCompleted = false
-                    timedOutPreview = previewName
+                    recordTimeout(previewName, effectiveCallbacksTimeoutMs)
                     return@reportingUncaughtRenderThreadExceptions
                   }
                   CallbacksOutcome.Failed -> {
@@ -655,7 +821,7 @@ internal class StaticPreviewCallbackRunner(
       } catch (e: TimeoutException) {
         installFuture.cancel(false)
         installTimedOut = true
-        timedOutPreview = previewName
+        recordTimeout(previewName, TimeUnit.SECONDS.toMillis(RENDER_THREAD_ACTION_TIMEOUT_SECONDS))
         throw e
       }
       block(uncaughtExceptionReported::get)
@@ -683,6 +849,34 @@ internal class StaticPreviewCallbackRunner(
   }
 }
 
+/**
+ * Extracts the action timeout from the message of the [TimeoutException] that `RenderExecutor` (tools/adt/idea/rendering) creates when a
+ * render action exceeds its timeout: `"The render action was too slow to execute (<timeout>ms)"`. `RenderExecutor` throws a plain
+ * [TimeoutException], so there is no more specific type to match on. Keep this in sync with that message format; if it changes, the callers
+ * fall back to their default budget.
+ */
+private val RENDER_ACTION_TIMEOUT_MS_REGEX = Regex("""\((\d+)ms\)""")
+
+/** Maximum number of causes inspected by [findTimeoutException], guarding against cyclic cause chains. */
+private const val MAX_CAUSE_CHAIN_DEPTH = 16
+
+private fun Throwable?.findTimeoutException(): TimeoutException? {
+  var current = this
+  var depth = 0
+  while (current != null && depth < MAX_CAUSE_CHAIN_DEPTH) {
+    if (current is TimeoutException) return current
+    current = current.cause
+    depth++
+  }
+  return null
+}
+
+private fun extractTimeoutBudgetMs(timeout: TimeoutException, defaultBudgetMs: Long): Long {
+  val parsed =
+    timeout.message?.let { RENDER_ACTION_TIMEOUT_MS_REGEX.find(it)?.groupValues?.getOrNull(1)?.toLongOrNull() }?.takeIf { it > 0L }
+  return parsed ?: defaultBudgetMs
+}
+
 /** Production [PreviewRenderSession] backed by [RenderTask] and [RenderService.getRenderAsyncActionExecutor]. */
 internal class RenderTaskPreviewSession(
   private val renderTask: RenderTask,
@@ -690,9 +884,14 @@ internal class RenderTaskPreviewSession(
   private val createErrorRenderResult: (RenderLogger, Throwable?) -> RenderResult,
   private val defaultClassLoader: ClassLoader? = null,
 ) : PreviewRenderSession<RenderResult> {
+  // On timeout, the futures of inflate() and render() are not cancelled and the render thread is not interrupted here: those futures are
+  // derived stages that do not propagate cancellation to the queued render action, and RenderExecutor already interrupts the render
+  // thread when the action itself exceeds its own timeout. Interrupting here could hit an unrelated action that happens to be running.
   override fun inflate(): RenderResult? = renderTask.inflate().get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
 
   override fun isSuccess(result: RenderResult): Boolean = result.renderResult.isSuccess
+
+  override fun failureException(result: RenderResult): Throwable? = result.renderResult.exception
 
   override fun disposeResult(result: RenderResult) {
     Disposer.dispose(result)

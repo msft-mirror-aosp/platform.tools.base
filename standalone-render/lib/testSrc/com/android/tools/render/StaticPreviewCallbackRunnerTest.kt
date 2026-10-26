@@ -26,14 +26,21 @@ import java.util.logging.Handler
 import java.util.logging.Level
 import java.util.logging.LogRecord
 import java.util.logging.Logger
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
-private class FakeRenderResult(val id: String, val success: Boolean = true, var disposed: Boolean = false)
+private class FakeRenderResult(
+  val id: String,
+  val success: Boolean = true,
+  var disposed: Boolean = false,
+  val failureException: Throwable? = null,
+)
 
 private class FakePreviewRenderSession(
   var composeClassLoader: ClassLoader? = FakePreviewRenderSession::class.java.classLoader,
@@ -59,6 +66,8 @@ private class FakePreviewRenderSession(
   override fun inflate(): FakeRenderResult? = onInflate()
 
   override fun isSuccess(result: FakeRenderResult): Boolean = result.success
+
+  override fun failureException(result: FakeRenderResult): Throwable? = result.failureException
 
   override fun disposeResult(result: FakeRenderResult) {
     result.disposed = true
@@ -171,6 +180,16 @@ private class AdapterWithOnlyMisleadingDisposeHelpers {
 }
 
 class StaticPreviewCallbackRunnerTest {
+
+  @Before
+  fun setUp() {
+    StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+  }
+
+  @After
+  fun tearDown() {
+    StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+  }
 
   @Test
   fun settlesInOneRoundWhenNoPendingWorkRemainsAndAdvancesElapsedFrameTimeAcrossPreviews() {
@@ -694,10 +713,10 @@ class StaticPreviewCallbackRunnerTest {
     assertEquals(2, errors.size)
     assertThat(errors.last()).contains("pkg.PreviewKt.InfiniteBusyLoop (InfiniteBusyLoop_0)")
 
-    // When a warm Renderer refreshes its classpath while hungProbe is still unfinished, hungProbe is cancelled and poisonedByPreview is
-    // demoted to timedOutPreview so the new request probes once.
+    // When a warm Renderer refreshes its classpath while hungProbe is still unfinished, the new request probes once before failing fast.
+    // hungProbe is ahead of the re-probe in the render thread queue, so it is kept even when the re-probe fails to run.
     runner.onRefreshClassPath()
-    assertTrue(hungProbe.isCancelled)
+    assertFalse(hungProbe.isCancelled)
     val queueTimeoutCheck =
       runner.ensureRenderThreadAvailable(
         runAsyncOnRenderThread = {
@@ -707,12 +726,13 @@ class StaticPreviewCallbackRunnerTest {
         reportError = { msg, _ -> errors.add(msg) },
       )
     assertFalse(queueTimeoutCheck)
+    assertFalse(hungProbe.isCancelled)
     assertEquals(2, probeCalls)
     assertEquals(3, errors.size)
     assertThat(errors.last()).contains("pkg.PreviewKt.InfiniteBusyLoop (InfiniteBusyLoop_0)")
 
-    // If a new request's probe times out initially, and then completes during the same batch, the next preview in the same batch recovers
-    // automatically without needing onRefreshClassPath() or another probe.
+    // If a new request's probe times out while hungProbe is still pending, the new probe is cancelled in favor of hungProbe. Once hungProbe
+    // completes during the same batch, the next preview recovers automatically without needing onRefreshClassPath() or another probe.
     runner.onRefreshClassPath()
     val inBatchRecoveringProbe = CompletableFuture<Void?>()
     val thirdCheck =
@@ -727,7 +747,10 @@ class StaticPreviewCallbackRunnerTest {
     assertEquals(3, probeCalls)
     assertEquals(4, errors.size)
 
-    inBatchRecoveringProbe.complete(null)
+    assertTrue(inBatchRecoveringProbe.isCancelled)
+    assertFalse(hungProbe.isCancelled)
+
+    hungProbe.complete(null)
     val recoveredWithinBatch =
       runner.ensureRenderThreadAvailable(
         runAsyncOnRenderThread = {
@@ -739,6 +762,309 @@ class StaticPreviewCallbackRunnerTest {
     assertTrue(recoveredWithinBatch)
     assertEquals("In-batch recovery must reuse completed pendingProbe without submitting a new probe", 3, probeCalls)
     assertEquals(4, errors.size)
+  }
+
+  @Test
+  fun sharesPoisonedRenderThreadStateAcrossRunnerInstancesAndRecoversWhenPendingProbeCompletes() {
+    var fakeNowNanos = 0L
+    val runner1 =
+      StaticPreviewCallbackRunner(
+        callbacksTimeoutMs = 500L,
+        renderThreadRecoveryTimeoutMs = 20L,
+        nanoTime = { fakeNowNanos },
+      )
+    val timedOutSession =
+      FakePreviewRenderSession(
+        onPrepareDispatcher = {
+          fakeNowNanos += TimeUnit.MILLISECONDS.toNanos(600L)
+          CompletableFuture()
+        }
+      )
+    runner1.renderExecutingCallbacks(timedOutSession, "pkg.PreviewKt.WedgedPreview") {}
+
+    val hungProbe1 = CompletableFuture<Void?>()
+    val errors = mutableListOf<String>()
+    assertFalse(
+      runner1.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { hungProbe1 },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertThat(errors.single()).contains("pkg.PreviewKt.WedgedPreview")
+
+    // Simulate warm Renderer eviction and re-bootstrap with a different configured callbacksTimeoutMs. Constructing the new runner does not
+    // touch the shared state, so a batch still running on runner1 keeps failing fast without probing and hungProbe1 stays queued.
+    val runner2 = StaticPreviewCallbackRunner(callbacksTimeoutMs = 3_000L, renderThreadRecoveryTimeoutMs = 20L)
+    assertFalse(hungProbe1.isCancelled)
+    var runner1Probes = 0
+    assertFalse(
+      runner1.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = {
+          runner1Probes++
+          CompletableFuture()
+        },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertEquals(0, runner1Probes)
+    assertFalse(hungProbe1.isCancelled)
+
+    // runner2 shares globalRenderThreadTimeoutState, probes once, and preserves runner1's 500ms timeout budget in the error report. Its
+    // timed-out probe is cancelled in favor of hungProbe1, which is ahead of it in the render thread queue and observed by runner1's batch.
+    var runner2Probes = 0
+    val hungProbe2 = CompletableFuture<Void?>()
+    assertFalse(
+      runner2.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = {
+          runner2Probes++
+          hungProbe2
+        },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertEquals(1, runner2Probes)
+    assertTrue(hungProbe2.isCancelled)
+    assertFalse(hungProbe1.isCancelled)
+    assertThat(errors.last()).contains("pkg.PreviewKt.WedgedPreview")
+    assertThat(errors.last()).contains("500ms")
+
+    // If a direct renderExecutingCallbacks call times out while still poisoned, the original culprit and 500ms budget are preserved.
+    runCatching {
+      runner2.renderExecutingCallbacks(
+        FakePreviewRenderSession(onInflate = { throw TimeoutException("later inflate timeout") }),
+        "pkg.PreviewKt.SecondaryTimeout",
+      ) {}
+    }
+    assertFalse(
+      runner2.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { CompletableFuture() },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertThat(errors.last()).contains("pkg.PreviewKt.WedgedPreview")
+    assertThat(errors.last()).contains("500ms")
+
+    // Once hungProbe1 completes before a third runner bootstraps, runner3 observes completion on its first check and does not need to
+    // probe.
+    hungProbe1.complete(null)
+    val runner3 = StaticPreviewCallbackRunner(callbacksTimeoutMs = 500L, renderThreadRecoveryTimeoutMs = 20L)
+    var runner3Probes = 0
+    assertTrue(
+      runner3.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = {
+          runner3Probes++
+          CompletableFuture.completedFuture(null)
+        },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertEquals(0, runner3Probes)
+  }
+
+  @Test
+  fun inflateAndRenderTimeoutsRecordTimedOutPreviewWithRenderBudgetAndUseAsyncHandlerRestore() {
+    val isolatedState = RenderThreadTimeoutState()
+    val runner =
+      StaticPreviewCallbackRunner(
+        callbacksTimeoutMs = 500L,
+        renderThreadRecoveryTimeoutMs = 20L,
+        timeoutState = isolatedState,
+      )
+
+    // 1. Direct TimeoutException thrown from inflate() records timedOutPreview with the 100,000ms render timeout budget.
+    val throwingInflateSession = FakePreviewRenderSession(onInflate = { throw TimeoutException("Inflate future get timed out") })
+    val thrownInflate = runCatching {
+      runner.renderExecutingCallbacks(throwingInflateSession, "pkg.PreviewKt.ThrowingInflateTimeout") {}
+    }
+      .exceptionOrNull()
+    assertThat(thrownInflate).isInstanceOf(TimeoutException::class.java)
+    val errors = mutableListOf<String>()
+    assertFalse(
+      runner.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { CompletableFuture() },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertThat(errors.last()).contains("pkg.PreviewKt.ThrowingInflateTimeout")
+    assertThat(errors.last()).contains("100000ms")
+
+    // 2. Unsuccessful RenderResult wrapping RenderExecutor TimeoutException from RenderTask.inflate().handle(...) also records timeout.
+    isolatedState.reset()
+    val handledInflateTimeoutSession =
+      FakePreviewRenderSession(
+        onInflate = {
+          FakeRenderResult(
+            "inflate_timeout_result",
+            success = false,
+            failureException = TimeoutException("The render action was too slow to execute (100000ms)"),
+          )
+        }
+      )
+    val inflateTimeoutResult = runner.renderExecutingCallbacks(handledInflateTimeoutSession, "pkg.PreviewKt.HandledInflateTimeout") {}
+    assertEquals("inflate_timeout_result", inflateTimeoutResult.id)
+    assertFalse(
+      runner.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { CompletableFuture() },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertThat(errors.last()).contains("pkg.PreviewKt.HandledInflateTimeout")
+    assertThat(errors.last()).contains("100000ms")
+
+    // 3. Direct TimeoutException thrown from render() restores uncaughtExceptionHandler asynchronously, disposes inflated result, and
+    // records timedOutPreview.
+    isolatedState.reset()
+    var throwingRenderRestoreGetCalled = false
+    var throwingRenderAsyncCallCount = 0
+    val throwingRenderSession =
+      FakePreviewRenderSession(
+        onRender = { throw TimeoutException("Render future get timed out") },
+        onRunAsyncOnRenderThread = { action ->
+          throwingRenderAsyncCallCount++
+          if (throwingRenderAsyncCallCount == 1) {
+            action.run()
+            CompletableFuture.completedFuture(null)
+          } else {
+            object : CompletableFuture<Void?>() {
+              override fun get(timeout: Long, unit: TimeUnit): Void? {
+                throwingRenderRestoreGetCalled = true
+                return null
+              }
+            }
+          }
+        },
+      )
+    val thrownRender = runCatching {
+      runner.renderExecutingCallbacks(throwingRenderSession, "pkg.PreviewKt.ThrowingRenderTimeout") {}
+    }
+      .exceptionOrNull()
+    assertThat(thrownRender).isInstanceOf(TimeoutException::class.java)
+    assertFalse("finally must not block synchronously on restore when render() timed out", throwingRenderRestoreGetCalled)
+    assertEquals(listOf("inflated"), throwingRenderSession.disposedResults.map { it.id })
+    assertFalse(
+      runner.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { CompletableFuture() },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertThat(errors.last()).contains("pkg.PreviewKt.ThrowingRenderTimeout")
+    assertThat(errors.last()).contains("100000ms")
+
+    // 4. Unsuccessful RenderResult wrapping RenderExecutor's 10s TimeoutException from RenderTask.render().handle(...) uses async handler
+    // restore, skips round-2 pending-work checks, and records the extracted 10,000ms budget.
+    isolatedState.reset()
+    var handledRenderRestoreGetCalled = false
+    var handledRenderAsyncCallCount = 0
+    var checkPendingWorkAfterRenderCalled = false
+    val handledRenderTimeoutSession =
+      FakePreviewRenderSession(
+        onRender = {
+          FakeRenderResult(
+            "render_timeout_result",
+            success = false,
+            failureException = TimeoutException("The render action was too slow to execute (10000ms)"),
+          )
+        },
+        onCheckPendingWork = { result, _ ->
+          if (result.id == "render_timeout_result") {
+            checkPendingWorkAfterRenderCalled = true
+          }
+          CompletableFuture.completedFuture(false)
+        },
+        onRunAsyncOnRenderThread = { action ->
+          handledRenderAsyncCallCount++
+          if (handledRenderAsyncCallCount == 1) {
+            action.run()
+            CompletableFuture.completedFuture(null)
+          } else {
+            object : CompletableFuture<Void?>() {
+              override fun get(timeout: Long, unit: TimeUnit): Void? {
+                handledRenderRestoreGetCalled = true
+                return null
+              }
+            }
+          }
+        },
+      )
+    val renderTimeoutResult = runner.renderExecutingCallbacks(handledRenderTimeoutSession, "pkg.PreviewKt.HandledRenderTimeout") {}
+    assertEquals("render_timeout_result", renderTimeoutResult.id)
+    assertFalse("finally must not block synchronously on restore when render() returned timeout result", handledRenderRestoreGetCalled)
+    assertFalse("checkPendingWork must not run after an unsuccessful render()", checkPendingWorkAfterRenderCalled)
+    assertFalse(
+      runner.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { CompletableFuture() },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertThat(errors.last()).contains("pkg.PreviewKt.HandledRenderTimeout")
+    assertThat(errors.last()).contains("10000ms")
+  }
+
+  @Test
+  fun successfulProbeDoesNotClearTimeoutRecordedWhileProbeWasInFlight() {
+    val sharedState = RenderThreadTimeoutState()
+    val runnerA = StaticPreviewCallbackRunner(renderThreadRecoveryTimeoutMs = 20L, timeoutState = sharedState)
+    val runnerB = StaticPreviewCallbackRunner(renderThreadRecoveryTimeoutMs = 20L, timeoutState = sharedState)
+    sharedState.recordTimeout("pkg.PreviewKt.FirstTimeout", 500L)
+
+    // While runnerA's probe is in flight (before runnerA observes its completion), a concurrent batch on runnerB records a new timeout.
+    val errors = mutableListOf<String>()
+    var probes = 0
+    assertTrue(
+      runnerA.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = {
+          probes++
+          runCatching {
+            runnerB.renderExecutingCallbacks(
+              FakePreviewRenderSession(onInflate = { throw TimeoutException("The render action was too slow to execute (700ms)") }),
+              "pkg.PreviewKt.ConcurrentTimeout",
+            ) {}
+          }
+          CompletableFuture.completedFuture(null)
+        },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertEquals(1, probes)
+    assertTrue(errors.isEmpty())
+
+    // The successful probe must not have wiped runnerB's timeout: the next preview probes again and reports the concurrent culprit.
+    assertFalse(
+      runnerA.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = {
+          probes++
+          CompletableFuture()
+        },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+    )
+    assertEquals(2, probes)
+    assertThat(errors.single()).contains("pkg.PreviewKt.ConcurrentTimeout")
+    assertThat(errors.single()).contains("700ms")
+  }
+
+  @Test
+  fun poisonedRenderThreadErrorIsReportedWithoutHoldingSharedStateLock() {
+    val sharedState = RenderThreadTimeoutState()
+    val runner = StaticPreviewCallbackRunner(renderThreadRecoveryTimeoutMs = 20L, timeoutState = sharedState)
+    sharedState.recordTimeout("pkg.PreviewKt.WedgedPreview", 500L)
+    val hungProbe = CompletableFuture<Void?>()
+    assertFalse(runner.ensureRenderThreadAvailable(runAsyncOnRenderThread = { hungProbe }, reportError = { _, _ -> }))
+
+    // When failing fast on the poisoned thread, another thread must be able to use the shared state from within the error callback.
+    val decisionFromOtherThread = CompletableFuture<ProbeDecision>()
+    val reported =
+      runner.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { CompletableFuture() },
+        reportError = { _, _ ->
+          val otherThread = Thread { decisionFromOtherThread.complete(sharedState.evaluateBeforeRender()) }
+          otherThread.start()
+          otherThread.join(10_000L)
+        },
+      )
+    assertFalse(reported)
+    assertTrue("evaluateBeforeRender blocked while the error was reported", decisionFromOtherThread.isDone)
+    assertEquals(ProbeDecision.Poisoned("pkg.PreviewKt.WedgedPreview", 500L), decisionFromOtherThread.get())
   }
 
   @Test
