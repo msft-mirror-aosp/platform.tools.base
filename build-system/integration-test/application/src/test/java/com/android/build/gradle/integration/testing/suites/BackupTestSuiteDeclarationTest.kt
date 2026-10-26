@@ -51,7 +51,7 @@ class BackupTestSuiteDeclarationTest {
       .withProfileOutput()
       .withMavenRepository {
         jar("com.google.truth:truth:0.44")
-        jar("androidx.test.backup:backup-host:$CUSTOM_BACKUP_VERSION")
+        jar("androidx.test.backup:backup-host:$CUSTOM_BACKUP_VERSION").withDependencies("org.junit.jupiter:junit-jupiter-api:5.13.3")
         jar("androidx.test.backup:backup:$CUSTOM_BACKUP_VERSION")
         jar("org.junit.platform:junit-platform-engine:1.13.3")
         jar("org.junit.platform:junit-platform-launcher:1.13.3")
@@ -142,6 +142,33 @@ class BackupTestSuiteDeclarationTest {
       .expectFailure()
       .run(":app:testDebugMyBackupDefaultTestSuite")
       .assertOutputContains("java.lang.Exception: Restore restored no app data")
+  }
+
+  @Test
+  fun testTestsThatJUnitCannotRunFailTheRun() {
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/myBackup/test/java/com/example/ValueReturningTest.java",
+            """
+            package com.example;
+
+            public class ValueReturningTest {
+              @org.junit.jupiter.api.Test
+              public int returnsValue() {
+                return 1;
+              }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    // JUnit doesn't run a test method that returns a value, so the run fails instead of passing without it.
+    build.executor.expectFailure().run(":app:testDebugMyBackupDefaultTestSuite").assertOutputContains("must not return a value")
   }
 
   @Test

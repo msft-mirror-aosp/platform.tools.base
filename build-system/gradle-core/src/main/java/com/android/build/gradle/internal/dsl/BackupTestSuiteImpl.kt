@@ -157,8 +157,8 @@ constructor(
       )
 
       // Automatically inject engine dependencies for the JUnit Jupiter test engine
-      enginesDependencies.add(dependencyHandler.create("org.junit.jupiter:junit-jupiter-engine:5.10.0"))
-      enginesDependencies.add(dependencyHandler.create("org.junit.platform:junit-platform-launcher:1.10.0"))
+      enginesDependencies.add(dependencyHandler.create("org.junit.jupiter:junit-jupiter-engine:5.13.3"))
+      enginesDependencies.add(dependencyHandler.create("org.junit.platform:junit-platform-launcher:1.13.3"))
     }
 
     // This suite is created before the user's DSL block runs, so the version must be read lazily.
@@ -208,6 +208,9 @@ constructor(
       // The backup library tells why a backup, restore or check failed in the exception message, which Gradle's default SHORT
       // format leaves out of the console.
       task.testLogging { it.exceptionFormat = TestExceptionFormat.FULL }
+      // Fail the run when JUnit finds tests that it can't run, such as a @Test method that returns a value, instead of skipping them with
+      // a logged warning.
+      task.systemProperty("junit.platform.discovery.issue.severity.critical", "WARNING")
     }
   }
 

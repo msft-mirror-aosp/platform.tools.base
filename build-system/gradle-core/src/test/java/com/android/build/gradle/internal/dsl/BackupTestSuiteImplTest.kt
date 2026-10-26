@@ -67,9 +67,10 @@ class BackupTestSuiteImplTest {
     // 2. Assert JUnit engine defaults: "junit-jupiter" engine is configured
     assertThat(suite.useJunitEngine.includeEngines).containsExactly("junit-jupiter")
 
-    // 3. Assert engine dependencies: junit-jupiter-engine is registered as an engine dependency
+    // 3. Assert engine dependencies: the JUnit Jupiter engine and a matching launcher are registered as engine dependencies
     val notations = suite.useJunitEngine.enginesDependencies.dependencies.get().map { it.toString() }
-    assertThat(notations).contains("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+    assertThat(notations)
+      .containsAtLeast("org.junit.jupiter:junit-jupiter-engine:5.13.3", "org.junit.platform:junit-platform-launcher:1.13.3")
 
     // 4. Assert input parameters mapping matches backup test execution requirements
     val expectedInputs =
@@ -184,6 +185,17 @@ class BackupTestSuiteImplTest {
     suite.testTaskConfigActions.forEach { it(task, mock<TestTaskContext>()) }
 
     assertThat(task.testLogging.exceptionFormat).isEqualTo(TestExceptionFormat.FULL)
+  }
+
+  @Test
+  fun testDiscoveryIssuesFailTheRun() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
+    val task = project.tasks.register("backupTestSuiteDiscoveryIssues", org.gradle.api.tasks.testing.Test::class.java).get()
+
+    suite.testTaskConfigActions.forEach { it(task, mock<TestTaskContext>()) }
+
+    assertThat(task.systemProperties).containsEntry("junit.platform.discovery.issue.severity.critical", "WARNING")
   }
 
   @Test
