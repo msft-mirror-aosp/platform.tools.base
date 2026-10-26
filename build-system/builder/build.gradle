@@ -107,7 +107,7 @@ dependencies {
     includeInJarSources(project(':base:build-system:builder-r8')) {
         transitive = false
     }
-    includeInJarRuntime(libs.r8)
+    includeInJarRuntime(r8.r8)
 }
 
 sourceSets.main.compileClasspath += configurations.includeInJar

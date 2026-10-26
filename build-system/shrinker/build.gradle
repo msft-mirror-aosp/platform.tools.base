@@ -13,6 +13,6 @@ dependencies {
     testImplementation libs.junit
     testImplementation libs.truth
     testImplementation libs.com.android.tools.testutils
-    compileOnly libs.r8
-    testImplementation libs.r8
+    compileOnly r8.r8
+    testImplementation r8.r8
 }
