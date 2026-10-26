@@ -77,7 +77,7 @@ internal class ComposeInspectorResolution(val overrideJar: Path?, val cacheDir: 
         logger.log(LogLevel.PROGRESS, "Using the Compose inspector downloaded from ${lookup.location}")
         return lookup.jar
       }
-      is JarLookup.NotFound -> throw IOException(lookup.reason)
+      is JarLookup.NotFound -> throw IOException("${lookup.location}: ${lookup.reason}")
     }
   }
 }

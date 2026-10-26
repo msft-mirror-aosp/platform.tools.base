@@ -316,11 +316,11 @@ the compose inspector jar:
   * *Note:* To support Jetpack Compose's Kotlin Multiplatform (KMP) transition in
     version 1.5.0+, the host automatically resolves the artifact ID to `ui`
     for versions < 1.5.0, and to `ui-android` for versions >= 1.5.0.
-* In case the user’s machine does not have access to public maven, the
-  CLI will also provide a flag to specify an alternative maven repo.
 
-The host should check local caches on the user's machine (like gradle
-cache) and have its own cache where it can store the downloaded jars.
+The host keeps the extracted jars in its own cache, so each Compose
+version is downloaded once. Like Android Studio's Layout Inspector, it
+only downloads from Google Maven: on a machine without access to it,
+pass the jar with `--compose-inspector`.
 
 ## UI Inspector daemon
 

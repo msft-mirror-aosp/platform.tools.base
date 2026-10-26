@@ -19,13 +19,21 @@ package com.android.tools.ui.inspector.client
 import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.RecordingLogger
 import com.android.tools.ui.inspector.deploy.ArtifactDownloader
+import com.android.tools.ui.inspector.deploy.ArtifactHttpStatusException
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import java.net.http.HttpConnectTimeoutException
+import java.nio.channels.UnresolvedAddressException
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import javax.net.ssl.SSLHandshakeException
+import kotlin.random.Random
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -107,31 +115,83 @@ class ComposeInspectorResolutionTest {
   }
 
   @Test
-  fun testResolve_failedDownload_failsWithTheDownloadFailure() {
-    val cacheDir = tempFolder.newFolder()
-    val resolution =
-      ComposeInspectorResolution(overrideJar = null, cacheDir.toPath(), FakeDownloader { throw IOException("Simulated download failure") })
+  fun testResolve_failedDownload_explainsWhy() {
+    // Each failure, with causes wrapped the way java.net.http and android-cli's downloader wrap them, and the reason it is reported with.
+    val cases: List<Pair<(File) -> Unit, String>> =
+      listOf(
+        { _: File ->
+          throw ArtifactHttpStatusException(404, AAR_URL)
+        } to "not found (HTTP 404): this version is not on Google Maven",
+        { _: File ->
+          throw ArtifactHttpStatusException(410, AAR_URL)
+        } to "not found (HTTP 410): this version is not on Google Maven",
+        { _: File -> throw ArtifactHttpStatusException(401, AAR_URL) } to "authentication required (HTTP 401)",
+        { _: File -> throw ArtifactHttpStatusException(403, AAR_URL) } to "access denied (HTTP 403)",
+        { _: File -> throw ArtifactHttpStatusException(407, AAR_URL) } to "proxy authentication required (HTTP 407)",
+        { _: File -> throw ArtifactHttpStatusException(302, AAR_URL) } to "redirected (HTTP 302); a proxy may require signing in",
+        { _: File -> throw ArtifactHttpStatusException(503, AAR_URL) } to "server error (HTTP 503)",
+        { _: File -> throw ArtifactHttpStatusException(418, AAR_URL) } to "HTTP 418",
+        { _: File -> throw UnknownHostException("maven.google.com") } to "cannot connect: unknown host maven.google.com",
+        { _: File ->
+          throw IOException("Failed to connect to $AAR_URL", ConnectException().initCause(UnresolvedAddressException()))
+        } to "cannot connect: unknown host maven.google.com",
+        { _: File -> throw SocketTimeoutException("Read timed out") } to "timed out",
+        { _: File ->
+          throw IOException(
+            "Failed to connect to $AAR_URL",
+            HttpConnectTimeoutException("HTTP connect timed out").initCause(ConnectException()),
+          )
+        } to "timed out",
+        { _: File ->
+          throw IOException("Failed to connect to $AAR_URL", SSLHandshakeException("PKIX path building failed"))
+        } to "TLS error (PKIX path building failed); a proxy may be intercepting HTTPS",
+        { _: File -> throw ConnectException("Connection refused") } to "cannot connect (Connection refused)",
+        { _: File -> throw IOException("Failed to connect to $AAR_URL", ConnectException()) } to "cannot connect",
+        { _: File ->
+          throw IOException("Unable to tunnel through proxy. Proxy returns \"HTTP/1.1 407\"")
+        } to "download failed: Unable to tunnel through proxy. Proxy returns \"HTTP/1.1 407\"",
+        { file: File ->
+          file.writeText("<html>Blocked by your network administrator</html>")
+        } to "not an AAR: the response is not a zip archive (a proxy or firewall may have returned an HTML page)",
+        { _: File -> } to "not an AAR: the response is empty",
+        { file: File -> file.writeBytes(zipOf("AndroidManifest.xml" to "<manifest/>".toByteArray())) } to "the AAR has no inspector.jar",
+      )
+    for ((respond, reason) in cases) {
+      val cacheDir = tempFolder.newFolder()
+      val resolution = ComposeInspectorResolution(overrideJar = null, cacheDir.toPath(), FakeDownloader(respond))
 
-    val exception = assertThrows(IOException::class.java) { resolution.jarResolver(logger)(VERSION) }
+      val exception = assertThrows(reason, IOException::class.java) { resolution.jarResolver(logger)(VERSION) }
 
-    assertThat(exception).hasMessageThat().isEqualTo("Simulated download failure")
-    assertThat(cacheDir.listFiles()).isEmpty()
+      assertWithMessage(reason).that(exception).hasMessageThat().isEqualTo("$AAR_URL: $reason")
+      assertWithMessage(reason).that(cacheDir.listFiles()).isEmpty()
+    }
   }
 
   @Test
-  fun testResolve_aarWithoutInspectorJar_failsWithTheUrl() {
-    val cacheDir = tempFolder.newFolder()
+  fun testResolve_truncatedAar_isReportedAsCorrupt() {
+    val aar = aarWithInspectorJar(Random(0).nextBytes(64 * 1024))
     val resolution =
       ComposeInspectorResolution(
         overrideJar = null,
-        cacheDir.toPath(),
-        FakeDownloader { it.writeBytes(zipOf("AndroidManifest.xml" to "<manifest/>".toByteArray())) },
+        tempFolder.newFolder().toPath(),
+        FakeDownloader { it.writeBytes(aar.copyOf(aar.size / 2)) },
       )
 
     val exception = assertThrows(IOException::class.java) { resolution.jarResolver(logger)(VERSION) }
 
-    assertThat(exception).hasMessageThat().isEqualTo("inspector.jar not found in $AAR_URL")
-    assertThat(cacheDir.listFiles()).isEmpty()
+    assertThat(exception).hasMessageThat().startsWith("$AAR_URL: the AAR is corrupt or truncated (")
+  }
+
+  @Test
+  fun testResolve_cacheThatCannotBeWritten_failsWithTheCacheDirectory() {
+    // A file where the cache directory should be: extracting the jar there fails, which says nothing about the download.
+    val cacheDir = tempFolder.newFile("not-a-directory")
+    val resolution =
+      ComposeInspectorResolution(overrideJar = null, cacheDir.toPath(), FakeDownloader { it.writeBytes(aarWithInspectorJar("x")) })
+
+    val exception = assertThrows(IOException::class.java) { resolution.jarResolver(logger)(VERSION) }
+
+    assertThat(exception).hasMessageThat().startsWith("Could not extract inspector.jar to $cacheDir: ")
   }
 
   @Test

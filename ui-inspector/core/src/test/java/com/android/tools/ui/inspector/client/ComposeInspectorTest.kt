@@ -1457,9 +1457,10 @@ class ComposeInspectorTest {
 
     assertThat(exception)
       .hasMessageThat()
-      .startsWith(
+      .isEqualTo(
         "Could not resolve the Compose inspector for Compose 1.6.0: " +
-          "https://maven.google.com/androidx/compose/ui/ui-android/1.6.0/ui-android-1.6.0.aar is not an AAR"
+          "https://maven.google.com/androidx/compose/ui/ui-android/1.6.0/ui-android-1.6.0.aar: not an AAR: the response is not a zip " +
+          "archive (a proxy or firewall may have returned an HTML page)"
       )
   }
 

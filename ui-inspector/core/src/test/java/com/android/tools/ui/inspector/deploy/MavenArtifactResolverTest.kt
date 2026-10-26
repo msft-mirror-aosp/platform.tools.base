@@ -23,6 +23,7 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.concurrent.Callable
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
@@ -126,6 +127,21 @@ class MavenArtifactResolverTest {
     assertThat((lookup as JarLookup.NotFound).location).isEqualTo(AAR_URL)
     assertThat(cacheDir.listFiles()).isEmpty()
     assertThat(failingDownloader.outputFile!!.exists()).isFalse()
+  }
+
+  @Test
+  fun testDownload_unknownHostWithUnsafeVersion_reportsTheHost() {
+    // The resolver does not validate the version: its callers do. The failure must still be reported, not replaced by a URL parsing error.
+    val unknownHostDownloader =
+      object : ArtifactDownloader {
+        override fun download(url: String, outputFile: File) {
+          throw UnknownHostException("maven.google.com")
+        }
+      }
+
+    val lookup = MavenArtifactResolver(unknownHostDownloader, tempFolder.newFolder()).download("androidx.compose.ui", "ui-android", "1.0 2")
+
+    assertThat((lookup as JarLookup.NotFound).reason).isEqualTo("cannot connect: unknown host maven.google.com")
   }
 
   @Test
