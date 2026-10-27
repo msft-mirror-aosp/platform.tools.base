@@ -164,6 +164,52 @@ class TestSuiteTestTaskTest {
     assertThat(notified).isTrue()
   }
 
+  @Test
+  fun executeTests_connectedDevicesExcluded_doesNotQueryConnectedDevices() {
+    val project = ProjectFactory.project
+    val task = project.tasks.register("testSuiteTestTaskManagedDevicesOnly", TestSuiteTestTask::class.java).get()
+    task.resultsDir.set(folder.newFolder())
+    task.coverageDir.set(folder.newFolder())
+    task.logFile.set(folder.newFile())
+    task.streamingOutputFile.set(folder.newFile())
+    task.engineInputParameters.add(TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, project.files()))
+    task.includeConnectedDevices.set(false)
+    val deviceProvider = RecordingDeviceProvider()
+    DeviceProviderInstrumentTestTask.DeviceProviderFactory::class
+      .java
+      .getDeclaredField("deviceProvider")
+      .apply { isAccessible = true }
+      .set(task.deviceProviderFactory, deviceProvider)
+    var notified = false
+    task.addNoDeviceListener { notified = true }
+
+    // No managed device is configured, so there is no device to run the tests on.
+    val thrown = assertFailsWith<DeviceException> { task.executeTests() }
+
+    assertThat(deviceProvider.initCalled).isFalse()
+    assertThat(thrown).hasMessageThat().isEqualTo("No managed devices available!")
+    assertThat(notified).isTrue()
+  }
+
+  /** Records whether the connected devices were queried. */
+  private class RecordingDeviceProvider : DeviceProvider() {
+    var initCalled = false
+
+    override fun getName() = "recording"
+
+    override fun init() {
+      initCalled = true
+    }
+
+    override fun terminate() {}
+
+    override fun getDevices(): List<DeviceConnector> = emptyList()
+
+    override fun getTimeoutInMs() = 0
+
+    override fun isConfigured() = true
+  }
+
   /** Finds no device, as when none is connected. */
   private class NoDeviceProvider : DeviceProvider() {
     override fun getName() = "noDevice"

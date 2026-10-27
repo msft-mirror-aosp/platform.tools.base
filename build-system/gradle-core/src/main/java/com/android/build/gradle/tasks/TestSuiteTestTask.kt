@@ -191,6 +191,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
    */
   @get:Input @get:Optional abstract val androidDeviceSerials: Property<String>
 
+  /**
+   * Whether the tests also run on the devices connected through adb, in addition to [managedDevices]. Defaults to true.
+   *
+   * Gradle Managed Device tasks set this to false so that they run only on the managed devices they launch.
+   */
+  @get:Input @get:Optional abstract val includeConnectedDevices: Property<Boolean>
+
   @get:Nested abstract val managedDevices: ListProperty<ManagedVirtualDevice>
 
   /**
@@ -295,6 +302,16 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   }
 
   private fun provisionDevicesAndExecute(onDevicesReady: (onlineDevices: List<DeviceTestTarget>) -> Unit) {
+    if (!includeConnectedDevices.getOrElse(true)) {
+      provisionManagedDevicesAndExecute { managedDevices ->
+        if (managedDevices.isEmpty()) {
+          noDeviceListeners.forEach { it.onNoDevice() }
+          throw DeviceException("No managed devices available!")
+        }
+        onDevicesReady(managedDevices)
+      }
+      return
+    }
     provisionConnectedDevicesAndExecute { connectedDevices, deviceException ->
       provisionManagedDevicesAndExecute { managedDevices ->
         val onlineDevices = connectedDevices + managedDevices
@@ -1299,6 +1316,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.managedDevices.add(device)
       task.managedDevices.disallowChanges()
+      // Run only on the managed device, not also on the devices that happen to be connected through adb.
+      task.includeConnectedDevices.setDisallowChanges(false)
 
       val shardPoolSize = creationConfig.services.projectOptions.get(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE)
       task.shardCount.setDisallowChanges(shardPoolSize ?: 1)
