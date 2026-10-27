@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
@@ -192,6 +193,29 @@ class AssetsAndHostJarTestSuiteTest {
       "Test suite 'mixedAndroidTest' collides with source set 'mixedAndroidTest' of mixed test suite 'mixed'. " +
         "Please rename one of the test suites to avoid source set and task name collisions."
     )
+  }
+
+  @Test
+  fun testStaticFilesInputParameterIsDelivered() {
+    val project = rule.build {
+      androidApplication {
+        android {
+          testOptions.customSuites.named("first") {
+            it.useJunitEngine.inputs.add(AgpTestSuiteInputParameters.STATIC_FILES)
+          }
+        }
+      }
+    }
+    project.executor.run("testDebugFirstT1TestSuite")
+
+    val engineInputs =
+      Properties().apply {
+        project.subProject(":app").buildDir.resolve("intermediates/debug/testDebugFirstT1TestSuite/junit_inputs.txt").inputStream().use {
+          load(it)
+        }
+      }
+    Truth.assertThat(engineInputs.getProperty(AgpTestSuiteInputParameters.STATIC_FILES.propertyName))
+      .contains("src${File.separator}first${File.separator}assetsTest")
   }
 
   @Test

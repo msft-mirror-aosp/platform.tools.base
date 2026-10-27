@@ -151,7 +151,12 @@ class TestSuiteTestTaskTest {
   fun executeTests_noDevice_notifiesNoDeviceListeners() {
     val project = ProjectFactory.project
     val task = project.tasks.register("testSuiteTestTaskWithoutDevice", TestSuiteTestTask::class.java).get()
-    task.resultsDir.set(folder.newFolder())
+    val resultsDir = folder.newFolder().also { it.resolve("TEST-stale-engine.xml").writeText("<testsuite/>") }
+    val junitXmlDir = folder.newFolder().also { it.resolve("TEST-stale-gradle.xml").writeText("<testsuite/>") }
+    val xmlResultsDir = folder.newFolder().also { it.resolve("TEST-stale-aggregated.xml").writeText("<testsuite/>") }
+    task.resultsDir.set(resultsDir)
+    task.reports.junitXml.outputLocation.set(junitXmlDir)
+    task.xmlResultsDirectory.set(xmlResultsDir)
     task.coverageDir.set(folder.newFolder())
     task.logFile.set(folder.newFile())
     task.streamingOutputFile.set(folder.newFile())
@@ -167,6 +172,9 @@ class TestSuiteTestTaskTest {
     assertFailsWith<DeviceException> { task.executeTests() }
 
     assertThat(notified).isTrue()
+    assertThat(resultsDir.exists()).isFalse()
+    assertThat(junitXmlDir.exists()).isFalse()
+    assertThat(xmlResultsDir.listFiles()).isEmpty()
   }
 
   @Test

@@ -254,7 +254,7 @@ class HostJarTestSuiteUnitTestParityTest {
     val results =
       build
         .subProject(":app")
-        .resolve("build/intermediates/debug/testDebugUnitJvmTestSuite/results")
+        .resolve("build/test-results/testDebugUnitJvmTestSuite")
         .toFile()
         .walk()
         .filter { it.isFile && it.name.endsWith(".xml") }

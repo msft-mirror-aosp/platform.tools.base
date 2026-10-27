@@ -49,7 +49,9 @@ import org.gradle.api.logging.Logger
  * @param suiteName Name of the test suite (for example, `"unitTest"`).
  * @param target Target platform or device identifier.
  * @param logger Logger used to report processing warnings.
+ * @param excludeFileFilter Returns true for result files that must not be aggregated.
  */
+@JvmOverloads
 fun processTestReportAggregation(
   sourceDir: File,
   xmlResultsDirectory: DirectoryProperty,
@@ -58,6 +60,7 @@ fun processTestReportAggregation(
   suiteName: String,
   target: String,
   logger: Logger,
+  excludeFileFilter: (File) -> Boolean = { false },
 ) {
   if (!xmlResultsDirectory.isPresent) return
 
@@ -69,7 +72,7 @@ fun processTestReportAggregation(
       TEST_SUITE_METADATA_TARGET_KEY to target,
     )
 
-  injectPropertiesToXmlResults(sourceDir, properties, xmlResultsDirectory.get().asFile, logger)
+  injectPropertiesToXmlResults(sourceDir, properties, xmlResultsDirectory.get().asFile, logger, excludeFileFilter)
 }
 
 /**
@@ -89,8 +92,16 @@ fun clearTestReportAggregationResults(xmlResultsDirectory: DirectoryProperty) {
  *
  * Injects [properties] into `TEST-*.xml` files, hashes [SUITE_ENVIRONMENT_FILE_NAME] to `suite-environment_<hash>.json`, namespaces
  * [SUITE_DETAILS_DIR_NAME] files under `suite-details/<hash>/`, and copies remaining files verbatim.
+ *
+ * @param excludeFileFilter Returns true for result files that must not be aggregated.
  */
-private fun injectPropertiesToXmlResults(directory: File, properties: Map<String, String>, outputDir: File, logger: Logger) {
+private fun injectPropertiesToXmlResults(
+  directory: File,
+  properties: Map<String, String>,
+  outputDir: File,
+  logger: Logger,
+  excludeFileFilter: (File) -> Boolean,
+) {
   if (!directory.exists()) return
 
   val hashString = calculateHash(properties)
@@ -103,6 +114,7 @@ private fun injectPropertiesToXmlResults(directory: File, properties: Map<String
       allPaths.forEach { sourcePath ->
         if (Files.isSymbolicLink(sourcePath)) return@forEach
         val sourceFile = sourcePath.toFile()
+        if (sourceFile.isFile && excludeFileFilter(sourceFile)) return@forEach
         val relativePath = directory.toPath().relativize(sourcePath)
         val isUnderSuiteDetails = relativePath.nameCount > 0 && relativePath.getName(0).toString() == SUITE_DETAILS_DIR_NAME
 

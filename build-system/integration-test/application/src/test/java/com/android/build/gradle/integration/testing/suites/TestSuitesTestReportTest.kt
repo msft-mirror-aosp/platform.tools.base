@@ -34,6 +34,8 @@ import java.io.File
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import org.gradle.api.Project
+import org.gradle.api.tasks.testing.Test as GradleTestTask
+import org.gradle.jvm.toolchain.JavaToolchainService
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -116,6 +118,17 @@ class TestSuitesTestReportTest {
 
     val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/first")
     assertThat(coverageReportDir.toFile().exists()).isFalse()
+
+    val standardJunitXmlFiles =
+      build
+        .androidApplication()
+        .buildDir
+        .resolve("test-results/testDebugFirstT1TestSuite")
+        .toFile()
+        .listFiles()
+        ?.filter { it.isFile && it.extension == "xml" }
+        .orEmpty()
+    assertThat(standardJunitXmlFiles).isNotEmpty()
   }
 
   @Test
@@ -264,6 +277,44 @@ class TestSuitesTestReportTest {
 
     assertThat(result.didWorkTasks).containsAtLeast(":app:testDebugListedT1TestSuite", ":app:testAllSuites")
     assertThat(build.collectedTestClasses()).containsExactly("com.example.PassingTest")
+  }
+
+  @Test
+  fun testPreExecutionFailureDoesNotReportStaleXmlResults() {
+    fun File.xmlFiles() = listFiles()?.filter { it.isFile && it.extension == "xml" }.orEmpty()
+
+    val build = rule.build { androidApplication { pluginCallbacks += FailBeforeWorkerStartCallback::class.java } }
+
+    build.executor.run(":app:testDebugFirstT1TestSuite")
+
+    val junitXmlDir = build.androidApplication().buildDir.resolve("test-results/testDebugFirstT1TestSuite").toFile()
+    val suiteResultsDir = build.androidApplication().intermediatesDir.resolve("test_suite_results/debug/testDebugFirstT1TestSuite").toFile()
+    val suiteReportData = build.androidApplication().buildDir.resolve("reports/tests/testDebugFirstT1TestSuite/data.js").toFile()
+
+    assertThat(junitXmlDir.xmlFiles()).isNotEmpty()
+    assertThat(suiteResultsDir.xmlFiles()).isNotEmpty()
+    assertThat(suiteReportData.readText()).contains("testClassName")
+
+    build.executor.withArgument("-PbadExecutable=true").expectFailure().run(":app:testDebugFirstT1TestSuite")
+
+    assertThat(junitXmlDir.xmlFiles()).isEmpty()
+    assertThat(suiteResultsDir.xmlFiles()).isEmpty()
+    assertThat(suiteReportData.readText()).doesNotContain("testClassName")
+  }
+
+  class FailBeforeWorkerStartCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      val badExec = project.providers.gradleProperty("badExecutable")
+      val defaultLauncher = project.extensions.getByType(JavaToolchainService::class.java).launcherFor {}
+      val missingExec = project.layout.projectDirectory.file("nonexistent-java").asFile.absolutePath
+      project.tasks.withType(GradleTestTask::class.java).configureEach { task ->
+        // Keep javaLauncher valid for pre-task input snapshotting while missingExec fails inside Test.executeTests().
+        task.javaLauncher.set(defaultLauncher)
+        if (badExec.isPresent) {
+          task.executable = missingExec
+        }
+      }
+    }
   }
 
   @Test

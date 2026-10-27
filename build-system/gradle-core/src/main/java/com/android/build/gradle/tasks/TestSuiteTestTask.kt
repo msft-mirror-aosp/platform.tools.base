@@ -82,6 +82,7 @@ import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
+import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import java.io.File
 import java.util.Locale
@@ -277,11 +278,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     // In fact, I am suspecting that since the test engine is running in a separate process,
     // Gradle has no way to monitor what is written to these directories so it leaves it
     // untouched at the next execution.
-    PathUtils.deleteRecursivelyIfExists(resultsDir.get().asFile.toPath())
+    val testResultsDir = resultsDir.get().asFile
+    PathUtils.deleteRecursivelyIfExists(testResultsDir.toPath())
     PathUtils.deleteRecursivelyIfExists(coverageDir.get().asFile.toPath())
     if (additionalTestOutputDir.isPresent) {
       PathUtils.deleteRecursivelyIfExists(additionalTestOutputDir.get().asFile.toPath())
     }
+    val junitXmlDir = reports.junitXml.outputLocation.orNull?.asFile
+    if (junitXmlDir != null && !FileUtils.isSameFile(junitXmlDir, testResultsDir)) {
+      PathUtils.deleteRecursivelyIfExists(junitXmlDir.toPath())
+    }
+    clearTestReportAggregationResults(xmlResultsDirectory)
     logFile.get().asFile.delete()
 
     val streamingFile = streamingOutputFile.get().asFile
@@ -554,7 +561,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .trimIndent()
 
       if (xmlResultsDirectory.isPresent) {
-        clearTestReportAggregationResults(xmlResultsDirectory)
+        val hasEngineXmlResults =
+          testResultsDir.exists() && testResultsDir.walk().any { it.isFile && it.name.endsWith(".xml", ignoreCase = true) }
         processTestReportAggregation(
           testResultsDir,
           xmlResultsDirectory,
@@ -564,6 +572,22 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           this.testSuiteTarget.get(),
           logger,
         )
+        val junitXmlDir = this.reports.junitXml.outputLocation.orNull?.asFile
+        if (junitXmlDir != null && !FileUtils.isSameFile(junitXmlDir, testResultsDir)) {
+          processTestReportAggregation(
+            junitXmlDir,
+            xmlResultsDirectory,
+            this.modulePath.get(),
+            this.testedVariantName.get(),
+            this.testSuiteName.get(),
+            this.testSuiteTarget.get(),
+            logger,
+          ) { file ->
+            // Gradle reports each device of android-test-engine as a class named `device_<serial>`, which duplicates the
+            // engine's own per-device XML.
+            hasEngineXmlResults && file.name.startsWith("TEST-device_")
+          }
+        }
 
         val rootDir = this.rootProjectDir.get().asFile
         val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), this.modulePath.get(), rootDir)
@@ -802,6 +826,23 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val shardPoolSize = creationConfig.services.projectOptions.get(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE)
       task.shardCount.setDisallowChanges(shardPoolSize ?: 1)
 
+      creationConfig.sourceContainers.forEach { sourceContainer: TestSuiteSourceContainer ->
+        when (val sourceSet = sourceContainer.source) {
+          is TestSuiteSourceSet.Assets -> {
+            task.sourceFolders.from(sourceSet.get().all)
+            task.testDefinitionDirs.from(sourceSet.get().all)
+          }
+          is TestSuiteSourceSet.HostJar -> {
+            task.binaryFolders.from(
+              sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+            )
+          }
+          is TestSuiteSourceSet.TestApk -> {
+            task.testDefinitionDirs.from(sourceContainer.artifacts.get(InternalArtifactType.ANDROID_TEST_DISCOVERY_LIST))
+          }
+        }
+      }
+
       val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
       val resolvedInputs = junitEngineSpec.inputs
       resolvedInputs.forEach { inputParameter: AgpTestSuiteInputParameters ->
@@ -989,8 +1030,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             // Handled via task properties and standardInputs in executeTests
           }
 
-          else -> {
-            println("I don't know of this parameter $inputParameter")
+          AgpTestSuiteInputParameters.STATIC_FILES -> {
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.STATIC_FILES, task.sourceFolders))
           }
         }
       }
@@ -1085,22 +1126,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.useJUnitPlatform { testFramework: JUnitPlatformOptions ->
         testFramework.includeEngines(*creationConfig.junitEngineSpec.includeEngines.toTypedArray())
       }
-      creationConfig.sourceContainers.forEach { sourceContainer: TestSuiteSourceContainer ->
-        when (val sourceSet = sourceContainer.source) {
-          is TestSuiteSourceSet.Assets -> {
-            task.sourceFolders.from(sourceSet.get().all)
-            task.testDefinitionDirs.from(sourceSet.get().all)
-          }
-          is TestSuiteSourceSet.HostJar -> {
-            task.binaryFolders.from(
-              sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-            )
-          }
-          is TestSuiteSourceSet.TestApk -> {
-            task.testDefinitionDirs.from(sourceContainer.artifacts.get(InternalArtifactType.ANDROID_TEST_DISCOVERY_LIST))
-          }
-        }
-      }
 
       task.engineInputParameters.disallowChanges()
       // TODO : Improve file handling by using Artifacts APIs.
@@ -1135,7 +1160,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       testTaskReports.html.required.setDisallowChanges(true)
       testTaskReports.junitXml.required.setDisallowChanges(true)
       val xmlReport = testTaskReports.junitXml
-      xmlReport.outputLocation.setDisallowChanges(task.resultsDir)
+      xmlReport.outputLocation.convention(creationConfig.services.projectInfo.getTestResultsFolder().map { it.dir(task.name) })
 
       val htmlReport = testTaskReports.html
       htmlReport.outputLocation.fileProvider(creationConfig.services.projectInfo.getTestReportFolder().map { it.dir(task.name).asFile })

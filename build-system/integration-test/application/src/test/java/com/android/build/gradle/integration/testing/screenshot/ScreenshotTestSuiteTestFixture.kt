@@ -564,7 +564,7 @@ fun getTestSuiteXmlReportFile(
   testClassFqcn: String? = null,
 ): Path {
   val taskName = getTestSuiteValidateTaskName(variantName, "", suiteName, targetName)
-  val xmlDir = project.buildDir.resolve("intermediates/$variantName/$taskName/results")
+  val xmlDir = project.buildDir.resolve("test-results/$taskName")
   val fileName = if (testClassFqcn != null) "TEST-$testClassFqcn.xml" else "TEST-preview-screenshot-test-engine.xml"
   return xmlDir.resolve(fileName)
 }
