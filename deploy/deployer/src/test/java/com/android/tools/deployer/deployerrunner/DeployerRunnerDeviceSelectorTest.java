@@ -41,8 +41,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -52,16 +50,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@RunWith(Parameterized.class)
 public class DeployerRunnerDeviceSelectorTest {
     private static final String BASE = "tools/base/deploy/deployer/src/test/resource/";
-
-    @Parameterized.Parameters(name = "useConnectedDevices={0}")
-    public static Object[] data() {
-        return new Object[] {false, true};
-    }
-
-    @Parameterized.Parameter public boolean useConnectedDevices;
 
     private final FakeDeviceHandler handler = new FakeDeviceHandler();
 
@@ -259,7 +249,6 @@ public class DeployerRunnerDeviceSelectorTest {
     private DeployerRunner createRunner() {
         DeployerRunner runner = new DeployerRunner(cacheDb, dexDb, service);
         runner.setServerPort(fakeAdbServer.getPort());
-        runner.setUseConnectedDevices(useConnectedDevices);
         return runner;
     }
 }

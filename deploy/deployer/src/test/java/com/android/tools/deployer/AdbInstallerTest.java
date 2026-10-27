@@ -51,7 +51,6 @@ import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * This test works in the same manner as the DeployerRunnerTest with a fake adb server to which
@@ -96,8 +95,7 @@ public class AdbInstallerTest {
                         (scope, continuation) ->
                                 ConnectedDevicesTrackerKt.waitForDevice(
                                         tracker, iDevice.getSerialNumber(), continuation));
-        DeviceHolder deviceHolder =
-                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
+        DeviceHolder deviceHolder = new DeviceHolder(connectedDevice);
         AdbClient client = new AdbClient(deviceHolder, logger);
 
         AdbInstaller installer =
@@ -147,8 +145,7 @@ public class AdbInstallerTest {
                         (scope, continuation) ->
                                 ConnectedDevicesTrackerKt.waitForDevice(
                                         tracker, iDevice.getSerialNumber(), continuation));
-        DeviceHolder deviceHolder =
-                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
+        DeviceHolder deviceHolder = new DeviceHolder(connectedDevice);
         AdbClient client = new AdbClient(deviceHolder, logger);
 
         AdbInstaller installer =

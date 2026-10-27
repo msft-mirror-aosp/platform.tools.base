@@ -49,7 +49,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 @RunWith(ApiLevel.class)
@@ -57,12 +56,10 @@ public class LiveUpdateDeployerTest {
 
     @Rule @ApiLevel.Init public FakeDeviceConnection.WithAdbLib connection;
 
-    private FakeDevice device;
     private ILogger logger;
 
     @Before
     public void setUp() {
-        device = connection.getDevice();
         logger = new TestLogger();
     }
 
@@ -95,8 +92,7 @@ public class LiveUpdateDeployerTest {
                         (scope, continuation) ->
                                 ConnectedDevicesTrackerKt.waitForDevice(
                                         tracker, iDevice.getSerialNumber(), continuation));
-        DeviceHolder deviceHolder =
-                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
+        DeviceHolder deviceHolder = new DeviceHolder(connectedDevice);
         AdbClient adb = new AdbClient(deviceHolder, logger);
 
         Path installersPath = DeployerTestUtils.prepareInstaller().toPath();

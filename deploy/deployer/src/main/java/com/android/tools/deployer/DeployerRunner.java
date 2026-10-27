@@ -103,7 +103,6 @@ public class DeployerRunner {
 
     private long deviceWaitTimeoutMs = TimeUnit.SECONDS.toMillis(30);
     private Integer serverPort = null;
-    private Boolean useConnectedDevices = null;
 
     // Run it from bazel with the following command:
     // bazel run :deployer.runner INSTALL --device=<target device> <package name> <apk 1> <apk 2>
@@ -198,11 +197,6 @@ public class DeployerRunner {
         this.serverPort = serverPort;
     }
 
-    @VisibleForTesting
-    public void setUseConnectedDevices(boolean useConnectedDevices) {
-        this.useConnectedDevices = useConnectedDevices;
-    }
-
     public int run(String[] args) {
         if (args.length < 3) {
             // The values for --user come directly from the framework's package manager, and is
@@ -266,10 +260,6 @@ public class DeployerRunner {
      * option.
      */
     private boolean isUseConnectedDevices() {
-        if (useConnectedDevices != null) {
-            return useConnectedDevices;
-        }
-
         String value = System.getProperty(DeployerProperties.USE_CONNECTED_DEVICE_PROPERTY_NAME);
         if (value != null) {
             return Boolean.parseBoolean(value);

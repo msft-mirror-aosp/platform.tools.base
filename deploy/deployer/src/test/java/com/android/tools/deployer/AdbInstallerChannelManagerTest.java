@@ -50,7 +50,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @RunWith(ApiLevel.class)
 public class AdbInstallerChannelManagerTest {
@@ -96,8 +95,7 @@ public class AdbInstallerChannelManagerTest {
                         (scope, continuation) ->
                                 ConnectedDevicesTrackerKt.waitForDevice(
                                         tracker, iDevice.getSerialNumber(), continuation));
-        DeviceHolder deviceHolder =
-                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
+        DeviceHolder deviceHolder = new DeviceHolder(connectedDevice);
         LocalHostInstallerAdbClient client =
                 new LocalHostInstallerAdbClient(
                         deviceHolder, logger, installersPath + "/x86/installer");
@@ -145,8 +143,7 @@ public class AdbInstallerChannelManagerTest {
                         (scope, continuation) ->
                                 ConnectedDevicesTrackerKt.waitForDevice(
                                         tracker, iDevice.getSerialNumber(), continuation));
-        DeviceHolder deviceHolder =
-                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
+        DeviceHolder deviceHolder = new DeviceHolder(connectedDevice);
         AdbClient client = new AdbClient(deviceHolder, logger);
 
         AdbInstallerChannel c1 =
