@@ -17,6 +17,7 @@
 package com.android.tools.render
 
 import com.android.ide.common.rendering.api.Result
+import com.android.ide.common.rendering.api.SessionParams
 import com.android.resources.ResourceFolderType
 import com.android.sdklib.devices.screenShape
 import com.android.tools.configurations.Configuration
@@ -106,6 +107,9 @@ class Renderer(
    *   extracted component tree reflects the settled post-callback hierarchy. When `false` (component-tree-only mode), the layout is only
    *   inflated without executing layoutlib callbacks or rendering a bitmap, so any extracted component tree reflects the initial
    *   post-inflation hierarchy before `LaunchedEffect`s or animations run.
+   * @param allowShowDecorations Whether to honor [com.android.tools.preview.PreviewDisplaySettings.showDecoration] (for example,
+   *   `@Preview(showSystemUi = true)`) by rendering device system decorations (status/navigation bars, device frame). Defaults to `false`
+   *   so existing screenshot tests render composable content only.
    * @return A list of [PreviewScreenshotResult]s, each detailing the outcome of a single render operation, including the output path and
    *   any potential errors.
    */
@@ -115,11 +119,18 @@ class Renderer(
     outputFolderPath: String,
     includeComponentTree: Boolean = false,
     renderImage: Boolean = true,
+    allowShowDecorations: Boolean = false,
   ): List<PreviewScreenshotResult> {
     // If the screenshot is non-Compose or its preview and method parameters have already been resolved/specified,
     // bypass bytecode preview discovery and render it directly.
     if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {
-      return renderResolvedScreenshot(screenshot, outputFolderPath, includeComponentTree, renderImage)
+      return renderResolvedScreenshot(
+        screenshot,
+        outputFolderPath,
+        includeComponentTree,
+        renderImage,
+        allowShowDecorations,
+      )
     }
 
     val packagePath = sanitizePackagePath(screenshot.methodFQN)
@@ -164,6 +175,7 @@ class Renderer(
               baseResultId,
               includeComponentTree,
               renderImage,
+              allowShowDecorations,
             ) {
               imageCounter++
             }
@@ -183,6 +195,7 @@ class Renderer(
     outputFolderPath: String,
     includeComponentTree: Boolean,
     renderImage: Boolean,
+    allowShowDecorations: Boolean = false,
   ): List<PreviewScreenshotResult> {
     val packagePath = sanitizePackagePath(screenshot.methodFQN)
     val baseResultId = sanitizeBaseResultId(screenshot.previewId)
@@ -198,7 +211,17 @@ class Renderer(
         logger.log(Level.WARNING, "Preview parameter validation warning for ${screenshot.methodFQN}: $warningMessages")
       }
       var imageCounter = 0
-      renderScreenshotElement(screenshot, outputFolderPath, packagePath, baseResultId, includeComponentTree, renderImage) { imageCounter++ }
+      renderScreenshotElement(
+        screenshot,
+        outputFolderPath,
+        packagePath,
+        baseResultId,
+        includeComponentTree,
+        renderImage,
+        allowShowDecorations,
+      ) {
+        imageCounter++
+      }
     }
   }
 
@@ -209,6 +232,7 @@ class Renderer(
     baseResultId: String,
     includeComponentTree: Boolean,
     renderImage: Boolean,
+    allowShowDecorations: Boolean = false,
     nextImageIndex: () -> Int,
   ): List<PreviewScreenshotResult> {
     // Creating the preview element can fail for reasons specific to a single screenshot (e.g. a class that cannot be loaded). Report
@@ -237,6 +261,7 @@ class Renderer(
       RenderRequest.withResolvedLayouts(
         configurationModifier = previewElement::applyTo,
         resolvedLayoutsProvider = { resolvedLayouts.asSequence() },
+        showDecorations = allowShowDecorations && previewElement.displaySettings.showDecoration,
       )
 
     val usedSuffixes = mutableSetOf<String>()
@@ -405,7 +430,13 @@ class Renderer(
     return request.xmlLayoutsProvider().map {
       val configuration = baseConfiguration.clone()
       request.configurationModifier(configuration)
-      configuration to render(configuration, it, renderImage)
+      configuration to
+        render(
+          configuration,
+          it,
+          renderImage,
+          allowShowDecorations = request.showDecorations,
+        )
     }
   }
 
@@ -442,7 +473,18 @@ class Renderer(
       val configuration = baseConfiguration.clone()
       request.configurationModifier(configuration)
       val layoutPreviewName = it.displayName?.let { displayName -> "$previewName [$displayName]" } ?: previewName
-      Triple(configuration, render(configuration, it.xmlLayout, renderImage, executeCallbacks = true, previewName = layoutPreviewName), it)
+      Triple(
+        configuration,
+        render(
+          configuration,
+          it.xmlLayout,
+          renderImage,
+          executeCallbacks = true,
+          previewName = layoutPreviewName,
+          allowShowDecorations = request.showDecorations,
+        ),
+        it,
+      )
     }
   }
 
@@ -456,6 +498,7 @@ class Renderer(
     renderImage: Boolean,
     executeCallbacks: Boolean = false,
     previewName: String? = null,
+    allowShowDecorations: Boolean = false,
   ): RenderResult {
     val disposable = Disposer.newCheckedDisposable()
     val logger = RenderLogger()
@@ -484,6 +527,11 @@ class Renderer(
             return createRenderTaskErrorResult(logger)
           }
       val moduleClassLoader: ClassLoader = moduleClassLoaderManager.getShared(null).classLoader
+
+      if (allowShowDecorations) {
+        renderTask.setDecorations(true)
+        renderTask.setRenderingMode(SessionParams.RenderingMode.NORMAL)
+      }
 
       // b/469819154: Release render and dispose Compose views after use to avoid accumulating heap memory usage
       // and leaving effects or animations from this preview running on the shared AndroidUiDispatcher.Main.

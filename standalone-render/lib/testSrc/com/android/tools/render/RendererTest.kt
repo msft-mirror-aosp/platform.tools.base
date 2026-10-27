@@ -1962,15 +1962,76 @@ class RendererTest {
     return outDir
   }
 
+  @Test
+  fun testAllowShowDecorationsHonorsPreviewShowSystemUiOnlyWhenOptedIn() {
+    // language=xml
+    val xmlLayout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="100dp"
+          android:layout_height="50dp"
+          android:orientation="vertical" />
+      """
+        .trimIndent()
+
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_show_decorations")
+
+    val previewWithSystemUi =
+      xmlPreviewScreenshot(
+        fqn = "com.example.DecorPreviewKt.WithSystemUi",
+        xmlLayout = xmlLayout,
+        previewParams = mapOf("showSystemUi" to "true"),
+      )
+    val previewWithoutSystemUi =
+      xmlPreviewScreenshot(
+        fqn = "com.example.DecorPreviewKt.WithoutSystemUi",
+        xmlLayout = xmlLayout,
+        previewParams = mapOf("showSystemUi" to "false"),
+      )
+
+    bootstrapper.bootstrap().use { renderer ->
+      // 1. Default (allowShowDecorations = false) ignores showSystemUi = true and renders shrink-wrapped content.
+      val defaultResult = renderer.render(previewWithSystemUi, outputDir.absolutePath).single()
+      assertNull(defaultResult.error)
+      val defaultImg = ImageIO.read(File(outputDir, defaultResult.imagePath))
+      assertThat(defaultImg.height).isLessThan(300)
+
+      // 2. Opting in (allowShowDecorations = true) does NOT add system UI when showSystemUi = false.
+      val noSysUiResult = renderer.render(previewWithoutSystemUi, outputDir.absolutePath, allowShowDecorations = true).single()
+      assertNull(noSysUiResult.error)
+      val noSysUiImg = ImageIO.read(File(outputDir, noSysUiResult.imagePath))
+      assertThat(noSysUiImg.height).isLessThan(300)
+
+      // 3. Opting in (allowShowDecorations = true) renders full device frame + decorations when showSystemUi = true.
+      val sysUiResult = renderer.render(previewWithSystemUi, outputDir.absolutePath, allowShowDecorations = true).single()
+      assertNull(sysUiResult.error)
+      val sysUiImg = ImageIO.read(File(outputDir, sysUiResult.imagePath))
+      assertThat(sysUiImg.width).isEqualTo(1080)
+      assertThat(sysUiImg.height).isEqualTo(2400)
+    }
+  }
+
   private fun xmlPreviewScreenshot(
     fqn: String,
     xmlLayout: String,
     previewId: String = "${fqn}_screenshot",
     displayName: String? = null,
+    previewParams: Map<String, String> = emptyMap(),
   ): PreviewScreenshot =
     object : PreviewScreenshot {
       override val methodFQN = fqn
-      override val previewParams = emptyMap<String, String>()
+      override val previewParams = previewParams
       override val previewId = previewId
       override val previewWrapperFqn: String? = null
 

@@ -27,11 +27,13 @@ import com.android.tools.render.common.ResolvedScreenshotLayout
  *   we allow their creation to be postponed.
  * @param resolvedLayoutsProvider An optional provider for [ResolvedScreenshotLayout]s. When provided, this preserves layout metadata such
  *   as custom parameter display names (from `PreviewParameterProvider.getDisplayName`) alongside the XML layout strings.
+ * @param showDecorations Whether to render device system decorations (status/navigation bars, device frame).
  */
 class RenderRequest(
   val configurationModifier: Configuration.() -> Unit,
   val xmlLayoutsProvider: () -> Sequence<String>,
   val resolvedLayoutsProvider: (() -> Sequence<ResolvedScreenshotLayout>)? = null,
+  val showDecorations: Boolean = false,
 ) {
   companion object {
     /**
@@ -41,11 +43,13 @@ class RenderRequest(
     fun withResolvedLayouts(
       configurationModifier: Configuration.() -> Unit,
       resolvedLayoutsProvider: () -> Sequence<ResolvedScreenshotLayout>,
+      showDecorations: Boolean = false,
     ): RenderRequest =
       RenderRequest(
         configurationModifier,
         { resolvedLayoutsProvider().map { it.xmlLayout } },
         resolvedLayoutsProvider,
+        showDecorations,
       )
   }
 }
