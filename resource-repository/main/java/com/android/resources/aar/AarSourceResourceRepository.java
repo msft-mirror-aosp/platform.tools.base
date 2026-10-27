@@ -166,7 +166,7 @@ public class AarSourceResourceRepository extends AbstractResourceRepository impl
   @NonNull
   public static AarSourceResourceRepository create(@NonNull Path resourceDirectoryOrFile, @NonNull String libraryName,
                                                    @Nullable CachingData cachingData) {
-    return create(resourceDirectoryOrFile, null, ResourceNamespace.RES_AUTO, libraryName, cachingData);
+    return create(resourceDirectoryOrFile, null, libraryName, cachingData);
   }
 
   /**
@@ -188,16 +188,15 @@ public class AarSourceResourceRepository extends AbstractResourceRepository impl
                                                    @Nullable CachingData cachingData) {
     Path resDir = resourceFolderRoot.toPath();
     Preconditions.checkArgument(resDir != null);
-    return create(resDir, resourceFolderResources, ResourceNamespace.RES_AUTO, libraryName, cachingData);
+    return create(resDir, resourceFolderResources, libraryName, cachingData);
   }
 
   @NonNull
   private static AarSourceResourceRepository create(@NonNull Path resourceDirectoryOrFile,
                                                     @Nullable Collection<PathString> resourceFilesAndFolders,
-                                                    @NonNull ResourceNamespace namespace,
                                                     @NonNull String libraryName,
                                                     @Nullable CachingData cachingData) {
-    Loader loader = new Loader(resourceDirectoryOrFile, resourceFilesAndFolders, namespace);
+    Loader loader = new Loader(resourceDirectoryOrFile, resourceFilesAndFolders);
     AarSourceResourceRepository repository = new AarSourceResourceRepository(loader, libraryName);
 
     // If loading from an AAR file, try to load from a cache file first.
@@ -223,13 +222,6 @@ public class AarSourceResourceRepository extends AbstractResourceRepository impl
   @NonNull
   public Path getOrigin() {
     return myResourceDirectoryOrFile;
-  }
-
-  @TestOnly
-  @NonNull
-  public static AarSourceResourceRepository createForTest(
-      @NonNull Path resourceDirectoryOrFile, @NonNull ResourceNamespace namespace, @NonNull String libraryName) {
-    return create(resourceDirectoryOrFile, null, namespace, libraryName, null);
   }
 
   @Override
@@ -458,9 +450,8 @@ public class AarSourceResourceRepository extends AbstractResourceRepository impl
   private static class Loader extends RepositoryLoader<AarSourceResourceRepository> {
     @NonNull private Set<String> myRTxtIds = ImmutableSet.of();
 
-    Loader(@NonNull Path resourceDirectoryOrFile, @Nullable Collection<PathString> resourceFilesAndFolders,
-           @NonNull ResourceNamespace namespace) {
-      super(resourceDirectoryOrFile, resourceFilesAndFolders, namespace);
+    Loader(@NonNull Path resourceDirectoryOrFile, @Nullable Collection<PathString> resourceFilesAndFolders) {
+      super(resourceDirectoryOrFile, resourceFilesAndFolders, ResourceNamespace.RES_AUTO);
     }
 
     @Override
