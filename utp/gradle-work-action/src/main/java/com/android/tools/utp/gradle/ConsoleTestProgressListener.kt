@@ -53,6 +53,9 @@ internal class ConsoleTestProgressListener(
   /** Serials of devices whose test count has already been reported. */
   private val testCountReportedDevices = ConcurrentHashMap.newKeySet<String>()
 
+  /** Serials of devices whose run-level failure has already been logged. */
+  private val runFailureLoggedDevices = ConcurrentHashMap.newKeySet<String>()
+
   override fun reportingEntryPublished(testIdentifier: TestIdentifier, entry: ReportEntry) {
     val deviceId = testIdentifier.getDeviceId()?.takeIf { it.isNotEmpty() } ?: return
     entry.keyValuePairs[AndroidTestReportKeys.TEST_COUNT]?.toIntOrNull()?.let { testCount -> onTestCountReported(deviceId, testCount) }
@@ -84,6 +87,7 @@ internal class ConsoleTestProgressListener(
       if (testExecutionResult.status == TestExecutionResult.Status.FAILED) {
         logRunFailure(deviceId, testExecutionResult.throwable.map { it.message ?: it.javaClass.name }.orElse(""))
       }
+      runFailureLoggedDevices.remove(deviceId)
       testCountReportedDevices.remove(deviceId)
       trackers.remove(deviceId)?.onTestSuiteFinished()
       return
@@ -121,6 +125,7 @@ internal class ConsoleTestProgressListener(
     trackers.values.forEach { it.cancel() }
     trackers.clear()
     testCountReportedDevices.clear()
+    runFailureLoggedDevices.clear()
   }
 
   /** Returns the tracker for [deviceId], creating one if the test count has not been reported yet. */
@@ -130,6 +135,7 @@ internal class ConsoleTestProgressListener(
   private fun getDeviceName(deviceId: String): String = deviceNames[deviceId] ?: deviceId
 
   private fun logRunFailure(deviceId: String, errorMessage: String) {
+    if (!runFailureLoggedDevices.add(deviceId)) return
     logger.warn("Tests on ${getDeviceName(deviceId)} failed: $errorMessage")
   }
 

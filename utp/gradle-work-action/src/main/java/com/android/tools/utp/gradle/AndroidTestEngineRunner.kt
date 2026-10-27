@@ -195,7 +195,7 @@ class DeviceTrackingListener : TestExecutionListener {
 
   override fun executionFinished(testIdentifier: TestIdentifier, testExecutionResult: TestExecutionResult) {
     val deviceId = testIdentifier.getDeviceId() ?: ""
-    if (testIdentifier.isTest && deviceId.isNotEmpty()) {
+    if ((testIdentifier.isTest || testIdentifier.isContainer) && deviceId.isNotEmpty()) {
       if (testExecutionResult.status == TestExecutionResult.Status.FAILED) {
         perDeviceAllTestsPassed[deviceId] = false
       }

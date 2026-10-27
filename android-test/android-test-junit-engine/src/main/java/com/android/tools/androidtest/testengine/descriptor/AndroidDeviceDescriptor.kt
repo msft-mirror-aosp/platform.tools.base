@@ -377,11 +377,15 @@ class AndroidDeviceDescriptor(
 
   override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
     // Consume and process test discovery and report events from the instrumentation runner.
+    var runFailure: String? = null
     runBlocking {
       for (testEvent in tests) {
         when (testEvent) {
           is TestEvent.DeviceReportEntries -> {
             for (entry in testEvent.entries) {
+              if (runFailure == null) {
+                runFailure = entry.keyValuePairs[AndroidTestReportKeys.RUN_FAILURE]
+              }
               context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, entry)
             }
           }
@@ -394,6 +398,8 @@ class AndroidDeviceDescriptor(
         }
       }
     }
+    dynamicTestExecutor.awaitFinished()
+    runFailure?.let { throw RuntimeException(it) }
 
     return context
   }
@@ -510,7 +516,6 @@ class AndroidDeviceDescriptor(
 
     /** Handles instrumentation failures by completing all pending test results exceptionally. */
     override fun instrumentationFailed(errorMessage: String) {
-      reporter?.testRunFailed(errorMessage)
       reportRunFailure(errorMessage)
       val exception = RuntimeException(errorMessage)
       testDescriptors.values.forEach {
@@ -533,10 +538,11 @@ class AndroidDeviceDescriptor(
     }
 
     /**
-     * Publishes a [AndroidTestReportKeys.RUN_FAILURE] report entry on this device so that listeners can report that the test run failed as
-     * a whole, e.g. when the instrumentation crashes before any test case has started.
+     * Records that the test run failed as a whole, e.g. when the instrumentation crashes before any test case has started: as a failure in
+     * the XML report, and as a [AndroidTestReportKeys.RUN_FAILURE] report entry on this device for listeners.
      */
     fun reportRunFailure(errorMessage: String) {
+      reporter?.testRunFailed(errorMessage)
       // This is best-effort: the channel is already closed if the test run has finished.
       tests.trySend(TestEvent.DeviceReportEntries(listOf(ReportEntry.from(AndroidTestReportKeys.RUN_FAILURE, errorMessage))))
     }

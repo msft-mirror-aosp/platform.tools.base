@@ -557,4 +557,22 @@ class AndroidTestEngineRunnerTest {
 
     assertThat(listener.perDeviceAllTestsPassed[serial]).isTrue()
   }
+
+  @Test
+  fun deviceTrackingListener_failedContainerWithZeroTests_marksDeviceFailed() {
+    val listener = DeviceTrackingListener()
+    val serial = "emulator-5554"
+    val deviceUniqueId = UniqueId.forEngine("android-test-engine").append("device", serial)
+
+    val containerId = mock<TestIdentifier>()
+    whenever(containerId.isContainer).thenReturn(true)
+    whenever(containerId.isTest).thenReturn(false)
+    whenever(containerId.uniqueId).thenReturn(deviceUniqueId.toString())
+    whenever(containerId.uniqueIdObject).thenReturn(deviceUniqueId)
+
+    listener.executionStarted(containerId)
+    listener.executionFinished(containerId, TestExecutionResult.failed(RuntimeException("Instrumentation failed")))
+
+    assertThat(listener.perDeviceAllTestsPassed[serial]).isFalse()
+  }
 }

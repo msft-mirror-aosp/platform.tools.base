@@ -612,4 +612,20 @@ class AndroidTestResultListenerTest {
     val event = decodeEvent(outputStream.toString())
     assertThat(event.deviceId).isEqualTo(serial)
   }
+
+  @Test
+  fun testSuiteFinished_onFailedContainerWithZeroTests_emitsFailedSuiteStatus() {
+    val listener = AndroidTestResultListener()
+    val testIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
+    whenever(testIdentifier.isContainer).thenReturn(true)
+
+    listener.executionStarted(testIdentifier)
+    listener.executionFinished(testIdentifier, TestExecutionResult.failed(RuntimeException("Instrumentation crashed")))
+
+    val finishEvent = decodeEvent(outputStream.toString())
+    assertThat(finishEvent.hasTestSuiteFinished()).isTrue()
+    val suiteResult = finishEvent.testSuiteFinished.testSuiteResult.unpack(TestSuiteResultProto.TestSuiteResult::class.java)
+    assertThat(suiteResult.testStatus).isEqualTo(TestStatusProto.TestStatus.FAILED)
+    assertThat(suiteResult.platformError.errorsList.single().summary.errorMessage).isEqualTo("Instrumentation crashed")
+  }
 }

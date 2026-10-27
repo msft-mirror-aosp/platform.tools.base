@@ -253,6 +253,16 @@ class ConsoleTestProgressListenerTest {
   }
 
   @Test
+  fun runFailureReportedAndContainerFailed_logsFailureOnce() {
+    val device = deviceContainer("serial1")
+
+    listener.reportingEntryPublished(device, runFailureEntry("Unable to find instrumentation info"))
+    listener.executionFinished(device, TestExecutionResult.failed(RuntimeException("Unable to find instrumentation info")))
+
+    verify(mockLogger).warn("Tests on Pixel_3a(AVD) - 13 failed: Unable to find instrumentation info")
+  }
+
+  @Test
   fun testPlanExecutionFinished_cancelsUnfinishedTrackers() {
     val device = deviceContainer("serial1")
 

@@ -226,13 +226,21 @@ class AndroidTestResultListener : TestExecutionListener {
         // Ensure TestSuiteStarted was emitted.
         emitTestSuiteStarted(deviceId, 0)
 
-        val allTestsPassed = perDeviceAllTestsPassed.getOrDefault(deviceId, true)
+        val allTestsPassed =
+          perDeviceAllTestsPassed.getOrDefault(deviceId, true) && testExecutionResult.status != TestExecutionResult.Status.FAILED
         val testResults = perDeviceTestResults[deviceId] ?: emptyList<TestResultProto.TestResult>()
         val testSuiteResult =
           TestSuiteResultProto.TestSuiteResult.newBuilder()
             .setTestStatus(if (allTestsPassed) TestStatusProto.TestStatus.PASSED else TestStatusProto.TestStatus.FAILED)
             .addAllTestResult(testResults)
             .apply {
+              testExecutionResult.throwable.ifPresent { throwable ->
+                platformErrorBuilder.addErrorsBuilder().summaryBuilder.apply {
+                  errorMessage = throwable.message.orEmpty()
+                  className = throwable.javaClass.name
+                  stackTrace = throwable.stackTraceToString()
+                }
+              }
               perDeviceDeviceInfoPath[deviceId]?.let { path ->
                 addOutputArtifactBuilder().apply {
                   labelBuilder.label = "device-info"

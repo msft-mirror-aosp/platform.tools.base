@@ -30,6 +30,7 @@ import com.android.tools.androidtest.testengine.report.AndroidTestReportKeys
 import com.android.tools.androidtest.testengine.report.DdmlibTestIdentifier
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -128,7 +129,7 @@ class AndroidDeviceDescriptorTest {
   }
 
   @Test
-  fun `instrumentationFailed publishes run failure report entry`() {
+  fun `instrumentationFailed publishes run failure report entry and fails execution`() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
     val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
     val context = AndroidTestExecutionContext(executionRequest)
@@ -139,7 +140,11 @@ class AndroidDeviceDescriptorTest {
     listener.instrumentationFailed("Test run failed to complete. Process crashed.")
     listener.finish()
 
-    descriptor.execute(context, mock<Node.DynamicTestExecutor>())
+    val error =
+      assertThrows(RuntimeException::class.java) {
+        descriptor.execute(context, mock<Node.DynamicTestExecutor>())
+      }
+    assertThat(error).hasMessageThat().isEqualTo("Test run failed to complete. Process crashed.")
 
     val reportEntryCaptor = argumentCaptor<ReportEntry>()
     verify(engineExecutionListener, atLeastOnce()).reportingEntryPublished(eq(descriptor), reportEntryCaptor.capture())
@@ -164,7 +169,7 @@ class AndroidDeviceDescriptorTest {
   }
 
   @Test
-  fun `startRunner publishes run failure report entry when the test runner fails`() {
+  fun `startRunner publishes run failure report entry and fails execution when the test runner fails`() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
     whenever(mockAdbApkInstaller.preInstallationSetup(any())).thenThrow(RuntimeException("Failed to install APKs"))
 
@@ -179,12 +184,18 @@ class AndroidDeviceDescriptorTest {
     val context = AndroidTestExecutionContext(executionRequest)
     descriptor.startRunner(context)
     // Consumes the events sent by the runner thread until it finishes.
-    descriptor.execute(context, mock<Node.DynamicTestExecutor>())
+    val error =
+      assertThrows(RuntimeException::class.java) {
+        descriptor.execute(context, mock<Node.DynamicTestExecutor>())
+      }
+    assertThat(error).hasMessageThat().contains("Failed to install APKs")
 
     val reportEntryCaptor = argumentCaptor<ReportEntry>()
     verify(engineExecutionListener, atLeastOnce()).reportingEntryPublished(eq(descriptor), reportEntryCaptor.capture())
     val runFailures = reportEntryCaptor.allValues.mapNotNull { it.keyValuePairs[AndroidTestReportKeys.RUN_FAILURE] }
     assertThat(runFailures).isNotEmpty()
+    val xmlReport = resultsDir.walk().single { it.name.startsWith("TEST-") && it.extension == "xml" }
+    assertThat(xmlReport.readText()).contains("failures=\"1\"")
   }
 
   @Test
