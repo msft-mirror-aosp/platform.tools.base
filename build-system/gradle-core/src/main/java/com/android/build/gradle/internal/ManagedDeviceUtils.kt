@@ -18,11 +18,13 @@ package com.android.build.gradle.internal
 
 import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
+import com.android.build.api.dsl.ManagedDevices
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.prefs.AndroidLocationsProvider
 import com.android.testing.utils.computeVendorString
 import com.android.utils.CpuArchitecture
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ProviderFactory
@@ -96,3 +98,33 @@ fun computeAbiFromArchitecture(
     sdkVersion <= 30 -> "x86"
     else -> "x86_64"
   }
+
+/** Resolves target device and device group names to the managed virtual devices they declare, without duplicates. */
+internal fun ManagedDevices.resolveTargetDevices(targetDeviceNames: Collection<String>): List<ManagedVirtualDevice> {
+  val resolved = LinkedHashMap<String, ManagedVirtualDevice>()
+  for (targetName in targetDeviceNames) {
+    val localDevice = localDevices.findByName(targetName)
+    if (localDevice != null) {
+      resolved[localDevice.name] = localDevice as ManagedVirtualDevice
+      continue
+    }
+    val group = groups.findByName(targetName)
+    if (group != null) {
+      for (device in group.targetDevices) {
+        val virtualDevice =
+          device as? ManagedVirtualDevice
+            ?: throw InvalidUserDataException(
+              "Device '${device.name}' in device group '$targetName' is not a managed virtual device. " +
+                "Test suites currently support only managed virtual devices in device groups."
+            )
+        resolved[virtualDevice.name] = virtualDevice
+      }
+      continue
+    }
+    throw InvalidUserDataException(
+      "Target device or device group '$targetName' was not found in android.testOptions.managedDevices. " +
+        "Declare it under managedDevices.localDevices or managedDevices.groups."
+    )
+  }
+  return resolved.values.toList()
+}

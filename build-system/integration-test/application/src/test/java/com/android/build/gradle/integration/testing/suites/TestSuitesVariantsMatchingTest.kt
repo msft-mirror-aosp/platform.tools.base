@@ -106,17 +106,18 @@ class TestSuitesVariantsMatchingTest {
     Truth.assertThat(secondTestSuiteFolders.type).isEqualTo(SourceType.HOST_JAR)
     Truth.assertThat(secondTestSuiteFolders.kotlin).containsExactly(project.subProject(":app").resolve("src/second/kotlin").toFile())
 
+    // A host suite ignores targetDevices, so c2 and c3 keep the plain task name.
     Truth.assertThat(secondTestSuite.targetsByVariant.map { variantTarget -> variantTarget.targets.map { it.testTaskName } }.flatten())
       .containsExactly(
         "testBlueDebugSecondC1TestSuite",
         "testRedDebugSecondC1TestSuite",
         "testRedStagingSecondC1TestSuite",
-        "testBlueDebugSecondC2Device1TestSuite",
-        "testRedDebugSecondC2Device1TestSuite",
-        "testRedStagingSecondC2Device1TestSuite",
-        "testBlueDebugSecondC3Device2TestSuite",
-        "testRedDebugSecondC3Device2TestSuite",
-        "testRedStagingSecondC3Device2TestSuite",
+        "testBlueDebugSecondC2TestSuite",
+        "testRedDebugSecondC2TestSuite",
+        "testRedStagingSecondC2TestSuite",
+        "testBlueDebugSecondC3TestSuite",
+        "testRedDebugSecondC3TestSuite",
+        "testRedStagingSecondC3TestSuite",
       )
 
     Truth.assertThat(models.basicAndroidProject?.variants).hasSize(6)

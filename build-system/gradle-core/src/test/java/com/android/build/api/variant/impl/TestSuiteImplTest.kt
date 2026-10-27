@@ -17,6 +17,7 @@
 package com.android.build.api.variant.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.Component
@@ -50,6 +51,7 @@ import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarSources
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteSources
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteTargetBuilderImpl
 import com.android.build.gradle.internal.variant.VariantComponentInfo
 import com.android.builder.core.ComponentTypeImpl
 import com.google.common.truth.Truth.assertThat
@@ -477,6 +479,61 @@ class TestSuiteImplTest {
 
     `when`(testedVariant.useBuiltInKotlinSupport).thenReturn(false)
     assertThat(javaCompileConfig.builtInKotlincOutput).isNull()
+  }
+
+  @Test
+  fun testTargetDevicesIgnoredOnHostOnlySuite() {
+    val variantServices = createVariantPropertiesApiServices()
+
+    fun createSuite(inputs: Set<AgpTestSuiteInputParameters>): TestSuiteImpl {
+      val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+      val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
+      val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+      val targetBuilder = mock(TestSuiteTargetBuilderImpl::class.java)
+      `when`(testSuiteBuilder.name).thenReturn("mySuite")
+      `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
+      `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
+      `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+      `when`(junitEngineSpec.inputs).thenReturn(inputs.toMutableList())
+      `when`(junitEngineSpec.inputProperties).thenReturn(variantServices.mapPropertyOf(String::class.java, String::class.java, emptyMap()))
+
+      `when`(targetBuilder.name).thenReturn("t1")
+      `when`(targetBuilder.enable).thenReturn(true)
+      `when`(targetBuilder.targetDevices).thenReturn(mutableListOf("pixel6"))
+      `when`(targetBuilder.uniqueName()).thenReturn("pixel6T1")
+      `when`(testSuiteBuilder.targets).thenReturn(mapOf("t1" to targetBuilder))
+
+      val testedVariant = mock(VariantCreationConfig::class.java)
+      `when`(testedVariant.name).thenReturn("debug")
+      @Suppress("UNCHECKED_CAST")
+      val testedVariantComponent =
+        mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+      `when`(testedVariantComponent.variant).thenReturn(testedVariant)
+
+      return TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = mock(GlobalTaskCreationConfig::class.java),
+        variantServices = variantServices,
+        services = mock(TaskCreationServices::class.java),
+        artifacts = mock(ArtifactsImpl::class.java),
+        defaultConfig = mock(DefaultConfig::class.java),
+        manifestDataProviderBuilder = { mock(ManifestDataProvider::class.java) },
+      )
+    }
+
+    val hostSuite = createSuite(setOf(AgpTestSuiteInputParameters.TEST_CLASSES))
+    val hostTarget = hostSuite.targets.getValue("t1")
+    assertThat(hostTarget.targetDevices).isEmpty()
+    assertThat(hostTarget.uniqueName).isEqualTo("t1")
+    assertThat(hostTarget.testTaskName).isEqualTo("testDebugMySuiteT1TestSuite")
+
+    val deviceSuite = createSuite(setOf(AgpTestSuiteInputParameters.TEST_APKS))
+    val deviceTarget = deviceSuite.targets.getValue("t1")
+    assertThat(deviceTarget.targetDevices).containsExactly("pixel6")
+    assertThat(deviceTarget.uniqueName).isEqualTo("pixel6T1")
+    assertThat(deviceTarget.testTaskName).isEqualTo("testDebugMySuitePixel6T1TestSuite")
   }
 
   @Test

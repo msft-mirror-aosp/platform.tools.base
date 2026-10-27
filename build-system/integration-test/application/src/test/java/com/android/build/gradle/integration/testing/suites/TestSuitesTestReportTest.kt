@@ -21,9 +21,11 @@ import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.google.gson.Gson
@@ -31,6 +33,7 @@ import com.google.gson.annotations.SerializedName
 import java.io.File
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -393,6 +396,48 @@ class TestSuitesTestReportTest {
     build.executor.run(":app:updateDebugUpdateCoverageSuiteT1TestSuite")
 
     assertThat(coverageReportDir.toFile().exists()).isFalse()
+  }
+
+  @Test
+  fun testTargetDevicesIgnoredForHostSuiteAndGroupsResolvedForDeviceSuite() {
+    val build = rule.build {
+      androidApplication {
+        pluginCallbacks += CreateManagedDeviceGroupCallback::class.java
+        android {
+          testOptions.managedDevices.localDevices.create("pixel6") {
+            it.device = "Pixel 6"
+            it.apiLevel = 33
+            it.systemImageSource = "aosp-atd"
+          }
+          testOptions.customSuites.named("first") { suite -> suite.targets.named("t1") { it.targetDevices.add("ciGroup") } }
+          testOptions.customSuites.create("deviceGroupSuite") { suite ->
+            suite.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
+              includeEngines.add("[engine:custom-junit-engine-for-tests]")
+            }
+            suite.testApk {}
+            suite.targetVariants.add("debug")
+            suite.targets.create("t1") { it.targetDevices.add("ciGroup") }
+          }
+        }
+      }
+    }
+
+    val hostResult = build.executor.run(":app:testDebugFirstT1TestSuite")
+    assertThat(hostResult.didWorkTasks).contains(":app:testDebugFirstT1TestSuite")
+
+    val tasksResult = build.executor.run(":app:tasks", "--all")
+    tasksResult.assertOutputContains("testDebugDeviceGroupSuiteT1CiGroupTestSuite")
+  }
+
+  class CreateManagedDeviceGroupCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.finalizeDsl { extension ->
+        extension.testOptions.managedDevices.apply {
+          groups.create("ciGroup") { group -> group.targetDevices.add(allDevices.getByName("pixel6")) }
+        }
+      }
+    }
   }
 
   @Test

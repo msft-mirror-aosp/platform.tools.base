@@ -18,7 +18,10 @@ package com.android.build.gradle.tasks
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
+import com.android.build.gradle.internal.dsl.ManagedDevices
 import com.android.build.gradle.internal.fixtures.ProjectFactory
+import com.android.build.gradle.internal.resolveTargetDevices
+import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
@@ -27,6 +30,7 @@ import com.google.common.truth.Truth.assertThat
 import java.util.Properties
 import java.util.concurrent.ExecutionException
 import kotlin.test.assertFailsWith
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.VerificationException
 import org.junit.Rule
 import org.junit.Test
@@ -199,6 +203,24 @@ class TestSuiteTestTaskTest {
 
     val providerJava11 = HostJarJvmArgumentProvider(project.providers.provider { false })
     assertThat(providerJava11.asArguments()).isEmpty()
+  }
+
+  @Test
+  fun resolveTargetDevices_resolvesLocalDevicesAndGroupsAndDeduplicates() {
+    val dslServices = createDslServices()
+    val managedDevices = ManagedDevices(dslServices)
+    val pixel6 = managedDevices.localDevices.create("pixel6") { it.device = "Pixel 6" }
+    val pixel8 = managedDevices.localDevices.create("pixel8") { it.device = "Pixel 8" }
+    managedDevices.groups.create("phones") {
+      it.targetDevices.add(pixel6)
+      it.targetDevices.add(pixel8)
+    }
+
+    val resolved = managedDevices.resolveTargetDevices(listOf("phones", "pixel6"))
+    assertThat(resolved.map { it.name }).containsExactly("pixel6", "pixel8").inOrder()
+
+    val missing = assertFailsWith<InvalidUserDataException> { managedDevices.resolveTargetDevices(listOf("unknownGroup")) }
+    assertThat(missing.message).contains("Target device or device group 'unknownGroup' was not found")
   }
 
   /** Records whether the connected devices were queried. */

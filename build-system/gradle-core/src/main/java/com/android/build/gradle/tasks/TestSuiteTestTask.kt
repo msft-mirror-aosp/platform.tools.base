@@ -442,7 +442,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val onlineDeviceSerials = onlineDevices.joinToString(",") { it.serialNumber }
       standardInputs.add(TestEngineInputProperty(TestEngineInputProperty.SERIAL_IDS, onlineDeviceSerials))
 
-      val useDeviceSpecificPaths = managedDevices.get().size == 1
+      val useDeviceSpecificPaths = managedDevices.get().isNotEmpty()
 
       onlineDevices.forEach { target ->
         val serial = target.serialNumber
@@ -611,6 +611,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     val creationConfig: TestSuiteCreationConfig,
     val testSuiteTarget: TestSuiteTargetCreationConfig,
     val taskName: String,
+    private val targetManagedDevices: List<ManagedVirtualDevice>,
     private val deviceSerials: Provider<List<String>>? = null,
     private val isUpdate: Boolean = false,
   ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
@@ -763,8 +764,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         }
       }
 
-      val localDevices = creationConfig.global.androidTestOptions.managedDevices.localDevices
-      testSuiteTarget.targetDevices.forEach { task.managedDevices.add(localDevices.getByName(it) as ManagedVirtualDevice) }
+      task.managedDevices.addAll(targetManagedDevices)
       task.managedDevices.disallowChanges()
 
       val shardPoolSize = creationConfig.services.projectOptions.get(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE)

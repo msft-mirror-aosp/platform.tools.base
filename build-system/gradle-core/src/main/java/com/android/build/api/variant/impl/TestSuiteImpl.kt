@@ -19,6 +19,7 @@ package com.android.build.api.variant.impl
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.component.impl.features.DexingImpl
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.JUnitEngineSpec
@@ -78,15 +79,22 @@ internal constructor(
   override val testedVariant: VariantCreationConfig
     get() = testedVariantComponent.variant
 
+  private val requiresDevices: Boolean =
+    junitEngineSpec.inputs.any {
+      it == AgpTestSuiteInputParameters.TESTED_APKS || it == AgpTestSuiteInputParameters.TEST_APKS
+    }
+
   override val targets: Map<String, TestSuiteTargetCreationConfig> =
     testSuiteBuilder.targets.mapValues { entry ->
+      val uniqueTargetName = if (requiresDevices) entry.value.uniqueName() else entry.value.name
       TestSuiteTargetImpl(
         entry.value,
         computeTaskName(
           testedVariant.name,
           "test",
-          "${_name.capitalizeFirstChar()}${entry.value.uniqueName().capitalizeFirstChar()}TestSuite",
+          "${_name.capitalizeFirstChar()}${uniqueTargetName.capitalizeFirstChar()}TestSuite",
         ),
+        requiresDevices = requiresDevices,
       )
     }
 
