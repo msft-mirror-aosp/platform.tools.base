@@ -657,6 +657,101 @@ src/pkg/k/test.kt:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
       .expectClean()
   }
 
+  fun testUVariableNameAndType() {
+    // b/414626181
+    lint()
+      .files(
+        java(
+            """
+            package pkg.j;
+
+            import com.intellij.psi.PsiType;
+            import org.jetbrains.uast.UField;
+            import org.jetbrains.uast.ULocalVariable;
+            import org.jetbrains.uast.UParameter;
+            import org.jetbrains.uast.UVariable;
+
+            class JClass {
+                void testParameter(UParameter p) {
+                    String name = p.getName();
+                    PsiType type = p.getType();
+                }
+
+                void testField(UField f) {
+                    String name = f.getName();
+                    PsiType type = f.getType();
+                }
+
+                void testLocal(ULocalVariable l) {
+                    String name = l.getName();
+                    PsiType type = l.getType();
+                }
+
+                void testVariable(UVariable v) {
+                    String name = v.getName();
+                    PsiType type = v.getType();
+                }
+            }
+          """
+          )
+          .indented(),
+        kotlin(
+            """
+            package pkg.k
+
+            import org.jetbrains.uast.UField
+            import org.jetbrains.uast.ULambdaExpression
+            import org.jetbrains.uast.ULocalVariable
+            import org.jetbrains.uast.UMethod
+            import org.jetbrains.uast.UParameter
+            import org.jetbrains.uast.UVariable
+
+            fun fromIssue(lambda: ULambdaExpression) {
+              val receiver = lambda.parameters.firstOrNull()?.takeIf { it.name == "<this>" }
+              val type = receiver?.type
+            }
+
+            fun testParameter(p: UParameter) {
+              val name = p.name
+              val type = p.type
+            }
+
+            fun testField(f: UField) {
+              val name = f.name
+              val type = f.type
+            }
+
+            fun testLocal(l: ULocalVariable) {
+              val name = l.name
+              val type = l.type
+            }
+
+            fun testVariable(v: UVariable) {
+              val name = v.name
+              val type = v.type
+            }
+
+            fun testExplicitCalls(p: UParameter, f: UField, l: ULocalVariable, v: UVariable) {
+              val pName = p.getName()
+              val pType = p.getType()
+              val fName = f.getName()
+              val fType = f.getType()
+              val lName = l.getName()
+              val lType = l.getType()
+              val vName = v.getName()
+              val vType = v.getType()
+            }
+
+            fun UMethod.fromIssue428933819() = this.uastParameters.map { it.getType() }
+          """
+          )
+          .indented(),
+        *getLintClassPath(),
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testContractLambda() {
     // b/463436546
     lint()

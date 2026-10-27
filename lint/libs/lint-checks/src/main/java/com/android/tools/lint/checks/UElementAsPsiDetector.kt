@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypes
@@ -155,6 +156,7 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
         val psiMethod = node.resolve() ?: return
         val containingClass = psiMethod.containingClass ?: return
         if (containingClass.qualifiedName in ALLOWED_REDEFINITION) return
+        if (isRedefinedInReceiverHierarchy(node.receiverType, psiMethod)) return
         val superMethods = psiMethod.findSuperMethods()
         if (
           (isPsiElementClass(containingClass) || superMethods.any { isPsiElementClass(it.containingClass) }) &&
@@ -167,6 +169,13 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
         val receiverType = uMethod.getReceiverType() ?: return
         if (!isAssignable(uElementType, receiverType) && isAssignable(psiElementType, receiverType)) {
           reportUsage(node.receiver)
+        }
+      }
+
+      private fun isRedefinedInReceiverHierarchy(receiverType: PsiType?, psiMethod: PsiMethod): Boolean {
+        val receiverClass = (receiverType as? PsiClassType)?.resolve() ?: return false
+        return receiverClass.findMethodsBySignature(psiMethod, true).any {
+          it.containingClass?.qualifiedName in ALLOWED_REDEFINITION
         }
       }
 
