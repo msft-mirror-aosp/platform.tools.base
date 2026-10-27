@@ -15,36 +15,22 @@
  */
 package com.android.tools.deployer;
 
-import static com.android.ddmlib.IDevice.PROP_BUILD_CODENAME;
 import static com.android.tools.deployer.common.ApkVerifierTracker.SKIP_VERIFICATION_OPTION;
 import static com.android.tools.deployer.common.ApkVerifierTracker.getSkipVerificationInstallationFlag;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
-import com.android.adblib.AdbSession;
 import com.android.adblib.AdbSessionKt;
 import com.android.adblib.ConnectedDevice;
 import com.android.adblib.ConnectedDevicesTracker;
 import com.android.adblib.ConnectedDevicesTrackerKt;
-import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
 import com.android.adblib.testingutils.FakeAdbServerProviderRule;
-import com.android.annotations.NonNull;
-import com.android.ddmlib.AdbInitOptions;
-import com.android.ddmlib.AndroidDebugBridge;
-import com.android.ddmlib.IDevice;
 import com.android.fakeadbserver.DeviceState;
-import com.android.fakeadbserver.FakeAdbServer;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.tools.deployer.common.ApkVerifierTracker;
 import com.android.tools.deployer.common.DeviceHolder;
-import com.android.tools.deployer.devices.FakeDevice;
-import com.android.tools.deployer.devices.FakeDeviceHandler;
-import com.android.tools.deployer.devices.shell.GetProp;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.android.tools.deployer.devices.DeviceId;
 
 import kotlin.coroutines.EmptyCoroutineContext;
 
@@ -54,207 +40,108 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.RuleChain;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class ApkVerifierTrackerTest {
-    private static final long WAIT_TIME_MS = TimeUnit.SECONDS.toMillis(10);
     private static final String FIRST_PACKAGE = "package 0";
     private static final String SECOND_PACKAGE = "package 1";
 
-    private final FakeDeviceHandler handler = new FakeDeviceHandler();
+    @Rule public final FakeAdbServerProviderRule fakeAdbRule = new FakeAdbServerProviderRule();
 
-    private final FakeAdbServerProviderRule fakeAdbRule =
-            new FakeAdbServerProviderRule(
-                    provider -> {
-                        provider.installDeviceHandler(handler);
-                        return kotlin.Unit.INSTANCE;
-                    });
-
-    @Rule public final RuleChain chain = RuleChain.outerRule(fakeAdbRule)
-            .around(new UseAdbLibAndroidDebugBridgeRule(fakeAdbRule::getAdbSession));
-
-    private FakeAdbServer fakeAdbServer;
-    private AndroidDebugBridge bridge;
-
-    private Set<DeviceHolder> disabledDevices;
-    private final List<DeviceHolder> devices = new ArrayList<>();
+    private DeviceHolder api29Device;
+    private DeviceHolder api30Device;
+    private DeviceHolder api31Device;
 
     @Before
-    public void before() throws Exception {
-        fakeAdbServer = fakeAdbRule.getFakeAdb().getFakeAdbServer();
-        AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.getPort());
-
-        FakeDevice oDevice = new FakeDevice("8.0", 26);
-        oDevice.getShell().addCommand(new GetProp());
-
-        FakeDevice rDeviceDp1 = new FakeDevice("10.0", 29);
-        rDeviceDp1.getProps().put(PROP_BUILD_CODENAME, "R");
-        rDeviceDp1.getProps().put("ro.build.version.preview_sdk", "1");
-        rDeviceDp1.getShell().addCommand(new GetProp());
-
-        FakeDevice rDeviceDp2 = new FakeDevice("10.0", 29);
-        rDeviceDp2.getProps().put(PROP_BUILD_CODENAME, "R");
-        rDeviceDp2.getProps().put("ro.build.version.preview_sdk", "2");
-        rDeviceDp2.getShell().addCommand(new GetProp());
-
-        FakeDevice rDevice = new FakeDevice("11.0", 30);
-        rDevice.getShell().addCommand(new GetProp());
-
-        List<FakeDevice> fakeDevices = Lists.newArrayList(oDevice, rDeviceDp1, rDeviceDp2, rDevice);
-
-        // Get the bridge synchronously, since we're in test mode.
-        AndroidDebugBridge.init(AdbInitOptions.DEFAULT);
-        bridge = AndroidDebugBridge.createBridge();
-
-        // Wait for ADB.
-        waitFor(() -> bridge.isConnected());
-
-        for (FakeDevice fakeDevice : fakeDevices) {
-            connectAndWaitForDevice(fakeDevice);
-        }
-
-        Map<FakeDevice, DeviceHolder> devicesMap = new HashMap<>();
-
-        AdbSession session = fakeAdbRule.getAdbSession();
-        // Map FakeDevices to their corresponding IDevices.
-        for (FakeDevice device : fakeDevices) {
-            IDevice iDevice =
-                    Arrays.stream(AndroidDebugBridge.getBridge().getDevices())
-                            .filter(d -> device.getSerial().equals(d.getSerialNumber()))
-                            .findFirst()
-                            .orElse(null);
-            assertNotNull(iDevice);
-            ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
-            ConnectedDevice connectedDevice =
-                    BuildersKt.runBlocking(
-                            EmptyCoroutineContext.INSTANCE,
-                            (scope, continuation) ->
-                                    ConnectedDevicesTrackerKt.waitForDevice(
-                                            tracker, iDevice.getSerialNumber(), continuation));
-            devicesMap.put(
-                    device, new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false));
-        }
-
-        disabledDevices = Sets.newHashSet(devicesMap.get(oDevice), devicesMap.get(rDeviceDp1));
-        devices.addAll(devicesMap.values());
+    public void before() throws InterruptedException {
+        api29Device = connectDevice(DeviceId.API_29);
+        api30Device = connectDevice(DeviceId.API_30);
+        api31Device = connectDevice(DeviceId.API_31);
     }
 
     @After
-    public void after() throws InterruptedException {
+    public void after() {
         ApkVerifierTracker.clear();
-        AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS);
-        AndroidDebugBridge.terminate();
-        AndroidDebugBridge.disableFakeAdbServerMode();
     }
 
     @Test
     public void verifyOnFirstInstall() {
-        for (DeviceHolder device : devices) {
-            assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE));
-            assertNull(getSkipVerificationInstallationFlag(device, SECOND_PACKAGE));
-        }
+        assertNull(getSkipVerificationInstallationFlag(api29Device, FIRST_PACKAGE));
+        assertNull(getSkipVerificationInstallationFlag(api29Device, SECOND_PACKAGE));
+        assertNull(getSkipVerificationInstallationFlag(api30Device, FIRST_PACKAGE));
+        assertNull(getSkipVerificationInstallationFlag(api30Device, SECOND_PACKAGE));
     }
 
     @Test
     public void skipVerifyOnSecondInstall() {
-        for (DeviceHolder device : devices) {
-            assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, 0));
+        assertNull(getSkipVerificationInstallationFlag(api29Device, FIRST_PACKAGE, 0));
+        assertNull(getSkipVerificationInstallationFlag(api30Device, FIRST_PACKAGE, 0));
 
-            // Ensure that a fast followup install does not incur verification.
-            if (disabledDevices.contains(device)) {
-                assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, 1));
-            } else {
-                assertEquals(
-                        SKIP_VERIFICATION_OPTION,
-                        getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, 1));
-            }
+        // Ensure that a fast followup install does not incur verification for API 30+ devices
+        assertNull(getSkipVerificationInstallationFlag(api29Device, FIRST_PACKAGE, 1));
+        assertEquals(
+                SKIP_VERIFICATION_OPTION,
+                getSkipVerificationInstallationFlag(api30Device, FIRST_PACKAGE, 1));
 
-            // Ensure skipping doesn't bleed over to a different package.
-            assertNull(getSkipVerificationInstallationFlag(device, SECOND_PACKAGE, 2));
-        }
+        // Ensure skipping doesn't bleed over to a different package.
+        assertNull(getSkipVerificationInstallationFlag(api29Device, SECOND_PACKAGE, 2));
+        assertNull(getSkipVerificationInstallationFlag(api30Device, SECOND_PACKAGE, 2));
+
+        // Ensure skipping doesn't bleed over to a different device, which still skips
+        // verification on its own fast followup install.
+        assertNull(getSkipVerificationInstallationFlag(api31Device, FIRST_PACKAGE, 2));
+        assertEquals(
+                SKIP_VERIFICATION_OPTION,
+                getSkipVerificationInstallationFlag(api31Device, FIRST_PACKAGE, 3));
     }
 
     @Test
     public void reverifiesAfterAnHourThenNoVerification() {
-        for (DeviceHolder device : devices) {
-            assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, 0));
+        assertNull(getSkipVerificationInstallationFlag(api29Device, FIRST_PACKAGE, 0));
+        assertNull(getSkipVerificationInstallationFlag(api30Device, FIRST_PACKAGE, 0));
 
-            long hour = TimeUnit.HOURS.toMillis(1);
+        long hour = TimeUnit.HOURS.toMillis(1);
 
-            // Ensure that an install before an hour skips verification.
-            if (disabledDevices.contains(device)) {
-                assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, hour - 1));
-            } else {
-                assertEquals(
-                        SKIP_VERIFICATION_OPTION,
-                        getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, hour - 1));
-            }
+        // Ensure that an install before an hour skips verification for API 30+ devices
+        assertNull(getSkipVerificationInstallationFlag(api29Device, FIRST_PACKAGE, hour - 1));
+        assertEquals(
+                SKIP_VERIFICATION_OPTION,
+                getSkipVerificationInstallationFlag(api30Device, FIRST_PACKAGE, hour - 1));
 
-            // Ensure that an install on or after an hour gets verified, and that timestamps don't
-            // get updated erroneously.
-            assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, hour));
+        // Ensure that an install on or after an hour gets verified, and that timestamps don't
+        // get updated erroneously.
+        assertNull(getSkipVerificationInstallationFlag(api29Device, FIRST_PACKAGE, hour));
+        assertNull(getSkipVerificationInstallationFlag(api30Device, FIRST_PACKAGE, hour));
 
-            // Ensure that a fast subsequent install skips verification.
-            if (disabledDevices.contains(device)) {
-                assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, hour + 1));
-            } else {
-                assertEquals(
-                        SKIP_VERIFICATION_OPTION,
-                        getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, hour + 1));
-            }
-        }
+        // Ensure that a fast subsequent install skips verification for API 30+ devices
+        assertNull(getSkipVerificationInstallationFlag(api29Device, FIRST_PACKAGE, hour + 1));
+        assertEquals(
+                SKIP_VERIFICATION_OPTION,
+                getSkipVerificationInstallationFlag(api30Device, FIRST_PACKAGE, hour + 1));
     }
 
-    private static void waitFor(@NonNull Callable<Boolean> callable) throws Exception {
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < WAIT_TIME_MS) {
-            if (callable.call()) {
-                return;
-            }
-            //noinspection BusyWait
-            Thread.sleep(100);
-        }
-    }
-
-    private DeviceState connectAndWaitForDevice(FakeDevice fakeDevice) throws Exception {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-
-        AndroidDebugBridge.IDeviceChangeListener deviceChangeListener =
-                new AndroidDebugBridge.IDeviceChangeListener() {
-                    @Override
-                    public void deviceConnected(@NonNull IDevice device) {
-                        countDownLatch.countDown();
-                    }
-
-                    @Override
-                    public void deviceDisconnected(@NonNull IDevice device) {}
-
-                    @Override
-                    public void deviceChanged(@NonNull IDevice device, int changeMask) {}
-                };
-        AndroidDebugBridge.addDeviceChangeListener(deviceChangeListener);
-
-        DeviceState deviceState;
-        try {
-            deviceState = handler.connect(fakeDevice, fakeAdbServer);
-            // Wait until the device is recognized by ADB.
-            if (!countDownLatch.await(WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
-                fail("Timeout waiting for the device to connect");
-            }
-        } finally {
-            AndroidDebugBridge.removeDeviceChangeListener(deviceChangeListener);
-        }
-        return deviceState;
+    private DeviceHolder connectDevice(DeviceId deviceId) throws InterruptedException {
+        String serialNumber = "serial-" + deviceId.api();
+        fakeAdbRule
+                .getFakeAdb()
+                .connectDevice(
+                        serialNumber,
+                        "Google",
+                        "Pixel",
+                        deviceId.version(),
+                        new AndroidApiLevel(deviceId.api()),
+                        DeviceState.HostConnectionType.USB,
+                        /* maxSpeedMbps= */ 0,
+                        /* negotiatedSpeedMbps= */ 0);
+        ConnectedDevicesTracker tracker =
+                AdbSessionKt.getConnectedDevicesTracker(fakeAdbRule.getAdbSession());
+        ConnectedDevice connectedDevice =
+                BuildersKt.runBlocking(
+                        EmptyCoroutineContext.INSTANCE,
+                        (scope, continuation) ->
+                                ConnectedDevicesTrackerKt.waitForDevice(
+                                        tracker, serialNumber, continuation));
+        return new DeviceHolder(connectedDevice);
     }
 }
