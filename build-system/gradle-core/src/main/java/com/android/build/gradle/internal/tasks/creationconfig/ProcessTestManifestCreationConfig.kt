@@ -290,10 +290,10 @@ abstract class TestSuiteProcessTestManifestCreationConfig(
     get() = sourceContainer.identifier
 
   override val applicationId: Provider<String>
-    get() = testSuiteCreationConfig.testedVariant.applicationId.map { "$it.test" }
+    get() = testSuiteCreationConfig.testApplicationId
 
   override val testedApplicationId: Provider<String>
-    get() = testSuiteCreationConfig.testedVariant.applicationId
+    get() = testSuiteCreationConfig.instrumentationTargetPackageId
 
   override val namespace: Provider<String>
     get() = testSuiteCreationConfig.testedVariant.namespace.map { "$it.test" }

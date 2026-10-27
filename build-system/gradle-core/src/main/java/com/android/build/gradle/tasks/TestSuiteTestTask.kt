@@ -56,8 +56,16 @@ import com.android.build.gradle.internal.tasks.getApkFiles
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
 import com.android.build.gradle.internal.test.report.clearTestReportAggregationResults
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
+import com.android.build.gradle.internal.testing.COVERAGE_DIR_ON_DEVICE_KEY
+import com.android.build.gradle.internal.testing.COVERAGE_FILE_ON_DEVICE_KEY
+import com.android.build.gradle.internal.testing.COVERAGE_TYPE_KEY
 import com.android.build.gradle.internal.testing.INSTRUMENTATION_ARGS_KEY
+import com.android.build.gradle.internal.testing.INSTRUMENTATION_RUNNER_CLASS_KEY
+import com.android.build.gradle.internal.testing.INSTRUMENTATION_TARGET_PACKAGE_ID_KEY
+import com.android.build.gradle.internal.testing.TEST_PACKAGE_ID_KEY
 import com.android.build.gradle.internal.testing.TestData
+import com.android.build.gradle.internal.testing.UNINSTALL_AFTER_TESTS_KEY
+import com.android.build.gradle.internal.testing.USE_TEST_STORAGE_SERVICE_KEY
 import com.android.build.gradle.internal.testing.configureAndroidTestEngine
 import com.android.build.gradle.internal.testing.formatInstrumentationArgs
 import com.android.build.gradle.internal.testsuites.impl.HostJarTestSuiteTaskManager
@@ -90,6 +98,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.ListProperty
@@ -247,6 +256,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   @get:OutputDirectory @get:Optional abstract val coverageReportDir: DirectoryProperty
 
   @get:Internal abstract val jacocoHostDestinationFile: RegularFileProperty
+
+  @get:Input @get:Optional abstract val hasDeviceTests: Property<Boolean>
 
   private val noDeviceListeners = mutableListOf<NoDeviceListener>()
 
@@ -497,11 +508,31 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       this.systemProperty("java.util.logging.config.file", julConfigFile.absolutePath)
     }
 
+    val effectiveEngineInputProperties = engineInputProperties.get().toMutableMap()
+    if (hasDeviceTests.getOrElse(false)) {
+      val testsRegex =
+        buildTestsRegexFromFilter(
+          includePatterns = filter.includePatterns,
+          // The public TestFilter doesn't expose `--tests` patterns; only Gradle's DefaultTestFilter does.
+          commandLineIncludePatterns = (filter as? DefaultTestFilter)?.commandLineIncludePatterns.orEmpty(),
+          excludePatterns = filter.excludePatterns,
+        )
+      if (testsRegex != null) {
+        val existingArgs = effectiveEngineInputProperties[INSTRUMENTATION_ARGS_KEY].orEmpty()
+        if (containsInstrumentationArgKey(existingArgs, "tests_regex")) {
+          logger.warn("Test filters are ignored for the device tests of $path because the instrumentation argument 'tests_regex' is set.")
+        } else {
+          val regexArg = formatInstrumentationArgs(mapOf("tests_regex" to testsRegex))
+          effectiveEngineInputProperties[INSTRUMENTATION_ARGS_KEY] = if (existingArgs.isBlank()) regexArg else "$existingArgs,$regexArg"
+        }
+      }
+    }
+
     // write all the input properties for the junit engine. This mean the input properties
     // that were requested through the TestSuite DSL/Variant APIs but also the default ones
     // that are always provided.
     AgpTestSuiteInputsSerializer.serialize(
-      engineInputProperties = engineInputProperties.get(),
+      engineInputProperties = effectiveEngineInputProperties,
       engineInputParameters = engineInputParameters.plus(standardInputs),
       into = engineInputPropertiesFiles.asFile.get(),
     )
@@ -972,19 +1003,79 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         creationConfig.global.buildToolsRevision,
       )
 
-      task.engineInputProperties.set(junitEngineSpec.inputProperties)
-      // add default properties.
-      task.engineInputProperties.put(TestEngineInputProperty.TESTED_APPLICATION_ID, testedVariant.applicationId)
+      val testApkSource =
+        creationConfig.sourceContainers.firstOrNull { it.source is TestSuiteSourceSet.TestApk }?.source as? TestSuiteSourceSet.TestApk
+      task.hasDeviceTests.setDisallowChanges(
+        testApkSource != null && (!hasHostJar || "android-test-engine" in creationConfig.junitEngineSpec.includeEngines)
+      )
+
+      val coverageEnabledForTask = creationConfig.codeCoverageEnabled && !isUpdate
       // Only a suite that collects coverage carries the on-device coverage agent in its test APK, so only such a suite asks the
       // engine to attach it.
       val onDeviceCoverage =
-        creationConfig.codeCoverageEnabled &&
-          !isUpdate &&
-          creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
-      task.engineInputProperties.put("com.android.agp.test.COVERAGE_TYPE", if (onDeviceCoverage) "ON_THE_FLY" else "NONE")
-      if (onDeviceCoverage) {
-        // The agent instruments the classes under the tested app's namespace, as for androidTest. Without this prefix, the engine
-        // falls back to the tested application id, which doesn't match when there is an applicationIdSuffix.
+        coverageEnabledForTask && creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
+
+      if (testApkSource != null) {
+        task.engineInputProperties.put(UNINSTALL_AFTER_TESTS_KEY, "true")
+      }
+
+      task.engineInputProperties.putAll(junitEngineSpec.inputProperties)
+      task.engineInputProperties.put(TestEngineInputProperty.TESTED_APPLICATION_ID, testedVariant.applicationId)
+      task.engineInputProperties.put(COVERAGE_TYPE_KEY, if (onDeviceCoverage) "ON_THE_FLY" else "NONE")
+
+      if (testApkSource != null) {
+        // These match the test APK manifest, which ProcessTestManifest builds from the same providers.
+        task.engineInputProperties.put(TEST_PACKAGE_ID_KEY, creationConfig.testApplicationId)
+        task.engineInputProperties.put(INSTRUMENTATION_TARGET_PACKAGE_ID_KEY, creationConfig.instrumentationTargetPackageId)
+        task.engineInputProperties.put(INSTRUMENTATION_RUNNER_CLASS_KEY, creationConfig.instrumentationRunner(testApkSource))
+        // Like the instrumentation arguments below, command-line options take precedence over the suite's values.
+        if (creationConfig.services.projectOptions.get(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN)) {
+          task.engineInputProperties.put(UNINSTALL_AFTER_TESTS_KEY, "false")
+        }
+
+        val extraRunnerArgs = creationConfig.services.projectOptions.extraInstrumentationTestRunnerArgs
+        task.engineInputProperties.put(
+          USE_TEST_STORAGE_SERVICE_KEY,
+          junitEngineSpec.inputProperties.getting(USE_TEST_STORAGE_SERVICE_KEY).orElse("").zip(extraRunnerArgs) { propValue, cliArgs ->
+            cliArgs["useTestStorageService"] ?: propValue.ifBlank { "false" }
+          },
+        )
+        task.engineInputProperties.put(
+          COVERAGE_FILE_ON_DEVICE_KEY,
+          junitEngineSpec.inputProperties.getting(COVERAGE_FILE_ON_DEVICE_KEY).orElse("").zip(extraRunnerArgs) { propValue, cliArgs ->
+            cliArgs["coverageFile"] ?: propValue
+          },
+        )
+        task.engineInputProperties.put(
+          COVERAGE_DIR_ON_DEVICE_KEY,
+          junitEngineSpec.inputProperties.getting(COVERAGE_DIR_ON_DEVICE_KEY).orElse("").zip(extraRunnerArgs) { propValue, cliArgs ->
+            cliArgs["coverageFilePath"] ?: propValue
+          },
+        )
+
+        val suiteArgs = junitEngineSpec.inputProperties.getting(INSTRUMENTATION_ARGS_KEY).orElse("")
+        val mergedArgsProvider =
+          testedVariant.namespace
+            .zip(suiteArgs) { namespace, args -> namespace to args }
+            .zip(extraRunnerArgs) { (namespace, args), cliArgs ->
+              val parts = mutableListOf<String>()
+              if (onDeviceCoverage) {
+                // The agent instruments the classes under the tested app's namespace, as for androidTest. Without this prefix, the engine
+                // falls back to the tested application id, which doesn't match when there is an applicationIdSuffix.
+                parts.add(formatInstrumentationArgs(mapOf("com.android.tools.coverage.prefixes" to namespace.replace('.', '/'))))
+              }
+              if (args.isNotBlank()) {
+                parts.add(args)
+              }
+              if (cliArgs.isNotEmpty()) {
+                parts.add(formatInstrumentationArgs(cliArgs))
+              }
+              parts.joinToString(",")
+            }
+        task.engineInputProperties.putAll(
+          mergedArgsProvider.map { merged -> if (merged.isNotBlank()) mapOf(INSTRUMENTATION_ARGS_KEY to merged) else emptyMap() }
+        )
+      } else if (onDeviceCoverage) {
         val suiteArgs = junitEngineSpec.inputProperties.getting(INSTRUMENTATION_ARGS_KEY).orElse("")
         task.engineInputProperties.put(
           INSTRUMENTATION_ARGS_KEY,
@@ -1537,6 +1628,70 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.rootProjectDir.set(services.projectInfo.rootDir)
       task.rootProjectDir.disallowChanges()
     }
+
+    internal fun containsInstrumentationArgKey(rawArgs: String, key: String): Boolean {
+      if (rawArgs.isBlank()) return false
+      return Regex("(?:^|(?<!\\\\),)\\s*${Regex.escape(key)}\\s*=").containsMatchIn(rawArgs)
+    }
+
+    /**
+     * Translates Gradle `--tests` and DSL `filter` patterns into a single regex for AndroidX Runner's `tests_regex` argument, which matches
+     * against `<className>#<methodName>`. Returns `null` when no filtering is active.
+     */
+    internal fun buildTestsRegexFromFilter(
+      includePatterns: Set<String>,
+      commandLineIncludePatterns: Set<String>,
+      excludePatterns: Set<String>,
+    ): String? {
+      val dslIncludes = includePatterns.filter { it.isNotBlank() && it != "*" }
+      val cliIncludes = commandLineIncludePatterns.filter { it.isNotBlank() && it != "*" }
+      val excludes = excludePatterns.filter { it.isNotBlank() }
+
+      if (dslIncludes.isEmpty() && cliIncludes.isEmpty() && excludes.isEmpty()) {
+        return null
+      }
+
+      if (excludes.any { it == "*" }) {
+        return "^(?!)x$"
+      }
+
+      val dslUnion = dslIncludes.takeIf { it.isNotEmpty() }?.joinToString("|") { stripAnchors(gradleTestPatternToRegex(it)) }
+      val cliUnion = cliIncludes.takeIf { it.isNotEmpty() }?.joinToString("|") { stripAnchors(gradleTestPatternToRegex(it)) }
+      val excludeUnion = excludes.takeIf { it.isNotEmpty() }?.joinToString("|") { stripAnchors(gradleTestPatternToRegex(it)) }
+
+      val positiveBody =
+        when {
+          dslUnion != null && cliUnion != null -> "(?=(?:$dslUnion)$)(?:$cliUnion)"
+          dslUnion != null -> if (dslIncludes.size == 1) dslUnion else "(?:$dslUnion)"
+          cliUnion != null -> if (cliIncludes.size == 1) cliUnion else "(?:$cliUnion)"
+          else -> ".*"
+        }
+      val negativeLookahead = if (excludeUnion != null) "(?!(?:$excludeUnion)$)" else ""
+      return "^$negativeLookahead$positiveBody$"
+    }
+
+    private fun stripAnchors(regex: String): String = regex.removePrefix("^").removeSuffix("$")
+
+    /**
+     * Translates a Gradle test filter pattern into a regex over AndroidX Runner test ids (`<className>#<methodName>`), following Gradle's
+     * matching rules: the pattern matches `<className>` or `<className>.<methodName>`, `*` matches anything, and a pattern starting with an
+     * upper-case letter matches the simple class name. Parameterized methods (`method[0]`) match their method name.
+     */
+    internal fun gradleTestPatternToRegex(pattern: String): String {
+      val body = pattern.split('*').joinToString(".*") { literal -> literal.split('.').joinToString("[.#]") { escapeRegexLiteral(it) } }
+      val simpleClassNamePrefix = if (pattern.firstOrNull()?.isUpperCase() == true) "(?:[^#]*\\.)?" else ""
+      return "^$simpleClassNamePrefix$body(?:\\[.*\\])?(?:#.*)?$"
+    }
+
+    private fun escapeRegexLiteral(literal: String): String =
+      buildString(literal.length) {
+        for (c in literal) {
+          if (c in "\\.^$+?()[]{}|") {
+            append('\\')
+          }
+          append(c)
+        }
+      }
   }
 }
 

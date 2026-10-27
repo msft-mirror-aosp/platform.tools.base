@@ -29,6 +29,7 @@ import com.android.builder.testing.api.DeviceProvider
 import com.google.common.truth.Truth.assertThat
 import java.util.Properties
 import java.util.concurrent.ExecutionException
+import java.util.regex.Pattern
 import kotlin.test.assertFailsWith
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.VerificationException
@@ -203,6 +204,62 @@ class TestSuiteTestTaskTest {
 
     val providerJava11 = HostJarJvmArgumentProvider(project.providers.provider { false })
     assertThat(providerJava11.asArguments()).isEmpty()
+  }
+
+  @Test
+  fun buildTestsRegexFromFilter_translatesGradlePatterns() {
+    fun matches(regex: String, testId: String): Boolean = Pattern.compile(regex).matcher(testId).find()
+
+    assertThat(TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), emptySet(), emptySet())).isNull()
+    assertThat(TestSuiteTestTask.buildTestsRegexFromFilter(setOf("*"), setOf("*"), emptySet())).isNull()
+
+    val exactClass = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("com.example.MyTest"), emptySet())!!
+    assertThat(matches(exactClass, "com.example.MyTest#testOne")).isTrue()
+    assertThat(matches(exactClass, "com.example.MyTestOther#testOne")).isFalse()
+
+    val classAndMethod = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("com.example.MyTest.testOne"), emptySet())!!
+    assertThat(matches(classAndMethod, "com.example.MyTest#testOne")).isTrue()
+    assertThat(matches(classAndMethod, "com.example.MyTest#testOne[alpha]")).isTrue()
+    assertThat(matches(classAndMethod, "com.example.MyTest#testOneMore")).isFalse()
+
+    val paramVariant = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("com.example.MyTest.testOne[alpha]"), emptySet())!!
+    assertThat(matches(paramVariant, "com.example.MyTest#testOne[alpha]")).isTrue()
+    assertThat(matches(paramVariant, "com.example.MyTest#testOne[beta]")).isFalse()
+
+    val simpleClass = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("MyTest"), emptySet())!!
+    assertThat(matches(simpleClass, "com.example.MyTest#testOne")).isTrue()
+    assertThat(matches(simpleClass, "com.example.OtherMyTest#testOne")).isFalse()
+
+    val simpleClassAndMethod = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("MyTest.testOne"), emptySet())!!
+    assertThat(matches(simpleClassAndMethod, "com.example.MyTest#testOne")).isTrue()
+
+    val upperCaseMethod = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("com.example.MyTest.Given_when_then"), emptySet())!!
+    assertThat(matches(upperCaseMethod, "com.example.MyTest#Given_when_then")).isTrue()
+
+    val wildcardClassAndMethod = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("*MyTest.test*"), emptySet())!!
+    assertThat(matches(wildcardClassAndMethod, "com.example.MyTest#testOne")).isTrue()
+    assertThat(matches(wildcardClassAndMethod, "com.example.MyTest#other")).isFalse()
+
+    val lowerCaseName = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("testOne"), emptySet())!!
+    assertThat(matches(lowerCaseName, "com.example.MyTest#testOne")).isFalse()
+
+    val pkgWildcard = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("com.example.*"), emptySet())!!
+    assertThat(matches(pkgWildcard, "com.example.MyTest#testOne")).isTrue()
+    assertThat(matches(pkgWildcard, "com.example.sub.MyTest#testOne")).isTrue()
+    assertThat(matches(pkgWildcard, "com.other.MyTest#testOne")).isFalse()
+
+    val nestedClass = TestSuiteTestTask.buildTestsRegexFromFilter(emptySet(), setOf("com.example.Outer\$Inner.testOne"), emptySet())!!
+    assertThat(matches(nestedClass, "com.example.Outer\$Inner#testOne")).isTrue()
+
+    val intersectedAndExcluded =
+      TestSuiteTestTask.buildTestsRegexFromFilter(
+        includePatterns = setOf("com.example.*"),
+        commandLineIncludePatterns = setOf("*MyTest*"),
+        excludePatterns = setOf("com.example.MyTest.flakyTest"),
+      )!!
+    assertThat(matches(intersectedAndExcluded, "com.example.MyTest#stableTest")).isTrue()
+    assertThat(matches(intersectedAndExcluded, "com.example.MyTest#flakyTest")).isFalse()
+    assertThat(matches(intersectedAndExcluded, "com.other.MyTest#stableTest")).isFalse()
   }
 
   @Test

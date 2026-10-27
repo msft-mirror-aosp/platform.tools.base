@@ -60,6 +60,7 @@ fun configureAndroidTestEngine(
     }
 
   task.useJUnitPlatform { testFramework: JUnitPlatformOptions -> testFramework.includeEngines("android-test-engine") }
+  task.hasDeviceTests.setDisallowChanges(true)
 
   task.animationsDisabled.setDisallowChanges(creationConfig.services.provider { globalConfig.androidTestOptions.animationsDisabled })
 
@@ -90,15 +91,15 @@ fun configureAndroidTestEngine(
     task.buildTools.aapt2ExecutableProvider().map { it.asFile.absolutePath },
   )
 
-  task.engineInputProperties.put("android-test.instrumentation-runner-class", testData.instrumentationRunner)
-  task.engineInputProperties.put("android-test.test-package-id", testData.applicationId)
-  task.engineInputProperties.put("android-test.instrumentation-target-package-id", testData.instrumentationTargetPackageId)
+  task.engineInputProperties.put(INSTRUMENTATION_RUNNER_CLASS_KEY, testData.instrumentationRunner)
+  task.engineInputProperties.put(TEST_PACKAGE_ID_KEY, testData.applicationId)
+  task.engineInputProperties.put(INSTRUMENTATION_TARGET_PACKAGE_ID_KEY, testData.instrumentationTargetPackageId)
   task.engineInputProperties.put(
     INSTRUMENTATION_ARGS_KEY,
     testData.instrumentationRunnerArguments.map(::formatInstrumentationArgs),
   )
   task.engineInputProperties.put(
-    "android-test.uninstall-after-tests",
+    UNINSTALL_AFTER_TESTS_KEY,
     (!globalConfig.services.projectOptions.get(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN)).toString(),
   )
   task.engineInputProperties.put("android-test.force-aot-compilation", creationConfig.isForceAotCompilation.toString())
@@ -109,21 +110,21 @@ fun configureAndroidTestEngine(
   task.engineInputProperties.put("android-test.emulator-control-enabled", emulatorControlEnabled.toString())
 
   task.engineInputProperties.put(
-    "android-test.use-test-storage-service",
+    USE_TEST_STORAGE_SERVICE_KEY,
     testData.instrumentationRunnerArguments.map { it.getOrDefault("useTestStorageService", "false") },
   )
-  task.engineInputProperties.put("android-test.is-test-coverage-enabled", testData.testCoverageEnabled.map { it.toString() })
+  task.engineInputProperties.put(TEST_COVERAGE_ENABLED_KEY, testData.testCoverageEnabled.map { it.toString() })
   task.engineInputProperties.put("android-test.instrument-in-pcc", testData.privateComputeCoreInstrumentation.map { it.toString() })
   task.engineInputProperties.put(
-    "android-test.coverage-file-on-device",
+    COVERAGE_FILE_ON_DEVICE_KEY,
     testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageFile", "") },
   )
   task.engineInputProperties.put(
-    "android-test.coverage-dir-on-device",
-    testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageDir", "") },
+    COVERAGE_DIR_ON_DEVICE_KEY,
+    testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageFilePath", "") },
   )
   task.engineInputProperties.put(
-    "com.android.agp.test.COVERAGE_TYPE",
+    COVERAGE_TYPE_KEY,
     if (creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)) {
       "ON_THE_FLY"
     } else {

@@ -17,11 +17,14 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.Properties
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
@@ -114,6 +117,51 @@ class TestSuiteOnDeviceCoverageInputsTest {
     val inputs = engineInputs()
     assertThat(inputs.getProperty(COVERAGE_TYPE)).isEqualTo("NONE")
     assertThat(inputs.getProperty(INSTRUMENTATION_ARGS)).isNull()
+  }
+
+  @Test
+  fun suiteForwardsCliInstrumentationArgsTestsFilterAndLeaveApksFlag() {
+    val build = rule.build {
+      androidApplication(":app") {
+        pluginCallbacks += FailOnlyOnT2Callback::class.java
+        android {
+          testOptions.customSuites.named("deviceSuite") { suite ->
+            suite.codeCoverage = false
+            suite.targets.create("t2") {}
+          }
+        }
+      }
+    }
+
+    build.executor
+      .withArgument("-Pandroid.testInstrumentationRunnerArguments.custom=a,b=c")
+      .withArgument("-Pandroid.testInstrumentationRunnerArguments.useTestStorageService=true")
+      .withArgument("-Pandroid.testInstrumentationRunnerArguments.coverageFile=/data/local/tmp/cov.ec")
+      .with(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN, true)
+      .withArguments(listOf(":app:$TEST_TASK", "--tests", "com.example.app.SuiteTestClass.myMethod"))
+      .run()
+
+    val inputs = engineInputs()
+    assertThat(inputs.getProperty("android-test.uninstall-after-tests")).isEqualTo("false")
+    assertThat(inputs.getProperty("android-test.use-test-storage-service")).isEqualTo("true")
+    assertThat(inputs.getProperty("android-test.coverage-file-on-device")).isEqualTo("/data/local/tmp/cov.ec")
+    val args = inputs.getProperty(INSTRUMENTATION_ARGS)
+    assertThat(args).contains("custom=a\\,b=c")
+    assertThat(args).contains("tests_regex=^com[.#]example[.#]app[.#]SuiteTestClass[.#]myMethod(?:\\[.*\\])?(?:#.*)?$")
+
+    // Target-scoped configureTestTasks on t2 applies to t2 without leaking to t1 above.
+    val t2Failure = build.executor.expectFailure().run(":app:testDebugDeviceSuiteT2TestSuite")
+    t2Failure.assertErrorContains("There were failing tests")
+  }
+
+  class FailOnlyOnT2Callback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.finalizeDsl { extension ->
+        extension.testOptions.customSuites.getByName("deviceSuite").targets.getByName("t2").configureTestTasks {
+          systemProperty("toyEngine.failure", "failed-only-on-t2")
+        }
+      }
+    }
   }
 
   private fun engineInputs(): Properties {

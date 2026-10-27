@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import java.io.File
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
@@ -63,4 +64,10 @@ interface TestSuiteCreationConfig : TestSuite {
 
   /** Returns whether the Android Resources should be included in the test suite. */
   val androidResourcesIncluded: Boolean
+
+  /** Package name of the test APK. */
+  val testApplicationId: Provider<String>
+
+  /** Package name of the app the test APK instruments: the tested app, or the test APK itself for libraries. */
+  val instrumentationTargetPackageId: Provider<String>
 }

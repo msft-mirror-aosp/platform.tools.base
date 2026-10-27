@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatA
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import java.util.Properties
 import org.junit.Rule
 import org.junit.Test
 
@@ -263,6 +264,29 @@ class TestSuiteApkIntegrationTest {
       containsClass("Lcom/example/test/SuiteKotlinHelper;")
       containsClass("Lcom/example/test/SuiteJavaCaller;")
     }
+  }
+
+  @Test
+  fun testRunnerSynchronizedBetweenMergedManifestAndEngineInputs() {
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          defaultConfig { testInstrumentationRunner = "com.example.DefaultRunner" }
+          testOptions.customSuites.named("customTest") {
+            it.useJunitEngine.inputs.clear()
+            it.useJunitEngine.addInputProperty("android-test.instrumentation-runner-class", "com.example.SuiteRunner")
+          }
+        }
+      }
+    }
+
+    build.executor.run(":app:packageDebugCustomTest", ":app:testDebugCustomTestT1TestSuite")
+
+    ApkSubject.assertThat(customTestApk()) { manifest().contains("android:name=\"com.example.SuiteRunner\"") }
+    val inputsFile =
+      File(build.androidApplication(":app").buildDir.toFile(), "intermediates/debug/testDebugCustomTestT1TestSuite/junit_inputs.txt")
+    val inputs = Properties().also { props -> inputsFile.reader(Charsets.UTF_8).use { props.load(it) } }
+    assertThat(inputs.getProperty("android-test.instrumentation-runner-class")).isEqualTo("com.example.SuiteRunner")
   }
 
   private fun customTestApk(): File {

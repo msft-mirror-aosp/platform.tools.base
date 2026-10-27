@@ -482,6 +482,92 @@ class TestSuiteImplTest {
   }
 
   @Test
+  fun testInstrumentationRunnerPrefersEngineInputPropertyOverDefault() {
+    val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+    val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
+    val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+    `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
+    `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
+    `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+
+    val variantServices = createVariantPropertiesApiServices()
+    val mapProp =
+      variantServices.mapPropertyOf(
+        String::class.java,
+        String::class.java,
+        mapOf("android-test.instrumentation-runner-class" to "com.example.SuiteRunner"),
+      )
+    `when`(junitEngineSpec.inputProperties).thenReturn(mapProp)
+
+    val testedVariantComponent =
+      mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+    val manifestDataProvider = mock(ManifestDataProvider::class.java)
+    `when`(manifestDataProvider.manifestData).thenReturn(variantServices.provider { ManifestData(instrumentationRunner = null) })
+
+    val testSuiteImpl =
+      TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = mock(GlobalTaskCreationConfig::class.java),
+        variantServices = variantServices,
+        services = mock(TaskCreationServices::class.java),
+        artifacts = mock(ArtifactsImpl::class.java),
+        defaultConfig = mock(DefaultConfig::class.java),
+        manifestDataProviderBuilder = { manifestDataProvider },
+      )
+
+    val testApkSource = mock(TestSuiteSourceSet.TestApk::class.java)
+    `when`(testApkSource.manifestFile).thenReturn(File("fake/path/AndroidManifest.xml"))
+
+    assertThat(testSuiteImpl.instrumentationRunner(testApkSource).get()).isEqualTo("com.example.SuiteRunner")
+  }
+
+  @Test
+  fun testLibrarySuiteInstrumentsItsOwnTestPackage() {
+    val variantServices = createVariantPropertiesApiServices()
+
+    fun createLibrarySuite(inputProperties: Map<String, String>): TestSuiteImpl {
+      val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+      val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
+      val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+      `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
+      `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
+      `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+      `when`(junitEngineSpec.inputProperties)
+        .thenReturn(variantServices.mapPropertyOf(String::class.java, String::class.java, inputProperties))
+
+      val library = mock(VariantCreationConfig::class.java)
+      `when`(library.componentType).thenReturn(ComponentTypeImpl.LIBRARY)
+      `when`(library.applicationId).thenReturn(variantServices.provider { "com.example.lib" })
+      @Suppress("UNCHECKED_CAST")
+      val testedVariantComponent =
+        mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+      `when`(testedVariantComponent.variant).thenReturn(library)
+
+      return TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = mock(GlobalTaskCreationConfig::class.java),
+        variantServices = variantServices,
+        services = mock(TaskCreationServices::class.java),
+        artifacts = mock(ArtifactsImpl::class.java),
+        defaultConfig = mock(DefaultConfig::class.java),
+        manifestDataProviderBuilder = { mock(ManifestDataProvider::class.java) },
+      )
+    }
+
+    val defaultSuite = createLibrarySuite(mapOf("android-test.test-package-id" to ""))
+    assertThat(defaultSuite.testApplicationId.get()).isEqualTo("com.example.lib.test")
+    assertThat(defaultSuite.instrumentationTargetPackageId.get()).isEqualTo("com.example.lib.test")
+
+    val customSuite = createLibrarySuite(mapOf("android-test.test-package-id" to "com.custom.test"))
+    assertThat(customSuite.testApplicationId.get()).isEqualTo("com.custom.test")
+    assertThat(customSuite.instrumentationTargetPackageId.get()).isEqualTo("com.custom.test")
+  }
+
+  @Test
   fun testTargetDevicesIgnoredOnHostOnlySuite() {
     val variantServices = createVariantPropertiesApiServices()
 

@@ -16,7 +16,17 @@
 
 package com.android.build.gradle.internal.testing
 
+// Input properties of android-test-engine. Keep in sync with `AndroidTestConfigurationKeys` and `AgpTestSuiteInput` in the engine.
 internal const val INSTRUMENTATION_ARGS_KEY = "android-test.instrumentation-args"
+internal const val INSTRUMENTATION_RUNNER_CLASS_KEY = "android-test.instrumentation-runner-class"
+internal const val TEST_PACKAGE_ID_KEY = "android-test.test-package-id"
+internal const val INSTRUMENTATION_TARGET_PACKAGE_ID_KEY = "android-test.instrumentation-target-package-id"
+internal const val UNINSTALL_AFTER_TESTS_KEY = "android-test.uninstall-after-tests"
+internal const val USE_TEST_STORAGE_SERVICE_KEY = "android-test.use-test-storage-service"
+internal const val TEST_COVERAGE_ENABLED_KEY = "android-test.is-test-coverage-enabled"
+internal const val COVERAGE_FILE_ON_DEVICE_KEY = "android-test.coverage-file-on-device"
+internal const val COVERAGE_DIR_ON_DEVICE_KEY = "android-test.coverage-dir-on-device"
+internal const val COVERAGE_TYPE_KEY = "com.android.agp.test.COVERAGE_TYPE"
 
 /**
  * Formats instrumentation runner arguments as comma-separated `key=value` entries for [INSTRUMENTATION_ARGS_KEY], escaping `,` and `=` in
