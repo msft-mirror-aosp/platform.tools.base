@@ -256,4 +256,37 @@ class AvdSnapshotHandlerTest {
 
     assertThat(onDeviceReadyIsCalled).isTrue()
   }
+
+  @Test
+  fun emulatorCommandsDisableNetsimWifi() {
+    val commands = mutableListOf<List<String>>()
+    val handler =
+      AvdSnapshotHandler(
+        showFullEmulatorKernelLogging = false,
+        "auto-no-window",
+        deviceBootAndSnapshotCheckTimeoutSec = 1234,
+        mockAdbHelper,
+        emulatorDirectoryProvider,
+        qemuExecutor,
+        extraWaitAfterBootCompleteMs = 0L,
+        MoreExecutors.newDirectExecutorService(),
+        { _ -> EmulatorVersionMetadata(true) },
+      ) { command ->
+        commands += command
+        if (command.contains("-check-snapshot-loadable")) {
+          createMockProcessBuilder(stdout = "Loadable")
+        } else {
+          createMockProcessBuilder()
+        }
+      }
+
+    handler.generateSnapshot("myTestAvdName", avdDirectory, mockAvdManager, mockLogger)
+    handler.startEmulatorThenStop(createSnapshot = false, "myTestAvdName", avdDirectory, mockLogger) {}
+
+    // Snapshot creation, the loadable check, and the test device launch must all disable netsim
+    // Wi-Fi, so the snapshot is created and loaded with the same feature set.
+    assertThat(commands.map { it.contains("-no-snapshot-load") }).containsAtLeast(true, false)
+    assertThat(commands.map { it.contains("-check-snapshot-loadable") }).contains(true)
+    commands.forEach { assertThat(it.zipWithNext()).contains("-feature" to "-WiFiPacketStream") }
+  }
 }

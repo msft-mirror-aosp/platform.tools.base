@@ -93,6 +93,12 @@ class AvdSnapshotHandler(
       "-show-kernel",
       "-gpu",
       emulatorGpuFlag,
+      // All instances of a managed device are restored from the same read-only snapshot. With
+      // netsim Wi-Fi (the default in recent emulator versions), they all join one shared virtual
+      // Wi-Fi network with the same guest Wi-Fi state, and only the first instance gets Wi-Fi
+      // connectivity. Keep each instance on its own private network instead.
+      "-feature",
+      "-WiFiPacketStream",
       *additionalParams.toTypedArray(),
     )
   }
