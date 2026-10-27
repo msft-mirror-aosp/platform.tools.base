@@ -62,6 +62,7 @@ import com.android.build.gradle.internal.testing.COVERAGE_TYPE_KEY
 import com.android.build.gradle.internal.testing.INSTRUMENTATION_ARGS_KEY
 import com.android.build.gradle.internal.testing.INSTRUMENTATION_RUNNER_CLASS_KEY
 import com.android.build.gradle.internal.testing.INSTRUMENTATION_TARGET_PACKAGE_ID_KEY
+import com.android.build.gradle.internal.testing.TEST_COVERAGE_ENABLED_KEY
 import com.android.build.gradle.internal.testing.TEST_PACKAGE_ID_KEY
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.UNINSTALL_AFTER_TESTS_KEY
@@ -1013,10 +1014,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       // Only a suite that collects coverage carries the on-device coverage agent in its test APK, so only such a suite asks the
       // engine to attach it.
       val onDeviceCoverage =
-        coverageEnabledForTask && creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
+        testApkSource != null &&
+          coverageEnabledForTask &&
+          creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
 
       if (testApkSource != null) {
         task.engineInputProperties.put(UNINSTALL_AFTER_TESTS_KEY, "true")
+        task.engineInputProperties.put(TEST_COVERAGE_ENABLED_KEY, coverageEnabledForTask.toString())
       }
 
       task.engineInputProperties.putAll(junitEngineSpec.inputProperties)
@@ -1074,16 +1078,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             }
         task.engineInputProperties.putAll(
           mergedArgsProvider.map { merged -> if (merged.isNotBlank()) mapOf(INSTRUMENTATION_ARGS_KEY to merged) else emptyMap() }
-        )
-      } else if (onDeviceCoverage) {
-        val suiteArgs = junitEngineSpec.inputProperties.getting(INSTRUMENTATION_ARGS_KEY).orElse("")
-        task.engineInputProperties.put(
-          INSTRUMENTATION_ARGS_KEY,
-          testedVariant.namespace.zip(suiteArgs) { namespace, args ->
-            val prefixArg = formatInstrumentationArgs(mapOf("com.android.tools.coverage.prefixes" to namespace.replace('.', '/')))
-            // The engine keeps the last value of a repeated key, so arguments set on the suite take precedence.
-            if (args.isBlank()) prefixArg else "$prefixArg,$args"
-          },
         )
       }
       task.engineInputProperties.disallowChanges()

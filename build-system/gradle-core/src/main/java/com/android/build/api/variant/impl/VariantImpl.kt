@@ -35,6 +35,7 @@ import com.android.build.api.variant.ExternalNativeBuild
 import com.android.build.api.variant.HasDeviceTests
 import com.android.build.api.variant.HasHostTestsBuilder
 import com.android.build.api.variant.ResValue
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.Variant
 import com.android.build.gradle.internal.DependencyConfigurator
 import com.android.build.gradle.internal.component.ApkCreationConfig
@@ -260,7 +261,11 @@ abstract class VariantImpl<DslInfoT : VariantDslInfo>(
     lazy(LazyThreadSafetyMode.NONE) { createManifestPlaceholdersCreationConfig(dslInfo.manifestPlaceholdersDslInfo?.placeholders) }
 
   override val requiresJacocoTransformation: Boolean
-    get() = (this as? HasDeviceTests)?.deviceTests?.values?.any { it.codeCoverageEnabled } ?: false
+    get() =
+      ((this as? HasDeviceTests)?.deviceTests?.values?.any { it.codeCoverageEnabled } ?: false) ||
+        ((this as? HasTestSuitesCreationConfig)?.suites?.values?.any { suite ->
+          suite.codeCoverageEnabled && suite.sources.any { it is TestSuiteSourceSet.TestApk }
+        } ?: false)
 
   override val isCoreLibraryDesugaringEnabledLintCheck: Boolean
     get() =

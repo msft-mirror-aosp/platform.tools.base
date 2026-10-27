@@ -289,6 +289,16 @@ class TestSuiteApkIntegrationTest {
     assertThat(inputs.getProperty("android-test.instrumentation-runner-class")).isEqualTo("com.example.SuiteRunner")
   }
 
+  @Test
+  fun testOfflineJacocoTransformsAppWhenDeviceSuiteEnablesCoverage() {
+    val build = rule.build {
+      androidApplication(":app") { android { testOptions.customSuites.named("customTest") { it.codeCoverage = true } } }
+    }
+
+    val result = build.executor.run(":app:assembleDebug", ":app:packageDebugCustomTest")
+    assertThat(result.didWorkTasks).contains(":app:jacocoDebug")
+  }
+
   private fun customTestApk(): File {
     val buildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val testApk = buildDir.walkTopDown().firstOrNull { it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true) }

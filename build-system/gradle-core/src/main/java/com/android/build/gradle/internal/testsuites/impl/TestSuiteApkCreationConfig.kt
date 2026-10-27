@@ -92,7 +92,7 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
     get() = true
 
   override val requiresJacocoTransformation: Boolean
-    get() = false
+    get() = testSuite.codeCoverageEnabled && mainVariant.componentType.isAar
 
   override val instrumentationCreationConfig: InstrumentationCreationConfig?
     get() = null

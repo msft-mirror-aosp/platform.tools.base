@@ -120,6 +120,16 @@ class TestSuiteOnDeviceCoverageInputsTest {
   }
 
   @Test
+  fun suiteWithOfflineCoverageEnablesDeviceCoverageWithoutAgent() {
+    rule.build.executor.with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, false).run(":app:$TEST_TASK")
+
+    val inputs = engineInputs()
+    assertThat(inputs.getProperty(COVERAGE_TYPE)).isEqualTo("NONE")
+    assertThat(inputs.getProperty("android-test.is-test-coverage-enabled")).isEqualTo("true")
+    assertThat(inputs.getProperty(INSTRUMENTATION_ARGS)).isNull()
+  }
+
+  @Test
   fun suiteForwardsCliInstrumentationArgsTestsFilterAndLeaveApksFlag() {
     val build = rule.build {
       androidApplication(":app") {

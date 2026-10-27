@@ -1534,7 +1534,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     }
   }
 
-  private fun handleJacocoDependencies(creationConfig: ComponentCreationConfig) {
+  protected fun handleJacocoDependencies(creationConfig: ComponentCreationConfig) {
     if (creationConfig is ApkCreationConfig && creationConfig.packageJacocoRuntime) {
       val jacocoAgentRuntimeDependency =
         JacocoConfigurations.getAgentRuntimeDependency(JacocoTask.getAndroidTestJacocoVersion(creationConfig))

@@ -62,6 +62,7 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     // Like the androidTest APK, a suite's test APK carries the on-device coverage agent, which the test engine attaches from it.
     // Only suites that collect coverage need it.
     if (testSuite.codeCoverageEnabled) {
+      handleJacocoDependencies(apkCreationConfig)
       handleOnTheFlyCoverageDependencies(apkCreationConfig)
     }
 
