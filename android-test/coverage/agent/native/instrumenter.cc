@@ -245,13 +245,18 @@ bool Instrumenter::InstrumentMethod(
 
   std::string_view name(ir_method->decl->name->c_str());
   const bool is_constructor = (name == "<init>");
+  // Kotlin compiles the default values of constructor parameters into a
+  // synthetic constructor that evaluates them and calls the primary one.
+  const bool is_default_arguments_constructor =
+      ConstructorAnalyzer::IsDefaultArgumentsConstructor(ir_method);
 
-  // Skip synthetic compiler-generated methods unless they contain user lambdas
-  // or Compose logic.
+  // Skip synthetic compiler-generated methods unless they contain user lambdas,
+  // Compose logic or default values.
   if (ir_method->access_flags & dex::kAccSynthetic) {
     // We allow synthetic methods if they are likely user-authored lambda bodies
     // or Compose helpers.
-    if (name.find("invoke") == std::string_view::npos &&
+    if (!is_default_arguments_constructor &&
+        name.find("invoke") == std::string_view::npos &&
         name.find("lambda") == std::string_view::npos &&
         name.find("Composable") == std::string_view::npos) {
       return false;
@@ -262,7 +267,18 @@ bool Instrumenter::InstrumentMethod(
 
   std::vector<lir::Instruction*> super_calls;
   lir::Instruction* last_super_call = nullptr;
-  if (is_constructor) {
+  if (is_default_arguments_constructor) {
+    last_super_call =
+        ConstructorAnalyzer::FindDefaultArgumentsDelegation(code_ir);
+    if (last_super_call == nullptr) {
+      Log::I(
+          "Constructor for default arguments of %s has an unexpected format. "
+          "Skipping.",
+          ir_method->decl->parent->descriptor->c_str());
+      return false;
+    }
+    super_calls.push_back(last_super_call);
+  } else if (is_constructor) {
     super_calls = ConstructorAnalyzer::FindSuperCallInstructions(code_ir, name);
     if (super_calls.empty()) {
       Log::I("Constructor %s has missing super delegation. Skipping.",
@@ -306,8 +322,17 @@ bool Instrumenter::InstrumentMethod(
   dex::u4 scratch_reg = 0;
   bool found_unused = false;
 
-  scratch_reg = RegisterScanner::FindUnusedScratchRegister(ir_method, code_ir,
-                                                           found_unused);
+  if (is_default_arguments_constructor) {
+    // Its probes all go right before its final return-void, where no register
+    // is read anymore, so v0 is free. This is intentional: all of its default
+    // values count as covered whenever it finishes.
+    // TODO: Probe each block before this(...), so that only the default values
+    // that were evaluated count as covered.
+    found_unused = true;
+  } else {
+    scratch_reg = RegisterScanner::FindUnusedScratchRegister(ir_method, code_ir,
+                                                             found_unused);
+  }
 
   // Slow Path: If no unused registers exist, we manually expand the method's
   // register frame by exactly 1 slot, allocating the absolute highest register
@@ -526,7 +551,11 @@ bool Instrumenter::InstrumentMethod(
     if (auto* last_bytecode =
             dynamic_cast<lir::Bytecode*>(block.region.last)) {
       auto flags = dex::GetFlagsFromOpcode(last_bytecode->opcode);
-      if (SyntheticFilter::IsSyntheticBranch(ir_method, block)) {
+      // TODO: Move this check into a separate filter for constructors for
+      // default arguments, like the lateinit and coroutine filters.
+      if (SyntheticFilter::IsSyntheticBranch(ir_method, block) ||
+          (is_default_arguments_constructor &&
+           (flags & (dex::kBranch | dex::kSwitch)))) {
         branch_count = 1; // Demote to sequential block flow (removes synthetic branch)
       } else if (flags & dex::kBranch) {
         if (flags & dex::kContinue) {

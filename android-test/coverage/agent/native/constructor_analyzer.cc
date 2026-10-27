@@ -16,8 +16,56 @@
 
 #include "tools/base/android-test/coverage/agent/native/constructor_analyzer.h"
 #include <cstring>
+#include "slicer/dex_format.h"
+#include "slicer/dex_leb128.h"
 
 namespace coverage {
+
+namespace {
+
+// Returns whether the debug info maps an address to a line, like an entry of
+// the LineNumberTable of a class file.
+bool HasLineNumbers(const ir::DebugInfo* debug_info) {
+  if (debug_info == nullptr || debug_info->data.size() == 0) {
+    return false;
+  }
+  const dex::u1* ptr = debug_info->data.ptr<dex::u1>();
+  for (dex::u1 opcode = *ptr++; opcode != dex::DBG_END_SEQUENCE;
+       opcode = *ptr++) {
+    switch (opcode) {
+      case dex::DBG_ADVANCE_PC:
+      case dex::DBG_END_LOCAL:
+      case dex::DBG_RESTART_LOCAL:
+      case dex::DBG_SET_FILE:
+        dex::ReadULeb128(&ptr);
+        break;
+      case dex::DBG_ADVANCE_LINE:
+        dex::ReadSLeb128(&ptr);
+        break;
+      case dex::DBG_START_LOCAL:
+        // The register, name and type.
+        for (int i = 0; i < 3; ++i) {
+          dex::ReadULeb128(&ptr);
+        }
+        break;
+      case dex::DBG_START_LOCAL_EXTENDED:
+        // The register, name, type and signature.
+        for (int i = 0; i < 4; ++i) {
+          dex::ReadULeb128(&ptr);
+        }
+        break;
+      case dex::DBG_SET_PROLOGUE_END:
+      case dex::DBG_SET_EPILOGUE_BEGIN:
+        break;
+      default:
+        // A special opcode, which emits a position: an address and its line.
+        return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace
 
 std::vector<lir::Instruction*> ConstructorAnalyzer::FindSuperCallInstructions(
     lir::CodeIr& code_ir, std::string_view method_name) {
@@ -86,6 +134,62 @@ std::vector<lir::Instruction*> ConstructorAnalyzer::FindSuperCallInstructions(
   }
 
   return super_calls;
+}
+
+bool ConstructorAnalyzer::IsDefaultArgumentsConstructor(
+    const ir::EncodedMethod* ir_method) {
+  if (ir_method == nullptr || ir_method->decl == nullptr ||
+      (ir_method->access_flags & dex::kAccSynthetic) == 0 ||
+      std::strcmp(ir_method->decl->name->c_str(), "<init>") != 0 ||
+      ir_method->decl->prototype == nullptr) {
+    return false;
+  }
+  // Its parameters end with the int mask of the default values to use, then
+  // the marker.
+  const auto* params = ir_method->decl->prototype->param_types;
+  if (params == nullptr || params->types.size() < 2) {
+    return false;
+  }
+  const auto& types = params->types;
+  if (std::strcmp(types[types.size() - 2]->descriptor->c_str(), "I") != 0 ||
+      std::strcmp(types.back()->descriptor->c_str(),
+                  "Lkotlin/jvm/internal/DefaultConstructorMarker;") != 0) {
+    return false;
+  }
+  // Kotlin's synthetic accessors of private constructors end with the marker
+  // too, and sometimes with an int before it. Unlike the constructor for
+  // default arguments, they have no line numbers, which is also why JaCoCo
+  // leaves them out.
+  return ir_method->code != nullptr &&
+         HasLineNumbers(ir_method->code->debug_info);
+}
+
+lir::Instruction* ConstructorAnalyzer::FindDefaultArgumentsDelegation(
+    lir::CodeIr& code_ir) {
+  lir::Bytecode* last = nullptr;
+  lir::Bytecode* second_to_last = nullptr;
+  for (auto* instr : code_ir.instructions) {
+    if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
+      second_to_last = last;
+      last = bytecode;
+    }
+  }
+  if (last == nullptr || last->opcode != dex::OP_RETURN_VOID ||
+      second_to_last == nullptr ||
+      (second_to_last->opcode != dex::OP_INVOKE_DIRECT &&
+       second_to_last->opcode != dex::OP_INVOKE_DIRECT_RANGE) ||
+      second_to_last->operands.size() < 2) {
+    return nullptr;
+  }
+  auto* callee = dynamic_cast<lir::Method*>(second_to_last->operands[1]);
+  const auto* constructor = code_ir.ir_method->decl;
+  if (callee == nullptr ||
+      std::strcmp(callee->ir_method->name->c_str(), "<init>") != 0 ||
+      std::strcmp(callee->ir_method->parent->descriptor->c_str(),
+                  constructor->parent->descriptor->c_str()) != 0) {
+    return nullptr;
+  }
+  return second_to_last;
 }
 
 }  // namespace coverage

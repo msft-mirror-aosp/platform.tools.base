@@ -77,7 +77,8 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
           }
-          // A device test suite that only covers the "subtract" branch of AppKotlinClass.calculate().
+          // A device test suite that only covers the "subtract" branch of AppKotlinClass.calculate(), and creates an Item with its
+          // default id.
           testOptions.customSuites.create(DEVICE_SUITE) {
             it.codeCoverage = true
             it.testApk {
@@ -138,6 +139,40 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
               @Test
               fun subtract() {
                   assertEquals(1, AppKotlinClass().calculate(3, 2, "subtract"))
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        // Kotlin compiles the default id into a synthetic constructor for default arguments.
+        files.add(
+          "src/main/java/com/example/app/Item.kt",
+          """
+          package com.example.app
+
+          import java.util.UUID
+
+          class Item(val id: String = UUID.randomUUID().toString(), val amount: Int)
+          """
+            .trimIndent(),
+        )
+        files.add(
+          "src/$DEVICE_SUITE/kotlin/com/example/app/ItemTest.kt",
+          """
+          package com.example.app
+
+          import androidx.test.ext.junit.runners.AndroidJUnit4
+          import org.junit.Assert.assertEquals
+          import org.junit.Test
+          import org.junit.runner.RunWith
+
+          @RunWith(AndroidJUnit4::class)
+          class ItemTest {
+              @Test
+              fun defaultId() {
+                  val item = Item(amount = 5)
+                  assertEquals(5, item.amount)
+                  assertEquals(36, item.id.length)
               }
           }
           """
@@ -210,6 +245,11 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(subtractLine.coveredInstructions(DEVICE_SUITE)).isGreaterThan(0)
     assertThat(subtractLine.coveredInstructions("Aggregated")).isGreaterThan(0)
 
+    // The device suite runs the synthetic constructor of Item for its default id, which the agent instruments too, so "Aggregated" doesn't
+    // count it as missed.
+    val item = app.packages.flatMap { it.classes }.single { it.name == "Item" }
+    assertThat(item.missedInstructions("Aggregated")).isEqualTo(0)
+
     // The suite's own report, and androidTest's on the built-in test platform, are built from the on-device data too.
     val appBuildDir = rule.build.subProject(":app").buildDir.toFile()
     assertThat(FileUtils.join(appBuildDir, "reports", "coverage", DEVICE_SUITE, "index.html")).exists()
@@ -254,6 +294,14 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
   private fun ModuleReport.coveredInstructions(testSuite: String): Int =
     testSuiteCoverages.single { it.name == testSuite }.variantCoverages.single { it.name == "debug" }.instruction.covered
 
+  private fun ClassReport.missedInstructions(testSuite: String): Int =
+    testSuiteCoverages
+      .single { it.name == testSuite }
+      .variantCoverages
+      .single { it.name == "debug" }
+      .instruction
+      .let { it.total - it.covered }
+
   private fun LineCoverage.coveredInstructions(testSuite: String): Int =
     variantCoverageDetails
       .filter { it.variantName == "debug" }
@@ -271,7 +319,11 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
   data class PackageReport(val name: String, val classes: List<ClassReport>)
 
-  data class ClassReport(val name: String, val variantSourceFilePaths: List<VariantSourceFilePath>)
+  data class ClassReport(
+    val name: String,
+    val variantSourceFilePaths: List<VariantSourceFilePath>,
+    val testSuiteCoverages: List<TestSuiteReportCoverage>,
+  )
 
   data class VariantSourceFilePath(val variantName: String, val path: String)
 

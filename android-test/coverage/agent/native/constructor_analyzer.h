@@ -30,6 +30,15 @@ class ConstructorAnalyzer {
   // a constructor.
   static std::vector<lir::Instruction*> FindSuperCallInstructions(
       lir::CodeIr& code_ir, std::string_view method_name);
+
+  // Returns whether the method is a constructor that Kotlin generates for
+  // default arguments: a synthetic <init> with line numbers, whose parameters
+  // end with an int mask and a kotlin.jvm.internal.DefaultConstructorMarker.
+  static bool IsDefaultArgumentsConstructor(const ir::EncodedMethod* ir_method);
+
+  // Returns the this() call of a constructor for default arguments, or nullptr
+  // if the constructor doesn't have the exact shape that Kotlin generates.
+  static lir::Instruction* FindDefaultArgumentsDelegation(lir::CodeIr& code_ir);
 };
 
 }  // namespace coverage
