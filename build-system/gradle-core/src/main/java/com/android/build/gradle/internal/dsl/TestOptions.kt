@@ -23,6 +23,7 @@ import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.utils.updateIfChanged
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.TestOptions.Execution
 import com.android.builder.model.v2.ide.ProjectType
@@ -199,28 +200,41 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
         // Custom suites start with Android resources off. A suite opts in with hostJar { enableAndroidResources = true }.
         dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, false)
       }
-
-      if (dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_SCREENSHOT_TEST)) {
-        screenshotTests.configureEach { suite ->
-          this.add(
-            dslServices.newInstance(com.android.build.gradle.internal.dsl.ScreenshotAgpTestSuiteImpl::class.java, suite, dslServices)
-          )
-        }
+      if (dslServices.projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)) {
+        addSuitesFrom(screenshotTests, "screenshot", ScreenshotAgpTestSuiteImpl::class.java)
       }
-
-      if (dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_BACKUP_TEST)) {
-        backupTests.configureEach { suite ->
-          this.add(dslServices.newInstance(com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl::class.java, suite, dslServices))
-        }
+      if (dslServices.projectOptions.get(BooleanOption.ENABLE_BACKUP_TEST) && isBackupTestSupported()) {
+        addSuitesFrom(backupTests, "backup", BackupAgpTestSuiteImpl::class.java)
       }
     }
 
   @Suppress("DEPRECATION") override val customSuites: NamedDomainObjectContainer<AgpTestSuite> = suites
 
+  /** Adds an [implClass] suite for each suite of [source], unless a suite with the same name already exists. */
+  private fun <T : Any> NamedDomainObjectContainer<AgpTestSuite>.addSuitesFrom(
+    source: NamedDomainObjectContainer<T>,
+    kind: String,
+    implClass: Class<out AgpTestSuite>,
+  ) {
+    @Suppress("EagerGradleConfiguration") // Realizes registered suites so they are bridged into customSuites.
+    source.all { suite ->
+      val name = source.namer.determineName(suite)
+      if (name in names) {
+        dslServices.issueReporter.reportError(
+          IssueReporter.Type.GENERIC,
+          "Cannot add $kind test suite '$name' because a test suite with that name already exists. " +
+            "Choose a unique name for each test suite.",
+        )
+      } else {
+        add(dslServices.newInstance(implClass, suite, dslServices))
+      }
+    }
+  }
+
   private fun checkScreenshotTestEnabled() {
-    if (!dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_SCREENSHOT_TEST)) {
+    if (!dslServices.projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)) {
       dslServices.issueReporter.reportError(
-        com.android.builder.errors.IssueReporter.Type.GENERIC,
+        IssueReporter.Type.GENERIC,
         "Compose Preview Screenshot Testing is an experimental feature. " +
           "To enable it, add 'android.experimental.enableScreenshotTest=true' to your gradle.properties file.",
       )
@@ -228,14 +242,24 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
   }
 
   private fun checkBackupTestEnabled() {
-    if (!dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_BACKUP_TEST)) {
+    if (!dslServices.projectOptions.get(BooleanOption.ENABLE_BACKUP_TEST)) {
       dslServices.issueReporter.reportError(
-        com.android.builder.errors.IssueReporter.Type.GENERIC,
+        IssueReporter.Type.GENERIC,
         "Automated Backup and Restore Testing is an experimental feature. " +
           "To enable it, add 'android.experimental.enableBackupTest=true' to your gradle.properties file.",
       )
     }
+    if (!isBackupTestSupported()) {
+      dslServices.issueReporter.reportError(
+        IssueReporter.Type.GENERIC,
+        "Automated Backup and Restore Testing is only supported in application modules ('com.android.application'). " +
+          "Move this backup test suite to an application module.",
+      )
+    }
   }
+
+  /** Backup tests need an app APK under test. */
+  private fun isBackupTestSupported() = dslServices.projectType.let { it == null || it == ProjectType.APPLICATION }
 
   private fun createTargetSdkSpec(): TargetSdkSpecImpl {
     return dslServices.newDecoratedInstance(TargetSdkSpecImpl::class.java, dslServices).also { it.version = targetSdkVersion }

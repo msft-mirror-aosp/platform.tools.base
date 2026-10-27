@@ -77,6 +77,7 @@ import com.android.build.gradle.internal.core.dsl.TestedVariantDslInfo
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.DslInfoBuilder
 import com.android.build.gradle.internal.core.dsl.impl.DslInfoBuilder.Companion.getBuilder
+import com.android.build.gradle.internal.core.dsl.impl.computeName
 import com.android.build.gradle.internal.core.dsl.impl.computeSourceSetName
 import com.android.build.gradle.internal.crash.ExternalApiUsageException
 import com.android.build.gradle.internal.dependency.VariantDependenciesBuilder
@@ -102,6 +103,7 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.createSigningOverride
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
+import com.android.build.gradle.internal.testsuites.DEFAULT_RESERVED_SUITE_NAMES
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
@@ -222,10 +224,15 @@ class VariantManager<
 
   /** Create all variants. */
   private fun computeVariants() {
-    validateTestSuiteSourceSetNames(dslExtension.testOptions.customSuites)
     val flavorDimensionList: List<String> = dslExtension.flavorDimensions
     val computer = DimensionCombinator(variantInputModel, projectServices.issueReporter, flavorDimensionList)
     val variants = computer.computeVariants()
+    validateTestSuiteSourceSetNames(
+      suites = dslExtension.testOptions.customSuites,
+      issueReporter = projectServices.issueReporter,
+      reservedNames = computeReservedTestSuiteNames(variants),
+      projectDirectory = project.projectDir,
+    )
 
     val globalConfig = GlobalVariantBuilderConfigImpl(dslExtension)
 
@@ -250,6 +257,31 @@ class VariantManager<
     // before any onVariants to avoid cross access between the two.
     // This means changing the way to run beforeVariants vs onVariants.
     variantBuilderServices.lockValues()
+  }
+
+  /** Names of the build type, flavor, variant and test component source sets, which test suites must not reuse. */
+  private fun computeReservedTestSuiteNames(variants: List<DimensionCombination>): Set<String> {
+    val testComponentTypes = buildList {
+      add(ComponentTypeImpl.UNIT_TEST)
+      add(ComponentTypeImpl.ANDROID_TEST)
+      add(ComponentTypeImpl.TEST_FIXTURES)
+      if (project.plugins.hasPlugin("com.android.compose.screenshot")) add(ComponentTypeImpl.SCREENSHOT_TEST)
+    }
+    val baseNames = buildSet {
+      addAll(variantInputModel.buildTypes.keys)
+      addAll(variantInputModel.productFlavors.keys)
+      for (variant in variants) {
+        add(computeName(variant, variantFactory.componentType) { flavorName -> if (flavorName.isNotEmpty()) add(flavorName) })
+      }
+    }
+    return buildSet {
+      addAll(DEFAULT_RESERVED_SUITE_NAMES)
+      testComponentTypes.forEach { add(it.prefix) }
+      for (baseName in baseNames) {
+        add(baseName)
+        testComponentTypes.forEach { add(computeSourceSetName(baseName, it)) }
+      }
+    }
   }
 
   private val testBuildTypeData: BuildTypeData<BuildType>?

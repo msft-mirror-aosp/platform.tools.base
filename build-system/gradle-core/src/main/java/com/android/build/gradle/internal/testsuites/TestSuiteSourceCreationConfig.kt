@@ -16,11 +16,22 @@
 
 package com.android.build.gradle.internal.testsuites
 
+import com.android.SdkConstants.ANDROID_MANIFEST_XML
+import com.android.SdkConstants.FD_AIDL
+import com.android.SdkConstants.FD_ASSETS
+import com.android.SdkConstants.FD_JAVA
+import com.android.SdkConstants.FD_JAVA_RES
+import com.android.SdkConstants.FD_RES
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
+import com.android.build.gradle.internal.dsl.TestSuiteAssetsSpecImpl
+import com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl
+import com.android.build.gradle.internal.dsl.TestSuiteTestApkSpecImpl
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.builder.errors.IssueReporter
+import java.io.File
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.NamedDomainObjectContainer
 
@@ -48,23 +59,69 @@ interface TestSuiteSourceCreationConfig {
   ): TestSuiteSourceSet
 }
 
+internal val DEFAULT_RESERVED_SUITE_NAMES: Set<String> = setOf("main", "test", "unitTest", "androidTest", "testFixtures")
+
+/** Source folders and files under `src/<suite>/` that single-source `hostJar` or `testApk` suites read. */
+private val SINGLE_SOURCE_SUITE_ENTRIES: Set<String> =
+  setOf(FD_JAVA, "kotlin", FD_RES, FD_JAVA_RES, FD_ASSETS, FD_AIDL, ANDROID_MANIFEST_XML)
+
+private fun TestSuiteSourceCreationConfig.mixedSourceDirName(): String? =
+  when (this) {
+    is TestSuiteHostJarSpecImpl -> "test"
+    is TestSuiteTestApkSpecImpl -> "androidTest"
+    is TestSuiteAssetsSpecImpl -> "assetsTest"
+    else -> null
+  }
+
+private fun File.isHiddenEntry(): Boolean = isHidden || name.startsWith(".")
+
+private fun isMisplacedMixedSuiteEntry(entry: File, expectedDirNames: Set<String>, hasAssets: Boolean): Boolean {
+  if (entry.isHiddenEntry()) return false
+  if (entry.isDirectory && entry.name in expectedDirNames) return false
+  val isDocFile =
+    entry.isFile &&
+      (entry.name == "OWNERS" || entry.name.equals("README", ignoreCase = true) || entry.name.startsWith("README.", ignoreCase = true))
+  val matchesSingleSourceLayout = entry.name in SINGLE_SOURCE_SUITE_ENTRIES || (hasAssets && !isDocFile)
+  if (!matchesSingleSourceLayout) return false
+  return entry.isFile || entry.walkTopDown().onEnter { !it.isHiddenEntry() }.any { it.isFile && !it.isHiddenEntry() }
+}
+
 /**
- * Validates that no generated mixed test suite source set name (`<suite>Test`, `<suite>AndroidTest`, `<suite>Assets`) collides with another
- * test suite name or another mixed test suite's source set name.
+ * Validates test suite names, generated mixed source set names (`<suite>Test`, `<suite>AndroidTest`, `<suite>Assets`), and mixed source
+ * directory layout.
  *
- * @throws InvalidUserDataException if a naming collision is detected.
+ * @throws InvalidUserDataException if a reserved name or source set name collision is detected.
  */
-internal fun validateTestSuiteSourceSetNames(suites: NamedDomainObjectContainer<AgpTestSuite>) {
-  if (suites.size <= 1) return
+internal fun validateTestSuiteSourceSetNames(
+  suites: NamedDomainObjectContainer<AgpTestSuite>,
+  issueReporter: IssueReporter,
+  reservedNames: Set<String> = DEFAULT_RESERVED_SUITE_NAMES,
+  projectDirectory: File? = null,
+) {
+  if (suites.isEmpty()) return
   val suiteNames = suites.names
   val mixedSourceSetToSuite = mutableMapOf<String, String>()
 
   for (suite in suites) {
+    if (suite.name in reservedNames) {
+      throw InvalidUserDataException(
+        "Test suite name '${suite.name}' is reserved for Android source sets or built-in test components. " +
+          "Choose a distinct name for the test suite."
+      )
+    }
+
     if (suite !is AgpTestSuiteImpl) continue
     val sources = suite.getSourceContainers()
     if (sources.size <= 1) continue
+
     for (source in sources) {
       val sourceSetName = source.sourceSetName(isMixed = true)
+      if (sourceSetName in reservedNames) {
+        throw InvalidUserDataException(
+          "Source set '$sourceSetName' of mixed test suite '${suite.name}' collides with reserved source set '$sourceSetName'. " +
+            "Rename test suite '${suite.name}' to avoid source set and task name collisions."
+        )
+      }
       if (sourceSetName in suiteNames) {
         throw InvalidUserDataException(
           "Test suite '$sourceSetName' collides with source set '$sourceSetName' of mixed test suite '${suite.name}'. " +
@@ -77,6 +134,26 @@ internal fun validateTestSuiteSourceSetNames(suites: NamedDomainObjectContainer<
         throw InvalidUserDataException(
           "Source set '$sourceSetName' of mixed test suite '${suite.name}' collides with source set '$sourceSetName' " +
             "of mixed test suite '$existingSuiteName'. Please rename one of the test suites to avoid source set and task name collisions."
+        )
+      }
+    }
+
+    if (projectDirectory != null) {
+      val expectedDirNames = sources.mapNotNullTo(linkedSetOf()) { it.mixedSourceDirName() }
+      val hasAssets = sources.any { it is TestSuiteAssetsSpecImpl }
+      val misplacedEntries =
+        File(projectDirectory, "src/${suite.name}")
+          .listFiles()
+          .orEmpty()
+          .filter { entry -> isMisplacedMixedSuiteEntry(entry, expectedDirNames, hasAssets) }
+          .map { it.name }
+          .sorted()
+      if (misplacedEntries.isNotEmpty()) {
+        val expectedDirs = expectedDirNames.map { "'src/${suite.name}/$it/'" }
+        issueReporter.reportError(
+          IssueReporter.Type.GENERIC,
+          "Mixed test suite '${suite.name}' declares multiple source types, so files directly under 'src/${suite.name}/' " +
+            "(found: ${misplacedEntries.joinToString()}) are ignored. Move them into ${expectedDirs.joinToString(" or ")}.",
         )
       }
     }

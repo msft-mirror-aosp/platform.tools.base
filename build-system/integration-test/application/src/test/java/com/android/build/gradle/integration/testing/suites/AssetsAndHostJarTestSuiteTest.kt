@@ -193,4 +193,21 @@ class AssetsAndHostJarTestSuiteTest {
         "Please rename one of the test suites to avoid source set and task name collisions."
     )
   }
+
+  @Test
+  fun testMixedSuiteWithStrayRootSourceFolderFails() {
+    val project = rule.build {
+      androidApplication {
+        files {
+          add("src/first/java/Stray.java", "public class Stray {}")
+          add("src/first/simple.journey.xml", "<journey/>")
+        }
+      }
+    }
+
+    val result = project.executor.expectFailure().run(":app:tasks")
+    result.assertErrorContains("Mixed test suite 'first' declares multiple source types")
+    result.assertErrorContains("files directly under 'src/first/' (found: java, simple.journey.xml) are ignored")
+    result.assertErrorContains("Move them into 'src/first/assetsTest/' or 'src/first/test/'.")
+  }
 }

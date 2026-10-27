@@ -21,6 +21,7 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl
+import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.services.VariantServicesImpl
 import com.android.build.gradle.internal.services.createDslServices
@@ -29,6 +30,7 @@ import com.android.build.gradle.internal.testsuites.validateTestSuiteSourceSetNa
 import com.google.common.truth.Truth
 import kotlin.test.assertFailsWith
 import org.gradle.api.InvalidUserDataException
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.testfixtures.ProjectBuilder
@@ -60,6 +62,20 @@ class HostJarTestSuiteSourceSetTest {
   }
 
   private lateinit var includeAndroidResources: Property<Boolean>
+
+  private val issueReporter = FakeSyncIssueReporter()
+
+  private fun suitesContainer(configure: NamedDomainObjectContainer<AgpTestSuite>.() -> Unit): NamedDomainObjectContainer<AgpTestSuite> {
+    val dslServices = createDslServices(createProjectServices(project))
+    return dslServices
+      .polymorphicDomainObjectContainer(AgpTestSuite::class.java)
+      .apply {
+        registerFactory(AgpTestSuite::class.java) { name ->
+          dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, false)
+        }
+      }
+      .apply(configure)
+  }
 
   @Test
   fun testKotlinDisabled() {
@@ -186,26 +202,16 @@ class HostJarTestSuiteSourceSetTest {
 
   @Test
   fun testValidateTestSuiteSourceSetNamesThrowsOnCollisions() {
-    val dslServices = createDslServices(createProjectServices(project))
-    fun suitesContainer(configure: org.gradle.api.NamedDomainObjectContainer<AgpTestSuite>.() -> Unit) =
-      dslServices
-        .polymorphicDomainObjectContainer(AgpTestSuite::class.java)
-        .apply {
-          registerFactory(AgpTestSuite::class.java) { name ->
-            dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, false)
-          }
-        }
-        .apply(configure)
-
     // Non-colliding suites (empty, single, multiple with mixed) should succeed without error
-    validateTestSuiteSourceSetNames(suitesContainer {})
+    validateTestSuiteSourceSetNames(suitesContainer {}, issueReporter)
     validateTestSuiteSourceSetNames(
       suitesContainer {
         create("onlySuite") {
           it.hostJar {}
           it.assets {}
         }
-      }
+      },
+      issueReporter,
     )
     validateTestSuiteSourceSetNames(
       suitesContainer {
@@ -216,7 +222,8 @@ class HostJarTestSuiteSourceSetTest {
           it.testApk {}
           it.assets {}
         }
-      }
+      },
+      issueReporter,
     )
 
     // Single-source hostJar colliding with mixed suite's hostJar source set (regardless of declaration order)
@@ -232,7 +239,8 @@ class HostJarTestSuiteSourceSetTest {
               it.hostJar {}
               it.assets {}
             }
-          }
+          },
+          issueReporter,
         )
       }
     val hostJarCollision2 =
@@ -244,7 +252,8 @@ class HostJarTestSuiteSourceSetTest {
               it.assets {}
             }
             create("testSuiteTest") { it.hostJar {} }
-          }
+          },
+          issueReporter,
         )
       }
     Truth.assertThat(hostJarCollision1.message).isEqualTo(expectedHostJarMsg)
@@ -260,7 +269,8 @@ class HostJarTestSuiteSourceSetTest {
               it.hostJar {}
               it.testApk {}
             }
-          }
+          },
+          issueReporter,
         )
       }
     Truth.assertThat(testApkCollision.message)
@@ -280,7 +290,8 @@ class HostJarTestSuiteSourceSetTest {
               it.hostJar {}
               it.assets {}
             }
-          }
+          },
+          issueReporter,
         )
       }
     Truth.assertThat(assetsCollision.message)
@@ -299,7 +310,8 @@ class HostJarTestSuiteSourceSetTest {
               it.hostJar {}
               it.assets {}
             }
-          }
+          },
+          issueReporter,
         )
       }
     Truth.assertThat(crossTypeCollision.message)
@@ -322,7 +334,8 @@ class HostJarTestSuiteSourceSetTest {
               it.testApk {}
               it.assets {}
             }
-          }
+          },
+          issueReporter,
         )
       }
     Truth.assertThat(mixedToMixedCollision.message)
@@ -346,7 +359,7 @@ class HostJarTestSuiteSourceSetTest {
 
     val lazyCollision =
       assertFailsWith<InvalidUserDataException> {
-        validateTestSuiteSourceSetNames(lazyContainer)
+        validateTestSuiteSourceSetNames(lazyContainer, issueReporter)
       }
     Truth.assertThat(lazyRealized).isTrue()
     Truth.assertThat(lazyCollision.message)
@@ -377,5 +390,129 @@ class HostJarTestSuiteSourceSetTest {
     Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/test/java"), dir.dir("java"))
     Truth.assertThat(sourceSet.resources.all.get())
       .containsExactly(project.layout.projectDirectory.dir("src/test/resources"), dir.dir("resources"))
+  }
+
+  @Test
+  fun testValidateTestSuiteSourceSetNamesRejectsReservedNames() {
+    val reserved = setOf("main", "test", "unitTest", "androidTest", "testFixtures", "debug")
+    for (reservedName in reserved) {
+      val ex =
+        assertFailsWith<InvalidUserDataException> {
+          validateTestSuiteSourceSetNames(
+            suitesContainer { create(reservedName) { it.hostJar {} } },
+            issueReporter,
+            reservedNames = reserved,
+          )
+        }
+      Truth.assertThat(ex.message)
+        .isEqualTo(
+          "Test suite name '$reservedName' is reserved for Android source sets or built-in test components. " +
+            "Choose a distinct name for the test suite."
+        )
+    }
+
+    val mixedEx =
+      assertFailsWith<InvalidUserDataException> {
+        validateTestSuiteSourceSetNames(
+          suitesContainer {
+            create("unit") {
+              it.hostJar {}
+              it.assets {}
+            }
+          },
+          issueReporter,
+          reservedNames = reserved,
+        )
+      }
+    Truth.assertThat(mixedEx.message)
+      .isEqualTo(
+        "Source set 'unitTest' of mixed test suite 'unit' collides with reserved source set 'unitTest'. " +
+          "Rename test suite 'unit' to avoid source set and task name collisions."
+      )
+  }
+
+  @Test
+  fun testValidateTestSuiteSourceSetNamesRejectsMisplacedFilesInMixedSuite() {
+    val container = suitesContainer {
+      create("mixedSuite") {
+        it.hostJar {}
+        it.testApk {}
+      }
+    }
+
+    val projectDir = project.projectDir
+    projectDir.resolve("src/mixedSuite/test/java/HostTest.kt").apply {
+      parentFile.mkdirs()
+      writeText("class HostTest")
+    }
+    projectDir.resolve("src/mixedSuite/androidTest/java/DeviceTest.kt").apply {
+      parentFile.mkdirs()
+      writeText("class DeviceTest")
+    }
+    projectDir.resolve("src/mixedSuite/OWNERS").writeText("owner@example.com")
+    projectDir.resolve("src/mixedSuite/README.md").writeText("Mixed suite")
+    validateTestSuiteSourceSetNames(container, issueReporter, projectDirectory = projectDir)
+    Truth.assertThat(issueReporter.errors).isEmpty()
+
+    val strayFile = projectDir.resolve("src/mixedSuite/java/StrayTest.kt")
+    strayFile.parentFile.mkdirs()
+    strayFile.writeText("class StrayTest")
+
+    validateTestSuiteSourceSetNames(container, issueReporter, projectDirectory = projectDir)
+    Truth.assertThat(issueReporter.errors)
+      .containsExactly(
+        "Mixed test suite 'mixedSuite' declares multiple source types, so files directly under 'src/mixedSuite/' " +
+          "(found: java) are ignored. Move them into 'src/mixedSuite/test/' or 'src/mixedSuite/androidTest/'."
+      )
+  }
+
+  @Test
+  fun testValidateTestSuiteSourceSetNamesRejectsLooseAssetsInMixedSuite() {
+    val container = suitesContainer {
+      create("journeys") {
+        it.assets {}
+        it.hostJar {}
+      }
+    }
+
+    val projectDir = project.projectDir
+    projectDir.resolve("src/journeys/assetsTest/ok.journey.xml").apply {
+      parentFile.mkdirs()
+      writeText("<journey/>")
+    }
+    projectDir.resolve("src/journeys/test/java/HostTest.kt").apply {
+      parentFile.mkdirs()
+      writeText("class HostTest")
+    }
+    projectDir.resolve("src/journeys/OWNERS").writeText("owner@example.com")
+    projectDir.resolve("src/journeys/README.md").writeText("Journeys suite")
+    projectDir.resolve("src/journeys/.gitignore").writeText("*.tmp")
+    projectDir.resolve("src/journeys/emptyDir").mkdirs()
+    projectDir.resolve("src/journeys/sub/.DS_Store").apply {
+      parentFile.mkdirs()
+      writeText("")
+    }
+
+    validateTestSuiteSourceSetNames(container, issueReporter, projectDirectory = projectDir)
+    Truth.assertThat(issueReporter.errors).isEmpty()
+
+    projectDir.resolve("src/journeys/simple.journey.xml").writeText("<journey/>")
+    projectDir.resolve("src/journeys/readme_flow.journey.xml").writeText("<journey/>")
+    projectDir.resolve("src/journeys/auth/login.journey.xml").apply {
+      parentFile.mkdirs()
+      writeText("<journey/>")
+    }
+    projectDir.resolve("src/journeys/androidTest/stray.journey.xml").apply {
+      parentFile.mkdirs()
+      writeText("<journey/>")
+    }
+
+    validateTestSuiteSourceSetNames(container, issueReporter, projectDirectory = projectDir)
+    Truth.assertThat(issueReporter.errors)
+      .containsExactly(
+        "Mixed test suite 'journeys' declares multiple source types, so files directly under 'src/journeys/' " +
+          "(found: androidTest, auth, readme_flow.journey.xml, simple.journey.xml) are ignored. " +
+          "Move them into 'src/journeys/assetsTest/' or 'src/journeys/test/'."
+      )
   }
 }

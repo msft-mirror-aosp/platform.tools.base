@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.services.createProjectServices
 import com.android.build.gradle.options.ProjectOptions
+import com.android.builder.model.v2.ide.ProjectType
 import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -119,6 +120,18 @@ class TestOptionsTest {
   }
 
   @Test
+  fun testRegisteredScreenshotSuiteIsBridged() {
+    val providerFactory =
+      FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of("android.experimental.enableScreenshotTest", "true"))
+    val customDslServices = createDslServices(projectServices = createProjectServices(projectOptions = ProjectOptions(providerFactory)))
+
+    val wrapper = customDslServices.newDecoratedInstance(TestOptionsWrapper::class.java, customDslServices)
+    wrapper.testOptions { screenshotTests.register("lazySuite") }
+
+    assertThat(wrapper.testOptions.customSuites.getByName("lazySuite")).isInstanceOf(ScreenshotAgpTestSuiteImpl::class.java)
+  }
+
+  @Test
   fun testBackupTestDisabledByFlag() {
     val wrapper = dslServices.newDecoratedInstance(TestOptionsWrapper::class.java, dslServices)
     wrapper.testOptions {
@@ -161,6 +174,54 @@ class TestOptionsTest {
     val suite = wrapper.testOptions.backupTests.getByName("myBackupTest")
     assertThat(suite.backupTestLibraryVersion).isEqualTo("0.0.1-dev")
     assertThat(suite.targetVariants).containsExactly("debug")
+    assertThat(wrapper.testOptions.customSuites.getByName("myBackupTest")).isInstanceOf(BackupAgpTestSuiteImpl::class.java)
+  }
+
+  @Test
+  fun testBackupTestRejectedInLibraryModule() {
+    val providerFactory = FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of("android.experimental.enableBackupTest", "true"))
+    val projectServices = createProjectServices(projectOptions = ProjectOptions(providerFactory))
+    val libraryDslServices = createDslServices(projectServices = projectServices, projectType = ProjectType.LIBRARY)
+
+    val wrapper = libraryDslServices.newDecoratedInstance(TestOptionsWrapper::class.java, libraryDslServices)
+    wrapper.testOptions { backupTests.create("myBackupTest") {} }
+
+    val reporter = libraryDslServices.issueReporter as FakeSyncIssueReporter
+    assertThat(reporter.errors).hasSize(1)
+    assertThat(reporter.errors.single())
+      .isEqualTo(
+        "Automated Backup and Restore Testing is only supported in application modules ('com.android.application'). " +
+          "Move this backup test suite to an application module."
+      )
+    assertThat(wrapper.testOptions.customSuites.names).isEmpty()
+  }
+
+  @Test
+  fun testCrossContainerDuplicateSuiteNamesReportError() {
+    val providerFactory =
+      FakeProviderFactory(
+        FakeProviderFactory.factory,
+        ImmutableMap.of("android.experimental.enableScreenshotTest", "true", "android.experimental.enableBackupTest", "true"),
+      )
+    val projectServices = createProjectServices(projectOptions = ProjectOptions(providerFactory))
+    val appDslServices = createDslServices(projectServices = projectServices, projectType = ProjectType.APPLICATION)
+
+    val wrapper = appDslServices.newDecoratedInstance(TestOptionsWrapper::class.java, appDslServices)
+    wrapper.testOptions {
+      customSuites.create("dupSuite") {}
+      screenshotTests.create("dupSuite") {}
+      backupTests.create("dupSuite") {}
+    }
+
+    val reporter = appDslServices.issueReporter as FakeSyncIssueReporter
+    assertThat(reporter.errors)
+      .containsExactly(
+        "Cannot add screenshot test suite 'dupSuite' because a test suite with that name already exists. " +
+          "Choose a unique name for each test suite.",
+        "Cannot add backup test suite 'dupSuite' because a test suite with that name already exists. " +
+          "Choose a unique name for each test suite.",
+      )
+    assertThat(wrapper.testOptions.customSuites.single()).isInstanceOf(AgpTestSuiteImpl::class.java)
   }
 
   @Test
