@@ -35,8 +35,4 @@ data class TestSuiteArtifactImpl(
   companion object {
     @JvmStatic private val serialVersionUID: Long = 2L
   }
-
-  @Deprecated("Was never used, removed in AGP 8.3")
-  override val modelSyncFiles: Collection<Void>
-    get() = emptyList()
 }

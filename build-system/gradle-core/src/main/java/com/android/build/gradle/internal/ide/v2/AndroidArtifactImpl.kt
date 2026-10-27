@@ -24,7 +24,6 @@ import com.android.builder.model.v2.ide.CodeShrinker
 import com.android.builder.model.v2.ide.TestInfo
 import java.io.File
 import java.io.Serializable
-import java.util.Collections
 
 /** Implementation of [AndroidArtifact] for serialization via the Tooling API. */
 data class AndroidArtifactImpl(
@@ -54,10 +53,6 @@ data class AndroidArtifactImpl(
   override val mappingR8TextFile: File?,
   override val mappingR8PartitionFile: File?,
 ) : AndroidArtifact, Serializable {
-
-  @Deprecated("Was never used, removed in AGP 8.3")
-  override val modelSyncFiles: Collection<Void>
-    get() = Collections.emptyList()
 
   companion object {
     @JvmStatic private val serialVersionUID: Long = 2L
