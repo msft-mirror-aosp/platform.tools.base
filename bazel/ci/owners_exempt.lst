@@ -4843,8 +4843,6 @@ tools/base/bazel/src/com/android/tools/utils/WorkspaceUtils.java
 tools/base/bazel/src/com/android/tools/utils/Zipper.java
 tools/base/bazel/src/com/intellij/util/graph/GraphGenerator.java
 tools/base/bazel/test/NoOpTest.java
-tools/base/bazel/test/gradle/library/src/androidTest/java/com/example/mylibrary/ExampleInstrumentedTest.java
-tools/base/bazel/test/gradle/library/src/test/java/com/example/mylibrary/ExampleUnitTest.java
 tools/base/bazel/test/iml_module/friends/src/Impl.kt
 tools/base/bazel/test/iml_module/friends/testSrc/Test.kt
 tools/base/bazel/test/iml_to_bazel/compile_after_runtime/src/Dummy.java
