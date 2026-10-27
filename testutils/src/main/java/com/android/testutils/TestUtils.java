@@ -99,7 +99,7 @@ public class TestUtils {
      * <p>If changing this value, also update
      * //tools/base/build-system:android_platform_for_agp_unit_tests
      */
-    public static final int ANDROID_PLATFORM_FOR_AGP_UNIT_TESTS = 35;
+    public static final int ANDROID_PLATFORM_FOR_AGP_UNIT_TESTS = 36;
 
     /**
      * Unix file-mode mask indicating that the file is executable by owner, group, and other.

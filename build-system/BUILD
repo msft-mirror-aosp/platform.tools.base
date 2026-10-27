@@ -950,7 +950,7 @@ gradle_test(
 # tools/base/testutils/src/main/java/com/android/testutils/TestUtils.ANDROID_PLATFORM_FOR_AGP_UNIT_TESTS
 filegroup(
     name = "android_platform_for_agp_unit_tests",
-    srcs = ["//prebuilts/studio/sdk:platforms/android-35"],
+    srcs = ["//prebuilts/studio/sdk:platforms/android-36"],
     visibility = ["//visibility:public"],
 )
 
