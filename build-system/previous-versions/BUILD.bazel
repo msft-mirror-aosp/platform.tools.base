@@ -107,6 +107,10 @@ maven_repository(
 
 #keep sorted
 AGP_8_13_0_ARTIFACTS = [
+    "@maven//:androidx.databinding.databinding-adapters_8.13.0",
+    "@maven//:androidx.databinding.databinding-ktx_8.13.0",
+    "@maven//:androidx.databinding.databinding-runtime_8.13.0",
+    "@maven//:androidx.databinding.viewbinding_8.13.0",
     "@maven//:com.android.application.com.android.application.gradle.plugin_8.13.0",
     "@maven//:com.android.databinding.adapters_8.13.0",
     "@maven//:com.android.databinding.viewbinding_8.13.0",
