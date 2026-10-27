@@ -27,7 +27,6 @@ import com.android.build.gradle.internal.services.VariantBuilderServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.model.ObjectFactory
@@ -46,8 +45,6 @@ internal constructor(
 
   companion object {
 
-    val flagChecked = AtomicBoolean(false)
-
     /**
      * Create the list of test suites for this component, the list is driven by the passed [dslDefinedTestSuites] which is the list of test
      * suites targets implicitly or explicitly defined by the Component type and its DSL.
@@ -60,7 +57,8 @@ internal constructor(
 
       if (dslDefinedTestSuites.isEmpty()) return mapOf()
 
-      if (!flagChecked.getAndSet(true)) {
+      if (!variantBuilderServices.testSuiteSupportChecked) {
+        variantBuilderServices.testSuiteSupportChecked = true
         val unstableNotice = "*Important* Test suite support is experimental and subject to change\n"
         if (variantBuilderServices.projectOptions[BooleanOption.TEST_SUITE_SUPPORT]) {
           variantBuilderServices.issueReporter.reportWarning(IssueReporter.Type.TEST_SUITE_SUPPORT_EXPERIMENTAL, unstableNotice)

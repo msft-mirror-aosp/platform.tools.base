@@ -41,6 +41,9 @@ interface VariantBuilderServices : BaseServices {
 
   val isPostVariantApi: Boolean
 
+  /** Whether the experimental test suite support flag has been checked for this module. */
+  var testSuiteSupportChecked: Boolean
+
   /** A value wrapper */
   interface Value<T> {
     fun set(value: T)

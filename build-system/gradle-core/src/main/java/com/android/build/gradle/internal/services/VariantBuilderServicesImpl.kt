@@ -33,6 +33,8 @@ class VariantBuilderServicesImpl(projectServices: ProjectServices) : BaseService
   override val isPostVariantApi: Boolean
     get() = disallowSet
 
+  override var testSuiteSupportChecked: Boolean = false
+
   inner class ValueImpl<T>(private var value: T) : Value<T> {
 
     override fun set(value: T) {

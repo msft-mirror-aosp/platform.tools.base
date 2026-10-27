@@ -395,6 +395,14 @@ class TestSuitesTestReportTest {
     assertThat(coverageReportDir.toFile().exists()).isFalse()
   }
 
+  @Test
+  fun testMissingOptInFailsOnRepeatedBuilds() {
+    val build = rule.build { gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, false) } }
+
+    build.executor.expectFailure().run(":app:tasks").assertErrorContains(BooleanOption.TEST_SUITE_SUPPORT.propertyName)
+    build.executor.expectFailure().run(":app:tasks").assertErrorContains(BooleanOption.TEST_SUITE_SUPPORT.propertyName)
+  }
+
   private val gson = Gson()
 
   private inline fun <reified T> parseReportJs(file: File): T {
