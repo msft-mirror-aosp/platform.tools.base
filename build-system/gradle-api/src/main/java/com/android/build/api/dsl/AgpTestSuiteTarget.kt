@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 import org.gradle.api.Named
+import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.base.TestSuiteTarget
 
 /**
@@ -91,4 +92,16 @@ interface AgpTestSuiteTarget : TestSuiteTarget, Named {
    * ignored.
    */
   @get:Incubating val targetDevices: MutableList<String>
+
+  /**
+   * Configure the test tasks for this test suite target.
+   *
+   * Even for a single target, [action] may run multiple times (for example per [AgpTestSuite.targetVariants] entry, per device-allocated
+   * [Test] task, and for both test and update tasks when [AgpTestSuite.requiresUpdateTask] is enabled). Always inspect the
+   * [TestTaskContext] parameter rather than assuming a single task instance.
+   *
+   * @param action a block to configure the [Test] tasks associated with this test suite target.
+   * @see AgpTestSuite.configureTestTasks
+   */
+  @Incubating fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
 }

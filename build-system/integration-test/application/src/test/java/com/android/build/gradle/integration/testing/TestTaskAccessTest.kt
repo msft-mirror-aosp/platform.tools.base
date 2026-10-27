@@ -22,6 +22,7 @@ import com.android.build.api.variant.HasHostTests
 import com.android.build.api.variant.HasTestSuites
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
@@ -131,6 +132,54 @@ class TestTaskAccessTest {
     // Verify TestSuite
     ScannerSubject.assertThat(result.stdout).contains("SUITE_TEST_DESCRIPTION: Custom description set by configureTestTasks on TestSuite")
     ScannerSubject.assertThat(result.stdout).contains("SUITE_TEST_GROUP: Custom group set by withTestTaskProviders on TestSuite")
+  }
+
+  @Test
+  fun testTargetConfigureTestTasksInKtsBuildFile() {
+    val build = rule.build { buildFileType = BuildFileType.KTS }
+    build
+      .androidApplication()
+      .files
+      .update("build.gradle.kts")
+      .append(
+        """
+
+        android {
+          testOptions {
+            customSuites {
+              create("ktsSuite") {
+                useJunitEngine { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
+                assets {}
+                targetVariants.add("debug")
+                configureTestTasks { ctx -> systemProperty("suiteProp", ctx.targetName) }
+                targets {
+                  create("t1") {
+                    configureTestTasks { ctx -> systemProperty("t1Prop", ctx.targetName) }
+                  }
+                  register("t2") {
+                    configureTestTasks { ctx -> systemProperty("t2Prop", ctx.targetName) }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        tasks.register("printKtsSuiteProps") {
+          val t1Task = tasks.named<org.gradle.api.tasks.testing.Test>("testDebugKtsSuiteT1TestSuite")
+          val t2Task = tasks.named<org.gradle.api.tasks.testing.Test>("testDebugKtsSuiteT2TestSuite")
+          val summary = t1Task.zip(t2Task) { t1, t2 ->
+            "T1=" + t1.systemProperties.filterKeys { it.endsWith("Prop") }.toSortedMap() +
+              " T2=" + t2.systemProperties.filterKeys { it.endsWith("Prop") }.toSortedMap()
+          }
+          doLast { println(summary.get()) }
+        }
+        """
+          .trimIndent()
+      )
+
+    val result = build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF).run(":app:printKtsSuiteProps")
+    ScannerSubject.assertThat(result.stdout).contains("T1={suiteProp=t1, t1Prop=t1} T2={suiteProp=t2, t2Prop=t2}")
   }
 }
 

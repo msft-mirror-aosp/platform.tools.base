@@ -417,6 +417,7 @@ package com.android.build.api.dsl {
   }
 
   @org.gradle.api.Incubating public interface AgpTestSuiteTarget extends org.gradle.testing.base.TestSuiteTarget org.gradle.api.Named {
+    method @org.gradle.api.Incubating public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetDevices();
     property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetDevices;
   }

@@ -18,6 +18,7 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.DefaultConfig
+import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.InternalSources
 import com.android.build.api.variant.TestSuiteSourceSet
@@ -53,9 +54,12 @@ import com.android.build.gradle.internal.variant.VariantComponentInfo
 import com.android.builder.core.ComponentTypeImpl
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.gradle.api.Action
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.testing.Test as GradleTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -473,5 +477,97 @@ class TestSuiteImplTest {
 
     `when`(testedVariant.useBuiltInKotlinSupport).thenReturn(false)
     assertThat(javaCompileConfig.builtInKotlincOutput).isNull()
+  }
+
+  @Test
+  fun testTargetConfigureTestTasksScopesToMatchingTarget() {
+    val recorded = mutableListOf<String>()
+    val dslServices = createDslServices()
+    val suite = dslServices.newInstance(AgpTestSuiteImpl::class.java, "mySuite", dslServices, false)
+
+    suite.apply {
+      targets.apply {
+        create("t1") { it.configureTestTasks { ctx -> recorded.add("stale-t1:${ctx.targetName}") } }
+        remove(getByName("t1"))
+        create("t1").apply { configureTestTasks { ctx -> recorded.add("t1:${ctx.targetName}") } }
+        register("t2") { it.configureTestTasks { ctx -> recorded.add("t2:${ctx.targetName}") } }
+      }
+      configureTestTasks { ctx -> recorded.add("suite:${ctx.targetName}") }
+    }
+
+    assertThat(suite.testTaskConfigActions).hasSize(1)
+    val snapshotByTarget = suite.getTargetTestTaskConfigActions()
+    assertThat(snapshotByTarget.keys).containsExactly("t1", "t2")
+    assertThat(snapshotByTarget.getValue("t1")).hasSize(1)
+    assertThat(snapshotByTarget.getValue("t2")).hasSize(1)
+
+    val variantServices = createVariantPropertiesApiServices()
+    val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+    val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+    `when`(testSuiteBuilder.name).thenReturn("mySuite")
+    `when`(testSuiteBuilder.testSuite).thenReturn(suite)
+    `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+    `when`(junitEngineSpec.inputProperties).thenReturn(variantServices.mapPropertyOf(String::class.java, String::class.java, emptyMap()))
+
+    @Suppress("UNCHECKED_CAST")
+    val testedVariantComponent =
+      mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+
+    val testSuiteImpl =
+      TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = mock(GlobalTaskCreationConfig::class.java),
+        variantServices = variantServices,
+        services = mock(TaskCreationServices::class.java),
+        artifacts = mock(ArtifactsImpl::class.java),
+        defaultConfig = mock(DefaultConfig::class.java),
+        manifestDataProviderBuilder = { mock(ManifestDataProvider::class.java) },
+      )
+    testSuiteImpl.configureTestTasks { ctx -> recorded.add("variant:${ctx.targetName}") }
+
+    // Post-construction DSL mutations must not leak into an already constructed TestSuiteImpl.
+    suite.configureTestTasks { ctx -> recorded.add("late-suite:${ctx.targetName}") }
+    suite.targets.getByName("t1").configureTestTasks { ctx -> recorded.add("late-t1:${ctx.targetName}") }
+
+    fun ctxFor(name: String) =
+      object : TestTaskContext {
+        override val targetName: String = name
+        override val isUpdateTask: Boolean = false
+        override val suiteName: String = "mySuite"
+        override val targetedVariant: String = "debug"
+        override val targetedDevices: Collection<String> = emptyList()
+      }
+
+    fun configuredActionsFor(targetName: String): List<Action<GradleTest>> {
+      val actions = mutableListOf<Action<GradleTest>>()
+      @Suppress("UNCHECKED_CAST") val taskProvider = mock(TaskProvider::class.java) as TaskProvider<GradleTest>
+      `when`(taskProvider.configure(any())).thenAnswer { invocation ->
+        actions.add(invocation.getArgument(0))
+        Unit
+      }
+      testSuiteImpl.runTestTaskConfigurationActions(ctxFor(targetName), taskProvider)
+      return actions
+    }
+
+    val dummyTask = mock(GradleTest::class.java)
+
+    val t1Actions = configuredActionsFor("t1")
+    assertThat(t1Actions).hasSize(3)
+    t1Actions.forEach { it.execute(dummyTask) }
+    assertThat(recorded).containsExactly("suite:t1", "t1:t1", "variant:t1").inOrder()
+
+    recorded.clear()
+    val t2Actions = configuredActionsFor("t2")
+    assertThat(t2Actions).hasSize(3)
+    t2Actions.forEach { it.execute(dummyTask) }
+    assertThat(recorded).containsExactly("suite:t2", "t2:t2", "variant:t2").inOrder()
+
+    recorded.clear()
+    val t3Actions = configuredActionsFor("t3")
+    assertThat(t3Actions).hasSize(2)
+    t3Actions.forEach { it.execute(dummyTask) }
+    assertThat(recorded).containsExactly("suite:t3", "variant:t3").inOrder()
   }
 }

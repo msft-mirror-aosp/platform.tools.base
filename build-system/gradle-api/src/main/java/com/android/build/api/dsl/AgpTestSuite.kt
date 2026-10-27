@@ -42,30 +42,30 @@ import org.gradle.testing.base.TestSuite
  *     - **Content**: A single folder containing static files like XML, JSON, or other declarative resources that describe or support tests.
  *       These files are not compiled.
  *     - **Purpose**: Typically interpreted directly by test execution engines (e.g., JUnit).
- *     - **Default Location**: `src/<testSuiteName>/` if it's the only source type in the suite, or `src/<testSuiteName>Assets/` if the
- *       suite is mixed (contains both hostJar and testApk).
+ *     - **Default Location**: `src/<testSuiteName>/` if it's the only source type in the suite, or `src/<testSuiteName>/assetsTest/` if the
+ *       suite is mixed (contains multiple source types).
  * 2. **Host Test Sources (configured via `hostJar`)**:
  *     - **Content**: A single folder containing compilable source code (e.g., Kotlin or Java) intended for tests that run on the host
  *       machine (JVM).
  *     - **Purpose**: Compiled before test execution. The compiled classes are then used by test engines.
  *     - **Default Location**: `src/<testSuiteName>/` (containing `java/`, `kotlin/`, `resources/`) if it's the only source type, or
- *       `src/<testSuiteName>Test/` if the suite is mixed.
+ *       `src/<testSuiteName>/test/` if the suite is mixed.
  * 3. **Device Test Sources (configured via `testApk`)**:
  *     - **Content**: A standard Android source set structure, including compilable source code (Kotlin/Java), Android resources (`res/`),
  *       Android assets (`assets/`), and an AndroidManifest.xml file.
  *     - **Purpose**: Compiled into a test APK that runs on an Android device or emulator.
- *     - **Default Location**: `src/<testSuiteName>/` if it's the only source type, or `src/<testSuiteName>AndroidTest/` if the suite is
+ *     - **Default Location**: `src/<testSuiteName>/` if it's the only source type, or `src/<testSuiteName>/androidTest/` if the suite is
  *       mixed.
  *
  * **Configuration Notes:**
- * - A test suite can include one or more of these source types. For example, a suite might define both `hostTest` sources and `assetTest`
+ * - A test suite can include one or more of these source types. For example, a suite might define both `hostJar` sources and `assets`
  *   sources.
- * - Currently, it is not possible to declare the same type of source (e.g., two `hostTest` blocks) for a single test suite.
+ * - Currently, it is not possible to declare the same type of source (e.g., two `hostJar` blocks) for a single test suite.
  * - Future versions of this API may introduce more flexibility, such as allowing multiple instances of the same source type or providing
  *   ways to customize the default directory names.
  *
  * Test execution engines can retrieve the locations or outputs of these configured sources through properties defined in
- * `com.android.build.api.variant.AgpTestSuiteInputParameters` (e.g., `STATIC_FILES`, `TEST_CLASSES`, `TESTED_APKS`). *
+ * [AgpTestSuiteInputParameters] (e.g., `STATIC_FILES`, `TEST_CLASSES`, `TEST_APKS`).
  */
 @Suppress("UnstableApiUsage")
 @Incubating
@@ -87,8 +87,8 @@ interface AgpTestSuite : TestSuite {
   /**
    * Adds an asset folder to this test suite sources, containing static sources like xml, or json files.
    *
-   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>Assets/` if the
-   * suite is mixed (contains both hostJar and testApk).
+   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>/assetsTest/` if
+   * the suite is mixed (contains multiple source types).
    *
    * No compilation of the sources will be performed and the sources files will be provided to the configured junit engines using the
    * [AgpTestSuiteInputParameters.STATIC_FILES]
@@ -98,21 +98,21 @@ interface AgpTestSuite : TestSuite {
   /**
    * Adds a host test folder to this test suite sources, containing kotlin sources that will be compiled.
    *
-   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>Test/` if the
+   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>/test/` if the
    * suite is mixed. It may contain subfolders like 'java', 'kotlin' and 'resources'.
    *
-   * questionable : Configured test engines can retrieve the compiled classes using the [AgpTestSuiteInputParameters.TEST_CLASSES] property.
+   * Configured test engines can retrieve the compiled classes using the [AgpTestSuiteInputParameters.TEST_CLASSES] property.
    */
   @Incubating fun hostJar(action: TestSuiteHostJarSpec.() -> Unit)
 
   /**
    * Adds a device test source folder to this test suite, containing all necessary sources to create an APK.
    *
-   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>AndroidTest/` if
+   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>/androidTest/` if
    * the suite is mixed.
    *
    * The sources will be compiled to produce a test APK that can be retrieved by the test engine using the
-   * [AgpTestSuiteInputParameters.TESTED_APKS] property.
+   * [AgpTestSuiteInputParameters.TEST_APKS] property.
    */
   @Incubating fun testApk(action: TestSuiteTestApkSpec.() -> Unit)
 
@@ -123,7 +123,7 @@ interface AgpTestSuite : TestSuite {
   @get:Incubating @set:Incubating var requiresUpdateTask: Boolean
 
   /**
-   * Configure the test tasks for this test target.
+   * Configure the test tasks for all targets in this test suite.
    *
    * There can be one to many instances of [Test] tasks for a particular test suite target. For instance, if the test suite targets more
    * than one device, AGP may decide to create one [Test] instance per device.
@@ -133,7 +133,7 @@ interface AgpTestSuite : TestSuite {
    * Do not make assumption about how AGP decides to allocate [Test] task instances per device, as each AGP version can potentially change
    * it in future release, always use the context object to determine what the [Test] task applies to.
    *
-   * @param action a block to configure the [Test] tasks associated with this test suite target.
+   * @param action a block to configure the [Test] tasks associated with this test suite.
    */
   @Incubating fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
 

@@ -17,12 +17,20 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuiteTarget
+import com.android.build.api.dsl.TestTaskContext
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.testing.Test
 
 open class AgpTestSuiteTargetImpl(val testSuite: AgpTestSuiteImpl, private val _name: String) : AgpTestSuiteTarget {
 
   override val targetDevices: MutableList<String> = mutableListOf()
+
+  internal val testTaskConfigActions = mutableListOf<Test.(context: TestTaskContext) -> Unit>()
+
+  override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
+    testTaskConfigActions.add(action)
+  }
 
   @Suppress("UnstableApiUsage")
   override fun getBinaryResultsDirectory(): Provider<Directory> {

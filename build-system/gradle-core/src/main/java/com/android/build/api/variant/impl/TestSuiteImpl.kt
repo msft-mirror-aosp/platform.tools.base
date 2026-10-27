@@ -97,7 +97,7 @@ internal constructor(
 
   @Synchronized
   override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
-    testTaskConfigActions.add(action)
+    variantTestTaskConfigActions.add(action)
   }
 
   @Synchronized
@@ -147,8 +147,9 @@ internal constructor(
   }
 
   /** Internal APIs */
-  private val testTaskConfigActions =
-    mutableListOf<Test.(TestTaskContext) -> Unit>().also { it.addAll(testSuiteBuilder.testSuite.testTaskConfigActions) }
+  private val testTaskConfigActions = testSuiteBuilder.testSuite.testTaskConfigActions.toList()
+  private val targetTestTaskConfigActions = testSuiteBuilder.testSuite.getTargetTestTaskConfigActions()
+  private val variantTestTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
   private val testTaskProviderConfigActions =
     mutableListOf<TaskProvider<out Test>.(TestTaskContext) -> Unit>().also {
       it.addAll(testSuiteBuilder.testSuite.testTaskProviderConfigActions)
@@ -158,5 +159,9 @@ internal constructor(
   override fun runTestTaskConfigurationActions(context: TestTaskContext, testTaskProvider: TaskProvider<out Test>) {
     testTaskProviderConfigActions.forEach { testTaskProvider.it(context) }
     testTaskConfigActions.forEach { testTaskProvider.configure { testTask -> it(testTask, context) } }
+    targetTestTaskConfigActions[context.targetName]?.forEach {
+      testTaskProvider.configure { testTask -> it(testTask, context) }
+    }
+    variantTestTaskConfigActions.forEach { testTaskProvider.configure { testTask -> it(testTask, context) } }
   }
 }

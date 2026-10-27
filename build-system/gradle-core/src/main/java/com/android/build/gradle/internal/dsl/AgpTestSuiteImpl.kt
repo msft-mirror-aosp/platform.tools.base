@@ -134,6 +134,12 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
   internal val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
   internal val testTaskProviderConfigActions = mutableListOf<TaskProvider<out Test>.(TestTaskContext) -> Unit>()
 
+  internal fun getTargetTestTaskConfigActions(): Map<String, List<Test.(TestTaskContext) -> Unit>> =
+    targets
+      .filterIsInstance<AgpTestSuiteTargetImpl>()
+      .filter { it.testTaskConfigActions.isNotEmpty() }
+      .associate { it.name to it.testTaskConfigActions.toList() }
+
   /** Private APIs */
   /**
    * Creates the source container of type [T] on first invocation or reuses the existing instance on subsequent DSL blocks.
