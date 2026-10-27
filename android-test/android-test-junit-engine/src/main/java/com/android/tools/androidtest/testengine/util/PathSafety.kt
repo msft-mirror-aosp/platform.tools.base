@@ -17,6 +17,8 @@
 package com.android.tools.androidtest.testengine.util
 
 import java.io.File
+import java.io.IOException
+import java.nio.file.InvalidPathException
 
 /**
  * Utility functions for centralizing path sanitization and containment validation against path traversal attacks (b/509645146,
@@ -58,12 +60,19 @@ object PathSafety {
 
   /**
    * Resolves a relative path [child] under a [baseDir] and verifies that the resolved canonical path is strictly contained within the base
-   * directory. Returns null if it escapes.
+   * directory. Returns null if it escapes, or if [child] is not a valid path on the host (e.g. it contains '?' or ':' on Windows).
    */
   fun resolveContainedFile(baseDir: File, child: String): File? {
     val baseCanon = baseDir.canonicalFile.toPath()
     val targetFile = File(baseDir, child)
-    val targetCanon = targetFile.canonicalFile.toPath()
+    val targetCanon =
+      try {
+        targetFile.canonicalFile.toPath()
+      } catch (e: IOException) {
+        return null
+      } catch (e: InvalidPathException) {
+        return null
+      }
     return if (targetCanon.startsWith(baseCanon)) {
       targetFile
     } else {

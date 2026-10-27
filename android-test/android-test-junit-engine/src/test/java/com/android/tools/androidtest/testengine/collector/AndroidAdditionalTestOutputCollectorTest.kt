@@ -31,9 +31,12 @@ import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -447,4 +450,188 @@ class AndroidAdditionalTestOutputCollectorTest {
 
     assertThat(result.traceFiles).containsExactly(expectedSafeFile)
   }
+
+  @Test
+  fun addBenchmarkOutput_pullsNamedFilesWithoutListingDirectory() {
+    val collector = createCollector()
+    val benchmarkOutputDir = "/sdcard/benchmark"
+    mockApiLevel(33)
+    val traceFile = mockPullCreatesFile("$benchmarkOutputDir/a.trace", File(hostOutputDir, "a.trace"))
+    val perfettoFile = mockPullCreatesFile("$benchmarkOutputDir/b.perfetto-trace", File(hostOutputDir, "b.perfetto-trace"))
+
+    val result =
+      collector.addBenchmarkOutput(
+        benchmarkTestResult(
+          "benchmark: [method](file://a.trace)\n[perfetto](uri://b.perfetto-trace)\n" +
+            "[insight](uri://b.perfetto-trace?selectionParams=abc)\n[absolute](file:///sdcard/abs.trace)",
+          benchmarkOutputDir,
+        )
+      )
+
+    assertThat(result.traceFiles).containsExactly(traceFile, perfettoFile)
+    // Only the two named files are pulled; links with a query or an absolute path are not files in the output directory.
+    verify(adbController, times(2)).pull(anyString(), anyString(), anyString(), anyOrNull())
+    // The output directory is neither listed nor walked entry by entry (b/578508685).
+    verify(adbController, never()).runAdbShellCommand(eq(deviceSerial), eq(listOf("ls", benchmarkOutputDir)), anyOrNull())
+    verify(adbController, never())
+      .runAdbShellCommand(eq(deviceSerial), argThat<List<String>> { take(2) == listOf("test", "-d") }, anyOrNull())
+  }
+
+  @Test
+  fun collect_skipsFilesAlreadyPulledByBenchmarkOutput() {
+    val collector = createCollector()
+    mockApiLevel(33)
+    val traceFile = mockPullCreatesFile("$deviceOutputDir/trace.pb", File(hostOutputDir, "trace.pb"))
+    collector.addBenchmarkOutput(benchmarkTestResult("benchmark: [trace](uri://trace.pb)", deviceOutputDir))
+
+    doReturn(AdbController.CommandResult(0, "", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("test", "-d", deviceOutputDir)), anyOrNull())
+    doReturn(AdbController.CommandResult(0, "trace.pb\npkg-benchmarkData.json", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("ls", deviceOutputDir)), anyOrNull())
+
+    collector.collect()
+
+    verify(adbController, times(1)).pull(eq(deviceSerial), eq("$deviceOutputDir/trace.pb"), eq(traceFile.absolutePath), anyOrNull())
+    verify(adbController, never()).runAdbShellCommand(eq(deviceSerial), eq(listOf("test", "-d", "$deviceOutputDir/trace.pb")), anyOrNull())
+    // Files that no test linked to, like the benchmark JSON written at the end of the run, are still collected.
+    verify(adbController)
+      .pull(
+        eq(deviceSerial),
+        eq("$deviceOutputDir/pkg-benchmarkData.json"),
+        eq(File(hostOutputDir, "pkg-benchmarkData.json").absolutePath),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun collect_retriesBenchmarkFilesThatFailedToPull() {
+    val collector = createCollector()
+    mockApiLevel(33)
+    val hostTraceFile = File(hostOutputDir, "trace.pb")
+    doReturn(AdbController.CommandResult(1, "", "error"))
+      .`when`(adbController)
+      .pull(eq(deviceSerial), eq("$deviceOutputDir/trace.pb"), eq(hostTraceFile.absolutePath), anyOrNull())
+    val result = collector.addBenchmarkOutput(benchmarkTestResult("benchmark: [trace](uri://trace.pb)", deviceOutputDir))
+    assertThat(result.traceFiles).isEmpty()
+
+    doReturn(AdbController.CommandResult(0, "", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("test", "-d", deviceOutputDir)), anyOrNull())
+    doReturn(AdbController.CommandResult(0, "trace.pb", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("ls", deviceOutputDir)), anyOrNull())
+
+    collector.collect()
+
+    verify(adbController, times(2)).pull(eq(deviceSerial), eq("$deviceOutputDir/trace.pb"), eq(hostTraceFile.absolutePath), anyOrNull())
+  }
+
+  @Test
+  fun addBenchmarkOutput_secondaryUserUsesContentProvider() {
+    val collector = createCollector()
+    val benchmarkOutputDir = "/sdcard/benchmark"
+    mockApiLevel(33)
+    doReturn(AdbController.CommandResult(0, "10", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("am", "get-current-user")), anyOrNull())
+    doReturn(AdbController.CommandResult(0, "Row: 0 _id=42, _data=/storage/emulated/10/benchmark/trace.pb", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), argThat<List<String>> { take(2) == listOf("content", "query") }, anyOrNull())
+
+    val result = collector.addBenchmarkOutput(benchmarkTestResult("benchmark: [trace](uri://trace.pb)", benchmarkOutputDir))
+
+    assertThat(result.traceFiles).containsExactly(File(hostOutputDir, "trace.pb"))
+    verify(adbController)
+      .runAdbShellCommandToOutputStream(
+        eq(deviceSerial),
+        eq(listOf("content", "read", "--user", "10", "--uri", "content://media/external/file/42")),
+        org.mockito.kotlin.any(),
+        anyOrNull(),
+      )
+    verify(adbController, never()).pull(anyString(), anyString(), anyString(), anyOrNull())
+  }
+
+  @Test
+  fun addBenchmarkOutput_queriesCurrentUserOnlyOnce() {
+    val collector = createCollector()
+    val benchmarkOutputDir = "/sdcard/benchmark"
+    mockApiLevel(33)
+    doReturn(AdbController.CommandResult(0, "0", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("am", "get-current-user")), anyOrNull())
+
+    collector.addBenchmarkOutput(benchmarkTestResult("benchmark: [trace](uri://a.pb)", benchmarkOutputDir))
+    collector.addBenchmarkOutput(benchmarkTestResult("benchmark: [trace](uri://b.pb)", benchmarkOutputDir))
+
+    verify(adbController, times(1)).runAdbShellCommand(eq(deviceSerial), eq(listOf("am", "get-current-user")), anyOrNull())
+  }
+
+  @Test
+  fun addBenchmarkOutput_doesNotCacheFailedCurrentUserQuery() {
+    val collector = createCollector()
+    val benchmarkOutputDir = "/sdcard/benchmark"
+    mockApiLevel(33)
+    // The first query fails transiently (empty output); the second returns the secondary user.
+    whenever(adbController.runAdbShellCommand(eq(deviceSerial), eq(listOf("am", "get-current-user")), anyOrNull()))
+      .thenReturn(AdbController.CommandResult(1, "", "error"), AdbController.CommandResult(0, "10", ""))
+    doReturn(AdbController.CommandResult(0, "Row: 0 _id=42, _data=/storage/emulated/10/benchmark/b.pb", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), argThat<List<String>> { take(2) == listOf("content", "query") }, anyOrNull())
+
+    // Falls back to the primary user path for this test only.
+    collector.addBenchmarkOutput(benchmarkTestResult("benchmark: [trace](uri://a.pb)", benchmarkOutputDir))
+    verify(adbController).pull(eq(deviceSerial), eq("$benchmarkOutputDir/a.pb"), anyString(), anyOrNull())
+
+    // The next test queries the user again and uses the content provider for the secondary user.
+    collector.addBenchmarkOutput(benchmarkTestResult("benchmark: [trace](uri://b.pb)", benchmarkOutputDir))
+    verify(adbController)
+      .runAdbShellCommandToOutputStream(
+        eq(deviceSerial),
+        eq(listOf("content", "read", "--user", "10", "--uri", "content://media/external/file/42")),
+        org.mockito.kotlin.any(),
+        anyOrNull(),
+      )
+    verify(adbController, never()).pull(eq(deviceSerial), eq("$benchmarkOutputDir/b.pb"), anyString(), anyOrNull())
+  }
+
+  private fun createCollector() =
+    AndroidAdditionalTestOutputCollector(
+      adbController,
+      deviceSerial,
+      hostOutputDir,
+      deviceOutputDir,
+      instrumentationTargetPackageId = "instr.pkg",
+      testedApplicationId = "pkg",
+      useTestStorageService = false,
+    )
+
+  private fun mockApiLevel(apiLevel: Int) {
+    doReturn(AdbController.CommandResult(0, "$apiLevel", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("getprop", "ro.build.version.sdk")), anyOrNull())
+  }
+
+  /** Makes `adb pull [devicePath] [hostFile]` succeed and create [hostFile], like the real command. */
+  private fun mockPullCreatesFile(devicePath: String, hostFile: File): File {
+    whenever(adbController.pull(eq(deviceSerial), eq(devicePath), eq(hostFile.absolutePath), anyOrNull())).thenAnswer {
+      hostFile.createNewFile()
+      AdbController.CommandResult(0, "", "")
+    }
+    return hostFile
+  }
+
+  private fun benchmarkTestResult(benchmarkMessage: String, benchmarkOutputDir: String) =
+    TestResult(
+      TestIdentifier("pkg", "Cls", "meth"),
+      status = -1,
+      startTime = Instant.now(),
+      endTime = Instant.now(),
+      statusBundle =
+        mapOf(
+          AndroidAdditionalTestOutputCollector.BENCHMARK_V3_TEST_METRICS_KEY to benchmarkMessage,
+          AndroidAdditionalTestOutputCollector.BENCHMARK_V3_PATH_TEST_METRICS_KEY to benchmarkOutputDir,
+        ),
+    )
 }

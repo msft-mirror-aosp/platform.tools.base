@@ -22,6 +22,7 @@ import com.android.tools.androidtest.testengine.instrument.TestResult
 import com.android.tools.androidtest.testengine.util.PathSafety
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -66,6 +67,15 @@ class AndroidAdditionalTestOutputCollector(
     private const val BENCHMARK_V3_TRACE_FILE_PREFIX = "uri://"
   }
 
+  /** Absolute host paths of files already pulled by [addBenchmarkOutput]; [collect] doesn't copy them again. */
+  private val pulledHostFiles: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+  /**
+   * The current Android user, cached after the first successful query instead of queried for every copy (one adb call per test otherwise).
+   * A failed query is not cached, so a transient adb failure doesn't pin a secondary user to the primary user's "0".
+   */
+  @Volatile private var cachedAndroidUser: String? = null
+
   /** Prepares directories on host and device before test execution. */
   fun prepare() {
     val deviceDir = getEffectiveAdditionalOutputDirectoryOnDevice()
@@ -73,6 +83,7 @@ class AndroidAdditionalTestOutputCollector(
       "Preparing additional test output collector. hostDir=$additionalOutputDirectoryOnHost, deviceDir=$additionalOutputDirectoryOnDevice (effective: $deviceDir)"
     )
     createEmptyDirectoryOnHost()
+    pulledHostFiles.clear()
 
     if (!deviceDir.isNullOrBlank()) {
       adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-rf", deviceDir))
@@ -329,6 +340,8 @@ class AndroidAdditionalTestOutputCollector(
         val safeLeaf = PathSafety.sanitizeLeafName(rawName) ?: return@forEach
         val hostFile = PathSafety.resolveContainedFile(hostDirFile, safeLeaf) ?: return@forEach
         val hostFilePath = hostFile.absolutePath
+        // Already pulled when its test ended; skip the `test -d` round trip and the second pull.
+        if (hostFilePath in pulledHostFiles) return@forEach
         if (isDirectory(deviceFilePath)) {
           hostFile.let { file ->
             if (!file.exists()) {
@@ -469,9 +482,41 @@ class AndroidAdditionalTestOutputCollector(
         .toSet()
 
     val hostOutputDir = additionalOutputDirectoryOnHost ?: return emptyList()
-    copyFilesFromDeviceToHost(benchmarkOutputDir, hostOutputDir.absolutePath, benchmarkFileRelativePaths::contains)
+    pullBenchmarkFiles(benchmarkOutputDir, hostOutputDir, benchmarkFileRelativePaths)
 
     return benchmarkFileRelativePaths.mapNotNull { PathSafety.resolveContainedFile(hostOutputDir, it) }.filter { it.exists() }
+  }
+
+  /**
+   * Pulls the files named by a benchmark message from [deviceDir] to the same relative paths under [hostDir].
+   *
+   * The files are pulled by name. Listing [deviceDir] and checking every entry instead costs one adb call per file already in the
+   * directory, for every test (b/578508685).
+   */
+  private fun pullBenchmarkFiles(deviceDir: String, hostDir: File, relativePaths: Set<String>) {
+    val androidUser = getCurrentAndroidUser()
+    if (getApiLevel() >= 28 && androidUser != "0") {
+      // Secondary users can only read these files through the media content provider, which needs a single query.
+      copyFilesFromDeviceToHost(deviceDir, hostDir.absolutePath, relativePaths::contains)
+      return
+    }
+    val normalizedDeviceDir = replaceSystemPath(deviceDir, androidUser).removeSuffix("/")
+    for (relativePath in relativePaths) {
+      // Only plain relative paths name a file in deviceDir. This skips absolute paths, "..", and links with a query
+      // (e.g. "?selectionParams="). [collect] still picks up the files skipped here, at their sanitized names.
+      if (relativePath.split('/').any { segment -> PathSafety.sanitizeLeafName(segment) != segment }) continue
+      val hostFile = PathSafety.resolveContainedFile(hostDir, relativePath) ?: continue
+      hostFile.parentFile?.mkdirs()
+      val deviceFilePath = "$normalizedDeviceDir/$relativePath"
+      val hostFilePath = hostFile.absolutePath
+      logger.info("Pulling $deviceFilePath to $hostFilePath")
+      val pullResult = adbController.pull(deviceSerial, deviceFilePath, hostFilePath)
+      if (pullResult.exitCode == 0) {
+        pulledHostFiles.add(hostFilePath)
+      } else {
+        logger.warning("Failed to pull $deviceFilePath to $hostFilePath: ${pullResult.errorOutput}")
+      }
+    }
   }
 
   private fun isDirectory(deviceFilePath: String): Boolean {
@@ -486,13 +531,20 @@ class AndroidAdditionalTestOutputCollector(
       .contains("package:androidx.test.services")
   }
 
+  /** Returns the current Android user, or "0" (without caching it) if `am get-current-user` printed nothing. */
   private fun getCurrentAndroidUser(): String {
-    return adbController
-      .runAdbShellCommand(deviceSerial, listOf("am", "get-current-user"))
-      .output
-      .lineSequence()
-      .map { it.trim() }
-      .firstOrNull { it.isNotBlank() } ?: "0"
+    cachedAndroidUser?.let {
+      return it
+    }
+    val user =
+      adbController
+        .runAdbShellCommand(deviceSerial, listOf("am", "get-current-user"))
+        .output
+        .lineSequence()
+        .map { it.trim() }
+        .firstOrNull { it.isNotBlank() } ?: return "0"
+    cachedAndroidUser = user
+    return user
   }
 }
 
