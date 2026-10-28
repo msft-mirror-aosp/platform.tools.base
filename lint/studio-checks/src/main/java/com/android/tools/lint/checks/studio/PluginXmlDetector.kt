@@ -65,17 +65,18 @@ class PluginXmlDetector : Detector(), OtherFileScanner {
 
     val file = context.file
     if (file.extension != EXT_XML) return
+    context.client.runReadAction {
+      val contents = context.client.readFile(file)
+      if (!contents.contains("<idea-plugin")) return@runReadAction
 
-    val contents = context.client.readFile(file)
-    if (!contents.contains("<idea-plugin")) return
+      val document = context.client.getXmlDocument(file, contents) ?: return@runReadAction
+      val rootElement = document.documentElement ?: return@runReadAction
+      if (rootElement.tagName != "idea-plugin") return@runReadAction
 
-    val document = context.client.getXmlDocument(file, contents) ?: return
-    val rootElement = document.documentElement ?: return
-    if (rootElement.tagName != "idea-plugin") return
-
-    rootElement.visitElements { e ->
-      visitElement(context, e)
-      false // Keep going.
+      rootElement.visitElements { e ->
+        visitElement(context, e)
+        false // Keep going.
+      }
     }
   }
 

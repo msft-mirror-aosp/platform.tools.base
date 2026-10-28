@@ -90,7 +90,7 @@ class UastEnvironmentSourceSetTest {
       """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
-          <module name="app" android="true" library="false" compute_source_roots="false">
+          <module name="app" android="true" library="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
             <classpath jar="libs/support-annotations.jar" />
             <src file="src/Foo.java" />
             <!-- Intentionally miss Foo.kt to see if Foo.foo in Bar.java refers to Foo.java, not Foo.kt -->
@@ -174,7 +174,7 @@ class UastEnvironmentSourceSetTest {
       """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
-          <module name="app" android="true" library="false" compute_source_roots="false">
+          <module name="app" android="true" library="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
             <classpath jar="libs/support-annotations.jar" />
             <src file="src/Foo.java" />
             <!-- Intentionally miss Foo.kt to see if Foo.foo in Bar.java refers to Foo.java, not Foo.kt -->
@@ -265,7 +265,7 @@ class UastEnvironmentSourceSetTest {
       """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
-          <module name="app" android="true" library="false" compute_source_roots="false">
+          <module name="app" android="true" library="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
             <classpath jar="libs/support-annotations.jar" />
             <src file="src/Foo.java" />
             <!-- Intentionally miss Foo.kt to see if Foo.foo in Bar.java refers to Foo.java, not Foo.kt -->
@@ -338,7 +338,7 @@ class UastEnvironmentSourceSetTest {
       """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
-          <module name="app" android="true" library="false" compute_source_roots="false">
+          <module name="app" android="true" library="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
             <classpath jar="libs/support-annotations.jar" />
             <src file="src/test/pkg/package-info.java" />
             <src file="src/test/pkg/Foo.java" />
@@ -407,7 +407,7 @@ class UastEnvironmentSourceSetTest {
       """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
-          <module name="app" android="true" library="false" compute_source_roots="false">
+          <module name="app" android="true" library="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
             <classpath jar="libs/support-annotations.jar" />
             <src file="src/test/pkg/package-info.java" />
             <src file="src/test/pkg/Foo.java" />

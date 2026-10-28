@@ -320,14 +320,14 @@ class ProjectInitializerTest {
             <cache dir='$cacheDir'/>
             <classpath jar="test.jar" />
             <baseline file='$baseline' />
-            <module name="$appProjectPath:App" android="true" library="false" compile-sdk-version='18.1'>
+            <module name="$appProjectPath:App" android="true" library="false" compile-sdk-version='18.1' kotlinPlatforms="JVM [1.8]">
               <manifest file="AndroidManifest.xml" />
               <resource file="res/values/strings.xml" />
               <src file="test/Test.java" test="true" />
               <src file="generated/Generated.java" generated="true" />
               <dep module="Library" />
             </module>
-            <module name="Library" android="true" library="true" compile-sdk-version='android-M'>
+            <module name="Library" android="true" library="true" compile-sdk-version='android-M' kotlinPlatforms="JVM [1.8]">
               <manifest file="Library/AndroidManifest.xml" />
               <merged-manifest file='$mergedManifest'/>
               <src file="Library/src/test/pkg/Loader.java" />
@@ -434,7 +434,7 @@ class ProjectInitializerTest {
       """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
-            <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3">
+            <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3" kotlinPlatforms="JVM [1.8]">
               <unknown file="foo.Bar" />
               <resource file="res/values/strings.xml" />
               <dep module="NonExistent" />
@@ -462,7 +462,7 @@ class ProjectInitializerTest {
       """
             app: Error: No .class files were found in project "Foo:App", so none of the classfile based checks could be run. Does the project need to be built first? [LintError]
             project.xml:3: Error: Invalid Java language level "1000" [LintError]
-            <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3">
+            <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3" kotlinPlatforms="JVM [1.8]">
             ^
             project.xml:4: Error: Unexpected tag unknown [LintError]
               <unknown file="foo.Bar" />
@@ -487,7 +487,7 @@ class ProjectInitializerTest {
       """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
-            <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3">
+            <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3" kotlinPlatforms="JVM [1.8]">
               <unknown file="foo.Bar" />
               <resource file="res/values/strings.xml" />
               <dep module="NonExistent" />
@@ -503,7 +503,7 @@ class ProjectInitializerTest {
     MainTest.checkDriver(
       """
             project.xml:3: Error: Invalid Java language level "1000" [LintError]
-            <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3">
+            <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3" kotlinPlatforms="JVM [1.8]">
             ^
             project.xml:4: Error: Unexpected tag unknown [LintError]
               <unknown file="foo.Bar" />
@@ -589,7 +589,7 @@ class ProjectInitializerTest {
             <project incomplete="true">
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir"/>
-            <module name="M" android="true" library="true">
+            <module name="M" android="true" library="true" kotlinPlatforms="JVM [1.8]">
                 <manifest file="$projectDir/AndroidManifest.xml" />
                 <src file="$projectDir/C.java" />
                 <src file="$projectDir/src/test/pkg/InterfaceMethodTest.java" />
@@ -657,7 +657,7 @@ class ProjectInitializerTest {
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
-            <module name="M" android="true" library="true">
+            <module name="M" android="true" library="true" kotlinPlatforms="JVM [1.8]">
                 <manifest file="layout/AndroidManifest.xml" />
             </module>
             </project>
@@ -735,7 +735,7 @@ class ProjectInitializerTest {
             <project incomplete="true">
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
-            <module name="M" android="true" library="true">
+            <module name="M" android="true" library="true" kotlinPlatforms="JVM [1.8]">
                 <manifest file="AndroidManifest.xml" />
                 <resource file="res/raw/sample.txt" />
                 <resource file="res/values/strings.xml" />
@@ -852,7 +852,7 @@ class ProjectInitializerTest {
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
-                <module name="M" android="true" library="false">
+                <module name="M" android="true" library="false" kotlinPlatforms="JVM [1.8]">
                 <manifest file="AndroidManifest.xml" />
                 <src file="src/main/java/test/pkg/Private.java" />
                 <aar file="$aarFile" extracted="$aar" />
@@ -944,7 +944,7 @@ class ProjectInitializerTest {
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
-                <module name="M" android="true" library="false">
+                <module name="M" android="true" library="false" kotlinPlatforms="JVM [1.8]">
                 <jar file="$jarFile" />
                 <src file="src/test/pkg/Child.java" />
             </module>
@@ -1010,7 +1010,7 @@ class ProjectInitializerTest {
               """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
-            <module name="M" android="true" library="false">
+            <module name="M" android="true" library="false" kotlinPlatforms="JVM [1.8]">
             <classpath jar="libs/support-annotations.jar" />
             <src file="src/test/pkg/RequiresApiFieldTest.java" />
             </module>
@@ -1068,7 +1068,7 @@ class ProjectInitializerTest {
             <project incomplete="true">
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
-            <module name="M" android="false" library="true">
+            <module name="M" android="false" library="true" kotlinPlatforms="JVM [1.8]">
                 <src file="C.java" />
             </module>
             </project>
@@ -1136,7 +1136,7 @@ class ProjectInitializerTest {
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
             <!-- We could have specified desugar="full" instead of specifying android_java8_libs -->
-            <module desugar="default" android_java8_libs="true" name="M" android="true" library="false">
+            <module desugar="default" android_java8_libs="true" name="M" android="true" library="false" kotlinPlatforms="JVM [1.8]">
                 <src file="C.java" />
             </module>
             </project>
@@ -1246,7 +1246,7 @@ class ProjectInitializerTest {
                 <sdk dir='${TestUtils.getSdk()}'/>
                 <annotations file="annotations.zip"/>
                 <annotations dir="external-annotations"/>
-                <module name="M" android="true" library="false">
+                <module name="M" android="true" library="false" kotlinPlatforms="JVM [1.8]">
                 <classpath jar="libs/support-annotations.jar" />
                 <src file="src/test/pkg1/Library1.java" />
                 <src file="src/test/pkg2/Library2.java" />
@@ -1329,7 +1329,7 @@ class ProjectInitializerTest {
                 <project>
                 <root dir="$root/project" />
                 <sdk dir='${TestUtils.getSdk()}'/>
-                <module name="M" android="true" library="false" javaLanguage="14">
+                <module name="M" android="true" library="false" javaLanguage="14" kotlinPlatforms="JVM [1.8]">
                 <classpath jar="libs/support-annotations.jar" />
                 <src file="src/test/pkg/Java14Test.java" />
                 </module>
@@ -1420,7 +1420,7 @@ class ProjectInitializerTest {
                   <project>
                   <root dir="$root/project" />
                   <sdk dir='${TestUtils.getSdk()}'/>
-                  <module name="M" android="true" library="false">
+                  <module name="M" android="true" library="false" kotlinPlatforms="JVM [1.8]">
                   <proguard file="name.some-ext" />
                   </module>
                   </project>
@@ -1487,7 +1487,7 @@ class ProjectInitializerTest {
     val descriptor =
       """
       <project>
-         <module android="true" compile-sdk-version="18" name="app">
+         <module android="true" compile-sdk-version="18" name="app" kotlinPlatforms="JVM [1.8]">
             <src file="app/src/main/java/ClassCRLF.java"/>
             <src file="app/src/main/java/ClassLF.java"/>
          </module>
@@ -1621,11 +1621,11 @@ class ProjectInitializerTest {
             <root dir="$root" />
             <sdk dir='$sdk'/>
             <cache dir='$cacheDir'/>
-            <module name="$appProjectPath:App" android="true" library="false" compile-sdk-version='18'>
+            <module name="$appProjectPath:App" android="true" library="false" compile-sdk-version='18' kotlinPlatforms="JVM [1.8]">
               <manifest file="AndroidManifest.xml" />
               <dep module="Library" />
             </module>
-            <module name="Library" android="true" library="true" compile-sdk-version='android-M'>
+            <module name="Library" android="true" library="true" compile-sdk-version='android-M' kotlinPlatforms="JVM [1.8]">
               <manifest file="Library/AndroidManifest.xml" />
             </module>
             </project>
@@ -1724,7 +1724,7 @@ class ProjectInitializerTest {
             <project incomplete="false">
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir"/>
-            <module name="M" android="true" library="true">
+            <module name="M" android="true" library="true" kotlinPlatforms="JVM [1.8]">
                 <manifest file="layout/SomethingNamedAndroidManifest.xml" />
                 <resource file="res/layout/layout.xml" />
             </module>
@@ -1900,6 +1900,7 @@ class ProjectInitializerTest {
             <project>
             <root dir="$root" />
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="true"
                 name="//java/com/google/a:a"
@@ -1970,6 +1971,7 @@ class ProjectInitializerTest {
             <project>
             <root dir="$root" />
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="true"
                 name="//java/com/google/b:b"
@@ -1982,6 +1984,7 @@ class ProjectInitializerTest {
             <dep module="//java/com/google/a:a" />
             </module>
             <module android="true"
+                kotlinPlatforms="JVM [1.8]"
                 library="true"
                 name="//java/com/google/a:a"
                 desugar="full"
@@ -2019,6 +2022,7 @@ class ProjectInitializerTest {
             <project>
             <root dir="$root" />
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="true"
                 name="//java/com/google/onlyres:onlyres"
@@ -2123,6 +2127,7 @@ class ProjectInitializerTest {
             <project>
             <root dir="$root" />
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="false"
                 name="//java/com/google/c:c"
@@ -2137,18 +2142,21 @@ class ProjectInitializerTest {
             <dep module="//java/com/google/onlyres:onlyres" />
             </module>
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="true"
                 name="//java/com/google/a:a"
                 desugar="full"
                 partial-results-dir="out/java/com/google/a/lint_partial_results" />
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="true"
                 name="//java/com/google/b:b"
                 desugar="full"
                 partial-results-dir="out/java/com/google/b/lint_partial_results" />
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="true"
                 name="//java/com/google/onlyres:onlyres"
@@ -2451,6 +2459,7 @@ class ProjectInitializerTest {
             <project>
             <root dir="$root" />
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="true"
                 name="//java/com/google/a:a"
@@ -2472,6 +2481,7 @@ class ProjectInitializerTest {
             <project>
             <root dir="$root" />
             <module
+                kotlinPlatforms="JVM [1.8]"
                 android="true"
                 library="false"
                 name="//java/com/google/b:b"
@@ -2483,6 +2493,7 @@ class ProjectInitializerTest {
             <dep module="//java/com/google/a:a" />
             </module>
             <module android="true"
+                kotlinPlatforms="JVM [1.8]"
                 library="true"
                 name="//java/com/google/a:a"
                 desugar="full"
@@ -2636,7 +2647,7 @@ class ProjectInitializerTest {
               "project.xml",
               """
                 <project>
-                <module name="test" android="true" library="false">
+                <module name="test" android="true" library="false" kotlinPlatforms="JVM [1.8]">
                 <src file="com/google/b244342092repro/ToBeChecked.java" test="true"/>
                 <src file="com/google/b244342092repro/gen/com/google/b244342092repro/ToBeIgnored.java" generated="true"/>
                 </module>
@@ -4199,7 +4210,7 @@ class ProjectInitializerTest {
               "project.xml",
               """
               <project>
-                <module name="test" android="true" library="false" compute_source_roots="false">
+                <module name="test" android="true" library="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
                   <src file="com/example/A.java" test="true"/>
                   <src file="com/example/B.java" generated="true"/>
                   <src file="com/example/C.java" test="true" generated="true"/>
@@ -4316,7 +4327,7 @@ class ProjectInitializerTest {
               "project.xml",
               """
               <project>
-                <module name="test" android="true" library="false" compute_source_roots="false">
+                <module name="test" android="true" library="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
                   <src file="com/example/A.java" test="true"/>
                   <src file="com/example/B.java" generated="true"/>
                   <src file="com/example/C.java" test="true" generated="true"/>
@@ -4427,7 +4438,7 @@ class ProjectInitializerTest {
               "project.xml",
               """
               <project>
-                <module name="test" android="true" library="false" compute_source_roots="false">
+                <module name="test" android="true" library="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
                   <src file="com/example/A.java" test="true"/>
                   <src file="com/example/B.java" generated="true"/>
                   <src file="com/example/C.java" test="true" generated="true"/>
@@ -4539,7 +4550,7 @@ class ProjectInitializerTest {
               "project.xml",
               """
               <project>
-                <module name="test" android="true" library="false" test="true" compute_source_roots="false">
+                <module name="test" android="true" library="false" test="true" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
                   <src file="com/example/A.java"/>
                   <src file="com/example/B.java" generated="true"/>
                   <manifest file="com/example/AndroidManifest.xml" />
@@ -5011,7 +5022,7 @@ class ProjectInitializerTest {
           <sdk dir='${TestUtils.getSdk()}'/>
           <root dir="$root" />
 
-          <module name="androidApp" android="true" library="false" compile-sdk-version='18'>
+          <module name="androidApp" android="true" library="false" compile-sdk-version='18' kotlinPlatforms="JVM [1.8]">
             <manifest file="androidApp/src/main/AndroidManifest.xml" />
             <resource file="androidApp/src/main/res/values/styles.xml" />
             <src file="androidApp/src/main/java/pkg/android/MainActivity.kt" />
@@ -5021,13 +5032,13 @@ class ProjectInitializerTest {
             <dep module="commonMain" kind="dependsOn" />
           </module>
 
-          <module name="iosApp" android="false" library="false">
+          <module name="iosApp" android="false" library="false" kotlinPlatforms="Native [general]">
             <src file="iosApp/iosApp/ContentView.swift" />
             <src file="iosApp/iosApp/iOSApp.swift" />
             <dep module="commonMain" kind="dependsOn"/>
           </module>
 
-          <module name="commonMain" android="false">
+          <module name="commonMain" android="false" kotlinPlatforms="JS []/JVM [1.8]/Native [general]/wasm-js [JS]/wasm-wasi [WASI]">
             <src file="shared/src/commonMain/kotlin/pkg/Platform.kt" />
             <src file="shared/src/androidMain/kotlin/pkg/Platform.kt" />
             <src file="shared/src/iosMain/kotlin/pkg/Platform.kt" />
@@ -5839,7 +5850,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           <sdk dir='${TestUtils.getSdk()}'/>
           <root dir="$root" />
 
-          <module name="androidApp" android="true" library="false" compile-sdk-version='18'>
+          <module name="androidApp" android="true" library="false" compile-sdk-version='18' kotlinPlatforms="JVM [1.8]">
             <manifest file="androidApp/src/main/AndroidManifest.xml" />
             <resource file="androidApp/src/main/res/values/styles.xml" />
             <src file="androidApp/src/main/java/pkg/android/MainActivity.kt" />
@@ -5849,13 +5860,13 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             <klib file="shared/build/common.klib" kind="dependsOn" />
           </module>
 
-          <module name="iosApp" android="false" library="false">
+          <module name="iosApp" android="false" library="false" kotlinPlatforms="Native [general]">
             <src file="iosApp/iosApp/ContentView.swift" />
             <src file="iosApp/iosApp/iOSApp.swift" />
             <klib file="shared/build/common.klib" kind="dependsOn"/>
           </module>
 
-          <module name="commonMain">
+          <module name="commonMain" kotlinPlatforms="JS []/JVM [1.8]/Native [general]/wasm-js [JS]/wasm-wasi [WASI]">
             <src file="shared/src/androidMain/kotlin/pkg/Platform.kt" />
           </module>
         </project>
@@ -6116,7 +6127,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           <sdk dir='${TestUtils.getSdk()}'/>
           <root dir="$root" />
 
-          <module name="androidApp" android="true" library="false" compile-sdk-version='18'>
+          <module name="androidApp" android="true" library="false" compile-sdk-version='18' kotlinPlatforms="JVM [1.8]">
             <manifest file="androidApp/src/main/AndroidManifest.xml" />
             <resource file="androidApp/src/main/res/values/styles.xml" />
             <src file="androidApp/src/main/java/pkg/android/MainActivity.kt" />
@@ -6125,14 +6136,14 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             <dep module="commonMain" kind="dependsOn" />
           </module>
 
-          <module name="iosApp" android="false" library="false">
+          <module name="iosApp" android="false" library="false" kotlinPlatforms="Native [general]">
             <src file="iosApp/iosApp/ContentView.swift" />
             <src file="iosApp/iosApp/iOSApp.swift" />
             <src file="iosApp/src/IosHello.kt" />
             <dep module="commonMain" kind="dependsOn"/>
           </module>
 
-          <module name="commonMain" android="false">
+          <module name="commonMain" android="false" kotlinPlatforms="JS []/JVM [1.8]/Native [general]/wasm-js [JS]/wasm-wasi [WASI]">
             <src file="shared/src/commonMain/kotlin/pkg/Platform.kt" />
             <src file="shared/src/androidMain/kotlin/pkg/Platform.kt" />
             <src file="shared/src/iosMain/kotlin/pkg/Platform.kt" />
@@ -6219,7 +6230,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       <project>
       <sdk dir='${TestUtils.getSdk()}'/>
       <root dir="$root" />
-      <module name="M" android="true" library="false">
+      <module name="M" android="true" library="false" kotlinPlatforms="JVM [1.8]">
         <aar file="$aarFile" />
       </module>
       </project>

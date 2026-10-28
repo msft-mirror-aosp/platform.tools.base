@@ -238,10 +238,16 @@ interface UastEnvironment {
         }
 
     internal val platforms: TargetPlatform =
-      // TODO: Support reading the Kotlin target platforms from Gradle projects.
-      (project as? ManualProject)?.kotlinPlatforms?.deserializeTargetPlatformByComponentPlatforms()
-        ?: project.buildVariant?.name?.targetPlatformFromSourceSetNameConvention
-        ?: project.name.targetPlatformFromSourceSetNameConvention
+      when (project) {
+        // For ManualProjects, we do not guess; we use the provided platforms, if present, else the default JVM platform.
+        is ManualProject -> project.kotlinPlatforms?.deserializeTargetPlatformByComponentPlatforms() ?: JvmPlatforms.defaultJvmPlatform
+        // Otherwise, we guess.
+        // TODO: Support reading the Kotlin target platforms from Gradle projects.
+        else -> {
+          val name = project.buildVariant?.name ?: project.name
+          name.targetPlatformFromSourceSetNameConvention
+        }
+      }
 
     val sourceRoots: Set<File> =
       with(project) {

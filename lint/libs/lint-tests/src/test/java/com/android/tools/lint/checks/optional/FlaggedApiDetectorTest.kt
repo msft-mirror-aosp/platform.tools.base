@@ -1182,7 +1182,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         <project>
         <root dir="$root" />
         <sdk dir='$sdk'/>
-        <module name="App:App" android="true">
+        <module name="App:App" android="true" kotlinPlatforms="JVM [1.8]">
           <manifest file="AndroidManifest.xml" />
           <src file="src/test/api/MyApi.java" />
           <src file="src/test/pkg/Test.java" />

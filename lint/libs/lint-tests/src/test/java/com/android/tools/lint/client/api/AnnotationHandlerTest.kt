@@ -2218,11 +2218,11 @@ src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation 
           <sdk dir='${getSdk()}'/>
           <root dir="$root" />
 
-          <module name="shared" android="false" library="false" >
+          <module name="shared" android="false" library="false" kotlinPlatforms="JVM [1.8]">
             <klib file="shared/libs/common.klib" kind="regular" />
           </module>
 
-          <module name="commonMain" android="false" library="false" >
+          <module name="commonMain" android="false" library="false" kotlinPlatforms="JS []/JVM [1.8]/Native [general]/wasm-js [JS]/wasm-wasi [WASI]">
             <src file="commonMain/src/test/pkg/testCommon.kt" />
             <klib file="shared/libs/common.klib" kind="regular" />
           </module>
