@@ -16,7 +16,9 @@
 
 package com.android.tools.render
 
+import com.android.SdkConstants
 import com.android.ide.common.rendering.api.Result
+import com.android.ide.common.resources.Locale
 import com.android.testutils.TestUtils
 import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.ConfigurablePreviewElement
@@ -42,12 +44,14 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.lang.reflect.InvocationTargetException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.Base64
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
@@ -56,6 +60,8 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.imageio.ImageIO
 import javax.tools.ToolProvider
 import kotlin.io.path.absolutePathString
@@ -884,6 +890,20 @@ class RendererTest {
           Boolean::class.javaPrimitiveType,
           Int::class.javaPrimitiveType,
           Any::class.java,
+        )
+    )
+    assertNotNull(
+      RenderEnvironmentBootstrapper::class
+        .java
+        .getConstructor(
+          String::class.java,
+          String::class.java,
+          String::class.java,
+          List::class.java,
+          List::class.java,
+          String::class.java,
+          List::class.java,
+          List::class.java,
         )
     )
   }
@@ -2300,6 +2320,151 @@ class RendererTest {
 
     assertEquals(1, results.size)
     return results[0]
+  }
+
+  // Regression test for b/575469767
+  @Test
+  fun testRtlLayoutRendering_enabledWithSupportsRtlInManifestFile() {
+    // Layout with a View aligned to start (top-left in LTR, top-right in RTL).
+    val layout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent">
+          <View
+              android:layout_width="40dp"
+              android:layout_height="40dp"
+              android:layout_gravity="start|top"
+              android:background="#FFFF0000" />
+      </FrameLayout>
+      """
+        .trimIndent()
+
+    val manifestFile = tmpFolder.newFile("AndroidManifest.xml")
+    manifestFile.writeText(
+      """
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.test">
+          <application android:supportsRtl="true" />
+      </manifest>
+      """
+        .trimIndent()
+    )
+
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapperWithRtl =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        manifest = StandaloneRenderModelManifest.fromPath(manifestFile.absolutePath),
+        namespace = "com.example.test",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+
+    val requestRtl = RenderRequest({ setLocale(Locale.create("ar")) }, { sequenceOf(layout) })
+
+    var outputImageRtl: BufferedImage? = null
+    bootstrapperWithRtl.bootstrap().use {
+      val (_, result) = it.render(requestRtl).single()
+      outputImageRtl = result.renderedImage.copy
+      result.dispose()
+    }
+
+    assertNotNull(outputImageRtl)
+    val redColor = 0xFFFF0000.toInt()
+    // In RTL with supportsRtl="true", the 40dp View with layout_gravity="start" mirrors to the right side of the screen.
+    // Left side (x=10, y=10) should not be red.
+    // Right side (x=width-10, y=10) should be red (#FFFF0000).
+    assertNotEquals(redColor, outputImageRtl!!.getRGB(10, 10))
+    assertEquals(redColor, outputImageRtl!!.getRGB(outputImageRtl!!.width - 10, 10))
+
+    // When the manifest does not support RTL (supportsRtl="false"), RTL layout is not enabled even with RTL locale.
+    val manifestNoRtlFile = tmpFolder.newFile("AndroidManifest_no_rtl.xml")
+    manifestNoRtlFile.writeText(
+      """
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.test">
+          <application android:supportsRtl="false" />
+      </manifest>
+      """
+        .trimIndent()
+    )
+
+    val bootstrapperNoRtl =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        manifest = StandaloneRenderModelManifest.fromPath(manifestNoRtlFile.absolutePath),
+        namespace = "com.example.test",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+
+    var outputImageNoRtl: BufferedImage? = null
+    bootstrapperNoRtl.bootstrap().use {
+      val (_, result) = it.render(requestRtl).single()
+      outputImageNoRtl = result.renderedImage.copy
+      result.dispose()
+    }
+
+    assertNotNull(outputImageNoRtl)
+    // Without RTL support, the View remains on the left side (x=10 is red, x=width-10 is not red).
+    assertEquals(redColor, outputImageNoRtl!!.getRGB(10, 10))
+    assertNotEquals(redColor, outputImageNoRtl!!.getRGB(outputImageNoRtl!!.width - 10, 10))
+  }
+
+  // Regression test for b/575469767
+  @Test
+  fun testRtlLayoutRendering_enabledWithBinaryManifestInApk() {
+    val layout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent">
+          <View
+              android:layout_width="40dp"
+              android:layout_height="40dp"
+              android:layout_gravity="start|top"
+              android:background="#FFFF0000" />
+      </FrameLayout>
+      """
+        .trimIndent()
+
+    val apkFile = tmpFolder.newFile("app_binary_rtl.apk")
+    val binaryManifestBytes = Base64.getDecoder().decode(StandaloneRenderModelManifestTest.BXML_SUPPORTS_RTL_BASE64)
+    ZipOutputStream(FileOutputStream(apkFile)).use { zos ->
+      zos.putNextEntry(ZipEntry(SdkConstants.FN_ANDROID_MANIFEST_XML))
+      zos.write(binaryManifestBytes)
+      zos.closeEntry()
+    }
+
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = apkFile.absolutePath,
+        namespace = "com.example.myapplication",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+
+    val requestRtl = RenderRequest({ setLocale(Locale.create("ar")) }, { sequenceOf(layout) })
+
+    var outputImage: BufferedImage? = null
+    bootstrapper.bootstrap().use {
+      val (_, result) = it.render(requestRtl).single()
+      outputImage = result.renderedImage.copy
+      result.dispose()
+    }
+
+    assertNotNull(outputImage)
+    val redColor = 0xFFFF0000.toInt()
+    assertNotEquals(redColor, outputImage!!.getRGB(10, 10))
+    assertEquals(redColor, outputImage!!.getRGB(outputImage!!.width - 10, 10))
   }
 }
 

@@ -17,6 +17,7 @@
 package com.android.tools.render
 
 import com.android.ide.common.rendering.api.ResourceNamespace
+import com.android.ide.common.rendering.api.SessionParams
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.resources.ResourceType
 import com.android.sdklib.AndroidVersion
@@ -28,6 +29,7 @@ import com.android.tools.render.configuration.StandaloneConfigurationSettings
 import com.android.tools.render.environment.StandaloneEnvironmentContext
 import com.android.tools.render.framework.IJFramework
 import com.android.tools.rendering.RenderService
+import com.android.tools.rendering.api.RenderModelManifest
 import com.android.tools.res.FrameworkOverlay
 import com.android.tools.res.LocalResourceRepository
 import com.android.tools.res.SingleRepoResourceRepositoryManager
@@ -44,7 +46,9 @@ import java.util.TimeZone
 import java.util.logging.Logger
 
 /** Bootstraps the Layoutlib and IntelliJ environment required for standalone rendering. */
-class RenderEnvironmentBootstrapper(
+class RenderEnvironmentBootstrapper
+@JvmOverloads
+constructor(
   private val fontsPath: String?,
   private val resourceApkPath: String?,
   private val namespace: String,
@@ -53,6 +57,7 @@ class RenderEnvironmentBootstrapper(
   private val layoutlibPath: String,
   private val resourceDirs: List<String> = emptyList(),
   private val rClassJars: List<String> = emptyList(),
+  private val manifest: RenderModelManifest? = null,
 ) {
   private val logger = Logger.getLogger(RenderEnvironmentBootstrapper::class.java.name)
 
@@ -75,7 +80,7 @@ class RenderEnvironmentBootstrapper(
 
     val apkResourcesRepo =
       if (resourceApkPath != null) ApkResourceRepository(resourceApkPath, resourceIdManager::findById)
-      else LocalResourceRepository.EmptyRepository<Path>(com.android.ide.common.rendering.api.ResourceNamespace.RES_AUTO)
+      else LocalResourceRepository.EmptyRepository<Path>(ResourceNamespace.RES_AUTO)
 
     val resourcesRepo =
       if (resourceDirs.isNotEmpty()) {
@@ -134,6 +139,14 @@ class RenderEnvironmentBootstrapper(
         configurationSettings.defaultDevice?.let { setDevice(it, false) }
       }
 
+    val resolvedManifest =
+      manifest
+        ?: resourceApkPath?.let { StandaloneRenderModelManifest.fromApk(it) }
+        ?: resourceDirs.firstNotNullOfOrNull { dir ->
+          StandaloneRenderModelManifest.fromPath(dir)
+            ?: File(dir).parentFile?.let { StandaloneRenderModelManifest.fromPath(it.absolutePath) }
+        }
+
     val module =
       StandaloneRenderModelModule(
         resourceRepositoryManager,
@@ -146,12 +159,13 @@ class RenderEnvironmentBootstrapper(
         environment,
         resourceIdManager,
         resourceApkPath,
+        resolvedManifest,
       )
 
     val renderService = RenderService {
       it.apply {
         disableDecorations()
-        withRenderingMode(com.android.ide.common.rendering.api.SessionParams.RenderingMode.SHRINK)
+        withRenderingMode(SessionParams.RenderingMode.SHRINK)
         disableSecurityManager()
       }
     }

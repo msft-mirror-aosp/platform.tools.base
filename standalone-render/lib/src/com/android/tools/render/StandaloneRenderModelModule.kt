@@ -53,6 +53,7 @@ class StandaloneRenderModelModule(
   override val environment: StandaloneEnvironmentContext,
   override val resourceIdManager: ResourceIdManager,
   private val resourceApkPath: String? = null,
+  manifest: RenderModelManifest? = null,
 ) : RenderModelModule {
   private val assetFileOpener = StandaloneAssetFileOpener(resourceApkPath)
   override val assetRepository = AssetRepositoryBase(assetFileOpener)
@@ -60,7 +61,10 @@ class StandaloneRenderModelModule(
   private val rClassInitLock = Any()
   private val initializedClassLoaders = Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>()))
 
-  override val manifest: RenderModelManifest? = null
+  // RenderEnvironmentBootstrapper already attempts to resolve the manifest from resourceApkPath (and other locations)
+  // before passing it to this constructor. However, keeping it here makes the module more self-sufficient if
+  // instantiated directly.
+  override val manifest: RenderModelManifest? = manifest ?: resourceApkPath?.let { StandaloneRenderModelManifest.fromApk(it) }
 
   override val parentDisposable: CheckedDisposable = Disposer.newCheckedDisposable()
   override val isDisposed: Boolean
