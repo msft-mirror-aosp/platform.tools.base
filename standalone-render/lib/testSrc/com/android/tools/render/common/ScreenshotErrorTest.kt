@@ -16,14 +16,19 @@
 
 package com.android.tools.render.common
 
+import com.android.ide.common.rendering.api.RecyclableImage
 import com.android.ide.common.rendering.api.Result
 import com.android.testutils.TestUtils
 import com.android.tools.render.RenderEnvironmentBootstrapper
 import com.android.tools.render.StandaloneRenderModelModule
 import com.android.tools.rendering.RenderLogger
 import com.android.tools.rendering.RenderResult
+import com.android.tools.rendering.RenderResultStats
 import com.android.tools.rendering.compose.ComposeRenderErrors
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
+import java.awt.Dimension
 import java.awt.image.BufferedImage
 import java.lang.reflect.InvocationTargetException
 import kotlin.io.path.absolutePathString
@@ -97,6 +102,27 @@ class ScreenshotErrorTest {
   }
 
   @Test
+  fun testThrowableToScreenshotErrorWithMessagelessWrappedErrorFallsBackToClassName() {
+    val wrapped = InvocationTargetException(StackOverflowError())
+
+    val error = wrapped.toScreenshotError()
+    assertThat(error.status).isEqualTo("ERROR_UNKNOWN")
+    assertThat(error.message).isEqualTo("java.lang.StackOverflowError")
+    assertThat(error.stackTrace).contains("java.lang.StackOverflowError")
+  }
+
+  @Test
+  fun testThrowableToScreenshotErrorWithBlankMessageFallsBackToClassName() {
+    val emptyMessageError = IllegalStateException("").toScreenshotError()
+    assertThat(emptyMessageError.status).isEqualTo("ERROR_UNKNOWN")
+    assertThat(emptyMessageError.message).isEqualTo("java.lang.IllegalStateException")
+
+    val wrappedBlankMessageError = InvocationTargetException(IllegalArgumentException("   "), "   ").toScreenshotError()
+    assertThat(wrappedBlankMessageError.status).isEqualTo("ERROR_UNKNOWN")
+    assertThat(wrappedBlankMessageError.message).isEqualTo("java.lang.IllegalArgumentException")
+  }
+
+  @Test
   fun testRenderResultToScreenshotErrorReturnsNullOnSuccess() {
     withRenderModule { module ->
       val renderResult =
@@ -153,6 +179,96 @@ class ScreenshotErrorTest {
       assertThat(error?.message).contains("Failed to instantiate Composition Local")
       assertThat(error?.message).contains(ComposeRenderErrors.COMPOSITION_LOCAL_NOT_FOUND_HINT.trimIndent())
       assertThat(error?.stackTrace).contains("LocalGraphicsContext not present")
+    }
+  }
+
+  @Test
+  fun testRenderResultToScreenshotErrorWithMessagelessLoggerThrowableOnSuccessStatusUsesRootThrowableClassName() {
+    withRenderModule { module ->
+      val logger = RenderLogger()
+      val wrapped = InvocationTargetException(StackOverflowError())
+      logger.addBrokenClass("com.example.StackOverflowPreviewKt", wrapped)
+
+      val renderResult =
+        RenderResult(
+          { throw NotImplementedError() },
+          module.project,
+          module,
+          logger,
+          null,
+          false,
+          Result.Status.SUCCESS.createResult(),
+          ImmutableList.of(),
+          ImmutableList.of(),
+          RecyclableImage.NULL,
+          ImmutableMap.of(),
+          ImmutableMap.of(),
+          null,
+          Dimension(0, 0),
+          RenderResultStats.EMPTY,
+        )
+      val image = BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB)
+
+      val error = renderResult.toScreenshotError(image)
+      assertThat(error).isNotNull()
+      assertThat(error?.status).isEqualTo("SUCCESS")
+      assertThat(error?.message).isEqualTo("java.lang.StackOverflowError")
+      assertThat(error?.stackTrace).contains("java.lang.StackOverflowError")
+      assertThat(error?.brokenClasses).hasSize(1)
+    }
+  }
+
+  @Test
+  fun testRenderResultToScreenshotErrorWithBlankMessageThrowableFallsBackToClassName() {
+    withRenderModule { module ->
+      val logger = RenderLogger()
+      val wrapped = InvocationTargetException(IllegalStateException("   "))
+      logger.addBrokenClass("com.example.BlankErrorPreviewKt", wrapped)
+
+      val renderResult =
+        RenderResult(
+          { throw NotImplementedError() },
+          module.project,
+          module,
+          logger,
+          null,
+          false,
+          Result.Status.SUCCESS.createResult("   "),
+          ImmutableList.of(),
+          ImmutableList.of(),
+          RecyclableImage.NULL,
+          ImmutableMap.of(),
+          ImmutableMap.of(),
+          null,
+          Dimension(0, 0),
+          RenderResultStats.EMPTY,
+        )
+      val image = BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB)
+
+      val error = renderResult.toScreenshotError(image)
+      assertThat(error).isNotNull()
+      assertThat(error?.message).isEqualTo("java.lang.IllegalStateException")
+      assertThat(error?.stackTrace).startsWith("java.lang.IllegalStateException")
+    }
+  }
+
+  @Test
+  fun testRenderResultToScreenshotErrorUnwrapsInvocationTargetExceptionStackTrace() {
+    withRenderModule { module ->
+      val rootCause = IllegalStateException("Preview boom")
+      val wrapped = InvocationTargetException(rootCause)
+      val renderResult =
+        RenderResult.createRenderTaskErrorResult(
+          module,
+          { throw NotImplementedError() },
+          wrapped,
+          RenderLogger(),
+        )
+
+      val error = renderResult.toScreenshotError(null)
+      assertThat(error).isNotNull()
+      assertThat(error?.status).isEqualTo("ERROR_RENDER_TASK")
+      assertThat(error?.stackTrace).startsWith("java.lang.IllegalStateException: Preview boom")
     }
   }
 }

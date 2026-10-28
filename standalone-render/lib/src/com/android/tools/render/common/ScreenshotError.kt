@@ -54,6 +54,7 @@ fun RenderResult.toScreenshotError(imageRendered: BufferedImage?, expectImage: B
   val allThrowables =
     sequenceOf(renderResult.exception) + logger.messages.asSequence().map { it.throwable } + logger.brokenClasses.values.asSequence()
   val diagnosedComposeError = allThrowables.mapNotNull { ComposeRenderErrors.match(it) }.firstOrNull()
+  val firstRootThrowable = allThrowables.mapNotNull { ComposeRenderErrors.unwrapIfInvocationTargetException(it) }.firstOrNull()
 
   val errorMessage =
     when {
@@ -63,10 +64,16 @@ fun RenderResult.toScreenshotError(imageRendered: BufferedImage?, expectImage: B
         val hintSuffix = diagnosedComposeError.hint?.let { "\nHint: ${it.trimIndent()}" } ?: ""
         "${diagnosedComposeError.summary}$hintSuffix"
       }
-      else -> renderResult.errorMessage ?: ""
+      !renderResult.errorMessage.isNullOrBlank() -> renderResult.errorMessage!!
+      firstRootThrowable != null -> firstRootThrowable.message?.takeUnless { it.isBlank() } ?: firstRootThrowable.javaClass.name
+      else -> ""
     }
 
-  val stackTrace = diagnosedComposeError?.rootCause?.stackTraceToString() ?: renderResult.exception?.stackTraceToString() ?: ""
+  val stackTrace =
+    diagnosedComposeError?.rootCause?.stackTraceToString()
+      ?: firstRootThrowable?.stackTraceToString()
+      ?: renderResult.exception?.stackTraceToString()
+      ?: ""
 
   return ScreenshotError(
     status = renderResult.status.name,
@@ -86,14 +93,14 @@ fun RenderResult.toScreenshotError(imageRendered: BufferedImage?, expectImage: B
  */
 fun Throwable.toScreenshotError(customStatus: String? = null): ScreenshotError {
   val diagnosedComposeError = ComposeRenderErrors.match(this)
+  val rootCause = diagnosedComposeError?.rootCause ?: ComposeRenderErrors.unwrapIfInvocationTargetException(this) ?: this
   val message =
     if (diagnosedComposeError != null) {
       val hintSuffix = diagnosedComposeError.hint?.let { "\nHint: ${it.trimIndent()}" } ?: ""
       "${diagnosedComposeError.summary}$hintSuffix"
     } else {
-      this.message ?: ""
+      rootCause.message?.takeUnless { it.isBlank() } ?: this.message?.takeUnless { it.isBlank() } ?: rootCause.javaClass.name
     }
-  val rootCause = diagnosedComposeError?.rootCause ?: this
   val status = customStatus ?: if (diagnosedComposeError != null) Result.Status.ERROR_RENDER_TASK.name else Result.Status.ERROR_UNKNOWN.name
 
   return ScreenshotError(

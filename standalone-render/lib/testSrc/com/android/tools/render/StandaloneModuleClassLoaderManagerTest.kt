@@ -184,14 +184,25 @@ class StandaloneModuleClassLoaderManagerTest {
       assertThat(LibraryClassBinaryCache.asmTransformCount).isEqualTo(1)
       ref1.close()
 
-      // Replace the JAR in-place with an updated modification timestamp
-      writeJarWithValueClass(libJar, "com/example/lib/JarLib", "jar-v2", lastModifiedMs = 2_000_000L)
+      // Replace the JAR in-place with an updated modification timestamp and an additional class in a
+      // brand-new package to verify that both ClassBinaryCacheManager and UrlClassLoader's shared
+      // package-hash CachePool invalidate stale entries for the modified JAR path.
+      writeJarWithValueClasses(
+        libJar,
+        mapOf(
+          "com/example/lib/JarLib" to "jar-v2",
+          "com/example/lib/newbranch/NewBranchLib" to "branch-v2",
+        ),
+        lastModifiedMs = 2_000_000L,
+      )
       manager.refreshClassPath(classPath, projectClassPath)
 
       val ref2 = manager.getPrivate(null)
       val cls2 = ref2.classLoader.loadClass("com.example.lib.JarLib")
       assertThat(cls2.getMethod("getValue").invoke(null)).isEqualTo("jar-v2")
-      assertThat(LibraryClassBinaryCache.asmTransformCount).isEqualTo(2)
+      val newPkgCls = ref2.classLoader.loadClass("com.example.lib.newbranch.NewBranchLib")
+      assertThat(newPkgCls.getMethod("getValue").invoke(null)).isEqualTo("branch-v2")
+      assertThat(LibraryClassBinaryCache.asmTransformCount).isEqualTo(3)
       ref2.close()
     } finally {
       manager.close()
@@ -501,13 +512,20 @@ class StandaloneModuleClassLoaderManagerTest {
 
   /** Packages a generated `.class` file (see [writeValueClass]) into [jarFile] with the given [lastModifiedMs] timestamp. */
   private fun writeJarWithValueClass(jarFile: File, internalName: String, returnValue: String, lastModifiedMs: Long) {
-    val bytes = generateValueClassBytes(internalName, returnValue)
+    writeJarWithValueClasses(jarFile, mapOf(internalName to returnValue), lastModifiedMs)
+  }
+
+  /** Packages one or more generated `.class` files into [jarFile] with the given [lastModifiedMs] timestamp. */
+  private fun writeJarWithValueClasses(jarFile: File, classes: Map<String, String>, lastModifiedMs: Long) {
     JarOutputStream(FileOutputStream(jarFile)).use { jos ->
-      val entry = JarEntry("$internalName.class")
-      entry.time = lastModifiedMs
-      jos.putNextEntry(entry)
-      jos.write(bytes)
-      jos.closeEntry()
+      for ((internalName, returnValue) in classes) {
+        val bytes = generateValueClassBytes(internalName, returnValue)
+        val entry = JarEntry("$internalName.class")
+        entry.time = lastModifiedMs
+        jos.putNextEntry(entry)
+        jos.write(bytes)
+        jos.closeEntry()
+      }
     }
     jarFile.setLastModified(lastModifiedMs)
   }
