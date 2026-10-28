@@ -80,6 +80,48 @@ class AdbServerStartupUtilsTest {
   }
 
   @Test
+  fun findAdbOnPath_skipsEmptyEntries() {
+    // Prepare
+    val binDir = tempFolder.newFolder("bin").toPath()
+    val adbFile = Files.createFile(binDir.resolve("adb"))
+    val pathEnv = listOf("", " ", binDir.toString(), "").joinToString(File.pathSeparator)
+
+    // Act
+    val result = AdbServerStartupUtils.findAdbOnPath(osName = "Linux", pathEnv = pathEnv)
+
+    // Assert
+    assertEquals(adbFile.toAbsolutePath(), result)
+  }
+
+  @Test
+  fun findAdbOnPath_skipsInvalidEntries() {
+    // Prepare
+    val binDir = tempFolder.newFolder("bin").toPath()
+    val adbFile = Files.createFile(binDir.resolve("adb"))
+    // NUL is invalid in paths on all platforms, so `Paths.get` throws `InvalidPathException`
+    val pathEnv = listOf("invalid\u0000dir", binDir.toString()).joinToString(File.pathSeparator)
+
+    // Act
+    val result = AdbServerStartupUtils.findAdbOnPath(osName = "Linux", pathEnv = pathEnv)
+
+    // Assert
+    assertEquals(adbFile.toAbsolutePath(), result)
+  }
+
+  @Test
+  fun findAdbOnPath_stripsQuotesFromEntriesOnWindows() {
+    // Prepare
+    val binDir = tempFolder.newFolder("bin dir").toPath()
+    val adbExe = Files.createFile(binDir.resolve("adb.exe"))
+
+    // Act
+    val result = AdbServerStartupUtils.findAdbOnPath(osName = "Windows 11", pathEnv = "\"$binDir\"")
+
+    // Assert
+    assertEquals(adbExe.toAbsolutePath(), result)
+  }
+
+  @Test
   fun findAdbOnPath_throwsWhenNotFound() {
     // Prepare
     val pathEnv = tempFolder.newFolder("empty").toPath().toString()

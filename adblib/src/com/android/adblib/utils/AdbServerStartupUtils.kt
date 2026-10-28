@@ -19,6 +19,7 @@ import com.android.adblib.AdbLogger
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -27,7 +28,7 @@ object AdbServerStartupUtils {
 
   /**
    * Searches the directories listed in the `PATH` environment variable, in order, for the `adb` executable (`adb.exe` on Windows) and
-   * returns the absolute [Path] of the first match.
+   * returns the absolute [Path] of the first match. Empty and invalid `PATH` entries are skipped.
    *
    * @throws IOException if the `PATH` environment variable is not defined, or if `adb` cannot be found in any of its directories
    */
@@ -39,10 +40,23 @@ object AdbServerStartupUtils {
     if (pathEnv == null) {
       throw IOException("No PATH environment variable is defined")
     }
-    val executableName = if (osName?.startsWith("Windows", ignoreCase = true) == true) "adb.exe" else "adb"
-    for (binDir in pathEnv.split(File.pathSeparator)) {
-      // Resolve relative `PATH` entries (e.g. "."), since `ProcessRunner` requires an absolute executable path
-      val file = Paths.get(binDir).resolve(executableName).toAbsolutePath()
+    val isWindows = osName?.startsWith("Windows", ignoreCase = true) == true
+    val executableName = if (isWindows) "adb.exe" else "adb"
+    for (rawBinDir in pathEnv.split(File.pathSeparator)) {
+      // Windows allows quoting `PATH` entries (e.g. `"C:\Program Files\foo"`), and `"` is not a valid character in Windows paths
+      val binDir = if (isWindows) rawBinDir.replace("\"", "").trim() else rawBinDir
+      // Skip empty entries (e.g. from "::" or a trailing separator), which would otherwise resolve to the current working directory
+      if (binDir.isBlank()) {
+        continue
+      }
+      val file =
+        try {
+          // Resolve relative `PATH` entries (e.g. "."), since `ProcessRunner` requires an absolute executable path
+          Paths.get(binDir).resolve(executableName).toAbsolutePath()
+        } catch (e: InvalidPathException) {
+          logger?.debug { "Skipping invalid PATH entry '$binDir': ${e.message}" }
+          continue
+        }
       if (Files.isRegularFile(file)) {
         return file
       }
