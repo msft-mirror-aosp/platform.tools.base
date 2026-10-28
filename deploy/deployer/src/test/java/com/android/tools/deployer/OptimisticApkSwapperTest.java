@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-import com.android.ddmlib.IDevice;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.common.DeployerOption;
@@ -67,10 +66,6 @@ public class OptimisticApkSwapperTest {
 
     @Before
     public void beforeTest() throws IOException {
-        IDevice device = Mockito.mock(IDevice.class);
-        when(device.getSerialNumber()).thenReturn(TEST_SERIAL);
-        when(device.getAbis()).thenReturn(ImmutableList.of(TEST_ABI));
-
         installer = Mockito.mock(Installer.class);
         when(installer.overlaySwap(ArgumentMatchers.any()))
                 .thenReturn(

@@ -53,7 +53,7 @@ import java.util.List;
 @RunWith(ApiLevel.class)
 public class OptimisticInstallTest {
     @Rule public TestName name = new TestName();
-    @Rule @ApiLevel.Init public FakeDeviceConnection.WithAdbLib connection;
+    @Rule @ApiLevel.Init public FakeDeviceConnection connection;
 
     private static final String BASE = "tools/base/deploy/deployer/src/test/resource/";
 

@@ -75,7 +75,7 @@ abstract class DeployRunnerTestBase {
 
   @JvmField @Rule var testName: TestName = TestName()
 
-  @JvmField @Rule @ApiLevel.Init var connection: FakeDeviceConnection.WithAdbLib? = null
+  @JvmField @Rule @ApiLevel.Init var connection: FakeDeviceConnection? = null
 
   companion object {
 

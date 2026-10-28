@@ -50,7 +50,7 @@ public class AdbInstallerTest {
     private static final String INVOCATION =
             AdbInstaller.INSTALLER_PATH + " -version=wrong_version_hash";
 
-    @Rule @ApiLevel.Init public FakeDeviceConnection.WithAdbLib connection;
+    @Rule @ApiLevel.Init public FakeDeviceConnection connection;
     private FakeDevice device;
     private ILogger logger;
 

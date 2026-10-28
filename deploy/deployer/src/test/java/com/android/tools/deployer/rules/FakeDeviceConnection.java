@@ -43,14 +43,12 @@ import org.junit.runners.model.Statement;
  * A JUnit {@link TestRule} that sets up a {@link FakeDevice} and connects it to a {@link FakeAdbServer}.
  * <p>
  * This rule handles the lifecycle of the device and the ADB bridge, ensuring that they are
- * properly initialized before each test and shut down afterward. It also optionally supports
- * enabling adblib compatibility for tests that require it.
+ * properly initialized before each test and shut down afterward.
  */
 public class FakeDeviceConnection implements TestRule {
 
     private final DeviceId deviceId;
     private FakeDevice device;
-    private boolean useAdbLib = false;
     private final FakeDeviceHandler handler = new FakeDeviceHandler();
     public final FakeAdbServerProviderRule fakeAdbRule = new FakeAdbServerProviderRule(
             provider -> {
@@ -93,21 +91,6 @@ public class FakeDeviceConnection implements TestRule {
         this.deviceId = deviceId;
     }
 
-    /**
-     * A specialized {@link FakeDeviceConnection} that enables adblib compatibility by default.
-     * Useful for tests that use {@link ApiLevel.Init} to initialize the rule.
-     */
-    public static class WithAdbLib extends FakeDeviceConnection {
-        public WithAdbLib(DeviceId deviceId) {
-            super(deviceId);
-            useAdbLib();
-        }
-    }
-
-    public void useAdbLib() {
-        useAdbLib = true;
-    }
-
     public DeviceId getDeviceId() { return deviceId; }
 
     public FakeDevice getDevice() {
@@ -141,10 +124,9 @@ public class FakeDeviceConnection implements TestRule {
 
     @Override
     public Statement apply(Statement base, Description description) {
-        RuleChain chain = RuleChain.outerRule(fakeAdbRule);
-        if (useAdbLib) {
-            chain = chain.around(new UseAdbLibAndroidDebugBridgeRule(this::getAdbSession));
-        }
-        return chain.around(deviceConnectionRule).apply(base, description);
+        return RuleChain.outerRule(fakeAdbRule)
+                .around(new UseAdbLibAndroidDebugBridgeRule(this::getAdbSession))
+                .around(deviceConnectionRule)
+                .apply(base, description);
     }
 }
