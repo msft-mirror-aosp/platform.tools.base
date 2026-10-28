@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.services.createProjectServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl
+import com.android.build.gradle.internal.variant.DimensionCombinator
 import com.android.build.gradle.internal.variant.LegacyVariantInputManager
 import com.android.build.gradle.internal.variant.VariantInputModelBuilder
 import com.android.build.gradle.internal.variant.VariantModel
@@ -158,6 +159,42 @@ class ModelBuilderTest {
   }
 
   @Test
+  fun `test AndroidDsl does not expose fake dimension when flavorDimensions is empty`() {
+    AndroidLocationsBuildService.RegistrationAction(project).execute()
+    val variantInputModel =
+      LegacyVariantInputManager(
+        dslServices,
+        ComponentTypeImpl.BASE_APK,
+        SourceSetManager(ProjectFactory.project, false, dslServices, DelayedActionsExecutor()),
+      )
+    val extension = dslServices.newDecoratedInstance(ApplicationExtensionImpl::class.java, dslServices, variantInputModel)
+    extension.productFlavors.create("example")
+
+    val combinator = DimensionCombinator(variantInputModel, projectServices.issueReporter, extension.flavorDimensions)
+    Truth.assertThat(combinator.computeVariants()).isNotEmpty()
+    // Internally DimensionCombinator assigns FAKE_DIMENSION so variant combination can proceed during sync
+    Truth.assertThat(extension.productFlavors.single().dimension).isEqualTo(DimensionCombinator.FAKE_DIMENSION)
+
+    val androidProblemReporterProvider = AndroidProblemReporterProvider.RegistrationAction(project, false).execute()
+    SyncIssueReporterImpl.GlobalSyncIssueService.RegistrationAction(
+        project,
+        SyncOptions.EvaluationMode.IDE,
+        SyncOptions.ErrorFormatMode.MACHINE_PARSABLE,
+        androidProblemReporterProvider,
+      )
+      .execute()
+
+    val modelBuilder = ModelBuilder(project, createVariantModel(variantInputModel), extension)
+    val androidDsl = modelBuilder.query(AndroidDsl::class.java, project)
+
+    Truth.assertThat(androidDsl.flavorDimensions).isEmpty()
+    Truth.assertThat(androidDsl.productFlavors).hasSize(1)
+    val exampleFlavor = androidDsl.productFlavors.single()
+    Truth.assertThat(exampleFlavor.name).isEqualTo("example")
+    Truth.assertThat(exampleFlavor.dimension).isNull()
+  }
+
+  @Test
   fun `test issueReporter lockdown`() {
     thrown.expect(IllegalStateException::class.java)
     thrown.expectMessage("Issue registered after handler locked.")
@@ -210,17 +247,26 @@ class ModelBuilderTest {
     return ModelBuilder(project, createVariantModel(), extension)
   }
 
-  private fun createVariantModel(): VariantModel {
+  private fun createVariantModel(
+    variantInputModel:
+      com.android.build.gradle.internal.variant.VariantInputModel<
+        com.android.build.gradle.internal.dsl.DefaultConfig,
+        com.android.build.gradle.internal.dsl.BuildType,
+        com.android.build.gradle.internal.dsl.ProductFlavor,
+        com.android.build.gradle.internal.dsl.SigningConfig,
+      > =
+      VariantInputModelBuilder(ComponentTypeImpl.BASE_APK, dslServices).toModel()
+  ): VariantModel {
     val globalConfig = mock<GlobalTaskCreationConfigImpl>()
     whenever(globalConfig.services).thenReturn(dslServices)
 
     return VariantModelImpl(
-      VariantInputModelBuilder(ComponentTypeImpl.BASE_APK, dslServices).toModel(),
+      variantInputModel,
       { "debug" },
       { variantList },
       { testComponentList },
       { listOf() },
-      { BuildFeatureValuesImpl(dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java), mock<ProjectServices>()) },
+      { BuildFeatureValuesImpl(dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java), projectServices) },
       AndroidProjectTypes.PROJECT_TYPE_APP,
       ProjectType.APPLICATION,
       globalConfig,

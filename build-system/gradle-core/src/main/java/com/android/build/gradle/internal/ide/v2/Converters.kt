@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.lint.resolveBaselineFile
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableMap
+import com.android.build.gradle.internal.variant.DimensionCombinator
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.model.ApiVersion as DslApiVersion
 import com.android.builder.model.ClassField as DslClassField
@@ -95,7 +96,7 @@ internal fun DslDefaultConfig.convert(features: BuildFeatureValues) =
 internal fun DslProductFlavor.convert(features: BuildFeatureValues) =
   ProductFlavorImpl(
     name = name,
-    dimension = dimension,
+    dimension = dimension?.takeUnless { it == DimensionCombinator.FAKE_DIMENSION },
     applicationId = applicationId,
     versionCode = versionCode,
     versionName = versionName,
