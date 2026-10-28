@@ -1,6 +1,7 @@
 package com.android.aaptcompiler
 
 import com.android.aaptcompiler.android.ResTableConfig
+import com.android.resources.Pseudolocalizer
 
 /**
  * The struct that represents both [Span] and [UntranslatableSection] objects.

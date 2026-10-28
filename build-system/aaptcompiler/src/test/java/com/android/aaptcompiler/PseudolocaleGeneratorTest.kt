@@ -1,7 +1,11 @@
 package com.android.aaptcompiler
 
+import com.android.resources.Pseudolocalizer
 import com.google.common.truth.Truth
 import org.junit.Test
+
+private const val bidiWordStart = "\u200f\u202e"
+private const val bidiWordEnd = "\u202c\u200f"
 
 class PseudolocaleGeneratorTest {
 

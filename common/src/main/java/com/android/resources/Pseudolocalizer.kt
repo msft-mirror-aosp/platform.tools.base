@@ -1,6 +1,5 @@
-package com.android.aaptcompiler
+package com.android.resources
 
-import com.android.aaptcompiler.android.isTruthy
 
 // Placeholder marks
 private const val PLACEHOLDER_OPEN = "\u00bb"
@@ -178,7 +177,7 @@ class PseudoMethodAccent : PseudoMethodImpl() {
 
   override fun end(): String {
     val result = StringBuilder()
-    if (length.isTruthy()) {
+    if (length != 0) {
       result.append(' ')
       result.append(pseudoGenerateExpansion(if (wordCount > 3) length else length / 2))
     }
@@ -397,7 +396,7 @@ class Pseudolocalizer(method: Method) {
 
       if (currentChar == ARG_START) {
         ++depth
-      } else if (currentChar == ARG_END && depth.isTruthy()) {
+      } else if (currentChar == ARG_END && depth != 0) {
         --depth
       }
 
@@ -408,7 +407,7 @@ class Pseudolocalizer(method: Method) {
           ++nextPos
         }
         val chunkSize = nextPos - lastPos
-        if (chunkSize.isTruthy()) {
+        if (chunkSize != 0) {
           var chunk = originalText.substring(lastPos, nextPos)
           if (pseudo) {
             chunk = implementation.text(chunk)
