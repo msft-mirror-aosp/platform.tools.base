@@ -30,6 +30,7 @@ import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.Closeable
+import java.io.File
 import java.util.concurrent.TimeUnit
 import org.junit.Assume
 import org.junit.Rule
@@ -369,7 +370,86 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun additionalTestOutputWithTestStorageServiceInSecondaryUser() {
-    SecondaryUser().use { util.additionalTestOutputWithTestStorageService() }
+    SecondaryUser().use { secondaryUser ->
+      try {
+        util.additionalTestOutputWithTestStorageService()
+      } catch (e: AssertionError) {
+        // This test is flaky (b/579071803): some of the files that the test writes with TestStorage
+        // are missing on the host. Print what the device and the test engine see before the
+        // secondary user is removed.
+        try {
+          printTestStorageDiagnostics(secondaryUser.userId)
+        } catch (diagnosticsFailure: Exception) {
+          e.addSuppressed(diagnosticsFailure)
+        }
+        throw e
+      }
+    }
+  }
+
+  private fun printTestStorageDiagnostics(userId: Int) {
+    println("========== TestStorage diagnostics (user $userId) ==========")
+    val hostDir = util.project.resolve(util.testAdditionalOutputPath).parent.toFile()
+    println("--- Files on host in $hostDir ---")
+    hostDir.walkTopDown().filter { it.isFile }.forEach { println(it.relativeTo(hostDir)) }
+
+    // Compare the media store's file index right away and a few seconds later to see whether
+    // the missing files are indexed late.
+    val mediaStoreQuery =
+      arrayOf(
+        "content",
+        "query",
+        "--uri",
+        "'content://media/external/file?includePending=1&includeTrashed=1'",
+        "--user",
+        userId.toString(),
+        "--projection",
+        "_id:_data:mime_type:is_pending:is_trashed",
+        "--where",
+        "\"_data LIKE '%googletest%'\"",
+      )
+    println("--- Media store entries ---")
+    println(adbShell(*mediaStoreQuery))
+    Thread.sleep(10_000)
+    println("--- Media store entries after 10 seconds ---")
+    println(adbShell(*mediaStoreQuery))
+    println("--- Files on device in /storage/emulated/$userId/googletest ---")
+    println(adbShell("ls", "-laR", "/storage/emulated/$userId/googletest"))
+    println("--- Files on device in /sdcard/googletest ---")
+    println(adbShell("ls", "-laR", "/sdcard/googletest"))
+    println("--- Device log (filtered) ---")
+    val logcatFilter = Regex("MediaProvider|MediaScanner|TestStorage|androidx\\.test\\.services|googletest|FuseDaemon")
+    adbShell("logcat", "-d", "-v", "threadtime").lineSequence().filter { logcatFilter.containsMatchIn(it) }.forEach(::println)
+
+    val buildDir = util.project.resolve("${util.moduleName}/build").toFile()
+    val engineLogs = buildDir.walkTopDown().filter { it.isFile && it.name == "junit_engines_logging.txt" }.toList()
+    if (engineLogs.isEmpty()) {
+      println("--- No junit_engines_logging.txt in $buildDir ---")
+    }
+    engineLogs.forEach { engineLog ->
+      println("--- ${engineLog.relativeTo(buildDir)} (last 400 lines) ---")
+      engineLog.readLines().takeLast(400).forEach(::println)
+    }
+    println("========== End of TestStorage diagnostics ==========")
+  }
+
+  private fun adbShell(vararg args: String): String {
+    // Write the output to a file so that the time limit applies even if adb keeps the output open.
+    val outputFile = File.createTempFile("adb_shell_", ".txt")
+    try {
+      val process =
+        ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", *args)
+          .redirectErrorStream(true)
+          .redirectOutput(outputFile)
+          .start()
+      if (!process.waitFor(1, TimeUnit.MINUTES)) {
+        process.destroyForcibly()
+        return "${outputFile.readText()}\n(adb shell ${args.joinToString(" ")} timed out)"
+      }
+      return outputFile.readText()
+    } finally {
+      outputFile.delete()
+    }
   }
 
   @Test
@@ -459,10 +539,13 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       }
     }
 
+    /** The ID of the secondary user, which is the current user until this object is closed. */
+    val userId: Int
+
     init {
       removeAllSecondaryUsers()
-      val secondaryUserId = createSecondaryUser()
-      switchCurrentUser(secondaryUserId)
+      userId = createSecondaryUser()
+      switchCurrentUser(userId)
     }
 
     override fun close() {
