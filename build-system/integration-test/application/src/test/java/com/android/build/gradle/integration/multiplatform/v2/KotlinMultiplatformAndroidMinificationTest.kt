@@ -359,9 +359,15 @@ class KotlinMultiplatformAndroidMinificationTest {
         .trimIndent(),
     )
 
-    executor().run(":app:assembleDebug")
+    executor().run(":app:assembleDebug", ":kmpFirstLib:assemble")
 
     project.getSubproject("app").assertApk(ApkSelector.DEBUG) { mainDex().containsExactly(expectedClasses) }
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      mainJar {
+        classes().containsExactly("com/example/kmpfirstlib/KmpAndroidActivity")
+        resources().containsExactly("kmp_resource.txt")
+      }
+    }
   }
 
   @Test

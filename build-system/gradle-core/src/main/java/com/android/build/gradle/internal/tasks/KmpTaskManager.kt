@@ -196,9 +196,15 @@ class KmpTaskManager(project: Project, global: GlobalTaskCreationConfig) : TaskM
       }
     }
 
+    if (
+      variant.optimizationCreationConfig.minifiedEnabled ||
+        globalConfig.publishConsumerProguardRules
+    ) {
+      project.tasks.registerTask(MergeGeneratedProguardFilesCreationAction(variant))
+    }
+
     // Publishing consumer proguard rules is an opt-in feature for KMP
     if (globalConfig.publishConsumerProguardRules) {
-      project.tasks.registerTask(MergeGeneratedProguardFilesCreationAction(variant))
       project.tasks.registerTask(MergeConsumerProguardFilesTask.CreationAction(variant))
       project.tasks.registerTask(ExportConsumerProguardFilesTask.CreationAction(variant))
     }
