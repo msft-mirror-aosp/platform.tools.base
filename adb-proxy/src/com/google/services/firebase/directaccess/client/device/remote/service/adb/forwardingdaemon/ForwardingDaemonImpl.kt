@@ -283,7 +283,15 @@ internal class ForwardingDaemonImpl(
     }
 
   override fun onStateChanged(newState: DeviceState, features: String?) {
-    if (features != null) this.features = features
+    if (features != null) {
+      // When the local host adb server has burst mode enabled (ADB_BURST_MODE=1) and sees
+      // delayed_ack in the A_CNXN banner, it expects every A_OKAY response to an A_WRTE packet to
+      // include a 4-byte window-ack payload (acknowledged byte count). Because handleWrite sends
+      // 0-byte A_OKAY packets, advertising delayed_ack causes the local adb server to fail with
+      // "delayed ack mismatch" and close the stream.
+      // See http://b/578889039 for more details.
+      this.features = features.split(",").filter { it != DELAYED_ACK_FEATURE }.joinToString(",")
+    }
     _deviceState.update { newState }
     if (this::localAdbChannel.isInitialized) localAdbChannel.close()
   }
@@ -335,6 +343,7 @@ internal class ForwardingDaemonImpl(
   }
 
   companion object {
+    private const val DELAYED_ACK_FEATURE = "delayed_ack"
     private val logger = Logger.getLogger(ForwardingDaemonImpl::class.qualifiedName)
   }
 }

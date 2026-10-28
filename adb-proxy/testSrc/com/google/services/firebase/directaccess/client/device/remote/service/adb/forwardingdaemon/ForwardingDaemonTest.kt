@@ -94,7 +94,7 @@ class ForwardingDaemonTest {
       override suspend fun connect(forwardingDaemon: ForwardingDaemon) {
         fakeAdbSession.scope.launch {
           forwardingDaemon.onStateChanged(DeviceState.MISSING)
-          forwardingDaemon.onStateChanged(DeviceState.DEVICE)
+          forwardingDaemon.onStateChanged(DeviceState.DEVICE, "shell_v2,delayed_ack,cmd")
         }
       }
 
@@ -169,7 +169,7 @@ class ForwardingDaemonTest {
     fakeAdbSession.channelFactory.connectSocket(testSocket.localAddress()!!).use { channel ->
       inputList.forEach { channel.writeExactly(it) }
       // CNXN response
-      channel.assertCommand(CNXN)
+      channel.assertCommand(CNXN, payload = "device::features=shell_v2,cmd")
       // OPEN response
       channel.assertCommand(OKAY, 1, 1)
       // WRTE response
@@ -204,7 +204,7 @@ class ForwardingDaemonTest {
     fakeAdbSession.channelFactory.connectSocket(testSocket.localAddress()!!).use { channel ->
       inputList.forEach { channel.writeExactly(it) }
       // CNXN response
-      channel.assertCommand(CNXN)
+      channel.assertCommand(CNXN, payload = "device::features=shell_v2,cmd")
       // OPEN response
       channel.assertCommand(OKAY, 1, 1)
       // WRTE response
@@ -351,6 +351,19 @@ class ForwardingDaemonTest {
       }
 
       yieldUntil { forwardingDaemon.deviceState.value == DeviceState.LATENCY_DISCONNECT }
+    }
+  }
+
+  @Test
+  fun testDelayedAckFeatureStripped() = runBlockingWithTimeout {
+    val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession) { testSocket }
+    forwardingDaemon.start()
+    yieldUntil { isAdbDeviceConnected() }
+    forwardingDaemon.onStateChanged(DeviceState.DEVICE, "shell_v2,delayed_ack,cmd")
+    fakeAdbSession.channelFactory.connectSocket(testSocket.localAddress()!!).use { channel ->
+      channel.writeExactly(createByteBuffer(CNXN))
+      channel.assertCommand(CNXN, payload = "device::features=shell_v2,cmd")
     }
   }
 
