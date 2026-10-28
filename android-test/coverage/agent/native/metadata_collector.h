@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <mutex>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "tools/base/build-system/gradle-core/src/main/proto/coverage_metadata.pb.h"
@@ -55,6 +56,16 @@ class MetadataCollector {
                                  const std::string& source_file,
                                  const std::string& smap);
 
+  // Like AddClass(), for a class that was never loaded. Its entry is written
+  // only if the class isn't added with AddClass() too, for example because it
+  // loads later, so that no class is written twice.
+  proto::ClassMetadata* AddUnloadedClass(const std::string& class_name,
+                                         const std::string& source_file,
+                                         const std::string& smap);
+
+  // Returns whether the class was added, with AddClass() or AddUnloadedClass().
+  bool HasClass(const std::string& class_name) const;
+
   // Adds a method to a class metadata entry.
   proto::MethodMetadata* AddMethod(proto::ClassMetadata* class_meta,
                                    const std::string& method_name,
@@ -75,7 +86,12 @@ class MetadataCollector {
   // is added, allowing for JNI mocking.
   bool WriteToDisk() const;
 
-  // Returns a read-only reference to the internal metadata.
+  // Returns the metadata that WriteToDisk() writes: the loaded classes, then
+  // the classes that were never loaded.
+  proto::CoverageMetadata BuildMetadata() const;
+
+  // Returns a read-only reference to the metadata of the loaded classes. See
+  // BuildMetadata() for what WriteToDisk() writes.
   const proto::CoverageMetadata& metadata() const;
 
  private:
@@ -83,9 +99,17 @@ class MetadataCollector {
   MetadataCollector(const MetadataCollector&) = delete;
   MetadataCollector& operator=(const MetadataCollector&) = delete;
 
+  // Like BuildMetadata(), for callers that hold mutex_.
+  proto::CoverageMetadata BuildMetadataLocked() const;
+
   mutable std::mutex mutex_;
   std::string data_dir_;
   proto::CoverageMetadata metadata_;
+  // The classes that were never loaded, see AddUnloadedClass().
+  proto::CoverageMetadata unloaded_metadata_;
+  // The names of the classes added with AddClass() and AddUnloadedClass().
+  std::unordered_set<std::string> loaded_classes_;
+  std::unordered_set<std::string> unloaded_classes_;
   bool initialized_ = false;
 };
 

@@ -94,4 +94,36 @@ TEST_F(MetadataCollectorTest, IsolationVerification) {
   EXPECT_EQ(metadata.classes_size(), 0);
 }
 
+TEST_F(MetadataCollectorTest, ClassesThatNeverLoadedAreWrittenAfterLoadedOnes) {
+  collector_.Initialize("com.example.test");
+  collector_.AddClass("Lcom/example/Loaded;", "Loaded.kt", "");
+  auto* unloaded =
+      collector_.AddUnloadedClass("Lcom/example/Unloaded;", "Unloaded.kt", "");
+  collector_.AddBlock(collector_.AddMethod(unloaded, "run", "()V"), 7, {{3, 2}},
+                      1);
+
+  EXPECT_TRUE(collector_.HasClass("Lcom/example/Loaded;"));
+  EXPECT_TRUE(collector_.HasClass("Lcom/example/Unloaded;"));
+  EXPECT_FALSE(collector_.HasClass("Lcom/example/Other;"));
+
+  const auto metadata = collector_.BuildMetadata();
+  EXPECT_EQ(metadata.version(), 1);
+  ASSERT_EQ(metadata.classes_size(), 2);
+  EXPECT_EQ(metadata.classes(0).class_name(), "Lcom/example/Loaded;");
+  EXPECT_EQ(metadata.classes(1).class_name(), "Lcom/example/Unloaded;");
+  EXPECT_EQ(metadata.classes(1).methods(0).blocks(0).block_id(), 7u);
+}
+
+TEST_F(MetadataCollectorTest,
+       ClassThatLoadsAfterItsUnloadedEntryIsWrittenOnce) {
+  collector_.Initialize("com.example.test");
+  collector_.AddUnloadedClass("Lcom/example/Late;", "Late.kt", "");
+  auto* loaded = collector_.AddClass("Lcom/example/Late;", "Late.kt", "");
+  collector_.AddMethod(loaded, "run", "()V");
+
+  const auto metadata = collector_.BuildMetadata();
+  ASSERT_EQ(metadata.classes_size(), 1);
+  EXPECT_EQ(metadata.classes(0).methods_size(), 1);
+}
+
 }  // namespace coverage

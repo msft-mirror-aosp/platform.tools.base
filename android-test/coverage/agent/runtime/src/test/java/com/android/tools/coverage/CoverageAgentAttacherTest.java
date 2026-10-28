@@ -22,15 +22,24 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Tests that {@link CoverageAgentAttacher} never lets a coverage problem escape into the test run.
@@ -42,6 +51,8 @@ public class CoverageAgentAttacherTest {
 
     private final FakeEnvironment environment = new FakeEnvironment();
     private final CoverageAgentAttacher attacher = new CoverageAgentAttacher(environment);
+
+    @Rule public final TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void attachesWithParsedConfigAndDumpsAtTheEnd() throws Exception {
@@ -165,6 +176,68 @@ public class CoverageAgentAttacherTest {
         assertThrows(OutOfMemoryError.class, () -> attacher.testRunFinished(new Result()));
     }
 
+    @Test
+    public void passesTheDexFilesOfEveryApkBeforeTheDump() throws Exception {
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.apkPaths.add(
+                apk("base.apk", "classes.dex", "base dex", "classes2.dex", "base dex 2").getPath());
+        // Only top-level classes*.dex entries are dex files of the app.
+        environment.apkPaths.add(
+                apk(
+                                "split.apk",
+                                "assets/classes.dex",
+                                "asset",
+                                "classes.txt",
+                                "text",
+                                "classes.dex",
+                                "split dex")
+                        .getPath());
+
+        runTests();
+
+        assertEquals(
+                Arrays.asList("add base dex", "add base dex 2", "add split dex", "dump"),
+                environment.calls);
+        assertTrue(environment.errors.isEmpty());
+    }
+
+    @Test
+    public void unloadedClassesExceptionDoesNotStopTheDump() throws Exception {
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.apkPaths.add(new File(tempFolder.getRoot(), "missing.apk").getPath());
+
+        runTests();
+
+        assertEquals(Arrays.asList("dump"), environment.calls);
+        assertEquals(1, environment.errors.size());
+    }
+
+    @Test
+    public void unloadedClassesErrorDoesNotStopTheDump() throws Exception {
+        // What an agent without the native method throws.
+        environment.arguments.put("coverage-agent-config", CONFIG);
+        environment.apkPaths.add(apk("base.apk", "classes.dex", "base dex").getPath());
+        environment.addUnloadedClassesFailure = new UnsatisfiedLinkError("addUnloadedClasses");
+
+        runTests();
+
+        assertEquals(Arrays.asList("dump"), environment.calls);
+        assertEquals(1, environment.errors.size());
+    }
+
+    /** Writes an APK with the given entries, as name and content pairs. */
+    private File apk(String fileName, String... entries) throws IOException {
+        File apk = tempFolder.newFile(fileName);
+        try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(apk))) {
+            for (int i = 0; i < entries.length; i += 2) {
+                out.putNextEntry(new ZipEntry(entries[i]));
+                out.write(entries[i + 1].getBytes(StandardCharsets.UTF_8));
+                out.closeEntry();
+            }
+        }
+        return apk;
+    }
+
     /** Calls the listener the way the test runner does. Anything it throws fails the test. */
     private void runTests() throws Exception {
         attacher.testRunStarted(Description.EMPTY);
@@ -177,11 +250,15 @@ public class CoverageAgentAttacherTest {
         RuntimeException argumentsFailure;
         Throwable attachFailure;
         boolean trackerLoaded = true;
+        Error addUnloadedClassesFailure;
         Error dumpFailure;
 
         String attachedLibrary;
         String attachedOptions;
         int dumpCount;
+        final List<String> apkPaths = new ArrayList<>();
+        // The dex files passed to the agent, and the dumps, in order.
+        final List<String> calls = new ArrayList<>();
         final List<String> warnings = new ArrayList<>();
         final List<String> errors = new ArrayList<>();
 
@@ -216,8 +293,27 @@ public class CoverageAgentAttacherTest {
         }
 
         @Override
+        public List<String> apkPaths() {
+            return apkPaths;
+        }
+
+        @Override
+        public void addUnloadedClasses(ByteBuffer dex) {
+            if (addUnloadedClassesFailure != null) {
+                throw addUnloadedClassesFailure;
+            }
+            // The agent reads the whole capacity of the direct buffer as the dex file.
+            assertTrue(dex.isDirect());
+            assertEquals(dex.capacity(), dex.remaining());
+            byte[] content = new byte[dex.remaining()];
+            dex.get(content);
+            calls.add("add " + new String(content, StandardCharsets.UTF_8));
+        }
+
+        @Override
         public void dumpCoverageData() {
             dumpCount++;
+            calls.add("dump");
             if (dumpFailure != null) {
                 throw dumpFailure;
             }

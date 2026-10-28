@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstring>
 #include <limits>
 #include <map>
@@ -145,6 +146,45 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
     return;
   }
 
+  bool modified =
+      instance_->InstrumentClass(dex_ir, descriptor, /*loaded=*/true);
+
+  if (!modified) {
+    return;
+  }
+
+  dex::Writer writer(dex_ir);
+  JvmtiAllocator allocator(jvmti);
+  size_t new_image_size = 0;
+  dex::u1* new_image = writer.CreateImage(&allocator, &new_image_size);
+
+  if (new_image != nullptr) {
+    if (new_image_size > std::numeric_limits<jint>::max()) {
+      Log::E("Error: Generated DEX image size exceeds jint max for %s", name);
+      jvmti->Deallocate(reinterpret_cast<unsigned char*>(new_image));
+      return;
+    }
+
+    *new_class_data_len = static_cast<jint>(new_image_size);
+    *new_class_data = reinterpret_cast<unsigned char*>(new_image);
+
+    // After successful instrumentation, tag the class to avoid future redundant
+    // instrumentation.
+    if (class_being_redefined != nullptr) {
+      jvmti->SetTag(class_being_redefined, kInstrumentedTag);
+    } else {
+      // On initial load, the class_being_redefined is null. We track it so we
+      // can tag it in ClassPrepare.
+      TaggingManager::Instance().TrackClass(descriptor);
+    }
+  } else {
+    Log::E("Slicer failed to produce new DEX image for %s", name);
+  }
+}
+
+bool Instrumenter::InstrumentClass(const std::shared_ptr<ir::DexFile>& dex_ir,
+                                   const std::string& descriptor,
+                                   bool loaded) const {
   // Pre-build the declaration for CoverageTracker.hit(int) once
   // per class to avoid redundant lookups for every method.
   ir::Builder builder(dex_ir);
@@ -183,56 +223,65 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
     }
   }
 
+  MetadataCollector& collector = MetadataCollector::Instance();
   auto* class_meta =
-      MetadataCollector::Instance().AddClass(descriptor, source_file, smap);
+      loaded ? collector.AddClass(descriptor, source_file, smap)
+             : collector.AddUnloadedClass(descriptor, source_file, smap);
 
   bool modified = false;
   for (auto& ir_class : dex_ir->classes) {
     for (auto& method : ir_class->virtual_methods) {
-      if (instance_->InstrumentMethod(method, hit_method_decl, dex_ir,
-                                      class_meta)) {
+      if (InstrumentMethod(method, hit_method_decl, dex_ir, class_meta)) {
         modified = true;
       }
     }
     for (auto& method : ir_class->direct_methods) {
-      if (instance_->InstrumentMethod(method, hit_method_decl, dex_ir,
-                                      class_meta)) {
+      if (InstrumentMethod(method, hit_method_decl, dex_ir, class_meta)) {
         modified = true;
       }
     }
   }
+  return modified;
+}
 
-  if (!modified) {
-    return;
-  }
-
-  dex::Writer writer(dex_ir);
-  JvmtiAllocator allocator(jvmti);
-  size_t new_image_size = 0;
-  dex::u1* new_image = writer.CreateImage(&allocator, &new_image_size);
-
-  if (new_image != nullptr) {
-    if (new_image_size > std::numeric_limits<jint>::max()) {
-      Log::E("Error: Generated DEX image size exceeds jint max for %s", name);
-      jvmti->Deallocate(reinterpret_cast<unsigned char*>(new_image));
-      return;
+void Instrumenter::AddUnloadedClasses(const unsigned char* dex, size_t size) {
+  const auto start = std::chrono::steady_clock::now();
+  dex::Reader index(dex, size);
+  const auto class_defs = index.ClassDefs();
+  const auto type_ids = index.TypeIds();
+  int added = 0;
+  for (dex::u4 class_index = 0; class_index < class_defs.size();
+       ++class_index) {
+    std::string descriptor = index.GetStringMUTF8(
+        type_ids[class_defs[class_index].class_idx].descriptor_idx);
+    if (descriptor.size() < 3 || descriptor.front() != 'L' ||
+        descriptor.back() != ';') {
+      continue;
+    }
+    std::string_view class_name(descriptor.data() + 1, descriptor.size() - 2);
+    if (!MatchesInclusionFilter(class_name) ||
+        MetadataCollector::Instance().HasClass(descriptor)) {
+      continue;
     }
 
-    *new_class_data_len = static_cast<jint>(new_image_size);
-    *new_class_data = reinterpret_cast<unsigned char*>(new_image);
+    Log::I("Adding class that never loaded: %s", descriptor.c_str());
 
-    // After successful instrumentation, tag the class to avoid future redundant
-    // instrumentation.
-    if (class_being_redefined != nullptr) {
-      jvmti->SetTag(class_being_redefined, kInstrumentedTag);
-    } else {
-      // On initial load, the class_being_redefined is null. We track it so we
-      // can tag it in ClassPrepare.
-      TaggingManager::Instance().TrackClass(descriptor);
+    // Like for a loaded class, create an IR for only this class.
+    dex::Reader reader(dex, size);
+    reader.CreateClassIr(class_index);
+    auto dex_ir = reader.GetIr();
+    if (dex_ir == nullptr) {
+      Log::E("Slicer failed to generate IR for %s", descriptor.c_str());
+      continue;
     }
-  } else {
-    Log::E("Slicer failed to produce new DEX image for %s", name);
+    InstrumentClass(dex_ir, descriptor, /*loaded=*/false);
+    ++added;
   }
+  const auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                              std::chrono::steady_clock::now() - start)
+                              .count();
+  Log::I("Added %d classes that never loaded in %lld ms.", added,
+         static_cast<long long>(elapsed_ms));
 }
 
 bool Instrumenter::InstrumentMethod(
@@ -741,9 +790,11 @@ bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
     return false;
   }
 
-  std::string_view class_name(name);
+  return MatchesInclusionFilter(name);
+}
 
-  // Skip synthetic compiler-generated and nested classes.
+bool Instrumenter::MatchesInclusionFilter(std::string_view class_name) const {
+  // Skip synthetic compiler-generated classes.
   if (IsSyntheticOrCompilerGenerated(class_name)) {
     return false;
   }

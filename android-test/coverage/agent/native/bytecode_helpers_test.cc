@@ -15,6 +15,7 @@
  */
 
 #include "tools/base/android-test/coverage/agent/native/constructor_analyzer.h"
+#include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 #include "tools/base/android-test/coverage/agent/native/parameter_shifter.h"
 #include "tools/base/android-test/coverage/agent/native/register_scanner.h"
 #include "tools/base/android-test/coverage/agent/native/synthetic_filter.h"
@@ -667,6 +668,23 @@ TEST(ConstructorAnalyzerTest, RejectsConstructorThatDoesNotEndWithReturnVoid) {
 
   EXPECT_EQ(ConstructorAnalyzer::FindDefaultArgumentsDelegation(code_ir),
             nullptr);
+}
+
+TEST(InstrumenterTest, MatchesClassesWithTheInclusionPrefix) {
+  Instrumenter instrumenter(nullptr, "com/example");
+  EXPECT_TRUE(instrumenter.MatchesInclusionFilter("com/example"));
+  EXPECT_TRUE(instrumenter.MatchesInclusionFilter("com/example/Foo"));
+  EXPECT_TRUE(instrumenter.MatchesInclusionFilter("com/example/Foo$Bar"));
+  EXPECT_FALSE(instrumenter.MatchesInclusionFilter("com/examples/Foo"));
+  EXPECT_FALSE(instrumenter.MatchesInclusionFilter("org/example/Foo"));
+}
+
+TEST(InstrumenterTest, DoesNotMatchGeneratedClassesOrTheCoverageRuntime) {
+  Instrumenter instrumenter(nullptr, "com");
+  EXPECT_FALSE(instrumenter.MatchesInclusionFilter(
+      "com/example/Foo$$ExternalSyntheticLambda0"));
+  EXPECT_FALSE(instrumenter.MatchesInclusionFilter(
+      "com/android/tools/coverage/CoverageTracker"));
 }
 
 }  // namespace coverage

@@ -244,3 +244,19 @@ Java_com_android_tools_coverage_CoverageTracker_dumpCoverageData(JNIEnv* env,
   coverage::HitsExtractor::Instance().ExtractAndWrite(env);
   coverage::MetadataCollector::Instance().WriteToDisk();
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_android_tools_coverage_CoverageTracker_addUnloadedClasses(
+    JNIEnv* env, jclass clazz, jobject dex) {
+  if (g_instrumenter == nullptr || dex == nullptr) {
+    return;
+  }
+  auto* data =
+      static_cast<const unsigned char*>(env->GetDirectBufferAddress(dex));
+  jlong size = env->GetDirectBufferCapacity(dex);
+  if (data == nullptr || size <= 0) {
+    coverage::Log::W("Skipping a dex file that isn't in a direct buffer.");
+    return;
+  }
+  g_instrumenter->AddUnloadedClasses(data, static_cast<size_t>(size));
+}

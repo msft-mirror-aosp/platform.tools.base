@@ -46,11 +46,30 @@ proto::ClassMetadata* MetadataCollector::AddClass(
     const std::string& class_name, const std::string& source_file,
     const std::string& smap) {
   std::lock_guard<std::mutex> lock(mutex_);
+  loaded_classes_.insert(class_name);
   auto* class_meta = metadata_.add_classes();
   class_meta->set_class_name(class_name);
   class_meta->set_source_file(source_file);
   class_meta->set_smap(smap);
   return class_meta;
+}
+
+proto::ClassMetadata* MetadataCollector::AddUnloadedClass(
+    const std::string& class_name, const std::string& source_file,
+    const std::string& smap) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  unloaded_classes_.insert(class_name);
+  auto* class_meta = unloaded_metadata_.add_classes();
+  class_meta->set_class_name(class_name);
+  class_meta->set_source_file(source_file);
+  class_meta->set_smap(smap);
+  return class_meta;
+}
+
+bool MetadataCollector::HasClass(const std::string& class_name) const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return loaded_classes_.count(class_name) > 0 ||
+         unloaded_classes_.count(class_name) > 0;
 }
 
 proto::MethodMetadata* MetadataCollector::AddMethod(
@@ -102,7 +121,7 @@ bool MetadataCollector::WriteToDisk() const {
     return false;
   }
 
-  if (!metadata_.SerializeToOstream(&out)) {
+  if (!BuildMetadataLocked().SerializeToOstream(&out)) {
     Log::E("Failed to serialize coverage metadata to %s.", tmp_path.c_str());
     out.close();
     unlink(tmp_path.c_str());
@@ -123,6 +142,21 @@ bool MetadataCollector::WriteToDisk() const {
 const proto::CoverageMetadata& MetadataCollector::metadata() const {
   std::lock_guard<std::mutex> lock(mutex_);
   return metadata_;
+}
+
+proto::CoverageMetadata MetadataCollector::BuildMetadata() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return BuildMetadataLocked();
+}
+
+proto::CoverageMetadata MetadataCollector::BuildMetadataLocked() const {
+  proto::CoverageMetadata metadata = metadata_;
+  for (const auto& class_meta : unloaded_metadata_.classes()) {
+    if (loaded_classes_.count(class_meta.class_name()) == 0) {
+      *metadata.add_classes() = class_meta;
+    }
+  }
+  return metadata;
 }
 
 }  // namespace coverage

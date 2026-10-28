@@ -16,10 +16,15 @@
 
 package android.app;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 
 public class Instrumentation {
+    public Context getTargetContext() {
+        return null;
+    }
+
     public void callActivityOnCreate(Activity activity, Bundle savedInstance) {
         activity.performCreate(savedInstance, null);
     }

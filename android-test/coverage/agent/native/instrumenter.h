@@ -20,8 +20,10 @@
 #include <jni.h>
 #include <jvmti.h>
 
+#include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace android {
 namespace tools {
@@ -58,12 +60,27 @@ class Instrumenter {
   // retransformation for those that match the inclusion filter.
   void RetransformLoadedClasses(JNIEnv* jni);
 
+  // Adds the metadata of the classes in a dex file that match the inclusion
+  // filter but were never loaded, so that they are reported with no coverage.
+  // Their instrumented code is discarded: nothing is handed to ART.
+  void AddUnloadedClasses(const unsigned char* dex, size_t size);
+
+  // Returns true if the class name matches the inclusion filter: it has the
+  // inclusion prefix, and isn't compiler-generated or the coverage runtime.
+  bool MatchesInclusionFilter(std::string_view class_name) const;
+
   // Returns true if the class is a compiler-generated synthetic class.
   static bool IsSyntheticOrCompilerGenerated(std::string_view class_name);
 
  private:
   // Helper to determine if a class should be instrumented.
   bool ShouldInstrument(jobject loader, const char* name, jclass klass) const;
+
+  // Instruments the class with the given descriptor in `dex_ir` and records its
+  // metadata, as a loaded class or as one that never loaded. Returns true if
+  // any method was modified.
+  bool InstrumentClass(const std::shared_ptr<ir::DexFile>& dex_ir,
+                       const std::string& descriptor, bool loaded) const;
 
   // Instruments a single method by allocating scratch registers and injecting
   // coverage tracking calls. Returns true if the method was modified.

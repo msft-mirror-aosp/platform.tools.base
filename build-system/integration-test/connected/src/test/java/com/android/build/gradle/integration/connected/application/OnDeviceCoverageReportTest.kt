@@ -178,6 +178,18 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
           """
             .trimIndent(),
         )
+        // The tests never load NeverUsed.
+        files.add(
+          "src/main/java/com/example/app/NeverUsed.kt",
+          """
+          package com.example.app
+
+          class NeverUsed {
+              fun value() = 42
+          }
+          """
+            .trimIndent(),
+        )
       }
       androidLibrary(":lib") {
         android {
@@ -250,6 +262,11 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
     val item = app.packages.flatMap { it.classes }.single { it.name == "Item" }
     assertThat(item.missedInstructions("Aggregated")).isEqualTo(0)
 
+    // The tests never load NeverUsed, but the device suite still reports it, with no coverage.
+    val neverUsed = app.packages.flatMap { it.classes }.single { it.name == "NeverUsed" }.instructions(DEVICE_SUITE)
+    assertThat(neverUsed.covered).isEqualTo(0)
+    assertThat(neverUsed.total).isGreaterThan(0)
+
     // The suite's own report, and androidTest's on the built-in test platform, are built from the on-device data too.
     val appBuildDir = rule.build.subProject(":app").buildDir.toFile()
     assertThat(FileUtils.join(appBuildDir, "reports", "coverage", DEVICE_SUITE, "index.html")).exists()
@@ -294,13 +311,10 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
   private fun ModuleReport.coveredInstructions(testSuite: String): Int =
     testSuiteCoverages.single { it.name == testSuite }.variantCoverages.single { it.name == "debug" }.instruction.covered
 
-  private fun ClassReport.missedInstructions(testSuite: String): Int =
-    testSuiteCoverages
-      .single { it.name == testSuite }
-      .variantCoverages
-      .single { it.name == "debug" }
-      .instruction
-      .let { it.total - it.covered }
+  private fun ClassReport.missedInstructions(testSuite: String): Int = instructions(testSuite).let { it.total - it.covered }
+
+  private fun ClassReport.instructions(testSuite: String): CoverageInfo =
+    testSuiteCoverages.single { it.name == testSuite }.variantCoverages.single { it.name == "debug" }.instruction
 
   private fun LineCoverage.coveredInstructions(testSuite: String): Int =
     variantCoverageDetails

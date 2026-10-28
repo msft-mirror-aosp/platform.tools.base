@@ -16,6 +16,8 @@
 
 package android.content;
 
+import android.content.pm.ApplicationInfo;
+
 public class Context {
     private String myPackageName;
     private int myUserId;
@@ -31,5 +33,9 @@ public class Context {
 
     public int getUserId() {
         return myUserId;
+    }
+
+    public ApplicationInfo getApplicationInfo() {
+        return new ApplicationInfo();
     }
 }

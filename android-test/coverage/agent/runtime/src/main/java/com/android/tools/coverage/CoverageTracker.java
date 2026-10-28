@@ -18,6 +18,8 @@ package com.android.tools.coverage;
 
 import android.util.Log;
 
+import java.nio.ByteBuffer;
+
 /**
  * Runtime tracker for on-the-fly code coverage. This class is injected into the application's
  * Bootstrap ClassLoader by the native coverage agent, making it globally visible.
@@ -149,4 +151,10 @@ public class CoverageTracker {
 
     /** Signals the native agent to write captured coverage data to disk immediately. */
     public static native void dumpCoverageData();
+
+    /**
+     * Adds the metadata of the classes in {@code dex}, a direct buffer holding a dex file of the
+     * app, that were never loaded, so that they are reported with no coverage.
+     */
+    public static native void addUnloadedClasses(ByteBuffer dex);
 }

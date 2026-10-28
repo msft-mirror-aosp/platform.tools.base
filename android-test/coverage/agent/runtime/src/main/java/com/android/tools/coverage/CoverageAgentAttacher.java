@@ -16,6 +16,7 @@
 
 package com.android.tools.coverage;
 
+import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Debug;
 import android.util.Log;
@@ -25,6 +26,18 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * A JUnit {@link RunListener} that attempts to attach the native JVMTI agent using the internal
@@ -48,6 +61,9 @@ public class CoverageAgentAttacher extends RunListener {
 
     private static final String TRACKER_CLASS_NAME = "com.android.tools.coverage.CoverageTracker";
 
+    /** The dex files of an APK. */
+    private static final Pattern DEX_ENTRY = Pattern.compile("classes\\d*\\.dex");
+
     /** The Android calls the attacher makes, replaced in tests. */
     interface Environment {
         int sdkInt();
@@ -59,6 +75,12 @@ public class CoverageAgentAttacher extends RunListener {
 
         /** Whether the agent made {@code CoverageTracker} available to the app. */
         boolean isCoverageTrackerLoaded();
+
+        /** Returns the paths of the APKs of the app under test: its base APK and its splits. */
+        List<String> apkPaths();
+
+        /** Passes a dex file of the app to {@link CoverageTracker#addUnloadedClasses}. */
+        void addUnloadedClasses(ByteBuffer dex);
 
         void dumpCoverageData();
 
@@ -98,6 +120,11 @@ public class CoverageAgentAttacher extends RunListener {
     public void testRunFinished(Result result) throws Exception {
         if (attached) {
             try {
+                addUnloadedClasses();
+            } catch (Exception | LinkageError e) {
+                environment.error("Couldn't report the classes that never loaded.", e);
+            }
+            try {
                 environment.info("Test run finished. Triggering explicit coverage dump.");
                 environment.dumpCoverageData();
             } catch (Exception | LinkageError e) {
@@ -105,6 +132,42 @@ public class CoverageAgentAttacher extends RunListener {
             }
         }
         super.testRunFinished(result);
+    }
+
+    /**
+     * Passes every dex file of the app under test to the agent, so that the classes the tests never
+     * loaded are reported too, with no coverage.
+     */
+    private void addUnloadedClasses() throws IOException {
+        for (String apkPath : environment.apkPaths()) {
+            try (ZipFile apk = new ZipFile(apkPath)) {
+                Enumeration<? extends ZipEntry> entries = apk.entries();
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    if (DEX_ENTRY.matcher(entry.getName()).matches()) {
+                        environment.addUnloadedClasses(read(apk, entry));
+                    }
+                }
+            }
+        }
+    }
+
+    /** Reads {@code entry} into a direct buffer, which the agent reads in place. */
+    private static ByteBuffer read(ZipFile apk, ZipEntry entry) throws IOException {
+        long size = entry.getSize();
+        if (size < 0 || size > Integer.MAX_VALUE) {
+            throw new IOException("Unexpected size " + size + " of " + entry.getName());
+        }
+        ByteBuffer buffer = ByteBuffer.allocateDirect((int) size);
+        try (ReadableByteChannel in = Channels.newChannel(apk.getInputStream(entry))) {
+            while (buffer.hasRemaining()) {
+                if (in.read(buffer) == -1) {
+                    throw new IOException("Truncated " + entry.getName());
+                }
+            }
+        }
+        buffer.flip();
+        return buffer;
     }
 
     private boolean attachAgent() throws Exception {
@@ -179,6 +242,25 @@ public class CoverageAgentAttacher extends RunListener {
             } catch (ClassNotFoundException | LinkageError e) {
                 return false;
             }
+        }
+
+        @Override
+        public List<String> apkPaths() {
+            ApplicationInfo app =
+                    InstrumentationRegistry.getInstrumentation()
+                            .getTargetContext()
+                            .getApplicationInfo();
+            List<String> paths = new ArrayList<>();
+            paths.add(app.sourceDir);
+            if (app.splitSourceDirs != null) {
+                paths.addAll(Arrays.asList(app.splitSourceDirs));
+            }
+            return paths;
+        }
+
+        @Override
+        public void addUnloadedClasses(ByteBuffer dex) {
+            CoverageTracker.addUnloadedClasses(dex);
         }
 
         @Override
