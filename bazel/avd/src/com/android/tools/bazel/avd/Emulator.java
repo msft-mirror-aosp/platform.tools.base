@@ -73,11 +73,16 @@ public final class Emulator extends ExternalResource {
 
     @Override
     public void after() {
+        long startTime = System.currentTimeMillis();
         try {
             System.out.println("Killing emulator (" + port + ")");
             exec(scriptPath, "kill", port);
-            System.out.println("Emulator killed ("  + port + ")");
+            long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
+            System.out.println("Emulator killed after " + elapsedTime + " seconds (" + port + ")");
         } catch (Exception ex) {
+            long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
+            System.out.println(
+                    "Failed to kill emulator after " + elapsedTime + " seconds (" + port + ")");
             ex.printStackTrace();
         }
     }

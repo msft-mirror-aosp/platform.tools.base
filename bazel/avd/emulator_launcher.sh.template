@@ -101,6 +101,8 @@ echo "Initial emulator boot timeout is $emulator_boot_timeout seconds."
 # --- Timeouts for wait loops ---
 readonly kill_wait_timeout=60      # 1 minute to wait for `kill` command.
 readonly snapshot_save_timeout=120 # 2 minutes to wait for the emulator to save the snapshot.
+readonly force_kill_grace_period=10 # Seconds between SIGTERM and SIGKILL when the emulator is killed forcibly.
+readonly force_kill_wait_timeout=30 # Seconds to wait for the device to go offline after a forced kill.
 
 # Determine the host operating system to locate the correct SDK tools.
 if [ "$(uname)" = "Darwin" ]; then
@@ -141,34 +143,178 @@ fi
 # Enable verbose logging to aid in debugging emulator launch failures.
 additional_emulator_args=("-verbose" "-show-kernel")
 
+# The emulator's output is redirected to this file (see the launch section below).
+# HOME is the test's private TEST_TMPDIR, or the working directory outside of
+# tests, so these files are not in a shared directory like /tmp.
+readonly emu_log_file="$HOME/emulator-log-${port}.txt"
+
+# The launch command records the emulator's PID in this file so that the kill
+# command can stop the emulator forcibly if `adb emu kill` doesn't work.
+readonly emu_pid_file="$HOME/emulator-${port}.pid"
+
+# --- Helper Functions ---
+
+# Runs a command with a time limit. Returns the command's exit code, or a
+# non-zero code if the command was stopped because it exceeded the time limit.
+with_timeout() {
+  local seconds="$1"
+  shift
+  if command -v timeout &>/dev/null; then
+    timeout "$seconds" "$@"
+    return
+  fi
+  # The `timeout` utility is missing on macOS by default. Run the command in the
+  # background and stop it and its child processes with a watchdog process when
+  # the time limit is exceeded (child processes could keep a captured output
+  # open). The watchdog doesn't inherit stdout and stderr, so that a caller that
+  # captures the output, e.g. `$(with_timeout ...)`, doesn't wait for it.
+  "$@" &
+  local command_pid=$!
+  (
+    sleep "$seconds"
+    pkill -TERM -P "$command_pid" 2>/dev/null
+    kill -TERM "$command_pid" 2>/dev/null
+  ) </dev/null &>/dev/null &
+  local watchdog_pid=$!
+  wait "$command_pid"
+  local exit_code=$?
+  kill "$watchdog_pid" 2>/dev/null
+  return "$exit_code"
+}
+
+# Prints the PID recorded by the launch command if that process is still running
+# and is the emulator on this port. The command line check makes sure that a
+# stale or tampered PID file doesn't make this script kill an unrelated process.
+recorded_emulator_pid() {
+  local pid
+  pid="$(cat "$emu_pid_file" 2>/dev/null)"
+  if ! [[ "$pid" =~ ^[0-9]+$ ]] || ! kill -0 "$pid" 2>/dev/null; then
+    return
+  fi
+  local args
+  args="$(ps -o args= -p "$pid" 2>/dev/null)"
+  if [[ " $args " == *" -port $port "* ]]; then
+    echo "$pid"
+  else
+    echo "Warning: Ignoring PID $pid in $emu_pid_file because it is not the emulator on port $port: $args" >&2
+  fi
+}
+
+# Returns 0 if any of the given processes is still running.
+any_process_running() {
+  local pid
+  for pid in "$@"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Waits up to the given number of seconds for the device to disconnect from ADB.
+# Returns 1 on timeout.
+wait_for_device_offline() {
+  local timeout_seconds="$1"
+  local start_time=$SECONDS
+  local state
+  while true; do
+    # An empty output means the device is offline.
+    state="$($adb -s "$device_serial" get-state 2>/dev/null)"
+    if [ -z "$state" ]; then
+      echo "Emulator $device_serial is offline."
+      return 0
+    fi
+    if [ $((SECONDS - start_time)) -gt "$timeout_seconds" ]; then
+      return 1
+    fi
+    echo "Emulator state is still '$state'. Waiting..."
+    sleep 1
+  done
+}
+
+# Prints information that helps to find out why the emulator didn't exit, and
+# keeps the emulator's log in the test outputs.
+print_kill_diagnostics() {
+  local pid="$1"
+  echo "--- Diagnostics for $device_serial (emulator PID: ${pid:-unknown}) ---"
+  if [ -n "$pid" ]; then
+    echo "Emulator process and its child processes:"
+    local pids
+    pids="$(echo "$pid" $(pgrep -P "$pid" 2>/dev/null) | tr ' ' ',')"
+    ps -o pid,ppid,stat,etime,args -p "$pids"
+  fi
+  echo "Current user: $(with_timeout 10 $adb -s "$device_serial" shell am get-current-user 2>&1)"
+  echo "Users: $(with_timeout 10 $adb -s "$device_serial" shell pm list users 2>&1)"
+  echo "sys.boot_completed: $(with_timeout 10 $adb -s "$device_serial" shell getprop sys.boot_completed 2>&1)"
+  if [ -f "$emu_log_file" ]; then
+    if [ -n "$TEST_UNDECLARED_OUTPUTS_DIR" ] && [ -d "$TEST_UNDECLARED_OUTPUTS_DIR" ]; then
+      local saved_log_file
+      saved_log_file="$(mktemp "$TEST_UNDECLARED_OUTPUTS_DIR/emulator-log-${port}-XXXXXX")"
+      cp "$emu_log_file" "$saved_log_file"
+      echo "The full emulator log is saved as $(basename "$saved_log_file") in the test outputs."
+    fi
+    echo "--- Last 100 lines of the emulator log ---"
+    tail -n 100 "$emu_log_file"
+  fi
+  echo "--- End of diagnostics ---"
+}
+
+# Stops the given emulator process and its child processes. Sends SIGTERM
+# first, then SIGKILL to the processes that are still running after the grace
+# period. The child PIDs are collected before any signal is sent, because the
+# children are reparented (and can't be found with `pgrep -P`) once the parent
+# exits.
+force_kill_emulator() {
+  local pid="$1"
+  local pids=("$pid" $(pgrep -P "$pid" 2>/dev/null))
+  echo "Sending SIGTERM to emulator processes: ${pids[*]}"
+  kill -TERM "${pids[@]}" 2>/dev/null
+  local start_time=$SECONDS
+  while any_process_running "${pids[@]}"; do
+    if [ $((SECONDS - start_time)) -ge "$force_kill_grace_period" ]; then
+      echo "Emulator processes are still running. Sending SIGKILL to: ${pids[*]}"
+      kill -KILL "${pids[@]}" 2>/dev/null
+      break
+    fi
+    sleep 1
+  done
+}
+
 
 # --- Command Handling: Kill ---
 
 # Handle the 'kill' command to terminate a running emulator.
 if [ "$mode" = "kill" ]; then
   echo "Killing emulator on port $port ($device_serial)..."
-  $adb -s "$device_serial" emu kill &>/dev/null
+  emu_pid="$(recorded_emulator_pid)"
+  kill_output="$(with_timeout 30 $adb -s "$device_serial" emu kill 2>&1)"
+  kill_exit_code=$?
+  echo "'adb emu kill' exited with code $kill_exit_code: $kill_output"
 
   # Wait for the emulator to fully disconnect from ADB.
   echo "Waiting for $device_serial to go offline..."
-  kill_start_time=$SECONDS
-  while true; do
-    # Check the device state. An empty output means the device is offline.
-    output=$($adb -s "$device_serial" get-state 2>/dev/null)
-    if [ -z "$output" ]; then
-      echo "Emulator $device_serial is offline."
-      break
-    fi
+  if wait_for_device_offline "$kill_wait_timeout"; then
+    rm -f "$emu_pid_file"
+    exit 0
+  fi
+  echo "Error: Timed out after $kill_wait_timeout seconds waiting for $device_serial to go offline." >&2
+  print_kill_diagnostics "$emu_pid"
 
-    if [ $((SECONDS - kill_start_time)) -gt "$kill_wait_timeout" ]; then
-      echo "Error: Timed out after $kill_wait_timeout seconds waiting for $device_serial to go offline." >&2
-      exit 1
-    fi
-
-    echo "Emulator state is still '$output'. Waiting..."
-    sleep 1
-  done
-  exit $?
+  # If the emulator keeps running, the next launch on this port would reuse it
+  # and wait for this timeout again when it is killed.
+  if [ -z "$emu_pid" ]; then
+    echo "Error: The emulator PID is unknown, so the emulator cannot be killed forcibly." >&2
+    exit 1
+  fi
+  echo "Warning: Killing the emulator forcibly." >&2
+  force_kill_emulator "$emu_pid"
+  if wait_for_device_offline "$force_kill_wait_timeout"; then
+    rm -f "$emu_pid_file"
+    echo "Warning: $device_serial was killed forcibly because 'adb emu kill' didn't stop it." >&2
+    exit 0
+  fi
+  echo "Error: $device_serial is still online after the emulator was killed forcibly." >&2
+  exit 1
 fi
 
 
@@ -361,10 +507,25 @@ fi
 
 # --- Emulator Launch and Boot-wait Loop ---
 
-# Redirect emulator output to a temporary log file. This allows the script
+# A device that is still connected on this port (e.g. an emulator that the kill
+# command didn't stop) would answer the boot check below instead of the new
+# emulator, so the tests would run on that device. Stop it first.
+stale_device_state="$($adb -s "$device_serial" get-state 2>/dev/null)"
+if [ -n "$stale_device_state" ]; then
+  echo "Warning: $device_serial is already connected (state: '$stale_device_state') before the launch." >&2
+  stale_emu_pid="$(recorded_emulator_pid)"
+  if [ -n "$stale_emu_pid" ]; then
+    force_kill_emulator "$stale_emu_pid"
+  fi
+  if ! wait_for_device_offline "$force_kill_wait_timeout"; then
+    echo "Error: $device_serial is still connected. Not launching a new emulator on port $port." >&2
+    exit 1
+  fi
+fi
+
+# Redirect emulator output to a temporary log file (emu_log_file). This allows the script
 # to display the log during boot and then detach, preventing the parent
 # process (e.g., Bazel) from hanging while waiting for stdout to close.
-readonly emu_log_file="${TEST_TMPDIR:-/tmp}/emulator-log-${port}.txt"
 
 # Ensure the log file is clean for this run.
 rm -f "$emu_log_file"
@@ -406,6 +567,7 @@ for i in "${retry_attempts[@]}"; do
     "${user_extra_args[@]}" \
     >> "$emu_log_file" 2>&1 &
   emu_pid=$!
+  echo "$emu_pid" > "$emu_pid_file"
   echo "Emulator process started with PID $emu_pid (Attempt $i)."
 
   # Wait for the emulator to finish booting.
