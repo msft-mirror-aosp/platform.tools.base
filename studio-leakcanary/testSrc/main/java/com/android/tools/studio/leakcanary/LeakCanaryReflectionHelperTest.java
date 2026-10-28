@@ -78,14 +78,14 @@ public class LeakCanaryReflectionHelperTest {
     }
 
     /**
-     * Verifies that swapping the object retained listener returns false and doesn't crash when
+     * Verifies that setting the object retained listeners returns false and doesn't crash when
      * LeakCanary is missing.
      */
     @Test
-    public void testSwapOnObjectRetainedListenerFailsGracefully() {
+    public void testSetOnObjectRetainedListenersFailsGracefully() {
         // Should return false and not throw
         boolean result =
-                LeakCanaryReflectionHelper.swapOnObjectRetainedListener(new Object(), true);
+                LeakCanaryReflectionHelper.setOnObjectRetainedListeners(new Object(), true);
         assertThat(result).isFalse();
     }
 

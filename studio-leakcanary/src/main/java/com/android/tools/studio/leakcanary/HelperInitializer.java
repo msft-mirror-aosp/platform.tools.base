@@ -27,9 +27,10 @@ import android.util.Log;
  * Initializes the helper library by running its code on app startup. This ContentProvider is
  * automatically created by the OS before Application.onCreate().
  *
- * <p>Its primary purpose is to: 1. Disable LeakCanary's default heap dumping behavior (since Studio
- * handles that). 2. Swap LeakCanary's default internal listener with [StudioLeakCanaryListener]. 3.
- * Register broadcast receivers to listen for commands from Android Studio.
+ * <p>Its primary purpose is to: 1. Start in ON_HOST mode: disable LeakCanary's default heap dumping
+ * (since Studio handles that) and replace LeakCanary's listener with {@link
+ * StudioLeakCanaryListener}. 2. Register broadcast receivers to listen for commands from Android
+ * Studio.
  */
 @SuppressWarnings("unused")
 public class HelperInitializer extends ContentProvider {

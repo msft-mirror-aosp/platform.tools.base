@@ -174,45 +174,52 @@ public class LeakCanaryReflectionHelper {
     }
 
     /**
-     * Swaps the OnObjectRetainedListener between the internal LeakCanary listener and our Studio
-     * listener.
+     * Sets which listeners LeakCanary calls when an object is retained.
      *
-     * @param studioListener The proxy instance of the StudioLeakCanaryListener.
-     * @param useStudioListener True to use the studio listener, false to restore LeakCanary's
-     *     default.
+     * <p>ON_HOST: only our Studio listener, so LeakCanary does not dump the heap itself. ON_DEVICE:
+     * LeakCanary's own listener plus ours, so LeakCanary works as usual and we only read the count.
+     *
+     * @param studioListener The proxy instance of the StudioLeakCanaryListener. May be null.
+     * @param replaceLeakCanaryListener True for ON_HOST (remove LeakCanary's listener), false for
+     *     ON_DEVICE (keep it).
      * @return True if successful, false otherwise.
      */
-    public static boolean swapOnObjectRetainedListener(
-            Object studioListener, boolean useStudioListener) {
+    public static boolean setOnObjectRetainedListeners(
+            Object studioListener, boolean replaceLeakCanaryListener) {
         ensureInitialized();
         if (state != ReflectionState.COMPLETED
                 || objectWatcherInstance == null
                 || removeListenerMethod == null
                 || addListenerMethod == null
                 || internalLcInstance == null) {
-            Log.w(HelperConfig.LOG_TAG, "Cannot swap LeakCanary listener; reflection failed.");
+            Log.w(HelperConfig.LOG_TAG, "Cannot set LeakCanary listeners; reflection failed.");
             return false;
         }
 
         try {
-            // Remove both to be safe and avoid duplicates
+            // Remove both first, so nothing is added twice.
             removeListenerMethod.invoke(objectWatcherInstance, internalLcInstance);
             if (studioListener != null) {
                 removeListenerMethod.invoke(objectWatcherInstance, studioListener);
             }
 
-            if (useStudioListener && studioListener != null) {
-                addListenerMethod.invoke(objectWatcherInstance, studioListener);
-                Log.d(
-                        HelperConfig.LOG_TAG,
-                        "Replaced LeakCanary default listener with Studio listener.");
-            } else {
+            // Without our listener, always keep LeakCanary's, so LeakCanary still works.
+            boolean keepLeakCanaryListener = !replaceLeakCanaryListener || studioListener == null;
+            if (keepLeakCanaryListener) {
                 addListenerMethod.invoke(objectWatcherInstance, internalLcInstance);
-                Log.d(HelperConfig.LOG_TAG, "Restored LeakCanary default listener.");
             }
+            if (studioListener != null) {
+                addListenerMethod.invoke(objectWatcherInstance, studioListener);
+            }
+            Log.d(
+                    HelperConfig.LOG_TAG,
+                    "Set LeakCanary listeners. LeakCanary's listener kept: "
+                            + keepLeakCanaryListener
+                            + ", Studio listener added: "
+                            + (studioListener != null));
             return true;
         } catch (Throwable t) {
-            Log.e(HelperConfig.LOG_TAG, "Failed to swap LeakCanary listener.", t);
+            Log.e(HelperConfig.LOG_TAG, "Failed to set LeakCanary listeners.", t);
             return false;
         }
     }

@@ -27,16 +27,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 /**
- * A custom listener that replaces LeakCanary's default listener.
+ * A listener that sends LeakCanary's retained object count to Android Studio.
  *
- * <p>This listener adapts LeakCanary's object tracking for Android Studio's Profiler. Instead of
- * triggering a heap dump directly when a threshold is reached, it: 1. Listens for object retention
- * events from AppWatcher. 2. Schedules a debounced check on a background thread. 3. Runs garbage
- * collection (GC) to ensure weak references are cleared if possible. 4. Counts the remaining
- * retained objects. 5. Broadcasts the count to Android Studio via an intent.
+ * <p>In ON_HOST mode it replaces LeakCanary's own listener. In ON_DEVICE mode it runs next to it.
+ * It: 1. Listens for object retention events from AppWatcher. 2. Schedules a debounced check on a
+ * background thread. 3. In ON_HOST only, runs garbage collection (GC) so weak references can be
+ * cleared. 4. Counts the remaining retained objects. 5. Broadcasts the count to Android Studio.
  *
- * <p>Android Studio then decides whether to trigger a heap dump based on its own logic and user
- * configuration.
+ * <p>In ON_HOST, Android Studio decides when to dump the heap. In ON_DEVICE, LeakCanary decides.
  *
  * <p>NOTE: This class uses reflection and dynamic proxies to avoid a compile-time dependency on the
  * leakcanary-android library, which may not be present in the build environment.
@@ -48,7 +46,10 @@ public class StudioLeakCanaryListener {
 
     // Re-check in 5 seconds if objects are still retained.
     private static final long WAIT_FOR_OBJECT_THRESHOLD_MILLIS = 5000L;
-    private static final long DEBOUNCE_DELAY_MILLIS = 100L;
+    static final long DEBOUNCE_DELAY_MILLIS = 100L;
+    // ON_DEVICE: we don't run GC, so the count can include objects LeakCanary's own GC is about to
+    // free. Waiting this long lets that GC finish first. The 5s re-check fixes any miss.
+    static final long ON_DEVICE_FIRST_CHECK_DELAY_MILLIS = 500L;
 
     private final Application application;
     private final HandlerThread handlerThread;
@@ -206,19 +207,23 @@ public class StudioLeakCanaryListener {
         // If we were waiting for a debounce, this resets the timer.
         backgroundHandler.removeCallbacks(checkRunnable);
 
-        // Schedule a new check in 100ms (Immediate feedback for new leaks)
-        backgroundHandler.postDelayed(checkRunnable, DEBOUNCE_DELAY_MILLIS);
+        // Schedule a new check in 100ms (Immediate feedback for new leaks). In ON_DEVICE we wait
+        // longer, so LeakCanary's own GC has usually finished and the count is closer to its count.
+        backgroundHandler.postDelayed(
+                checkRunnable,
+                isOnHostMode() ? DEBOUNCE_DELAY_MILLIS : ON_DEVICE_FIRST_CHECK_DELAY_MILLIS);
     }
 
-    /** Checks for retained objects, runs GC, and reports the count to Studio. */
-    private void checkRetainedObjects() {
+    /** Checks for retained objects and reports the count to Studio. Package-private for tests. */
+    void checkRetainedObjects() {
         if (!isEnabled) return;
 
         // 1. Get the count BEFORE GC
         int retainedReferenceCount = getRetainedObjectCount();
 
-        // 2. Run GC if there are potential leaks
-        if (retainedReferenceCount > 0) {
+        // 2. GC only in ON_HOST, where Studio uses the count to start a heap dump. In ON_DEVICE the
+        // count is only shown: extra GCs (up to every 5s) would slow the app and upset LeakCanary.
+        if (retainedReferenceCount > 0 && isOnHostMode()) {
             LeakCanaryReflectionHelper.runGc();
             // 3. Get the count AFTER GC
             retainedReferenceCount = getRetainedObjectCount();
@@ -247,6 +252,11 @@ public class StudioLeakCanaryListener {
         return LeakCanaryReflectionHelper.getRetainedObjectCount();
     }
 
+    private static boolean isOnHostMode() {
+        return StudioLeakCanaryManager.getInstance().getCurrentMode()
+                == StudioLeakCanaryManager.MODE_ON_HOST;
+    }
+
     /** A simplified, non-debounced scheduler. Used to re-check after a delay. */
     private void scheduleRetainedObjectCheck(long delayMillis) {
         backgroundHandler.removeCallbacks(checkRunnable);
@@ -264,6 +274,11 @@ public class StudioLeakCanaryListener {
     public static void onHeapDumpFinished(final long heapDumpTimestamp) {
         final StudioLeakCanaryListener currentInstance = instance;
         if (currentInstance == null || !currentInstance.isEnabled) return;
+        // Only for Studio's heap dumps. In ON_DEVICE, LeakCanary owns its watched objects.
+        if (!isOnHostMode()) {
+            Log.i(HelperConfig.LOG_TAG, "Ignoring heap dump finished event: not in ON_HOST mode.");
+            return;
+        }
 
         Log.d(
                 HelperConfig.LOG_TAG,

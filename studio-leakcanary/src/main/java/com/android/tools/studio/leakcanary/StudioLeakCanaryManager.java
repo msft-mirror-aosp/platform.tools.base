@@ -23,17 +23,17 @@ import android.util.Log;
 /**
  * Manages the mode of LeakCanary integration within the app.
  *
- * <p>It switches between two modes: MODE_ON_DEVICE: LeakCanary's original listener is active, and
- * it dumps the heap locally on the device. MODE_ON_HOST: LeakCanary's default listener is replaced
- * by StudioLeakCanaryListener, which tracks object counts and delegates the actual heap dumping to
- * Android Studio.
+ * <p>MODE_ON_DEVICE: LeakCanary works as usual and dumps the heap on the device. Our listener runs
+ * next to LeakCanary's and only sends the retained object count to Studio. MODE_ON_HOST: our
+ * listener replaces LeakCanary's, sends the count, and Android Studio does the heap dump.
  */
 public class StudioLeakCanaryManager {
 
     public static final int MODE_ON_DEVICE = 0;
     public static final int MODE_ON_HOST = 1;
     private static StudioLeakCanaryManager instance;
-    private int currentMode = -1; // Uninitialized state
+    // Volatile: also read from the listener's background thread.
+    private volatile int currentMode = -1; // Uninitialized state
     private Application application;
     private Object cachedStudioListenerProxy;
 
@@ -75,13 +75,9 @@ public class StudioLeakCanaryManager {
                         + (mode == MODE_ON_HOST ? "ON_HOST" : "ON_DEVICE"));
         this.currentMode = mode;
 
-        if (mode == MODE_ON_HOST) {
-            setLeakCanaryDumpHeap(false);
-            swapListener(true);
-        } else {
-            setLeakCanaryDumpHeap(true);
-            swapListener(false);
-        }
+        // In ON_HOST, Studio dumps the heap, so LeakCanary must not.
+        setLeakCanaryDumpHeap(mode != MODE_ON_HOST);
+        setUpListeners(mode == MODE_ON_HOST);
     }
 
     /** Returns the current active mode. */
@@ -93,8 +89,12 @@ public class StudioLeakCanaryManager {
         LeakCanaryReflectionHelper.setDumpHeapEnabled(dumpHeap);
     }
 
-    private void swapListener(boolean useStudioListener) {
-        if (useStudioListener && cachedStudioListenerProxy == null) {
+    /**
+     * Adds our listener in both modes, so the retained count is sent to Studio in both. Only
+     * ON_HOST removes LeakCanary's own listener.
+     */
+    private void setUpListeners(boolean replaceLeakCanaryListener) {
+        if (cachedStudioListenerProxy == null) {
             if (application != null) {
                 cachedStudioListenerProxy = StudioLeakCanaryListener.createInstance(application);
                 if (cachedStudioListenerProxy == null) {
@@ -111,13 +111,13 @@ public class StudioLeakCanaryManager {
         }
 
         boolean success =
-                LeakCanaryReflectionHelper.swapOnObjectRetainedListener(
-                        cachedStudioListenerProxy, useStudioListener);
+                LeakCanaryReflectionHelper.setOnObjectRetainedListeners(
+                        cachedStudioListenerProxy, replaceLeakCanaryListener);
 
         if (success) {
-            StudioLeakCanaryListener.setIsEnabled(useStudioListener);
+            StudioLeakCanaryListener.setIsEnabled(cachedStudioListenerProxy != null);
         } else {
-            Log.e(HelperConfig.LOG_TAG, "Failed to swap LeakCanary listener during mode switch.");
+            Log.e(HelperConfig.LOG_TAG, "Failed to set LeakCanary listeners during mode switch.");
         }
     }
 }

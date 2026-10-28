@@ -127,3 +127,22 @@ robolectric_test(
         "@maven//:org.robolectric.robolectric",
     ],
 )
+
+# Tests that need LeakCanary. They use small fakes of LeakCanary classes, so they run in their own
+# target: the tests above check what happens when LeakCanary is missing.
+# Fake names match HelperConfig. Update both together.
+robolectric_test(
+    name = "studio-leakcanary_fake_leakcanary_tests",
+    srcs = glob(["testSrc/fakeleakcanary/java/**/*.java"]),
+    custom_package = "com.android.tools.studio.leakcanary",
+    test_class = "com.android.tools.studio.leakcanary.RetainedCountModeTest",
+    deps = [
+        ":studio-leakcanary_lib",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+        "@maven//:org.mockito.mockito-core",
+        "@maven//:org.robolectric.robolectric",
+    ],
+)
