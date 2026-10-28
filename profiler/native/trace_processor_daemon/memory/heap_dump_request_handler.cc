@@ -419,7 +419,9 @@ std::string FormatSortAndLimitSql(
       sort_field = "o.native_size";
       break;
     case proto::QueryParameters::SORT_DEPTH:
-      sort_field = "IFNULL(dt.depth, 2147483647)";
+      // Same as the depth reported for each instance: the distance from a GC
+      // root, with unreachable objects counted as the deepest.
+      sort_field = "IIF(o.reachable, o.root_distance, 2147483647)";
       break;
     case proto::QueryParameters::SORT_LABEL:
       sort_field = "d.value_string";
