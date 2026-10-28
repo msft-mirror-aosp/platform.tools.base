@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.databinding
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Apk
 import org.junit.Rule
 import org.junit.Test
@@ -52,8 +51,6 @@ class DataBindingWithDynamicFeaturesTest {
   fun checkApkContainsDataBindingClasses() {
     project
       .executor()
-      // TODO(b/439806981): Remove this
-      .with(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
       .run("clean", "assembleDebug")
     val aApk: Apk = project.getSubproject("featureA").getApk(GradleTestProject.ApkType.DEBUG)
     val bApk: Apk = project.getSubproject("featureB").getApk(GradleTestProject.ApkType.DEBUG)

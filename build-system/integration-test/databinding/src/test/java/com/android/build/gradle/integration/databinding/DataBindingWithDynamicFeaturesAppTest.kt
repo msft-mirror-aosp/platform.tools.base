@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.databinding
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -35,9 +34,6 @@ class DataBindingWithDynamicFeaturesAppTest {
   val project: GradleTestProject =
     GradleTestProject.builder()
       .fromDataBindingIntegrationTest("DynamicApp", true)
-      .addGradleProperties( // TODO(b/439806981): Remove this
-        "${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=true"
-      )
       .create()
 
   @Before
