@@ -127,6 +127,7 @@ import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.IgnoreEmptyDirectories
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -1476,19 +1477,20 @@ abstract class SourceProviderInput {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val aarKeepRulesDirectories: ConfigurableFileCollection
 
-  // Without javaDirectoriesClasspath, the lint analysis task would be UP-TO-DATE after a change
-  // in the *order* of java source directories, which would be incorrect. We can't get rid of
-  // javaDirectories entirely because without javaDirectories, the lint analysis task would be
-  // UP-TO-DATE after the addition or removal of a non-existent java source directory. We need to
-  // set javaDirectoriesClasspath only for lint analysis tasks because other lint tasks set
-  // javaDirectoryPaths.
-  @get:Classpath @get:Optional abstract val javaDirectoriesClasspath: ConfigurableFileCollection
+  // Lint encodes the location of a source file in its partial results using the index of the source
+  // directory containing it (e.g., "{:lib*debug*MAIN*sourceProvider*0*javaDir*1}/a/B.kt"), and
+  // that index also counts source directories which don't exist. The lint analysis task must
+  // therefore track the contents of each source directory separately and in order, which the
+  // RELATIVE javaDirectories alone does not (b/566069554). javaDirectories is still needed to carry
+  // task dependencies (e.g., for KMP source directories), and for non-analysis lint tasks. These
+  // are only set for lint analysis tasks because other lint tasks set javaDirectoryPaths, etc.
+  @get:Nested abstract val javaDirectoryInputs: ListProperty<SourceDirectoryInput>
 
-  // See comment for javaDirectoriesClasspath
-  @get:Classpath @get:Optional abstract val resDirectoriesClasspath: ConfigurableFileCollection
+  // See comment for javaDirectoryInputs
+  @get:Nested abstract val resDirectoryInputs: ListProperty<SourceDirectoryInput>
 
-  // See comment for javaDirectoriesClasspath
-  @get:Classpath @get:Optional abstract val assetsDirectoriesClasspath: ConfigurableFileCollection
+  // See comment for javaDirectoryInputs
+  @get:Nested abstract val assetsDirectoryInputs: ListProperty<SourceDirectoryInput>
 
   @get:Input // Note: The files may not exist
   @get:Optional
@@ -1553,9 +1555,9 @@ abstract class SourceProviderInput {
     aarKeepRulesDirectories.disallowChanges()
 
     if (lintMode == LintMode.ANALYSIS) {
-      this.javaDirectoriesClasspath.from(javaDirectories)
-      this.resDirectoriesClasspath.from(resDirectories)
-      this.assetsDirectoriesClasspath.from(assetsDirectories)
+      this.javaDirectoryInputs.set(javaDirectories.toSourceDirectoryInputs())
+      this.resDirectoryInputs.set(resDirectories.toSourceDirectoryInputs())
+      this.assetsDirectoryInputs.set(assetsDirectories.toSourceDirectoryInputs())
     } else {
       this.manifestAbsoluteFilePaths.add(manifestFilePath.map { it.asFile.absolutePath })
       this.manifestAbsoluteFilePaths.addAll(manifestOverlayFilePaths.map { it.map(File::getAbsolutePath) })
@@ -1568,9 +1570,9 @@ abstract class SourceProviderInput {
     this.javaDirectoryPaths.disallowChanges()
     this.resDirectoryPaths.disallowChanges()
     this.assetsDirectoryPaths.disallowChanges()
-    this.javaDirectoriesClasspath.disallowChanges()
-    this.resDirectoriesClasspath.disallowChanges()
-    this.assetsDirectoriesClasspath.disallowChanges()
+    this.javaDirectoryInputs.disallowChanges()
+    this.resDirectoryInputs.disallowChanges()
+    this.assetsDirectoryInputs.disallowChanges()
     this.debugOnly.setDisallowChanges(false) // TODO
     this.unitTestOnly.setDisallowChanges(unitTestOnly)
     this.instrumentationTestOnly.setDisallowChanges(instrumentationTestOnly)
@@ -1585,11 +1587,11 @@ abstract class SourceProviderInput {
     this.resDirectories.disallowChanges()
     this.assetsDirectories.disallowChanges()
     if (lintMode == LintMode.ANALYSIS) {
-      this.javaDirectoriesClasspath.from(sourceSet.allJava.sourceDirectories)
+      this.javaDirectoryInputs.set(javaDirectories.toSourceDirectoryInputs())
     }
-    this.javaDirectoriesClasspath.disallowChanges()
-    this.resDirectoriesClasspath.disallowChanges()
-    this.assetsDirectoriesClasspath.disallowChanges()
+    this.javaDirectoryInputs.disallowChanges()
+    this.resDirectoryInputs.disallowChanges()
+    this.assetsDirectoryInputs.disallowChanges()
     this.aarKeepRulesDirectories.disallowChanges()
     this.debugOnly.setDisallowChanges(false)
     this.unitTestOnly.setDisallowChanges(unitTestOnly)
@@ -1609,17 +1611,22 @@ abstract class SourceProviderInput {
     this.resDirectories.disallowChanges()
     this.assetsDirectories.disallowChanges()
     if (lintMode == LintMode.ANALYSIS) {
-      this.javaDirectoriesClasspath.from(sourceDirectories)
+      this.javaDirectoryInputs.set(javaDirectories.toSourceDirectoryInputs())
     }
-    this.javaDirectoriesClasspath.disallowChanges()
-    this.resDirectoriesClasspath.disallowChanges()
-    this.assetsDirectoriesClasspath.disallowChanges()
+    this.javaDirectoryInputs.disallowChanges()
+    this.resDirectoryInputs.disallowChanges()
+    this.assetsDirectoryInputs.disallowChanges()
     this.aarKeepRulesDirectories.disallowChanges()
     this.debugOnly.setDisallowChanges(false)
     this.unitTestOnly.setDisallowChanges(unitTestOnly)
     this.instrumentationTestOnly.setDisallowChanges(false)
     this.testFixtureOnly.setDisallowChanges(false)
     return this
+  }
+
+  /** One [SourceDirectoryInput] per directory in this collection, in order. See [javaDirectoryInputs]. */
+  private fun FileCollection.toSourceDirectoryInputs(): Provider<List<SourceDirectoryInput>> = elements.map { elements ->
+    elements.map { SourceDirectoryInput(it.asFile) }
   }
 
   internal fun toLintModels(): List<LintModelSourceProvider> {
@@ -1641,6 +1648,15 @@ abstract class SourceProviderInput {
     )
   }
 }
+
+/**
+ * A single source directory of a [SourceProviderInput]. As an element of a [Nested] list, its index is part of the input property name, so
+ * Gradle fingerprints each directory's contents separately and at the right index, even if the directory doesn't exist.
+ */
+class SourceDirectoryInput(
+  // Empty directories don't affect lint's results, so ignore them.
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) @get:IgnoreEmptyDirectories val directory: File
+)
 
 /** Inputs for an SdkVersion. This is used by [VariantInputs] for min/target SDK Version */
 abstract class SdkVersionInput {

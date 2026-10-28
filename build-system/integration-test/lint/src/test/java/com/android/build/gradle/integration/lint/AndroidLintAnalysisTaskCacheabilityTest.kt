@@ -28,6 +28,7 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import java.nio.file.Files
 import org.gradle.api.file.Directory
 import org.junit.Assert.fail
 import org.junit.Before
@@ -441,5 +442,90 @@ class AndroidLintAnalysisTaskCacheabilityTest {
       assertTask(":java-lib:lintAnalyzeJvmMain").wasFromCache()
       assertTask(":java-lib:lintAnalyzeJvmTest").wasFromCache()
     }
+  }
+
+  /**
+   * Moving an unchanged source file from one source root to another (e.g., src/main/java to src/main/kotlin) must invalidate the lint
+   * analysis task because lint's partial results encode each file's location via the index of its source directory. Previously, the task
+   * was UP-TO-DATE or FROM-CACHE after such a move, and lint reported issues at the old, nonexistent location.
+   *
+   * Regression test for b/566069554.
+   */
+  @Test
+  fun testLintAnalysisNotReusedAfterMovingSourceRoot() {
+    TestFileUtils.appendToFile(project1.gradlePropertiesFile, "\norg.gradle.caching=true\n")
+    val lib = project1.getSubproject(":lib")
+    // Explicitly register src/main/kotlin so that this test doesn't depend on the default source directories.
+    TestFileUtils.appendToFile(lib.buildFile, "\nandroid.sourceSets.main.java.srcDirs += 'src/main/kotlin'\n")
+    val javaRoot = FileUtils.join(lib.projectDir, "src", "main", "java")
+    val kotlinRoot = FileUtils.join(lib.projectDir, "src", "main", "kotlin")
+    // Prefix with a separator so that these don't also match the java-lib module's Foo.java.
+    val fooInJava = File.separator + FileUtils.join("lib", "src", "main", "java", "com", "example", "Foo.java")
+    val fooInKotlin = File.separator + FileUtils.join("lib", "src", "main", "kotlin", "com", "example", "Foo.java")
+    val lintReport = project1.file("app/lint-report.txt")
+
+    project1.executor().run("clean", ":app:lintDebug")
+    assertThat(lintReport).contains(fooInJava)
+    assertThat(lintReport).doesNotContain(fooInKotlin)
+
+    // Move src/main/java to src/main/kotlin, and check that the build cache entry from the first build is not reused, even though the
+    // configuration cache entry is.
+    Files.move(javaRoot.toPath(), kotlinRoot.toPath())
+    project1.executor().run("clean", ":app:lintDebug").apply {
+      assertConfigurationCacheHit()
+      assertTask(":lib:lintAnalyzeDebug").didWork()
+    }
+    assertThat(lintReport).contains(fooInKotlin)
+    assertThat(lintReport).doesNotContain(fooInJava)
+
+    // Move the sources back without cleaning, and check that the task is not UP-TO-DATE, but that the (still valid) build cache entry from
+    // the first build is reused.
+    Files.move(kotlinRoot.toPath(), javaRoot.toPath())
+    project1.executor().run(":app:lintDebug").apply { assertTask(":lib:lintAnalyzeDebug").wasFromCache() }
+    assertThat(lintReport).contains(fooInJava)
+    assertThat(lintReport).doesNotContain(fooInKotlin)
+  }
+
+  /**
+   * Like [testLintAnalysisNotReusedAfterMovingSourceRoot], but both source directories exist before and after the move, and the ordered
+   * sequence of (relative path, content) of all source files is unchanged, so the move is only visible in which directory each file is in.
+   * This test also covers the UP-TO-DATE check, whereas [testLintAnalysisNotReusedAfterMovingSourceRoot] covers the build cache.
+   *
+   * Regression test for b/566069554.
+   */
+  @Test
+  fun testLintAnalysisNotReusedAfterMovingFileBetweenExistingSourceRoots() {
+    TestFileUtils.appendToFile(project1.gradlePropertiesFile, "\norg.gradle.caching=true\n")
+    val lib = project1.getSubproject(":lib")
+    TestFileUtils.appendToFile(lib.buildFile, "\nandroid.sourceSets.main.java.srcDirs += 'src/main/kotlin'\n")
+    val fooInJavaFile = FileUtils.join(lib.projectDir, "src", "main", "java", "com", "example", "Foo.java")
+    val fooInKotlinFile = FileUtils.join(lib.projectDir, "src", "main", "kotlin", "com", "example", "Foo.java")
+    // Zoo.java sorts after Foo.java, so the overall order of files is the same before and after moving Foo.java.
+    val zooInKotlinFile = FileUtils.join(lib.projectDir, "src", "main", "kotlin", "com", "example", "Zoo.java")
+    zooInKotlinFile.parentFile.mkdirs()
+    zooInKotlinFile.writeText("package com.example;\n\npublic class Zoo {}\n")
+    val fooInJava = File.separator + FileUtils.join("lib", "src", "main", "java", "com", "example", "Foo.java")
+    val fooInKotlin = File.separator + FileUtils.join("lib", "src", "main", "kotlin", "com", "example", "Foo.java")
+    val lintReport = project1.file("app/lint-report.txt")
+
+    project1.executor().run(":app:lintDebug")
+    assertThat(lintReport).contains(fooInJava)
+    assertThat(lintReport).doesNotContain(fooInKotlin)
+
+    // Move Foo.java to src/main/kotlin without cleaning, and check that the task is not UP-TO-DATE. src/main/java still exists (it contains
+    // the now empty com/example directory).
+    Files.move(fooInJavaFile.toPath(), fooInKotlinFile.toPath())
+    project1.executor().run(":app:lintDebug").apply {
+      assertConfigurationCacheHit()
+      assertTask(":lib:lintAnalyzeDebug").didWork()
+    }
+    assertThat(lintReport).contains(fooInKotlin)
+    assertThat(lintReport).doesNotContain(fooInJava)
+
+    // Move Foo.java back without cleaning.
+    Files.move(fooInKotlinFile.toPath(), fooInJavaFile.toPath())
+    project1.executor().run(":app:lintDebug").apply { assertTask(":lib:lintAnalyzeDebug").wasFromCache() }
+    assertThat(lintReport).contains(fooInJava)
+    assertThat(lintReport).doesNotContain(fooInKotlin)
   }
 }
