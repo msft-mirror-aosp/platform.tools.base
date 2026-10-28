@@ -16,7 +16,12 @@
 package com.android.tools.deployer.rules;
 
 import com.android.adblib.AdbSession;
+import com.android.adblib.AdbSessionKt;
+import com.android.adblib.ConnectedDevice;
+import com.android.adblib.ConnectedDevicesTracker;
+import com.android.adblib.ConnectedDevicesTrackerKt;
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
+import com.android.adblib.testingutils.CoroutineTestUtils;
 import com.android.adblib.testingutils.FakeAdbServerProviderRule;
 import com.android.adblib.testingutils.TestingAdbSessionHost;
 import com.android.ddmlib.AndroidDebugBridge;
@@ -26,6 +31,7 @@ import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
 import com.android.tools.deployer.devices.FakeDeviceLibrary;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.rules.RuleChain;
@@ -118,6 +124,19 @@ public class FakeDeviceConnection implements TestRule {
 
     public AdbSession getAdbSession() {
         return fakeAdbRule.getAdbSession();
+    }
+
+    /**
+     * Waits until the adblib session tracks the {@link #getDevice() device} and returns the
+     * corresponding {@link ConnectedDevice}.
+     */
+    public ConnectedDevice waitForConnectedDevice() {
+        ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(getAdbSession());
+        return CoroutineTestUtils.INSTANCE.runBlockingWithTimeout(
+                Duration.ofSeconds(30),
+                (scope, continuation) ->
+                        ConnectedDevicesTrackerKt.waitForDevice(
+                                tracker, device.getSerial(), continuation));
     }
 
     @Override

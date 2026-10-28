@@ -15,14 +15,6 @@
  */
 package com.android.tools.deployer;
 
-import com.android.adblib.AdbSession;
-import com.android.adblib.AdbSessionKt;
-import com.android.adblib.ConnectedDevice;
-import com.android.adblib.ConnectedDevicesTracker;
-import com.android.adblib.ConnectedDevicesTrackerKt;
-import com.android.ddmlib.AdbInitOptions;
-import com.android.ddmlib.AndroidDebugBridge;
-import com.android.ddmlib.IDevice;
 import com.android.testutils.AssumeUtil;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.DeployMetric;
@@ -34,10 +26,6 @@ import com.android.tools.deployer.rules.FakeDeviceConnection;
 import com.android.utils.ILogger;
 
 import com.google.common.collect.ImmutableList;
-
-import kotlin.coroutines.EmptyCoroutineContext;
-
-import kotlinx.coroutines.BuildersKt;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,7 +42,7 @@ import java.util.List;
 
 /**
  * This test works in the same manner as the DeployerRunnerTest with a fake adb server to which
- * ddmlib connects.
+ * adblib connects.
  */
 @RunWith(ApiLevel.class)
 public class AdbInstallerTest {
@@ -79,23 +67,8 @@ public class AdbInstallerTest {
 
         File installersPath = DeployerTestUtils.prepareInstaller();
 
-        AndroidDebugBridge.init(AdbInitOptions.DEFAULT);
-        AndroidDebugBridge bridge = AndroidDebugBridge.createBridge();
-        while (bridge.getDevices().length == 0) {
-            Thread.sleep(100);
-        }
-
         List<DeployMetric> unusedMetric = new ArrayList<>();
-        IDevice iDevice = getDevice(bridge);
-        AdbSession session = connection.getAdbSession();
-        ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
-        ConnectedDevice connectedDevice =
-                BuildersKt.runBlocking(
-                        EmptyCoroutineContext.INSTANCE,
-                        (scope, continuation) ->
-                                ConnectedDevicesTrackerKt.waitForDevice(
-                                        tracker, iDevice.getSerialNumber(), continuation));
-        DeviceHolder deviceHolder = new DeviceHolder(connectedDevice);
+        DeviceHolder deviceHolder = new DeviceHolder(connection.waitForConnectedDevice());
         AdbClient client = new AdbClient(deviceHolder, logger);
 
         AdbInstaller installer =
@@ -129,23 +102,8 @@ public class AdbInstallerTest {
 
         File installersPath = DeployerTestUtils.prepareInstaller();
 
-        AndroidDebugBridge.init(AdbInitOptions.DEFAULT);
-        AndroidDebugBridge bridge = AndroidDebugBridge.createBridge();
-        while (bridge.getDevices().length == 0) {
-            Thread.sleep(100);
-        }
-
         List<DeployMetric> unusedMetric = new ArrayList<>();
-        IDevice iDevice = getDevice(bridge);
-        AdbSession session = connection.getAdbSession();
-        ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
-        ConnectedDevice connectedDevice =
-                BuildersKt.runBlocking(
-                        EmptyCoroutineContext.INSTANCE,
-                        (scope, continuation) ->
-                                ConnectedDevicesTrackerKt.waitForDevice(
-                                        tracker, iDevice.getSerialNumber(), continuation));
-        DeviceHolder deviceHolder = new DeviceHolder(connectedDevice);
+        DeviceHolder deviceHolder = new DeviceHolder(connection.waitForConnectedDevice());
         AdbClient client = new AdbClient(deviceHolder, logger);
 
         AdbInstaller installer =
@@ -176,13 +134,5 @@ public class AdbInstallerTest {
         // recorded by the `FakeDeviceHandler`
         Object[] actual = device.getShell().getHistory().toArray();
         Assert.assertArrayEquals("", expected, actual);
-    }
-
-    private IDevice getDevice(AndroidDebugBridge bridge) {
-        IDevice[] devices = bridge.getDevices();
-        if (devices.length < 1) {
-            return null;
-        }
-        return devices[0];
     }
 }

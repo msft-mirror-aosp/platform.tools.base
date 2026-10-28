@@ -15,28 +15,15 @@
  */
 package com.android.tools.deployer;
 
-import com.android.adblib.AdbSession;
-import com.android.adblib.AdbSessionKt;
-import com.android.adblib.ConnectedDevice;
-import com.android.adblib.ConnectedDevicesTracker;
-import com.android.adblib.ConnectedDevicesTrackerKt;
-import com.android.ddmlib.AdbInitOptions;
-import com.android.ddmlib.AndroidDebugBridge;
-import com.android.ddmlib.IDevice;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.DeployMetric;
 import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.common.Installer;
-import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
 import com.android.tools.deployer.tasks.LiveUpdateDeployer;
 import com.android.utils.ILogger;
-
-import kotlin.coroutines.EmptyCoroutineContext;
-
-import kotlinx.coroutines.BuildersKt;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -78,21 +65,7 @@ public class LiveUpdateDeployerTest {
                         Deploy.LiveEditRequest.InvalidateMode.SAVE_AND_LOAD,
                         true,
                         false);
-        AndroidDebugBridge.init(AdbInitOptions.DEFAULT);
-        AndroidDebugBridge bridge = AndroidDebugBridge.createBridge();
-        while (bridge.getDevices().length == 0) {
-            Thread.sleep(100);
-        }
-        IDevice iDevice = bridge.getDevices()[0];
-        AdbSession session = connection.getAdbSession();
-        ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
-        ConnectedDevice connectedDevice =
-                BuildersKt.runBlocking(
-                        EmptyCoroutineContext.INSTANCE,
-                        (scope, continuation) ->
-                                ConnectedDevicesTrackerKt.waitForDevice(
-                                        tracker, iDevice.getSerialNumber(), continuation));
-        DeviceHolder deviceHolder = new DeviceHolder(connectedDevice);
+        DeviceHolder deviceHolder = new DeviceHolder(connection.waitForConnectedDevice());
         AdbClient adb = new AdbClient(deviceHolder, logger);
 
         Path installersPath = DeployerTestUtils.prepareInstaller().toPath();

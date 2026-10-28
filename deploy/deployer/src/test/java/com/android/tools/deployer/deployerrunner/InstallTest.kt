@@ -15,10 +15,6 @@
  */
 package com.android.tools.deployer.deployerrunner
 
-import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.waitForDevice
-import com.android.ddmlib.AdbInitOptions
-import com.android.ddmlib.AndroidDebugBridge
 import com.android.testutils.AssumeUtil
 import com.android.testutils.TestUtils
 import com.android.tools.deploy.proto.Deploy.DumpResponse
@@ -34,8 +30,6 @@ import com.android.tools.deployer.common.DeviceHolder
 import com.android.tools.deployer.common.Installer
 import com.android.tools.deployer.rules.ApiLevel
 import com.android.utils.ILogger
-import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -1375,17 +1369,8 @@ class InstallTestTest : DeployRunnerTestBase() {
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     val runner = createDeployerRunner()
 
-    AndroidDebugBridge.init(AdbInitOptions.DEFAULT)
-    val bridge = AndroidDebugBridge.createBridge()
-    while (bridge!!.devices.isEmpty()) {
-      Thread.sleep(100)
-    }
-    val iDevice = bridge.devices[0]
     val logger: ILogger = TestLogger()
-    val session = connection!!.adbSession
-    val tracker = session.connectedDevicesTracker
-    val connectedDevice = runBlocking { tracker.waitForDevice(iDevice.serialNumber) }
-    val deviceHolder = DeviceHolder(connectedDevice)
+    val deviceHolder = DeviceHolder(connection!!.waitForConnectedDevice())
     val adb = AdbClient(deviceHolder, logger)
     val metrics = ArrayList<DeployMetric>()
     val installer: Installer = AdbInstaller(installersPath.toString(), adb, metrics, logger)
@@ -1393,8 +1378,6 @@ class InstallTestTest : DeployRunnerTestBase() {
     // Make sure we have true negative.
     var response = installer.dump(listOf(packageName))
     Assert.assertEquals(DumpResponse.Status.ERROR_PACKAGE_NOT_FOUND, response.status)
-    AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS)
-    AndroidDebugBridge.terminate()
 
     // Install our target APK.
     run {
