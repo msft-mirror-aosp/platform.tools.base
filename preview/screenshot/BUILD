@@ -14,7 +14,9 @@ maven_repository(
     ],
 )
 
-# This includes transitive maven dependencies.
+# This includes transitive maven dependencies and the standalone
+# screenshot-test-gradle-plugin. The standalone plugin is currently used only by
+# integration tests and will be removed once those integration tests are removed.
 # Use :preview_screenshot_maven_repo for release.
 merged_zip(
     name = "preview_screenshot_maven_repo_all",
@@ -28,7 +30,7 @@ merged_zip(
 )
 
 maven_repository(
-    name = "maven_dependencies_no_transitive_deps",
+    name = "preview_screenshot_maven_repo",
     # keep sorted
     artifacts = [
         "//tools/base/preview/screenshot/screenshot-validation-api",
@@ -36,14 +38,6 @@ maven_repository(
         "//tools/base/standalone-render/compose-cli:compose-preview-renderer",
     ],
     include_transitive_deps = False,
-)
-
-merged_zip(
-    name = "preview_screenshot_maven_repo",
-    srcs = [
-        ":maven_dependencies_no_transitive_deps.zip",
-        "//tools/base/preview/screenshot/screenshot-test-gradle-plugin:screenshot-test-gradle-plugin.zip",
-    ],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",
     ],
