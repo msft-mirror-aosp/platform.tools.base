@@ -19,6 +19,7 @@ package com.android.tools.render
 import com.android.tools.rendering.RenderResult
 import java.lang.reflect.Field
 import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.logging.Level
@@ -133,7 +134,9 @@ private class InitializedBridgeContextHandle(
   val getHandlerMessageQueue: Method,
   val isHandlerQueueNotEmpty: Method,
   val getChoreographerCallbacks: Method,
-  val choreographerCallbacksField: Field,
+  val callbacksByTypeField: Field,
+  val getCallbacksByTypeSize: Method,
+  val getCallbacksQueueAt: Method,
 ) {
   private val operationFailureCount = AtomicInteger(0)
 
@@ -152,13 +155,23 @@ private class InitializedBridgeContextHandle(
     }
     val choreographerCallbacks = getChoreographerCallbacks.invoke(interactiveData)
     if (choreographerCallbacks != null) {
-      val callbacks =
-        choreographerCallbacksField.get(choreographerCallbacks) as? Collection<*>
-          ?: throw IllegalStateException("mCallbacks is not a Collection")
-      if (synchronized(callbacks) { callbacks.isNotEmpty() }) return true
+      val callbacksByType = callbacksByTypeField.get(choreographerCallbacks) ?: throw IllegalStateException("mCallbacksByType is null")
+      if (hasPendingChoreographerCallbacks(callbacksByType)) return true
     }
     return false
   }
+
+  private fun hasPendingChoreographerCallbacks(callbacksByType: Any): Boolean =
+    synchronized(callbacksByType) {
+      val size =
+        getCallbacksByTypeSize.invoke(callbacksByType) as? Int ?: throw IllegalStateException("mCallbacksByType.size() did not return Int")
+      (0 until size).any { index ->
+        val queue =
+          getCallbacksQueueAt.invoke(callbacksByType, index) as? Collection<*>
+            ?: throw IllegalStateException("mCallbacksByType.valueAt($index) is not a Collection")
+        queue.isNotEmpty()
+      }
+    }
 }
 
 private sealed interface BridgeContextHandleState {
@@ -205,9 +218,23 @@ private fun getInitializedBridgeContextHandle(
   val getChoreographerCallbacks = interactiveDataClass.getMethod("getChoreographerCallbacks").apply { isAccessible = true }
   val choreographerCallbacks =
     getChoreographerCallbacks.invoke(interactiveData) ?: throw IllegalStateException("getChoreographerCallbacks returned null")
-  val choreographerCallbacksField = choreographerCallbacks.javaClass.getDeclaredField("mCallbacks").apply { isAccessible = true }
-  if (choreographerCallbacksField.get(choreographerCallbacks) !is Collection<*>) {
-    throw IllegalStateException("mCallbacks is not a Collection")
+  val callbacksByTypeField = choreographerCallbacks.javaClass.getDeclaredField("mCallbacksByType").apply { isAccessible = true }
+  val callbacksByType = callbacksByTypeField.get(choreographerCallbacks) ?: throw IllegalStateException("mCallbacksByType is null")
+  val callbacksByTypeClass = callbacksByType.javaClass
+  val getCallbacksByTypeSize = callbacksByTypeClass.getMethod("size").apply { isAccessible = true }
+  if (getCallbacksByTypeSize.returnType != Int::class.javaPrimitiveType && getCallbacksByTypeSize.returnType != Int::class.javaObjectType) {
+    throw IllegalStateException("mCallbacksByType.size() does not return Int")
+  }
+  val getCallbacksQueueAt = callbacksByTypeClass.getMethod("valueAt", Int::class.javaPrimitiveType).apply { isAccessible = true }
+  val queueValueType = (callbacksByTypeField.genericType as? ParameterizedType)?.actualTypeArguments?.singleOrNull()
+  val queueValueClass =
+    when (queueValueType) {
+      is Class<*> -> queueValueType
+      is ParameterizedType -> queueValueType.rawType as? Class<*>
+      else -> null
+    }
+  if (queueValueClass == null || !Collection::class.java.isAssignableFrom(queueValueClass)) {
+    throw IllegalStateException("mCallbacksByType value type ($queueValueType) is not a Collection")
   }
 
   val handle =
@@ -216,7 +243,9 @@ private fun getInitializedBridgeContextHandle(
       getHandlerMessageQueue = getHandlerMessageQueue,
       isHandlerQueueNotEmpty = isHandlerQueueNotEmpty,
       getChoreographerCallbacks = getChoreographerCallbacks,
-      choreographerCallbacksField = choreographerCallbacksField,
+      callbacksByTypeField = callbacksByTypeField,
+      getCallbacksByTypeSize = getCallbacksByTypeSize,
+      getCallbacksQueueAt = getCallbacksQueueAt,
     )
   val newState = BridgeContextHandleState.Initialized(handle)
   stateRef.compareAndSet(BridgeContextHandleState.Uninitialized, newState)

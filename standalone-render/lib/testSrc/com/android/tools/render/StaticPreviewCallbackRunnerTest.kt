@@ -121,8 +121,20 @@ private class FakeHandlerMessageQueue {
   }
 }
 
+private class FakeSparseArray<T> {
+  private val entries = sortedMapOf<Int, T>()
+
+  fun getOrPut(key: Int, defaultValue: () -> T): T = entries.getOrPut(key, defaultValue)
+
+  fun size(): Int = entries.size
+
+  fun valueAt(index: Int): T = entries.values.elementAt(index)
+}
+
 private class FakeChoreographerCallbacks {
-  @JvmField val mCallbacks: MutableList<Any> = mutableListOf()
+  @JvmField val mCallbacksByType: FakeSparseArray<MutableList<Any>> = FakeSparseArray()
+
+  fun queueFor(callbackType: Int): MutableList<Any> = mCallbacksByType.getOrPut(callbackType) { mutableListOf() }
 }
 
 private class FakeSessionInteractiveData(
@@ -1118,7 +1130,9 @@ class StaticPreviewCallbackRunnerTest {
     assertTrue(hasPendingLayoutlibCallbacksFromView(wrappedView, FakeBridgeContext::class.java.name))
 
     interactiveData.handlerQueue.notEmpty = false
-    interactiveData.choreographerCallbacks.mCallbacks.add(Any())
+    interactiveData.choreographerCallbacks.queueFor(0)
+    assertFalse(hasPendingLayoutlibCallbacksFromView(wrappedView, FakeBridgeContext::class.java.name))
+    interactiveData.choreographerCallbacks.queueFor(1).add(Any())
     assertTrue(hasPendingLayoutlibCallbacksFromView(wrappedView, FakeBridgeContext::class.java.name))
 
     val logger = Logger.getLogger("com.android.tools.render.LayoutlibCallbackQueues")
@@ -1160,7 +1174,7 @@ class StaticPreviewCallbackRunnerTest {
       logger.level = previousLevel
     }
 
-    interactiveData.choreographerCallbacks.mCallbacks.clear()
+    interactiveData.choreographerCallbacks.queueFor(1).clear()
     assertFalse(hasPendingLayoutlibCallbacksFromView(wrappedView, FakeBridgeContext::class.java.name))
   }
 
