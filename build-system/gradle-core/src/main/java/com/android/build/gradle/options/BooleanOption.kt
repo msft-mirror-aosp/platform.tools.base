@@ -359,6 +359,17 @@ enum class BooleanOption(
   /** When enabled, registers code coverage and test results aggregation tasks. */
   REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", false, FeatureStage.Experimental),
 
+  /**
+   * When enabled, test tasks that write the new HTML test report also write a Markdown version of it, `report.md`, to the same directory.
+   * Unit test tasks and the `testAllSuites` tasks also need [REPORT_AGGREGATION_SUPPORT].
+   */
+  ENABLE_MARKDOWN_TEST_REPORT(
+    "android.experimental.testOptions.enableMarkdownReport",
+    false,
+    FeatureStage.Experimental,
+    FutureStage(Version.VERSION_10_0, true, FeatureStage.Experimental),
+  ),
+
   /** When enabled, migrates test and coverage reports to the new format for individual suites. */
   TEST_SUITE_NEW_REPORT_FORMAT("android.experimental.testSuite.newReportFormat", false, FeatureStage.Experimental),
 
