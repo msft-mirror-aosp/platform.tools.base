@@ -57,6 +57,39 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
   }
 
   companion object {
+    /**
+     * Types that appear in `runR8` signature, directly or inside another type, and that don't touch com.android.tools.r8.*. If one did
+     * reference R8, the parent copy would link to the bundled R8 instead of the downloaded one. Anything that touches R8 must be loaded by
+     * the child, so it links against the maven downloaded R8 The isolated loader takes these from the parent (AGP's) loader, so AGP can
+     * pass its own objects to the child-loaded `builder-r8` code. Nested classes (e.g. `KeepRuleFile$MavenOrigin`) are matched by their
+     * outer class.
+     */
+    private val PARENT_DELEGATED_DEXING_CLASSES =
+      setOf(
+        "com.android.builder.dexing.KeepRuleFile",
+        "com.android.builder.dexing.MainDexListConfig",
+        "com.android.builder.dexing.PartialShrinking",
+        "com.android.builder.dexing.PartialShrinkingConfig",
+        "com.android.builder.dexing.PartialShrinkingIncludeAll",
+        "com.android.builder.dexing.ProguardConfig",
+        "com.android.builder.dexing.ProguardOutputFiles",
+        "com.android.builder.dexing.ProguardOutputReports",
+        "com.android.builder.dexing.R8OutputType",
+        "com.android.builder.dexing.R8Tools",
+        "com.android.builder.dexing.ResourceShrinkingConfig",
+        "com.android.builder.dexing.ToolConfig",
+      )
+
+    private fun shouldLoadChildFirst(name: String): Boolean {
+      if (name.startsWith("com.android.tools.r8.")) {
+        return true
+      }
+      if (name.startsWith("com.android.builder.dexing.")) {
+        return name.substringBefore('$') !in PARENT_DELEGATED_DEXING_CLASSES
+      }
+      return false
+    }
+
     /** Creates a new isolated [URLClassLoader] for the provided [files]. */
     fun createClassLoader(files: Collection<File>): URLClassLoader {
       val builderR8Url =
@@ -75,7 +108,7 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
       synchronized(getClassLoadingLock(name)) {
         var c = findLoadedClass(name)
         if (c == null) {
-          if (name.startsWith("com.android.tools.r8.") || name.startsWith("com.android.builder.dexing.")) {
+          if (shouldLoadChildFirst(name)) {
             try {
               c = findClass(name)
             } catch (_: ClassNotFoundException) {

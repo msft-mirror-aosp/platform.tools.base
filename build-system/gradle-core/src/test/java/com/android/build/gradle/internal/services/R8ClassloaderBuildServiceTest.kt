@@ -53,6 +53,34 @@ class R8ClassloaderBuildServiceTest {
   }
 
   @Test
+  fun testR8FreeConfigTypesComeFromParent() {
+    R8ClassloaderBuildService.createClassLoader(setOf(jar1)).use { classLoader ->
+      // Shared with AGP: same Class object on both sides of the classloader boundary
+      assertThat(classLoader.loadClass("com.android.builder.dexing.ToolConfig"))
+        .isSameInstanceAs(com.android.builder.dexing.ToolConfig::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.KeepRuleFile\$MavenOrigin"))
+        .isSameInstanceAs(com.android.builder.dexing.KeepRuleFile.MavenOrigin::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.R8Tools"))
+        .isSameInstanceAs(com.android.builder.dexing.R8Tools::class.java)
+
+      // Still child-first: the code that actually calls R8.
+      assertThat(classLoader.loadClass("com.android.builder.dexing.R8Tool").classLoader).isSameInstanceAs(classLoader)
+    }
+  }
+
+  @Test
+  fun testR8ToolsImplIsChildFirstButImplementsParentInterface() {
+    R8ClassloaderBuildService.createClassLoader(setOf(jar1)).use { classLoader ->
+      val implClass = classLoader.loadClass("com.android.builder.dexing.R8ToolsImpl")
+      // Loaded by the isolated loader, so it links against the R8 in that loader...
+      assertThat(implClass.classLoader).isSameInstanceAs(classLoader)
+      // ...but implements AGP's R8Tools, so AGP can call it without reflection.
+      assertThat(com.android.builder.dexing.R8Tools::class.java.isAssignableFrom(implClass)).isTrue()
+      assertThat(implClass.getConstructor().newInstance()).isInstanceOf(com.android.builder.dexing.R8Tools::class.java)
+    }
+  }
+
+  @Test
   fun testClassLoaderCaching() {
     val service = TestR8ClassloaderBuildService()
     val classLoader1 = service.getClassLoader(setOf(jar1, jar2))
