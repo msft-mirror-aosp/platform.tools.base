@@ -494,6 +494,21 @@ public class InstallerUtilTest extends TestCase {
         assertFalse(progress.getWarnings().isEmpty());
     }
 
+    /** r1->emulator, where emulator is not available. */
+    public void testMissingEmulatorDependency() {
+        FakeRemotePackage r1 = new FakeRemotePackage("r1");
+        r1.setDependencies(ImmutableList.of(new FakeDependency("emulator")));
+        ImmutableList<RemotePackage> request = ImmutableList.of(r1);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        assertEquals(
+                request,
+                InstallerUtil.computeRequiredPackages(
+                        request,
+                        new RepositoryPackages(ImmutableList.of(), ImmutableList.of(r1)),
+                        progress));
+        progress.assertNoErrorsOrWarnings();
+    }
+
     /**
      * r1->r2->r3. r3 is installed, but a higher version is required and not available. Null should
      * be returned, and there should be an error.

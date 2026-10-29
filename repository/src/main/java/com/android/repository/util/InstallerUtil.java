@@ -436,10 +436,18 @@ public class InstallerUtil {
                 String dependencyPath = d.getPath();
                 UpdatablePackage updatableDependency = consolidatedPackages.get(dependencyPath);
                 if (updatableDependency == null) {
-                    logger.logWarning(
-                            String.format("Dependant package with key %s not found!",
-                                    dependencyPath));
-                    return null;
+                    if (dependencyPath.equals("emulator")) {
+                        // Make dependencies on emulator implicitly "soft", since they may also be
+                        // satisfied by qemu-next (and we have other ways of ensuring the emulator
+                        // is installed).
+                        continue;
+                    } else {
+                        logger.logWarning(
+                                String.format(
+                                        "Dependant package with key %s not found!",
+                                        dependencyPath));
+                        return null;
+                    }
                 }
                 LocalPackage localDependency = updatableDependency.getLocal();
                 if (localDependency == null && d.isSoft() != null && d.isSoft()) {
