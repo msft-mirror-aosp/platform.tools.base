@@ -1173,7 +1173,6 @@ _CLASS_JARS = [
     "io.ktor:ktor-server-sse-jvm:3.3.2",  # MCP SDK
     "io.ktor:ktor-server-websockets-jvm:3.3.2",  # MCP SDK
     "io.opentracing:opentracing-impl:0.13.0",
-    "io.roastedroot:quickjs4j:0.1.1",  # Mermaid diagram rendering in the AI plugin
     "it.krzeminski:snakeyaml-engine-kmp-jvm:3.0.1",
     "jakarta.inject:jakarta.inject-api:2.0.1",
     "javax.annotation:javax.annotation-api:1.2",
@@ -1667,7 +1666,6 @@ _SOURCE_JARS = [
     "io.grpc:grpc-protobuf:jar:sources:1.69.1",
     "io.grpc:grpc-protobuf-lite:jar:sources:1.69.1",
     "io.grpc:grpc-stub:jar:sources:1.69.1",
-    "io.roastedroot:quickjs4j:jar:sources:0.1.1",
     "junit:junit:jar:sources:4.13.2",
     "org.brotli:dec:jar:sources:0.1.2",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:jar:sources:1.0.0",
