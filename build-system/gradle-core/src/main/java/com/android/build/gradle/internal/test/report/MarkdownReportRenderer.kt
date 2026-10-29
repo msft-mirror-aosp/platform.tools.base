@@ -20,7 +20,8 @@ package com.android.build.gradle.internal.test.report
  * Renders a [RootReport] as Markdown, the content of `report.md`.
  *
  * The report is meant to be read by coding agents and in terminals, so it stays small: a YAML front matter block with the totals, a summary
- * table per module, test suite and variant, and passed tests as counts per class rather than one row per test.
+ * table per module, test suite and variant, failing tests with their stack traces, and passed tests as counts per class rather than one row
+ * per test. Each unique stack trace is printed once, and long ones are truncated.
  */
 class MarkdownReportRenderer {
 
@@ -36,6 +37,7 @@ class MarkdownReportRenderer {
         return@buildString
       }
       appendSummary(executions)
+      appendFailures(executions.filter { it.status == STATUS_FAIL })
       appendPassed(executions)
     }
     // Each section ends with a blank line; end the file with a single newline instead.
@@ -71,6 +73,39 @@ class MarkdownReportRenderer {
     appendLine()
   }
 
+  /**
+   * Appends one entry per failing test. Runs of the same test that failed with the same stack trace, for example in several variants, share
+   * an entry, and a stack trace that was already printed for another test is referenced instead of printed again. Each entry's title starts
+   * with the module, so tests with the same class name in different modules can be told apart.
+   */
+  private fun StringBuilder.appendFailures(failures: List<Execution>) {
+    if (failures.isEmpty()) return
+    appendLine("## Failures (${failures.size})")
+    appendLine()
+    val firstTestWithStackTrace = mutableMapOf<String, String>()
+    failures
+      .groupBy { FailureKey(it.module, it.className, it.testName, it.stackTrace) }
+      .entries
+      .sortedWith(compareBy({ it.key.module }, { it.key.className }, { it.key.testName }, { it.key.stackTrace.orEmpty() }))
+      .forEach { (key, runs) ->
+        val title = testTitle(key.module, key.className, key.testName)
+        val stackTrace = key.stackTrace
+        appendLine("### $title")
+        appendLine()
+        appendLine("Failed in: ${runs.map(::describeRun).distinct().sorted().joinToString(", ")}.")
+        appendLine()
+        when {
+          stackTrace == null -> appendLine("No stack trace was recorded.")
+          stackTrace in firstTestWithStackTrace -> appendLine("Same stack trace as ${firstTestWithStackTrace.getValue(stackTrace)}.")
+          else -> {
+            firstTestWithStackTrace[stackTrace] = title
+            appendCodeBlock(truncateStackTrace(stackTrace))
+          }
+        }
+        appendLine()
+      }
+  }
+
   private fun StringBuilder.appendPassed(executions: List<Execution>) {
     val passedByClass = executions.filter { it.status == STATUS_PASS }.groupingBy { it.className }.eachCount().toSortedMap()
     if (passedByClass.isEmpty()) return
@@ -95,7 +130,44 @@ class MarkdownReportRenderer {
     val stackTrace: String?,
   )
 
+  /** Groups runs of the same failing test that share a stack trace. */
+  private data class FailureKey(val module: String, val className: String, val testName: String, val stackTrace: String?)
+
   internal companion object {
+
+    /** Identifies a test across modules, for example `:app > com.example.MathTest > divides`. */
+    fun testTitle(module: String, className: String, testName: String): String = "$module > $className > $testName"
+
+    /** Stack traces longer than this many lines are truncated. */
+    const val MAX_STACK_TRACE_LINES = 40
+
+    /** Number of leading lines kept from a truncated stack trace, besides its `Caused by:` lines. */
+    const val KEPT_STACK_TRACE_LINES = 25
+
+    /**
+     * Returns [stackTrace] unchanged if it has at most [MAX_STACK_TRACE_LINES] lines. Otherwise, keeps the first [KEPT_STACK_TRACE_LINES]
+     * lines and every later `Caused by:` line, so the root cause is still visible.
+     */
+    fun truncateStackTrace(stackTrace: String): String {
+      val lines = stackTrace.lines()
+      if (lines.size <= MAX_STACK_TRACE_LINES) return stackTrace
+      val causes = lines.drop(KEPT_STACK_TRACE_LINES).filter { it.trimStart().startsWith("Caused by:") }
+      val omitted = lines.size - KEPT_STACK_TRACE_LINES - causes.size
+      return (lines.take(KEPT_STACK_TRACE_LINES) + "\t... $omitted lines omitted" + causes).joinToString("\n")
+    }
+
+    /** Describes where [run] ran, for example `unitTest / debug` or `connected / debug on Pixel_8`. */
+    fun describeRun(run: Execution): String =
+      if (run.target == UNKNOWN_TARGET) "${run.suite} / ${run.variant}" else "${run.suite} / ${run.variant} on ${run.target}"
+
+    /** Appends [text] as a fenced code block, with a fence longer than any run of backticks in [text]. */
+    fun StringBuilder.appendCodeBlock(text: String) {
+      val longestBacktickRun = Regex("`+").findAll(text).maxOfOrNull { it.value.length } ?: 0
+      val fence = "`".repeat(maxOf(3, longestBacktickRun + 1))
+      appendLine(fence)
+      appendLine(text)
+      appendLine(fence)
+    }
 
     /** Flattens [report] into one [Execution] per test case, target, test suite and variant. */
     fun collectExecutions(report: RootReport): List<Execution> =

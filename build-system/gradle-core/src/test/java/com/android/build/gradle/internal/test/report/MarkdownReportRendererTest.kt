@@ -137,6 +137,125 @@ class MarkdownReportRendererTest {
 
     assertThat(renderer.render(report)).contains("| NoPackageTest | 1 |")
   }
+
+  @Test
+  fun render_failureWithStackTrace() {
+    val stackTrace = "java.lang.AssertionError: expected:<0> but was:<3>\n\tat com.example.app.MathTest.divides(MathTest.kt:12)"
+    val report =
+      report(
+        module(":app", testClass("com.example.app.MathTest", testCase("adds"), testCase("divides", STATUS_FAIL, stackTrace = stackTrace)))
+      )
+
+    assertThat(renderer.render(report))
+      .contains(
+        """
+        ## Failures (1)
+
+        ### :app > com.example.app.MathTest > divides
+
+        Failed in: unitTest / debug.
+
+        ```
+        java.lang.AssertionError: expected:<0> but was:<3>
+        	at com.example.app.MathTest.divides(MathTest.kt:12)
+        ```
+
+        ## Passed (1)
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun render_groupsRunsOfTheSameFailure() {
+    val report =
+      report(
+        module(
+          ":app",
+          testClass(
+            "com.example.app.UiTest",
+            testCase("opens", STATUS_FAIL, variants = listOf("debug", "release"), targets = listOf("Pixel_8"), stackTrace = "Boom"),
+          ),
+        )
+      )
+
+    val output = renderer.render(report)
+
+    assertThat(output).contains("## Failures (2)")
+    assertThat(output).contains("Failed in: unitTest / debug on Pixel_8, unitTest / release on Pixel_8.")
+    assertThat(output.split("### :app > com.example.app.UiTest > opens")).hasSize(2)
+  }
+
+  @Test
+  fun render_printsEachStackTraceOnce() {
+    val report =
+      report(
+        module(
+          ":app",
+          testClass(
+            "com.example.app.MathTest",
+            testCase("divides", STATUS_FAIL, stackTrace = "java.lang.IllegalStateException: shared"),
+            testCase("multiplies", STATUS_FAIL, stackTrace = "java.lang.IllegalStateException: shared"),
+          ),
+        )
+      )
+
+    val output = renderer.render(report)
+
+    assertThat(output.split("java.lang.IllegalStateException: shared")).hasSize(2)
+    assertThat(output).contains("Same stack trace as :app > com.example.app.MathTest > divides.")
+  }
+
+  @Test
+  fun render_identifiesTheModuleOfEachFailure() {
+    val report =
+      report(
+        module(":app", testClass("com.example.MathTest", testCase("divides", STATUS_FAIL, stackTrace = "Boom"))),
+        module(":lib", testClass("com.example.MathTest", testCase("divides", STATUS_FAIL, stackTrace = "Boom"))),
+      )
+
+    val output = renderer.render(report)
+
+    assertThat(output).contains("### :app > com.example.MathTest > divides")
+    assertThat(output).contains("### :lib > com.example.MathTest > divides")
+    assertThat(output).contains("Same stack trace as :app > com.example.MathTest > divides.")
+  }
+
+  @Test
+  fun render_failureWithoutStackTrace() {
+    val report = report(module(":app", testClass("com.example.app.MathTest", testCase("divides", STATUS_FAIL))))
+
+    assertThat(renderer.render(report)).contains("No stack trace was recorded.")
+  }
+
+  @Test
+  fun render_fenceIsLongerThanBackticksInStackTrace() {
+    val report =
+      report(module(":app", testClass("com.example.app.MathTest", testCase("divides", STATUS_FAIL, stackTrace = "Expected ```a```"))))
+
+    assertThat(renderer.render(report)).contains("````\nExpected ```a```\n````")
+  }
+
+  @Test
+  fun truncateStackTrace_keepsShortStackTraces() {
+    val stackTrace = (1..MarkdownReportRenderer.MAX_STACK_TRACE_LINES).joinToString("\n") { "\tat Frame$it" }
+
+    assertThat(MarkdownReportRenderer.truncateStackTrace(stackTrace)).isEqualTo(stackTrace)
+  }
+
+  @Test
+  fun truncateStackTrace_keepsLeadingLinesAndCauses() {
+    val lines = (1..60).map { "\tat Frame$it" }.toMutableList()
+    lines[0] = "java.lang.RuntimeException: outer"
+    lines[45] = "Caused by: java.lang.IllegalStateException: inner"
+
+    val truncated = MarkdownReportRenderer.truncateStackTrace(lines.joinToString("\n")).lines()
+
+    assertThat(truncated).hasSize(MarkdownReportRenderer.KEPT_STACK_TRACE_LINES + 2)
+    assertThat(truncated.first()).isEqualTo("java.lang.RuntimeException: outer")
+    assertThat(truncated[MarkdownReportRenderer.KEPT_STACK_TRACE_LINES]).isEqualTo("\t... 34 lines omitted")
+    assertThat(truncated.last()).isEqualTo("Caused by: java.lang.IllegalStateException: inner")
+  }
 }
 
 /** A test case to add to a [testClass]: one result per variant and target. */
