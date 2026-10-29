@@ -282,6 +282,11 @@ internal class AdblibIDeviceWrapper(
 
   override fun getProperty(name: String): String? =
     logUsage(IDeviceUsageTracker.Method.GET_PROPERTY) {
+      if (propertiesMapRef.get() == null && deviceState() != com.android.adblib.DeviceState.ONLINE) {
+        // Properties are only fetched once the device is online, which may never happen (e.g. `unauthorized`), so don't wait.
+        // This was also the original `DeviceImpl` behavior for `ro.` properties (see `PropertyFetcher.getProperty`).
+        return@logUsage null
+      }
       val timeout = if (propertiesMapRef.get() == null) INITIAL_GET_PROP_TIMEOUT_MS else GET_PROP_TIMEOUT_MS
       try {
         return@logUsage getSystemProperty(name).get(timeout, TimeUnit.MILLISECONDS)

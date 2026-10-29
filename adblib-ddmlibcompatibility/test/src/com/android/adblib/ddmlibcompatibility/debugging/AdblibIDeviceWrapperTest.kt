@@ -532,6 +532,23 @@ class AdblibIDeviceWrapperTest {
   }
 
   @Test
+  fun getProperty_returnsNullWithoutWaiting_whenDeviceIsNotOnline() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.UNAUTHORIZED)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act
+    val startNanos = System.nanoTime()
+    val propertyValue = adblibIDeviceWrapper.getProperty("ro.serialno")
+    val elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos)
+
+    // Assert: Properties can't be fetched from an unauthorized device, so `getProperty` should
+    // return right away instead of waiting for `INITIAL_GET_PROP_TIMEOUT_MS` (5 seconds)
+    assertNull(propertyValue)
+    assertTrue("getProperty took $elapsedMillis ms", elapsedMillis < 2_000)
+  }
+
+  @Test
   fun getProperty_nonReadOnly_updatesValue() = runBlockingWithTimeout {
     // Prepare
     val (connectedDevice, fakeDevice) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
@@ -768,6 +785,22 @@ class AdblibIDeviceWrapperTest {
 
     // Act/Assert
     assertEquals("test1-test2-device1", adblibIDeviceWrapper.name)
+  }
+
+  @Test
+  fun getName_returnsSerialNumberWithoutWaiting_whenDeviceIsNotOnline() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.UNAUTHORIZED)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act
+    val startNanos = System.nanoTime()
+    val name = adblibIDeviceWrapper.name
+    val elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos)
+
+    // Assert: `getName` should not wait for the device properties (manufacturer and model)
+    assertEquals("device1", name)
+    assertTrue("getName took $elapsedMillis ms", elapsedMillis < 2_000)
   }
 
   @Test
