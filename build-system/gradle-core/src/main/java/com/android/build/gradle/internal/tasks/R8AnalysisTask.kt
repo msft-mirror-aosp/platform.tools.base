@@ -48,6 +48,7 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.internal.logging.ConsoleRenderer
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 
@@ -101,7 +102,9 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
 
     val reportFile = r8ConfigurationAnalyzerReportOutput.get().asFile
     val dataFile = r8ConfigurationAnalyzerDataOutput.get().asFile
-    val relativePath = projectLayout.projectDirectory.asFile.toURI().relativize(reportFile.toURI()).path
+    // Use an absolute file:// URL so that the report can be opened directly from the terminal/IDE,
+    // consistent with other Gradle and AGP reports (e.g. test, lint, problems reports).
+    val reportUrl = ConsoleRenderer().asClickableFileUrl(reportFile)
 
     val workerAction = { it: R8RunnableAnalysis.Params ->
       it.bootClasspath.from(bootClasspath.toList())
@@ -124,7 +127,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
       it.resourcesJar.set(resourcesJar)
       it.r8ConfigurationAnalyzerDataOutput.set(dataFile)
       it.r8ConfigurationAnalyzerReportOutput.set(reportFile)
-      it.reportRelativePath.set(relativePath)
+      it.reportUrl.set(reportUrl)
       it.featureClassJars.from(featureClassJars.toList())
       it.featureJavaResourceJars.from(featureJavaResourceJars.toList())
       it.libConfiguration.set(coreLibDesugarConfig.orNull)
@@ -167,7 +170,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
       abstract val proguardConfigurations: ListProperty<String>
       abstract val r8ConfigurationAnalyzerDataOutput: RegularFileProperty
       abstract val r8ConfigurationAnalyzerReportOutput: RegularFileProperty
-      abstract val reportRelativePath: Property<String>
+      abstract val reportUrl: Property<String>
       abstract val legacyMultiDexEnabled: Property<Boolean>
       abstract val referencedInputs: ConfigurableFileCollection
       abstract val classes: ConfigurableFileCollection
@@ -259,7 +262,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
           r8ThreadPool,
         )
 
-        logger.lifecycle("R8 Keep Rules analysis report generated: ${parameters.reportRelativePath.get()}")
+        logger.lifecycle("R8 Keep Rules analysis report generated: ${parameters.reportUrl.get()}")
       } finally {
         if (isolationMode) {
           (r8ClassLoader as? AutoCloseable)?.close()

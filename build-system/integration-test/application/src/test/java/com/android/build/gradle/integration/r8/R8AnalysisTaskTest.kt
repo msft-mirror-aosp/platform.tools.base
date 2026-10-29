@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.r8
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.testutils.truth.PathSubject.assertThat
 import java.io.File
 import org.junit.Rule
@@ -46,13 +47,18 @@ class R8AnalysisTaskTest {
     val build = rule.build
     val app = build.androidApplication()
 
-    build.executor.run(":app:analyzeReleaseR8Config").apply { assertTask(":app:analyzeReleaseR8Config").didWork() }
+    val result = build.executor.run(":app:analyzeReleaseR8Config")
+    result.assertTask(":app:analyzeReleaseR8Config").didWork()
 
     val pbReport = app.resolve("build/reports/r8/r8-config-analyzer-release.pb")
     val htmlReport = app.resolve("build/reports/r8/r8-config-analyzer-release.html")
 
     assertThat(pbReport).exists()
     assertThat(htmlReport).exists()
+    // The report location must be printed as an absolute, clickable file:/// URL.
+    result.stdout.use {
+      ScannerSubject.assertThat(it).contains("R8 Keep Rules analysis report generated: ${htmlReport.toUri()}")
+    }
   }
 
   @Test
