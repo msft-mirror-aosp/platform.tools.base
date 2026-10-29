@@ -3201,7 +3201,6 @@ tools/adt/idea/android/testData/snapshots/projects/multiFlavor/app/src/test/java
 tools/adt/idea/android/testData/snapshots/projects/multiFlavor/app/src/testFirstAbcSecondAbc/java/com/example/multiflavor/MediumTestExample.java
 tools/adt/idea/android/testData/snapshots/projects/multiFlavor/app/src/testFirstAbcSecondAbcDebug/java/com/example/multiflavor/DeepTestExample.java
 tools/adt/idea/android/testData/snapshots/projects/multiFlavor/app/src/testSecondAbc/java/com/example/multiflavor/TestExample.java
-tools/adt/idea/android/testData/snapshots/projects/namespaces/app/src/main/java/com/example/app/MyActivity.java
 tools/adt/idea/android/testData/snapshots/projects/navigator/packageview/commonroots/src/com/foo/Foo.java
 tools/adt/idea/android/testData/snapshots/projects/navigator/packageview/simple/app/src/androidTest/java/com/example/canon/app/MainActivityTest.java
 tools/adt/idea/android/testData/snapshots/projects/navigator/packageview/simple/app/src/debug/java/Debug.java
