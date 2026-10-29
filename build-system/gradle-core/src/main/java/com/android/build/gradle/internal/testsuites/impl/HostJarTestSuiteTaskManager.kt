@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.tasks.ProcessJavaResTask
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskFactory
+import com.android.build.gradle.tasks.GenerateTestConfig
 import com.android.build.gradle.tasks.JavaCompileCreationAction
 import com.android.build.gradle.tasks.JavaPreCompileTask
 import org.gradle.api.Project
@@ -115,9 +116,7 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
 
     val task = taskFactory.register(ProcessJavaResTask.CreationAction(config))
 
-    createCompilationTasks(testSuite, sourceContainer, source, taskFactory, taskCreationServices, hostJarConfig)
-
-    if (testSuite.androidResourcesIncluded) {
+    if (hasAndroidResources(testSuite)) {
       setupAndroidResourceTasks(testSuite, taskFactory, hostJarConfig)
     } else if (hasRuntimeStubRClasses(testSuite)) {
       // A library's runtime classes hold no R class. This generates R classes with non-zero IDs for the library and its runtime
@@ -125,11 +124,17 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
       taskFactory.register(GenerateLibraryRFileTask.TestRuntimeStubRClassCreationAction(hostJarConfig))
     }
 
+    createCompilationTasks(testSuite, sourceContainer, source, taskFactory, taskCreationServices, hostJarConfig)
+
     setupAssembleTasks(testSuite, hostJarConfig, task)
 
     return hostJarConfig.taskContainer.assembleTask
   }
 
+  /**
+   * Registers the Android resource tasks, resource APK packaging ([PackageForHostTest]), and test config generation ([GenerateTestConfig])
+   * for [hostJarConfig].
+   */
   private fun setupAndroidResourceTasks(
     testSuite: TestSuiteCreationConfig,
     taskFactory: TaskFactory,
@@ -148,16 +153,23 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
         testSuiteTaskManager.createTestSuiteProcessTestManifestTask(hostJarConfig)
         testSuite.artifacts.copy(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT, testedVariant.artifacts)
         testSuite.artifacts.copy(SingleArtifact.ASSETS, testedVariant.artifacts)
+        hostJarConfig.artifacts.copy(SingleArtifact.ASSETS, testedVariant.artifacts)
       }
       testSuite.artifacts.copy(InternalArtifactType.MERGED_MANIFESTS, hostJarConfig.artifacts)
 
       taskFactory.register(PackageForHostTest.TestSuiteCreationAction(testSuite))
+      hostJarConfig.artifacts.copy(InternalArtifactType.APK_FOR_LOCAL_TEST, testSuite.artifacts)
     } else if (testedVariant.componentType.isAar) {
       testSuiteTaskManager.createHostJarTestSuiteResourcesTasks(hostJarConfig)
 
       taskFactory.register(PackageForHostTest.CreationAction(hostJarConfig))
       testSuite.artifacts.copy(InternalArtifactType.APK_FOR_LOCAL_TEST, hostJarConfig.artifacts)
+    } else {
+      return
     }
+
+    // Writes com/android/tools/test_config.properties with the paths to the resource APK, merged assets, and merged manifest.
+    taskFactory.register(GenerateTestConfig.CreationAction(hostJarConfig))
   }
 
   private fun createCompilationTasks(
@@ -215,8 +227,9 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
     hostJarConfig.taskContainer.assembleTask.configure { task: Task ->
       task.dependsOn(hostJarConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES))
       task.dependsOn(javaResTask)
-      if (testSuite.androidResourcesIncluded) {
+      if (hasAndroidResources(testSuite)) {
         task.dependsOn(testSuite.artifacts.get(InternalArtifactType.APK_FOR_LOCAL_TEST))
+        task.dependsOn(hostJarConfig.artifacts.get(InternalArtifactType.UNIT_TEST_CONFIG_DIRECTORY))
       } else if (hasRuntimeStubRClasses(testSuite)) {
         task.dependsOn(hostJarConfig.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR))
       }
@@ -224,6 +237,18 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
   }
 
   companion object {
+    /**
+     * Whether [testSuite] builds Android resources ([InternalArtifactType.APK_FOR_LOCAL_TEST] and
+     * [InternalArtifactType.UNIT_TEST_CONFIG_DIRECTORY]) for its host-jar sources: the suite requests Android resources, and the tested APK
+     * or AAR variant has Android resources enabled. The suite's resource tasks reuse the resource intermediates of the tested variant (for
+     * example [InternalArtifactType.GENERATED_RES] and [InternalArtifactType.LOCAL_ONLY_SYMBOL_LIST]), which only a variant with Android
+     * resources produces.
+     */
+    internal fun hasAndroidResources(testSuite: TestSuiteCreationConfig): Boolean =
+      testSuite.androidResourcesIncluded &&
+        testSuite.testedVariant.buildFeatures.androidResources &&
+        (testSuite.testedVariant.componentType.isApk || testSuite.testedVariant.componentType.isAar)
+
     /**
      * Whether the test runtime classpath of [testSuite] gets generated `R` classes
      * ([InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR]): the tested variant is an Android library with Android resources enabled,

@@ -122,7 +122,7 @@ class HostJarTestSuiteComposeCompilationTest {
           }
           dependencies {
             implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")
-            implementation("androidx.compose.runtime:runtime:+")
+            implementation("androidx.compose.runtime:runtime:1.7.0")
             implementation("androidx.compose.ui:ui-tooling-preview:+")
           }
         }

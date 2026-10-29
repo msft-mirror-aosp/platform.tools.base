@@ -171,6 +171,7 @@ abstract class PackageForHostTest : NonIncrementalTask() {
       val artifacts = testSuite.artifacts
       artifacts.setTaskInputToFinalProduct(LINKED_RESOURCES_BINARY_FORMAT, task.resApk)
       task.mergedAssetsDirectory.setDisallowChanges(artifacts.get(SingleArtifact.ASSETS))
+      testSuite.testedVariant.androidResources?.let { task.noCompress.setDisallowChanges(it.noCompress) }
     }
   }
 }

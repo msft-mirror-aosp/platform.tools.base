@@ -23,6 +23,7 @@ import com.android.build.api.variant.AnnotationProcessor
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.api.AbstractTestSuiteSourceSet
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.creationconfig.JavaCompileCreationConfig
@@ -92,7 +93,7 @@ internal class JavaCompileCreationConfigForTestSuite(
     get() = testedVariant.global.bootClasspath
 
   override val compileClasspath: FileCollection
-    get() = getTestSuiteCompileClasses(sourceContainer.suiteSourceClasspath, services)
+    get() = getTestSuiteSourcesCompileClasspath(sourceContainer, services)
 
   override val builtInKotlincOutput: Provider<Directory>?
     get() = null
@@ -120,4 +121,22 @@ internal class JavaCompileCreationConfigForTestSuite(
 
   override val lifecycleTasks: LifecycleTasksImpl
     get() = testedVariant.lifecycleTasks
+}
+
+/**
+ * Returns the compile classpath for [sourceContainer]'s Java and Kotlin sources, placing the suite's linked `R` classes (when
+ * [TestSuiteHostJarCreationConfig.hasLinkedRClasses] is true) ahead of [getTestSuiteCompileClasses] so suite-resolved resource IDs take
+ * precedence.
+ */
+internal fun getTestSuiteSourcesCompileClasspath(
+  sourceContainer: TestSuiteSourceContainer,
+  services: TaskCreationServices,
+): FileCollection {
+  val classes = getTestSuiteCompileClasses(sourceContainer.suiteSourceClasspath, services)
+  val suiteLinkedRClasses =
+    (sourceContainer.creationConfig as? TestSuiteHostJarCreationConfig)
+      ?.takeIf { it.hasLinkedRClasses() }
+      ?.androidResourcesCreationConfig
+      ?.getCompiledRClasses(ConsumedConfigType.COMPILE_CLASSPATH) ?: return classes
+  return services.fileCollection(suiteLinkedRClasses, classes)
 }

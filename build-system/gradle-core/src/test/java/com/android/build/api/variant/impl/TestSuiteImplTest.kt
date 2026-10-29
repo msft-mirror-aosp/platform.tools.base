@@ -22,6 +22,7 @@ import com.android.build.api.variant.Component
 import com.android.build.api.variant.InternalSources
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.VariantBuilder
+import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
 import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -30,6 +31,7 @@ import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl
+import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.manifest.ManifestData
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -43,6 +45,7 @@ import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVaria
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarSources
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteSources
 import com.android.build.gradle.internal.variant.VariantComponentInfo
 import com.android.builder.core.ComponentTypeImpl
@@ -387,5 +390,57 @@ class TestSuiteImplTest {
       )
 
     assertEquals(true, testSuiteImpl.codeCoverageEnabled)
+  }
+
+  @Test
+  fun testTestSuiteHostJarCreationConfigAndroidResources() {
+    val testSuite = mock(TestSuiteCreationConfig::class.java)
+    val testedVariant = mock(ApplicationCreationConfig::class.java, withSettings().extraInterfaces(Component::class.java))
+    `when`(testSuite.testedVariant).thenReturn(testedVariant)
+
+    val buildFeatures = mock(com.android.build.gradle.internal.scope.BuildFeatureValues::class.java)
+    `when`(testedVariant.buildFeatures).thenReturn(buildFeatures)
+    `when`(buildFeatures.androidResources).thenReturn(true)
+    `when`(testedVariant.componentType).thenReturn(ComponentTypeImpl.BASE_APK)
+
+    val baseResConfig = mock(com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig::class.java)
+    `when`(testedVariant.androidResourcesCreationConfig).thenReturn(baseResConfig)
+
+    val sourceContainer = mock(TestSuiteSourceContainer::class.java)
+    val sourceContainerArtifacts = mock(ArtifactsImpl::class.java)
+    `when`(sourceContainer.artifacts).thenReturn(sourceContainerArtifacts)
+
+    @Suppress("UNCHECKED_CAST") val suiteRClassJar = mock(Provider::class.java) as Provider<org.gradle.api.file.RegularFile>
+    `when`(sourceContainerArtifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)).thenReturn(suiteRClassJar)
+
+    `when`(testSuite.androidResourcesIncluded).thenReturn(true)
+    val creationConfigWithRes = TestSuiteHostJarCreationConfig(testSuite, sourceContainer)
+    assertThat(creationConfigWithRes.androidResourcesCreationConfig?.compiledRClassArtifact).isSameInstanceAs(suiteRClassJar)
+
+    `when`(testSuite.androidResourcesIncluded).thenReturn(false)
+    val creationConfigWithoutRes = TestSuiteHostJarCreationConfig(testSuite, sourceContainer)
+    assertThat(creationConfigWithoutRes.androidResourcesCreationConfig).isSameInstanceAs(baseResConfig)
+  }
+
+  @Test
+  fun testTestSuiteHostJarSourcesManifest() {
+    val delegate = mock(InternalSources::class.java)
+    val sourceContainer = mock(TestSuiteSourceContainer::class.java)
+    val sourceSet = mock(HostJarTestSuiteSourceSet::class.java)
+    `when`(sourceContainer.source).thenReturn(sourceSet)
+    `when`(sourceContainer.project).thenReturn(ProjectFactory.project)
+
+    val variantServices = createVariantPropertiesApiServices()
+    val testedMainManifest = File("main/AndroidManifest.xml")
+    val testedOverlay = File("debug/AndroidManifest.xml")
+    `when`(delegate.manifestFile).thenReturn(testedMainManifest)
+    `when`(delegate.manifestOverlayFiles).thenReturn(variantServices.provider { listOf(testedOverlay) })
+
+    val suiteManifest = File("suite/AndroidManifest.xml")
+    `when`(sourceSet.manifestFileCandidate).thenReturn(suiteManifest)
+
+    val hostJarSources = TestSuiteHostJarSources(delegate, sourceContainer)
+    assertThat(hostJarSources.manifestFile).isEqualTo(suiteManifest)
+    assertThat(hostJarSources.manifestOverlayFiles.get()).isEmpty()
   }
 }

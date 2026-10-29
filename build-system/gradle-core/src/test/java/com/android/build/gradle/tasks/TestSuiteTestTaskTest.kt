@@ -191,6 +191,16 @@ class TestSuiteTestTaskTest {
     assertThat(notified).isTrue()
   }
 
+  @Test
+  fun testHostJarJvmArgumentProvider() {
+    val project = ProjectFactory.project
+    val providerJava17 = HostJarJvmArgumentProvider(project.providers.provider { true })
+    assertThat(providerJava17.asArguments()).containsExactly("--add-opens=java.base/java.io=ALL-UNNAMED")
+
+    val providerJava11 = HostJarJvmArgumentProvider(project.providers.provider { false })
+    assertThat(providerJava11.asArguments()).isEmpty()
+  }
+
   /** Records whether the connected devices were queried. */
   private class RecordingDeviceProvider : DeviceProvider() {
     var initCalled = false

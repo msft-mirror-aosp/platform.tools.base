@@ -17,7 +17,10 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.apk.Zip
@@ -25,8 +28,16 @@ import com.android.testutils.generateAarWithContent
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.nio.file.Path
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import kotlin.io.path.exists
 import kotlin.io.path.readLines
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 
@@ -292,6 +303,7 @@ class HostJarTestSuiteAndroidResourcesTest {
     val result = rule.build.executor.run(":app:assembleDebugAndroidResSuite")
 
     assertThat(result.didWorkTasks).contains(":app:packageDebugForAndroidResSuite")
+    assertThat(result.didWorkTasks).contains(":app:generateDebugAndroidResSuiteConfig")
     assertThat(result.didWorkTasks).contains(":app:compileDebugAndroidResSuiteJavaWithJavac")
     assertThat(result.getTask(":app:assembleDebugAndroidResSuite")).isNotNull()
 
@@ -321,6 +333,32 @@ class HostJarTestSuiteAndroidResourcesTest {
           }
         }
         files {
+          add(
+            "src/debug/AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <meta-data android:name="com.example.suite.MANIFEST_MARKER" android:value="from_app_debug_manifest" />
+                </application>
+            </manifest>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/androidResSuite/AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools">
+                <application>
+                    <meta-data
+                        android:name="com.example.suite.MANIFEST_MARKER"
+                        android:value="from_app_suite_manifest"
+                        tools:replace="android:value" />
+                </application>
+            </manifest>
+            """
+              .trimIndent(),
+          )
           update("src/androidResSuite/java/some/androidres/TestClass.java")
             .searchAndReplace(
               "int stringRes = com.example.test.R.string.app_name;",
@@ -336,6 +374,7 @@ class HostJarTestSuiteAndroidResourcesTest {
       androidLibrary(":lib") {
         dependencies { implementation("$SHARED_LIBRARY:1.0") }
         android {
+          testOptions.targetSdk = 33
           testOptions.customSuites.named("libAndroidResSuite") {
             it.useJunitEngine.addInputProperty(
               "com.android.junit.engine.expected.classes",
@@ -350,6 +389,32 @@ class HostJarTestSuiteAndroidResourcesTest {
           }
         }
         files {
+          add(
+            "src/debug/AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <meta-data android:name="com.example.lib.suite.MANIFEST_MARKER" android:value="from_lib_debug_manifest" />
+                </application>
+            </manifest>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/libAndroidResSuite/AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools">
+                <application>
+                    <meta-data
+                        android:name="com.example.lib.suite.MANIFEST_MARKER"
+                        android:value="from_lib_suite_manifest"
+                        tools:replace="android:value" />
+                </application>
+            </manifest>
+            """
+              .trimIndent(),
+          )
           update("src/libAndroidResSuite/java/some/lib/androidres/LibTestClass.java")
             .searchAndReplace(
               "int stringRes = com.example.lib.R.string.lib_name;",
@@ -369,6 +434,13 @@ class HostJarTestSuiteAndroidResourcesTest {
     build.executor.run(":app:testDebugAndroidResSuiteT1TestSuite", ":lib:testDebugLibAndroidResSuiteT1TestSuite")
 
     val intermediatesDir = build.androidApplication(":app").intermediatesDir
+
+    val appSuiteManifest =
+      intermediatesDir.resolve("packaged_manifests/debugAndroidResSuite/processDebugAndroidResSuiteManifest/AndroidManifest.xml")
+    assertWithMessage("$appSuiteManifest exists").that(appSuiteManifest.exists()).isTrue()
+    val appSuiteManifestText = appSuiteManifest.toFile().readText()
+    assertThat(appSuiteManifestText).contains("from_app_suite_manifest")
+    assertThat(appSuiteManifestText).doesNotContain("from_app_debug_manifest")
 
     // The resources passed to the test engine hold the resources of the dependencies that only the test suite has, or has in a newer
     // version.
@@ -423,6 +495,14 @@ class HostJarTestSuiteAndroidResourcesTest {
     }
 
     val libIntermediatesDir = build.androidLibrary(":lib").intermediatesDir
+    val libSuiteManifest =
+      libIntermediatesDir.resolve("packaged_manifests/debugLibAndroidResSuite/processDebugLibAndroidResSuiteManifest/AndroidManifest.xml")
+    assertWithMessage("$libSuiteManifest exists").that(libSuiteManifest.exists()).isTrue()
+    val libSuiteManifestText = libSuiteManifest.toFile().readText()
+    assertThat(libSuiteManifestText).contains("from_lib_suite_manifest")
+    assertThat(libSuiteManifestText).doesNotContain("from_lib_debug_manifest")
+    assertThat(libSuiteManifestText).contains("android:targetSdkVersion=\"33\"")
+
     val libApkForLocalTest =
       libIntermediatesDir.resolve("apk_for_local_test").toFile().walkTopDown().single {
         it.name == "apk-for-local-test.ap_" && it.parentFile.name == "packageDebugLibAndroidResSuiteForUnitTest"
@@ -457,6 +537,287 @@ class HostJarTestSuiteAndroidResourcesTest {
     }
   }
 
+  @Test
+  fun testCompileAgainstSuiteLinkedRClass() {
+    val build = rule.build {
+      gradleProperties { add(BooleanOption.NON_TRANSITIVE_R_CLASS, false) }
+      androidApplication(":app") {
+        dependencies { implementation("$SHARED_LIBRARY:1.0") }
+        android {
+          testOptions.customSuites.named("androidResSuite") {
+            it.useJunitEngine.addInputProperty("com.android.junit.engine.invoked.methods", "some.androidres.TestClass#checkLinkedRClass")
+            it.hostJar {
+              dependencies.apply {
+                implementation.add(SUITE_ONLY_LIBRARY)
+                implementation.add("$SHARED_LIBRARY:2.0")
+              }
+            }
+          }
+        }
+        files {
+          update("src/androidResSuite/java/some/androidres/TestClass.java")
+            .searchAndReplace(
+              "int stringRes = com.example.test.R.string.app_name;",
+              """
+              int stringRes = com.example.test.R.string.app_name;
+              }
+              public static void checkLinkedRClass() {
+                if (com.example.test.R.string.app_name == 0) throw new IllegalStateException("app_name is 0");
+                if (com.example.test.R.string.suite_only_string == 0) throw new IllegalStateException("suite_only_string is 0");
+                if (com.example.test.R.color.shared_color == 0) throw new IllegalStateException("shared_color is 0");
+              """
+                .trimIndent(),
+            )
+        }
+      }
+      androidLibrary(":lib") {
+        dependencies { implementation("$SHARED_LIBRARY:1.0") }
+        android {
+          testOptions.customSuites.named("libAndroidResSuite") {
+            it.useJunitEngine.addInputProperty(
+              "com.android.junit.engine.invoked.methods",
+              "some.lib.androidres.LibTestClass#checkLinkedRClass",
+            )
+            it.hostJar {
+              dependencies.apply {
+                implementation.add(SUITE_ONLY_LIBRARY)
+                implementation.add("$SHARED_LIBRARY:2.0")
+              }
+            }
+          }
+        }
+        files {
+          update("src/libAndroidResSuite/java/some/lib/androidres/LibTestClass.java")
+            .searchAndReplace(
+              "int stringRes = com.example.lib.R.string.lib_name;",
+              """
+              int stringRes = com.example.lib.R.string.lib_name;
+              }
+              public static void checkLinkedRClass() {
+                if (com.example.lib.R.string.lib_name == 0) throw new IllegalStateException("lib_name is 0");
+                if (com.example.lib.R.string.suite_only_string == 0) throw new IllegalStateException("suite_only_string is 0");
+                if (com.example.lib.R.color.shared_color == 0) throw new IllegalStateException("shared_color is 0");
+              """
+                .trimIndent(),
+            )
+        }
+      }
+    }
+
+    build.executor.run(":app:testDebugAndroidResSuiteT1TestSuite", ":lib:testDebugLibAndroidResSuiteT1TestSuite")
+  }
+
+  @Test
+  fun testTestedLibraryMergedManifestTransformPropagatesToSuite() {
+    val build = rule.build {
+      androidLibrary(":lib") {
+        pluginCallbacks += TransformLibraryMergedManifestCallback::class.java
+        files {
+          add(
+            "src/main/AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <meta-data android:name="com.example.lib.suite.MANIFEST_MARKER" android:value="raw_lib_manifest" />
+                </application>
+            </manifest>
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":lib:processDebugLibAndroidResSuiteManifest")
+
+    val libSuiteManifest =
+      build
+        .androidLibrary(":lib")
+        .intermediatesDir
+        .resolve("packaged_manifests/debugLibAndroidResSuite/processDebugLibAndroidResSuiteManifest/AndroidManifest.xml")
+    val libSuiteManifestText = libSuiteManifest.toFile().readText()
+    assertThat(libSuiteManifestText).contains("transformed_lib_manifest")
+    assertThat(libSuiteManifestText).doesNotContain("raw_lib_manifest")
+  }
+
+  @Test
+  fun testSuiteManifestAddedAndRemovedReusesConfigurationCache() {
+    val build = rule.build {
+      androidLibrary(":lib") {
+        files {
+          add(
+            "src/debug/AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <meta-data android:name="com.example.lib.suite.MANIFEST_MARKER" android:value="from_lib_debug_manifest" />
+                </application>
+            </manifest>
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    val lib = build.androidLibrary(":lib")
+    val libSuiteManifest =
+      lib.intermediatesDir.resolve("packaged_manifests/debugLibAndroidResSuite/processDebugLibAndroidResSuiteManifest/AndroidManifest.xml")
+
+    build.executor.run(":lib:processDebugLibAndroidResSuiteManifest")
+    assertThat(libSuiteManifest.toFile().readText()).contains("from_lib_debug_manifest")
+
+    lib.files.add(
+      "src/libAndroidResSuite/AndroidManifest.xml",
+      """
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+          <application>
+              <meta-data
+                  android:name="com.example.lib.suite.MANIFEST_MARKER"
+                  android:value="from_lib_suite_manifest"
+                  tools:replace="android:value" />
+          </application>
+      </manifest>
+      """
+        .trimIndent(),
+    )
+
+    val resultAfterAdd = build.executor.run(":lib:processDebugLibAndroidResSuiteManifest")
+    resultAfterAdd.assertConfigurationCacheHit()
+    val manifestWithSuiteOverlay = libSuiteManifest.toFile().readText()
+    assertThat(manifestWithSuiteOverlay).contains("from_lib_suite_manifest")
+    assertThat(manifestWithSuiteOverlay).doesNotContain("from_lib_debug_manifest")
+
+    lib.files.remove("src/libAndroidResSuite/AndroidManifest.xml")
+
+    val resultAfterRemove = build.executor.run(":lib:processDebugLibAndroidResSuiteManifest")
+    resultAfterRemove.assertConfigurationCacheHit()
+    val manifestAfterRemoval = libSuiteManifest.toFile().readText()
+    assertThat(manifestAfterRemoval).contains("from_lib_debug_manifest")
+    assertThat(manifestAfterRemoval).doesNotContain("from_lib_suite_manifest")
+  }
+
+  @Test
+  fun testDynamicFeatureAndroidResourcesSuite() {
+    val build = rule.build {
+      androidApplication(":app") { android { dynamicFeatures.add(":feature") } }
+      androidFeature(":feature") {
+        dependencies { implementation(project(":app")) }
+        android {
+          namespace = "com.example.feature"
+          testOptions.customSuites.create("featureResSuite") {
+            it.useVerifyingJunitEngine()
+            it.useJunitEngine.inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE)
+            it.useJunitEngine.addInputProperty("com.android.junit.engine.expected.classes", "some.feature.FeatureSuiteTest")
+            it.useJunitEngine.addInputProperty(
+              "com.android.junit.engine.expected.resources",
+              "com/android/tools/test_config.properties",
+            )
+            it.hostJar { enableAndroidResources = true }
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+        files {
+          add("src/main/assets/feature_asset.txt", "Feature asset")
+          add(
+            "src/featureResSuite/AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <meta-data android:name="com.example.feature.SUITE_MARKER" android:value="from_feature_suite_manifest" />
+                </application>
+            </manifest>
+            """
+              .trimIndent(),
+          )
+          add("src/featureResSuite/java/some/feature/FeatureSuiteTest.java", "package some.feature; public class FeatureSuiteTest {}")
+        }
+      }
+    }
+
+    val result = build.executor.run(":feature:assembleDebugFeatureResSuite", ":feature:testDebugFeatureResSuiteT1TestSuite")
+    assertThat(result.didWorkTasks).contains(":feature:generateDebugFeatureResSuiteConfig")
+    assertThat(result.didWorkTasks).contains(":feature:packageDebugForFeatureResSuite")
+
+    val featureSuiteManifest =
+      build
+        .androidFeature(":feature")
+        .intermediatesDir
+        .resolve("packaged_manifests/debugFeatureResSuite/processDebugFeatureResSuiteManifest/AndroidManifest.xml")
+    assertThat(featureSuiteManifest.toFile().readText()).contains("from_feature_suite_manifest")
+  }
+
+  @Test
+  fun testNoCompressInSuiteResourceApk() {
+    // Large enough for the compressor to keep the deflated data.
+    val assetContent = "Compressible host-jar test suite asset content. ".repeat(64)
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          androidResources { noCompress += "nocompress" }
+          dynamicFeatures.add(":feature")
+        }
+        files {
+          add("src/main/assets/stored_asset.nocompress", assetContent)
+          add("src/main/assets/deflated_asset.txt", assetContent)
+        }
+      }
+      androidLibrary(":lib") {
+        android { androidResources { noCompress += "nocompress" } }
+        files {
+          add("src/main/assets/stored_asset.nocompress", assetContent)
+          add("src/main/assets/deflated_asset.txt", assetContent)
+        }
+      }
+      androidFeature(":feature") {
+        dependencies { implementation(project(":app")) }
+        android {
+          namespace = "com.example.feature"
+          androidResources { noCompress += "nocompress" }
+          testOptions.customSuites.create("featureResSuite") {
+            it.useVerifyingJunitEngine()
+            it.hostJar { enableAndroidResources = true }
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+        files {
+          add("src/main/assets/stored_asset.nocompress", assetContent)
+          add("src/main/assets/deflated_asset.txt", assetContent)
+        }
+      }
+    }
+
+    build.executor.run(
+      ":app:packageDebugForAndroidResSuite",
+      ":lib:packageDebugLibAndroidResSuiteForUnitTest",
+      ":feature:packageDebugForFeatureResSuite",
+    )
+
+    val apkForLocalTests =
+      mapOf(
+        build.androidApplication(":app").intermediatesDir to "packageDebugForAndroidResSuite",
+        build.androidLibrary(":lib").intermediatesDir to "packageDebugLibAndroidResSuiteForUnitTest",
+        build.androidFeature(":feature").intermediatesDir to "packageDebugForFeatureResSuite",
+      )
+    for ((intermediatesDir, taskName) in apkForLocalTests) {
+      val apkForLocalTest =
+        intermediatesDir.resolve("apk_for_local_test").toFile().walkTopDown().single {
+          it.name == "apk-for-local-test.ap_" && it.parentFile.name == taskName
+        }
+      ZipFile(apkForLocalTest).use { zip ->
+        assertWithMessage("$taskName stored_asset.nocompress")
+          .that(zip.getEntry("assets/stored_asset.nocompress").method)
+          .isEqualTo(ZipEntry.STORED)
+        assertWithMessage("$taskName deflated_asset.txt")
+          .that(zip.getEntry("assets/deflated_asset.txt").method)
+          .isEqualTo(ZipEntry.DEFLATED)
+      }
+    }
+  }
+
   /** Returns the ids of the resources listed in the given R.txt file, by resource type and name, e.g. `string app_name`. */
   private fun readResourceIds(symbolList: Path): Map<String, String> {
     assertWithMessage("$symbolList exists").that(symbolList.exists()).isTrue()
@@ -468,5 +829,28 @@ class HostJarTestSuiteAndroidResourcesTest {
         val (_, type, name, value) = line.split(" ", limit = 4)
         "$type $name" to value
       }
+  }
+}
+
+abstract class ReplaceLibraryManifestMarkerTask : DefaultTask() {
+  @get:InputFile abstract val mergedManifest: RegularFileProperty
+  @get:OutputFile abstract val updatedManifest: RegularFileProperty
+
+  @TaskAction
+  fun taskAction() {
+    val content = mergedManifest.get().asFile.readText().replace("raw_lib_manifest", "transformed_lib_manifest")
+    updatedManifest.get().asFile.writeText(content)
+  }
+}
+
+class TransformLibraryMergedManifestCallback : LibraryComponentCallback {
+  override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+      val updater = project.tasks.register("${variant.name}ManifestMarkerUpdater", ReplaceLibraryManifestMarkerTask::class.java)
+      variant.artifacts
+        .use(updater)
+        .wiredWithFiles(ReplaceLibraryManifestMarkerTask::mergedManifest, ReplaceLibraryManifestMarkerTask::updatedManifest)
+        .toTransform(SingleArtifact.MERGED_MANIFEST)
+    }
   }
 }

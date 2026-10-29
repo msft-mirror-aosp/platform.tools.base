@@ -808,9 +808,11 @@ SUITES_FIXTURE = [
 maven_repository(
     name = "compose_desktop_prebuilts",
     artifacts = [
+        "@maven//:androidx.compose.runtime.runtime-desktop_1.10.0",
         "@maven//:androidx.compose.runtime.runtime-desktop_1.7.0",
         "@maven//:androidx.compose.ui.ui-tooling-preview-desktop_1.7.0",
         "@maven//:androidx.compose.ui.ui-tooling-preview_1.7.0",
+        "@maven//:androidx.compose.runtime.runtime_1.10.0",
         "@maven//:androidx.compose.runtime.runtime_1.7.0",
         "@maven//:androidx.compose.ui.ui-tooling-preview-android_1.7.0",
     ],

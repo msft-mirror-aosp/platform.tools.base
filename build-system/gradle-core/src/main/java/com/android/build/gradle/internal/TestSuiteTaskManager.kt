@@ -117,6 +117,10 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     return taskContainer.assembleTask
   }
 
+  /**
+   * Creates the manifest, asset, and resource tasks for [hostJarConfig], which has Android resources enabled (see
+   * [com.android.build.gradle.internal.testsuites.impl.HostJarTestSuiteTaskManager.hasAndroidResources]).
+   */
   fun createHostJarTestSuiteResourcesTasks(hostJarConfig: TestSuiteHostJarCreationConfig) {
     // Add a task to process the manifest
     createProcessTestManifestTask(hostJarConfig)

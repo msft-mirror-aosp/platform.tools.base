@@ -16,6 +16,11 @@
 
 package com.android.build.gradle.internal.dependency
 
+import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
+import com.android.build.gradle.internal.utils.isKotlinAndroidPluginApplied
+import com.android.build.gradle.internal.utils.isKotlinPluginAppliedInTheSameClassloader
+import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.ProjectOptions
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
@@ -23,13 +28,31 @@ import org.gradle.api.attributes.AttributeCompatibilityRule
 import org.gradle.api.attributes.AttributeDisambiguationRule
 import org.gradle.api.attributes.CompatibilityCheckDetails
 import org.gradle.api.attributes.MultipleCandidatesDetails
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 private const val ANDROID_JVM_PLATFORM_TYPE = "androidJvm"
 private const val JVM_PLATFORM_TYPE = "jvm"
 private const val COMMON_TYPE = "common"
+private const val KOTLIN_PLATFORM_TYPE_ATTRIBUTE_NAME = "org.jetbrains.kotlin.platform.type"
+
+/**
+ * Requests the `androidJvm` Kotlin platform on [configuration]: the typed [KotlinPlatformType.attribute] when a Kotlin plugin is in AGP's
+ * classloader, and [configureKotlinPlatformAttribute] when no Kotlin plugin is applied. Suite host runtime classpaths rely on this request
+ * to resolve Android variants, because no Kotlin plugin owns them. A Kotlin plugin loads in a separate classloader only when the Kotlin
+ * Gradle plugin is excluded from AGP's dependencies, and [configuration] then relies on `TargetJvmEnvironment=android`.
+ */
+fun requestAndroidJvmKotlinPlatform(configuration: Configuration, project: Project, projectOptions: ProjectOptions) {
+  val builtInKotlin =
+    projectOptions.get(BooleanOption.BUILT_IN_KOTLIN) || project.pluginManager.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
+  val kgpInSameClassloader = builtInKotlin || isKotlinPluginAppliedInTheSameClassloader(project)
+  when {
+    kgpInSameClassloader -> configuration.attributes.attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)
+    !isKotlinAndroidPluginApplied(project) -> configureKotlinPlatformAttribute(listOf(configuration), project)
+  }
+}
 
 fun configureKotlinPlatformAttribute(configs: List<Configuration>, project: Project) {
-  val kotlinPlatformTypeAttribute = Attribute.of("org.jetbrains.kotlin.platform.type", String::class.java)
+  val kotlinPlatformTypeAttribute = Attribute.of(KOTLIN_PLATFORM_TYPE_ATTRIBUTE_NAME, String::class.java)
 
   configs.forEach { it.attributes.attribute(kotlinPlatformTypeAttribute, ANDROID_JVM_PLATFORM_TYPE) }
 

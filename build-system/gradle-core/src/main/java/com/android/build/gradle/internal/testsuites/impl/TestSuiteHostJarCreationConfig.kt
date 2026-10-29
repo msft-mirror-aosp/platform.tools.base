@@ -26,11 +26,15 @@ import com.android.build.api.variant.JavaCompilation
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.LayeredSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
+import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
@@ -39,8 +43,10 @@ import com.android.build.gradle.options.getOption
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.utils.appendCapitalized
+import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
@@ -77,7 +83,8 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
 
   // TestComponent
   override val manifestPlaceholders: MapProperty<String, String> by lazy {
-    services.mapProperty(String::class.java, String::class.java).also { it.set(emptyMap<String, String>()) }
+    manifestPlaceholdersCreationConfig?.placeholders
+      ?: services.mapProperty(String::class.java, String::class.java).also { it.set(emptyMap<String, String>()) }
   }
 
   // TestComponentCreationConfig
@@ -91,7 +98,7 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
 
   // TestCreationConfig
   override val targetSdkVersion: AndroidVersion
-    get() = getMainTargetSdkVersion()
+    get() = global.unitTestOptions.targetSdkVersion ?: getMainTargetSdkVersion()
 
   override val instrumentationRunner: Provider<String>
     get() = testSuite.services.provider { "androidx.test.runner.AndroidJUnitRunner" }
@@ -120,6 +127,29 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
   override val taskContainer: MutableTaskContainer by lazy { MutableTaskContainer() }
 
   override val sources: InternalSources by lazy { TestSuiteHostJarSources(testSuite.testedVariant.sources, sourceContainer) }
+
+  override val androidResourcesCreationConfig: AndroidResourcesCreationConfig? by lazy {
+    val baseConfig = testSuite.testedVariant.androidResourcesCreationConfig ?: return@lazy null
+    if (hasLinkedRClasses()) {
+      object : AndroidResourcesCreationConfig by baseConfig {
+        override val compiledRClassArtifact: Provider<RegularFile>
+          get() = artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
+
+        override fun getCompiledRClasses(configType: AndroidArtifacts.ConsumedConfigType): FileCollection =
+          services.fileCollection(compiledRClassArtifact)
+      }
+    } else {
+      baseConfig
+    }
+  }
+
+  /**
+   * Whether this suite links its own Android resources and generates [InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR] (see
+   * [HostJarTestSuiteTaskManager.setupAndroidResourceTasks]): Android resources are enabled for a tested library or application.
+   */
+  internal fun hasLinkedRClasses(): Boolean =
+    HostJarTestSuiteTaskManager.hasAndroidResources(testSuite) &&
+      (testSuite.testedVariant.componentType.isAar || testSuite.testedVariant is ApplicationCreationConfig)
 
   override val variantDependencies: VariantDependencies by lazy {
     val classpath = sourceContainer.suiteSourceClasspath
@@ -185,16 +215,22 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
 
 class TestSuiteHostJarSources(val delegate: InternalSources, val sourceContainer: TestSuiteSourceContainer) : InternalSources by delegate {
   override val java: FlatSourceDirectoriesImpl?
-    get() = (sourceContainer.source as? com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet)?.java
+    get() = (sourceContainer.source as? HostJarTestSuiteSourceSet)?.java
 
   override val kotlin: FlatSourceDirectoriesImpl?
-    get() = (sourceContainer.source as? com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet)?.kotlin
+    get() = (sourceContainer.source as? HostJarTestSuiteSourceSet)?.kotlin
 
   override val jniLibs: LayeredSourceDirectoriesImpl?
     get() = null
 
   override val resources: FlatSourceDirectoriesImpl?
-    get() = (sourceContainer.source as? com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet)?.resources
+    get() = (sourceContainer.source as? HostJarTestSuiteSourceSet)?.resources
+
+  override val manifestFile: File
+    get() = (sourceContainer.source as? HostJarTestSuiteSourceSet)?.manifestFileCandidate ?: delegate.manifestFile
+
+  override val manifestOverlayFiles: Provider<List<File>>
+    get() = sourceContainer.project.providers.provider { emptyList() }
 
   override fun java(action: (FlatSourceDirectoriesImpl) -> Unit) {
     java?.let(action)

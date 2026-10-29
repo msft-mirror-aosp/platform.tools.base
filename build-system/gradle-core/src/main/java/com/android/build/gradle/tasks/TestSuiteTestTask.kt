@@ -28,9 +28,7 @@ import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BuildToolsExecutableInput
-import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
-import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
@@ -44,6 +42,7 @@ import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.R_CLASS_JAR
+import com.android.build.gradle.internal.scope.BootClasspathBuilder
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -62,6 +61,7 @@ import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.configureAndroidTestEngine
 import com.android.build.gradle.internal.testing.formatInstrumentationArgs
 import com.android.build.gradle.internal.testsuites.impl.HostJarTestSuiteTaskManager
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -73,14 +73,17 @@ import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
+import com.google.common.collect.ImmutableList
 import java.io.File
 import java.util.Locale
 import java.util.Properties
+import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import javax.inject.Inject
 import kotlin.collections.asIterable
 import kotlin.collections.joinToString
 import kotlin.collections.plus
+import org.gradle.api.JavaVersion
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.DirectoryProperty
@@ -109,6 +112,7 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.VerificationException
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
+import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.workers.WorkerExecutor
 import shadow.bundletool.com.android.utils.PathUtils
@@ -655,8 +659,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.classpath =
         creationConfig.services.fileCollection().also { fileCollection ->
           if (hasHostJar) {
+            // Place the generated test config directory (com/android/tools/test_config.properties) first on the classpath so host test
+            // runners can locate the suite's merged manifest, resources, and assets.
+            if (HostJarTestSuiteTaskManager.hasAndroidResources(creationConfig)) {
+              hostJarSourceContainers.forEach { sourceContainer ->
+                fileCollection.from(sourceContainer.artifacts.get(InternalArtifactType.UNIT_TEST_CONFIG_DIRECTORY))
+              }
+            }
             fileCollection.from(classesDir)
-            // The suite's compiled classes and Java resources (src/<suite>/resources) come first.
+            // The suite's compiled classes and Java resources (src/<suite>/resources) precede its dependencies.
             hostJarSourceContainers.forEach { sourceContainer ->
               fileCollection.from(
                 sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
@@ -686,6 +697,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
                 fileCollection.from(sourceContainer.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR))
               }
             }
+            // Any additional or requested optional libraries of the SDK (for example org.apache.http.legacy).
+            fileCollection.from(getAdditionalAndRequestedOptionalLibraries())
+            // The mockable android.jar is last, so that dependencies can shadow its classes. It honors
+            // testOptions.unitTests.isReturnDefaultValues.
+            fileCollection.from(creationConfig.global.mockableJarArtifact)
           } else {
             creationConfig.sourceContainers.forEach { sourceContainer ->
               fileCollection.from(
@@ -694,6 +710,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             }
           }
         }
+
+      if (hasHostJar) {
+        task.systemProperty("java.awt.headless", "true")
+        val isJava17OrNewer =
+          task.javaLauncher
+            .map { it.metadata.languageVersion.canCompileOrRun(17) }
+            .orElse(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17))
+        task.jvmArgumentProviders.add(HostJarJvmArgumentProvider(isJava17OrNewer))
+      }
 
       // Get all project properties, and system properties (possibly overriding project
       // properties) and register them for the test engine.
@@ -1045,17 +1070,28 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
      * application.
      */
     private fun getLinkedRClassJars(hostJarSourceContainers: List<TestSuiteSourceContainer>) =
-      if (
-        creationConfig.androidResourcesIncluded &&
-          creationConfig.testedVariant.buildFeatures.androidResources &&
-          (creationConfig.testedVariant.componentType.isAar || creationConfig.testedVariant is ApplicationCreationConfig)
-      ) {
-        hostJarSourceContainers.mapNotNull { sc ->
-          (sc.creationConfig as? HostTestCreationConfig)?.artifacts?.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
+      hostJarSourceContainers
+        .mapNotNull { sc -> (sc.creationConfig as? TestSuiteHostJarCreationConfig)?.takeIf { it.hasLinkedRClasses() } }
+        .map { it.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR) }
+
+    /**
+     * The SDK's additional libraries and the optional libraries requested via `useLibrary`, resolved lazily through a [Callable] when the
+     * test task's classpath is evaluated.
+     */
+    private fun getAdditionalAndRequestedOptionalLibraries(): FileCollection =
+      creationConfig.services.fileCollection(
+        Callable {
+          val versionedSdkLoader = creationConfig.global.versionedSdkLoader.get()
+          BootClasspathBuilder.computeAdditionalAndRequestedOptionalLibraries(
+            creationConfig.services,
+            versionedSdkLoader.additionalLibrariesProvider.get(),
+            versionedSdkLoader.optionalLibrariesProvider.get(),
+            false,
+            ImmutableList.copyOf(creationConfig.global.libraryRequests),
+            creationConfig.services.issueReporter,
+          )
         }
-      } else {
-        emptyList()
-      }
+      )
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)
@@ -1522,4 +1558,13 @@ internal fun runUnwrappingVerificationFailures(action: () -> Unit) {
     }
     throw cause as? VerificationException ?: e
   }
+}
+
+internal class HostJarJvmArgumentProvider(@get:Input val java17OrNewer: Provider<Boolean>) : CommandLineArgumentProvider {
+  override fun asArguments(): Iterable<String> =
+    if (java17OrNewer.get()) {
+      listOf("--add-opens=java.base/java.io=ALL-UNNAMED")
+    } else {
+      emptyList()
+    }
 }

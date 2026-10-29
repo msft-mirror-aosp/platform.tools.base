@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.dependency.LayoutlibExtractor
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.internal.dependency.checkConfigurationAlignments
+import com.android.build.gradle.internal.dependency.requestAndroidJvmKotlinPlatform
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -119,7 +120,13 @@ internal constructor(
       hostRuntimeClasspath.extendsFrom(runtimeClasspath)
     }
     populateClasspath(hostRuntimeClasspath, listOf(enginesDependencies))
-    addAttributesForHost(hostRuntimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
+    // Host-jar sources compile and run against the Android variants of their dependencies (see addAttributes); for other source types,
+    // this classpath only resolves the plain JVM test engines.
+    addAttributesForHost(
+      hostRuntimeClasspath,
+      factory.named(Usage::class.java, Usage.JAVA_RUNTIME),
+      isAndroidCode = sourceType == TestSuiteSourceType.HOST_JAR,
+    )
 
     // -------------- ENGINES CLASSPATH
     val enginesClasspathName: String = identifier + "EnginesClasspath"
@@ -127,7 +134,7 @@ internal constructor(
       configurations.maybeRegister(enginesClasspathName) {
         it.description = "Resolved configuration for test engines for test suite: $testSuiteName in $testedVariantName"
         populateClasspath(it, listOf(enginesDependencies))
-        addAttributesForHost(it, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
+        addAttributesForHost(it, factory.named(Usage::class.java, Usage.JAVA_RUNTIME), isAndroidCode = false)
       }
 
     if (
@@ -247,18 +254,29 @@ internal constructor(
     attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category::class.java, Category.LIBRARY))
     attributes.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, jvmEnvironment)
     attributes.attribute(AgpVersionAttr.ATTRIBUTE, agpVersion)
+    requestAndroidJvmKotlinPlatform(configuration, project, projectOptions)
     val consumptionFlavorMap = getConsumptionFlavorAttributes(flavorSelection)
     applyVariantAttributes(attributes, testedVariant.buildType, consumptionFlavorMap)
   }
 
-  private fun addAttributesForHost(configuration: Configuration, usage: Usage) {
+  /**
+   * @param isAndroidCode whether [configuration] resolves Android code and its dependencies, requesting [jvmEnvironment] and the
+   *   `androidJvm` Kotlin platform.
+   */
+  private fun addAttributesForHost(configuration: Configuration, usage: Usage, isAndroidCode: Boolean) {
     configuration.isCanBeConsumed = false
     configuration.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
     val attributes = configuration.attributes
     attributes.attribute(Usage.USAGE_ATTRIBUTE, usage)
     attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category::class.java, Category.LIBRARY))
-    attributes.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, standardJvmEnvironment)
+    attributes.attribute(
+      TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+      if (isAndroidCode) jvmEnvironment else standardJvmEnvironment,
+    )
     attributes.attribute(AgpVersionAttr.ATTRIBUTE, agpVersion)
+    if (isAndroidCode) {
+      requestAndroidJvmKotlinPlatform(configuration, project, projectOptions)
+    }
 
     // Resolve host OS family and architecture attributes dynamically and CC-safely
     val hostOs = project.providers.systemProperty("os.name").map { getOperatingSystemFamily(it) }

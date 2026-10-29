@@ -78,7 +78,7 @@ internal class BuiltInKotlinCreationConfigImpl(
     configType: AndroidArtifacts.ConsumedConfigType,
     classesType: AndroidArtifacts.ArtifactType,
     generatedBytecodeKey: Any?,
-  ): FileCollection = getTestSuiteCompileClasses(sourceContainer.suiteSourceClasspath, services)
+  ): FileCollection = getTestSuiteSourcesCompileClasspath(sourceContainer, services)
 
   override val builtInKotlinSupportMode: BuiltInKotlinSupportMode
     get() = testSuite.testedVariant.builtInKotlinSupportMode
