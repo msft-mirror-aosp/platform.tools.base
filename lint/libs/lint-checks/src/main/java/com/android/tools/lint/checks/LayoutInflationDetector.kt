@@ -144,7 +144,7 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
     val project = context.project
     val scope = if (context.isGlobalAnalysis()) LOCAL_DEPENDENCIES else PROJECT_ONLY
     val resources = client.getResources(project, scope)
-    val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.LAYOUT, name)
+    val items = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.LAYOUT, name)
     if (items.isEmpty()) {
       // Couldn't find layout: uncertain.
       // (In partial analysis, we only look at the local project dependencies; if the

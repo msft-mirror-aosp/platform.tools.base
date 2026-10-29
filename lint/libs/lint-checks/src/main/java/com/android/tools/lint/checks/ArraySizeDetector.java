@@ -46,8 +46,14 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,9 +67,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /** Checks for arrays with inconsistent item counts */
 public class ArraySizeDetector extends ResourceXmlDetector {
@@ -73,18 +76,19 @@ public class ArraySizeDetector extends ResourceXmlDetector {
             Issue.create(
                     "InconsistentArrays",
                     "Inconsistencies in array element counts",
-                    "When an array is translated in a different locale, it should normally have "
-                            + "the same number of elements as the original array. When adding or removing "
-                            + "elements to an array, it is easy to forget to update all the locales, and this "
-                            + "lint warning finds inconsistencies like these.\n"
-                            + "\n"
-                            + "Note however that there may be cases where you really want to declare a "
-                            + "different number of array items in each configuration (for example where "
-                            + "the array represents available options, and those options differ for "
-                            + "different layout orientations and so on), so use your own judgment to "
-                            + "decide if this is really an error.\n"
-                            + "\n"
-                            + "You can suppress this error type if it finds false errors in your project.",
+                    "When an array is translated in a different locale, it should normally have the"
+                        + " same number of elements as the original array. When adding or removing"
+                        + " elements to an array, it is easy to forget to update all the locales,"
+                        + " and this lint warning finds inconsistencies like these.\n"
+                        + "\n"
+                        + "Note however that there may be cases where you really want to declare a"
+                        + " different number of array items in each configuration (for example"
+                        + " where the array represents available options, and those options differ"
+                        + " for different layout orientations and so on), so use your own judgment"
+                        + " to decide if this is really an error.\n"
+                        + "\n"
+                        + "You can suppress this error type if it finds false errors in your"
+                        + " project.",
                     Category.CORRECTNESS,
                     7,
                     Severity.WARNING,
@@ -166,7 +170,8 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                         String message =
                                 String.format(
                                         Locale.ROOT,
-                                        "Array `%1$s` has an inconsistent number of items (%2$d in `%3$s`, %4$d in `%5$s`)",
+                                        "Array `%1$s` has an inconsistent number of items (%2$d in"
+                                                + " `%3$s`, %4$d in `%5$s`)",
                                         name,
                                         count,
                                         thisName,
@@ -298,7 +303,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
         Project project = context.getMainProject();
         ResourceRepository resources = client.getResources(project, LOCAL_DEPENDENCIES);
         List<ResourceItem> items =
-                resources.getResources(ResourceNamespace.TODO(), ResourceType.ARRAY, name);
+                resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.ARRAY, name);
         for (ResourceItem item : items) {
             PathString source = item.getSource();
             if (source != null && Lint.isSameResourceFile(context.file, source.toFile())) {
@@ -331,7 +336,8 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                     String message =
                             String.format(
                                     Locale.ROOT,
-                                    "Array `%1$s` has an inconsistent number of items (%2$d in `%3$s`, %4$d in `%5$s`)",
+                                    "Array `%1$s` has an inconsistent number of items (%2$d in"
+                                            + " `%3$s`, %4$d in `%5$s`)",
                                     name,
                                     childCount,
                                     thisName,

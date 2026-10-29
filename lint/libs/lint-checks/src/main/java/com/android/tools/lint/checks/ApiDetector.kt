@@ -2364,7 +2364,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       val resources =
         if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
         else client.getResources(context.project, PROJECT_ONLY)
-      val items = resources.getResources(ResourceNamespace.TODO(), resource.type, resource.name)
+      val items = resources.getResources(ResourceNamespace.RES_AUTO, resource.type, resource.name)
       val paths = items.asSequence().mapNotNull { it.source }.toSet()
       for (path in paths) {
         try {

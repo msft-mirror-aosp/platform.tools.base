@@ -196,7 +196,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     val resources = context.client.getResources(context.mainProject, ResourceRepositoryScope.ALL_DEPENDENCIES)
     val purposeResources =
       resources
-        .getResources(ResourceNamespace.TODO(), resourceUrl.type, resourceUrl.name)
+        .getResources(ResourceNamespace.RES_AUTO, resourceUrl.type, resourceUrl.name)
         // Set a cap on number of resources that are analyzed to avoid potential perf issues.
         .take(MAX_PURPOSE_STRING_RESOURCES_TO_CHECK)
 

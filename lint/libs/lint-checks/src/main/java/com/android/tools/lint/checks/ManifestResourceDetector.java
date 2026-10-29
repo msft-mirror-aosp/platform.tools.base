@@ -43,12 +43,15 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+
+import org.w3c.dom.Attr;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.w3c.dom.Attr;
 
 /** Detects references to resources in the manifest that vary by configuration */
 public class ManifestResourceDetector extends ResourceXmlDetector {
@@ -57,9 +60,10 @@ public class ManifestResourceDetector extends ResourceXmlDetector {
             Issue.create(
                     "ManifestResource",
                     "Manifest Resource References",
-                    "Elements in the manifest can reference resources, but those resources cannot "
-                            + "vary across configurations (except as a special case, by version, and except "
-                            + "for a few specific package attributes such as the application title and icon).",
+                    "Elements in the manifest can reference resources, but those resources cannot"
+                        + " vary across configurations (except as a special case, by version, and"
+                        + " except for a few specific package attributes such as the application"
+                        + " title and icon).",
                     Category.CORRECTNESS,
                     6,
                     Severity.FATAL,
@@ -131,7 +135,7 @@ public class ManifestResourceDetector extends ResourceXmlDetector {
             Project project = context.getProject();
             ResourceRepository repository = client.getResources(project, PROJECT_ONLY);
             List<ResourceItem> items =
-                    repository.getResources(ResourceNamespace.TODO(), url.type, url.name);
+                    repository.getResources(ResourceNamespace.RES_AUTO, url.type, url.name);
             if (items.size() > 1) {
                 List<String> list = Lists.newArrayListWithExpectedSize(5);
                 for (ResourceItem item : items) {

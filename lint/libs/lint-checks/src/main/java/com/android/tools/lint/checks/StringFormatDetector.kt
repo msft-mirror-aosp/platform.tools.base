@@ -343,7 +343,7 @@ class StringFormatDetector : ResourceXmlDetector(), SourceCodeScanner {
       val full = context.isGlobalAnalysis()
       val project = if (full) context.mainProject else context.project
       val resources = client.getResources(project, LOCAL_DEPENDENCIES)
-      val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.STRING, name)
+      val items = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, name)
       val formatStrings =
         items
           .map { resourceFormatString(name, it, resources) }
@@ -545,7 +545,7 @@ class StringFormatDetector : ResourceXmlDetector(), SourceCodeScanner {
         if (url == null || url.isFramework) {
           break
         }
-        val l = resources.getResources(ResourceNamespace.TODO(), url.type, url.name)
+        val l = resources.getResources(ResourceNamespace.RES_AUTO, url.type, url.name)
         if (l.isNotEmpty()) {
           v = l[0].resourceValue
           if (v != null) {

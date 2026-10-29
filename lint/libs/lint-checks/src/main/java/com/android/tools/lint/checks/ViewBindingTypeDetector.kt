@@ -143,7 +143,7 @@ class ViewBindingTypeDetector : LayoutDetector(), XmlScanner {
     val resourceUrl = ResourceUrl.parse(idAttribute.value)
     if (resourceUrl != null && resourceUrl.type == ResourceType.ID && !resourceUrl.isFramework) {
       val id = resourceUrl.name
-      val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.ID, id)
+      val items = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.ID, id)
       if (items.size > 1) {
         val layout = context.toLayoutName()
         val bindingTypes = mutableSetOf<String>()

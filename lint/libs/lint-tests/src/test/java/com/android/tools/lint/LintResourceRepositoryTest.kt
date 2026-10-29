@@ -170,7 +170,7 @@ class LintResourceRepositoryTest {
       image("res/drawable/ic_launcher.png", 48, 48).fill(10, 10, 20, 20, -0xff0001),
       image("res/drawable-xhdpi-v4/ic_launcher2.png", 48, 48).fill(10, 10, 20, 20, -0xff0001),
     ) { name, repository, root ->
-      val namespace = ResourceNamespace.TODO()
+      val namespace = ResourceNamespace.RES_AUTO
       assertEquals(
         name,
         "array, attr, dimen, drawable, id, layout, plurals, string, " + "style, styleable",
@@ -400,7 +400,7 @@ class LintResourceRepositoryTest {
       if (includeAgpRepository) TestLintClient.getResources(ResourceNamespace.RES_AUTO, null, listOf(Pair("app", listOf(res))), true)
       else null
 
-    val lintRepo = LintResourceRepository.createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.TODO())
+    val lintRepo = LintResourceRepository.createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.RES_AUTO)
 
     for (pair in
       sequenceOf(
@@ -481,7 +481,7 @@ class LintResourceRepositoryTest {
       if (repository is LintResourceRepository) {
         val client = LintCliClient(LintClient.CLIENT_UNIT_TESTS)
         val parser = client.xmlParser
-        val item = repository.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "string1").single()
+        val item = repository.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "string1").single()
 
         val location = parser.getLocation(client, item)
         location!!

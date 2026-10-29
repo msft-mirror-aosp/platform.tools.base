@@ -48,8 +48,7 @@ import org.w3c.dom.Element
 /**
  * Reports `<service>` elements in the merged manifest if the following conditions hold:
  * - the service has an intent filter with action `android.app.appfunctions.AppFunctionService`
- * - for some API level in [max(minSdk, 34), 36], the application and more than one such service are
- *   enabled
+ * - for some API level in [max(minSdk, 34), 36], the application and more than one such service are enabled
  *
  * Why: prior to API 37, the platform only indexes a single `AppFunctionService`.
  */
@@ -104,9 +103,7 @@ class MultiAppFunctionServiceDetector : Detector(), XmlScanner {
       val message =
         "Multiple `AppFunctionService` declarations are enabled prior to API level 37, " +
           "where the platform only indexes a single `AppFunctionService`"
-      context.report(
-        Incident(ISSUE, primaryLocation.source ?: primaryService, primaryLocation, message)
-      )
+      context.report(Incident(ISSUE, primaryLocation.source ?: primaryService, primaryLocation, message))
     }
   }
 
@@ -136,9 +133,8 @@ class MultiAppFunctionServiceDetector : Detector(), XmlScanner {
   }
 
   /**
-   * Returns `true` only if [value] unambiguously resolves to `true` at [sdk]. Returns `false` if it
-   * resolves to `false` or cannot be statically determined, erring on the side of avoiding false
-   * positives.
+   * Returns `true` only if [value] unambiguously resolves to `true` at [sdk]. Returns `false` if it resolves to `false` or cannot be
+   * statically determined, erring on the side of avoiding false positives.
    */
   private fun resolveBooleanValueAtSdk(
     value: String,
@@ -163,14 +159,10 @@ class MultiAppFunctionServiceDetector : Detector(), XmlScanner {
       return false
     }
 
-    val items =
-      resourcesProvider().getResources(ResourceNamespace.TODO(), ResourceType.BOOL, resourceUrl.name)
+    val items = resourcesProvider().getResources(ResourceNamespace.RES_AUTO, ResourceType.BOOL, resourceUrl.name)
     // Bail out if any definition uses non-version qualifiers, which take precedence over API
     // version qualifiers during resource resolution.
-    if (
-      items.isEmpty() ||
-        items.any { item -> item.configuration.any { it !is VersionQualifier } }
-    ) {
+    if (items.isEmpty() || items.any { item -> item.configuration.any { it !is VersionQualifier } }) {
       return false
     }
 
@@ -193,8 +185,7 @@ class MultiAppFunctionServiceDetector : Detector(), XmlScanner {
     private const val MULTI_SERVICE_SDK = 37
     private const val MAX_RESOURCE_INDIRECTION = 2
 
-    private val IMPLEMENTATION =
-      Implementation(MultiAppFunctionServiceDetector::class.java, Scope.MANIFEST_SCOPE)
+    private val IMPLEMENTATION = Implementation(MultiAppFunctionServiceDetector::class.java, Scope.MANIFEST_SCOPE)
 
     @JvmField
     val ISSUE: Issue =

@@ -62,12 +62,21 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.XmlUtils;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -80,12 +89,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
 /** Checks for duplicate ids within a layout and within an included layout */
 public class WrongIdDetector extends LayoutDetector {
@@ -125,12 +128,12 @@ public class WrongIdDetector extends LayoutDetector {
             Issue.create(
                     "UnknownId",
                     "Reference to an unknown id",
-                    "The `@+id/` syntax refers to an existing id, or creates a new one if it has "
-                            + "not already been defined elsewhere. However, this means that if you have a "
-                            + "typo in your reference, or if the referred view no longer exists, you do not "
-                            + "get a warning since the id will be created on demand. This check catches "
-                            + "errors where you have renamed an id without updating all of the references to "
-                            + "it.",
+                    "The `@+id/` syntax refers to an existing id, or creates a new one if it has"
+                        + " not already been defined elsewhere. However, this means that if you"
+                        + " have a typo in your reference, or if the referred view no longer"
+                        + " exists, you do not get a warning since the id will be created on"
+                        + " demand. This check catches errors where you have renamed an id without"
+                        + " updating all of the references to it.",
                     Category.CORRECTNESS,
                     8,
                     Severity.FATAL,
@@ -144,8 +147,9 @@ public class WrongIdDetector extends LayoutDetector {
             Issue.create(
                     "NotSibling",
                     "Invalid Constraints",
-                    "Layout constraints in a given `ConstraintLayout` or `RelativeLayout` should "
-                            + "reference other views within the same relative layout (but not itself!)",
+                    "Layout constraints in a given `ConstraintLayout` or `RelativeLayout` should"
+                            + " reference other views within the same relative layout (but not"
+                            + " itself!)",
                     Category.CORRECTNESS,
                     6,
                     Severity.FATAL,
@@ -156,12 +160,13 @@ public class WrongIdDetector extends LayoutDetector {
             Issue.create(
                     "InvalidId",
                     "Invalid ID declaration",
-                    "An id definition **must** be of the form `@+id/yourname`. The tools have not "
-                            + "rejected strings of the form `@+foo/bar` in the past, but that was an error, "
-                            + "and could lead to tricky errors because of the way the id integers are assigned.\n"
-                            + "\n"
-                            + "If you really want to have different \"scopes\" for your id's, use prefixes "
-                            + "instead, such as `login_button1` and `login_button2`.",
+                    "An id definition **must** be of the form `@+id/yourname`. The tools have not"
+                        + " rejected strings of the form `@+foo/bar` in the past, but that was an"
+                        + " error, and could lead to tricky errors because of the way the id"
+                        + " integers are assigned.\n"
+                        + "\n"
+                        + "If you really want to have different \"scopes\" for your id's, use"
+                        + " prefixes instead, such as `login_button1` and `login_button2`.",
                     Category.CORRECTNESS,
                     6,
                     Severity.FATAL,
@@ -172,15 +177,16 @@ public class WrongIdDetector extends LayoutDetector {
             Issue.create(
                     "UnknownIdInLayout",
                     "Reference to an id that is not in the current layout",
-                    "The `@+id/` syntax refers to an existing id, or creates a new one if it has "
-                            + "not already been defined elsewhere. However, this means that if you have a "
-                            + "typo in your reference, or if the referred view no longer exists, you do not "
-                            + "get a warning since the id will be created on demand.\n"
-                            + "\n"
-                            + "This is sometimes intentional, for example where you are referring to a view "
-                            + "which is provided in a different layout via an include. However, it is usually "
-                            + "an accident where you have a typo or you have renamed a view without updating "
-                            + "all the references to it.",
+                    "The `@+id/` syntax refers to an existing id, or creates a new one if it has"
+                        + " not already been defined elsewhere. However, this means that if you"
+                        + " have a typo in your reference, or if the referred view no longer"
+                        + " exists, you do not get a warning since the id will be created on"
+                        + " demand.\n"
+                        + "\n"
+                        + "This is sometimes intentional, for example where you are referring to a"
+                        + " view which is provided in a different layout via an include. However,"
+                        + " it is usually an accident where you have a typo or you have renamed a"
+                        + " view without updating all the references to it.",
                     Category.CORRECTNESS,
                     5,
                     Severity.WARNING,
@@ -294,7 +300,7 @@ public class WrongIdDetector extends LayoutDetector {
         Project project = full ? context.getMainProject() : context.getProject();
         ResourceRepository resources = client.getResources(project, LOCAL_DEPENDENCIES);
         List<ResourceItem> layouts =
-                resources.getResources(ResourceNamespace.TODO(), ResourceType.LAYOUT, included);
+                resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.LAYOUT, included);
         if (layouts.isEmpty()) {
             return false;
         }
@@ -462,7 +468,7 @@ public class WrongIdDetector extends LayoutDetector {
                                 Sets.newHashSet(
                                         resources
                                                 .getResources(
-                                                        ResourceNamespace.TODO(), ResourceType.ID)
+                                                        ResourceNamespace.RES_AUTO, ResourceType.ID)
                                                 .keySet());
                         spellingDictionary.remove(id);
                     }
@@ -482,7 +488,8 @@ public class WrongIdDetector extends LayoutDetector {
                     if (isDeclared) {
                         message =
                                 String.format(
-                                        "The id \"`%1$s`\" is defined but not assigned to any views.%2$s",
+                                        "The id \"`%1$s`\" is defined but not assigned to any"
+                                                + " views.%2$s",
                                         id, suggestionMessage);
                     } else {
                         message =
@@ -502,7 +509,8 @@ public class WrongIdDetector extends LayoutDetector {
                             UNKNOWN_ID_LAYOUT,
                             handle,
                             String.format(
-                                    "The id \"`%1$s`\" is not referring to any views in this layout",
+                                    "The id \"`%1$s`\" is not referring to any views in this"
+                                            + " layout",
                                     stripIdPrefix(id)));
                 } else if (mPendingNotSibling.containsKey(id)) {
                     String message = mPendingNotSibling.get(id);
@@ -628,7 +636,7 @@ public class WrongIdDetector extends LayoutDetector {
         ResourceRepository resources = client.getResources(project, ALL_DEPENDENCIES);
         List<ResourceItem> items =
                 resources.getResources(
-                        ResourceNamespace.TODO(), ResourceType.ID, stripIdPrefix(id));
+                        ResourceNamespace.RES_AUTO, ResourceType.ID, stripIdPrefix(id));
         for (ResourceItem item : items) {
             PathString source = item.getSource();
             if (source != null) {

@@ -150,7 +150,7 @@ class PrivateResourceDetector
     val client = context.client
     val mainProject = context.mainProject
     val repository = client.getResources(mainProject, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
-    return repository.hasResources(ResourceNamespace.TODO(), resourceType, name)
+    return repository.hasResources(ResourceNamespace.RES_AUTO, resourceType, name)
   }
 
   // ---- Implements XmlScanner ----

@@ -78,7 +78,7 @@ class AllCapsDetector : LayoutDetector() {
     val full = context.isGlobalAnalysis()
     val project = if (full) context.mainProject else context.project
     val repository = client.getResources(project, ALL_DEPENDENCIES)
-    val items = repository.getResources(ResourceNamespace.TODO(), url.type, url.name)
+    val items = repository.getResources(ResourceNamespace.RES_AUTO, url.type, url.name)
     if (items.isEmpty()) {
       return
     }

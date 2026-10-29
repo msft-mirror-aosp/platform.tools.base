@@ -1104,7 +1104,7 @@ fun getStyleAttributes(
     val front = queue.remove()
     val name = front.name
     seen.add(name)
-    val items = resources.getResources(ResourceNamespace.TODO(), front.resourceType, name)
+    val items = resources.getResources(ResourceNamespace.RES_AUTO, front.resourceType, name)
     if (!acceptMissing && items.isEmpty()) {
       // Failed to resolve the given resource: return null since it's possible that
       // we'll have false positives
@@ -1114,7 +1114,7 @@ fun getStyleAttributes(
       val rv = item.resourceValue
       if (rv is StyleResourceValue) {
         val srv = rv as StyleResourceValue?
-        val namespace = MoreObjects.firstNonNull(ResourceNamespace.fromNamespaceUri(namespaceUri), ResourceNamespace.TODO())
+        val namespace = MoreObjects.firstNonNull(ResourceNamespace.fromNamespaceUri(namespaceUri), ResourceNamespace.RES_AUTO)
         val frameworkResource: String? =
           if (!attribute.startsWith(ANDROID_NS_NAME_PREFIX) && namespace == ResourceNamespace.ANDROID) {
             ANDROID_NS_NAME_PREFIX + attribute
@@ -1178,7 +1178,7 @@ fun getInheritedStyles(project: Project, client: LintClient, styleUrl: String): 
     val front = queue.remove()
     val name = front.name
     seen.add(name)
-    val items = resources.getResources(ResourceNamespace.TODO(), front.resourceType, name)
+    val items = resources.getResources(ResourceNamespace.RES_AUTO, front.resourceType, name)
     for (item in items) {
       val rv = item.resourceValue
       if (rv is StyleResourceValue) {

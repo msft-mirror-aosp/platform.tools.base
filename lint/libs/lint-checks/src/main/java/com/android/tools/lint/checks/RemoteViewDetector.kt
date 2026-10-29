@@ -22,7 +22,7 @@ import com.android.SdkConstants.VIEW_INCLUDE
 import com.android.SdkConstants.VIEW_MERGE
 import com.android.SdkConstants.VIEW_PKG_PREFIX
 import com.android.SdkConstants.WIDGET_PKG_PREFIX
-import com.android.ide.common.rendering.api.ResourceNamespace.TODO
+import com.android.ide.common.rendering.api.ResourceNamespace.RES_AUTO
 import com.android.ide.common.resources.ResourceItem
 import com.android.resources.ResourceType.LAYOUT
 import com.android.tools.lint.checks.RtlDetector.getFolderVersion
@@ -96,7 +96,7 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
     // See if the associated resource references propertyValuesHolder, and if so
     // suggest switching to AnimatorInflaterCompat.loadAnimator.
     val layout = resource.name
-    val items = resources.getResources(TODO(), LAYOUT, layout)
+    val items = resources.getResources(RES_AUTO, LAYOUT, layout)
     if (items.isNotEmpty()) {
       checkLayouts(context, layout, items, node, null)
     } else if (!globalAnalysis) {
@@ -112,7 +112,7 @@ class RemoteViewDetector : Detector(), SourceCodeScanner {
     val layout = map[KEY_LAYOUT] ?: return false
     val client = context.client
     val resources = client.getResources(context.project, LOCAL_DEPENDENCIES)
-    val items = resources.getResources(TODO(), LAYOUT, layout)
+    val items = resources.getResources(RES_AUTO, LAYOUT, layout)
     return items.isNotEmpty() && checkLayouts(context, layout, items, null, incident)
   }
 

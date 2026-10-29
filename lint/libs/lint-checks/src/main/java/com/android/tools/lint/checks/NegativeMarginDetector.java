@@ -48,14 +48,16 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Checks for negative margins in the following scenarios:
@@ -76,13 +78,15 @@ public class NegativeMarginDetector extends LayoutDetector {
             Issue.create(
                             "NegativeMargin",
                             "Negative Margins",
-                            "Margin values should be positive. Negative values are generally a sign that "
-                                    + "you are making assumptions about views surrounding the current one, or may be "
-                                    + "tempted to turn off child clipping to allow a view to escape its parent. "
-                                    + "Turning off child clipping to do this not only leads to poor graphical "
-                                    + "performance, it also results in wrong touch event handling since touch events "
-                                    + "are based strictly on a chain of parent-rect hit tests. Finally, making "
-                                    + "assumptions about the size of strings can lead to localization problems.",
+                            "Margin values should be positive. Negative values are generally a sign"
+                                + " that you are making assumptions about views surrounding the"
+                                + " current one, or may be tempted to turn off child clipping to"
+                                + " allow a view to escape its parent. Turning off child clipping"
+                                + " to do this not only leads to poor graphical performance, it"
+                                + " also results in wrong touch event handling since touch events"
+                                + " are based strictly on a chain of parent-rect hit tests."
+                                + " Finally, making assumptions about the size of strings can lead"
+                                + " to localization problems.",
                             Category.USABILITY,
                             4,
                             Severity.WARNING,
@@ -170,7 +174,7 @@ public class NegativeMarginDetector extends LayoutDetector {
             Project project = context.getProject();
             ResourceRepository resources = client.getResources(project, ALL_DEPENDENCIES);
             List<ResourceItem> items =
-                    resources.getResources(ResourceNamespace.TODO(), url.type, url.name);
+                    resources.getResources(ResourceNamespace.RES_AUTO, url.type, url.name);
             for (ResourceItem item : items) {
                 ResourceValue resourceValue = item.getResourceValue();
                 if (resourceValue != null) {

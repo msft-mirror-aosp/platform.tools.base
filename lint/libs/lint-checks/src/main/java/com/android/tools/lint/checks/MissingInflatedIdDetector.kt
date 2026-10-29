@@ -73,7 +73,7 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
     val resources =
       if (globalAnalysis) context.client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
       else context.client.getResources(context.project, PROJECT_ONLY)
-    val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.LAYOUT, layout)
+    val items = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.LAYOUT, layout)
 
     if (items.isNotEmpty()) {
       if (layoutMissingId(context, items, id)) {
@@ -117,7 +117,7 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
     val id = map[KEY_ID] ?: return false
 
     val resources = context.client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
-    val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.LAYOUT, layout)
+    val items = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.LAYOUT, layout)
     return layoutMissingId(context, items, id)
   }
 

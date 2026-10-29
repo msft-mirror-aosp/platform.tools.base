@@ -93,7 +93,7 @@ class StartDestinationDetector : ResourceXmlDetector() {
           val repository =
             if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
             else client.getResources(context.project, ResourceRepositoryScope.PROJECT_ONLY)
-          val items = repository.getResources(ResourceNamespace.TODO(), includedUrl.type, includedUrl.name)
+          val items = repository.getResources(ResourceNamespace.RES_AUTO, includedUrl.type, includedUrl.name)
           if (items.isEmpty() && !context.isGlobalAnalysis()) {
             // The included layout is in another module; in that case, we can't check it.
             return

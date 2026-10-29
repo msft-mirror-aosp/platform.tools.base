@@ -115,7 +115,7 @@ public class VectorPathDetector extends ResourceXmlDetector {
             Project project = context.getProject();
             ResourceRepository repository = client.getResources(project, ALL_DEPENDENCIES);
             List<ResourceItem> item =
-                    repository.getResources(ResourceNamespace.TODO(), url.type, url.name);
+                    repository.getResources(ResourceNamespace.RES_AUTO, url.type, url.name);
             if (item.isEmpty()) {
                 return;
             }

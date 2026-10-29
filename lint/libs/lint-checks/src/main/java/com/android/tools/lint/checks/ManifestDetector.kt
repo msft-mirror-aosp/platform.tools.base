@@ -716,7 +716,7 @@ class ManifestDetector : Detector(), XmlScanner {
         val client = context.client
         val project = context.project
         val resources = client.getResources(project, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
-        val item = resources.getResources(ResourceNamespace.TODO(), url.type, url.name).firstOrNull()?.source
+        val item = resources.getResources(ResourceNamespace.RES_AUTO, url.type, url.name).firstOrNull()?.source
         item?.toFile()?.let { file ->
           getExtraction(client, file)?.let {
             return it

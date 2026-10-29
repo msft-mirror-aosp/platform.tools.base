@@ -451,7 +451,7 @@ open class LintResourceRepository(
         libs.asSequence().map { getForLibrary(client, it) }.filter { it !== EmptyRepository }.forEach { repositories += it }
       }
 
-      return MergedResourceRepository(project, repositories, ResourceNamespace.TODO())
+      return MergedResourceRepository(project, repositories, ResourceNamespace.RES_AUTO)
     }
 
     /** Whether we've already flagged a persisence problem */
@@ -554,7 +554,7 @@ open class LintResourceRepository(
     private fun getForProjectOnly(client: LintCliClient, project: Project): LintResourceRepository {
       return project.getClientProperty<LintResourceRepository>(ResourceRepositoryScope.PROJECT_ONLY)
         ?: getOrCreateRepository(client.getSerializationFile(project, XmlFileType.RESOURCE_REPOSITORY), client, project.dir, project) {
-            createFromFolder(client, project, ResourceNamespace.TODO())
+            createFromFolder(client, project, ResourceNamespace.RES_AUTO)
           }
           .also { project.putClientProperty(ResourceRepositoryScope.PROJECT_ONLY, it) }
     }
@@ -618,7 +618,7 @@ open class LintResourceRepository(
       return cache[library]
         // TODO: Handle relative paths over in AAR folders under ~/.gradle/
         ?: getOrCreateRepository(getLibraryResourceCacheFile(client, library), client, root = null, project = null) {
-            LintLibraryRepository(client, library, ResourceNamespace.TODO())
+            LintLibraryRepository(client, library, ResourceNamespace.RES_AUTO)
           }
           .also { cache[library] = it }
     }

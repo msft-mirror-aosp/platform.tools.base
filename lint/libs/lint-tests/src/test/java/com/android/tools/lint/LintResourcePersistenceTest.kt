@@ -65,7 +65,7 @@ class LintResourcePersistenceTest {
       file.writeText(contents.trimIndent())
     }
     val client = LintCliClient(LintClient.CLIENT_UNIT_TESTS)
-    return LintResourceRepository.createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.TODO())
+    return LintResourceRepository.createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.RES_AUTO)
   }
 
   @Test
@@ -102,7 +102,7 @@ class LintResourcePersistenceTest {
 
     // Spot check the lazily computed resource values in the deserialized repository
     val styleable =
-      deserialized.getResources(ResourceNamespace.TODO(), ResourceType.STYLEABLE, "ContentFrame").single().resourceValue
+      deserialized.getResources(ResourceNamespace.RES_AUTO, ResourceType.STYLEABLE, "ContentFrame").single().resourceValue
         as StyleableResourceValue
     val attrs = styleable.allAttributes.associateBy { it.name }
     assertEquals(setOf(AttributeFormat.REFERENCE), attrs["content"]?.formats)
@@ -110,12 +110,12 @@ class LintResourcePersistenceTest {
     assertEquals(mapOf("floating" to 0, "atThumb" to 1, "aboveThumb" to 2), attrs["fastScrollOverlayPosition"]?.attributeValues)
 
     // The tools:ignore attribute is persisted
-    val string = deserialized.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "string1").single()
+    val string = deserialized.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "string1").single()
     assertEquals("Typos", (string as IgnoredIdProvider).getIgnoredIds())
     assertEquals("Værdi 1", string.resourceValue?.value)
 
     // Positions are persisted
-    val original = repository.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "string1").single()
+    val original = repository.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "string1").single()
     val originalLocation = (original as LocationAware).getLocation()
     val deserializedLocation = (string as LocationAware).getLocation()
     assertEquals(originalLocation.start?.offset, deserializedLocation.start?.offset)
@@ -144,7 +144,7 @@ class LintResourcePersistenceTest {
           """
       )
 
-    val original = repository.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "big").single()
+    val original = repository.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "big").single()
     val originalStart = (original as LocationAware).getLocation().start!!
     assertTrue("Test setup problem: expected offset above 64K, was ${originalStart.offset}", originalStart.offset > 0xFFFF)
 
@@ -152,7 +152,7 @@ class LintResourcePersistenceTest {
     val serialized = repository.serialize(pathVariables, null, sort = true)
     val deserialized = LintResourcePersistence.deserialize(serialized, pathVariables, null, null)
 
-    val restored = deserialized.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "big").single()
+    val restored = deserialized.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "big").single()
     val location = (restored as LocationAware).getLocation()
     assertEquals(originalStart.offset, location.start!!.offset)
     assertEquals(originalStart.line, location.start!!.line)

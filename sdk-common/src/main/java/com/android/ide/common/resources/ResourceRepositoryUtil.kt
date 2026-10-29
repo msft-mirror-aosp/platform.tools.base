@@ -126,13 +126,12 @@ fun ResourceRepository.getConfiguredResources(
   return result
 }
 
-// TODO: namespaces
 fun ResourceRepository.getConfiguredValue(
   type: ResourceType,
   name: String,
   referenceConfig: FolderConfiguration,
 ): ResourceValue? {
-  val items = getResources(ResourceNamespace.TODO(), type, name)
+  val items = getResources(ResourceNamespace.RES_AUTO, type, name)
   val pseudolocalizerMethod = referenceConfig.getPseudolocalizerMethodForType(type)
   if (pseudolocalizerMethod == Pseudolocalizer.Method.NONE) {
     // Look for the best match for the given configuration.

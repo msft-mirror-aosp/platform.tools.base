@@ -260,7 +260,7 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
           val resources =
             if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
             else client.getResources(context.project, PROJECT_ONLY)
-          val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.ID, id)
+          val items = resources.getResources(ResourceNamespace.RES_AUTO, ResourceType.ID, id)
           if (items.isNotEmpty()) {
             val compatible = HashSet<String>()
             for (item in items) {

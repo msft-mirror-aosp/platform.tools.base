@@ -29,24 +29,28 @@ import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.ResourceQualifier;
 import com.android.resources.ResourceType;
 import com.android.utils.Pair;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Implementation of {@link DataMerger} for {@link ResourceSet}, {@link ResourceMergerItem}, and
@@ -368,7 +372,7 @@ public class ResourceMerger extends DataMerger<ResourceMergerItem, ResourceFile,
 
         if (name != null && type != null) {
             return new MergedResourceMergerItem(
-                    name, ResourceNamespace.TODO(), type, qualifiers, node, null);
+                    name, ResourceNamespace.RES_AUTO, type, qualifiers, node, null);
         }
 
         return null;

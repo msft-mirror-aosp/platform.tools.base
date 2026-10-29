@@ -52,13 +52,15 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /** Check for px dimensions instead of dp dimensions. Also look for non-"sp" text sizes. */
 public class PxUsageDetector extends LayoutDetector {
@@ -71,15 +73,18 @@ public class PxUsageDetector extends LayoutDetector {
                             "PxUsage",
                             "Using 'px' dimension",
                             // This description is from the below screen support document
-                            "For performance reasons and to keep the code simpler, the Android system uses pixels "
-                                    + "as the standard unit for expressing dimension or coordinate values. That means that "
-                                    + "the dimensions of a view are always expressed in the code using pixels, but "
-                                    + "always based on the current screen density. For instance, if `myView.getWidth()` "
-                                    + "returns 10, the view is 10 pixels wide on the current screen, but on a device with "
-                                    + "a higher density screen, the value returned might be 15. If you use pixel values "
-                                    + "in your application code to work with bitmaps that are not pre-scaled for the "
-                                    + "current screen density, you might need to scale the pixel values that you use in "
-                                    + "your code to match the un-scaled bitmap source.",
+                            "For performance reasons and to keep the code simpler, the Android"
+                                + " system uses pixels as the standard unit for expressing"
+                                + " dimension or coordinate values. That means that the dimensions"
+                                + " of a view are always expressed in the code using pixels, but"
+                                + " always based on the current screen density. For instance, if"
+                                + " `myView.getWidth()` returns 10, the view is 10 pixels wide on"
+                                + " the current screen, but on a device with a higher density"
+                                + " screen, the value returned might be 15. If you use pixel values"
+                                + " in your application code to work with bitmaps that are not"
+                                + " pre-scaled for the current screen density, you might need to"
+                                + " scale the pixel values that you use in your code to match the"
+                                + " un-scaled bitmap source.",
                             Category.CORRECTNESS,
                             2,
                             Severity.WARNING,
@@ -93,10 +98,11 @@ public class PxUsageDetector extends LayoutDetector {
                     "InOrMmUsage",
                     "Using `mm` or `in` dimensions",
                     "Avoid using `mm` (millimeters) or `in` (inches) as the unit for dimensions.\n"
-                            + "\n"
-                            + "While it should work in principle, unfortunately many devices do not report "
-                            + "the correct true physical density, which means that the dimension calculations "
-                            + "won't work correctly. You are better off using `dp` (and for font sizes, `sp`).",
+                        + "\n"
+                        + "While it should work in principle, unfortunately many devices do not"
+                        + " report the correct true physical density, which means that the"
+                        + " dimension calculations won't work correctly. You are better off using"
+                        + " `dp` (and for font sizes, `sp`).",
                     Category.CORRECTNESS,
                     4,
                     Severity.WARNING,
@@ -107,17 +113,19 @@ public class PxUsageDetector extends LayoutDetector {
             Issue.create(
                             "SpUsage",
                             "Using `dp` instead of `sp` for text sizes",
-                            "When setting text sizes, you should normally use `sp`, or \"scale-independent "
-                                    + "pixels\". This is like the `dp` unit, but it is also scaled "
-                                    + "by the user's font size preference. It is recommend you use this unit when "
-                                    + "specifying font sizes, so they will be adjusted for both the screen density "
-                                    + "and the user's preference.\n"
-                                    + "\n"
-                                    + "There **are** cases where you might need to use `dp`; typically this happens when "
-                                    + "the text is in a container with a specific dp-size. This will prevent the text "
-                                    + "from spilling outside the container. Note however that this means that the user's "
-                                    + "font size settings are not respected, so consider adjusting the layout itself "
-                                    + "to be more flexible.",
+                            "When setting text sizes, you should normally use `sp`, or"
+                                + " \"scale-independent pixels\". This is like the `dp` unit, but"
+                                + " it is also scaled by the user's font size preference. It is"
+                                + " recommend you use this unit when specifying font sizes, so they"
+                                + " will be adjusted for both the screen density and the user's"
+                                + " preference.\n"
+                                + "\n"
+                                + "There **are** cases where you might need to use `dp`; typically"
+                                + " this happens when the text is in a container with a specific"
+                                + " dp-size. This will prevent the text from spilling outside the"
+                                + " container. Note however that this means that the user's font"
+                                + " size settings are not respected, so consider adjusting the"
+                                + " layout itself to be more flexible.",
                             Category.CORRECTNESS,
                             3,
                             Severity.WARNING,
@@ -185,8 +193,8 @@ public class PxUsageDetector extends LayoutDetector {
                         attribute,
                         context.getLocation(attribute),
                         String.format(
-                                "Avoid using \"`%1$s`\" as units "
-                                        + "(it does not work accurately on all devices); use \"`dp`\" instead",
+                                "Avoid using \"`%1$s`\" as units (it does not work accurately on"
+                                        + " all devices); use \"`dp`\" instead",
                                 unit));
             }
         } else if (value.endsWith(UNIT_SP)
@@ -218,7 +226,7 @@ public class PxUsageDetector extends LayoutDetector {
                 ResourceUrl url = ResourceUrl.parse(value);
                 if (url != null) {
                     List<ResourceItem> items =
-                            resources.getResources(ResourceNamespace.TODO(), url.type, url.name);
+                            resources.getResources(ResourceNamespace.RES_AUTO, url.type, url.name);
                     for (ResourceItem item : items) {
                         ResourceValue resourceValue = item.getResourceValue();
                         if (resourceValue != null) {
@@ -229,7 +237,9 @@ public class PxUsageDetector extends LayoutDetector {
                                 String relativePath = client.getDisplayPath(item, TextFormat.TEXT);
                                 String message =
                                         String.format(
-                                                "Should use \"`sp`\" instead of \"`dp`\" for text sizes (`%1$s` is defined as `%2$s` in `%3$s`",
+                                                "Should use \"`sp`\" instead of \"`dp`\" for text"
+                                                        + " sizes (`%1$s` is defined as `%2$s` in"
+                                                        + " `%3$s`",
                                                 value, dimenValue, relativePath);
                                 Location location = context.getLocation(attribute);
 
@@ -370,9 +380,9 @@ public class PxUsageDetector extends LayoutDetector {
                                     item,
                                     context.getLocation(textNode),
                                     String.format(
-                                            "Avoid using \"`%1$s`\" as units "
-                                                    + "(it does not work accurately on all devices); "
-                                                    + "use \"`dp`\" instead",
+                                            "Avoid using \"`%1$s`\" as units (it does not work"
+                                                    + " accurately on all devices); use \"`dp`\""
+                                                    + " instead",
                                             unit));
                         }
                     }

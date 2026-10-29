@@ -21,10 +21,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Represents a namespace used by aapt when processing resources.
@@ -53,27 +50,6 @@ public class ResourceNamespace implements Comparable<ResourceNamespace>, Seriali
     /** The namespace of the old appcompat library when namespaces are used. */
     public static final ResourceNamespace APPCOMPAT_LEGACY =
             fromPackageName("android.support.v7.appcompat");
-
-    private static final Logger LOG = Logger.getLogger(ResourceNamespace.class.getSimpleName());
-
-    @SuppressWarnings("StaticNonFinalField") // Non-final to be able to set in code.
-    public static boolean noncomplianceLogging = false;
-
-    /**
-     * Namespace used in code that needs to start keeping track of namespaces. For easy tracking of
-     * parts of codebase that need fixing.
-     */
-    @NonNull
-    public static ResourceNamespace TODO() {
-        if (noncomplianceLogging) {
-            String trace =
-                    Arrays.stream(Thread.currentThread().getStackTrace())
-                            .map(Object::toString)
-                            .collect(Collectors.joining("\n"));
-            LOG.warning("This code does not support namespaces yet\n" + trace);
-        }
-        return RES_AUTO;
-    }
 
     /**
      * Logic for looking up namespace prefixes defined in some context.
@@ -165,14 +141,10 @@ public class ResourceNamespace implements Comparable<ResourceNamespace>, Seriali
         }
     }
 
-    /**
-     * Constructs a {@link ResourceNamespace} in code that does not keep track of namespaces yet,
-     * only of the boolean `isFramework` flag.
-     */
+    /** Constructs a {@link ResourceNamespace} from the boolean {@code isFramework} flag. */
     @NonNull
-    @Deprecated
     public static ResourceNamespace fromBoolean(boolean isFramework) {
-        return isFramework ? ANDROID : TODO();
+        return isFramework ? ANDROID : RES_AUTO;
     }
 
     /**

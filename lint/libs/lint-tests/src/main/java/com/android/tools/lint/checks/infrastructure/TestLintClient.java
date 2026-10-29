@@ -1767,7 +1767,7 @@ public class TestLintClient extends LintCliClient {
             // Workaround: The repository does not insert ids from layouts! We need
             // to do that here.
             Map<ResourceType, ListMultimap<String, ResourceItem>> items =
-                    repository.getResourceTable().row(ResourceNamespace.TODO());
+                    repository.getResourceTable().row(ResourceNamespace.RES_AUTO);
             ListMultimap<String, ResourceItem> layouts = items.get(ResourceType.LAYOUT);
             if (layouts != null) {
                 for (ResourceItem item : layouts.values()) {
@@ -1792,7 +1792,7 @@ public class TestLintClient extends LintCliClient {
                             ResourceMergerItem idItem =
                                     new ResourceMergerItem(
                                             id,
-                                            ResourceNamespace.TODO(),
+                                            ResourceNamespace.RES_AUTO,
                                             ResourceType.ID,
                                             null,
                                             null,

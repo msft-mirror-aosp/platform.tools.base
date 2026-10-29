@@ -20,10 +20,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.ResourceNamespace;
 import com.android.utils.ILogger;
-import java.io.File;
-import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import java.io.File;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * A {@link ResourceSet} that contains only generated files (e.g. PNGs generated from a vector
@@ -57,7 +60,8 @@ public class GeneratedResourceSet extends ResourceSet {
     @NonNull
     protected DataSet<ResourceMergerItem, ResourceFile> createSet(
             @NonNull String name, @Nullable String aaptEnv) {
-        return new GeneratedResourceSet(name, ResourceNamespace.TODO(), getLibraryName(), aaptEnv);
+        return new GeneratedResourceSet(
+                name, ResourceNamespace.RES_AUTO, getLibraryName(), aaptEnv);
     }
 
     @Override

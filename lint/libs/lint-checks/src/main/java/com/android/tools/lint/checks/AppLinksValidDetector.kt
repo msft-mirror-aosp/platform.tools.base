@@ -1040,7 +1040,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       }
       val project = context.project
       val resources = client.getResources(project, ResourceRepositoryScope.ALL_DEPENDENCIES)
-      val items = resources.getResources(ResourceNamespace.TODO(), url.type, url.name)
+      val items = resources.getResources(ResourceNamespace.RES_AUTO, url.type, url.name)
       if (items.isEmpty()) {
         return str
       }

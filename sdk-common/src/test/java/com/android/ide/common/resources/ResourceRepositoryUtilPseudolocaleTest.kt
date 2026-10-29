@@ -167,7 +167,7 @@ class ResourceRepositoryUtilPseudolocaleTest {
   fun testGetConfiguredResourcesWithPseudolocales() {
     val repository =
       resourceFixture.createTestResources(
-        ResourceNamespace.TODO(),
+        ResourceNamespace.RES_AUTO,
         arrayOf(
           "values/strings.xml",
           // language=XML
@@ -220,12 +220,12 @@ class ResourceRepositoryUtilPseudolocaleTest {
         localeQualifier = Locale.create("en-rXA").qualifier
       }
     val enXaTable = repository.getConfiguredResources(enXaConfig)
-    val enXaStrings = enXaTable[ResourceNamespace.TODO(), ResourceType.STRING]!!
+    val enXaStrings = enXaTable[ResourceNamespace.RES_AUTO, ResourceType.STRING]!!
     assertThat(enXaStrings["greeting"]?.value).isEqualTo("[Åñðŕöîð one two]")
     assertThat(enXaStrings["tagline"]?.value).isEqualTo("[þšéûðöļöçåļéš ŕûļé¡ one two three]")
     assertThat(enXaStrings["custom_override"]?.value).isEqualTo("Explicit EnXA")
     assertThat(enXaStrings["alias_greeting"]?.value).isEqualTo("@string/greeting")
-    val enXaPlurals = enXaTable[ResourceNamespace.TODO(), ResourceType.PLURALS]!!["items"] as PluralsResourceValue
+    val enXaPlurals = enXaTable[ResourceNamespace.RES_AUTO, ResourceType.PLURALS]!!["items"] as PluralsResourceValue
     assertThat(enXaPlurals.getValue("other")).isEqualTo("[»%d« îţéḿš one two]")
     assertThat(repository.getConfiguredValue(ResourceType.STRING, "greeting", enXaConfig)?.value).isEqualTo("[Åñðŕöîð one two]")
 
@@ -234,7 +234,7 @@ class ResourceRepositoryUtilPseudolocaleTest {
         localeQualifier = Locale.create("ar-rXB").qualifier
       }
     val arXbTable = repository.getConfiguredResources(arXbConfig)
-    val arXbStrings = arXbTable[ResourceNamespace.TODO(), ResourceType.STRING]!!
+    val arXbStrings = arXbTable[ResourceNamespace.RES_AUTO, ResourceType.STRING]!!
     assertThat(arXbStrings["greeting"]?.value).isEqualTo("${BIDI_WORD_START}Android$BIDI_WORD_END")
     assertThat(renderBidiVisualOrder(arXbStrings["greeting"]!!.value!!)).isEqualTo("diordnA")
 

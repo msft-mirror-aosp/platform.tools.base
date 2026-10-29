@@ -86,7 +86,7 @@ class CredentialManagerDigitalAssetLinkDetector : Detector(), SourceCodeScanner 
     if (resourceUrl.type != ResourceType.STRING) return
 
     val projectResources = context.client.getResources(context.project, ResourceRepositoryScope.ALL_DEPENDENCIES)
-    val statementsResources = projectResources.getResources(ResourceNamespace.TODO(), resourceUrl.type, resourceUrl.name)
+    val statementsResources = projectResources.getResources(ResourceNamespace.RES_AUTO, resourceUrl.type, resourceUrl.name)
     if (statementsResources.isEmpty()) return
     // Shortest key.
     val statementsResource = statementsResources.minByOrNull { it.key } ?: return
