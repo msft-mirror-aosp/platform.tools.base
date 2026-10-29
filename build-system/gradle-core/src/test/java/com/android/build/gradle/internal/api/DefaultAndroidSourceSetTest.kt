@@ -62,4 +62,38 @@ class DefaultAndroidSourceSetTest {
     }
     assertThat(called).isTrue()
   }
+
+  @Test
+  fun testStringsAreInternedAcrossSourceSets() {
+    val first = DefaultAndroidSourceSet(StringBuilder("test").append("Debug").toString(), project, false)
+    val second = DefaultAndroidSourceSet(StringBuilder("test").append("Debug").toString(), project, false)
+
+    assertThat(first.name).isSameInstanceAs(second.name)
+    assertThat(first.manifest.name).isSameInstanceAs(second.manifest.name)
+    assertThat(first.manifest.toString()).isSameInstanceAs(second.manifest.toString())
+
+    assertThat(first.apiConfigurationName).isSameInstanceAs(second.apiConfigurationName)
+    assertThat(first.compileOnlyConfigurationName).isSameInstanceAs(second.compileOnlyConfigurationName)
+    assertThat(first.compileOnlyApiConfigurationName).isSameInstanceAs(second.compileOnlyApiConfigurationName)
+    assertThat(first.implementationConfigurationName).isSameInstanceAs(second.implementationConfigurationName)
+    assertThat(first.runtimeOnlyConfigurationName).isSameInstanceAs(second.runtimeOnlyConfigurationName)
+    assertThat(first.annotationProcessorConfigurationName).isSameInstanceAs(second.annotationProcessorConfigurationName)
+    assertThat(first.kaptConfigurationName).isSameInstanceAs(second.kaptConfigurationName)
+    assertThat(first.packageConfigurationName).isSameInstanceAs(second.packageConfigurationName)
+
+    assertThat(first.java.directories.single()).isSameInstanceAs(second.java.directories.single())
+    assertThat(first.kotlin.directories.toList()[0]).isSameInstanceAs(second.kotlin.directories.toList()[0])
+    assertThat(first.kotlin.directories.toList()[1]).isSameInstanceAs(second.kotlin.directories.toList()[1])
+    assertThat(first.resources.directories.single()).isSameInstanceAs(second.resources.directories.single())
+    assertThat(first.res.directories.single()).isSameInstanceAs(second.res.directories.single())
+    assertThat(first.assets.directories.single()).isSameInstanceAs(second.assets.directories.single())
+    assertThat(first.aidl.directories.single()).isSameInstanceAs(second.aidl.directories.single())
+    assertThat(first.renderscript.directories.single()).isSameInstanceAs(second.renderscript.directories.single())
+    assertThat(first.baselineProfiles.directories.single()).isSameInstanceAs(second.baselineProfiles.directories.single())
+    assertThat(first.keepRules.directories.single()).isSameInstanceAs(second.keepRules.directories.single())
+    assertThat(first.jniLibs.directories.single()).isSameInstanceAs(second.jniLibs.directories.single())
+    assertThat(first.shaders.directories.single()).isSameInstanceAs(second.shaders.directories.single())
+    assertThat(first.mlModels.directories.single()).isSameInstanceAs(second.mlModels.directories.single())
+    assertThat(first.extras.create("custom").directories.single()).isSameInstanceAs(second.extras.create("custom").directories.single())
+  }
 }

@@ -45,7 +45,7 @@ open class DefaultAndroidLibrarySourceSet @Inject constructor(name: String, proj
   }
 
   private fun initRoot(path: String): AndroidSourceSet {
-    aarKeepRules.setSrcDirs(listOf("$path/aarKeepRules"))
+    aarKeepRules.setSrcDirs(listOf("$path/aarKeepRules".intern()))
     return this
   }
 }

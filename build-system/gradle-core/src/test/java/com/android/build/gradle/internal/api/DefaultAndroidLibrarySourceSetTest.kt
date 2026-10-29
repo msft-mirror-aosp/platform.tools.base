@@ -72,4 +72,11 @@ class DefaultAndroidLibrarySourceSetTest {
     assertThat(sourceSet).isInstanceOf(com.android.build.gradle.api.AndroidLibrarySourceSet::class.java)
     assertThat(sourceSet).isInstanceOf(com.android.build.api.dsl.AndroidLibrarySourceSet::class.java)
   }
+
+  @Test
+  fun testAarKeepRulesPathIsInterned() {
+    val first = DefaultAndroidLibrarySourceSet(StringBuilder("test").append("Debug").toString(), project, false)
+    val second = DefaultAndroidLibrarySourceSet(StringBuilder("test").append("Debug").toString(), project, false)
+    assertThat(first.aarKeepRules.directories.single()).isSameInstanceAs(second.aarKeepRules.directories.single())
+  }
 }

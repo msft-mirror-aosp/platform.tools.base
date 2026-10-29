@@ -40,7 +40,7 @@ data class AndroidSourceSetName(val name: String) {
     return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
       config
     } else {
-      name.appendCapitalized(config)
+      name.appendCapitalized(config).intern()
     }
   }
 
@@ -77,7 +77,7 @@ data class AndroidSourceSetName(val name: String) {
       return if (name == SourceSet.MAIN_SOURCE_SET_NAME) {
         CONFIG_NAME_KAPT
       } else {
-        CONFIG_NAME_KAPT.appendCapitalized(name)
+        CONFIG_NAME_KAPT.appendCapitalized(name).intern()
       }
     }
 

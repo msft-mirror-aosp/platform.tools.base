@@ -41,7 +41,7 @@ constructor(
   private val project: Project,
   private val publishPackage: Boolean,
 ) : AndroidSourceSet, SourceProvider {
-  protected val sourceSetName = AndroidSourceSetName(name)
+  protected val sourceSetName = AndroidSourceSetName(name.intern())
 
   final override val java: AndroidSourceDirectorySet
   final override val kotlin: com.android.build.api.dsl.AndroidSourceDirectorySet
@@ -69,7 +69,7 @@ constructor(
     resources = DefaultAndroidSourceDirectorySet(displayName, "Java resources", project, SourceArtifactType.JAVA_RESOURCES)
     resources.filter.exclude("**/*.java", "**/*.kt")
 
-    manifest = DefaultAndroidSourceFile("$displayName manifest", project)
+    manifest = DefaultAndroidSourceFile("$displayName manifest".intern(), project)
 
     assets = DefaultAndroidSourceDirectorySet(displayName, "assets", project, SourceArtifactType.ASSETS)
 
@@ -104,17 +104,24 @@ constructor(
     return "source set $displayName"
   }
 
-  override val apiConfigurationName = sourceSetName.apiConfigurationName
+  override val apiConfigurationName: String
+    get() = sourceSetName.apiConfigurationName
 
-  override val compileOnlyConfigurationName = sourceSetName.compileOnlyConfigurationName
+  override val compileOnlyConfigurationName: String
+    get() = sourceSetName.compileOnlyConfigurationName
 
-  override val compileOnlyApiConfigurationName = sourceSetName.compileOnlyApiConfigurationName
+  override val compileOnlyApiConfigurationName: String
+    get() = sourceSetName.compileOnlyApiConfigurationName
 
-  override val implementationConfigurationName = sourceSetName.implementationConfigurationName
+  override val implementationConfigurationName: String
+    get() = sourceSetName.implementationConfigurationName
 
-  override val runtimeOnlyConfigurationName = sourceSetName.runtimeOnlyConfigurationName
+  override val runtimeOnlyConfigurationName: String
+    get() = sourceSetName.runtimeOnlyConfigurationName
 
-  @Suppress("OverridingDeprecatedMember") override val compileConfigurationName = sourceSetName.compileConfigurationName
+  @Suppress("OverridingDeprecatedMember")
+  override val compileConfigurationName: String
+    get() = sourceSetName.compileConfigurationName
 
   @Suppress("OverridingDeprecatedMember")
   override val packageConfigurationName: String
@@ -126,11 +133,15 @@ constructor(
       }
     }
 
-  @Suppress("OverridingDeprecatedMember") override val providedConfigurationName = sourceSetName.providedConfigurationName
+  @Suppress("OverridingDeprecatedMember")
+  override val providedConfigurationName: String
+    get() = sourceSetName.providedConfigurationName
 
-  override val annotationProcessorConfigurationName = sourceSetName.annotationProcessorConfigurationName
+  override val annotationProcessorConfigurationName: String
+    get() = sourceSetName.annotationProcessorConfigurationName
 
-  override val kaptConfigurationName = sourceSetName.kaptConfigurationName
+  override val kaptConfigurationName: String
+    get() = sourceSetName.kaptConfigurationName
 
   override fun manifest(action: com.android.build.api.dsl.AndroidSourceFile.() -> Unit) {
     action.invoke(manifest)
@@ -248,20 +259,21 @@ constructor(
   }
 
   private fun initRoot(path: String): AndroidSourceSet {
-    java.setSrcDirs(listOf("$path/java"))
-    kotlin.setSrcDirs(listOf("$path/java", "$path/kotlin"))
-    resources.setSrcDirs(listOf("$path/resources"))
-    res.setSrcDirs(listOf("$path/${SdkConstants.FD_RES}"))
-    assets.setSrcDirs(listOf("$path/${SdkConstants.FD_ASSETS}"))
-    manifest.srcFile("$path/${SdkConstants.FN_ANDROID_MANIFEST_XML}")
-    aidl.setSrcDirs(listOf("$path/aidl"))
-    renderscript.setSrcDirs(listOf("$path/rs"))
-    baselineProfiles.setSrcDirs(listOf("$path/baselineProfiles"))
-    keepRules.setSrcDirs(listOf("$path/keepRules"))
-    jni.setSrcDirs(listOf("$path/jni"))
-    jniLibs.setSrcDirs(listOf("$path/jniLibs"))
-    shaders.setSrcDirs(listOf("$path/shaders"))
-    mlModels.setSrcDirs(listOf("$path/${SdkConstants.FD_ML_MODELS}"))
+    val javaSrc = "$path/java".intern()
+    java.setSrcDirs(listOf(javaSrc))
+    kotlin.setSrcDirs(listOf(javaSrc, "$path/kotlin".intern()))
+    resources.setSrcDirs(listOf("$path/resources".intern()))
+    res.setSrcDirs(listOf("$path/${SdkConstants.FD_RES}".intern()))
+    assets.setSrcDirs(listOf("$path/${SdkConstants.FD_ASSETS}".intern()))
+    manifest.srcFile("$path/${SdkConstants.FN_ANDROID_MANIFEST_XML}".intern())
+    aidl.setSrcDirs(listOf("$path/aidl".intern()))
+    renderscript.setSrcDirs(listOf("$path/rs".intern()))
+    baselineProfiles.setSrcDirs(listOf("$path/baselineProfiles".intern()))
+    keepRules.setSrcDirs(listOf("$path/keepRules".intern()))
+    jni.setSrcDirs(listOf("$path/jni".intern()))
+    jniLibs.setSrcDirs(listOf("$path/jniLibs".intern()))
+    shaders.setSrcDirs(listOf("$path/shaders".intern()))
+    mlModels.setSrcDirs(listOf("$path/${SdkConstants.FD_ML_MODELS}".intern()))
     return this
   }
 
@@ -345,13 +357,13 @@ constructor(
 
     override fun create(name: String): DefaultAndroidSourceDirectorySet {
       return DefaultAndroidSourceDirectorySet(sourceSetDisplayName, name, project, SourceArtifactType.CUSTOMS).also {
-        it.srcDir("src/$sourceSetName/$name")
+        it.srcDir("src/$sourceSetName/$name".intern())
       }
     }
   }
 
   /** Converts name to display name e.g. "fooDebug" (camel case) to "foo debug". */
   private fun convertNameToDisplayName(): String {
-    return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, sourceSetName.name).replace("-", " ")
+    return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, sourceSetName.name).replace("-", " ").intern()
   }
 }
