@@ -237,6 +237,99 @@ class MarkdownReportRendererTest {
   }
 
   @Test
+  fun render_screenshotMismatch() {
+    val report =
+      report(
+        module(
+          ":app",
+          testClass("com.example.app.HomeScreenTest", screenshotFailure("HomeScreenPreview_dark", MISMATCH_TRACE, diffPercent = "0.0482")),
+        ),
+        relativeRootDir = "../../../../",
+      )
+
+    val output = renderer.render(report)
+
+    assertThat(output)
+      .contains(
+        """
+        ## Screenshot failures (1)
+
+        | Test | Variant | Result | Diff | Reference | Actual | Diff image |
+        | :--- | :--- | :--- | ---: | :--- | :--- | :--- |
+        | :app > com.example.app.HomeScreenTest > HomeScreenPreview_dark | debug | Mismatch | 4.82% | ![Reference](../../../../app/src/screenshotTestDebug/reference/HomeScreenPreview_dark.png) | ![Actual](../../../../app/build/outputs/screenshotTest/rendered/HomeScreenPreview_dark.png) | ![Diff](../../../../app/build/outputs/screenshotTest/diffs/HomeScreenPreview_dark.png) |
+        """
+          .trimIndent()
+      )
+    assertThat(output).doesNotContain("## Failures")
+    assertThat(output).contains("failed: 1")
+  }
+
+  @Test
+  fun render_screenshotMissingBaseline() {
+    val report =
+      report(module(":app", testClass("com.example.app.SettingsTest", screenshotFailure("SettingsPreview", MISSING_BASELINE_TRACE))))
+
+    val output = renderer.render(report)
+
+    assertThat(output)
+      .contains(
+        "| :app > com.example.app.SettingsTest > SettingsPreview | debug | Missing baseline |  |  | " +
+          "![Actual](app/build/outputs/screenshotTest/rendered/SettingsPreview.png) |  |"
+      )
+  }
+
+  @Test
+  fun render_screenshotRenderErrorIsListedWithFailures() {
+    val report =
+      report(
+        module(
+          ":app",
+          testClass(
+            "com.example.app.BrokenTest",
+            screenshotFailure("BrokenPreview", "com.android.tools.screenshot.ScreenshotRenderException: Screenshot rendering failed"),
+          ),
+        )
+      )
+
+    val output = renderer.render(report)
+
+    assertThat(output).doesNotContain("## Screenshot failures")
+    assertThat(output).contains("### :app > com.example.app.BrokenTest > BrokenPreview")
+  }
+
+  @Test
+  fun formatDiffPercent_convertsTheEngineFractionToAPercentage() {
+    assertThat(MarkdownReportRenderer.formatDiffPercent("0.0482")).isEqualTo("4.82%")
+    assertThat(MarkdownReportRenderer.formatDiffPercent("1.0")).isEqualTo("100.00%")
+    assertThat(MarkdownReportRenderer.formatDiffPercent("0.00004")).isEqualTo("0.00%")
+    assertThat(MarkdownReportRenderer.formatDiffPercent("not a number")).isEqualTo("not a number")
+  }
+
+  @Test
+  fun formatDiffPercent_hasNoBinaryRoundingArtifacts() {
+    // As doubles, 0.07 * 100 and 0.29 * 100 are 7.000000000000001 and 28.999999999999996.
+    assertThat(MarkdownReportRenderer.formatDiffPercent("0.07")).isEqualTo("7.00%")
+    assertThat(MarkdownReportRenderer.formatDiffPercent("0.29")).isEqualTo("29.00%")
+    // Ties round to even.
+    assertThat(MarkdownReportRenderer.formatDiffPercent("0.00125")).isEqualTo("0.12%")
+  }
+
+  @Test
+  fun formatDiffPercent_returnsNonFiniteValuesUnchanged() {
+    assertThat(MarkdownReportRenderer.formatDiffPercent("NaN")).isEqualTo("NaN")
+    assertThat(MarkdownReportRenderer.formatDiffPercent("Infinity")).isEqualTo("Infinity")
+    assertThat(MarkdownReportRenderer.formatDiffPercent("-Infinity")).isEqualTo("-Infinity")
+  }
+
+  @Test
+  fun image_wrapsPathsWithSpacesAndKeepsAbsolutePaths() {
+    assertThat(MarkdownReportRenderer.image("Actual", "my app/shot (1).png", "../")).isEqualTo("![Actual](<../my app/shot (1).png>)")
+    assertThat(MarkdownReportRenderer.image("Actual", "/tmp/shot.png", "../")).isEqualTo("![Actual](/tmp/shot.png)")
+    assertThat(MarkdownReportRenderer.image("Actual", "C:\\shots\\shot.png", "../")).isEqualTo("![Actual](C:/shots/shot.png)")
+    assertThat(MarkdownReportRenderer.image("Actual", null, "../")).isEmpty()
+  }
+
+  @Test
   fun truncateStackTrace_keepsShortStackTraces() {
     val stackTrace = (1..MarkdownReportRenderer.MAX_STACK_TRACE_LINES).joinToString("\n") { "\tat Frame$it" }
 
@@ -257,6 +350,32 @@ class MarkdownReportRendererTest {
     assertThat(truncated.last()).isEqualTo("Caused by: java.lang.IllegalStateException: inner")
   }
 }
+
+private const val MISMATCH_TRACE =
+  "com.android.tools.screenshot.ImageComparisonAssertionError: Image does not match.\n\tat com.android.tools.screenshot.Engine.verify(Engine.kt:1)"
+
+private const val MISSING_BASELINE_TRACE =
+  "com.android.tools.screenshot.ScreenshotImageNotFoundException: Reference image file does not exist (app/src/screenshotTestDebug/reference/x.png)."
+
+/**
+ * A failed screenshot test with the image properties the screenshot test engine publishes. Like the engine, it always sets `refImagePath`,
+ * and it also sets a diff image path, which may be left over from an earlier run.
+ */
+private fun screenshotFailure(previewName: String, stackTrace: String, diffPercent: String? = null): TestCaseSpec =
+  testCase(
+    previewName,
+    STATUS_FAIL,
+    stackTrace = stackTrace,
+    result =
+      VariantTestResult(
+        status = STATUS_FAIL,
+        diffPercent = diffPercent,
+        previewName = previewName,
+        refImagePath = "app/src/screenshotTestDebug/reference/$previewName.png",
+        newImagePath = "app/build/outputs/screenshotTest/rendered/$previewName.png",
+        diffImagePath = "app/build/outputs/screenshotTest/diffs/$previewName.png",
+      ),
+  )
 
 /** A test case to add to a [testClass]: one result per variant and target. */
 private data class TestCaseSpec(
