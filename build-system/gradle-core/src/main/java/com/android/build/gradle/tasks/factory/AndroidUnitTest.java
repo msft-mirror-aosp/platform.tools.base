@@ -144,6 +144,13 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
     @Input
     public abstract Property<Boolean> getTestReportAggregationEnabled();
 
+    /**
+     * Whether to also write the Markdown test report, {@code report.md}, next to the new HTML test
+     * report. Only takes effect with {@link #getTestReportAggregationEnabled()}.
+     */
+    @Input
+    public abstract Property<Boolean> getMarkdownReportEnabled();
+
     @Internal
     public abstract Property<String> getModulePath();
 
@@ -224,7 +231,7 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                 XMLReportAggregator aggregator =
                         new XMLReportAggregator(
                                 List.of(resultsDir), getModulePath().get(), rootDir);
-                aggregator.writeReport(htmlOutputDirFile);
+                aggregator.writeReport(htmlOutputDirFile, getMarkdownReportEnabled().get());
             }
         }
     }
@@ -350,6 +357,12 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
             task.systemProperty("java.awt.headless", "true");
             task.getTestReportAggregationEnabled()
                     .set(configOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT));
+            // The new HTML report, which report.md is rendered from, needs report aggregation.
+            task.getMarkdownReportEnabled()
+                    .set(
+                            configOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT)
+                                    && configOptions.get(
+                                            BooleanOption.ENABLE_MARKDOWN_TEST_REPORT));
 
             task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
             String testType =

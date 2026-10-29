@@ -103,6 +103,35 @@ class UnitTestTaskTest {
   }
 
   @Test
+  fun testMarkdownReport() {
+    val build = rule.build
+    build.reconfigureGradleProperties { add(BooleanOption.ENABLE_MARKDOWN_TEST_REPORT, true) }
+
+    build.executor.expectFailure().run(":app:testDebugUnitTest")
+
+    val reportDir = build.androidApplication().buildDir.resolve("reports/tests/testDebugUnitTest")
+    assertThat(reportDir.resolve("report.md")).exists()
+    val markdown = reportDir.resolve("report.md").readText()
+    assertThat(markdown).contains("### :app > com.example.FailingTest > failingTest")
+    assertThat(markdown).contains("This test is supposed to fail")
+  }
+
+  @Test
+  fun testMarkdownReport_requiresReportAggregation() {
+    val build = rule.build
+    build.reconfigureGradleProperties {
+      add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+      add(BooleanOption.ENABLE_MARKDOWN_TEST_REPORT, true)
+    }
+
+    build.executor.expectFailure().run(":app:testDebugUnitTest")
+
+    val reportDir = build.androidApplication().buildDir.resolve("reports/tests/testDebugUnitTest")
+    assertThat(reportDir.resolve("index.html")).exists()
+    assertThat(reportDir.resolve("report.md")).doesNotExist()
+  }
+
+  @Test
   fun testUnitTestCachingWithReportAggregation() {
     val build = rule.build
 
