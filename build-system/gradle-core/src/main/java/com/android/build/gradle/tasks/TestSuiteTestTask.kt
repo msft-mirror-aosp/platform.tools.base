@@ -227,6 +227,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Internal abstract val rootProjectDir: DirectoryProperty
 
+  /** Whether to also write the Markdown test report, `report.md`, next to the HTML test report. */
+  @get:Input abstract val markdownReportEnabled: Property<Boolean>
+
   /**
    * Specifies the target devices for test execution using a comma-separated list of serial numbers.
    *
@@ -716,7 +719,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
         val rootDir = this.rootProjectDir.get().asFile
         val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), this.modulePath.get(), rootDir)
-        aggregator.writeReport(htmlOutputDirFile)
+        aggregator.writeReport(htmlOutputDirFile, writeMarkdown = markdownReportEnabled.getOrElse(false))
       }
 
       // Also write metadata to coverage directory so that the coverage collection task can identify the suite
@@ -1986,6 +1989,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.rootProjectName.set(services.projectInfo.rootProjectName)
       task.rootProjectDir.set(services.projectInfo.rootDir)
       task.rootProjectDir.disallowChanges()
+      // Test suite tasks always write the new HTML report, so report.md only needs its own option.
+      task.markdownReportEnabled.setDisallowChanges(services.projectOptions[BooleanOption.ENABLE_MARKDOWN_TEST_REPORT])
     }
 
     internal fun containsInstrumentationArgKey(rawArgs: String, key: String): Boolean {

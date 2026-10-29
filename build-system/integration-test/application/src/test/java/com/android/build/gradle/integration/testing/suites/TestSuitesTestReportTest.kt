@@ -142,6 +142,34 @@ class TestSuitesTestReportTest {
   }
 
   @Test
+  fun testMarkdownReport_writtenWithoutReportAggregation() {
+    val build = rule.build {
+      gradleProperties {
+        add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+        add(BooleanOption.ENABLE_MARKDOWN_TEST_REPORT, true)
+      }
+    }
+
+    build.executor.run(":app:testDebugFirstT1TestSuite")
+
+    val reportDir = build.androidApplication().buildDir.resolve("reports/tests/testDebugFirstT1TestSuite")
+    assertThat(reportDir.resolve("index.html").toFile().exists()).isTrue()
+    assertThat(reportDir.resolve("report.md").toFile().exists()).isTrue()
+    assertThat(reportDir.resolve("report.md").toFile().readText()).contains("# Test report: :app")
+  }
+
+  @Test
+  fun testMarkdownReport_notWrittenByDefault() {
+    val build = rule.build
+
+    build.executor.run(":app:testDebugFirstT1TestSuite")
+
+    val reportDir = build.androidApplication().buildDir.resolve("reports/tests/testDebugFirstT1TestSuite")
+    assertThat(reportDir.resolve("index.html").toFile().exists()).isTrue()
+    assertThat(reportDir.resolve("report.md").toFile().exists()).isFalse()
+  }
+
+  @Test
   fun testAcrossModuleReporting() {
     val build = rule.build {
       androidLibrary {
