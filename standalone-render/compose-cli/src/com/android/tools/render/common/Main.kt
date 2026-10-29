@@ -73,13 +73,16 @@ internal data class RendererBootstrapRequest(
 internal interface ManagedRenderer : Closeable {
   val isDisposed: Boolean
 
+  /** Reloads user project classes from [newProjectClassPath] while keeping warm external dependencies intact. */
   fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>)
 
+  /** Renders [screenshot] into [outputFolderPath], honoring `@Preview(showSystemUi = true)` when [allowShowDecorations] is `true`. */
   fun render(
     screenshot: PreviewScreenshot,
     outputFolderPath: String,
     includeComponentTree: Boolean,
     renderImage: Boolean,
+    allowShowDecorations: Boolean = false,
   ): List<PreviewScreenshotResult>
 }
 
@@ -87,17 +90,21 @@ private class RealManagedRenderer(private val delegate: Renderer) : ManagedRende
   override val isDisposed: Boolean
     get() = delegate.project.isDisposed || delegate.module.isDisposed
 
+  /** Reloads user project classes on [delegate]. */
   override fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>) {
     delegate.refreshClassPath(newClassPath, newProjectClassPath)
   }
 
+  /** Delegates rendering of [screenshot] to [delegate]. */
   override fun render(
     screenshot: PreviewScreenshot,
     outputFolderPath: String,
     includeComponentTree: Boolean,
     renderImage: Boolean,
-  ): List<PreviewScreenshotResult> = delegate.render(screenshot, outputFolderPath, includeComponentTree, renderImage)
+    allowShowDecorations: Boolean,
+  ): List<PreviewScreenshotResult> = delegate.render(screenshot, outputFolderPath, includeComponentTree, renderImage, allowShowDecorations)
 
+  /** Disposes the underlying [Renderer]. */
   override fun close() {
     delegate.close()
   }
@@ -211,6 +218,7 @@ internal constructor(
    * @param renderImage Whether to produce PNG screenshots (can be `false` when only extracting the component tree).
    * @param reuseEnvironment When `true`, acquires and reuses the process-wide warm [Renderer] via [acquireWarmRenderer] instead of
    *   bootstrapping and tearing down the environment on every call.
+   * @param allowShowDecorations When `true`, honors `@Preview(showSystemUi = true)` by rendering system UI decorations and device frames.
    * @return the per-screenshot results, or a [PreviewRenderingResult.globalError] when the batch could not be rendered.
    */
   @JvmOverloads
@@ -220,6 +228,7 @@ internal constructor(
     includeComponentTree: Boolean = false,
     renderImage: Boolean = true,
     reuseEnvironment: Boolean = true,
+    allowShowDecorations: Boolean = false,
   ): PreviewRenderingResult {
     return try {
       // Some callers supply R.jar files inside the general `classPath` rather than via `rClassJars`.
@@ -259,7 +268,7 @@ internal constructor(
           val results =
             try {
               acquired.handle.renderBatch(fullClassPath, projectClassPath, acquired.freshlyBootstrapped) { managedRenderer ->
-                renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage)
+                renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
               }
             } finally {
               acquired.handle.release()
@@ -273,7 +282,7 @@ internal constructor(
 
       // Cold / one-shot path: bootstrap a fresh Renderer and close it immediately via `.use {}`.
       rendererFactory(bootstrapRequest).use { managedRenderer ->
-        val results = renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage)
+        val results = renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
         PreviewRenderingResult(globalError = null, results)
       }
     } catch (e: StackOverflowError) {
@@ -288,17 +297,19 @@ internal constructor(
     }
   }
 
+  /** Renders every screenshot in [screenshots] using [renderer], capturing non-fatal exceptions as per-screenshot errors. */
   private fun renderAll(
     renderer: ManagedRenderer,
     screenshots: List<PreviewScreenshot>,
     outputFolder: String,
     includeComponentTree: Boolean,
     renderImage: Boolean,
+    allowShowDecorations: Boolean,
   ): List<PreviewScreenshotResult> =
     screenshots
       .flatMap { screenshot ->
         try {
-          renderer.render(screenshot, outputFolder, includeComponentTree, renderImage)
+          renderer.render(screenshot, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
         } catch (e: InterruptedException) {
           Thread.currentThread().interrupt()
           throw e

@@ -1065,4 +1065,20 @@ class ComponentTreeExtractorTest {
     assertEquals("Text", text.name)
     assertEquals("Ok", text.semantics?.get("text"))
   }
+
+  private class FakeElevatedView(private val elevationValue: Float) {
+    /** Returns the simulated view elevation in pixels. */
+    fun getElevation(): Float = elevationValue
+  }
+
+  /** Verifies that non-zero `View.getElevation()` values are extracted into node semantics while zero elevation is omitted. */
+  @Test
+  fun testExtractViewSemanticsExtractsNonZeroElevation() {
+    val elevatedSemantics = ComposeSemanticsExtractor.extractViewSemantics(FakeElevatedView(12.5f))
+    assertNotNull(elevatedSemantics)
+    assertEquals("12.5", elevatedSemantics!!["elevation"])
+
+    val flatSemantics = ComposeSemanticsExtractor.extractViewSemantics(FakeElevatedView(0f))
+    assertNull(flatSemantics)
+  }
 }

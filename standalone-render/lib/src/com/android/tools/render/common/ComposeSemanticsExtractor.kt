@@ -297,6 +297,9 @@ internal object ComposeSemanticsExtractor {
       val alpha = (invokeGetter(view, "alpha") as? Number)?.toFloat()
       if (alpha != null && alpha != 1.0f) map["alpha"] = alpha.toString()
 
+      val elevation = (invokeGetter(view, "elevation") as? Number)?.toFloat()
+      if (elevation != null && elevation != 0f) map["elevation"] = elevation.toString()
+
       map.ifEmpty { null }
     } catch (e: Exception) {
       logger.log(Level.FINE, "Failed to extract View semantics", e)

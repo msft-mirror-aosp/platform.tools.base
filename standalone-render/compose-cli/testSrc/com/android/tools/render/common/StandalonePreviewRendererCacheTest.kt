@@ -66,6 +66,7 @@ class StandalonePreviewRendererCacheTest {
     val closeCalls = AtomicInteger(0)
     val activeRenderers = AtomicInteger(0)
     val maxConcurrentRenders = AtomicInteger(0)
+    val recordedAllowShowDecorations = CopyOnWriteArrayList<Boolean>()
 
     override val isDisposed: Boolean
       get() = disposed
@@ -80,7 +81,9 @@ class StandalonePreviewRendererCacheTest {
       outputFolderPath: String,
       includeComponentTree: Boolean,
       renderImage: Boolean,
+      allowShowDecorations: Boolean,
     ): List<PreviewScreenshotResult> {
+      recordedAllowShowDecorations.add(allowShowDecorations)
       val current = activeRenderers.incrementAndGet()
       maxConcurrentRenders.updateAndGet { prev -> maxOf(prev, current) }
       try {
@@ -491,6 +494,24 @@ class StandalonePreviewRendererCacheTest {
     assertThat(oneShotOom.globalError).contains("OutOfMemoryError")
     assertThat(oneShotOom.isFatalJvmError).isTrue()
     assertThat(oneShotOom.fatalJvmError).isEqualTo("OutOfMemoryError")
+  }
+
+  /** Verifies that `allowShowDecorations` defaults to `false` and forwards `true` to both warm and one-shot renderers. */
+  @Test
+  fun forwardsAllowShowDecorationsToManagedRenderer() {
+    val resApk = tempFolder.newFile("res.apk").apply { writeText("apk") }
+    val outDir = tempFolder.newFolder("out").absolutePath
+    val screenshot = ComposeScreenshot("com.example.PreviewKt.Decorated", emptyList(), emptyMap(), "p1")
+    val createdRenderers = mutableListOf<FakeManagedRenderer>()
+    val factory: (RendererBootstrapRequest) -> ManagedRenderer = { FakeManagedRenderer().also { createdRenderers.add(it) } }
+
+    newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir)
+    newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir, allowShowDecorations = true)
+    newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir, reuseEnvironment = false, allowShowDecorations = true)
+
+    assertThat(createdRenderers).hasSize(2)
+    assertThat(createdRenderers[0].recordedAllowShowDecorations).containsExactly(false, true).inOrder()
+    assertThat(createdRenderers[1].recordedAllowShowDecorations).containsExactly(true)
   }
 
   private fun newFakeRenderer(resApk: File, factory: (RendererBootstrapRequest) -> ManagedRenderer) =
