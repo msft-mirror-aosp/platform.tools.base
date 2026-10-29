@@ -334,6 +334,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           MotionLayoutDetector.INVALID_SCENE_FILE_REFERENCE,
           MotionLayoutIdDetector.MISSING_ID,
           MotionSceneDetector.MOTION_SCENE_FILE_VALIDATION_ERROR,
+          MultiAppFunctionServiceDetector.ISSUE,
           NamespaceDetector.CUSTOM_VIEW,
           NamespaceDetector.REDUNDANT,
           NamespaceDetector.RES_AUTO,
