@@ -45,13 +45,12 @@ class StandaloneResourceRepository(
   /**
    * Returns resources for the given namespace and type.
    *
-   * Shadowing behavior: children are searched in reverse order. The first child that contains a resource with a given key wins. Typically,
-   * children are [folders] (dependency resources) followed by [apkResourcesRepo] (main project resources). By searching in reverse, the
-   * [apkResourcesRepo] (project resources) overrides library resources in [folders].
+   * Shadowing behavior: children are searched in order ([folders] followed by [apkResourcesRepo]). The first child that contains a resource
+   * with a given key wins, so live XML edits in [folders] are not shadowed by stale entries in [apkResourcesRepo].
    */
   override fun getResourcesInternal(namespace: ResourceNamespace, resourceType: ResourceType): ListMultimap<String, ResourceItem> {
     val result = ArrayListMultimap.create<String, ResourceItem>()
-    for (child in children.reversed()) {
+    for (child in children) {
       if (child.namespaces.contains(namespace)) {
         val map = child.getResources(namespace, resourceType)
         for (key in map.keySet()) {
