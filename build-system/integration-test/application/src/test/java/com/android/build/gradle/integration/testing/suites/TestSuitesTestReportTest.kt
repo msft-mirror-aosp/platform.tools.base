@@ -170,6 +170,17 @@ class TestSuitesTestReportTest {
   }
 
   @Test
+  fun testMarkdownReport_testAllSuites() {
+    val build = rule.build { gradleProperties { add(BooleanOption.ENABLE_MARKDOWN_TEST_REPORT, true) } }
+
+    build.executor.run(":app:testAllSuites")
+
+    val reportDir = build.androidApplication().buildDir.resolve("reports/testAllSuites/test-report")
+    assertThat(reportDir.resolve("index.html").toFile().exists()).isTrue()
+    assertThat(reportDir.resolve("report.md").toFile().readText()).contains("| :app | first | debug |")
+  }
+
+  @Test
   fun testAcrossModuleReporting() {
     val build = rule.build {
       androidLibrary {

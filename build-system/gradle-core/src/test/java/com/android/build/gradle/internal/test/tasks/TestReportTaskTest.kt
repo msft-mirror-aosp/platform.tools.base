@@ -75,6 +75,37 @@ class TestReportTaskTest {
     assertThat(testReportDir.resolve("data.js")).exists()
   }
 
+  @Test
+  fun doTaskAction_markdownReportEnabled_writesReportMd() {
+    writeTestResults(failingTest = false)
+    task.markdownReportEnabled.set(true)
+
+    task.runTaskAction()
+
+    assertThat(testReportDir.resolve("report.md")).exists()
+    assertThat(testReportDir.resolve("report.md").readText()).contains("# Test report: MyProject")
+  }
+
+  @Test
+  fun doTaskAction_failingTestWithMarkdownReport_writesReportMdBeforeFailing() {
+    writeTestResults(failingTest = true)
+    task.markdownReportEnabled.set(true)
+
+    assertFailsWith<VerificationException> { task.runTaskAction() }
+
+    assertThat(testReportDir.resolve("report.md").readText()).contains("### :app > com.example.app.ExampleTest > testOther")
+  }
+
+  @Test
+  fun doTaskAction_markdownReportDisabled_doesNotWriteReportMd() {
+    writeTestResults(failingTest = false)
+    task.markdownReportEnabled.set(false)
+
+    task.runTaskAction()
+
+    assertThat(testReportDir.resolve("report.md")).doesNotExist()
+  }
+
   private fun writeTestResults(failingTest: Boolean) {
     val failure = if (failingTest) """<failure message="assertion failed">stack trace</failure>""" else ""
     testResultsDir

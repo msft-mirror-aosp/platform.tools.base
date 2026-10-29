@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
+import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import org.gradle.api.file.Directory
@@ -58,13 +59,16 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
   @get:Internal abstract val rootProjectDir: RegularFileProperty
 
+  /** Whether to also write the Markdown test report, `report.md`, next to the HTML test report. */
+  @get:Input abstract val markdownReportEnabled: Property<Boolean>
+
   override fun doTaskAction() {
     val inputDirectories: List<File> = testResults.get().map { it.asFile }
     val testReport = testReport.get().asFile
 
     val rootDir = rootProjectDir.get().asFile
     val aggregator = XMLReportAggregator(inputDirectories, rootProjectName.get(), rootDir)
-    aggregator.writeReport(testReport)
+    aggregator.writeReport(testReport, writeMarkdown = markdownReportEnabled.getOrElse(false))
 
     // --- CODE COVERAGE REPORT GENERATION ---
     if (coverageXmlReports.isPresent && coverageXmlReports.get().isNotEmpty()) {
@@ -142,6 +146,9 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
       task.coverageXmlReports.set(creationConfig.globalArtifacts.getAll(coverageArtifactType))
       task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
       task.rootProjectDir.disallowChanges()
+      // This task is only registered when report aggregation is on, so report.md only needs its own option.
+      task.markdownReportEnabled.set(creationConfig.services.projectOptions[BooleanOption.ENABLE_MARKDOWN_TEST_REPORT])
+      task.markdownReportEnabled.disallowChanges()
 
       val reportsDir = task.project.layout.buildDirectory.dir("reports/$name")
       task.testReport.set(reportsDir.map { it.dir("test-report") })
