@@ -108,6 +108,10 @@ constructor(
 
   override var targetProjectPath: String? = null
 
+  open fun targetProjectPath(targetProjectPath: String?) {
+    this.targetProjectPath = targetProjectPath
+  }
+
   override val aaptOptions: AaptOptions
     get() = androidResources as AaptOptions
 

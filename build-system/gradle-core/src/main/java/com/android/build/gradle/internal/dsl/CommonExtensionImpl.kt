@@ -183,6 +183,10 @@ abstract class CommonExtensionImpl<
 
   override val experimentalProperties: MutableMap<String, Any> = mutableMapOf()
 
+  open fun resourcePrefix(prefix: String) {
+    resourcePrefix = prefix
+  }
+
   fun flavorDimensions(vararg dimensions: String) {
     flavorDimensions.clear()
     flavorDimensions.addAll(dimensions)
