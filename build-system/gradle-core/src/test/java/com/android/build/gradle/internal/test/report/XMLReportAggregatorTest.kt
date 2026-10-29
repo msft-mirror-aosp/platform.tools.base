@@ -232,6 +232,75 @@ class XMLReportAggregatorTest {
   }
 
   @Test
+  fun testWriteReport_withMarkdown_writesReportMd() {
+    createXmlReport(inputDir1, "test-report.xml", singlePassingTestXml())
+
+    createAggregator(files = listOf(inputDir1), projectName = "MyProject").writeReport(outputDir, writeMarkdown = true)
+
+    val markdown = File(outputDir, MARKDOWN_REPORT_FILE_NAME).readText()
+    assertThat(File(outputDir, "index.html").exists()).isTrue()
+    assertThat(markdown).contains("# Test report: MyProject")
+    assertThat(markdown).contains("total: 1")
+    assertThat(markdown).contains("| com.example.app.MyClassTest | 1 |")
+  }
+
+  @Test
+  fun testWriteReport_withoutMarkdown_doesNotWriteReportMd() {
+    createXmlReport(inputDir1, "test-report.xml", singlePassingTestXml())
+
+    createAggregator(files = listOf(inputDir1), projectName = "MyProject").writeReport(outputDir)
+
+    assertThat(File(outputDir, MARKDOWN_REPORT_FILE_NAME).exists()).isFalse()
+  }
+
+  @Test
+  fun testWriteReport_withMarkdown_linksScreenshotImagesRelativeToReport() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.PreviewTest" tests="1" failures="1" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="screenshotTest"/>
+          </properties>
+          <testcase name="HomePreview" classname="com.example.app.PreviewTest" time="0.1">
+              <properties>
+                  <property name="PreviewScreenshot.diffPercent" value="0.015"/>
+                  <property name="PreviewScreenshot.refImagePath" value="app/src/screenshotTestDebug/reference/home.png"/>
+                  <property name="PreviewScreenshot.newImagePath" value="app/build/outputs/rendered/home.png"/>
+                  <property name="PreviewScreenshot.diffImagePath" value="app/build/outputs/diffs/home.png"/>
+              </properties>
+              <failure message="Image does not match.">com.android.tools.screenshot.ImageComparisonAssertionError: Image does not match.
+              at com.android.tools.screenshot.Engine.verify(Engine.kt:1)</failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report.xml", xmlContent)
+
+    createAggregator(files = listOf(inputDir1), projectName = ":app").writeReport(outputDir, writeMarkdown = true)
+
+    val markdown = File(outputDir, MARKDOWN_REPORT_FILE_NAME).readText()
+    assertThat(markdown).contains("| :app > com.example.app.PreviewTest > HomePreview | debug | Mismatch | 1.50% |")
+    assertThat(markdown).contains("![Actual](../default_root/app/build/outputs/rendered/home.png)")
+  }
+
+  private fun singlePassingTestXml() =
+    """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+        <properties>
+            <property name="testedVariantName" value="debug"/>
+            <property name="modulePath" value=":app"/>
+            <property name="testSuiteName" value="unitTest"/>
+        </properties>
+        <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+    </testsuite>
+    """
+      .trimIndent()
+
+  @Test
   fun testGetFailedTestCount_countsFailuresAndErrors() {
     val xmlContent1 =
       """

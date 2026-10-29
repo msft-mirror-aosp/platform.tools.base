@@ -84,8 +84,13 @@ internal constructor(
     }
   }
 
-  /** Writes `data.js`, lazy `details/<id>.js` scripts, copied `artifacts/`, and renderer assets to [outputDir]. */
-  fun writeReport(outputDir: File) {
+  /**
+   * Writes `data.js`, lazy `details/<id>.js` scripts, copied `artifacts/`, and renderer assets to [outputDir].
+   *
+   * @param writeMarkdown whether to also write a Markdown version of the report, [MARKDOWN_REPORT_FILE_NAME], to the same directory
+   */
+  @JvmOverloads
+  fun writeReport(outputDir: File, writeMarkdown: Boolean = false) {
     if (!outputDir.exists()) {
       outputDir.mkdirs()
     }
@@ -164,6 +169,20 @@ internal constructor(
 
     val reportLocation = ConsoleRenderer().asClickableFileUrl(File(outputDir, "index.html"))
     logger.quiet("Test report generated at: $reportLocation")
+
+    if (writeMarkdown) {
+      writeMarkdownReport(finalReport, File(outputDir, MARKDOWN_REPORT_FILE_NAME))
+    }
+  }
+
+  /** Writes [report] as Markdown to [markdownFile]. A failure is logged rather than thrown, so it never fails the test task. */
+  private fun writeMarkdownReport(report: RootReport, markdownFile: File) {
+    try {
+      markdownFile.writeText(MarkdownReportRenderer().render(report))
+      logger.quiet("Markdown test report generated at: ${ConsoleRenderer().asClickableFileUrl(markdownFile)}")
+    } catch (e: Exception) {
+      logger.warning("Unable to write the Markdown test report to %s: %s", markdownFile.absolutePath, e.message)
+    }
   }
 
   private fun writeLazyDetailScript(detailsDir: File, id: String, payload: Any) {

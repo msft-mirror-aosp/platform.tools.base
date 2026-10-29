@@ -97,6 +97,9 @@ internal const val ADAPTER_ID_DEFAULT = "default"
 internal const val MAX_STREAM_CHARS = 262_144
 internal const val MAX_INLINE_LOG_BYTES = 524_288
 
+/** Name of the Markdown test report written next to the HTML report's `index.html`. */
+const val MARKDOWN_REPORT_FILE_NAME = "report.md"
+
 internal const val AGGREGATED_TEST_SUITE_NAME = "Aggregated"
 
 const val UNKNOWN_TARGET = "unknown_target"
