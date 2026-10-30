@@ -535,6 +535,10 @@ public final class SdkConstants {
     public static final String FD_DOCS_REFERENCE = "reference";
     /** Name of the SDK images folder. */
     public static final String FD_IMAGES = "images";
+
+    /** Path prefix of the versioned Lightbuild SDK packages. */
+    public static final String LIGHTBUILD_SDK_PACKAGE_PREFIX = "build;lightbuild";
+
     /** Name of the ABI to support. */
     public static final String ABI_ARMEABI = "armeabi";
 
