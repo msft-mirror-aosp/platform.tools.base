@@ -23,6 +23,8 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.ToolExecutionOptions
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -48,7 +50,6 @@ import com.android.builder.dexing.PartialShrinkingIncludeAll
 import com.android.builder.dexing.ProguardConfig
 import com.android.builder.dexing.R8OutputType
 import com.android.builder.dexing.R8Tools
-import com.android.builder.dexing.R8ToolsImpl
 import com.android.builder.dexing.ResourceShrinkingConfig
 import com.android.builder.dexing.ToolConfig
 import com.android.ide.common.blame.MessageReceiver
@@ -401,41 +402,6 @@ abstract class R8ToolParameters {
 }
 
 /**
- * Runs [block] with an isolated R8 [ClassLoader] for [r8Classpath], or with `null` when [r8Classpath] is empty (meaning: use AGP's own R8).
- *
- * The loader comes from [r8ClassloaderBuildService] when present (cached for the build); otherwise a one-off loader is created and closed
- * after [block] returns.
- */
-internal inline fun <T> withR8ClassLoader(
-  r8Classpath: Iterable<File>,
-  r8ClassloaderBuildService: Property<R8ClassloaderBuildService>? = null,
-  block: (ClassLoader?) -> T,
-): T {
-  val files = r8Classpath.toSet()
-  if (files.isEmpty()) {
-    return block(null)
-  }
-  if (r8ClassloaderBuildService != null && r8ClassloaderBuildService.isPresent) {
-    return block(r8ClassloaderBuildService.get().getClassLoader(files))
-  }
-  return R8ClassloaderBuildService.createClassLoader(files).use { classLoader -> block(classLoader) }
-}
-
-/**
- * Returns the [R8Tools] to run R8 with: AGP's own [R8ToolsImpl] (bundled R8) when [r8ClassLoader] is null, or the [R8ToolsImpl] loaded by
- * the isolated [r8ClassLoader] (next to the Maven-resolved R8) otherwise.
- *
- * The isolated implementation is created by name because AGP's code can only refer to its own copy of [R8ToolsImpl]. [R8Tools] is loaded
- * from AGP's ClassLoader on both sides, so the result can be used without reflection.
- */
-internal fun createR8Tools(r8ClassLoader: ClassLoader?): R8Tools =
-  if (r8ClassLoader == null) {
-    R8ToolsImpl()
-  } else {
-    r8ClassLoader.loadClass("com.android.builder.dexing.R8ToolsImpl").getConstructor().newInstance() as R8Tools
-  }
-
-/**
  * Runs R8 through [R8Tools]: with the R8 bundled in AGP when [r8ClassLoader] is null, or with the Maven-resolved R8 in the isolated
  * [r8ClassLoader] otherwise. Config objects such as [ToolConfig] are passed as is, because the isolated ClassLoader shares those classes
  * with AGP (see `R8ClassloaderBuildService`).
@@ -466,7 +432,7 @@ internal fun invokeRunR8(
   r8ExecutorService: ExecutorService? = null,
 ) {
   val r8Tools = createR8Tools(r8ClassLoader)
-  try {
+  wrapIsolatedR8Failures(r8ClassLoader) {
     r8Tools.runR8(
       inputClasses,
       output,
@@ -491,17 +457,6 @@ internal fun invokeRunR8(
       partialShrinking,
       r8ExecutorService,
     )
-  } catch (e: Throwable) {
-    // On the isolated path, report linkage/reflection failures from inside R8 as a likely
-    // R8 version mismatch, and rethrow everything else unchanged.
-    if (r8ClassLoader != null && (e is LinkageError || e is NoSuchMethodException || e is NoSuchFieldException)) {
-      throw RuntimeException(
-        "Failed to execute R8 via isolated ClassLoader. The configured R8 version may be " +
-          "incompatible with this version of the Android Gradle Plugin: ${e.message}",
-        e,
-      )
-    }
-    throw e
   }
 }
 

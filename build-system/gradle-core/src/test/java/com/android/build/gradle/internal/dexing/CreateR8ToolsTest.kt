@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.dexing
 
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.builder.dexing.R8ToolsImpl
+import com.android.testutils.TestInputsGenerator
+import com.android.testutils.TestUtils
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -47,4 +51,24 @@ class CreateR8ToolsTest {
       assertThat(r8Tools.javaClass).isNotSameInstanceAs(R8ToolsImpl::class.java)
     }
   }
+
+  @Test
+  fun runTraceReferences_throughIsolatedClassLoader() {
+    val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
+    val sourceJar = temporaryFolder.root.toPath().resolve("source.jar")
+    TestInputsGenerator.jarWithEmptyClasses(sourceJar, listOf("test/Source"))
+
+    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+      val r8Tools = createR8Tools(isolatedLoader)
+      assertThat(r8Tools.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
+
+      // All references resolve against android.jar, so the check passes.
+      r8Tools.runTraceReferences(listOf(sourceJar), listOf(androidJar), emptyMap())
+
+      // Without android.jar, java.lang.Object can't be resolved, so the isolated R8's check fails.
+      assertThrows(Throwable::class.java) { r8Tools.runTraceReferences(listOf(sourceJar), emptyList(), emptyMap()) }
+    }
+  }
+
+  private val r8Jar: File by lazy { File(Class.forName("com.android.tools.r8.R8").protectionDomain.codeSource.location.toURI()) }
 }

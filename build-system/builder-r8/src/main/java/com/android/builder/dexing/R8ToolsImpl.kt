@@ -77,4 +77,9 @@ class R8ToolsImpl : R8Tools {
       r8ExecutorService,
     )
   }
+
+  override fun runTraceReferences(sourceFiles: List<Path>, libraryFiles: List<Path>, libraryInMemoryClasses: Map<String, ByteArray>) {
+    // Fully qualified for the same reason as runR8 above.
+    com.android.builder.dexing.runTraceReferences(sourceFiles, libraryFiles, libraryInMemoryClasses)
+  }
 }

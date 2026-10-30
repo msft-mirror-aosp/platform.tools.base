@@ -53,4 +53,7 @@ interface R8Tools {
     partialShrinking: PartialShrinking?,
     r8ExecutorService: ExecutorService?,
   )
+
+  /** Same parameters as runTraceReferences in TraceReferences.kt, so the implementation just forwards them. */
+  fun runTraceReferences(sourceFiles: List<Path>, libraryFiles: List<Path>, libraryInMemoryClasses: Map<String, ByteArray>)
 }

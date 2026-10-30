@@ -17,16 +17,20 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.withR8ClassLoader
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.builder.dexing.runTraceReferences
 import com.android.builder.symbols.exportToCompiledJava
 import com.android.ide.common.symbols.SymbolTable
 import java.nio.file.Files
@@ -35,6 +39,7 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
@@ -69,6 +74,10 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
 
   @get:Internal abstract val symbolTableBuildService: Property<SymbolTableBuildService>
 
+  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
+
+  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
+
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(TraceReferencesWorkAction::class.java) {
       it.initializeFromBaseTask(this)
@@ -78,6 +87,8 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
       it.bootclasspath.from(bootclasspath)
       it.runtimeSymbolTables.from(runtimeRSymbolLists)
       it.symbolTableBuildService.set(symbolTableBuildService)
+      it.r8Classpath.from(r8Classpath)
+      it.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
     }
   }
 
@@ -88,6 +99,8 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
     abstract val bootclasspath: ConfigurableFileCollection
     abstract val runtimeSymbolTables: ConfigurableFileCollection
     abstract val symbolTableBuildService: Property<SymbolTableBuildService>
+    abstract val r8Classpath: ConfigurableFileCollection
+    abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
   }
 
   abstract class TraceReferencesWorkAction : ProfileAwareWorkAction<Params>() {
@@ -101,11 +114,16 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
       val libsDir = parameters.aarLibsDirectory.get().asFile.toPath()
       Files.list(libsDir).use { jars -> jars.forEach { sourceFiles.add(it) } }
 
-      runTraceReferences(
-        sourceFiles = sourceFiles,
-        libraryFiles = parameters.runtime.map { it.toPath() } + parameters.bootclasspath.map { it.toPath() },
-        libraryInMemoryClasses = inMemoryClasses,
-      )
+      withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
+        val r8Tools = createR8Tools(r8ClassLoader)
+        wrapIsolatedR8Failures(r8ClassLoader) {
+          r8Tools.runTraceReferences(
+            sourceFiles = sourceFiles,
+            libraryFiles = parameters.runtime.map { it.toPath() } + parameters.bootclasspath.map { it.toPath() },
+            libraryInMemoryClasses = inMemoryClasses,
+          )
+        }
+      }
     }
   }
 
@@ -144,6 +162,11 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
         ),
       )
       task.symbolTableBuildService.setDisallowChanges(getBuildService(creationConfig.services.buildServiceRegistry))
+      if (!creationConfig.services.projectOptions[StringOption.R8_VERSION_OVERRIDE].isNullOrBlank()) {
+        creationConfig.services.r8FromMaven?.r8Classpath?.let { task.r8Classpath.from(it) }
+      }
+      task.r8Classpath.disallowChanges()
+      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
     }
   }
 }
