@@ -73,5 +73,6 @@ coverage_java_test(
         "//tools/base/common:tools.common",
         "@maven//:com.google.guava.guava",
         "@maven//:junit.junit",
+        "@maven//:net.sf.kxml.kxml2",
     ],
 )

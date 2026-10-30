@@ -17,6 +17,7 @@ package com.android.ide.common.rendering.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import java.net.URL;
 import java.util.Map;
 
@@ -212,21 +213,21 @@ public abstract class LayoutlibCallback implements XmlParserFactory {
     }
 
     /**
-     * Returns an optional {@link ResourceNamespace.Resolver} that knows namespace prefixes assumed
-     * to be declared in every resource file.
+     * Returns a {@link ResourceNamespace.Resolver} that knows namespace prefixes assumed to be
+     * declared in every resource file.
      *
-     * <p>For backwards compatibility, in non-namespaced projects this contains the "tools" prefix
-     * mapped to {@link ResourceNamespace#TOOLS}. Before the IDE understood resource namespaces,
-     * this prefix was used for referring to sample data, even if the user didn't define the "tools"
-     * prefix using {@code xmlns:tools="..."}.
+     * <p>For backwards compatibility, this contains the "tools" prefix mapped to {@link
+     * ResourceNamespace#TOOLS}. Before the IDE understood resource namespaces, this prefix was used
+     * for referring to sample data, even if the user didn't define the "tools" prefix using {@code
+     * xmlns:tools="..."}.
      *
-     * <p>In namespaced projects this method returns an empty resolver, which means sample data
-     * won't work without an explicit definition of a namespace prefix for the {@link
-     * ResourceNamespace#TOOLS} URI.
+     * @deprecated Kept only for binary compatibility with older {@code
+     *     com.android.tools.layoutlib:layoutlib} prebuilts.
      */
+    @Deprecated
     @NonNull
     public ResourceNamespace.Resolver getImplicitNamespaces() {
-        return ResourceNamespace.Resolver.EMPTY_RESOLVER;
+        return ResourceNamespace.Resolver.TOOLS_ONLY;
     }
 
     /** Returns true if the module depends on android.support.v7.appcompat. */
@@ -239,7 +240,13 @@ public abstract class LayoutlibCallback implements XmlParserFactory {
         return false;
     }
 
-    /** Returns true if the module uses namespaced resources. */
+    /**
+     * Returns false, as namespaced resources are no longer supported.
+     *
+     * @deprecated Kept only for binary compatibility with older {@code
+     *     com.android.tools.layoutlib:layoutlib} prebuilts.
+     */
+    @Deprecated
     public boolean isResourceNamespacingRequired() {
         return false;
     }
