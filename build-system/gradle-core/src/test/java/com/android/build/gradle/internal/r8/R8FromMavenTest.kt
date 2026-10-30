@@ -22,10 +22,13 @@ import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.StringOption
 import com.android.builder.dexing.R8Version
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
+import org.junit.function.ThrowingRunnable
 
 /** Unit tests for [R8FromMaven]. */
 class R8FromMavenTest {
@@ -192,5 +195,58 @@ class R8FromMavenTest {
     val r8FromMaven = R8FromMaven.create(project) { null }
     val configuration = r8FromMaven.r8Classpath as Configuration
     assertThat(project.configurations.contains(configuration)).isFalse()
+  }
+
+  @Test
+  fun testVersionOverrideOlderThanMinimumFails() {
+    val olderVersion = "8.2.47"
+    val createWithOlderOption = ThrowingRunnable {
+      R8FromMaven.create(project) { option -> if (option == StringOption.R8_VERSION_OVERRIDE) olderVersion else null }
+    }
+    val createWithOlderProvider = ThrowingRunnable { R8FromMaven.create(project, { null }, { olderVersion }) }
+
+    for (create in listOf(createWithOlderOption, createWithOlderProvider)) {
+      val exception = assertThrows(InvalidUserDataException::class.java, create)
+      assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo(
+          "android.r8.versionOverride=8.2.47 is older than R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}, the minimum R8 version supported " +
+            "by this version of the Android Gradle Plugin. Remove the override or use version " +
+            "${R8Version.VERSION_AGP_WAS_SHIPPED_WITH} or newer."
+        )
+    }
+  }
+
+  @Test
+  fun testVersionOverrideEqualToMinimumIsAccepted() {
+    val r8FromMaven =
+      R8FromMaven.create(project) { option ->
+        if (option == StringOption.R8_VERSION_OVERRIDE) R8Version.VERSION_AGP_WAS_SHIPPED_WITH else null
+      }
+
+    assertThat(r8FromMaven.version).isEqualTo(R8Version.VERSION_AGP_WAS_SHIPPED_WITH)
+  }
+
+  @Test
+  fun testVersionOverrideNewerThanMinimumIsAccepted() {
+    for (newerVersion in listOf("99.0.0", "main (build 1234567)")) {
+      val r8FromMaven = R8FromMaven.create(project, { null }, { newerVersion })
+
+      assertThat(r8FromMaven.version).isEqualTo(newerVersion)
+    }
+  }
+
+  @Test
+  fun testUnparseableVersionOverrideIsAccepted() {
+    val r8FromMaven = R8FromMaven.create(project, { null }, { "latest" })
+
+    assertThat(r8FromMaven.version).isEqualTo("latest")
+  }
+
+  @Test
+  fun testNoVersionOverrideIsAccepted() {
+    val r8FromMaven = R8FromMaven.create(project, { null }, { null })
+
+    assertThat(r8FromMaven.version).isEqualTo(R8Version.VERSION_AGP_WAS_SHIPPED_WITH)
   }
 }

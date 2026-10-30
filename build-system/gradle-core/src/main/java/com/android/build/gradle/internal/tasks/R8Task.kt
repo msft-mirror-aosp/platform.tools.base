@@ -532,51 +532,51 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
         } else {
           parameters.r8D8ThreadPoolBuildServiceIfNonIsolationMode.get().threadPool
         }
-      val r8ClassLoader = getR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildServiceIfNonIsolationMode)
       try {
-        shrink(
-          parameters.bootClasspath.files.toList(),
-          parameters.mainDexListFiles.files.toList(),
-          parameters.mainDexRulesFiles.files.toList(),
-          parameters.mainDexListOutput.orNull?.asFile,
-          parameters.legacyMultiDexEnabled.get(),
-          parameters.referencedInputs.files.toList(),
-          parameters.classes.files.toList(),
-          parameters.resourcesJar.asFile.get(),
-          parameters.proguardConfigurationFiles.get(),
-          parameters.inputProguardMapping.orNull?.asFile,
-          parameters.proguardConfigurations.get(),
-          parameters.r8ConfigurationAnalyzerDataOutput.orNull?.asFile,
-          parameters.r8ConfigurationAnalyzerReportOutput.orNull?.asFile,
-          parameters.mappingFile.get().asFile,
-          parameters.mappingPartitionFile.get().asFile,
-          parameters.proguardSeedsOutput.get().asFile,
-          parameters.proguardUsageOutput.get().asFile,
-          parameters.proguardConfigurationOutput.get().asFile,
-          parameters.missingKeepRulesOutput.get().asFile,
-          parameters.output.get().asFile,
-          parameters.outputResources.get().asFile,
-          parameters.featureClassJars.files.toList(),
-          parameters.featureJavaResourceJars.files.toList(),
-          parameters.featureDexDir.orNull?.asFile,
-          parameters.featureJavaResourceOutputDir.orNull?.asFile,
-          parameters.libConfiguration.orNull,
-          parameters.errorFormatMode.get(),
-          parameters.inputArtProfile.orNull?.asFile,
-          parameters.outputArtProfile.orNull?.asFile,
-          parameters.inputProfileForDexStartupOptimization.orNull?.asFile,
-          parameters.r8Metadata.orNull?.asFile,
-          parameters.toolConfig.get(),
-          parameters.resourceShrinkingConfig.orNull,
-          parameters.partialShrinkingIncludes.orNull,
-          r8ThreadPool,
-          r8ClassLoader,
-        )
+        withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildServiceIfNonIsolationMode) { r8ClassLoader ->
+          shrink(
+            parameters.bootClasspath.files.toList(),
+            parameters.mainDexListFiles.files.toList(),
+            parameters.mainDexRulesFiles.files.toList(),
+            parameters.mainDexListOutput.orNull?.asFile,
+            parameters.legacyMultiDexEnabled.get(),
+            parameters.referencedInputs.files.toList(),
+            parameters.classes.files.toList(),
+            parameters.resourcesJar.asFile.get(),
+            parameters.proguardConfigurationFiles.get(),
+            parameters.inputProguardMapping.orNull?.asFile,
+            parameters.proguardConfigurations.get(),
+            parameters.r8ConfigurationAnalyzerDataOutput.orNull?.asFile,
+            parameters.r8ConfigurationAnalyzerReportOutput.orNull?.asFile,
+            parameters.mappingFile.get().asFile,
+            parameters.mappingPartitionFile.get().asFile,
+            parameters.proguardSeedsOutput.get().asFile,
+            parameters.proguardUsageOutput.get().asFile,
+            parameters.proguardConfigurationOutput.get().asFile,
+            parameters.missingKeepRulesOutput.get().asFile,
+            parameters.output.get().asFile,
+            parameters.outputResources.get().asFile,
+            parameters.featureClassJars.files.toList(),
+            parameters.featureJavaResourceJars.files.toList(),
+            parameters.featureDexDir.orNull?.asFile,
+            parameters.featureJavaResourceOutputDir.orNull?.asFile,
+            parameters.libConfiguration.orNull,
+            parameters.errorFormatMode.get(),
+            parameters.inputArtProfile.orNull?.asFile,
+            parameters.outputArtProfile.orNull?.asFile,
+            parameters.inputProfileForDexStartupOptimization.orNull?.asFile,
+            parameters.r8Metadata.orNull?.asFile,
+            parameters.toolConfig.get(),
+            parameters.resourceShrinkingConfig.orNull,
+            parameters.partialShrinkingIncludes.orNull,
+            r8ThreadPool,
+            r8ClassLoader,
+          )
+        }
       } finally {
-        // In isolation mode, we use a separate thread pool and classloader, so we need to close them now.
-        // In non-isolation mode, we use a shared thread pool and cached classloaders managed by build services.
+        // In isolation mode, we use a separate thread pool, so we need to close it now.
+        // In non-isolation mode, we use a shared thread pool managed by a build service.
         if (isolationMode) {
-          (r8ClassLoader as? AutoCloseable)?.close()
           r8ThreadPool.doClose()
         }
       }

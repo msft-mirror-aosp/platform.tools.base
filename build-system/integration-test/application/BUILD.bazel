@@ -643,10 +643,12 @@ single_gradle_integration_test_per_source(
         "//tools/base/build-system/integration-test:support_library_latest",
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
         "//tools/base/build-system/integration-test/application:prebuilts",
-        "//tools/base/build-system/integration-test/application:older_version_of_r8",
+        "//tools/base/build-system/integration-test/application:r8_for_version_override",
     ],
     resources = glob(["src/test/resources/**"]),
-    deps = TEST_DEPS,
+    deps = TEST_DEPS + [
+        "//tools/base/build-system/builder-r8",
+    ],
 )
 
 kotlin_library(
@@ -1130,6 +1132,15 @@ single_gradle_integration_test(
     ],
     resources = glob(["src/test/resources/**"]),
     deps = TEST_DEPS,
+)
+
+# The R8 version AGP was built with, for tests that set android.r8.versionOverride, which must not be older than that version.
+maven_repository(
+    name = "r8_for_version_override",
+    artifacts = [
+        "@maven//:com.android.tools.r8",
+    ],
+    visibility = ["__subpackages__"],
 )
 
 maven_repository(

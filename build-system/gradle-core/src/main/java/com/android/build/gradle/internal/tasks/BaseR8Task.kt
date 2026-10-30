@@ -400,19 +400,25 @@ abstract class R8ToolParameters {
   }
 }
 
-internal fun getR8ClassLoader(
-  r8Classpath: ConfigurableFileCollection,
-  r8ClassloaderBuildService: Property<R8ClassloaderBuildService>,
-): ClassLoader? {
-  return if (!r8Classpath.isEmpty) {
-    if (r8ClassloaderBuildService.isPresent) {
-      r8ClassloaderBuildService.get().getClassLoader(r8Classpath.files)
-    } else {
-      R8ClassloaderBuildService.createClassLoader(r8Classpath.files)
-    }
-  } else {
-    null
+/**
+ * Runs [block] with an isolated R8 [ClassLoader] for [r8Classpath], or with `null` when [r8Classpath] is empty (meaning: use AGP's own R8).
+ *
+ * The loader comes from [r8ClassloaderBuildService] when present (cached for the build); otherwise a one-off loader is created and closed
+ * after [block] returns.
+ */
+internal inline fun <T> withR8ClassLoader(
+  r8Classpath: Iterable<File>,
+  r8ClassloaderBuildService: Property<R8ClassloaderBuildService>? = null,
+  block: (ClassLoader?) -> T,
+): T {
+  val files = r8Classpath.toSet()
+  if (files.isEmpty()) {
+    return block(null)
   }
+  if (r8ClassloaderBuildService != null && r8ClassloaderBuildService.isPresent) {
+    return block(r8ClassloaderBuildService.get().getClassLoader(files))
+  }
+  return R8ClassloaderBuildService.createClassLoader(files).use { classLoader -> block(classLoader) }
 }
 
 /**

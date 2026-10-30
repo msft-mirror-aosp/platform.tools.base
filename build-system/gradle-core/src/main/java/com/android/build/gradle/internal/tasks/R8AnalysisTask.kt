@@ -208,7 +208,6 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
         } else {
           parameters.r8D8ThreadPoolBuildServiceIfNonIsolationMode.get().threadPool
         }
-      val r8ClassLoader = getR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildServiceIfNonIsolationMode)
       try {
         val proguardOutputReports =
           ProguardOutputReports(
@@ -236,36 +235,37 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
           }
 
         val logger = LoggerWrapper.getLogger(R8AnalysisTask::class.java)
-        invokeRunR8(
-          r8ClassLoader,
-          filterMissingFiles(parameters.classes.files.toList(), logger),
-          null,
-          parameters.resourcesJar.asFile.get().toPath(),
-          null,
-          parameters.bootClasspath.files.map { it.toPath() },
-          filterMissingFiles(parameters.referencedInputs.files.toList(), logger),
-          parameters.toolConfig.get(),
-          proguardConfig,
-          mainDexListConfig,
-          parameters.resourceShrinkingConfig.orNull,
-          MessageReceiverImpl(parameters.errorFormatMode.get(), Logging.getLogger(R8RunnableAnalysis::class.java)),
-          parameters.featureClassJars.files.map { it.toPath() },
-          parameters.featureJavaResourceJars.files.map { it.toPath() },
-          null,
-          null,
-          parameters.libConfiguration.orNull,
-          parameters.inputArtProfile.orNull?.asFile?.toPath(),
-          null,
-          parameters.inputProfileForDexStartupOptimization.orNull?.asFile?.toPath(),
-          null,
-          parameters.partialShrinkingIncludes.orNull,
-          r8ThreadPool,
-        )
+        withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildServiceIfNonIsolationMode) { r8ClassLoader ->
+          invokeRunR8(
+            r8ClassLoader,
+            filterMissingFiles(parameters.classes.files.toList(), logger),
+            null,
+            parameters.resourcesJar.asFile.get().toPath(),
+            null,
+            parameters.bootClasspath.files.map { it.toPath() },
+            filterMissingFiles(parameters.referencedInputs.files.toList(), logger),
+            parameters.toolConfig.get(),
+            proguardConfig,
+            mainDexListConfig,
+            parameters.resourceShrinkingConfig.orNull,
+            MessageReceiverImpl(parameters.errorFormatMode.get(), Logging.getLogger(R8RunnableAnalysis::class.java)),
+            parameters.featureClassJars.files.map { it.toPath() },
+            parameters.featureJavaResourceJars.files.map { it.toPath() },
+            null,
+            null,
+            parameters.libConfiguration.orNull,
+            parameters.inputArtProfile.orNull?.asFile?.toPath(),
+            null,
+            parameters.inputProfileForDexStartupOptimization.orNull?.asFile?.toPath(),
+            null,
+            parameters.partialShrinkingIncludes.orNull,
+            r8ThreadPool,
+          )
+        }
 
         logger.lifecycle("R8 Keep Rules analysis report generated: ${parameters.reportUrl.get()}")
       } finally {
         if (isolationMode) {
-          (r8ClassLoader as? AutoCloseable)?.close()
           r8ThreadPool.doClose()
         }
       }

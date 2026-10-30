@@ -16,9 +16,11 @@
 
 package com.android.build.gradle.internal.r8
 
+import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.StringOption
 import com.android.builder.dexing.R8Version
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 
@@ -54,6 +56,12 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
     /**
      * Resolves the R8 compiler JARs, prioritizing an explicit [versionOverrideProvider] (e.g., from module experimental properties) over
      * [StringOption.R8_VERSION_OVERRIDE], falling back to [R8Version.VERSION_AGP_WAS_SHIPPED_WITH].
+     *
+     * An override must not be older than [R8Version.VERSION_AGP_WAS_SHIPPED_WITH], the minimum R8 version this version of AGP supports,
+     * because AGP calls R8 APIs that older versions lack. An older override fails with an [InvalidUserDataException]. Overrides that cannot
+     * be parsed as a version are not checked.
+     *
+     * @throws InvalidUserDataException if the override is older than [R8Version.VERSION_AGP_WAS_SHIPPED_WITH]
      */
     @JvmStatic
     fun create(
@@ -66,6 +74,7 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
       val versionOverride = if (!explicitOverride.isNullOrEmpty()) explicitOverride else optionOverride
       val version =
         if (!versionOverride.isNullOrEmpty()) {
+          checkMinimumR8Version(versionOverride)
           versionOverride
         } else {
           R8Version.VERSION_AGP_WAS_SHIPPED_WITH
@@ -80,6 +89,18 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
         }
 
       return R8FromMaven(configuration, version)
+    }
+
+    private fun checkMinimumR8Version(versionOverride: String) {
+      val minimumVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
+      val parsedOverride = ShrinkerVersion.tryParse(versionOverride) ?: return
+      val parsedMinimum = ShrinkerVersion.tryParse(minimumVersion) ?: return
+      if (parsedOverride < parsedMinimum) {
+        throw InvalidUserDataException(
+          "${StringOption.R8_VERSION_OVERRIDE.propertyName}=$versionOverride is older than R8 $minimumVersion, the minimum R8 version " +
+            "supported by this version of the Android Gradle Plugin. Remove the override or use version $minimumVersion or newer."
+        )
+      }
     }
   }
 }

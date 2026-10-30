@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.r8
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.options.StringOption
+import com.android.builder.dexing.R8Version
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -83,7 +84,7 @@ class R8FromMavenIntegrationTest {
   @Test
   fun testR8VersionOverrideResolution() {
     val build = rule.build
-    val overrideVersion = "8.2.47"
+    val overrideVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
 
     val result = build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run("verifyR8Resolution")
 
@@ -101,9 +102,22 @@ class R8FromMavenIntegrationTest {
   }
 
   @Test
+  fun testR8VersionOverrideOlderThanMinimumFails() {
+    val build = rule.build
+
+    // Fails at configuration time, before com.android.tools:r8:8.2.47 would be resolved.
+    val result = build.executor.expectFailure().with(StringOption.R8_VERSION_OVERRIDE, "8.2.47").run("help")
+
+    result.assertErrorContains(
+      "android.r8.versionOverride=8.2.47 is older than R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}, the minimum R8 version supported by " +
+        "this version of the Android Gradle Plugin."
+    )
+  }
+
+  @Test
   fun testR8OptimizationWithVersionOverride() {
     val build = rule.build
-    val overrideVersion = "8.2.47"
+    val overrideVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
 
     build.androidApplication().files.update("build.gradle.kts") {
       append(
