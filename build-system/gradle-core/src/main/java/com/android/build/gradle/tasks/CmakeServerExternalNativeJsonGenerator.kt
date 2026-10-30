@@ -147,7 +147,7 @@ internal class CmakeServerExternalNativeJsonGenerator(abi: CxxAbiModel, variantB
         if (!cmakeServer.connect()) {
           throw RuntimeException("Unable to connect to Cmake server located at: " + cmakeBinFolder.absolutePath)
         }
-        return try {
+        try {
           val arguments = parameters.configurationArguments.get().toCmakeArguments()
           val cacheArgumentsList = arguments.onlyKeepCmakeServerArguments().toStringList()
           val configureCommandResult: ConfigureCommandResult
