@@ -145,7 +145,7 @@ public class StudioLeakCanaryListener {
      * in Kotlin (which treats many returns as non-null) if the proxied interface adds new methods
      * that our proxy doesn't explicitly handle.
      */
-    private static Object getDefaultValue(Class<?> returnType) {
+    static Object getDefaultValue(Class<?> returnType) {
         if (returnType.isArray()) {
             return java.lang.reflect.Array.newInstance(returnType.getComponentType(), 0);
         }

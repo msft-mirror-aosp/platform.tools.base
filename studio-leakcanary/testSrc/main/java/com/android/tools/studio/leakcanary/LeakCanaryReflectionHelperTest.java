@@ -105,4 +105,18 @@ public class LeakCanaryReflectionHelperTest {
         int threshold = LeakCanaryReflectionHelper.getRetainedVisibleThreshold();
         assertThat(threshold).isEqualTo(HelperConfig.REFLECTION_FAILED_THRESHOLD);
     }
+
+    /** Without LeakCanary, adding the event listener doesn't crash. */
+    @Test
+    public void testAddEventListenerFailsGracefully() {
+        // Should not throw
+        LeakCanaryReflectionHelper.addEventListener(new Object());
+    }
+
+    /** Without LeakCanary, reading the progress returns NO_ANALYSIS_PROGRESS and doesn't crash. */
+    @Test
+    public void testGetHeapAnalysisProgressPercentFailsGracefully() {
+        assertThat(LeakCanaryReflectionHelper.getHeapAnalysisProgressPercent(new Object()))
+                .isEqualTo(HelperConfig.NO_ANALYSIS_PROGRESS);
+    }
 }

@@ -135,7 +135,7 @@ robolectric_test(
     name = "studio-leakcanary_fake_leakcanary_tests",
     srcs = glob(["testSrc/fakeleakcanary/java/**/*.java"]),
     custom_package = "com.android.tools.studio.leakcanary",
-    test_class = "com.android.tools.studio.leakcanary.RetainedCountModeTest",
+    test_class = "com.android.tools.studio.leakcanary.FakeLeakCanaryTestSuite",
     deps = [
         ":studio-leakcanary_lib",
         "//prebuilts/studio/sdk:platforms/latest_jar",

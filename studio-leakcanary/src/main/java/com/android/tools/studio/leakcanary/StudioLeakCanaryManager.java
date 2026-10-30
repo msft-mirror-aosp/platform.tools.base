@@ -23,19 +23,21 @@ import android.util.Log;
 /**
  * Manages the mode of LeakCanary integration within the app.
  *
- * <p>MODE_ON_DEVICE: LeakCanary works as usual and dumps the heap on the device. Our listener runs
- * next to LeakCanary's and only sends the retained object count to Studio. MODE_ON_HOST: our
- * listener replaces LeakCanary's, sends the count, and Android Studio does the heap dump.
+ * <p>MODE_ON_DEVICE: LeakCanary works as usual and dumps the heap on the device. Our listeners run
+ * next to LeakCanary's and only send the retained object count and the analysis progress to Studio.
+ * MODE_ON_HOST: our listener replaces LeakCanary's, sends the count, and Android Studio does the
+ * heap dump.
  */
 public class StudioLeakCanaryManager {
 
     public static final int MODE_ON_DEVICE = 0;
     public static final int MODE_ON_HOST = 1;
     private static StudioLeakCanaryManager instance;
-    // Volatile: also read from the listener's background thread.
+    // Volatile: read from other threads.
     private volatile int currentMode = -1; // Uninitialized state
     private Application application;
     private Object cachedStudioListenerProxy;
+    private Object cachedStudioEventListenerProxy;
 
     private StudioLeakCanaryManager() {}
 
@@ -66,6 +68,10 @@ public class StudioLeakCanaryManager {
      */
     public synchronized void setMode(int mode) {
         if (this.currentMode == mode) {
+            // The app may have set a new LeakCanary config. Add ours again if it is gone.
+            if (mode == MODE_ON_DEVICE) {
+                addEventListener();
+            }
             return;
         }
 
@@ -78,6 +84,9 @@ public class StudioLeakCanaryManager {
         // In ON_HOST, Studio dumps the heap, so LeakCanary must not.
         setLeakCanaryDumpHeap(mode != MODE_ON_HOST);
         setUpListeners(mode == MODE_ON_HOST);
+        if (mode == MODE_ON_DEVICE) {
+            addEventListener();
+        }
     }
 
     /** Returns the current active mode. */
@@ -87,6 +96,23 @@ public class StudioLeakCanaryManager {
 
     private void setLeakCanaryDumpHeap(boolean dumpHeap) {
         LeakCanaryReflectionHelper.setDumpHeapEnabled(dumpHeap);
+    }
+
+    /**
+     * ON_DEVICE only: adds our event listener to LeakCanary, if it is not there yet, so the
+     * analysis progress is sent to Studio. It stays after a switch to ON_HOST, but sends nothing.
+     */
+    private void addEventListener() {
+        if (cachedStudioEventListenerProxy == null) {
+            if (application == null) {
+                Log.e(HelperConfig.LOG_TAG, "Application context is null. No event listener.");
+                return;
+            }
+            cachedStudioEventListenerProxy =
+                    StudioLeakCanaryEventListener.createInstance(application);
+            if (cachedStudioEventListenerProxy == null) return;
+        }
+        LeakCanaryReflectionHelper.addEventListener(cachedStudioEventListenerProxy);
     }
 
     /**

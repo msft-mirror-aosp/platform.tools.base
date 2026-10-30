@@ -20,6 +20,9 @@ import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Helper class to centralize and cache all reflection calls to LeakCanary internals.
@@ -61,6 +64,13 @@ public class LeakCanaryReflectionHelper {
 
     // Cached Dump Heap Method
     private static Method dumpHeapMethod;
+
+    // Cached Config.eventListeners field
+    private static Field eventListenersField;
+
+    // Cached HeapAnalysisProgress lookups
+    private static Class<?> heapAnalysisProgressClass;
+    private static Method getProgressPercentMethod;
 
     private LeakCanaryReflectionHelper() {}
 
@@ -134,6 +144,13 @@ public class LeakCanaryReflectionHelper {
                         gcTriggerClass.getDeclaredField(HelperConfig.INSTANCE_FIELD);
                 gcTriggerInstance = gcInstanceField.get(null);
                 runGcMethod = gcTriggerInstance.getClass().getMethod(HelperConfig.RUN_GC_METHOD);
+
+                // 5. Initialize HeapAnalysisProgress cache
+                heapAnalysisProgressClass =
+                        Class.forName(HelperConfig.HEAP_ANALYSIS_PROGRESS_CLASS);
+                getProgressPercentMethod =
+                        heapAnalysisProgressClass.getMethod(
+                                HelperConfig.GET_PROGRESS_PERCENT_METHOD);
 
                 // If we reached this point without throwing an exception, reflection was completely
                 // successful.
@@ -221,6 +238,81 @@ public class LeakCanaryReflectionHelper {
         } catch (Throwable t) {
             Log.e(HelperConfig.LOG_TAG, "Failed to set LeakCanary listeners.", t);
             return false;
+        }
+    }
+
+    /**
+     * Adds the listener to LeakCanary's Config.eventListeners, if it is not there yet. Keeps
+     * LeakCanary's own listeners, because one of them starts the heap analysis. The list is
+     * read-only, so it is replaced with a copy that has the listener at the end.
+     *
+     * <p>Does nothing (and logs) if reflection fails. Call it only from
+     * StudioLeakCanaryManager.setMode(), which is synchronized.
+     */
+    public static void addEventListener(Object listener) {
+        if (listener == null) return;
+        ensureInitialized();
+        if (state != ReflectionState.COMPLETED
+                || leakCanaryInstance == null
+                || getConfigMethod == null) {
+            Log.w(HelperConfig.LOG_TAG, "Cannot add LeakCanary event listener; reflection failed.");
+            return;
+        }
+
+        try {
+            Object currentConfig = getConfigMethod.invoke(leakCanaryInstance);
+            if (currentConfig == null) {
+                Log.w(HelperConfig.LOG_TAG, "LeakCanary config is null; event listener not added.");
+                return;
+            }
+            if (eventListenersField == null) {
+                Field field =
+                        currentConfig
+                                .getClass()
+                                .getDeclaredField(HelperConfig.EVENT_LISTENERS_FIELD);
+                field.setAccessible(true);
+                eventListenersField = field;
+            }
+            List<?> currentListeners = (List<?>) eventListenersField.get(currentConfig);
+            if (currentListeners != null && currentListeners.contains(listener)) {
+                Log.d(HelperConfig.LOG_TAG, "LeakCanary event listener already added.");
+                return;
+            }
+            // The list can't be changed in place, so write a new list with ours at the end.
+            List<Object> newListeners = new ArrayList<>();
+            if (currentListeners != null) {
+                newListeners.addAll(currentListeners);
+            }
+            newListeners.add(listener);
+            // Wrapped, so LeakCanary threads always see the full list (the wrapper has a final
+            // field). It is also read-only, like the original list.
+            eventListenersField.set(currentConfig, Collections.unmodifiableList(newListeners));
+            Log.d(HelperConfig.LOG_TAG, "Added LeakCanary event listener.");
+        } catch (Throwable t) {
+            Log.e(HelperConfig.LOG_TAG, "Failed to add LeakCanary event listener.", t);
+        }
+    }
+
+    /**
+     * Returns the analysis progress (0 to 100) if the event is a HeapAnalysisProgress event.
+     * Returns {@code HelperConfig.NO_ANALYSIS_PROGRESS} for any other event, or if reflection
+     * fails.
+     */
+    public static int getHeapAnalysisProgressPercent(Object event) {
+        ensureInitialized();
+        if (event == null
+                || state != ReflectionState.COMPLETED
+                || !heapAnalysisProgressClass.isInstance(event)) {
+            return HelperConfig.NO_ANALYSIS_PROGRESS;
+        }
+
+        try {
+            double progress = (double) getProgressPercentMethod.invoke(event);
+            int percent = (int) (progress * 100);
+            return Math.max(0, Math.min(100, percent));
+        } catch (Throwable t) {
+            Log.e(HelperConfig.LOG_TAG, "Failed to read LeakCanary analysis progress.", t);
+            return HelperConfig.NO_ANALYSIS_PROGRESS;
         }
     }
 

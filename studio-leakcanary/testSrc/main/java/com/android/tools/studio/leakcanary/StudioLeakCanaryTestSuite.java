@@ -23,6 +23,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     LeakCanaryReflectionHelperTest.class,
     StudioLeakCanaryListenerTest.class,
+    StudioLeakCanaryEventListenerTest.class,
     StudioLeakCanaryManagerTest.class,
     BroadcastReceiversTest.class,
     HelperInitializerTest.class,

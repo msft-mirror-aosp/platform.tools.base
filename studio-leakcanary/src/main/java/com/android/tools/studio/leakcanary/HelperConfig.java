@@ -60,6 +60,12 @@ final class HelperConfig {
     /** The key for the count extra in the object count update intent. */
     static final String OBJECT_COUNT_UPDATE_EXTRA = "count";
 
+    /** The broadcast action sent by the app with LeakCanary's analysis progress (ON_DEVICE). */
+    static final String ANALYSIS_PROGRESS_INTENT = "studio.leakcanary.ANALYSIS_PROGRESS";
+
+    /** The key for the progress extra (0 to 100) in the analysis progress intent. */
+    static final String ANALYSIS_PROGRESS_EXTRA = "percent";
+
     /** The broadcast action sent from Studio to the app to start listening for leaks. */
     static final String START_LISTENING_INTENT = "studio.leakcanary.START_LISTENING";
 
@@ -118,12 +124,21 @@ final class HelperConfig {
     static final String GC_TRIGGER_DEFAULT_CLASS = "leakcanary.GcTrigger$Default";
     static final String RUN_GC_METHOD = "runGc";
     static final String GET_RETAINED_VISIBLE_THRESHOLD_METHOD = "getRetainedVisibleThreshold";
+    static final String EVENT_LISTENER_CLASS = "leakcanary.EventListener";
+    static final String HEAP_ANALYSIS_PROGRESS_CLASS =
+            "leakcanary.EventListener$Event$HeapAnalysisProgress";
+    static final String EVENT_LISTENERS_FIELD = "eventListeners";
+    static final String ON_EVENT_METHOD = "onEvent";
+    static final String GET_PROGRESS_PERCENT_METHOD = "getProgressPercent";
 
     /** Default fallback value for the retained visible threshold. */
     static final int DEFAULT_THRESHOLD = 5;
 
     /** Value returned to Studio when LeakCanary reflection fails (e.g., due to minification). */
     static final int REFLECTION_FAILED_THRESHOLD = -1;
+
+    /** Returned by getHeapAnalysisProgressPercent() for other events or on reflection errors. */
+    static final int NO_ANALYSIS_PROGRESS = -1;
 
     /** Private constructor to prevent instantiation of this utility class. */
     private HelperConfig() {}

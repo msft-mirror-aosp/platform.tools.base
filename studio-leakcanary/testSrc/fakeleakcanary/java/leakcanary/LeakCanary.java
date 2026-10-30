@@ -16,6 +16,10 @@
 
 package leakcanary;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /** Test fake of LeakCanary's LeakCanary object. */
 public final class LeakCanary {
     public static final LeakCanary INSTANCE = new LeakCanary();
@@ -36,17 +40,33 @@ public final class LeakCanary {
         config = new Config();
     }
 
-    /** Test fake of LeakCanary.Config. Like the real one, dumpHeap is private and final. */
+    /**
+     * Test fake of LeakCanary.Config. Like the real one, dumpHeap and eventListeners are private
+     * and final, and the list can't be changed.
+     */
     public static final class Config {
+        /** Stand in for LeakCanary's own listeners. One of them starts the heap analysis. */
+        public static final EventListener LEAK_CANARY_LISTENER_1 = event -> {};
+
+        public static final EventListener LEAK_CANARY_LISTENER_2 = event -> {};
+
         private final boolean dumpHeap;
+        private final List<EventListener> eventListeners;
 
         Config() {
             // Set here, not inline, so reads are not inlined by the compiler.
             dumpHeap = true;
+            eventListeners =
+                    Collections.unmodifiableList(
+                            Arrays.asList(LEAK_CANARY_LISTENER_1, LEAK_CANARY_LISTENER_2));
         }
 
         public boolean getDumpHeap() {
             return dumpHeap;
+        }
+
+        public List<EventListener> getEventListeners() {
+            return eventListeners;
         }
 
         public int getRetainedVisibleThreshold() {

@@ -28,7 +28,7 @@
 # LeakCanary.INSTANCE, getConfig(), dumpHeap()
 -keep class leakcanary.LeakCanary { *; }
 
-# Config.dumpHeap (field), getRetainedVisibleThreshold()
+# Config.dumpHeap and Config.eventListeners (fields), getRetainedVisibleThreshold()
 -keep class leakcanary.LeakCanary$Config { *; }
 
 # InternalLeakCanary.INSTANCE (LeakCanary's default OnObjectRetainedListener)
@@ -46,6 +46,12 @@
 
 # GcTrigger.Default.INSTANCE, runGc()
 -keep class leakcanary.GcTrigger$Default { *; }
+
+# Implemented by StudioLeakCanaryEventListener through java.lang.reflect.Proxy (onEvent(...)).
+-keep interface leakcanary.EventListener { *; }
+
+# getProgressPercent(), read by StudioLeakCanaryEventListener.
+-keep class leakcanary.EventListener$Event$HeapAnalysisProgress { *; }
 
 # Proto classes made from leakcanary_data.proto. Protobuf reads their fields by name, so R8 must not
 # remove or rename those fields. protobuf-javalite has no such rule of its own. Only our classes
