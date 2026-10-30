@@ -80,7 +80,7 @@ constructor(
 
     val apkResourcesRepo =
       if (resourceApkPath != null) ApkResourceRepository(resourceApkPath, resourceIdManager::findById)
-      else LocalResourceRepository.EmptyRepository<Path>(ResourceNamespace.RES_AUTO)
+      else LocalResourceRepository.EmptyRepository<Path>()
 
     val resourcesRepo =
       if (resourceDirs.isNotEmpty()) {

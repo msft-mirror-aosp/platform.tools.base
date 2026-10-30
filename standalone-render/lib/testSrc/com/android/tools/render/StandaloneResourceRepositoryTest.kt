@@ -17,13 +17,16 @@
 package com.android.tools.render
 
 import com.android.ide.common.rendering.api.ResourceNamespace
+import com.android.ide.common.resources.AbstractResourceRepository
+import com.android.ide.common.resources.ResourceItem
+import com.android.ide.common.resources.ResourceVisitor
+import com.android.ide.common.resources.SingleNamespaceResourceRepository
 import com.android.resources.ResourceType
 import com.android.tools.res.FolderResourceRepository
-import com.android.tools.res.LocalResourceRepository
+import com.google.common.collect.ImmutableListMultimap
+import com.google.common.collect.ListMultimap
 import java.io.File
-import java.nio.file.Path
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -34,10 +37,23 @@ class StandaloneResourceRepositoryTest {
 
   @Test
   fun testGetNamespaces_includesApkNamespaces() {
-    val apkRepo = LocalResourceRepository.EmptyRepository<Path>(ResourceNamespace.ANDROID)
-    val repo = StandaloneResourceRepository(emptyList(), apkRepo)
+    val resDir = temporaryFolder.newFolder("res")
+    val apkRepo =
+      object : AbstractResourceRepository(), SingleNamespaceResourceRepository {
+        override fun getNamespace() = ResourceNamespace.ANDROID
 
-    assertTrue(repo.namespaces.contains(ResourceNamespace.ANDROID))
+        override fun getPackageName(): String? = "android"
+
+        override fun getResourcesInternal(namespace: ResourceNamespace, resourceType: ResourceType): ListMultimap<String, ResourceItem> =
+          ImmutableListMultimap.of()
+
+        override fun accept(visitor: ResourceVisitor) = ResourceVisitor.VisitResult.CONTINUE
+
+        override fun getPublicResources(namespace: ResourceNamespace, type: ResourceType): Collection<ResourceItem> = emptyList()
+      }
+    val repo = StandaloneResourceRepository(listOf(resDir.absolutePath), apkRepo)
+
+    assertEquals(setOf(ResourceNamespace.RES_AUTO, ResourceNamespace.ANDROID), repo.namespaces)
   }
 
   @Test
