@@ -30,6 +30,8 @@ import com.android.build.gradle.tasks.FusedLibraryReport
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject
+import com.google.gson.JsonParser
+import java.nio.file.Path
 import org.gradle.api.JavaVersion
 import org.junit.Ignore
 import org.junit.Rule
@@ -498,7 +500,6 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
     )
   }
 
-  @Ignore("b/456213076")
   @Test
   fun checkPlatformBomDependenciesInLibraryDependencies() {
     val build = rule.build {
@@ -521,31 +522,42 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
     // Checks that including a platform/BOM in a transitive dependency doesn't impact build.
     build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
     build.checkFusedLibReportContents(
-      include = listOf("project :lib"),
+      include = listOf("project ':lib'"),
       dependencies =
         listOf(
           "org.jetbrains.kotlin:kotlin-stdlib:<version>",
           "org.jetbrains:annotations:<version>",
-          "project.:my-platform:unspecified",
+          "project:my-platform:unspecified",
           "com.externaldep.externalaar:externalaar:<version>",
         ),
     )
 
     // Check publication
-    build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:generatePomFileForMavenPublication")
+    build.executor.run(
+      ":$FUSED_LIBRARY_PROJECT_NAME:generatePomFileForMavenPublication",
+      ":$FUSED_LIBRARY_PROJECT_NAME:generateMetadataFileForMavenPublication",
+    )
     assertExpectedPomDependencies(
       build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").buildDir.resolve("publications/maven/pom-default.xml"),
       listOf(
         "org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION} scope:runtime",
         "org.jetbrains:annotations:13.0 scope:runtime",
-        "project.:my-platform:unspecified scope:runtime",
+        "project:my-platform:unspecified scope:runtime",
         "com.externaldep.externalaar:externalaar:1.0 scope:runtime",
+      ),
+    )
+    assertExpectedModuleMetadataDependencies(
+      build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").buildDir.resolve("publications/maven/module.json"),
+      listOf(
+        "org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}",
+        "org.jetbrains:annotations:13.0",
+        "project:my-platform:unspecified category:platform",
+        "com.externaldep.externalaar:externalaar:1.0",
       ),
     )
   }
 
   @Test
-  @Ignore("This case does not work yet - b/399879853")
   fun checkExternalLibraryBomDependenciesInLibraryDependencies() {
     val build = rule.build {
       androidLibrary {
@@ -563,15 +575,41 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
     // Checks that including a platform/BOM in a transitive dependency doesn't impact build.
     build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
     build.checkFusedLibReportContents(
-      include = listOf("project :lib"),
-      dependencies = listOf("bom:external-lib-bom:1.0", "com.externaldep:depwithdep:1.0"),
+      include = listOf("project ':lib'"),
+      dependencies =
+        listOf(
+          "org.jetbrains.kotlin:kotlin-stdlib:<version>",
+          "org.jetbrains:annotations:<version>",
+          "bom:external-lib-bom:1.0",
+          "com.externaldep:depwithdep:1.0",
+          "com.externaldep.externalaar:externalaar:1.0",
+        ),
     )
 
     // Check publication
-    build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:generatePomFileForMavenPublication")
+    build.executor.run(
+      ":$FUSED_LIBRARY_PROJECT_NAME:generatePomFileForMavenPublication",
+      ":$FUSED_LIBRARY_PROJECT_NAME:generateMetadataFileForMavenPublication",
+    )
     assertExpectedPomDependencies(
       build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").buildDir.resolve("publications/maven/pom-default.xml"),
-      listOf("bom:external-lib-bom:1.0 scope:runtime", "com.externaldep:depwithdep:1.0"),
+      listOf(
+        "org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION} scope:runtime",
+        "org.jetbrains:annotations:13.0 scope:runtime",
+        "bom:external-lib-bom:1.0 scope:runtime",
+        "com.externaldep:depwithdep:1.0 scope:runtime",
+        "com.externaldep.externalaar:externalaar:1.0 scope:runtime",
+      ),
+    )
+    assertExpectedModuleMetadataDependencies(
+      build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").buildDir.resolve("publications/maven/module.json"),
+      listOf(
+        "org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}",
+        "org.jetbrains:annotations:13.0",
+        "bom:external-lib-bom:1.0 category:platform",
+        "com.externaldep:depwithdep:1.0",
+        "com.externaldep.externalaar:externalaar:1.0",
+      ),
     )
   }
 
@@ -691,6 +729,30 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         .trimIndent()
     )
     withMainJar { addEmptyClasses("com/externaldep/externaljar/ExternalClass") }
+  }
+
+  private fun assertExpectedModuleMetadataDependencies(moduleJson: Path, dependencies: List<String>) {
+    PathSubject.assertThat(moduleJson).isFile()
+    val root = JsonParser.parseString(moduleJson.toFile().readText()).asJsonObject
+    val runtimeVariant =
+      root.getAsJsonArray("variants").single {
+        it.asJsonObject.get("name").asString == "runtimePublication"
+      }.asJsonObject
+    val actualDependencies =
+      runtimeVariant.getAsJsonArray("dependencies")?.map { depElement ->
+        val dep = depElement.asJsonObject
+        val group = dep.get("group").asString
+        val module = dep.get("module").asString
+        val version = dep.getAsJsonObject("version")?.get("requires")?.asString
+        val category = dep.getAsJsonObject("attributes")?.get("org.gradle.category")?.asString
+        buildString {
+          append("$group:$module:$version")
+          if (category != null) {
+            append(" category:$category")
+          }
+        }
+      } ?: emptyList()
+    TruthHelper.assertThat(actualDependencies).containsExactlyElementsIn(dependencies)
   }
 
   companion object {

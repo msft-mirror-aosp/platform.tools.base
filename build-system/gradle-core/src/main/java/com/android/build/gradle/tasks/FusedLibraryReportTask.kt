@@ -20,7 +20,8 @@ import com.android.build.gradle.internal.caching.DisabledCachingReason
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
-import com.android.build.gradle.internal.fusedlibrary.getFusedLibraryDependencyModuleVersionIdentifiers
+import com.android.build.gradle.internal.fusedlibrary.getFusedLibraryDependencyComponents
+import com.android.build.gradle.internal.fusedlibrary.toDependencyModuleVersionIdentifiersProvider
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
@@ -105,7 +106,9 @@ abstract class FusedLibraryReportTask : NonIncrementalGlobalTask() {
       val resolvableRuntimeConfiguration = task.project.configurations.getByName(FusedLibraryConstants.FUSED_RUNTIME_CONFIGURATION_NAME)
 
       task.resolvedRuntimeConfiguration.setDisallowChanges(resolvableRuntimeConfiguration.incoming.resolutionResult.rootComponent)
-      task.dependencies.setDisallowChanges(getFusedLibraryDependencyModuleVersionIdentifiers(includeConfiguration))
+      task.dependencies.setDisallowChanges(
+        getFusedLibraryDependencyComponents(includeConfiguration).toDependencyModuleVersionIdentifiersProvider()
+      )
 
       task.localJars.setFrom(creationConfig.getLocalJars())
     }

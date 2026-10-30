@@ -41,7 +41,10 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.transform.TransformSpec
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeCompatibilityRule
+import org.gradle.api.attributes.AttributeContainer
+import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.CompatibilityCheckDetails
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.java.TargetJvmEnvironment
@@ -125,14 +128,27 @@ fun configureElements(
 }
 
 /**
- * Intended to provide a list of Dependency from a list of ModuleVersionIdentifier.
+ * Intended to provide a list of Dependency from a set of ResolvedComponentResult.
  *
  * @param project The Gradle project used to create the dependencies.
  * @return A provider of a List<Dependency>.
  */
-internal fun Provider<Set<ModuleVersionIdentifier>>.toDependenciesProvider(project: Project): Provider<List<Dependency>> {
-  return map { moduleVersionIdentifierSet ->
-    moduleVersionIdentifierSet.map { id: ModuleVersionIdentifier -> project.dependencies.create(id.toString()) }
+internal fun Provider<Set<ResolvedComponentResult>>.toDependenciesProvider(project: Project): Provider<List<Dependency>> {
+  return map { components ->
+    components.map { component ->
+      val notation = component.moduleVersion.toString()
+      when (component.getCategory()) {
+        Category.REGULAR_PLATFORM -> project.dependencies.platform(notation)
+        Category.ENFORCED_PLATFORM -> project.dependencies.enforcedPlatform(notation)
+        else -> project.dependencies.create(notation)
+      }
+    }
+  }
+}
+
+internal fun Provider<Set<ResolvedComponentResult>>.toDependencyModuleVersionIdentifiersProvider(): Provider<Set<ModuleVersionIdentifier>> {
+  return map { components ->
+    components.mapNotNull(ResolvedComponentResult::getModuleVersion).toSet()
   }
 }
 
@@ -144,10 +160,9 @@ internal fun Provider<Set<ModuleVersionIdentifier>>.toDependenciesProvider(proje
  *
  * @param sourceConfiguration configuration containing all dependencies (included in artifacts and dependencies). Direct/first level
  *   dependencies will be assumed to be packaged in the aar artifact.
- * @param issueReporter The issue reporter used to report any validation errors.
- * @return A provider of a Set<ModuleVersionIdentifier>.
+ * @return A provider of a Set<ResolvedComponentResult>.
  */
-internal fun getFusedLibraryDependencyModuleVersionIdentifiers(sourceConfiguration: Configuration): Provider<Set<ModuleVersionIdentifier>> {
+internal fun getFusedLibraryDependencyComponents(sourceConfiguration: Configuration): Provider<Set<ResolvedComponentResult>> {
   return sourceConfiguration.incoming.resolutionResult.rootComponent.map { sourceRootComponent ->
     val dependenciesIncludedInFusedAar: Set<ModuleVersionIdentifier> =
       sourceRootComponent.dependencies
@@ -157,15 +172,31 @@ internal fun getFusedLibraryDependencyModuleVersionIdentifiers(sourceConfigurati
         .map { it.selected.moduleVersion ?: error("${it.selected} cannot have a null moduleVersion") }
         .toSet()
 
+    val excludedModuleVersions = dependenciesIncludedInFusedAar + listOfNotNull(sourceRootComponent.moduleVersion)
+
     sourceConfiguration.incoming.resolutionResult.allComponents
       // ResolvedComponentResult's subclasses don't define `equals()` methods so we need to
-      // compare `ResolvedComponentResult`s through `ComponentIdentifier`s (which has `equals()`
-      // defined in their subclasses).
+      // compare `ResolvedComponentResult`s through `ModuleVersionIdentifier`s.
       .asSequence()
-      .map(ResolvedComponentResult::getModuleVersion)
-      .minus(dependenciesIncludedInFusedAar)
-      .minus(sourceRootComponent.moduleVersion)
-      .toSet() as Set<ModuleVersionIdentifier>
+      .filter { it.moduleVersion != null && it.moduleVersion !in excludedModuleVersions }
+      .distinctBy(ResolvedComponentResult::getModuleVersion)
+      .toSet()
+  }
+}
+
+private fun ResolvedComponentResult.getCategory(): String? {
+  return variants.firstNotNullOfOrNull { variant -> getCategoryAttribute(variant.attributes) }
+}
+
+private fun getCategoryAttribute(attributes: AttributeContainer): String? {
+  if (Category.CATEGORY_ATTRIBUTE in attributes.keySet()) {
+    return attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)?.name
+  }
+  val categoryAttr = attributes.keySet().firstOrNull { it.name == Category.CATEGORY_ATTRIBUTE.name } ?: return null
+  return if (categoryAttr.type == String::class.java) {
+    @Suppress("UNCHECKED_CAST") attributes.getAttribute(categoryAttr as Attribute<String>)
+  } else {
+    null
   }
 }
 

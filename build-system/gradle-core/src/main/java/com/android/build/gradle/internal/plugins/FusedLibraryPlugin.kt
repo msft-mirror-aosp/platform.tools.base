@@ -32,8 +32,9 @@ import com.android.build.gradle.internal.fusedlibrary.configureElements
 import com.android.build.gradle.internal.fusedlibrary.configureTransformsForFusedLibrary
 import com.android.build.gradle.internal.fusedlibrary.createTasks
 import com.android.build.gradle.internal.fusedlibrary.getDslServices
-import com.android.build.gradle.internal.fusedlibrary.getFusedLibraryDependencyModuleVersionIdentifiers
+import com.android.build.gradle.internal.fusedlibrary.getFusedLibraryDependencyComponents
 import com.android.build.gradle.internal.fusedlibrary.toDependenciesProvider
+import com.android.build.gradle.internal.fusedlibrary.toDependencyModuleVersionIdentifiersProvider
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
@@ -73,6 +74,7 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.configuration.BuildFeatures
+import org.gradle.api.plugins.JvmEcosystemPlugin
 import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
@@ -263,6 +265,7 @@ constructor(
 
   override fun apply(project: Project) {
     super.applyBaseServices(project, buildFeatures)
+    project.plugins.apply(JvmEcosystemPlugin::class.java)
 
     // 'include' is the configuration that users will use to indicate which dependencies should
     // be fused.
@@ -367,8 +370,9 @@ constructor(
     val resolvableConfigurations = listOf(fusedApi.get(), fusedRuntime.get())
     variantScope.incomingConfigurations.addAll(resolvableConfigurations)
 
-    val dependenciesModuleVersionIds = getFusedLibraryDependencyModuleVersionIdentifiers(includeTransitiveRuntimeResolved)
-    val dependenciesProvider = dependenciesModuleVersionIds.toDependenciesProvider(project)
+    val dependencyComponents = getFusedLibraryDependencyComponents(includeTransitiveRuntimeResolved)
+    val dependenciesModuleVersionIds = dependencyComponents.toDependencyModuleVersionIdentifiersProvider()
+    val dependenciesProvider = dependencyComponents.toDependenciesProvider(project)
 
     maybePublishToMaven(project, dependenciesModuleVersionIds, dependenciesProvider)
 
