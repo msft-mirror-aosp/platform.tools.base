@@ -247,9 +247,21 @@ private fun doConvertComposeNode(
     parameters = mappedParameters,
     mergedSemantics = mappedMergedSemantics,
     unmergedSemantics = mappedUnmergedSemantics,
-    isSystemCreated = (node.flags and LayoutInspectorComposeProtocol.ComposableNode.Flags.SYSTEM_CREATED_VALUE) != 0,
+    isSystemCreated = isSystemCreated(node),
   )
 }
+
+/**
+ * Whether [node] was called from framework code. The compose inspector flags a node as system-created when the package of its call site is
+ * a system package, and it counts -1, the package hash of a call site without source information, as one. Every composable called from app
+ * code compiled without Compose source information (off by default in google3 builds) would then be stripped from the default dump, so such
+ * nodes are not system-created. Android Studio's Layout Inspector does the same (b/334875691).
+ */
+private fun isSystemCreated(node: LayoutInspectorComposeProtocol.ComposableNode): Boolean =
+  node.packageHash != NO_PACKAGE_HASH && (node.flags and LayoutInspectorComposeProtocol.ComposableNode.Flags.SYSTEM_CREATED_VALUE) != 0
+
+/** The package hash the compose inspector reports for a composable whose call site has no source information. */
+private const val NO_PACKAGE_HASH = -1
 
 /**
  * Converts the value a [LayoutInspectorComposeProtocol.GetParameterDetailsCommand] requested, held in the list [kind] of its Composable.

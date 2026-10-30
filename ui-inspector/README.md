@@ -365,7 +365,9 @@ taking one or more comma-separated facets (the option is also repeatable):
 * `attributes`: view attributes and composable parameters.
 * `resolution-stack`: attribute style/theme resolution traces (implies `attributes`).
 * `semantics`: Compose accessibility and semantics properties.
-* `system-composables`: system/framework Composable nodes.
+* `system-composables`: Composable nodes called from framework code. Composables
+  called from code compiled without Compose source information are always
+  included, since their call site is unknown.
 * `all`: everything above.
 
 ### Truncated parameter values

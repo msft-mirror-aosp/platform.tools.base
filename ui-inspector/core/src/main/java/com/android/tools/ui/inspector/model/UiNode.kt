@@ -136,8 +136,9 @@ sealed class UiNode {
    * @param mergedSemantics Accessibility properties that aggregate all readable texts and actions from this node's entire subtree into one
    *   focusable block (which is what a screen reader like TalkBack speaks).
    * @param unmergedSemantics Accessibility properties declared directly on this Composable node.
-   * @param isSystemCreated True when this composable originates from framework code rather than the inspected app's own source, as
-   *   classified by the inspector.
+   * @param isSystemCreated True when the compose inspector found this composable called from framework code (e.g. `androidx.compose.*`)
+   *   rather than from the inspected app's own source. A composable called from code compiled without Compose source information is never
+   *   system-created, since its call site is unknown.
    */
   data class ComposeNode(
     override val id: Long,

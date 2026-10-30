@@ -45,6 +45,11 @@ import org.junit.Test
 
 private const val ROOT_VIEW_ID = 7L
 
+private const val SYSTEM_CREATED = LayoutInspectorComposeProtocol.ComposableNode.Flags.SYSTEM_CREATED_VALUE
+
+/** The hash the compose inspector computes for the package androidx.compose.material3, a system package. */
+private const val MATERIAL3_PACKAGE_HASH = 1_842_882_507
+
 class ProtoConvertersTest {
 
   @Test
@@ -732,25 +737,26 @@ class ProtoConvertersTest {
 
   @Test
   fun testConvertComposeNode_systemCreatedFlag() {
-    val stringTable = mapOf(1 to "MyComponent")
     val unknownBit = 0x8000
 
-    fun convert(flags: Int) =
-      convertComposeNode(
-        node = LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(100).setName(1).setFlags(flags).build(),
-        stringTable = stringTable,
-        hostedViews = emptyMap(),
-        renderOffsetX = 0,
-        renderOffsetY = 0,
-        includeParameters = false,
-        includeSemantics = false,
-      )
+    // For a call site with source information, only the SYSTEM_CREATED bit decides; other bits neither mark a node as system-created nor
+    // mask the bit when set.
+    assertThat(convertComposable(composable(flags = 0, packageHash = MATERIAL3_PACKAGE_HASH)).isSystemCreated).isFalse()
+    assertThat(convertComposable(composable(flags = SYSTEM_CREATED, packageHash = MATERIAL3_PACKAGE_HASH)).isSystemCreated).isTrue()
+    assertThat(convertComposable(composable(flags = unknownBit, packageHash = MATERIAL3_PACKAGE_HASH)).isSystemCreated).isFalse()
+    assertThat(convertComposable(composable(flags = SYSTEM_CREATED or unknownBit, packageHash = MATERIAL3_PACKAGE_HASH)).isSystemCreated)
+      .isTrue()
+  }
 
-    // Only the SYSTEM_CREATED bit decides; other bits neither mark a node as system-created nor mask the bit when set.
-    assertThat(convert(0).isSystemCreated).isFalse()
-    assertThat(convert(LayoutInspectorComposeProtocol.ComposableNode.Flags.SYSTEM_CREATED_VALUE).isSystemCreated).isTrue()
-    assertThat(convert(unknownBit).isSystemCreated).isFalse()
-    assertThat(convert(LayoutInspectorComposeProtocol.ComposableNode.Flags.SYSTEM_CREATED_VALUE or unknownBit).isSystemCreated).isTrue()
+  @Test
+  fun testConvertComposeNode_callSiteWithoutSourceInformationIsNotSystemCreated() {
+    val node = composableCalledWithoutSourceInformation().addChildren(composableCalledWithoutSourceInformation().setId(101))
+
+    val converted = convertComposable(node)
+
+    assertThat(converted.isSystemCreated).isFalse()
+    assertThat((converted.children.single() as UiNode.ComposeNode).isSystemCreated).isFalse()
+    assertThat(convertComposable(composableCalledWithoutSourceInformation().setFlags(0)).isSystemCreated).isFalse()
   }
 
   @Test
@@ -932,4 +938,25 @@ class ProtoConvertersTest {
       )
       .bounds
   }
+
+  private fun composable(flags: Int, packageHash: Int): LayoutInspectorComposeProtocol.ComposableNode.Builder =
+    LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(100).setName(1).setPackageHash(packageHash).setFlags(flags)
+
+  /**
+   * A composable as the compose inspector reports it when its call site has no source information: an empty file name, no line, and package
+   * hash -1, which the inspector counts as a system package, so it flags the composable SYSTEM_CREATED.
+   */
+  private fun composableCalledWithoutSourceInformation(): LayoutInspectorComposeProtocol.ComposableNode.Builder =
+    composable(flags = SYSTEM_CREATED, packageHash = -1).setFilename(2)
+
+  private fun convertComposable(node: LayoutInspectorComposeProtocol.ComposableNode.Builder): UiNode.ComposeNode =
+    convertComposeNode(
+      node = node.build(),
+      stringTable = mapOf(1 to "MyComponent", 2 to ""),
+      hostedViews = emptyMap(),
+      renderOffsetX = 0,
+      renderOffsetY = 0,
+      includeParameters = false,
+      includeSemantics = false,
+    )
 }
