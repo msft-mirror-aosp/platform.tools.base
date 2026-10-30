@@ -34,6 +34,22 @@ kotlin_library(
     ],
 )
 
+# LayoutLib-free error enum and color-blindness LUTs shared with //tools/base/uicheck/...
+# Kept separate from tools.visual-lint because src/main/java/ also houses Studio's LayoutLib-backed analyzers.
+kotlin_library(
+    name = "visual-lint-core",
+    srcs = [
+        "src/main/java/com/android/tools/visuallint/VisualLintErrorType.kt",
+    ] + glob([
+        "src/main/java/com/android/tools/visuallint/colorblindmode/*.kt",
+    ]),
+    lint_baseline = "lint_baseline.xml",
+    visibility = ["//tools/base/uicheck:__subpackages__"],
+    deps = [
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+    ],
+)
+
 kotlin_test(
     name = "tools.visual-lint.tests",
     srcs = glob(["src/test/java/**/*.kt"]),
