@@ -23,6 +23,7 @@ import com.android.tools.ui.inspector.model.DeviceConfiguration
 import com.android.tools.ui.inspector.model.DeviceLocale
 import com.android.tools.ui.inspector.model.Dimension
 import com.android.tools.ui.inspector.model.DisplayInfo
+import com.android.tools.ui.inspector.model.DumpWarning
 import com.android.tools.ui.inspector.model.Orientation
 import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.UiDump
@@ -66,7 +67,7 @@ class JsonUiDumpPrinterTest {
 
     withJsonPrinter(output = outputFile, prettyPrint = false) { printer -> printer.printDump(EMPTY_DUMP) }
 
-    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"displays":[],"windows":[]}""")
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"warnings":[],"displays":[],"windows":[]}""")
   }
 
   @Test
@@ -76,7 +77,7 @@ class JsonUiDumpPrinterTest {
 
     withJsonPrinter(output = outputFile, prettyPrint = false) { printer -> printer.printDump(EMPTY_DUMP) }
 
-    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"displays":[],"windows":[]}""")
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"warnings":[],"displays":[],"windows":[]}""")
   }
 
   @Test
@@ -90,7 +91,7 @@ class JsonUiDumpPrinterTest {
       System.setOut(originalOut)
     }
 
-    assertThat(capturedOut.toString(Charsets.UTF_8.name()).trim()).isEqualTo("""{"displays":[],"windows":[]}""")
+    assertThat(capturedOut.toString(Charsets.UTF_8.name()).trim()).isEqualTo("""{"warnings":[],"displays":[],"windows":[]}""")
   }
 
   @Test
@@ -189,6 +190,7 @@ class JsonUiDumpPrinterTest {
       UiDump(
         windows = listOf(UiWindow(root = viewNodeWithChild, configuration = config, theme = "AppTheme")),
         displays = listOf(DisplayInfo(0, 1080, 1920, 0)),
+        warnings = emptyList(),
       )
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = true)
@@ -198,7 +200,7 @@ class JsonUiDumpPrinterTest {
     assertThat(jsonString).isNotEmpty()
 
     val json = JsonParser.parseString(jsonString).asJsonObject
-    assertThat(json.keySet()).containsExactly("displays", "windows")
+    assertThat(json.keySet()).containsExactly("warnings", "displays", "windows").inOrder()
 
     val windows = json.getAsJsonArray("windows")
     assertThat(windows.size()).isEqualTo(1)
@@ -241,8 +243,32 @@ class JsonUiDumpPrinterTest {
     val jsonString = outputStream.toString(Charsets.UTF_8).trim()
     assertThat(jsonString).doesNotContain("\n")
     val json = JsonParser.parseString(jsonString).asJsonObject
-    assertThat(json.keySet()).containsExactly("displays", "windows")
+    assertThat(json.keySet()).containsExactly("warnings", "displays", "windows").inOrder()
     assertThat(json.getAsJsonArray("windows")[0].asJsonObject.keySet()).containsExactly("root")
+  }
+
+  @Test
+  fun testPrintDumpWarningsComeFirst() {
+    val node =
+      UiNode.ViewNode(
+        id = 1L,
+        className = "android.view.View",
+        bounds = UiNode.Bounds(0, 0, 10, 10),
+        idResource = null,
+        layoutResource = null,
+        attributes = emptyList(),
+        children = emptyList(),
+      )
+    val uiDump = dump(node).copy(warnings = listOf(DumpWarning(id = "someWarning", message = "Something is missing.")))
+
+    JsonUiDumpPrinter(out = printStream, prettyPrint = false).printDump(uiDump)
+
+    val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject
+    assertThat(json.keySet()).containsExactly("warnings", "displays", "windows").inOrder()
+    val warning = json.getAsJsonArray("warnings").single().asJsonObject
+    assertThat(warning.keySet()).containsExactly("id", "message").inOrder()
+    assertThat(warning.get("id").asString).isEqualTo("someWarning")
+    assertThat(warning.get("message").asString).isEqualTo("Something is missing.")
   }
 
   @Test
@@ -269,6 +295,7 @@ class JsonUiDumpPrinterTest {
             UiWindow(root = node(2), configuration = configuration(density = Dimension.Dpi(420)), theme = null),
           ),
         displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = null)),
+        warnings = emptyList(),
       )
 
     JsonUiDumpPrinter(out = printStream, prettyPrint = false).printDump(uiDump)
@@ -654,9 +681,14 @@ class JsonUiDumpPrinterTest {
     configuration: DeviceConfiguration? = null,
     theme: String? = null,
     displays: List<DisplayInfo> = emptyList(),
-  ): UiDump = UiDump(windows = listOf(UiWindow(root = root, configuration = configuration, theme = theme)), displays = displays)
+  ): UiDump =
+    UiDump(
+      windows = listOf(UiWindow(root = root, configuration = configuration, theme = theme)),
+      displays = displays,
+      warnings = emptyList(),
+    )
 
   private companion object {
-    val EMPTY_DUMP = UiDump(windows = emptyList(), displays = emptyList())
+    val EMPTY_DUMP = UiDump(windows = emptyList(), displays = emptyList(), warnings = emptyList())
   }
 }

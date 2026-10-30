@@ -116,6 +116,8 @@ private object JsonKeys {
   const val START_LINE_NUMBER = "startLineNumber"
   const val THEME = "theme"
   const val DISPLAYS = "displays"
+  const val WARNINGS = "warnings"
+  const val MESSAGE = "message"
   const val WIDTH_PX = "widthPx"
   const val HEIGHT_PX = "heightPx"
   const val ORIENTATION = "orientation"
@@ -206,6 +208,16 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
 
   private fun serializeUiDump(uiDump: UiDump): JsonObject {
     val root = JsonObject()
+
+    // First, so that a reader of only the beginning of a large dump sees them.
+    val warningsArray = JsonArray()
+    uiDump.warnings.forEach { warning ->
+      val warningObj = JsonObject()
+      warningObj.addProperty(JsonKeys.ID, warning.id)
+      warningObj.addProperty(JsonKeys.MESSAGE, warning.message)
+      warningsArray.add(warningObj)
+    }
+    root.add(JsonKeys.WARNINGS, warningsArray)
 
     val displaysArray = JsonArray()
     uiDump.displays.forEach { display ->

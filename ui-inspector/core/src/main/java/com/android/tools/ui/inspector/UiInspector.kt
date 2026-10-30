@@ -67,7 +67,7 @@ internal constructor(
 
   private val logger: Logger = logger ?: Logger { _, _ -> }
 
-  /** Captures the UI of [packageName] on the device [serial]. */
+  /** Captures the UI of [packageName] on the device [serial]. [UiDump.warnings] tell what makes the capture incomplete or less precise. */
   suspend fun dump(serial: String, packageName: String, facets: Set<Facet> = emptySet()): UiDump {
     val options = DumpOptions.of(facets)
     return runWithConnectedInspectors(

@@ -16,7 +16,10 @@
 
 package com.android.tools.ui.inspector
 
+import com.android.tools.ui.inspector.model.UiDump
 import com.android.tools.ui.inspector.model.UiNode
+import com.android.tools.ui.inspector.model.UiWindow
+import com.android.tools.ui.inspector.tree.NO_COMPOSE_SOURCE_INFORMATION_WARNING
 import com.google.common.truth.Truth.assertThat
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import org.junit.Test
@@ -102,6 +105,28 @@ class CommandsTest {
     }
   }
 
+  @Test
+  fun testFinishUiDumpWarnsOfMissingComposeSourceInformation() {
+    // As an app built without Compose source information is dumped: no location for the composables it calls.
+    val library = composeNode(11, location = UiNode.SourceLocation("Text.kt", 125), isSystemCreated = true)
+    val uiDump = dump(viewNode(1, composeNode(10, library)))
+
+    val stripped = finishUiDump(uiDump, includeSystemComposables = false)
+    val unstripped = finishUiDump(uiDump, includeSystemComposables = true)
+
+    assertThat(stripped.warnings).containsExactly(NO_COMPOSE_SOURCE_INFORMATION_WARNING)
+    assertThat(stripped.windows.single().root.children.single().children).isEmpty()
+    assertThat(unstripped.warnings).containsExactly(NO_COMPOSE_SOURCE_INFORMATION_WARNING)
+    assertThat(unstripped.windows.single().root.children.single().children).containsExactly(library)
+  }
+
+  @Test
+  fun testFinishUiDumpDoesNotWarnWithComposeSourceInformation() {
+    val uiDump = dump(viewNode(1, composeNode(10, location = UiNode.SourceLocation("MainActivity.kt", 22))))
+
+    assertThat(finishUiDump(uiDump, includeSystemComposables = false).warnings).isEmpty()
+  }
+
   private fun viewNode(id: Long, vararg children: UiNode): UiNode.ViewNode =
     UiNode.ViewNode(
       id = id,
@@ -118,4 +143,25 @@ class CommandsTest {
       .setViewId(targetViewId)
       .addNodes(LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(composableId))
       .build()
+
+  private fun composeNode(
+    id: Long,
+    vararg children: UiNode,
+    location: UiNode.SourceLocation? = null,
+    isSystemCreated: Boolean = false,
+  ): UiNode.ComposeNode =
+    UiNode.ComposeNode(
+      id = id,
+      className = "Composable",
+      bounds = UiNode.Bounds(0, 0, 100, 100),
+      children = children.toList(),
+      sourceLocation = location,
+      parameters = emptyList(),
+      mergedSemantics = emptyList(),
+      unmergedSemantics = emptyList(),
+      isSystemCreated = isSystemCreated,
+    )
+
+  private fun dump(root: UiNode.ViewNode): UiDump =
+    UiDump(windows = listOf(UiWindow(root = root, configuration = null, theme = null)), displays = emptyList(), warnings = emptyList())
 }

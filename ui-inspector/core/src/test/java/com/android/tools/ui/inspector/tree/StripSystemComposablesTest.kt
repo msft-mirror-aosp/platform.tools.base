@@ -116,7 +116,11 @@ class StripSystemComposablesTest {
     val configuration = configuration(density = Dimension.Dpi(420), fontScale = 1.2f)
     val displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 0))
     val input =
-      UiDump(windows = listOf(UiWindow(root = root, configuration = configuration, theme = "@style/Theme.Main")), displays = displays)
+      UiDump(
+        windows = listOf(UiWindow(root = root, configuration = configuration, theme = "@style/Theme.Main")),
+        displays = displays,
+        warnings = emptyList(),
+      )
 
     val stripped = stripSystemComposables(input)
 
@@ -129,7 +133,7 @@ class StripSystemComposablesTest {
   }
 
   private fun dump(vararg roots: UiNode.ViewNode): UiDump =
-    UiDump(windows = roots.map { UiWindow(root = it, configuration = null, theme = null) }, displays = emptyList())
+    UiDump(windows = roots.map { UiWindow(root = it, configuration = null, theme = null) }, displays = emptyList(), warnings = emptyList())
 
   private fun view(id: Long, vararg children: UiNode): UiNode.ViewNode =
     UiNode.ViewNode(

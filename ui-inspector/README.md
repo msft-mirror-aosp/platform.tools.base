@@ -428,6 +428,18 @@ when continuing one. A value at the same place with the same name and
 `"value"` is returned as is, e.g. a list of the same size with other elements,
 or a `Sequence` or `Iterable`, whose `"value"` has no size.
 
+## Warnings
+
+The dump starts with `"warnings"`: what makes it incomplete or less precise, or
+an empty list. Each warning has a stable `"id"` and a `"message"`, which
+`dump-ui` also prints on stderr:
+
+* `noComposeSourceInformation`: the app was built without Compose source
+  information, the default in google3. Composables have no `sourceLocation`,
+  the composables the app defines are missing, some of the composables it calls
+  are left out or show a library file as their location, and semantics are
+  unavailable.
+
 ## Change detection
 
 The standalone CLI deliberately ships no change-detection mode. An

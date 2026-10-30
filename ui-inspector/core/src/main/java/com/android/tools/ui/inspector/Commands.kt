@@ -36,7 +36,9 @@ import com.android.tools.ui.inspector.model.UiDump
 import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.model.UiWindow
 import com.android.tools.ui.inspector.proto.convertParameterDetails
+import com.android.tools.ui.inspector.tree.NO_COMPOSE_SOURCE_INFORMATION_WARNING
 import com.android.tools.ui.inspector.tree.attachComposeTree
+import com.android.tools.ui.inspector.tree.lacksComposeSourceInformation
 import com.android.tools.ui.inspector.tree.stripSystemComposables
 import java.io.IOException
 import java.nio.file.Path
@@ -183,7 +185,14 @@ internal suspend fun dumpUi(
     throw EmptyViewRootsException()
   }
 
-  return if (includeSystemComposables) uiDump else stripSystemComposables(uiDump)
+  return finishUiDump(uiDump, includeSystemComposables)
+}
+
+/** Returns [uiDump] with the warnings its content calls for, and without system composables unless [includeSystemComposables]. */
+internal fun finishUiDump(uiDump: UiDump, includeSystemComposables: Boolean): UiDump {
+  val warnings = if (lacksComposeSourceInformation(uiDump)) listOf(NO_COMPOSE_SOURCE_INFORMATION_WARNING) else emptyList()
+  val withWarnings = uiDump.copy(warnings = uiDump.warnings + warnings)
+  return if (includeSystemComposables) withWarnings else stripSystemComposables(withWarnings)
 }
 
 internal suspend fun fetchUiDump(

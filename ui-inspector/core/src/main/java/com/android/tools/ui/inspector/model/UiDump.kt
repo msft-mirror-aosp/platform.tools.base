@@ -18,9 +18,14 @@ package com.android.tools.ui.inspector.model
 
 /**
  * A UI snapshot whose windows preserve the root tree and metadata captured from the same root context. Window order matches the agent
- * response.
+ * response. [warnings] tell what makes the snapshot incomplete or less precise.
  */
-data class UiDump(val windows: List<UiWindow>, val displays: List<DisplayInfo>)
+data class UiDump(val windows: List<UiWindow>, val displays: List<DisplayInfo>, val warnings: List<DumpWarning>)
+
+/**
+ * Something that makes a dump incomplete or less precise. [id] identifies the kind of warning and doesn't change; [message] explains it.
+ */
+data class DumpWarning(val id: String, val message: String)
 
 /** One app window. Configuration and theme are null when the agent could not provide them; the root is always present. */
 data class UiWindow(val root: UiNode.ViewNode, val configuration: DeviceConfiguration?, val theme: String?)

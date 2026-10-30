@@ -53,6 +53,7 @@ class TextUiDumpPrinterTest {
             DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 0),
             DisplayInfo(id = 1, widthPx = 800, heightPx = 600, orientation = null),
           ),
+        warnings = emptyList(),
       )
 
     TextUiDumpPrinter(PrintStream(output)).printDump(dump)
@@ -105,7 +106,11 @@ View Hierarchy:
 
     TextUiDumpPrinter(PrintStream(output))
       .printDump(
-        UiDump(windows = listOf(UiWindow(root = view(1, "View", 10, 10), configuration = null, theme = null)), displays = emptyList())
+        UiDump(
+          windows = listOf(UiWindow(root = view(1, "View", 10, 10), configuration = null, theme = null)),
+          displays = emptyList(),
+          warnings = emptyList(),
+        )
       )
 
     val text = output.toString().normalizeLineEndings()

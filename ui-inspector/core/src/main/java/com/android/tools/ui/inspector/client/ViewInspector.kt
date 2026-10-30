@@ -86,5 +86,5 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
       val root = (convertViewNode(window.root, stringTable, includeResolutionStack).resolveDimensions(configuration) as UiNode.ViewNode)
       UiWindow(root = root, configuration = configuration, theme = stringTable[window.theme])
     }
-  return UiDump(windows = windows, displays = displays)
+  return UiDump(windows = windows, displays = displays, warnings = emptyList())
 }

@@ -64,6 +64,7 @@ internal class UiInspectorCommand : Callable<Int> {
       "Dump UI hierarchy.",
       "Composable parameter and semantics values stop after 2 levels of nesting and 5 elements per collection. Such values have " +
         "\"isTruncated\": true and a \"continuationToken\" that get-parameter takes to fetch the rest.",
+      "The output starts with \"warnings\", e.g. that the app has no Compose source information; dump-ui also prints them on stderr.",
     ],
 )
 internal class DumpUiCommand(private val sessionFactory: () -> AdbSession) : Callable<Int> {
@@ -96,7 +97,11 @@ internal class DumpUiCommand(private val sessionFactory: () -> AdbSession) : Cal
       val inspector = createUiInspector(adbSession, composeInspectorJarPath, err)
       // The output is opened before the dump runs, so an unwritable path fails before the agent is injected.
       withJsonPrinter(output, prettyPrint) { printer ->
-        printer.printDump(runBlocking { inspector.dump(serial, targetPackage, requestedFacets(include)) })
+        val uiDump = runBlocking { inspector.dump(serial, targetPackage, requestedFacets(include)) }
+        printer.printDump(uiDump)
+        // Also shown to whoever reads the console rather than the dump.
+        val logger = stderrLogger(err)
+        uiDump.warnings.forEach { logger.log(LogLevel.WARNING, it.message) }
       }
       return EXIT_OK
     } catch (e: Exception) {
