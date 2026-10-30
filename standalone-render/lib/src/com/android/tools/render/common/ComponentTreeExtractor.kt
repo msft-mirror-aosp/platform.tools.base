@@ -18,6 +18,7 @@ package com.android.tools.render.common
 
 import com.android.ide.common.rendering.api.ViewInfo
 import com.android.tools.configurations.Configuration
+import com.android.tools.render.animation.AnimationPreviewRunner
 import com.android.tools.render.common.ComposeParameterExtractor.ParamLookup
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.compose.ComposeViewInfo
@@ -49,13 +50,16 @@ object ComponentTreeExtractor {
     config: Configuration,
     renderResult: RenderResult? = null,
     viewInfos: List<ComposeViewInfo> = emptyList(),
+    /** Whether to report the Compose animations detected in the slot table: it walks the whole slot table, so only when requested. */
+    detectAnimations: Boolean = false,
   ): PreviewComponentTree {
     val rootViews = renderResult?.rootViews.orEmpty()
     val composeAdapter = findComposeViewAdapter(rootViews)
+    val slotTrees = composeAdapter?.let { ComposeParameterExtractor.extractSlotTrees(it) }
     val parsedComposeViewInfos = viewInfos.ifEmpty { rootViews.flatMap { parseViewInfo(it) } }
     val composeNodes =
       when {
-        composeAdapter != null -> extractFromComposeAdapter(composeAdapter, parsedComposeViewInfos)
+        composeAdapter != null -> extractFromComposeAdapter(composeAdapter, parsedComposeViewInfos, slotTrees)
         parsedComposeViewInfos.isNotEmpty() -> extractFromComposeViewInfos(parsedComposeViewInfos)
         else -> emptyList()
       }
@@ -79,6 +83,13 @@ object ComponentTreeExtractor {
     val effectiveWidth = if (rootWidth > 0) rootWidth else components.maxOfOrNull { it.bounds.right } ?: 0
     val effectiveHeight = if (rootHeight > 0) rootHeight else components.maxOfOrNull { it.bounds.bottom } ?: 0
 
+    val (hasAnimationsFlag, detectedAnimations) =
+      if (detectAnimations && composeAdapter != null) {
+        AnimationPreviewRunner.detectAnimationsFromAdapter(composeAdapter, slotTrees)
+      } else {
+        false to emptyList()
+      }
+
     return PreviewComponentTree(
       previewId = previewId,
       methodFQN = methodFQN,
@@ -89,6 +100,10 @@ object ComponentTreeExtractor {
       fontScale = config.fontScale,
       uiMode = config.uiModeFlagValue,
       deviceId = config.device?.id,
+      // Only with detectAnimations, so that the trees are unchanged without it; with it, static previews say so explicitly.
+      hasAnimations = hasAnimationsFlag.takeIf { detectAnimations },
+      animationCount = detectedAnimations.size.takeIf { detectAnimations },
+      detectedAnimations = detectedAnimations.takeIf { detectAnimations },
       components = components,
     )
   }
@@ -144,9 +159,10 @@ object ComponentTreeExtractor {
   internal fun extractFromComposeAdapter(
     adapter: Any,
     parsedViewInfos: List<ComposeViewInfo> = emptyList(),
+    slotTrees: List<Any>? = null,
   ): List<ComponentTreeNode> {
     val cl = adapter.javaClass.classLoader
-    val paramLookup = ComposeParameterExtractor.extractParametersFromSlotTable(adapter, cl)
+    val paramLookup = ComposeParameterExtractor.extractParametersFromSlotTable(adapter, cl, slotTrees)
 
     val getViewInfos =
       adapter.javaClass.declaredMethods.firstOrNull { it.name.contains("getViewInfos") && it.parameterCount == 0 }
@@ -551,8 +567,13 @@ object ComponentTreeExtractor {
     )
   }
 
-  // Cached reflection lookup tables keyed via ClassValue so cached Method/Field handles do not prevent class loader unloading.
-  private val getterMethodCache =
+  // Per-Class reflection caches using ClassValue so entries do not retain evicted module/library ClassLoaders across warm renders, and
+  // lookups allocate no Pair or concatenated String keys on the hit path.
+  private val zeroArgMethodCache =
+    object : ClassValue<ConcurrentHashMap<String, Method>>() {
+      override fun computeValue(type: Class<*>): ConcurrentHashMap<String, Method> = ConcurrentHashMap()
+    }
+  private val getterPropertyCache =
     object : ClassValue<ConcurrentHashMap<String, Method>>() {
       override fun computeValue(type: Class<*>): ConcurrentHashMap<String, Method> = ConcurrentHashMap()
     }
@@ -569,7 +590,7 @@ object ComponentTreeExtractor {
 
   internal fun findZeroArgMethod(clazz: Class<*>, methodName: String): Method? {
     val cached =
-      getterMethodCache.get(clazz).computeIfAbsent(methodName) { name ->
+      zeroArgMethodCache.get(clazz).computeIfAbsent(methodName) { name ->
         val found =
           clazz.methods.firstOrNull { it.name == name && it.parameterCount == 0 }
             ?: clazz.declaredMethods.firstOrNull { it.name == name && it.parameterCount == 0 }
@@ -590,12 +611,17 @@ object ComponentTreeExtractor {
   internal fun invokeGetter(obj: Any, propertyName: String): Any? {
     val clazz = obj.javaClass
     val method =
-      getterMethodCache.get(clazz).computeIfAbsent("prop:$propertyName") {
-        val capitalized = propertyName.replaceFirstChar { it.uppercaseChar() }
-        val targetNames = setOf("get$capitalized", propertyName, "is$capitalized")
+      getterPropertyCache.get(clazz).computeIfAbsent(propertyName) { name ->
+        val capitalized = name.replaceFirstChar { it.uppercaseChar() }
+        val getName = "get$capitalized"
+        val isName = "is$capitalized"
         val found =
-          clazz.methods.firstOrNull { it.name in targetNames && it.parameterCount == 0 }
-            ?: clazz.declaredMethods.firstOrNull { it.name in targetNames && it.parameterCount == 0 }
+          clazz.methods.firstOrNull {
+            it.parameterCount == 0 && (it.name == getName || it.name == name || it.name == isName)
+          }
+            ?: clazz.declaredMethods.firstOrNull {
+              it.parameterCount == 0 && (it.name == getName || it.name == name || it.name == isName)
+            }
         found?.apply { isAccessible = true } ?: noMethodSentinel
       }
     if (method !== noMethodSentinel) {

@@ -181,6 +181,7 @@ kotlin_test(
 # Render tests for Compose CLI render
 kotlin_test(
     name = "compose-cli-render-tests",
+    timeout = "long",
     srcs = glob(["testSrc/**/*.kt"]),
     # keep sorted
     data = [
@@ -197,6 +198,7 @@ kotlin_test(
     ],
     friends = [":tools.compose-preview-renderer"],
     jvm_flags = ["-Dtest.suite.jar=compose-cli-render-tests.jar"],
+    shard_count = 3,
     tags = [
         "noci:studio-win",
     ],

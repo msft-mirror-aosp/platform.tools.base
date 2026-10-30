@@ -16,6 +16,7 @@
 
 package com.android.tools.render.common
 
+import com.android.tools.render.animation.DetectedAnimationSummary
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import java.io.Reader
@@ -32,6 +33,9 @@ data class PreviewComponentTree(
   val fontScale: Float? = null,
   val uiMode: Int? = null,
   val deviceId: String? = null,
+  val hasAnimations: Boolean? = null,
+  val animationCount: Int? = null,
+  val detectedAnimations: List<DetectedAnimationSummary>? = null,
   val components: List<ComponentTreeNode>,
 )
 

@@ -348,7 +348,7 @@ internal class StaticPreviewCallbackRunner(
    */
   private val probeOnceIfPoisoned = AtomicBoolean(true)
 
-  private fun recordTimeout(previewName: String, budgetMs: Long) {
+  internal fun recordTimeout(previewName: String, budgetMs: Long) {
     timeoutState.recordTimeout(previewName, budgetMs)
   }
 
@@ -907,7 +907,7 @@ private val RENDER_ACTION_TIMEOUT_MS_REGEX = Regex("""\((\d+)ms\)""")
 /** Maximum number of causes inspected by [findTimeoutException], guarding against cyclic cause chains. */
 private const val MAX_CAUSE_CHAIN_DEPTH = 16
 
-private fun Throwable?.findTimeoutException(): TimeoutException? {
+internal fun Throwable?.findTimeoutException(): TimeoutException? {
   var current = this
   var depth = 0
   while (current != null && depth < MAX_CAUSE_CHAIN_DEPTH) {
@@ -918,7 +918,7 @@ private fun Throwable?.findTimeoutException(): TimeoutException? {
   return null
 }
 
-private fun extractTimeoutBudgetMs(timeout: TimeoutException, defaultBudgetMs: Long): Long {
+internal fun extractTimeoutBudgetMs(timeout: TimeoutException, defaultBudgetMs: Long): Long {
   val parsed =
     timeout.message?.let { RENDER_ACTION_TIMEOUT_MS_REGEX.find(it)?.groupValues?.getOrNull(1)?.toLongOrNull() }?.takeIf { it > 0L }
   return parsed ?: defaultBudgetMs

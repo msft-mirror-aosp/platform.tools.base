@@ -136,12 +136,21 @@ internal object ComposeParameterExtractor {
     }
   }
 
-  fun extractParametersFromSlotTable(adapter: Any, cl: ClassLoader?): ParamLookup {
-    val lookup = ParamLookup()
+  /**
+   * Reflectively reads `ComposeViewAdapter.slotTableRecord.store` from [adapter] and converts each recorded `CompositionData` into an
+   * `androidx.compose.ui.tooling.data.Group` tree via `SlotTreeKt.asTree` loaded from [cl].
+   *
+   * Callers such as [ComponentTreeExtractor] extract these slot trees once and share them across [extractParametersFromSlotTable] and
+   * `AnimationPreviewRunner.detectAnimationsFromAdapter` so static renders with animation detection do not convert the slot table twice.
+   * Returns an empty list if the slot table is empty or `ui-tooling-data` classes are absent/incompatible on [cl].
+   */
+  fun extractSlotTrees(adapter: Any, cl: ClassLoader? = adapter.javaClass.classLoader): List<Any> {
+    val roots = mutableListOf<Any>()
     try {
       val slotField = findField(adapter.javaClass, "slotTableRecord")
-      val record = slotField?.get(adapter) ?: invokeGetter(adapter, "slotTableRecord") ?: return lookup
-      val store = invokeGetter(record, "store") as? Set<*> ?: return lookup
+      val record = slotField?.get(adapter) ?: invokeGetter(adapter, "slotTableRecord") ?: return emptyList()
+      val store = invokeGetter(record, "store") as? Set<*> ?: return emptyList()
+      if (store.isEmpty()) return emptyList()
 
       val slotTreeClass =
         try {
@@ -150,12 +159,35 @@ internal object ComposeParameterExtractor {
           null
         } catch (_: LinkageError) {
           null
-        } ?: return lookup
-      val asTreeMethod = slotTreeClass.methods.firstOrNull { it.name == "asTree" && it.parameterCount == 1 } ?: return lookup
+        } ?: return emptyList()
+      val asTreeMethod = slotTreeClass.methods.firstOrNull { it.name == "asTree" && it.parameterCount == 1 } ?: return emptyList()
 
       for (compData in store) {
         if (compData == null) continue
-        val rootGroup = asTreeMethod.invoke(null, compData)
+        val rootGroup = asTreeMethod.invoke(null, compData) ?: continue
+        roots.add(rootGroup)
+      }
+    } catch (e: Exception) {
+      logger.log(Level.FINE, "Failed to convert Compose slot table to tree", e)
+    } catch (e: LinkageError) {
+      logger.log(Level.FINE, "Linkage error converting Compose slot table to tree", e)
+    }
+    return roots
+  }
+
+  /**
+   * Walks [slotTrees] (or extracts them from [adapter] via [extractSlotTrees] when `null`) to build a [ParamLookup] indexing user-facing
+   * composable call parameters and group names by source location, layout bounds, and `LayoutNode` identity, formatting inline value types
+   * (`Color`, `Dp`, `TextUnit`, `TextAlign`, `TextOverflow`) via [cl]. Returns an empty [ParamLookup] on reflection or linkage errors.
+   */
+  fun extractParametersFromSlotTable(
+    adapter: Any,
+    cl: ClassLoader?,
+    slotTrees: List<Any>? = null,
+  ): ParamLookup {
+    val lookup = ParamLookup()
+    try {
+      for (rootGroup in slotTrees ?: extractSlotTrees(adapter, cl)) {
         walkSlotGroup(rootGroup, cl, lookup)
       }
     } catch (e: Exception) {

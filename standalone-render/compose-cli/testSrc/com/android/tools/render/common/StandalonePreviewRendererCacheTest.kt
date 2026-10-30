@@ -16,6 +16,8 @@
 
 package com.android.tools.render.common
 
+import com.android.tools.render.animation.AnimationRenderOptions
+import com.android.tools.render.animation.PreviewAnimationResult
 import com.android.tools.render.compose.ComposeScreenshot
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -61,6 +63,16 @@ class StandalonePreviewRendererCacheTest {
         )
       )
     },
+    private val onRenderAnimations: (PreviewScreenshot, AnimationRenderOptions) -> List<PreviewAnimationResult> = { screenshot, _ ->
+      listOf(
+        PreviewAnimationResult(
+          previewId = screenshot.previewId,
+          methodFQN = screenshot.methodFQN,
+          manifestPath = "pkg/${screenshot.previewId}_0.animation.json",
+          framePaths = listOf("pkg/${screenshot.previewId}_0_frame_00.png"),
+        )
+      )
+    },
   ) : ManagedRenderer {
     val refreshCalls = AtomicInteger(0)
     val disposeCompletedRendersCalls = AtomicInteger(0)
@@ -101,6 +113,12 @@ class StandalonePreviewRendererCacheTest {
     override fun disposeCompletedRenders() {
       disposeCompletedRendersCalls.incrementAndGet()
     }
+
+    override fun renderAnimations(
+      screenshot: PreviewScreenshot,
+      outputFolderPath: String,
+      options: AnimationRenderOptions,
+    ): List<PreviewAnimationResult> = onRenderAnimations(screenshot, options)
 
     override fun close() {
       closeCalls.incrementAndGet()
@@ -529,7 +547,7 @@ class StandalonePreviewRendererCacheTest {
     assertThat(createdRenderers[1].recordedAllowShowDecorations).containsExactly(true)
   }
 
-  /** Verifies that warm `StandalonePreviewRenderer.render()` batches surface the renderer's poisoned render-thread reason. */
+  /** Verifies that warm `StandalonePreviewRenderer` batches surface the renderer's poisoned render-thread reason. */
   @Test
   fun surfacesPoisonedRenderThreadOnPreviewRenderingResult() {
     val resApk = tempFolder.newFile("res.apk").apply { writeText("apk") }
@@ -550,9 +568,63 @@ class StandalonePreviewRendererCacheTest {
     assertThat(warmPoisonedResult.isRenderThreadPoisoned).isTrue()
     assertThat(warmPoisonedResult.renderThreadPoisonedReason).isEqualTo(reason)
 
+    val warmPoisonedAnimResult = newFakeRenderer(resApk, factory).renderAnimations(listOf(screenshot), outDir)
+    assertThat(warmPoisonedAnimResult.isRenderThreadPoisoned).isTrue()
+    assertThat(warmPoisonedAnimResult.renderThreadPoisonedReason).isEqualTo(reason)
+
     val oneShotPoisonedResult = newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir, reuseEnvironment = false)
     assertThat(oneShotPoisonedResult.isRenderThreadPoisoned).isFalse()
     assertThat(oneShotPoisonedResult.renderThreadPoisonedReason).isNull()
+
+    val oneShotPoisonedAnimResult =
+      newFakeRenderer(resApk, factory).renderAnimations(listOf(screenshot), outDir, reuseEnvironment = false)
+    assertThat(oneShotPoisonedAnimResult.isRenderThreadPoisoned).isFalse()
+    assertThat(oneShotPoisonedAnimResult.renderThreadPoisonedReason).isNull()
+  }
+
+  @Test
+  fun renderAnimationsFlagsFatalVirtualMachineErrorsAndEvictsWarmRenderer() {
+    val resApk = tempFolder.newFile("res-anim.apk").apply { writeText("apk") }
+    var animError: Error? = null
+    val createdRenderers = mutableListOf<FakeManagedRenderer>()
+    val factory: (RendererBootstrapRequest) -> ManagedRenderer = {
+      FakeManagedRenderer(
+          onRenderAnimations = { screenshot, _ ->
+            animError?.let { throw it }
+            listOf(
+              PreviewAnimationResult(
+                previewId = screenshot.previewId,
+                methodFQN = screenshot.methodFQN,
+                manifestPath = "pkg/${screenshot.previewId}_0.animation.json",
+                framePaths = listOf("pkg/${screenshot.previewId}_0_frame_00.png"),
+              )
+            )
+          }
+        )
+        .also { createdRenderers.add(it) }
+    }
+    val outDir = tempFolder.newFolder("out_anim_vm_errors").absolutePath
+    val healthy = ComposeScreenshot("com.example.PreviewKt.HealthyAnim", emptyList(), emptyMap(), "HealthyAnim")
+
+    animError = StackOverflowError("simulated animation recursion")
+    val stackOverflowResult = newFakeRenderer(resApk, factory).renderAnimations(listOf(healthy), outDir)
+    assertThat(stackOverflowResult.globalError).contains("StackOverflowError")
+    assertThat(stackOverflowResult.isFatalJvmError).isFalse()
+    assertThat(stackOverflowResult.fatalJvmError).isNull()
+    assertThat(createdRenderers.single().closeCalls.get()).isEqualTo(1)
+
+    animError = null
+    val recoveredResult = newFakeRenderer(resApk, factory).renderAnimations(listOf(healthy), outDir)
+    assertThat(recoveredResult.globalError).isNull()
+    assertThat(recoveredResult.isFatalJvmError).isFalse()
+    assertThat(createdRenderers).hasSize(2)
+
+    animError = OutOfMemoryError("simulated animation OOM")
+    val oomResult = newFakeRenderer(resApk, factory).renderAnimations(listOf(healthy), outDir)
+    assertThat(oomResult.globalError).contains("OutOfMemoryError")
+    assertThat(oomResult.isFatalJvmError).isTrue()
+    assertThat(oomResult.fatalJvmError).isEqualTo("OutOfMemoryError")
+    assertThat(createdRenderers[1].closeCalls.get()).isEqualTo(1)
   }
 
   private fun newFakeRenderer(resApk: File, factory: (RendererBootstrapRequest) -> ManagedRenderer) =
@@ -573,7 +645,7 @@ class StandalonePreviewRendererCacheTest {
     val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
     while (!condition()) {
       assertWithMessage("Timed out waiting for $description").that(System.nanoTime() - deadline <= 0).isTrue()
-      Thread.onSpinWait()
+      Thread.sleep(1)
     }
   }
 }

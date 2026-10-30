@@ -18,9 +18,12 @@ package com.android.tools.render.compose
 
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
+import com.android.tools.render.common.StandalonePreviewRenderer
+import com.android.tools.render.common.readPreviewRenderingJson
 import com.android.tools.render.common.readPreviewRenderingResultJson
 import java.nio.file.Paths
 import javax.imageio.ImageIO
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -121,6 +124,126 @@ class PerfMainTest {
         )
       }
     commonTest(screenshots, "compose_cli_render_time_40_large", "compose_cli_render_memory_40_large", "large")
+  }
+
+  /**
+   * 10 large previews rendered with their component trees, as `android preview render --component-tree` does on a warm daemon. In this
+   * process (unlike the CLI of [commonTest]), so 10 previews per render keep it within the heap of the test.
+   */
+  @Test
+  fun test10LargeComponentTree() {
+    componentTreeTest(
+      largeScreenshots(10),
+      detectAnimations = false,
+      "compose_cli_component_tree_time_10_large",
+      "compose_cli_component_tree_memory_10_large",
+    )
+  }
+
+  /** The same with `--detect-animations`: the component trees also report the animations found in the slot table. */
+  @Test
+  fun test10LargeComponentTreeDetectAnimations() {
+    componentTreeTest(
+      largeScreenshots(10),
+      detectAnimations = true,
+      "compose_cli_component_tree_detect_animations_time_10_large",
+      "compose_cli_component_tree_detect_animations_memory_10_large",
+    )
+  }
+
+  /** 10 animated previews rendered with their component trees (`--detect-animations` off vs on). */
+  @Test
+  fun test10AnimatedComponentTree() {
+    componentTreeTest(
+      animatedScreenshots(10),
+      detectAnimations = false,
+      "compose_cli_component_tree_time_10_animated",
+      "compose_cli_component_tree_memory_10_animated",
+    )
+  }
+
+  @Test
+  fun test10AnimatedComponentTreeDetectAnimations() {
+    componentTreeTest(
+      animatedScreenshots(10),
+      detectAnimations = true,
+      "compose_cli_component_tree_detect_animations_time_10_animated",
+      "compose_cli_component_tree_detect_animations_memory_10_animated",
+    )
+  }
+
+  private fun largeScreenshots(count: Int) =
+    (0 until count).map {
+      ComposeScreenshot(
+        "com.example.composeapplication.PreviewsKt.PreviewLarge",
+        emptyList(),
+        emptyMap(),
+        "com.example.composeapplication.PreviewsKt.PreviewLarge_screenshot${it}",
+      )
+    }
+
+  private fun animatedScreenshots(count: Int) =
+    (0 until count).map {
+      ComposeScreenshot(
+        "com.example.composeapplication.AnimationsKt.PreviewExpandVertically",
+        emptyList(),
+        emptyMap(),
+        "com.example.composeapplication.AnimationsKt.PreviewExpandVertically_screenshot${it}",
+      )
+    }
+
+  /**
+   * Renders [screenshots] with their component trees in this process, with the warm [StandalonePreviewRenderer] the renderer daemon uses,
+   * so that the metric measures the renders (and the component tree extraction) rather than the startup of the CLI.
+   */
+  private fun componentTreeTest(
+    screenshots: List<ComposeScreenshot>,
+    detectAnimations: Boolean,
+    timeMetricName: String,
+    memoryMetricName: String,
+  ) {
+    val outputFolder = tmpFolder.newFolder()
+    val metaDataFolder = tmpFolder.newFolder()
+    val resultsFile = tmpFolder.newFile("results.json")
+    val rendering =
+      readPreviewRenderingJson(gradleProject.createSettingsFile(outputFolder, resultsFile, metaDataFolder, screenshots).bufferedReader())
+    val renderer =
+      StandalonePreviewRenderer(
+        fontsPath = rendering.fontsPath,
+        resourceApkPath = rendering.resourceApkPath,
+        namespace = rendering.namespace,
+        classPath = rendering.classPath,
+        projectClassPath = rendering.projectClassPath,
+        layoutlibPath = rendering.layoutlibPath,
+        resourceDirs = rendering.resourceDirs,
+        rClassJars = rendering.rClassJars,
+      )
+    try {
+      computeAndRecordMetric(timeMetricName, memoryMetricName) {
+        val metric = ComposeRenderingMetric()
+        metric.beforeTest()
+        val result =
+          renderer.render(
+            rendering.screenshots,
+            outputFolder.absolutePath,
+            includeComponentTree = true,
+            renderImage = true,
+            reuseEnvironment = true,
+            detectAnimations = detectAnimations,
+          )
+        metric.afterTest()
+        assertNull(result.globalError)
+        result.screenshotResults.forEach {
+          assertNull(it.error)
+          assertNotNull(it.componentTreePath)
+        }
+        metric
+      }
+    } finally {
+      // Not StandalonePreviewRenderer.disposeFramework(): the framework is shared by the other tests of this process.
+      // Stop the daemon otherwise it could keep the lock on the temporary folder
+      gradleProject.executeGradleTask("--stop")
+    }
   }
 
   private fun commonTest(screenshots: List<ComposeScreenshot>, timeMetricName: String, memoryMetricName: String, goldenName: String) {

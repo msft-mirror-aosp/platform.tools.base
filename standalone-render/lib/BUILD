@@ -13,6 +13,7 @@ kotlin_library(
     visibility = ["//visibility:public"],
     deps = [
         "//prebuilts/tools/common/lint-psi/intellij-core",
+        "//tools/adt/idea/compose-designer:ui-animation-tooling-internal",
         "//tools/adt/idea/layoutlib:tools.layoutlib",
         "//tools/adt/idea/layoutlib-loader:tools.layoutlib-loader",
         "//tools/adt/idea/preview-elements:tools.preview-elements",
@@ -60,6 +61,7 @@ kotlin_test(
     deps = [
         ":tools.standalone-render.lib",
         "//prebuilts/tools/common/lint-psi/intellij-core",
+        "//tools/adt/idea/compose-designer:ui-animation-tooling-internal",
         "//tools/adt/idea/layoutlib:tools.layoutlib",
         "//tools/adt/idea/preview-elements:tools.preview-elements",
         "//tools/adt/idea/render-resources:tools.render-resources",

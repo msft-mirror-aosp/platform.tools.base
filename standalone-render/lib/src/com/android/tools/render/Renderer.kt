@@ -22,6 +22,8 @@ import com.android.resources.ResourceFolderType
 import com.android.sdklib.devices.screenShape
 import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
+import com.android.tools.render.animation.AnimationRenderOptions
+import com.android.tools.render.animation.PreviewAnimationResult
 import com.android.tools.render.common.ComponentTreeExtractor
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
@@ -81,14 +83,15 @@ import javax.imageio.stream.MemoryCacheImageOutputStream
 class Renderer(
   val project: Project,
   val module: StandaloneRenderModelModule,
-  private val renderService: RenderService,
+  internal val renderService: RenderService,
   val baseConfiguration: Configuration,
-  private val moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
+  internal val moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
 ) : Closeable {
   private val logger = Logger.getLogger(Renderer::class.java.name)
-  private val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
-  private val previewValidator = PreviewValidator()
+  internal val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
+  internal val previewValidator = PreviewValidator()
   internal val callbackRunner = StaticPreviewCallbackRunner()
+  private val animationRenderer = PreviewAnimationRenderer(this)
   private val pendingDisposeTasks = ConcurrentLinkedQueue<() -> Future<*>>()
   private val inFlightDisposals = ConcurrentLinkedQueue<CompletableFuture<Void>>()
   private val outstandingDisposeFutures = ConcurrentLinkedQueue<Future<*>>()
@@ -113,7 +116,8 @@ class Renderer(
     return ArrayList(inFlightDisposals)
   }
 
-  private fun awaitOutstandingDisposals() {
+  internal fun awaitOutstandingDisposals() {
+    disposePendingRenderTasks()
     outstandingDisposeFutures.removeIf { it.isDone }
     val futures = ArrayList(outstandingDisposeFutures)
     if (futures.isEmpty()) return
@@ -265,7 +269,7 @@ class Renderer(
   companion object {
     private const val END_OF_BATCH_IN_FLIGHT_TIMEOUT_MS = 250L
     private const val DISPOSAL_DRAIN_TIMEOUT_SECONDS = 5L
-    private val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>| ]+""".toRegex()
+    internal val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>| ]+""".toRegex()
     private val invalidPathCharsRegex = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()
   }
 
@@ -285,6 +289,8 @@ class Renderer(
    * @param allowShowDecorations Whether to honor [com.android.tools.preview.PreviewDisplaySettings.showDecoration] (for example,
    *   `@Preview(showSystemUi = true)`) by rendering device system decorations (status/navigation bars, device frame). Defaults to `false`
    *   so existing screenshot tests render composable content only.
+   * @param detectAnimations Whether the component tree also reports the Compose animations detected in the slot table (it walks the whole
+   *   slot table, so it is off by default).
    * @return A list of [PreviewScreenshotResult]s, each detailing the outcome of a single render operation, including the output path and
    *   any potential errors.
    */
@@ -295,6 +301,7 @@ class Renderer(
     includeComponentTree: Boolean = false,
     renderImage: Boolean = true,
     allowShowDecorations: Boolean = false,
+    detectAnimations: Boolean = false,
   ): List<PreviewScreenshotResult> {
     // If the screenshot is non-Compose or its preview and method parameters have already been resolved/specified,
     // bypass bytecode preview discovery and render it directly.
@@ -305,6 +312,7 @@ class Renderer(
         includeComponentTree,
         renderImage,
         allowShowDecorations,
+        detectAnimations,
       )
     }
 
@@ -351,6 +359,7 @@ class Renderer(
               includeComponentTree,
               renderImage,
               allowShowDecorations,
+              detectAnimations,
             ) {
               imageCounter++
             }
@@ -371,6 +380,7 @@ class Renderer(
     includeComponentTree: Boolean,
     renderImage: Boolean,
     allowShowDecorations: Boolean = false,
+    detectAnimations: Boolean = false,
   ): List<PreviewScreenshotResult> {
     val packagePath = sanitizePackagePath(screenshot.methodFQN)
     val baseResultId = sanitizeBaseResultId(screenshot.previewId)
@@ -394,6 +404,7 @@ class Renderer(
         includeComponentTree,
         renderImage,
         allowShowDecorations,
+        detectAnimations,
       ) {
         imageCounter++
       }
@@ -408,6 +419,7 @@ class Renderer(
     includeComponentTree: Boolean,
     renderImage: Boolean,
     allowShowDecorations: Boolean = false,
+    detectAnimations: Boolean = false,
     nextImageIndex: () -> Int,
   ): List<PreviewScreenshotResult> {
     // Creating the preview element can fail for reasons specific to a single screenshot (e.g. a class that cannot be loaded). Report
@@ -423,14 +435,7 @@ class Renderer(
         val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
         return listOf(PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, defaultRelativeImagePath, t.toScreenshotError()))
       }
-    val seenNames = mutableSetOf<String>()
-    val duplicateNames = mutableSetOf<String>()
-    for (layout in resolvedLayouts) {
-      val name = layout.displayName?.replace(invalidCharsRegex, "_")?.trim('_')
-      if (!name.isNullOrBlank() && !seenNames.add(name)) {
-        duplicateNames.add(name)
-      }
-    }
+    val idAllocator = LayoutResultIdAllocator(screenshot, resolvedLayouts, baseResultId)
 
     val renderRequest =
       RenderRequest.withResolvedLayouts(
@@ -439,35 +444,9 @@ class Renderer(
         showDecorations = allowShowDecorations && previewElement.displaySettings.showDecoration,
       )
 
-    val usedSuffixes = mutableSetOf<String>()
-    val previewName =
-      when {
-        screenshot.previewId.isEmpty() -> screenshot.methodFQN
-        screenshot.previewId.startsWith(screenshot.methodFQN) -> screenshot.previewId
-        else -> "${screenshot.methodFQN} (${screenshot.previewId})"
-      }
-    return renderResolvedLayouts(renderRequest, renderImage, previewName)
+    return renderResolvedLayouts(renderRequest, renderImage, idAllocator.basePreviewName)
       .map { (config, renderResult, layout) ->
-        val index = nextImageIndex()
-        // If a custom display name is provided (e.g. from PreviewParameterProvider.getDisplayName),
-        // sanitize it for filesystem paths by replacing whitespace and reserved characters with underscores.
-        // If duplicate, append the preview index to disambiguate. If blank or not provided, fall back to numerical index.
-        val sanitizedDisplayName = layout.displayName?.replace(invalidCharsRegex, "_")?.trim('_')
-        val baseSuffix =
-          when {
-            sanitizedDisplayName.isNullOrBlank() -> index.toString()
-            sanitizedDisplayName in duplicateNames -> "${sanitizedDisplayName}_$index"
-            else -> sanitizedDisplayName
-          }
-        val suffix =
-          if (usedSuffixes.add(baseSuffix)) {
-            baseSuffix
-          } else {
-            val nameWithIndex = "${baseSuffix}_$index"
-            usedSuffixes.add(nameWithIndex)
-            nameWithIndex
-          }
-        val resultId = "${baseResultId}_$suffix"
+        val resultId = idAllocator.nextResultId(layout, nextImageIndex)
         val imageName = "$resultId.png"
         val relativeImagePath = if (renderImage) packagePath + File.separator + imageName else ""
         val relativeComponentTreePath = packagePath + File.separator + "$resultId.json"
@@ -497,6 +476,7 @@ class Renderer(
                   config = config,
                   renderResult = renderResult,
                   viewInfos = viewInfos,
+                  detectAnimations = detectAnimations,
                 )
             ) {
               relativeComponentTreePath
@@ -542,6 +522,7 @@ class Renderer(
     config: Configuration = baseConfiguration,
     renderResult: RenderResult? = null,
     viewInfos: List<ComposeViewInfo> = emptyList(),
+    detectAnimations: Boolean = false,
   ): Boolean {
     return try {
       val rootDir = Paths.get(outputFolderPath).toAbsolutePath().normalize()
@@ -558,6 +539,7 @@ class Renderer(
           config = config,
           renderResult = renderResult,
           viewInfos = viewInfos,
+          detectAnimations = detectAnimations,
         )
       treePath.parent?.let { Files.createDirectories(it) }
       Files.newBufferedWriter(treePath, StandardCharsets.UTF_8).use { writer ->
@@ -570,7 +552,7 @@ class Renderer(
     }
   }
 
-  private fun saveImage(image: BufferedImage, outputFolderPath: String, relativeImagePath: String) {
+  internal fun saveImage(image: BufferedImage, outputFolderPath: String, relativeImagePath: String) {
     try {
       val rootDir = Paths.get(outputFolderPath).toAbsolutePath().normalize()
       val imagePath = rootDir.resolve(relativeImagePath).normalize()
@@ -609,7 +591,7 @@ class Renderer(
     }
   }
 
-  private fun sanitizePackagePath(methodFqn: String): String =
+  internal fun sanitizePackagePath(methodFqn: String): String =
     methodFqn
       .substringBeforeLast(".")
       .split('.')
@@ -617,10 +599,23 @@ class Renderer(
       .filter { it.isNotEmpty() && it != "." && it != ".." }
       .joinToString(File.separator)
 
-  private fun sanitizeBaseResultId(previewId: String): String {
+  internal fun sanitizeBaseResultId(previewId: String): String {
     val sanitized = previewId.substringAfterLast(".").replace(invalidPathCharsRegex, "_")
     return if (sanitized.isEmpty() || sanitized == "." || sanitized == "..") "preview" else sanitized
   }
+
+  /**
+   * Renders an animated [PreviewScreenshot] across multiple `PreviewAnimationClock` timestamps inside a single warm Layoutlib [RenderTask]
+   * session per preview element, emitting frame PNGs and an `<resultId>.animation.json` manifest into [outputFolderPath].
+   *
+   * @see PreviewAnimationRenderer.renderAnimations
+   */
+  @JvmOverloads
+  fun renderAnimations(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    options: AnimationRenderOptions = AnimationRenderOptions(),
+  ): List<PreviewAnimationResult> = animationRenderer.renderAnimations(screenshot, outputFolderPath, options)
 
   /** Renders the layouts of [request] once, like the Android Studio layout editor does, without executing layoutlib callbacks. */
   fun render(request: RenderRequest, renderImage: Boolean = true): Sequence<Pair<Configuration, RenderResult>> {
@@ -699,7 +694,7 @@ class Renderer(
   ): RenderResult {
     awaitOutstandingDisposals()
     val disposable = Disposer.newCheckedDisposable()
-    val logger = RenderLogger()
+    val logger = renderService.createLogger(project)
     val composeViewAdapters: MutableSet<Any> = ConcurrentHashMap.newKeySet()
     val recordAdapters: (RenderResult) -> Unit = { composeViewAdapters.addAll(findComposeViewAdapters(it.rootViews)) }
     return try {
@@ -784,7 +779,7 @@ class Renderer(
    * calling `RenderAsyncActionExecutor.cancelActionsByTopic` or `cancelLowerPriorityActions`, this cleanup runs in FIFO order on the single
    * render thread before the next preview's `inflate()`.
    */
-  private fun releaseRender(renderTask: RenderTask, composeViewAdapters: Set<Any>, moduleClassLoader: ClassLoader) {
+  internal fun releaseRender(renderTask: RenderTask, composeViewAdapters: Set<Any>, moduleClassLoader: ClassLoader) {
     val disposalReady = CompletableFuture<Void>()
     inFlightDisposals.add(disposalReady)
     val completed = AtomicBoolean(false)
@@ -889,7 +884,7 @@ class Renderer(
       null
     }
 
-  private fun createRenderTaskErrorResult(logger: RenderLogger, throwable: Throwable? = null): RenderResult =
+  internal fun createRenderTaskErrorResult(logger: RenderLogger, throwable: Throwable? = null): RenderResult =
     RenderResult.createRenderTaskErrorResult(
       module,
       { throw NotImplementedError("PsiFile supplier is not supported") },
@@ -897,7 +892,7 @@ class Renderer(
       logger,
     )
 
-  private fun postProcessRenderedImage(config: Configuration, renderResult: RenderResult): BufferedImage? {
+  internal fun postProcessRenderedImage(config: Configuration, renderResult: RenderResult): BufferedImage? {
     val imageCopy = renderResult.renderedImage.copy
     if (imageCopy == null && renderResult.renderResult.status != Result.Status.SUCCESS) return null
 
@@ -981,7 +976,7 @@ private fun Throwable?.findFatalVirtualMachineError(): VirtualMachineError? {
  * Rethrows [t] when it represents caller-thread interruption/cancellation or wraps a fatal [VirtualMachineError] (other than
  * [StackOverflowError]), restoring the thread's interrupt flag on [InterruptedException].
  */
-private fun rethrowIfFatalOrCancelled(t: Throwable) {
+internal fun rethrowIfFatalOrCancelled(t: Throwable) {
   when (t) {
     is InterruptedException -> {
       Thread.currentThread().interrupt()
@@ -997,11 +992,68 @@ private fun rethrowIfFatalOrCancelled(t: Throwable) {
  * Rethrows any fatal [VirtualMachineError] (other than [StackOverflowError]) that `RenderTask`, Layoutlib, or the render-thread uncaught
  * exception handler captured inside [RenderResult] instead of propagating directly.
  */
-private fun RenderResult.rethrowIfFatalVirtualMachineError() {
+internal fun RenderResult.rethrowIfFatalVirtualMachineError() {
   val allThrowables =
     sequenceOf(renderResult.exception) + logger.messages.asSequence().map { it.throwable } + logger.brokenClasses.values.asSequence()
   val fatal = allThrowables.mapNotNull { it.findFatalVirtualMachineError() }.firstOrNull()
   if (fatal != null) {
     throw fatal
   }
+}
+
+/**
+ * Disambiguates output file stems (`<baseResultId>_<suffix>`) and diagnostic preview names across the [ResolvedScreenshotLayout]s of a
+ * single [PreviewScreenshot] (for example, `@PreviewParameter` elements with duplicate or blank display names).
+ */
+internal class LayoutResultIdAllocator(
+  screenshot: PreviewScreenshot,
+  resolvedLayouts: List<ResolvedScreenshotLayout>,
+  private val baseResultId: String,
+) {
+  val basePreviewName: String =
+    when {
+      screenshot.previewId.isEmpty() -> screenshot.methodFQN
+      screenshot.previewId.startsWith(screenshot.methodFQN) -> screenshot.previewId
+      else -> "${screenshot.methodFQN} (${screenshot.previewId})"
+    }
+
+  private val duplicateNames: Set<String> = buildSet {
+    val seenNames = mutableSetOf<String>()
+    for (layout in resolvedLayouts) {
+      val name = layout.displayName?.replace(Renderer.invalidCharsRegex, "_")?.trim('_')
+      if (!name.isNullOrBlank() && !seenNames.add(name)) {
+        add(name)
+      }
+    }
+  }
+  private val usedSuffixes = mutableSetOf<String>()
+
+  /**
+   * Allocates the filesystem-safe `<baseResultId>_<suffix>` stem for [layout] using [nextIndex] on demand (preserving lazy `Sequence`
+   * evaluation order in [Renderer.renderScreenshotElement]).
+   */
+  fun nextResultId(layout: ResolvedScreenshotLayout, nextIndex: () -> Int): String {
+    val index = nextIndex()
+    // If a custom display name is provided (e.g. from PreviewParameterProvider.getDisplayName),
+    // sanitize it for filesystem paths by replacing whitespace and reserved characters with underscores.
+    // If duplicate, append the preview index to disambiguate. If blank or not provided, fall back to numerical index.
+    val sanitizedDisplayName = layout.displayName?.replace(Renderer.invalidCharsRegex, "_")?.trim('_')
+    val baseSuffix =
+      when {
+        sanitizedDisplayName.isNullOrBlank() -> index.toString()
+        sanitizedDisplayName in duplicateNames -> "${sanitizedDisplayName}_$index"
+        else -> sanitizedDisplayName
+      }
+    val suffix =
+      if (usedSuffixes.add(baseSuffix)) {
+        baseSuffix
+      } else {
+        val nameWithIndex = "${baseSuffix}_$index"
+        usedSuffixes.add(nameWithIndex)
+        nameWithIndex
+      }
+    return "${baseResultId}_$suffix"
+  }
+
+  fun previewNameFor(layout: ResolvedScreenshotLayout): String = layout.displayName?.let { "$basePreviewName [$it]" } ?: basePreviewName
 }

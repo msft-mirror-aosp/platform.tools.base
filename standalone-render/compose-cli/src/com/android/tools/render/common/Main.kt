@@ -19,6 +19,9 @@ package com.android.tools.render.common
 import com.android.tools.render.LibraryClassBinaryCache
 import com.android.tools.render.RenderEnvironmentBootstrapper
 import com.android.tools.render.Renderer
+import com.android.tools.render.animation.AnimationRenderOptions
+import com.android.tools.render.animation.PreviewAnimationRenderingResult
+import com.android.tools.render.animation.PreviewAnimationResult
 import com.android.tools.render.framework.IJFramework
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Disposer
@@ -85,6 +88,27 @@ internal interface ManagedRenderer : Closeable {
     allowShowDecorations: Boolean = false,
   ): List<PreviewScreenshotResult>
 
+  /** Like [render], and also reports the Compose animations of each preview in its component tree when [detectAnimations] is `true`. */
+  fun render(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    includeComponentTree: Boolean,
+    renderImage: Boolean,
+    allowShowDecorations: Boolean,
+    detectAnimations: Boolean,
+  ): List<PreviewScreenshotResult> = render(screenshot, outputFolderPath, includeComponentTree, renderImage, allowShowDecorations)
+
+  /**
+   * Renders an animated [screenshot] across multiple `PreviewAnimationClock` timestamps into [outputFolderPath] according to [options],
+   * emitting frame PNGs and an `<resultId>.animation.json` manifest per resolved preview. Defaults to an empty list for test doubles that
+   * only exercise static [render].
+   */
+  fun renderAnimations(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    options: AnimationRenderOptions,
+  ): List<PreviewAnimationResult> = emptyList()
+
   /**
    * Reason why Layoutlib's single render thread is still blocked by the timed-out work of a previous request, as observed when the current
    * request probed it, or `null` if the render thread is available or recovered in place. Does not probe or block.
@@ -112,7 +136,31 @@ private class RealManagedRenderer(private val delegate: Renderer) : ManagedRende
     includeComponentTree: Boolean,
     renderImage: Boolean,
     allowShowDecorations: Boolean,
-  ): List<PreviewScreenshotResult> = delegate.render(screenshot, outputFolderPath, includeComponentTree, renderImage, allowShowDecorations)
+  ): List<PreviewScreenshotResult> =
+    render(screenshot, outputFolderPath, includeComponentTree, renderImage, allowShowDecorations, detectAnimations = false)
+
+  override fun render(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    includeComponentTree: Boolean,
+    renderImage: Boolean,
+    allowShowDecorations: Boolean,
+    detectAnimations: Boolean,
+  ): List<PreviewScreenshotResult> =
+    delegate.render(
+      screenshot,
+      outputFolderPath,
+      includeComponentTree = includeComponentTree,
+      renderImage = renderImage,
+      allowShowDecorations = allowShowDecorations,
+      detectAnimations = detectAnimations,
+    )
+
+  override fun renderAnimations(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    options: AnimationRenderOptions,
+  ): List<PreviewAnimationResult> = delegate.renderAnimations(screenshot, outputFolderPath, options)
 
   override val renderThreadPoisonedReason: String?
     get() = delegate.renderThreadPoisonedReason
@@ -237,6 +285,7 @@ internal constructor(
    * @param reuseEnvironment When `true`, acquires and reuses the process-wide warm [Renderer] via [acquireWarmRenderer] instead of
    *   bootstrapping and tearing down the environment on every call.
    * @param allowShowDecorations When `true`, honors `@Preview(showSystemUi = true)` by rendering system UI decorations and device frames.
+   * @param detectAnimations Whether the component tree also reports the Compose animations of each preview (see [Renderer.render]).
    * @return the per-screenshot results, or a [PreviewRenderingResult.globalError] when the batch could not be rendered.
    */
   @JvmOverloads
@@ -247,6 +296,7 @@ internal constructor(
     renderImage: Boolean = true,
     reuseEnvironment: Boolean = true,
     allowShowDecorations: Boolean = false,
+    detectAnimations: Boolean = false,
   ): PreviewRenderingResult {
     return try {
       // Some callers supply R.jar files inside the general `classPath` rather than via `rClassJars`.
@@ -287,11 +337,20 @@ internal constructor(
             try {
               acquired.handle.renderBatch(fullClassPath, projectClassPath, acquired.freshlyBootstrapped) { managedRenderer ->
                 val screenshotResults =
-                  renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
+                  renderAll(
+                    managedRenderer,
+                    screenshots,
+                    outputFolder,
+                    includeComponentTree,
+                    renderImage,
+                    allowShowDecorations,
+                    detectAnimations,
+                  )
                 val poisonedReason = managedRenderer.renderThreadPoisonedReason
                 screenshotResults to poisonedReason
               }
             } finally {
+              acquired.handle.unlockIfHeldByCurrentThread()
               acquired.handle.release()
             }
           if (batchOutcome != null) {
@@ -310,7 +369,8 @@ internal constructor(
       // Cold / one-shot path: bootstrap a fresh Renderer and close it immediately via `.use {}`. A fresh process cannot observe a render
       // thread blocked by a previous request, and the JVM exits right after writing results, so `renderThreadPoisonedReason` stays null.
       rendererFactory(bootstrapRequest).use { managedRenderer ->
-        val results = renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
+        val results =
+          renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations, detectAnimations)
         PreviewRenderingResult(
           globalError = null,
           screenshotResults = results,
@@ -338,11 +398,12 @@ internal constructor(
     includeComponentTree: Boolean,
     renderImage: Boolean,
     allowShowDecorations: Boolean,
+    detectAnimations: Boolean,
   ): List<PreviewScreenshotResult> =
     screenshots
       .flatMap { screenshot ->
         try {
-          renderer.render(screenshot, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
+          renderer.render(screenshot, outputFolder, includeComponentTree, renderImage, allowShowDecorations, detectAnimations)
         } catch (e: InterruptedException) {
           Thread.currentThread().interrupt()
           throw e
@@ -362,6 +423,129 @@ internal constructor(
         }
       }
       .sortedWith(RESULT_COMPARATOR)
+
+  /**
+   * Renders animated [screenshots] across multiple `PreviewAnimationClock` timestamps into [outputFolder], reusing the process-wide warm
+   * [Renderer] when [reuseEnvironment] is `true`.
+   */
+  @JvmOverloads
+  fun renderAnimations(
+    screenshots: List<PreviewScreenshot>,
+    outputFolder: String,
+    options: AnimationRenderOptions = AnimationRenderOptions(),
+    reuseEnvironment: Boolean = true,
+  ): PreviewAnimationRenderingResult {
+    return try {
+      val resolvedRClassJars = rClassJars.ifEmpty {
+        classPath.filter { it.endsWith("/R.jar") || it.endsWith("\\R.jar") || it.endsWith("-R.jar") }
+      }
+      val bootstrapRequest =
+        RendererBootstrapRequest(
+          fontsPath = fontsPath,
+          resourceApkPath = resourceApkPath,
+          namespace = namespace,
+          classPath = classPath,
+          projectClassPath = projectClassPath,
+          layoutlibPath = layoutlibPath,
+          resourceDirs = resourceDirs,
+          rClassJars = resolvedRClassJars,
+        )
+      val animComparator: Comparator<PreviewAnimationResult> =
+        compareBy(
+          { it.manifestPath.ifEmpty { null } ?: it.framePaths.firstOrNull().orEmpty() },
+          { it.methodFQN },
+          { it.previewId },
+          { it.displayName.orEmpty() },
+        )
+      if (reuseEnvironment) {
+        val fullClassPath = (classPath + resolvedRClassJars).distinct()
+        repeat(2) {
+          val acquired =
+            try {
+              acquireWarmRenderer(bootstrapRequest, fullClassPath, rendererFactory)
+            } catch (e: Error) {
+              try {
+                closeWarmRenderer()
+              } catch (closeFailure: Throwable) {
+                e.addSuppressed(closeFailure)
+              }
+              throw e
+            }
+          val batchOutcome =
+            try {
+              acquired.handle.renderBatch(fullClassPath, projectClassPath, acquired.freshlyBootstrapped) { managedRenderer ->
+                val animationResults = renderAllAnimations(managedRenderer, screenshots, outputFolder, options, animComparator)
+                val poisonedReason = managedRenderer.renderThreadPoisonedReason
+                animationResults to poisonedReason
+              }
+            } finally {
+              acquired.handle.unlockIfHeldByCurrentThread()
+              acquired.handle.release()
+            }
+          if (batchOutcome != null) {
+            val (results, poisonedReason) = batchOutcome
+            return PreviewAnimationRenderingResult(
+              globalError = null,
+              animationResults = results,
+              fatalJvmError = null,
+              renderThreadPoisonedReason = poisonedReason,
+            )
+          }
+        }
+        throw IllegalStateException("Warm renderer was repeatedly disposed or invalidated before animation rendering could start")
+      }
+
+      rendererFactory(bootstrapRequest).use { managedRenderer ->
+        val results = renderAllAnimations(managedRenderer, screenshots, outputFolder, options, animComparator)
+        PreviewAnimationRenderingResult(
+          globalError = null,
+          animationResults = results,
+          fatalJvmError = null,
+          renderThreadPoisonedReason = null,
+        )
+      }
+    } catch (e: StackOverflowError) {
+      PreviewAnimationRenderingResult(e.stackTraceToString(), emptyList())
+    } catch (e: VirtualMachineError) {
+      val errorName = e.javaClass.simpleName.ifEmpty { e.javaClass.name }
+      val errorText = runCatching { e.stackTraceToString() }.getOrElse { e.javaClass.name }
+      PreviewAnimationRenderingResult(errorText, emptyList(), fatalJvmError = errorName)
+    } catch (t: Throwable) {
+      PreviewAnimationRenderingResult(t.stackTraceToString(), emptyList())
+    }
+  }
+
+  private fun renderAllAnimations(
+    renderer: ManagedRenderer,
+    screenshots: List<PreviewScreenshot>,
+    outputFolder: String,
+    options: AnimationRenderOptions,
+    comparator: Comparator<PreviewAnimationResult>,
+  ): List<PreviewAnimationResult> =
+    screenshots
+      .flatMap { screenshot ->
+        try {
+          renderer.renderAnimations(screenshot, outputFolder, options)
+        } catch (e: InterruptedException) {
+          Thread.currentThread().interrupt()
+          throw e
+        } catch (e: ProcessCanceledException) {
+          throw e
+        } catch (e: CancellationException) {
+          throw e
+        } catch (e: Exception) {
+          listOf(
+            PreviewAnimationResult(
+              previewId = screenshot.previewId,
+              methodFQN = screenshot.methodFQN,
+              manifestPath = "",
+              framePaths = emptyList(),
+              error = e.toScreenshotError(),
+            )
+          )
+        }
+      }
+      .sortedWith(comparator)
 
   companion object {
     private fun defaultRendererFactory(request: RendererBootstrapRequest): ManagedRenderer =
@@ -428,6 +612,20 @@ internal constructor(
       }
 
       /**
+       * Acquires [renderLock] for the caller that just bootstrapped this handle before publishing it in [warmHandle], guaranteeing that the
+       * bootstrapping caller runs its initial batch before any concurrent caller that queued on [bootstrapLock].
+       */
+      fun lockInitialRender() {
+        renderLock.lock()
+      }
+
+      fun unlockIfHeldByCurrentThread() {
+        if (renderLock.isHeldByCurrentThread) {
+          renderLock.unlock()
+        }
+      }
+
+      /**
        * Executes [block] under [renderLock], refreshing `projectClassPath` before each warm batch (except the first batch run by the caller
        * that freshly bootstrapped this handle with the same `projectClassPath`).
        *
@@ -440,7 +638,11 @@ internal constructor(
         freshlyBootstrapped: Boolean,
         block: (ManagedRenderer) -> T,
       ): T? {
-        renderLock.lock()
+        if (!freshlyBootstrapped) {
+          renderLock.lock()
+        } else {
+          check(renderLock.isHeldByCurrentThread) { "Freshly bootstrapped WarmRendererHandle must already hold renderLock" }
+        }
         try {
           // An evicted (but not corrupted) handle still serves callers that retained it before eviction; it closes once the last
           // caller releases it.
@@ -598,6 +800,7 @@ internal constructor(
           freshHandle.release()
           throw IllegalStateException("Bootstrapped Renderer was already disposed")
         }
+        freshHandle.lockInitialRender()
 
         var dropCacheReference = false
         synchronized(warmStateLock) {
