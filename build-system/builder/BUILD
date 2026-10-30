@@ -43,8 +43,6 @@ kotlin_library(
         "//tools/base/signflinger",
         "@maven//:com.google.code.gson.gson",
         "@maven//:javax.inject.javax.inject",
-        "@maven//:org.bouncycastle.bcpkix-jdk18on",
-        "@maven//:org.bouncycastle.bcprov-jdk18on",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.ow2.asm.asm-commons",
     ],

@@ -23,8 +23,6 @@ dependencies {
 
     implementation libs.kotlin.stdlib
     api libs.javawriter
-    implementation libs.bouncycastle.pkix
-    implementation libs.bouncycastle.prov
     implementation libs.javax.inject
     implementation libs.asm.commons
     implementation libs.gson

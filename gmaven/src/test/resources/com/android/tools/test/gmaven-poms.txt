@@ -224,9 +224,7 @@ com.android.tools:sdklib:$BASE_VERSION
     com.android.tools:dvlib:$BASE_VERSION (runtime)
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    org.apache.commons:commons-compress:1.27.1 (runtime)
     org.apache.httpcomponents:httpcore:4.4.16 (runtime)
-    org.apache.httpcomponents:httpmime:4.5.6 (runtime)
     org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
 
 com.android.tools:testutils:$BASE_VERSION
@@ -492,8 +490,6 @@ com.android.tools.build:builder:$BUILD_VERSION
     com.android.tools.analytics-library:tracker:$BASE_VERSION (runtime)
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
-    org.bouncycastle:bcpkix-jdk18on:1.86 (runtime)
-    org.bouncycastle:bcprov-jdk18on:1.86 (runtime)
     javax.inject:javax.inject:1 (runtime)
     org.ow2.asm:asm-commons:9.9 (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
