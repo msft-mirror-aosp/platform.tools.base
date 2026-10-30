@@ -44,7 +44,6 @@
 #include "processor.h"
 #include "proto/service.grpc.pb.h"
 
-ABSL_FLAG(int32_t, timeout, 0, "Timeout in seconds");
 ABSL_FLAG(int32_t, parent_pid, 0, "Pid of the parent process to monitor");
 ABSL_FLAG(bool, use_ipv6, false, "Use IPv6 for the gRPC server");
 ABSL_FLAG(bool, use_token, false, "Require clients to use auth token");
@@ -77,8 +76,6 @@ using service::LoadCaptureResponse;
 using service::path_Capture;
 using service::PerfettoQueryRequest;
 using service::PerfettoQueryResponse;
-using service::PingRequest;
-using service::PingResponse;
 
 /**
  * Checks if a process with the given PID is currently running.
@@ -157,18 +154,8 @@ class GapidServiceImpl final : public Gapid::Service {
   // trace file loaded.
   std::unique_ptr<perfetto::trace_processor::TraceProcessor> tp;
 
-  GapidServiceImpl(int timeout_seconds, int32_t parent_pid,
-                   const std::string& token)
-      : last_ping_time_(std::chrono::steady_clock::now()),
-        running_(true),
-        timeout_seconds_(timeout_seconds),
-        parent_pid_(parent_pid),
-        token_(token) {
-    // Start a thread to monitor the ping timeout.
-    if (timeout_seconds_ != 0) {
-      ping_monitor_thread_ = std::thread([this]() { MonitorPingTimeout(); });
-    }
-
+  GapidServiceImpl(int32_t parent_pid, const std::string& token)
+      : running_(true), parent_pid_(parent_pid), token_(token) {
     // Start a thread to monitor the parent process.
     if (parent_pid_ != 0) {
       parent_monitor_thread_ =
@@ -178,23 +165,9 @@ class GapidServiceImpl final : public Gapid::Service {
 
   ~GapidServiceImpl() {
     running_ = false;
-    if (ping_monitor_thread_.joinable()) {
-      ping_monitor_thread_.join();
-    }
     if (parent_monitor_thread_.joinable()) {
       parent_monitor_thread_.join();
     }
-  }
-  /**
-   * This is a keep-alive call. If there are no pings received for N seconds,
-   * it means the frontend is dead/exited, so we should exit this process.
-   */
-  Status Ping(ServerContext* context, const PingRequest* request,
-              PingResponse* response) override {
-    GRPC_RETURN_IF_ERROR(ValidateToken(context));
-    // Update the last ping time whenever ping is received,
-    last_ping_time_ = std::chrono::steady_clock::now();
-    return Status::OK;
   }
 
   Status GetServerInfo(ServerContext* context,
@@ -339,25 +312,6 @@ class GapidServiceImpl final : public Gapid::Service {
 
  private:
   /**
-   * Monitors the incoming ping requests from the client letting this process
-   * know the frontend is still alive. If the duration from the last ping is
-   * more than the [timeout_seconds_], this process is termianted.
-   */
-  void MonitorPingTimeout() {
-    while (running_) {
-      std::this_thread::sleep_for(std::chrono::seconds(1));
-      auto now = std::chrono::steady_clock::now();
-      auto duration = std::chrono::duration_cast<std::chrono::seconds>(
-          now - last_ping_time_);
-      if (duration.count() > timeout_seconds_) {
-        LOG(ERROR) << "No ping received in " << timeout_seconds_
-                   << " seconds. Exiting...";
-        raise(SIGTERM);  // Send termination signal
-      }
-    }
-  }
-
-  /**
    * Monitors the parent process. If the parent process is no longer alive,
    * then the current process is terminated.
    */
@@ -396,16 +350,13 @@ class GapidServiceImpl final : public Gapid::Service {
   }
 
  private:
-  std::chrono::time_point<std::chrono::steady_clock> last_ping_time_;
   std::atomic<bool> running_;
-  std::thread ping_monitor_thread_;
   std::thread parent_monitor_thread_;
-  const int timeout_seconds_;
   const int32_t parent_pid_;
   std::string token_;
 };
 
-void RunServer(int timeout_seconds, int32_t parent_pid, bool use_ipv6) {
+void RunServer(int32_t parent_pid, bool use_ipv6) {
   std::string token = absl::GetFlag(FLAGS_use_token) ? GenerateToken() : "";
   ServerBuilder builder;
 
@@ -436,7 +387,7 @@ void RunServer(int timeout_seconds, int32_t parent_pid, bool use_ipv6) {
                              &selected_port);
   }
 
-  GapidServiceImpl gapid_service(timeout_seconds, parent_pid, token);
+  GapidServiceImpl gapid_service(parent_pid, token);
   builder.RegisterService(&gapid_service);
 
   std::unique_ptr<Server> server(builder.BuildAndStart());
@@ -459,12 +410,10 @@ int main(int argc, char** argv) {
 
   absl::ParseCommandLine(argc, argv);
 
-  int timeout = absl::GetFlag(FLAGS_timeout);
   int32_t parent_pid = absl::GetFlag(FLAGS_parent_pid);
   bool use_ipv6 = absl::GetFlag(FLAGS_use_ipv6);
 
-  LOG(INFO) << "Starting server with server timeout value of " << timeout
-            << " seconds and parent_pid " << parent_pid;
-  RunServer(timeout, parent_pid, use_ipv6);
+  LOG(INFO) << "Starting server with parent_pid " << parent_pid;
+  RunServer(parent_pid, use_ipv6);
   return 0;
 }

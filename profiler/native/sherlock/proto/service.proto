@@ -23,17 +23,12 @@ option java_outer_classname = "Service";
 package service;
 
 service Gapid {
-  rpc Ping(PingRequest) returns (PingResponse) {}
   rpc GetServerInfo(GetServerInfoRequest) returns (GetServerInfoResponse) {}
   rpc GetAvailableStringTables(GetAvailableStringTablesRequest) returns (GetAvailableStringTablesResponse) {}
   rpc LoadCapture(LoadCaptureRequest) returns (LoadCaptureResponse) {}
   rpc Get(GetRequest) returns (GetResponse) {}
   rpc PerfettoQuery(PerfettoQueryRequest) returns (PerfettoQueryResponse) {}
 }
-
-message PingRequest {}
-
-message PingResponse {}
 
 message ID {
   bytes data = 1;
