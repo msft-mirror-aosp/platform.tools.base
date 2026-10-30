@@ -760,6 +760,18 @@ class ProtoConvertersTest {
   }
 
   @Test
+  fun testConvertComposeNode_sourceLocation() {
+    val located = composable(flags = 0, packageHash = MATERIAL3_PACKAGE_HASH).setFilename(3).setLineNumber(7)
+
+    assertThat(convertComposable(located).sourceLocation).isEqualTo(UiNode.SourceLocation("Main.kt", 7))
+    // A call site without source information has an empty file name: there is no location to report.
+    assertThat(convertComposable(composableCalledWithoutSourceInformation()).sourceLocation).isNull()
+    // Neither is there one for an unset or unknown file name.
+    assertThat(convertComposable(composable(flags = 0, packageHash = MATERIAL3_PACKAGE_HASH)).sourceLocation).isNull()
+    assertThat(convertComposable(located.clone().setFilename(99)).sourceLocation).isNull()
+  }
+
+  @Test
   fun testConvertComposeNode_appendsHostedSubtreeIntactAfterComposeChildren() {
     val stringTable = mapOf(1 to "AndroidView", 2 to "Text")
     // AndroidView (100) with one Compose child (101) and a hosted subtree reference: the mapped value is the carrier
@@ -952,7 +964,7 @@ class ProtoConvertersTest {
   private fun convertComposable(node: LayoutInspectorComposeProtocol.ComposableNode.Builder): UiNode.ComposeNode =
     convertComposeNode(
       node = node.build(),
-      stringTable = mapOf(1 to "MyComponent", 2 to ""),
+      stringTable = mapOf(1 to "MyComponent", 2 to "", 3 to "Main.kt"),
       hostedViews = emptyMap(),
       renderOffsetX = 0,
       renderOffsetY = 0,

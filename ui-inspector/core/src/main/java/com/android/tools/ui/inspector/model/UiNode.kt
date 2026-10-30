@@ -132,6 +132,8 @@ sealed class UiNode {
   /**
    * Represents a Jetpack Compose Composable node.
    *
+   * @param sourceLocation Where this composable is called, or null when unknown, e.g. when the calling code was compiled without Compose
+   *   source information.
    * @param parameters Standard Composable properties and function parameters.
    * @param mergedSemantics Accessibility properties that aggregate all readable texts and actions from this node's entire subtree into one
    *   focusable block (which is what a screen reader like TalkBack speaks).

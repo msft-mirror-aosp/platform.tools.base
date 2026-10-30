@@ -231,13 +231,10 @@ private fun doConvertComposeNode(
     node.childrenList.map { doConvertComposeNode(it, stringTable, hostedViews, renderOffsetX, renderOffsetY, parameters) }
   val hostedView = if (node.viewId != 0L) hostedViews[node.viewId] else null
   val children: List<UiNode> = composeChildren + listOfNotNull(hostedView)
+  // No location for an unset, unknown or empty file name: the compose inspector sends an empty one for a call site without source
+  // information.
   val sourceLocation =
-    if (node.filename != 0) {
-      val filename = stringTable[node.filename] ?: "Missing"
-      UiNode.SourceLocation(filename, node.lineNumber)
-    } else {
-      null
-    }
+    stringTable[node.filename]?.takeIf { it.isNotEmpty() }?.let { filename -> UiNode.SourceLocation(filename, node.lineNumber) }
   return UiNode.ComposeNode(
     id = node.id,
     className = name,

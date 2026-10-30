@@ -65,7 +65,7 @@ Example JSON output:
           "id": 2,
           "className": "androidx.compose.material3.Text",
           "bounds": { "x": 48, "y": 96, "width": 200, "height": 48 },
-          "sourceLocation": { "filename": "MainActivity.kt", "lineNumber": 18 },
+          "sourceLocation": { "fileName": "MainActivity.kt", "lineNumber": 18 },
           "parameters": [
             { "name": "text", "value": "Hello World" }
           ]
