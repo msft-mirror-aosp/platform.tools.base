@@ -28,7 +28,6 @@ import com.android.adblib.availableFeatures
 import com.android.adblib.deviceProperties
 import com.android.adblib.isRoot
 import com.android.adblib.packageManager
-import com.android.adblib.property
 import com.android.adblib.read
 import com.android.adblib.rootAndWait
 import com.android.adblib.serialNumber
@@ -38,14 +37,7 @@ import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.properties
 import com.android.adblib.write
-import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.IDevice
-import com.android.ddmlib.IShellOutputReceiver
-import com.android.ddmlib.InstallException
-import com.android.ddmlib.ShellCommandUnresponsiveException
-import com.android.ddmlib.SimpleConnectedSocket
-import com.android.ddmlib.SyncException
-import com.android.ddmlib.TimeoutException as DdmlibTimeoutException
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.AndroidVersionUtil
 import com.android.tools.deploy.proto.Deploy
@@ -63,9 +55,7 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.runBlocking
 
-class DeviceHolder
-@JvmOverloads
-constructor(
+class DeviceHolder(
   private val iDevice: IDevice,
   /**
    * The resolved [ConnectedDevice] from the [AdbSession] corresponding to the IDevice.
@@ -73,13 +63,9 @@ constructor(
    * Can be set to an empty Optional value if no matching [ConnectedDevice] was found, e.g. because the device got disconnected.
    */
   private val connectedDevice: Optional<ConnectedDevice>,
-  /** Whether the adblib migration is enabled. */
-  private val useConnectedDevice: Boolean = false,
 ) {
 
-  constructor(
-    connectedDevice: ConnectedDevice
-  ) : this(iDevice = UnsupportedIDevice(), connectedDevice = Optional.of(connectedDevice), useConnectedDevice = true)
+  constructor(connectedDevice: ConnectedDevice) : this(iDevice = UnsupportedIDevice(), connectedDevice = Optional.of(connectedDevice))
 
   constructor(
     iDevice: IDevice,
@@ -88,16 +74,11 @@ constructor(
   ) : this(
     iDevice = iDevice,
     connectedDevice = Optional.ofNullable(connectedDevice),
-    useConnectedDevice = checkEnableUseConnectedDevice(session),
   )
 
   val version: AndroidVersion
     get() {
       return runMigrated(
-        onLegacy = {
-          // Retrieve using IDevice
-          iDevice.version
-        },
         onMigrated = { connectedDevice ->
           // Retrieve using ConnectedDevice
           val properties =
@@ -116,7 +97,6 @@ constructor(
   val serialNumber: String
     get() =
       runMigrated(
-        onLegacy = { iDevice.serialNumber },
         onMigrated = { connectedDevice -> connectedDevice.serialNumber },
         onMigratedWhenDeviceNotFound = {
           // When removing IDevice from deployer we would have to pass `serialNumber` directly.
@@ -127,7 +107,6 @@ constructor(
   val abis: List<String>
     get() =
       runMigrated(
-        onLegacy = { iDevice.abis },
         onMigrated = { connectedDevice ->
           val properties =
             try {
@@ -149,7 +128,6 @@ constructor(
 
   fun getPidsForPackageName(packageName: String): List<Int> {
     return runMigrated(
-      onLegacy = { iDevice.clients.filter { packageName == it.clientData.packageName }.map { it.clientData.pid } },
       onMigrated = { connectedDevice ->
         val realPkgNameSupported = isRealPkgNameSupported
         connectedDevice.jdwpProcessTracker.processesFlow.value
@@ -171,15 +149,6 @@ constructor(
 
   fun getArchForPid(pid: Int): Deploy.Arch {
     return runMigrated(
-      onLegacy = {
-        val client = iDevice.clients.firstOrNull { it.clientData.pid == pid } ?: return@runMigrated Deploy.Arch.ARCH_UNKNOWN
-        val abi = client.clientData.abi ?: return@runMigrated Deploy.Arch.ARCH_UNKNOWN
-        when {
-          abi.startsWith("32-bit") -> Deploy.Arch.ARCH_32_BIT
-          abi.startsWith("64-bit") -> Deploy.Arch.ARCH_64_BIT
-          else -> AdbClient.getArchForAbi(abi) ?: Deploy.Arch.ARCH_UNKNOWN
-        }
-      },
       onMigrated = { connectedDevice ->
         val process = connectedDevice.jdwpProcessTracker.processesFlow.value.firstOrNull { it.pid == pid }
         val instructionSet = process?.properties?.instructionSet?.getOrNull() ?: return@runMigrated Deploy.Arch.ARCH_UNKNOWN
@@ -190,22 +159,11 @@ constructor(
   }
 
   val isRoot: Boolean
-    get() = runMigrated(onLegacy = { iDevice.isRoot }, onMigrated = { connectedDevice -> runBlocking { connectedDevice.isRoot() } })
+    get() = runMigrated(onMigrated = { connectedDevice -> runBlocking { connectedDevice.isRoot() } })
 
   @Throws(IOException::class)
   fun rawExec2(executable: String, parameters: Array<String>): DeployerConnectedSocket {
     return runMigrated(
-      onLegacy = {
-        try {
-          DdmlibSocketAdapter(iDevice.rawExec2(executable, parameters))
-        } catch (e: Exception) {
-          when (e) {
-            is AdbCommandRejectedException,
-            is DdmlibTimeoutException -> throw IOException(e)
-            else -> throw e
-          }
-        }
-      },
       onMigrated = { connectedDevice ->
         val command = (listOf(executable) + parameters).joinToString(" ")
         try {
@@ -216,7 +174,7 @@ constructor(
         } catch (e: TimeoutException) {
           throw IOException(e)
         }
-      },
+      }
     )
   }
 
@@ -228,23 +186,6 @@ constructor(
     maxTimeToOutputResponseUnit: TimeUnit,
   ) {
     runMigrated(
-      onLegacy = {
-        try {
-          iDevice.executeShellCommand(
-            command,
-            DeployerToDdmlibReceiverAdapter(receiver),
-            maxTimeToOutputResponse,
-            maxTimeToOutputResponseUnit,
-          )
-        } catch (e: Exception) {
-          when (e) {
-            is AdbCommandRejectedException,
-            is ShellCommandUnresponsiveException,
-            is DdmlibTimeoutException -> throw IOException(e)
-            else -> throw e
-          }
-        }
-      },
       onMigrated = { connectedDevice ->
         try {
           runBlocking {
@@ -265,7 +206,7 @@ constructor(
         } catch (e: TimeoutException) {
           throw IOException(e)
         }
-      },
+      }
     )
   }
 
@@ -278,24 +219,6 @@ constructor(
     inputStream: InputStream?,
   ) {
     runMigrated(
-      onLegacy = {
-        try {
-          iDevice.executeBinderCommand(
-            parameters,
-            DeployerToDdmlibReceiverAdapter(receiver),
-            maxTimeToOutputResponse,
-            maxTimeToOutputResponseUnit,
-            inputStream,
-          )
-        } catch (e: Exception) {
-          when (e) {
-            is AdbCommandRejectedException,
-            is ShellCommandUnresponsiveException,
-            is DdmlibTimeoutException -> throw IOException(e)
-            else -> throw e
-          }
-        }
-      },
       onMigrated = { connectedDevice ->
         try {
           runBlocking {
@@ -335,20 +258,13 @@ constructor(
         } catch (e: TimeoutException) {
           throw IOException(e)
         }
-      },
+      }
     )
   }
 
   @Throws(IOException::class)
   fun uninstallPackage(packageName: String): String? {
     return runMigrated(
-      onLegacy = {
-        try {
-          iDevice.uninstallPackage(packageName)
-        } catch (e: InstallException) {
-          throw IOException(e)
-        }
-      },
       onMigrated = { connectedDevice ->
         try {
           runBlocking { connectedDevice.packageManager.uninstall(packageName) }
@@ -356,14 +272,13 @@ constructor(
         } catch (e: AdbPackageManagerException) {
           parsePmInstallErrorOutput(e.errorOutput)
         }
-      },
+      }
     )
   }
 
   val isRealPkgNameSupported: Boolean
     get() =
       runMigrated(
-        onLegacy = { iDevice.supportsFeature(IDevice.Feature.REAL_PKG_NAME) },
         onMigrated = { _ -> version.isAtLeast(29, "R") },
         onMigratedWhenDeviceNotFound = { false },
       )
@@ -371,7 +286,6 @@ constructor(
   val isSkipVerificationSupported: Boolean
     get() =
       runMigrated(
-        onLegacy = { iDevice.supportsFeature(IDevice.Feature.SKIP_VERIFICATION) },
         onMigrated = { _ ->
           // Relaxed check: only support API >= 30, ignoring pre-release R previews (API 29 with "R" codename).
           version.isAtLeast(30)
@@ -382,7 +296,6 @@ constructor(
   val isEmbedded: Boolean
     get() =
       runMigrated(
-        onLegacy = { iDevice.supportsFeature(IDevice.HardwareFeature.EMBEDDED) },
         onMigrated = { connectedDevice ->
           try {
             runBlocking {
@@ -399,18 +312,6 @@ constructor(
   @Throws(IOException::class)
   fun pushFile(local: String, remote: String) {
     runMigrated(
-      onLegacy = {
-        try {
-          iDevice.pushFile(local, remote)
-        } catch (e: Exception) {
-          when (e) {
-            is AdbCommandRejectedException,
-            is SyncException,
-            is DdmlibTimeoutException -> throw IOException(e)
-            else -> throw e
-          }
-        }
-      },
       onMigrated = { connectedDevice ->
         val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
         val localFile = File(local).toPath()
@@ -433,25 +334,13 @@ constructor(
         } catch (e: TimeoutException) {
           throw IOException(e)
         }
-      },
+      }
     )
   }
 
   @Throws(IOException::class)
   fun root(): Boolean {
     return runMigrated(
-      onLegacy = {
-        try {
-          iDevice.root()
-        } catch (e: Exception) {
-          when (e) {
-            is AdbCommandRejectedException,
-            is ShellCommandUnresponsiveException,
-            is DdmlibTimeoutException -> throw IOException(e)
-            else -> throw e
-          }
-        }
-      },
       onMigrated = { connectedDevice ->
         try {
           runBlocking {
@@ -462,43 +351,32 @@ constructor(
         } catch (e: TimeoutException) {
           throw IOException(e)
         }
-      },
+      }
     )
   }
 
   /**
-   * Executes an operation using either the migrated [ConnectedDevice] path or the legacy [IDevice] path.
+   * Executes an operation using the migrated [ConnectedDevice] path.
    *
    * Execution branches:
-   * - If migration is disabled, [onLegacy] is executed.
-   * - If migration is enabled and [connectedDevice] is present, [onMigrated] is executed with the unwrapped [ConnectedDevice].
-   * - If migration is enabled but [connectedDevice] is missing, [onMigratedWhenDeviceNotFound] is executed.
+   * - If [connectedDevice] is present, [onMigrated] is executed with the unwrapped [ConnectedDevice].
+   * - If [connectedDevice] is missing, [onMigratedWhenDeviceNotFound] is executed.
    *
    *     TODO: Consider logging missing device warnings at call sites (e.g. Deployer/AdbInstaller) or device lookup site rather than inside
    *       individual methods here.
    */
   private inline fun <T> runMigrated(
-    crossinline onLegacy: () -> T,
     crossinline onMigrated: (ConnectedDevice) -> T,
     crossinline onMigratedWhenDeviceNotFound: () -> T = { throw IOException("Connected device is not present") },
   ): T {
-    return if (useConnectedDevice) {
-      if (connectedDevice.isPresent) {
-        onMigrated(connectedDevice.get())
-      } else {
-        onMigratedWhenDeviceNotFound()
-      }
+    return if (connectedDevice.isPresent) {
+      onMigrated(connectedDevice.get())
     } else {
-      onLegacy()
+      onMigratedWhenDeviceNotFound()
     }
   }
 
   companion object {
-    @JvmStatic
-    internal fun checkEnableUseConnectedDevice(session: AdbSession): Boolean {
-      return session.property(DeployerProperties.USE_CONNECTED_DEVICE)
-    }
-
     /**
      * Regex pattern to match Package Manager failure outputs and extract the failure details inside brackets. For example a failure output
      * can look like this: "Failure \[DELETE_FAILED_INTERNAL_ERROR\]"
@@ -518,26 +396,6 @@ constructor(
       val firstLine = output.lines().firstOrNull { it.isNotBlank() } ?: output
       return if (firstLine.startsWith("Unknown failure: ")) firstLine else "Unknown failure: $firstLine"
     }
-  }
-}
-
-/**
- * Adapts a [DeployerIShellOutputReceiver] to a ddmlib [IShellOutputReceiver].
- *
- * This adapter is required for the legacy [IDevice] execution path in [DeviceHolder]. It can be removed once deployer is fully migrated
- * away from ddmlib.
- */
-private class DeployerToDdmlibReceiverAdapter(private val receiver: DeployerIShellOutputReceiver) : IShellOutputReceiver {
-  override fun addOutput(data: ByteArray, offset: Int, length: Int) {
-    receiver.addOutput(data, offset, length)
-  }
-
-  override fun flush() {
-    receiver.flush()
-  }
-
-  override fun isCancelled(): Boolean {
-    return receiver.isCancelled
   }
 }
 
@@ -612,20 +470,4 @@ private class AdblibChannelSocket(private val channel: AdbChannel) : DeployerCon
     closed = true
     channel.close()
   }
-}
-
-/**
- * Adapts a ddmlib [SimpleConnectedSocket] to a [DeployerConnectedSocket].
- *
- * This adapter is required for the legacy [IDevice] execution path in [DeviceHolder]. It can be removed once deployer is fully migrated
- * away from ddmlib.
- */
-private class DdmlibSocketAdapter(private val socket: SimpleConnectedSocket) : DeployerConnectedSocket {
-  override fun read(dst: ByteBuffer, timeoutMs: Long): Int = socket.read(dst, timeoutMs)
-
-  override fun write(dst: ByteBuffer, timeoutMs: Long): Int = socket.write(dst, timeoutMs)
-
-  override fun isOpen(): Boolean = socket.isOpen
-
-  override fun close() = socket.close()
 }

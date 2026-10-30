@@ -536,7 +536,7 @@ class DeviceHolderTest {
     // The IDevice is only used to retrieve the serial number of the device
     val iDevice = mock<IDevice>()
     whenever(iDevice.serialNumber).thenReturn(SERIAL_NUMBER)
-    return DeviceHolder(iDevice, Optional.empty(), useConnectedDevice = true)
+    return DeviceHolder(iDevice, Optional.empty())
   }
 
   private fun DeployerConnectedSocket.readText(): String {

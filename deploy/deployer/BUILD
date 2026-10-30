@@ -546,7 +546,6 @@ kotlin_test(
         "src/test/java/com/android/tools/deployer/DeployerRunnerUtilsTest.kt",
         "src/test/java/com/android/tools/deployer/TestLogger.java",
         "src/test/java/com/android/tools/deployer/apktestutils/BinaryXmlEncoderTest.kt",
-        "src/test/java/com/android/tools/deployer/common/DeviceHolderMigrationTest.kt",
         "src/test/java/com/android/tools/deployer/common/DeviceHolderTest.kt",
         "src/test/java/com/android/tools/deployer/model/AppTest.kt",
         "src/test/java/com/android/tools/deployer/model/component/DeclarativeWatchFaceTest.kt",
