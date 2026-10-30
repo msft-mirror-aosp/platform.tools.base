@@ -163,6 +163,7 @@ internal constructor(
         .keySet()
         .filter { it.type == ProductFlavorAttr::class.java }
         .associateWith { configuration.attributes.getAttribute(it) } as Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>
+    val kotlinPlatformTypeAttribute = configuration.attributes.keySet().find { it.name == KotlinPlatformType.attribute.name }
 
     return configuration.incoming
       .artifactView { view ->
@@ -173,6 +174,14 @@ internal constructor(
         view.attributes.apply {
           buildType?.let { attribute(BuildTypeAttr.ATTRIBUTE, buildType) }
           flavorMap.entries.forEach { attribute(it.key, it.value) }
+          copyAttribute(
+            TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+            from = configuration.attributes,
+            to = this,
+          )
+          kotlinPlatformTypeAttribute?.let {
+            copyAttribute(it, from = configuration.attributes, to = this)
+          }
 
           attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType::class.java, docsType))
           attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category::class.java, Category.DOCUMENTATION))
@@ -183,6 +192,14 @@ internal constructor(
         }
       }
       .artifacts
+  }
+
+  private fun <T : Any> copyAttribute(
+    attribute: Attribute<T>,
+    from: AttributeContainer,
+    to: AttributeContainer,
+  ) {
+    from.getAttribute(attribute)?.let { to.attribute(attribute, it) }
   }
 
   @JvmOverloads

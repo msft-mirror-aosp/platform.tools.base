@@ -32,7 +32,7 @@ import org.junit.Test
 /** Integration tests for fetching javadoc, source and samples. */
 class AdditionalArtifactsModelTest {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestApp(setUpTestProject()).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(setUpTestProject()).withKotlinGradlePlugin(true).create()
 
   private fun setUpTestProject(): TestProject {
     return MultiModuleTestProject.builder()
@@ -175,6 +175,68 @@ class AdditionalArtifactsModelTest {
       .isEqualTo("[{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-sources.jar{F}]")
     Truth.assertThat(lib?.docJar?.toValueString(result.normalizer))
       .isEqualTo("{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-javadoc.jar{F}")
+  }
+
+  @Test
+  fun testModelFetchingArtifactsFromMultiplatformLibrary() {
+    library.buildFile.writeText(
+      """
+      plugins {
+          id 'org.jetbrains.kotlin.multiplatform'
+          id 'com.android.kotlin.multiplatform.library'
+          id 'maven-publish'
+      }
+
+      group = 'com.example.android'
+      version = '1.0'
+
+      kotlin {
+          jvm()
+          android {
+              namespace = '$LIBRARY_PACKAGE'
+              compileSdk = ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
+          }
+      }
+
+      publishing {
+          repositories {
+              maven { url = '../testrepo' }
+          }
+      }
+      """
+        .trimIndent()
+    )
+    TestFileUtils.searchAndReplace(
+      app.buildFile,
+      "com.example.android:myLib:1.0",
+      "com.example.android:library:1.0",
+    )
+
+    library.execute("publish")
+    val result = app.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+
+    val variantDeps =
+      result.container.getProject(":app").variantDependencies ?: throw RuntimeException("No VariantDependencies model for :app")
+
+    val runtimeLib =
+      variantDeps.libraries.values.singleOrNull {
+        it.libraryInfo?.let { info ->
+          info.name == "library-android" && info.attributes["org.gradle.usage"] == "java-runtime"
+        } ?: false
+      }
+    Truth.assertWithMessage("library-android (java-runtime)").that(runtimeLib).isNotNull()
+    Truth.assertThat(runtimeLib?.srcJars?.toValueString(result.normalizer))
+      .isEqualTo("[{PROJECT}/testrepo/com/example/android/library-android/1.0/library-android-1.0-sources.jar{F}]")
+
+    val compileLib =
+      variantDeps.libraries.values.singleOrNull {
+        it.libraryInfo?.let { info ->
+          info.name == "library-android" && info.attributes["org.gradle.usage"] == "java-api"
+        } ?: false
+      }
+    Truth.assertWithMessage("library-android (java-api)").that(compileLib).isNotNull()
+    Truth.assertThat(compileLib?.srcJars?.toValueString(result.normalizer))
+      .isEqualTo("[{PROJECT}/testrepo/com/example/android/library-android/1.0/library-android-1.0-sources.jar{F}]")
   }
 
   private fun addPublication(componentName: String) {
