@@ -550,7 +550,7 @@ com.android.tools.build:gradle:$BUILD_VERSION
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     com.google.protobuf:protobuf-java-util:3.25.5 (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.crypto.tink:tink:1.7.0 (runtime)
+    com.google.crypto.tink:tink:1.15.0 (runtime)
     org.tensorflow:tensorflow-lite-metadata:0.2.0 (runtime)
 
 com.android.tools.build:gradle-api:$BUILD_VERSION
