@@ -28,8 +28,8 @@ import com.google.api.client.googleapis.util.Utils
 import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.http.HttpTransport
 import com.google.api.client.json.GenericJson
+import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.JsonObjectParser
-import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.storage.Storage
 import com.google.api.services.testing.Testing
 import com.google.api.services.testing.model.AndroidDeviceCatalog
@@ -111,8 +111,8 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
     request.headers[xGoogUserProjectHeaderKey] = quotaProjectName
   }
 
-  private val jacksonFactory: JacksonFactory
-    get() = JacksonFactory.getDefaultInstance()
+  private val jsonFactory: JsonFactory
+    get() = Utils.getDefaultJsonFactory()
 
   internal open val httpTransport: HttpTransport by
     lazy(LazyThreadSafetyMode.PUBLICATION) { parameters.httpHandler.get().createHttpTransport() }
@@ -143,7 +143,7 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
   private val toolResultsManager: ToolResultsManager by
     lazy(LazyThreadSafetyMode.PUBLICATION) {
       ToolResultsManager(
-        ToolResults.Builder(httpTransport, jacksonFactory, httpRequestInitializer)
+        ToolResults.Builder(httpTransport, jsonFactory, httpRequestInitializer)
           .apply { applicationName = CLIENT_APPLICATION_NAME }
           .build(),
         httpTransport.createRequestFactory(httpRequestInitializer),
@@ -153,14 +153,14 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
   private val testingManager: TestingManager by
     lazy(LazyThreadSafetyMode.PUBLICATION) {
       TestingManager(
-        Testing.Builder(httpTransport, jacksonFactory, httpRequestInitializer).apply { applicationName = CLIENT_APPLICATION_NAME }.build()
+        Testing.Builder(httpTransport, jsonFactory, httpRequestInitializer).apply { applicationName = CLIENT_APPLICATION_NAME }.build()
       )
     }
 
   private val storageManager: StorageManager by
     lazy(LazyThreadSafetyMode.PUBLICATION) {
       StorageManager(
-        Storage.Builder(httpTransport, jacksonFactory, httpRequestInitializer).apply { applicationName = CLIENT_APPLICATION_NAME }.build()
+        Storage.Builder(httpTransport, jsonFactory, httpRequestInitializer).apply { applicationName = CLIENT_APPLICATION_NAME }.build()
       )
     }
 

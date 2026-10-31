@@ -84477,6 +84477,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.auth.google-auth-library-bom_1.30.0",
+    pom = "com/google/auth/google-auth-library-bom/1.30.0/google-auth-library-bom-1.30.0.pom",
+    repo_root_path = "",
+    repo_path = "com/google/auth/google-auth-library-bom/1.30.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.auth.google-auth-library-credentials_1.23.0",
     pom = "com/google/auth/google-auth-library-credentials/1.23.0/google-auth-library-credentials-1.23.0.pom",
     repo_root_path = "",
@@ -87637,6 +87645,22 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.http-client.google-http-client-bom_1.42.0",
+    pom = "com/google/http-client/google-http-client-bom/1.42.0/google-http-client-bom-1.42.0.pom",
+    repo_root_path = "",
+    repo_path = "com/google/http-client/google-http-client-bom/1.42.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.http-client.google-http-client-bom_1.42.3",
+    pom = "com/google/http-client/google-http-client-bom/1.42.3/google-http-client-bom-1.42.3.pom",
+    repo_root_path = "",
+    repo_path = "com/google/http-client/google-http-client-bom/1.42.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.http-client.google-http-client-bom_1.43.3",
     pom = "com/google/http-client/google-http-client-bom/1.43.3/google-http-client-bom-1.43.3.pom",
     repo_root_path = "",
@@ -87649,6 +87673,14 @@ maven_artifact(
     pom = "com/google/http-client/google-http-client-bom/1.45.0/google-http-client-bom-1.45.0.pom",
     repo_root_path = "",
     repo_path = "com/google/http-client/google-http-client-bom/1.45.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.http-client.google-http-client-bom_1.45.2",
+    pom = "com/google/http-client/google-http-client-bom/1.45.2/google-http-client-bom-1.45.2.pom",
+    repo_root_path = "",
+    repo_path = "com/google/http-client/google-http-client-bom/1.45.2",
     visibility = ["//visibility:public"],
 )
 
@@ -87893,6 +87925,22 @@ maven_artifact(
     deps = [
         "com.google.guava.guava_30.1-android",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.oauth-client.google-oauth-client-bom_1.34.1",
+    pom = "com/google/oauth-client/google-oauth-client-bom/1.34.1/google-oauth-client-bom-1.34.1.pom",
+    repo_root_path = "",
+    repo_path = "com/google/oauth-client/google-oauth-client-bom/1.34.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.oauth-client.google-oauth-client-bom_1.36.0",
+    pom = "com/google/oauth-client/google-oauth-client-bom/1.36.0/google-oauth-client-bom-1.36.0.pom",
+    repo_root_path = "",
+    repo_path = "com/google/oauth-client/google-oauth-client-bom/1.36.0",
     visibility = ["//visibility:public"],
 )
 

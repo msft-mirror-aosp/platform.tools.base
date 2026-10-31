@@ -21,8 +21,6 @@ import com.android.tools.firebase.testlab.gradle.FixtureImpl
 import com.android.tools.firebase.testlab.gradle.services.TestLabBuildService
 import com.android.tools.firebase.testlab.gradle.services.storage.TestRunStorage
 import com.android.tools.firebase.testlab.gradle.services.toUrl
-import com.google.api.client.json.GenericJson
-import com.google.api.client.util.Key
 import com.google.api.services.storage.model.StorageObject
 import com.google.api.services.testing.model.AndroidDevice
 import com.google.api.services.testing.model.AndroidDeviceList
@@ -34,31 +32,19 @@ import com.google.api.services.testing.model.EnvironmentVariable
 import com.google.api.services.testing.model.GoogleCloudStorage
 import com.google.api.services.testing.model.RegularFile
 import com.google.api.services.testing.model.ResultStorage
+import com.google.api.services.testing.model.ShardingOption
+import com.google.api.services.testing.model.SmartSharding
 import com.google.api.services.testing.model.TestMatrix
 import com.google.api.services.testing.model.TestSetup
 import com.google.api.services.testing.model.TestSpecification
 import com.google.api.services.testing.model.ToolResultsHistory
+import com.google.api.services.testing.model.UniformSharding
 
 class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
 
   companion object {
-    const val INSTRUMENTATION_TEST_SHARD_FIELD = "shardingOption"
     const val TEST_MATRIX_FLAKY_TEST_ATTEMPTS_FIELD = "flakyTestAttempts"
     const val TEST_MATRIX_FAIL_FAST_FIELD = "failFast"
-  }
-
-  class UniformSharding : GenericJson() {
-    @Key var numShards: Int? = null
-  }
-
-  class SmartSharding : GenericJson() {
-    @Key var targetedShardDuration: String? = null
-  }
-
-  class ShardingOption : GenericJson() {
-    @Key var uniformSharding: UniformSharding? = null
-
-    @Key var smartSharding: SmartSharding? = null
   }
 
   fun createTestMatrix(
@@ -114,7 +100,7 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
                 orchestratorOption = "USE_ORCHESTRATOR"
               }
 
-              createShardingOption()?.also { sharding -> this.set(INSTRUMENTATION_TEST_SHARD_FIELD, sharding) }
+              createShardingOption()?.also { sharding -> shardingOption = sharding }
             }
 
           testTimeout = "${projectSettings.ftlTimeoutSeconds}s"

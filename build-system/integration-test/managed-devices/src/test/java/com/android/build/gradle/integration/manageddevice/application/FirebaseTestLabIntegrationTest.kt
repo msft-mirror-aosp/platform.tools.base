@@ -129,7 +129,7 @@ class FirebaseTestLabIntegrationTest {
       // Plugin invokes credential check
       assertThat(it).contains("Fake credential initialized")
       assertThat(it)
-        .contains("^POST https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings\$ is hit")
+        .contains("^POST https://toolresults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings\$ is hit")
       // Verifies that test request is sent to FTL server
       //            assertThat(it).contains("Firebase Testlab Test for myFtlDevice1: Starting
       // Android test.")
@@ -143,11 +143,11 @@ class FirebaseTestLabIntegrationTest {
       // Verifies that we are obtaining test results
       assertThat(it)
         .contains(
-          "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId\$ is hit"
+          "^GET https://toolresults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId\$ is hit"
         )
       assertThat(it)
         .contains(
-          "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/thumbnails\$ is hit"
+          "^GET https://toolresults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/thumbnails\$ is hit"
         )
       assertThat(it)
         .contains(
@@ -399,27 +399,27 @@ class TestUtils {
       ),
       INITIALIZE_SETTINGS(
         RequestResponseElement(
-          Regex("^POST https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings$"),
+          Regex("^POST https://toolresults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings$"),
           listOf(testInitializeSettingsData),
         )
       ),
       GET_HISTORY_LIST(
         RequestResponseElement(
           Regex(
-            "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories\\?filterByName=pkg\\.name\\.app$"
+            "^GET https://toolresults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories\\?filterByName=pkg\\.name\\.app$"
           ),
           listOf(getOrCreateHistoryData),
         )
       ),
       RETRIEVE_HISTORY_ANDROID_DEBUG(
         RequestResponseElement(
-          Regex("^GET https://www\\.googleapis\\.com/storage/v1/b/defaultBucketName/o/:app.*debug-androidTest\\.apk$"),
+          Regex("^GET https://storage\\.googleapis\\.com/storage/v1/b/defaultBucketName/o/:app.*debug-androidTest\\.apk$"),
           listOf(retrieveSharedFileAndroidDebugData),
         )
       ),
       RETRIEVE_HISTORY_APP(
         RequestResponseElement(
-          Regex("^GET https://www\\.googleapis\\.com/storage/v1/b/defaultBucketName/o/:app.*debug\\.apk$"),
+          Regex("^GET https://storage\\.googleapis\\.com/storage/v1/b/defaultBucketName/o/:app.*debug\\.apk$"),
           listOf(retrieveSharedFileAppData),
         )
       ),
@@ -438,7 +438,7 @@ class TestUtils {
       REQUEST_TEST_RESULT(
         RequestResponseElement(
           Regex(
-            "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId$"
+            "^GET https://toolresults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId$"
           ),
           listOf(testExecutionStepData),
         )
@@ -446,7 +446,7 @@ class TestUtils {
       REQUEST_THUMBNAILS(
         RequestResponseElement(
           Regex(
-            "^GET https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/thumbnails$"
+            "^GET https://toolresults\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id/histories/testHistoryId/executions/testExecutionId/steps/testStepId/thumbnails$"
           ),
           listOf(stepThumbnailsResponseData),
         )

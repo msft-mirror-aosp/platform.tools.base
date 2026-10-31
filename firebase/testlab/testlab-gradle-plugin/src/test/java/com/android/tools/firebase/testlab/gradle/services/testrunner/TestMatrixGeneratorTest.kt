@@ -19,9 +19,6 @@ package com.android.tools.firebase.testlab.gradle.services.testrunner
 import com.android.build.api.instrumentation.StaticTestData
 import com.android.tools.firebase.testlab.gradle.ManagedDeviceImpl
 import com.android.tools.firebase.testlab.gradle.services.storage.TestRunStorage
-import com.android.tools.firebase.testlab.gradle.services.testrunner.TestMatrixGenerator.ShardingOption
-import com.android.tools.firebase.testlab.gradle.services.testrunner.TestMatrixGenerator.SmartSharding
-import com.android.tools.firebase.testlab.gradle.services.testrunner.TestMatrixGenerator.UniformSharding
 import com.google.api.services.storage.model.StorageObject
 import com.google.api.services.testing.model.AndroidDevice
 import com.google.api.services.testing.model.AndroidModel
@@ -29,7 +26,10 @@ import com.google.api.services.testing.model.DeviceFile
 import com.google.api.services.testing.model.EnvironmentVariable
 import com.google.api.services.testing.model.FileReference
 import com.google.api.services.testing.model.RegularFile
+import com.google.api.services.testing.model.ShardingOption
+import com.google.api.services.testing.model.SmartSharding
 import com.google.api.services.testing.model.TestMatrix
+import com.google.api.services.testing.model.UniformSharding
 import com.google.common.truth.Truth.assertThat
 import java.lang.IllegalStateException
 import java.util.Locale
@@ -312,7 +312,7 @@ class TestMatrixGeneratorTest {
     testSpecInstrumentationTestPackageId: String = "testing_apk",
     testSpecInstrumentationAppPackageId: String = "app_under_test",
     testSpecInstrumentationOrchestrator: String? = null,
-    testSpecInstrumentationSharding: TestMatrixGenerator.ShardingOption? = null,
+    testSpecInstrumentationSharding: ShardingOption? = null,
     testSpecTestTimeout: String = "900s",
     testSpecDisablePerformance: Boolean? = true,
     testSpecDisableVideoRecording: Boolean? = true,
@@ -355,7 +355,7 @@ class TestMatrixGeneratorTest {
         assertThat(instrumentation.appPackageId).isEqualTo(testSpecInstrumentationAppPackageId)
         assertThat(instrumentation.testPackageId).isEqualTo(testSpecInstrumentationTestPackageId)
         assertThat(instrumentation.orchestratorOption).isEqualTo(testSpecInstrumentationOrchestrator)
-        assertThat(instrumentation.get("shardingOption")).isEqualTo(testSpecInstrumentationSharding)
+        assertThat(instrumentation.shardingOption).isEqualTo(testSpecInstrumentationSharding)
       }
 
       assertThat(testSpec.testTimeout).isEqualTo(testSpecTestTimeout)
