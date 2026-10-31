@@ -433,6 +433,8 @@ public class AvdManagerCliTest {
                         "P automotive_ultrawide\n",
                         "P desktop_api37\n",
                         "P ai_glasses_device\n",
+                        "P foldable_1_1\n",
+                        "P foldable_4_3\n",
                         "P Galaxy Nexus\n",
                         "P desktop_large\n",
                         "P desktop_medium\n",
@@ -535,11 +537,11 @@ public class AvdManagerCliTest {
         assertThat(Joiner.on("").join(mLogger.getMessages()))
                 .contains(
                         "P ---------\n"
-                                + "P id: 84 or \"4in WVGA (Nexus S)\"\n"
+                                + "P id: 86 or \"4in WVGA (Nexus S)\"\n"
                                 + "P     Name: 4\" WVGA (Nexus S)\n"
                                 + "P     OEM : Generic\n"
                                 + "P ---------\n"
-                                + "P id: 85 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                + "P id: 87 or \"4.65in 720p (Galaxy Nexus)\"\n"
                                 + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
                                 + "P     OEM : Generic\n"
                                 + "P ---------");
