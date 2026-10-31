@@ -95,4 +95,33 @@ class VerifyLibraryResourcesTaskTest {
       )
     assertFalse(dirOut.exists())
   }
+
+  @Test
+  fun localCompiledResourcesAreAddedAfterDependencyResources() {
+    val manifestFile = temporaryFolder.newFile("AndroidManifest.xml")
+    val linkedApk = temporaryFolder.newFile("linked.apk")
+    val depDir1 = temporaryFolder.newFolder("dep1")
+    val depDir2 = temporaryFolder.newFolder("dep2")
+    val localCompiledDir = temporaryFolder.newFolder("compiled")
+    val androidJar = temporaryFolder.newFile("android.jar")
+    val mergeBlameFolder = temporaryFolder.newFolder("blame")
+    val manifestMergeBlameFile = temporaryFolder.newFile("manifest-blame.txt")
+
+    val config =
+      VerifyLibraryResourcesTask.buildAaptPackageConfig(
+        manifestFile = manifestFile,
+        linkedApk = linkedApk,
+        compiledDependenciesResourcesDirs = listOf(depDir1, depDir2),
+        compiledResources = localCompiledDir,
+        androidJar = androidJar,
+        mergeBlameFolder = mergeBlameFolder,
+        manifestMergeBlameFile = manifestMergeBlameFile,
+        identifiedSourceSetMap = emptyMap(),
+      )
+
+    org.junit.Assert.assertEquals(
+      listOf(depDir1, depDir2, localCompiledDir),
+      config.resourceDirs,
+    )
+  }
 }

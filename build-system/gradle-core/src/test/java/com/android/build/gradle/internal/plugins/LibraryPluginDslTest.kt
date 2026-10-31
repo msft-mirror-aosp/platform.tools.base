@@ -261,6 +261,31 @@ class LibraryPluginDslTest {
     }
   }
 
+  @Test
+  fun testPrecompileDependenciesResourcesEnabledForLibraryMergeTask() {
+    plugin.createAndroidTasks(project)
+    val mergeTask =
+      project.tasks
+        .named(
+          "mergeReleaseResources",
+          com.android.build.gradle.tasks.MergeResources::class.java,
+        )
+        .get()
+    val packageTask =
+      project.tasks
+        .named(
+          "packageReleaseResources",
+          com.android.build.gradle.tasks.MergeResources::class.java,
+        )
+        .get()
+    val field =
+      com.android.build.gradle.tasks.MergeResources::class.java.getDeclaredField("precompileDependenciesResources").apply {
+        isAccessible = true
+      }
+    assertThat(field.getBoolean(mergeTask)).isTrue()
+    assertThat(field.getBoolean(packageTask)).isFalse()
+  }
+
   companion object {
     init {
       importOfflineMavenRepo()

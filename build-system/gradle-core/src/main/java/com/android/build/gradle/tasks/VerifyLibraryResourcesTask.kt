@@ -176,10 +176,14 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
       val linkedApk = tempOutput.resolve("linked.apk")
       val config =
         buildAaptPackageConfig(
-          linkedApk,
-          compiledDependenciesResourcesDirs,
-          compiledResources,
-          ResourcePathEncoding.Relative(resSourceSetMap),
+          manifestFile = parameters.manifestFile.get().asFile,
+          linkedApk = linkedApk,
+          compiledDependenciesResourcesDirs = compiledDependenciesResourcesDirs,
+          compiledResources = compiledResources,
+          androidJar = parameters.androidJar.get().asFile,
+          mergeBlameFolder = parameters.mergeBlameFolder.get().asFile,
+          manifestMergeBlameFile = parameters.manifestMergeBlameFile.get().asFile,
+          identifiedSourceSetMap = ResourcePathEncoding.Relative(resSourceSetMap).identifiedSourceSetMap,
         )
 
       workerExecutor.await() // All compilation must be done before linking.
@@ -195,28 +199,6 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
         Files.deleteIfExists(linkedApk.toPath())
       }
     }
-
-    private fun buildAaptPackageConfig(
-      linkedApk: File,
-      compiledDependenciesResourcesDirs: List<File>,
-      compiledResources: File,
-      relativeResourcePathEncoding: ResourcePathEncoding.Relative,
-    ): AaptPackageConfig =
-      with(parameters) {
-        AaptPackageConfig.Builder()
-          .setManifestFile(manifestFile = manifestFile.get().asFile)
-          .setResourceOutputApk(linkedApk)
-          .addResourceDir(resourceDir = compiledResources)
-          .addResourceDirectories(compiledDependenciesResourcesDirs)
-          .setLibrarySymbolTableFiles(ImmutableSet.of())
-          .setOptions(AaptOptions())
-          .setComponentType(ComponentTypeImpl.LIBRARY)
-          .setAndroidTarget(androidJar = androidJar.get().asFile)
-          .setMergeBlameDirectory(mergeBlameFolder.get().asFile)
-          .setManifestMergeBlameFile(manifestMergeBlameFile.get().asFile)
-          .setIdentifiedSourceSetMap(relativeResourcePathEncoding.identifiedSourceSetMap)
-          .build()
-      }
   }
 
   class CreationAction(creationConfig: ComponentCreationConfig) :
@@ -273,6 +255,32 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
   }
 
   companion object {
+
+    @JvmStatic
+    @VisibleForTesting
+    internal fun buildAaptPackageConfig(
+      manifestFile: File,
+      linkedApk: File,
+      compiledDependenciesResourcesDirs: List<File>,
+      compiledResources: File,
+      androidJar: File,
+      mergeBlameFolder: File,
+      manifestMergeBlameFile: File,
+      identifiedSourceSetMap: Map<String, String>,
+    ): AaptPackageConfig =
+      AaptPackageConfig.Builder()
+        .setManifestFile(manifestFile = manifestFile)
+        .setResourceOutputApk(linkedApk)
+        .addResourceDirectories(compiledDependenciesResourcesDirs)
+        .addResourceDir(resourceDir = compiledResources)
+        .setLibrarySymbolTableFiles(ImmutableSet.of())
+        .setOptions(AaptOptions())
+        .setComponentType(ComponentTypeImpl.LIBRARY)
+        .setAndroidTarget(androidJar = androidJar)
+        .setMergeBlameDirectory(mergeBlameFolder)
+        .setManifestMergeBlameFile(manifestMergeBlameFile)
+        .setIdentifiedSourceSetMap(identifiedSourceSetMap)
+        .build()
 
     /**
      * Compiles new or changed files and removes files that were compiled from the removed files.

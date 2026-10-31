@@ -686,7 +686,7 @@ abstract class MergeResources : NewIncrementalTask() {
     private val includeDependencies: Boolean,
     private val processResources: Boolean,
     private val flags: Set<Flag>,
-    private val isLibrary: Boolean,
+    isLibrary: Boolean,
   ) :
     VariantTaskCreationAction<MergeResources, ComponentCreationConfig>(creationConfig),
     AndroidResourcesTaskCreationAction by AndroidResourcesTaskCreationActionImpl(creationConfig) {
@@ -781,7 +781,7 @@ abstract class MergeResources : NewIncrementalTask() {
       task.flags = flags
       task.errorFormatMode = SyncOptions.getErrorFormatMode(creationConfig.services.projectOptions)
       task.precompileDependenciesResources =
-        (mergeType == TaskManager.MergeType.MERGE && !isLibrary && androidResourcesCreationConfig.isPrecompileDependenciesResourcesEnabled)
+        (mergeType == TaskManager.MergeType.MERGE && androidResourcesCreationConfig.isPrecompileDependenciesResourcesEnabled)
       task.resourceDirsOutsideRootProjectDir.setDisallowChanges(
         task.project.provider { getResourcesDirsOutsideRoot(task, isDataBindingEnabled, isViewBindingEnabled) }
       )
