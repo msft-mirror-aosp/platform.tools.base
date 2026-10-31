@@ -19,7 +19,6 @@ package com.android.tools.render.common
 import com.android.tools.render.common.ComponentTreeExtractor.findZeroArgMethod
 import com.android.tools.render.common.ComponentTreeExtractor.invokeGetter
 import java.lang.reflect.Method
-import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -43,8 +42,11 @@ internal object ComposeSemanticsExtractor {
   private const val COLOR_SPACE_UNSPECIFIED_ID = 16L
   private const val LEGACY_COLOR_UNSPECIFIED = 0x1000000000L
 
-  private val semanticsMethodCache = ConcurrentHashMap<Class<*>, Method>()
-  private val noMethodSentinel: Method = Any::class.java.getDeclaredMethod("toString")
+  // Cached reflection lookup table keyed via ClassValue so cached Method handles do not prevent class loader unloading.
+  private val semanticsMethodCache =
+    object : ClassValue<Method?>() {
+      override fun computeValue(cls: Class<*>): Method? = resolveSemanticsConfigMethod(cls)
+    }
 
   fun extractSemantics(layoutNode: Any?): Map<String, String>? {
     if (layoutNode == null) return null
@@ -124,25 +126,23 @@ internal object ComposeSemanticsExtractor {
     }
   }
 
+  private fun findSemanticsConfigMethod(clazz: Class<*>): Method? = semanticsMethodCache.get(clazz)
+
   /**
    * Resolves the semantics configuration getter on `LayoutNode`.
    *
    * Compose 1.8+ exposes `getSemanticsConfiguration()` via `SemanticsInfo`, whereas Compose 1.5–1.7 exposes the internal mangled method
    * `getCollapsedSemantics$ui_release()`.
    */
-  private fun findSemanticsConfigMethod(clazz: Class<*>): Method? {
-    val cached =
-      semanticsMethodCache.computeIfAbsent(clazz) { cls ->
-        val found =
-          (cls.methods.asSequence() + cls.declaredMethods.asSequence()).firstOrNull { method ->
-            method.parameterCount == 0 &&
-              (method.name == "getSemanticsConfiguration" ||
-                method.name.startsWith("getSemanticsConfiguration$") ||
-                method.name.startsWith("getCollapsedSemantics"))
-          }
-        found?.apply { isAccessible = true } ?: noMethodSentinel
+  private fun resolveSemanticsConfigMethod(cls: Class<*>): Method? {
+    val found =
+      (cls.methods.asSequence() + cls.declaredMethods.asSequence()).firstOrNull { method ->
+        method.parameterCount == 0 &&
+          (method.name == "getSemanticsConfiguration" ||
+            method.name.startsWith("getSemanticsConfiguration$") ||
+            method.name.startsWith("getCollapsedSemantics"))
       }
-    return cached.takeIf { it !== noMethodSentinel }
+    return found?.apply { isAccessible = true }
   }
 
   fun extractModifiers(layoutNode: Any?, cl: ClassLoader?): Map<String, String>? {

@@ -22,12 +22,16 @@ import com.android.tools.rendering.compose.PxBounds
 import com.android.tools.rendering.compose.SourceLocationImpl
 import java.io.StringReader
 import java.io.StringWriter
+import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
 
 class ComponentTreeExtractorTest {
 
@@ -1080,5 +1084,89 @@ class ComponentTreeExtractorTest {
 
     val flatSemantics = ComposeSemanticsExtractor.extractViewSemantics(FakeElevatedView(0f))
     assertNull(flatSemantics)
+  }
+
+  private fun generateDynamicNodeClassBytes(internalName: String): ByteArray {
+    val cw = ClassWriter(ClassWriter.COMPUTE_FRAMES)
+    cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, internalName, null, "java/lang/Object", null)
+
+    // public <init>()
+    val initMv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null)
+    initMv.visitCode()
+    initMv.visitVarInsn(Opcodes.ALOAD, 0)
+    initMv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+    initMv.visitInsn(Opcodes.RETURN)
+    initMv.visitMaxs(1, 1)
+    initMv.visitEnd()
+
+    // public int customField;
+    cw.visitField(Opcodes.ACC_PUBLIC, "customField", "I", null, null).visitEnd()
+
+    // public String getName() { return "DynamicNode"; }
+    val getNameMv = cw.visitMethod(Opcodes.ACC_PUBLIC, "getName", "()Ljava/lang/String;", null, null)
+    getNameMv.visitCode()
+    getNameMv.visitLdcInsn("DynamicNode")
+    getNameMv.visitInsn(Opcodes.ARETURN)
+    getNameMv.visitMaxs(1, 1)
+    getNameMv.visitEnd()
+
+    // public java.lang.Iterable getSemanticsConfiguration() { return java.util.Collections.emptyList(); }
+    val semMv = cw.visitMethod(Opcodes.ACC_PUBLIC, "getSemanticsConfiguration", "()Ljava/lang/Iterable;", null, null)
+    semMv.visitCode()
+    semMv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Collections", "emptyList", "()Ljava/util/List;", false)
+    semMv.visitInsn(Opcodes.ARETURN)
+    semMv.visitMaxs(1, 1)
+    semMv.visitEnd()
+
+    cw.visitEnd()
+    return cw.toByteArray()
+  }
+
+  private fun exerciseClassInThrowawayLoader(
+    className: String,
+    action: (Class<*>, Any) -> Unit,
+  ): Pair<WeakReference<ClassLoader>, WeakReference<Class<*>>> {
+    val internalName = className.replace('.', '/')
+    val bytes = generateDynamicNodeClassBytes(internalName)
+    val loader =
+      object : ClassLoader(null) {
+        fun define(name: String, b: ByteArray): Class<*> = defineClass(name, b, 0, b.size)
+      }
+    val clazz = loader.define(className, bytes)
+    val instance = clazz.getDeclaredConstructor().newInstance()
+    action(clazz, instance)
+    return WeakReference<ClassLoader>(loader) to WeakReference(clazz)
+  }
+
+  private fun assertClassLoaderCollected(weakLoader: WeakReference<ClassLoader>, weakClass: WeakReference<Class<*>>) {
+    val deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+    while (System.nanoTime() < deadlineNanos) {
+      if (weakLoader.get() == null && weakClass.get() == null) break
+      System.gc()
+      Thread.sleep(10)
+    }
+    assertNull("Throwaway ClassLoader should be garbage collected after dropping references", weakLoader.get())
+    assertNull("Class loaded by throwaway ClassLoader should be garbage collected", weakClass.get())
+  }
+
+  @Test
+  fun testComponentTreeExtractorDoesNotRetainClassLoader() {
+    val (weakLoader, weakClass) =
+      exerciseClassInThrowawayLoader("com.example.test.DynamicComponentNode") { clazz, instance ->
+        assertEquals("DynamicNode", ComponentTreeExtractor.invokeGetter(instance, "name"))
+        assertNotNull(ComponentTreeExtractor.findZeroArgMethod(clazz, "getName"))
+        assertNotNull(ComponentTreeExtractor.findField(clazz, "customField"))
+        assertNull(ComponentTreeExtractor.findField(clazz, "nonExistentField"))
+      }
+    assertClassLoaderCollected(weakLoader, weakClass)
+  }
+
+  @Test
+  fun testComposeSemanticsExtractorDoesNotRetainClassLoader() {
+    val (weakLoader, weakClass) =
+      exerciseClassInThrowawayLoader("com.example.test.DynamicSemanticsNode") { _, instance ->
+        assertNull(ComposeSemanticsExtractor.extractSemantics(instance))
+      }
+    assertClassLoaderCollected(weakLoader, weakClass)
   }
 }

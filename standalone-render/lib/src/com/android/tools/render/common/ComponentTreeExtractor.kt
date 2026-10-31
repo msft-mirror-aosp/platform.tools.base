@@ -551,18 +551,28 @@ object ComponentTreeExtractor {
     )
   }
 
-  // Cached reflection lookup tables to avoid repeated Class.getMethods() array allocations per node property.
-  private val getterMethodCache = ConcurrentHashMap<Pair<Class<*>, String>, Method>()
-  private val fieldCache = ConcurrentHashMap<Pair<Class<*>, String>, Field>()
-  private val noMethodSentinel: Method = Any::class.java.getDeclaredMethod("toString")
-  private val noFieldSentinel: Field = ComponentBounds::class.java.getDeclaredField("left")
+  // Cached reflection lookup tables keyed via ClassValue so cached Method/Field handles do not prevent class loader unloading.
+  private val getterMethodCache =
+    object : ClassValue<ConcurrentHashMap<String, Method>>() {
+      override fun computeValue(type: Class<*>): ConcurrentHashMap<String, Method> = ConcurrentHashMap()
+    }
+  private val fieldCache =
+    object : ClassValue<ConcurrentHashMap<String, Field>>() {
+      override fun computeValue(type: Class<*>): ConcurrentHashMap<String, Field> = ConcurrentHashMap()
+    }
+  @Suppress("unused") private var dummySentinelField: Any? = null
+
+  @Suppress("unused") private fun dummySentinelMethod() {}
+
+  private val noMethodSentinel: Method = ComponentTreeExtractor::class.java.getDeclaredMethod("dummySentinelMethod")
+  private val noFieldSentinel: Field = ComponentTreeExtractor::class.java.getDeclaredField("dummySentinelField")
 
   internal fun findZeroArgMethod(clazz: Class<*>, methodName: String): Method? {
     val cached =
-      getterMethodCache.computeIfAbsent(clazz to methodName) { (cls, name) ->
+      getterMethodCache.get(clazz).computeIfAbsent(methodName) { name ->
         val found =
-          cls.methods.firstOrNull { it.name == name && it.parameterCount == 0 }
-            ?: cls.declaredMethods.firstOrNull { it.name == name && it.parameterCount == 0 }
+          clazz.methods.firstOrNull { it.name == name && it.parameterCount == 0 }
+            ?: clazz.declaredMethods.firstOrNull { it.name == name && it.parameterCount == 0 }
         found?.apply { isAccessible = true } ?: noMethodSentinel
       }
     return cached.takeIf { it !== noMethodSentinel }
@@ -570,8 +580,8 @@ object ComponentTreeExtractor {
 
   internal fun findField(clazz: Class<*>, fieldName: String): Field? {
     val cached =
-      fieldCache.computeIfAbsent(clazz to fieldName) { (cls, name) ->
-        val found = cls.declaredFields.firstOrNull { it.name == name } ?: cls.fields.firstOrNull { it.name == name }
+      fieldCache.get(clazz).computeIfAbsent(fieldName) { name ->
+        val found = clazz.declaredFields.firstOrNull { it.name == name } ?: clazz.fields.firstOrNull { it.name == name }
         found?.apply { isAccessible = true } ?: noFieldSentinel
       }
     return cached.takeIf { it !== noFieldSentinel }
@@ -580,12 +590,12 @@ object ComponentTreeExtractor {
   internal fun invokeGetter(obj: Any, propertyName: String): Any? {
     val clazz = obj.javaClass
     val method =
-      getterMethodCache.computeIfAbsent(clazz to "prop:$propertyName") { (cls, _) ->
+      getterMethodCache.get(clazz).computeIfAbsent("prop:$propertyName") {
         val capitalized = propertyName.replaceFirstChar { it.uppercaseChar() }
         val targetNames = setOf("get$capitalized", propertyName, "is$capitalized")
         val found =
-          cls.methods.firstOrNull { it.name in targetNames && it.parameterCount == 0 }
-            ?: cls.declaredMethods.firstOrNull { it.name in targetNames && it.parameterCount == 0 }
+          clazz.methods.firstOrNull { it.name in targetNames && it.parameterCount == 0 }
+            ?: clazz.declaredMethods.firstOrNull { it.name in targetNames && it.parameterCount == 0 }
         found?.apply { isAccessible = true } ?: noMethodSentinel
       }
     if (method !== noMethodSentinel) {
