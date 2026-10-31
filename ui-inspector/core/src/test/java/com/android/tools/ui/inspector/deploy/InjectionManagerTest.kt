@@ -18,7 +18,6 @@ package com.android.tools.ui.inspector.deploy
 
 import com.android.adblib.DeviceInfo
 import com.android.adblib.DeviceList
-import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
@@ -36,6 +35,7 @@ import com.android.tools.ui.inspector.client.ComposeInspectorResolution
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.PROCESS_PACKAGES_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.android.tools.ui.inspector.deviceArtifactsInjectionManagerFactory
@@ -168,8 +168,7 @@ class InjectionManagerTest {
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     // Mock expected shell commands for the injection flow
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     val setupCmd = installCommand()
@@ -190,8 +189,7 @@ class InjectionManagerTest {
   fun testInjectAndAttach_reconnectsToRunningServer() = runTest {
     val injectionManager = createInjectionManager()
     // Only the commands of the reconnect path are configured: any injection-only command (run-as, pushes, attach) fails as unconfigured.
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses()
     // A realistic /proc/net/unix line: the abstract socket name is the last field, with a leading '@'.
     fakeSession.deviceServices.configureShellCommand(
@@ -215,8 +213,7 @@ class InjectionManagerTest {
   @Test
   fun testInjectAndAttach_reconnectStillEnablesDebugViewAttributes() = runTest {
     val injectionManager = createInjectionManager()
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "${socketName("1234")}\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
@@ -433,8 +430,7 @@ class InjectionManagerTest {
         tempFileSuffixGenerator = { "test.tmp" },
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
@@ -481,8 +477,7 @@ class InjectionManagerTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     // Mock expected shell commands for the injection flow
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
@@ -791,8 +786,7 @@ class InjectionManagerTest {
       InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses()
 
     // Configure run-as pwd to fail
@@ -822,8 +816,7 @@ class InjectionManagerTest {
       InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$packageName uid:10123\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n")
@@ -1061,8 +1054,7 @@ class InjectionManagerTest {
       InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$packageName uid:10123\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
@@ -1080,8 +1072,7 @@ class InjectionManagerTest {
   @Test
   fun testInjectAndAttach_packageNotInstalledPreservesAccessError() = runTest {
     val injectionManager = createInjectionManager()
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "")
 
     var exception: IllegalStateException? = null
@@ -1104,8 +1095,7 @@ class InjectionManagerTest {
   @Test
   fun testInjectAndAttach_pmAdbExceptionPropagates() = runTest {
     val injectionManager = createInjectionManager()
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
 
     try {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
@@ -1227,8 +1217,7 @@ class InjectionManagerTest {
       InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n27\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n27\n")
 
     try {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
@@ -1245,8 +1234,7 @@ class InjectionManagerTest {
       InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\ninvalid_sdk\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\ninvalid_sdk\n")
 
     try {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
@@ -1262,8 +1250,7 @@ class InjectionManagerTest {
       InjectionManager(testSession, deviceSerial, packageName, null, logger, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "\n30\n")
 
     try {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
@@ -1334,8 +1321,7 @@ class InjectionManagerTest {
         tempFileSuffixGenerator = { "test.tmp" },
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     // ps returns two PIDs with the package UID: 5678 (secondary process) and 1234 (main UI process).
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$packageName uid:10123\n")
     fakeSession.deviceServices.configureShellCommand(
@@ -1677,8 +1663,7 @@ class InjectionManagerTest {
     Files.write(overrideJar, byteArrayOf(1, 2, 3))
     val overrideToken = "1234_" + computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector, overrideJar).combined
     val injectionManager = createInjectionManager(composeInspectorOverrideJarPath = overrideJar)
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$overrideToken\n")
 
@@ -2008,8 +1993,7 @@ class InjectionManagerTest {
 
   @Test
   fun testRunWithConnectedInspectors_probeReadFailure_propagates() = runBlocking {
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses()
     // A failing /proc/net/unix read is not authoritative absence: it must fail the run, not silently fall through to a full injection.
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", stdout = "", stderr = "boom", exitCode = 1)
@@ -2286,8 +2270,7 @@ class InjectionManagerTest {
     token: String = serverToken(pid),
     socketGrepOutput: String = "ui_inspector_$token\n",
   ) {
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configurePackageUidAndProcesses(targetPackage, processOutput = "PID UID NAME\n$pid 10123 $processName\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $targetPackage pwd", "/data/data/$targetPackage\n")
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)

@@ -18,7 +18,6 @@ package com.android.tools.ui.inspector.client
 
 import com.android.adblib.DeviceInfo
 import com.android.adblib.DeviceList
-import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
@@ -35,6 +34,7 @@ import com.android.tools.ui.inspector.deploy.InjectionMode
 import com.android.tools.ui.inspector.deploy.buildInstallCommand
 import com.android.tools.ui.inspector.deploy.computeContentDigest
 import com.android.tools.ui.inspector.deploy.fileNameWithHash
+import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.fetchParameter
 import com.android.tools.ui.inspector.fetchUiDump
 import com.android.tools.ui.inspector.model.ParameterReference
@@ -182,8 +182,7 @@ class ComposeInspectorTest {
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
@@ -557,8 +556,7 @@ class ComposeInspectorTest {
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
@@ -873,8 +871,7 @@ class ComposeInspectorTest {
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
@@ -1199,8 +1196,7 @@ class ComposeInspectorTest {
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 

@@ -17,7 +17,6 @@
 package com.android.tools.ui.inspector.deploy
 
 import com.android.adblib.AdbSession
-import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
@@ -25,11 +24,14 @@ import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.AgentSocketChecker
+import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.DebugViewAttributes
+import com.android.tools.ui.inspector.device.DeviceMetadata
 import com.android.tools.ui.inspector.device.PackageUidGroup
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.UidResolver
 import com.android.tools.ui.inspector.device.getPackagesByPid
+import com.android.tools.ui.inspector.device.parseDeviceMetadata
 import com.android.tools.ui.inspector.device.parseTopActivityProcesses
 import com.android.tools.ui.inspector.device.shellAsTextOrThrow
 import java.nio.file.Files
@@ -126,10 +128,10 @@ internal class InjectionManager(
   suspend fun injectAndAttach(needsDebugViewAttributes: Boolean, mode: InjectionMode): InjectionResult {
     // Fails fast on an unusable Compose inspector override, before any device work.
     validateComposeInspectorOverride()
-    val (deviceAbi, sdkVersion) = retrieveDeviceMetadata(deviceSelector)
-    if (sdkVersion < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
+    val (deviceAbi, deviceVersion) = retrieveDeviceMetadata(deviceSelector)
+    if (deviceVersion.apiLevel < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
       throw IllegalStateException(
-        "The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above. The target device is running API level $sdkVersion."
+        "The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above. The target device is running API level ${deviceVersion.apiLevel}."
       )
     }
 
@@ -371,19 +373,9 @@ internal class InjectionManager(
     return stdout
   }
 
-  /** Queries the device for its CPU ABI and SDK API level in a single shell invocation. */
-  private suspend fun retrieveDeviceMetadata(deviceSelector: DeviceSelector): DeviceMetadata {
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    val output = adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, metadataCmd).stdout
-    val lines = output.lines()
-    val abi = lines.getOrNull(0)?.trim()
-    if (abi.isNullOrEmpty()) {
-      throw IllegalStateException("Failed to retrieve device CPU ABI.")
-    }
-    val sdkVersionStr = lines.getOrNull(1)?.trim()
-    val sdkVersion = sdkVersionStr?.toIntOrNull() ?: throw IllegalStateException("Failed to retrieve device SDK API level.")
-    return DeviceMetadata(abi, sdkVersion)
-  }
+  /** Queries the device for its CPU ABI and Android version in a single shell invocation. */
+  private suspend fun retrieveDeviceMetadata(deviceSelector: DeviceSelector): DeviceMetadata =
+    parseDeviceMetadata(adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, DEVICE_METADATA_SHELL_COMMAND).stdout)
 
   /** Resolves the local path to the agent binary for the given ABI. */
   private fun getAgentLocalPath(deviceAbi: String): Path {
@@ -482,8 +474,6 @@ internal class InjectionManager(
     }
   }
 }
-
-private data class DeviceMetadata(val abi: String, val sdkVersion: Int)
 
 /**
  * Thrown when [packageName] shares its UID with other packages and the running processes with that UID cannot be matched to their owning
