@@ -30,22 +30,19 @@ import kotlin.concurrent.withLock
 /**
  * [ModuleClassLoaderManager] for [ModuleClassLoader]s used in standalone rendering.
  *
- * In warm daemon mode, a single [StandaloneModuleClassLoaderManager] instance is retained inside a
- * cached [RenderEnvironment] across multiple render RPCs:
- * - Within a single render RPC (which may render multiple `@Preview`s in a batch), all [RenderTask]
- *   instances share the same [currentSharedClassLoader] via [getShared] so that library `R` classes
- *   initialized on the first preview remain initialized for subsequent previews in the same batch.
- * - Between render RPCs, [refreshClassPath] disposes [currentSharedClassLoader] so the next render
- *   RPC creates a fresh [DefaultModuleClassLoader] that picks up newly recompiled project `.class`
- *   files from [projectClassPath] while reusing pre-transformed external library bytecode from
- *   [LibraryClassBinaryCache].
+ * In warm daemon mode, a single [StandaloneModuleClassLoaderManager] instance is retained inside a cached [RenderEnvironment] across
+ * multiple render RPCs:
+ * - Within a single render RPC (which may render multiple `@Preview`s in a batch), all [RenderTask] instances share the same
+ *   [currentSharedClassLoader] via [getShared] so that library `R` classes initialized on the first preview remain initialized for
+ *   subsequent previews in the same batch.
+ * - Between render RPCs, [refreshClassPath] disposes [currentSharedClassLoader] so the next render RPC creates a fresh
+ *   [DefaultModuleClassLoader] that picks up newly recompiled project `.class` files from [projectClassPath] while reusing pre-transformed
+ *   external library bytecode from [LibraryClassBinaryCache].
  *
- * Note that both external library classes (`classPath - projectClassPath`) and user project classes
- * ([projectClassPath]) are defined inside the same flat [DefaultModuleClassLoader] instance (via
- * [DefaultLoader]) rather than a parent-child `ClassLoader` hierarchy. This is required because
- * framework/tooling classes loaded from the library classpath (such as `ComposableInvoker`,
- * `PreviewParameterProvider`, and `TileServiceViewAdapter`) resolve user project classes via 1-arg
- * `Class.forName(name)` or from their own defining classloader.
+ * Note that both external library classes (`classPath - projectClassPath`) and user project classes ([projectClassPath]) are defined inside
+ * the same flat [DefaultModuleClassLoader] instance (via [DefaultLoader]) rather than a parent-child `ClassLoader` hierarchy. This is
+ * required because framework/tooling classes loaded from the library classpath (such as `ComposableInvoker`, `PreviewParameterProvider`,
+ * and `TileServiceViewAdapter`) resolve user project classes via 1-arg `Class.forName(name)` or from their own defining classloader.
  */
 class StandaloneModuleClassLoaderManager(
   @Volatile private var classPath: List<String>,
@@ -54,8 +51,8 @@ class StandaloneModuleClassLoaderManager(
 
   companion object {
     /**
-     * Canonical wrapped parent [ClassLoader] for the standard standalone rendering hierarchy:
-     * `FirewalledResourcesClassLoader -> FilteringClassLoader -> LayoutlibClassLoader -> host ClassLoader`.
+     * Canonical wrapped parent [ClassLoader] for the standard standalone rendering hierarchy: `FirewalledResourcesClassLoader ->
+     * FilteringClassLoader -> LayoutlibClassLoader -> host ClassLoader`.
      */
     private val defaultWrappedParent: ClassLoader by lazy {
       FirewalledResourcesClassLoader(
@@ -67,33 +64,28 @@ class StandaloneModuleClassLoaderManager(
     }
 
     /**
-     * Cache of wrapped custom parent [ClassLoader]s (used when callers supply a non-default parent,
-     * e.g., in unit tests). Weak keys prevent leaking caller [ClassLoader]s; see [close] and
-     * [clearCache] for explicit cleanup of soft values that reference their keys.
+     * Cache of wrapped custom parent [ClassLoader]s (used when callers supply a non-default parent, e.g., in unit tests). Weak keys prevent
+     * leaking caller [ClassLoader]s; see [close] and [clearCache] for explicit cleanup of soft values that reference their keys.
      */
     private val wrappedParents = ContainerUtil.createConcurrentWeakKeySoftValueMap<ClassLoader, ClassLoader>()
 
     /**
-     * Wraps [parent] in [FilteringClassLoader] and [FirewalledResourcesClassLoader] to isolate the
-     * rendered module from host IDE/CLI classes and resources, while canonicalizing standard parent
-     * classloaders to the singleton [defaultWrappedParent].
+     * Wraps [parent] in [FilteringClassLoader] and [FirewalledResourcesClassLoader] to isolate the rendered module from host IDE/CLI
+     * classes and resources, while canonicalizing standard parent classloaders to the singleton [defaultWrappedParent].
      *
-     * Why canonicalization matters for warm renders:
-     * [LibraryClassBinaryCacheEntry] caches ASM-transformed library class bytes in a map keyed by
-     * the wrapped parent [ClassLoader] instance (`transformedBytesByParent`). However, the first
-     * caller of [getShared] differs between cold and warm renders:
-     * 1. On a **cold render** (initial [RenderEnvironment] bootstrap), `RClassResourceResolver`
-     *    calls `getShared(this::class.java.classLoader)` first, passing the host classloader
+     * Why canonicalization matters for warm renders: [LibraryClassBinaryCacheEntry] caches ASM-transformed library class bytes in a map
+     * keyed by the wrapped parent [ClassLoader] instance (`transformedBytesByParent`). However, the first caller of [getShared] differs
+     * between cold and warm renders:
+     * 1. On a **cold render** (initial [RenderEnvironment] bootstrap), `RClassResourceResolver` calls
+     *    `getShared(this::class.java.classLoader)` first, passing the host classloader
      *    (`StandaloneModuleClassLoaderManager::class.java.classLoader`).
-     * 2. On a **warm render** (after [refreshClassPath] clears [currentSharedClassLoader]),
-     *    `RClassResourceResolver` is skipped because resource IDs are already initialized. The
-     *    first caller of [getShared] is `RenderTask`, which passes `myLayoutLib.getClassLoader()` —
-     *    an instance of `LayoutlibClassLoader(StandaloneModuleClassLoaderManager::class.java.classLoader)`.
+     * 2. On a **warm render** (after [refreshClassPath] clears [currentSharedClassLoader]), `RClassResourceResolver` is skipped because
+     *    resource IDs are already initialized. The first caller of [getShared] is `RenderTask`, which passes `myLayoutLib.getClassLoader()`
+     *    — an instance of `LayoutlibClassLoader(StandaloneModuleClassLoaderManager::class.java.classLoader)`.
      *
-     * Both parent classloaders delegate to the exact same underlying classes, so canonicalizing
-     * `null`, the host classloader, and a `LayoutlibClassLoader` wrapping the host classloader to
-     * [defaultWrappedParent] ensures that warm renders hit the exact same per-parent ASM bytecode
-     * cache populated during the cold bootstrap.
+     * Both parent classloaders delegate to the exact same underlying classes, so canonicalizing `null`, the host classloader, and a
+     * `LayoutlibClassLoader` wrapping the host classloader to [defaultWrappedParent] ensures that warm renders hit the exact same
+     * per-parent ASM bytecode cache populated during the cold bootstrap.
      */
     private fun wrapParent(parent: ClassLoader?): ClassLoader {
       if (
@@ -112,27 +104,44 @@ class StandaloneModuleClassLoaderManager(
   private val sharedClassLoadersLock = ReentrantLock()
   @GuardedBy("sharedClassLoadersLock") private var currentSharedClassLoader: DefaultModuleClassLoader? = null
 
+  /** Disposes the active shared [DefaultModuleClassLoader] (if any) and clears wrapped parent caches. */
   override fun close() {
-    sharedClassLoadersLock.withLock {
-      currentSharedClassLoader?.dispose()
+    closeAndReturnRetired()
+  }
+
+  /**
+   * Disposes the active shared [DefaultModuleClassLoader] (if any), clears wrapped parent caches, and returns the retired
+   * [DefaultModuleClassLoader] so the caller can release any thread-local state associated with it.
+   */
+  internal fun closeAndReturnRetired(): DefaultModuleClassLoader? {
+    val retired = sharedClassLoadersLock.withLock {
+      val prev = currentSharedClassLoader
+      prev?.dispose()
       currentSharedClassLoader = null
+      prev
     }
     // Clear soft-valued wrapper entries because each value (FirewalledResourcesClassLoader ->
     // FilteringClassLoader -> parent) holds a strong reference back to its key.
     wrappedParents.clear()
+    return retired
   }
 
   /**
-   * Updates the active [classPath] and [projectClassPath] and invalidates the current per-RPC
-   * [DefaultModuleClassLoader] so the next render creates a fresh project classloader while reusing
-   * the warm [LibraryClassBinaryCache].
+   * Updates the active [classPath] and [projectClassPath], disposes the current per-RPC [DefaultModuleClassLoader] so the next render
+   * creates a fresh project classloader while reusing the warm [LibraryClassBinaryCache], and returns the retired
+   * [DefaultModuleClassLoader] (if any) so the caller can release any thread-local state associated with it.
    */
-  fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>) {
-    sharedClassLoadersLock.withLock {
+  fun refreshClassPath(
+    newClassPath: List<String>,
+    newProjectClassPath: List<String>,
+  ): DefaultModuleClassLoader? {
+    return sharedClassLoadersLock.withLock {
       classPath = newClassPath
       projectClassPath = newProjectClassPath
-      currentSharedClassLoader?.dispose()
+      val prev = currentSharedClassLoader
+      prev?.dispose()
       currentSharedClassLoader = null
+      prev
     }
   }
 
@@ -141,14 +150,12 @@ class StandaloneModuleClassLoaderManager(
   }
 
   /**
-   * Returns the shared [ModuleClassLoader] for the current render batch, creating it lazily if
-   * needed.
+   * Returns the shared [ModuleClassLoader] for the current render batch, creating it lazily if needed.
    *
-   * The returned [ModuleClassLoaderManager.Reference] uses a no-op release callback (`{}`) so that
-   * individual [RenderTask]s closing at the end of each preview in a multi-preview batch do not
-   * dispose the shared classloader (which would reset `rClassesInitialized` and force every
-   * subsequent preview in the batch to re-load all classes). Instead, [currentSharedClassLoader] is
-   * explicitly disposed between RPCs via [refreshClassPath] or on environment teardown via [close].
+   * The returned [ModuleClassLoaderManager.Reference] uses a no-op release callback (`{}`) so that individual [RenderTask]s closing at the
+   * end of each preview in a multi-preview batch do not dispose the shared classloader (which would reset `rClassesInitialized` and force
+   * every subsequent preview in the batch to re-load all classes). Instead, [currentSharedClassLoader] is explicitly disposed between RPCs
+   * via [refreshClassPath] or on environment teardown via [close].
    */
   fun getShared(parent: ClassLoader?): ModuleClassLoaderManager.Reference<ModuleClassLoader> {
     val classLoader = sharedClassLoadersLock.withLock {
@@ -158,8 +165,8 @@ class StandaloneModuleClassLoaderManager(
   }
 
   /**
-   * Returns a dedicated, unshared [ModuleClassLoader] that is disposed as soon as the caller
-   * releases the returned [ModuleClassLoaderManager.Reference].
+   * Returns a dedicated, unshared [ModuleClassLoader] that is disposed as soon as the caller releases the returned
+   * [ModuleClassLoaderManager.Reference].
    */
   fun getPrivate(parent: ClassLoader?): ModuleClassLoaderManager.Reference<ModuleClassLoader> {
     val classLoader = createClassLoader(parent)

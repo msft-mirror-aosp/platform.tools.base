@@ -49,12 +49,18 @@ import java.io.BufferedOutputStream
 import java.io.Closeable
 import java.io.File
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Logger
 import javax.imageio.IIOImage
@@ -83,13 +89,130 @@ class Renderer(
   private val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
   private val previewValidator = PreviewValidator()
   internal val callbackRunner = StaticPreviewCallbackRunner()
+  private val pendingDisposeTasks = ConcurrentLinkedQueue<() -> Future<*>>()
+  private val inFlightDisposals = ConcurrentLinkedQueue<CompletableFuture<Void>>()
+  private val outstandingDisposeFutures = ConcurrentLinkedQueue<Future<*>>()
+  private val retiredClassLoaders = ConcurrentLinkedQueue<WeakReference<DefaultModuleClassLoader>>()
+
+  private fun snapshotInFlightDisposals(): List<CompletableFuture<Void>> {
+    inFlightDisposals.removeIf { it.isDone }
+    return inFlightDisposals.toList()
+  }
+
+  private fun awaitOutstandingDisposals() {
+    outstandingDisposeFutures.removeIf { it.isDone }
+    val futures = outstandingDisposeFutures.toList()
+    if (futures.isEmpty()) return
+    try {
+      awaitFutures(futures, DISPOSAL_DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS, "RenderTask disposals")
+    } finally {
+      outstandingDisposeFutures.removeIf { it.isDone }
+    }
+  }
+
+  private fun awaitFutures(futures: List<Future<*>>, timeout: Long, unit: TimeUnit, description: String) {
+    if (futures.isEmpty()) return
+    val deadlineNanos = System.nanoTime() + unit.toNanos(timeout)
+    for (i in futures.indices) {
+      val remainingNanos = (deadlineNanos - System.nanoTime()).coerceAtLeast(0L)
+      try {
+        futures[i].get(remainingNanos, TimeUnit.NANOSECONDS)
+      } catch (e: InterruptedException) {
+        Thread.currentThread().interrupt()
+        logger.log(Level.WARNING, "Interrupted while waiting for $description", e)
+        return
+      } catch (_: TimeoutException) {
+        val pendingCount = futures.subList(i, futures.size).count { !it.isDone }
+        if (pendingCount > 0) {
+          logger.log(
+            Level.WARNING,
+            "Timed out after $timeout ${unit.name.lowercase()} waiting for $description ($pendingCount pending)",
+          )
+        }
+        return
+      } catch (t: Throwable) {
+        logger.log(Level.WARNING, "Failed while waiting for $description", t)
+      }
+    }
+  }
+
+  private fun disposePendingRenderTasks() {
+    while (true) {
+      val disposeAction = pendingDisposeTasks.poll() ?: break
+      logFailure("Unable to dispose RenderTask") {
+        outstandingDisposeFutures.add(disposeAction())
+      }
+    }
+  }
+
+  private fun sweepRetiredClassLoaders() {
+    val iter = retiredClassLoaders.iterator()
+    while (iter.hasNext()) {
+      val retired = iter.next().get()
+      if (retired == null) {
+        iter.remove()
+      } else {
+        clearThreadLocalEventLoop(retired)
+      }
+    }
+  }
+
+  /**
+   * Removes any `BlockingEventLoop` cached in `_layoutlib_._internal_.kotlinx.coroutines.ThreadLocalEventLoop` on the current thread (the
+   * Layoutlib render thread) for [classLoader].
+   *
+   * `ThreadLocalEventLoop` stores a `ThreadLocal<EventLoop>` (`ref`) whose value is a `BlockingEventLoop` defined by [classLoader]. Because
+   * the `ThreadLocal` key is referenced by `ThreadLocalEventLoop` (which is kept alive by the `BlockingEventLoop` value's class ->
+   * [classLoader] -> static `ref` chain), leaving the entry in the render thread's `ThreadLocalMap` prevents [classLoader] from ever being
+   * garbage-collected or unloaded.
+   */
+  private fun clearThreadLocalEventLoop(classLoader: DefaultModuleClassLoader) {
+    if (!classLoader.hasLoadedClass(THREAD_LOCAL_EVENT_LOOP_FQN)) {
+      return
+    }
+    try {
+      val eventLoopClass = Class.forName(THREAD_LOCAL_EVENT_LOOP_FQN, false, classLoader)
+      val refField = eventLoopClass.getDeclaredField("ref").apply { isAccessible = true }
+      (refField.get(null) as? ThreadLocal<*>)?.remove()
+    } catch (t: Throwable) {
+      logger.log(Level.FINE, "Unable to clear ThreadLocalEventLoop for retired classloader", t)
+    }
+  }
+
+  /**
+   * Drains and disposes completed [RenderTask]s from the finished batch.
+   *
+   * [RenderTask.disposeAsync] is deferred until after a batch finishes because it runs `RenderSessionCleaner.dispose`, which clears static
+   * state in the shared [DefaultModuleClassLoader] that later previews in the same batch still use. Callers that reuse this [Renderer] for
+   * another batch must call [refreshClassPath] before rendering again.
+   */
+  fun disposeCompletedRenders() {
+    awaitFutures(
+      snapshotInFlightDisposals(),
+      END_OF_BATCH_IN_FLIGHT_TIMEOUT_MS,
+      TimeUnit.MILLISECONDS,
+      "in-flight preview disposals",
+    )
+    disposePendingRenderTasks()
+  }
 
   /**
    * Refreshes the module classloader with updated [newClassPath] and [newProjectClassPath] so modified user `.class` files are loaded
    * freshly while keeping the warm Layoutlib environment and external library classes intact.
    */
   fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>) {
-    moduleClassLoaderManager.refreshClassPath(newClassPath, newProjectClassPath)
+    awaitFutures(snapshotInFlightDisposals(), DISPOSAL_DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS, "in-flight preview disposals")
+    disposePendingRenderTasks()
+    awaitOutstandingDisposals()
+    val retiredClassLoader = moduleClassLoaderManager.refreshClassPath(newClassPath, newProjectClassPath)
+    if (retiredClassLoader != null) {
+      retiredClassLoaders.add(WeakReference(retiredClassLoader))
+      logFailure("Unable to schedule ThreadLocalEventLoop cleanup") {
+        RenderService.getRenderAsyncActionExecutor().runAsyncAction {
+          clearThreadLocalEventLoop(retiredClassLoader)
+        }
+      }
+    }
     callbackRunner.onRefreshClassPath()
   }
 
@@ -102,6 +225,8 @@ class Renderer(
     get() = callbackRunner.unrecoveredRenderThreadReason
 
   companion object {
+    private const val END_OF_BATCH_IN_FLIGHT_TIMEOUT_MS = 250L
+    private const val DISPOSAL_DRAIN_TIMEOUT_SECONDS = 5L
     private val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>| ]+""".toRegex()
     private val invalidPathCharsRegex = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()
   }
@@ -534,6 +659,7 @@ class Renderer(
     previewName: String? = null,
     allowShowDecorations: Boolean = false,
   ): RenderResult {
+    awaitOutstandingDisposals()
     val disposable = Disposer.newCheckedDisposable()
     val logger = RenderLogger()
     val composeViewAdapters: MutableSet<Any> = ConcurrentHashMap.newKeySet()
@@ -620,12 +746,27 @@ class Renderer(
    * render thread before the next preview's `inflate()`.
    */
   private fun releaseRender(renderTask: RenderTask, composeViewAdapters: Set<Any>, moduleClassLoader: ClassLoader) {
+    val disposalReady = CompletableFuture<Void>()
+    inFlightDisposals.add(disposalReady)
+    val completed = AtomicBoolean(false)
+    val onComplete = {
+      if (completed.compareAndSet(false, true)) {
+        pendingDisposeTasks.add { renderTask.disposeAsync() }
+        inFlightDisposals.remove(disposalReady)
+        disposalReady.complete(null)
+      }
+    }
+    var disposeScheduled = false
     try {
       logFailure("Unable to schedule ComposeViewAdapter disposal") {
-        disposeComposeViewsAndClearDispatcher(renderTask, composeViewAdapters, moduleClassLoader)
+        disposeComposeViewsAndClearDispatcher(renderTask, composeViewAdapters, moduleClassLoader, onComplete)
+        disposeScheduled = true
       }
     } finally {
       renderTask.releaseRender()
+      if (!disposeScheduled) {
+        onComplete()
+      }
     }
   }
 
@@ -633,6 +774,7 @@ class Renderer(
     renderTask: RenderTask,
     composeViewAdapters: Set<Any>,
     moduleClassLoader: ClassLoader,
+    onComplete: () -> Unit,
   ) {
     val composeClassLoaders =
       composeViewAdapters.mapNotNullTo(linkedSetOf(moduleClassLoader)) {
@@ -641,6 +783,17 @@ class Renderer(
     val clearDispatcherWork = Runnable {
       for (classLoader in composeClassLoaders) {
         clearComposeUiDispatcherWork(classLoader)
+      }
+      sweepRetiredClassLoaders()
+    }
+    val scheduleClearDispatcherWork = {
+      try {
+        RenderService.getRenderAsyncActionExecutor().runAsyncAction(clearDispatcherWork).whenComplete { _, _ ->
+          onComplete()
+        }
+      } catch (t: Throwable) {
+        onComplete()
+        throw t
       }
     }
     val disposeActions = composeViewAdapters.mapNotNull { adapter ->
@@ -671,14 +824,18 @@ class Renderer(
             if (t !is CancellationException && t.cause !is CancellationException) {
               logger.log(Level.WARNING, "Unable to dispose ComposeViewAdapter", t)
             }
-            RenderService.getRenderAsyncActionExecutor().runAsyncAction(clearDispatcherWork)
+            logFailure("Unable to schedule ComposeUiDispatcher cleanup") {
+              scheduleClearDispatcherWork()
+            }
+          } else {
+            onComplete()
           }
         }
       } else {
-        RenderService.getRenderAsyncActionExecutor().runAsyncAction(clearDispatcherWork)
+        scheduleClearDispatcherWork()
       }
     } else {
-      RenderService.getRenderAsyncActionExecutor().runAsyncAction(clearDispatcherWork)
+      scheduleClearDispatcherWork()
     }
   }
 
@@ -727,20 +884,38 @@ class Renderer(
 
   override fun close() {
     try {
-      if (!module.isDisposed) {
-        module.dispose()
-      }
+      awaitFutures(snapshotInFlightDisposals(), DISPOSAL_DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS, "in-flight preview disposals")
+      disposePendingRenderTasks()
+      awaitOutstandingDisposals()
     } finally {
       try {
-        moduleClassLoaderManager.close()
+        if (!module.isDisposed) {
+          module.close()
+        }
       } finally {
-        if (!project.isDisposed) {
-          Disposer.dispose(project)
+        try {
+          val retiredClassLoader = moduleClassLoaderManager.closeAndReturnRetired()
+          if (retiredClassLoader != null) {
+            retiredClassLoaders.add(WeakReference(retiredClassLoader))
+          }
+          if (retiredClassLoaders.isNotEmpty()) {
+            logFailure("Unable to schedule ThreadLocalEventLoop cleanup") {
+              RenderService.getRenderAsyncActionExecutor().runAsyncAction {
+                sweepRetiredClassLoaders()
+              }
+            }
+          }
+        } finally {
+          if (!project.isDisposed) {
+            Disposer.dispose(project)
+          }
         }
       }
     }
   }
 }
+
+private const val THREAD_LOCAL_EVENT_LOOP_FQN = "_layoutlib_._internal_.kotlinx.coroutines.ThreadLocalEventLoop"
 
 /** Maximum number of causes inspected by [findFatalVirtualMachineError], guarding against cyclic cause chains. */
 private const val MAX_CAUSE_CHAIN_DEPTH = 16

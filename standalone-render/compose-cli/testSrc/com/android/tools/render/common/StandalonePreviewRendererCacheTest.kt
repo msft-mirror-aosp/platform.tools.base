@@ -63,6 +63,7 @@ class StandalonePreviewRendererCacheTest {
     },
   ) : ManagedRenderer {
     val refreshCalls = AtomicInteger(0)
+    val disposeCompletedRendersCalls = AtomicInteger(0)
     val closeCalls = AtomicInteger(0)
     val activeRenderers = AtomicInteger(0)
     val maxConcurrentRenders = AtomicInteger(0)
@@ -95,6 +96,10 @@ class StandalonePreviewRendererCacheTest {
       } finally {
         activeRenderers.decrementAndGet()
       }
+    }
+
+    override fun disposeCompletedRenders() {
+      disposeCompletedRendersCalls.incrementAndGet()
     }
 
     override fun close() {
@@ -197,11 +202,13 @@ class StandalonePreviewRendererCacheTest {
     newRenderer().render(listOf(screenshot), outDir)
     assertThat(createdRenderers).hasSize(3)
     assertThat(createdRenderers[0].closeCalls.get()).isEqualTo(1)
+    assertThat(createdRenderers[2].disposeCompletedRendersCalls.get()).isEqualTo(1)
 
     // refreshClassPath failure on the next warm batch evicts and closes renderer[2] so the following render bootstraps renderer[3].
     failRefresh = true
     val failedRefresh = newRenderer().render(listOf(screenshot), outDir)
     assertThat(failedRefresh.globalError).isNotNull()
+    assertThat(createdRenderers[2].disposeCompletedRendersCalls.get()).isEqualTo(1)
     assertThat(createdRenderers[2].closeCalls.get()).isEqualTo(1)
 
     failRefresh = false
@@ -413,9 +420,10 @@ class StandalonePreviewRendererCacheTest {
     assertThat(byId.getValue("Healthy").error).isNull()
 
     val firstFake = lastFake!!
+    assertThat(firstFake.disposeCompletedRendersCalls.get()).isEqualTo(1)
     assertThat(firstFake.closeCalls.get()).isEqualTo(0)
 
-    // 2. InterruptedException aborts the remaining screenshots in the batch and restores the thread's interrupt status.
+    // 2. InterruptedException aborts the remaining screenshots in the batch, drains completed renders, and restores interrupt status.
     renderedIds.clear()
     throwMode = "INTERRUPT"
     val interruptedResult = newFakeRenderer(resApk, factory).render(listOf(broken, healthy), outDir)
@@ -423,21 +431,24 @@ class StandalonePreviewRendererCacheTest {
     assertThat(interruptedResult.globalError).isNotNull()
     assertThat(interruptedResult.isFatalJvmError).isFalse()
     assertWithMessage("Batch must abort immediately on InterruptedException").that(renderedIds).containsExactly("Broken")
+    assertThat(firstFake.disposeCompletedRendersCalls.get()).isEqualTo(2)
 
-    // 3. CancellationException also aborts the batch instead of becoming a per-screenshot error.
+    // 3. CancellationException also aborts the batch and drains completed renders instead of retaining pending RenderTasks while idle.
     renderedIds.clear()
     throwMode = "CANCEL"
     val canceledResult = newFakeRenderer(resApk, factory).render(listOf(broken, healthy), outDir)
     assertThat(canceledResult.globalError).isNotNull()
     assertThat(canceledResult.isFatalJvmError).isFalse()
     assertWithMessage("Batch must abort immediately on CancellationException").that(renderedIds).containsExactly("Broken")
+    assertThat(firstFake.disposeCompletedRendersCalls.get()).isEqualTo(3)
     assertThat(firstFake.closeCalls.get()).isEqualTo(0)
 
-    // 4. LinkageError evicts and closes the offending warm renderer while returning globalError with isFatalJvmError == false.
+    // 4. LinkageError evicts and closes the offending warm renderer without running end-of-batch disposal on the corrupted handle.
     throwMode = "LINKAGE"
     val linkageResult = newFakeRenderer(resApk, factory).render(listOf(healthy), outDir)
     assertThat(linkageResult.globalError).contains("LinkageError")
     assertThat(linkageResult.isFatalJvmError).isFalse()
+    assertThat(firstFake.disposeCompletedRendersCalls.get()).isEqualTo(3)
     assertThat(firstFake.closeCalls.get()).isEqualTo(1)
   }
 

@@ -91,6 +91,9 @@ internal interface ManagedRenderer : Closeable {
    */
   val renderThreadPoisonedReason: String?
     get() = null
+
+  /** Disposes completed [RenderTask]s from the finished batch so sessions and view trees are not retained while idle. */
+  fun disposeCompletedRenders() {}
 }
 
 private class RealManagedRenderer(private val delegate: Renderer) : ManagedRenderer {
@@ -113,6 +116,11 @@ private class RealManagedRenderer(private val delegate: Renderer) : ManagedRende
 
   override val renderThreadPoisonedReason: String?
     get() = delegate.renderThreadPoisonedReason
+
+  /** Drains and disposes completed [RenderTask]s from the finished batch. */
+  override fun disposeCompletedRenders() {
+    delegate.disposeCompletedRenders()
+  }
 
   /** Disposes the underlying [Renderer]. */
   override fun close() {
@@ -453,7 +461,21 @@ internal constructor(
               throw t
             }
           }
-          return block(renderer)
+          val results =
+            try {
+              block(renderer)
+            } catch (t: Throwable) {
+              if (t !is Error) {
+                try {
+                  renderer.disposeCompletedRenders()
+                } catch (disposeFailure: Throwable) {
+                  t.addSuppressed(disposeFailure)
+                }
+              }
+              throw t
+            }
+          renderer.disposeCompletedRenders()
+          return results
         } catch (t: Throwable) {
           if (t is Error) {
             isCorrupted = true

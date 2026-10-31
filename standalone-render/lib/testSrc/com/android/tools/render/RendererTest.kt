@@ -40,6 +40,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.intellij.openapi.util.Disposer
 import com.intellij.util.concurrency.AppExecutorUtil
+import com.intellij.util.ref.GCUtil
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -47,6 +48,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationTargetException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -57,6 +59,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -2466,6 +2469,282 @@ class RendererTest {
     assertNotEquals(redColor, outputImage!!.getRGB(10, 10))
     assertEquals(redColor, outputImage!!.getRGB(outputImage!!.width - 10, 10))
   }
+
+  @Test
+  fun testWarmRendersDoNotLeakClassLoaders() {
+    val layout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="40dp"
+          android:layout_height="40dp" />
+      """
+        .trimIndent()
+
+    val request = RenderRequest({}, { sequenceOf(layout) })
+    assertWarmRendersReleaseClassLoaders { renderer ->
+      val (_, result) = renderer.render(request).single()
+      Disposer.dispose(result)
+      renderer.disposeCompletedRenders()
+    }
+  }
+
+  @Test
+  fun testWarmComposeRendersDoNotLeakClassLoaders() {
+    val classesDir =
+      compileCustomClasses(
+        Triple(
+          "androidx.compose.ui.tooling",
+          "ComposeViewAdapter",
+          """
+          package androidx.compose.ui.tooling;
+          import android.content.Context;
+          import android.util.AttributeSet;
+          import android.widget.TextView;
+          public class ComposeViewAdapter extends TextView {
+            public ComposeViewAdapter(Context context, AttributeSet attrs) {
+              super(context, attrs);
+              setText("Preview");
+            }
+            public void dispose() {}
+          }
+          """
+            .trimIndent(),
+        )
+      )
+    val classPath = listOf(classesDir.absolutePath)
+    val outputDir = tmpFolder.newFolder("warm_compose_screenshots").absolutePath
+    val screenshot =
+      ComposeScreenshot(
+        previewId = "preview_auto_discover",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview",
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+
+    assertWarmRendersReleaseClassLoaders(classPath = classPath, projectClassPath = classPath) { renderer ->
+      val results = renderer.render(screenshot, outputDir)
+      assertThat(results).hasSize(1)
+      assertThat(results.single().error).isNull()
+      renderer.disposeCompletedRenders()
+    }
+  }
+
+  @Test
+  fun testWarmRendersWithThreadLocalEventLoopDoNotLeakClassLoaders() {
+    // Compile _layoutlib_._internal_.kotlinx.coroutines.* directly rather than going through DefaultModuleClassLoader's bytecode
+    // repackaging; this exercises the same ThreadLocalEventLoop -> BlockingEventLoop -> ClassLoader pinning cycle.
+    val classesDir =
+      compileCustomClasses(
+        Triple(
+          "_layoutlib_._internal_.kotlinx.coroutines",
+          "BlockingEventLoop",
+          """
+          package _layoutlib_._internal_.kotlinx.coroutines;
+          public final class BlockingEventLoop {}
+          """
+            .trimIndent(),
+        ),
+        Triple(
+          "_layoutlib_._internal_.kotlinx.coroutines",
+          "ThreadLocalEventLoop",
+          """
+          package _layoutlib_._internal_.kotlinx.coroutines;
+          public final class ThreadLocalEventLoop {
+            public static final ThreadLocalEventLoop INSTANCE = new ThreadLocalEventLoop();
+            private static final ThreadLocal<Object> ref = new ThreadLocal<>();
+            private ThreadLocalEventLoop() {}
+            public static void cacheOnCurrentThread() {
+              ref.set(new BlockingEventLoop());
+            }
+          }
+          """
+            .trimIndent(),
+        ),
+        Triple(
+          "com.example.myapplication",
+          "CoroutineEventLoopView",
+          """
+          package com.example.myapplication;
+          import android.content.Context;
+          import android.util.AttributeSet;
+          import android.view.View;
+          import _layoutlib_._internal_.kotlinx.coroutines.ThreadLocalEventLoop;
+          public class CoroutineEventLoopView extends View {
+            public CoroutineEventLoopView(Context context, AttributeSet attrs) {
+              super(context, attrs);
+              ThreadLocalEventLoop.cacheOnCurrentThread();
+            }
+          }
+          """
+            .trimIndent(),
+        ),
+      )
+
+    val layout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <com.example.myapplication.CoroutineEventLoopView xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="40dp"
+          android:layout_height="40dp" />
+      """
+        .trimIndent()
+
+    val classPath = listOf(classesDir.absolutePath)
+    val request = RenderRequest({}, { sequenceOf(layout) })
+
+    assertWarmRendersReleaseClassLoaders(classPath = classPath, projectClassPath = classPath) { renderer ->
+      val (_, result) = renderer.render(request).single()
+      assertEquals(Result.Status.SUCCESS, result.renderResult.status)
+      Disposer.dispose(result)
+      renderer.disposeCompletedRenders()
+    }
+  }
+
+  private fun assertWarmRendersReleaseClassLoaders(
+    classPath: List<String> = emptyList(),
+    projectClassPath: List<String> = emptyList(),
+    renderOnce: (Renderer) -> Unit,
+  ) {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example.myapplication",
+        classPath = classPath,
+        projectClassPath = projectClassPath,
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+
+    val oldClassLoaderRefs = mutableListOf<WeakReference<ClassLoader>>()
+
+    bootstrapper.bootstrap().use { renderer ->
+      repeat(5) {
+        renderOnce(renderer)
+        oldClassLoaderRefs.add(captureSharedClassLoaderRef(renderer))
+        renderer.refreshClassPath(classPath, projectClassPath)
+        assertThat(renderer.module.isDisposed).isFalse()
+      }
+
+      // Trigger one more render so the last reset's classloader is no longer the active shared classloader.
+      renderOnce(renderer)
+      assertThat(renderer.module.isDisposed).isFalse()
+
+      // Wait for async RenderTask disposal, render-thread cleanup, and GC to collect all previous module classloaders.
+      val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+      while (System.nanoTime() < deadline && oldClassLoaderRefs.any { it.get() != null }) {
+        GCUtil.tryGcSoftlyReachableObjects()
+        Thread.sleep(50)
+      }
+
+      val surviving = oldClassLoaderRefs.mapNotNull { it.get() }
+      assertWithMessage("Expected all retired module classloaders to be collected, but ${surviving.size} survived: $surviving")
+        .that(surviving)
+        .isEmpty()
+    }
+  }
+
+  @Test
+  fun testSlowInFlightDisposalSurvivesEndOfBatchTimeoutAndIsAwaitedOnRefresh() {
+    val propertyKey = "com.android.tools.render.test.slowComposeDispose"
+    val classesDir =
+      compileCustomClasses(
+        Triple(
+          "androidx.compose.ui.tooling",
+          "ComposeViewAdapter",
+          """
+          package androidx.compose.ui.tooling;
+          import android.content.Context;
+          import android.util.AttributeSet;
+          import android.widget.TextView;
+          import java.util.concurrent.CountDownLatch;
+          import java.util.concurrent.TimeUnit;
+          import java.util.concurrent.atomic.AtomicBoolean;
+          public class ComposeViewAdapter extends TextView {
+            public ComposeViewAdapter(Context context, AttributeSet attrs) {
+              super(context, attrs);
+              setText("Preview");
+            }
+            public void dispose() {
+              Object raw = System.getProperties().get("$propertyKey");
+              if (raw instanceof Object[]) {
+                Object[] sync = (Object[]) raw;
+                ((CountDownLatch) sync[0]).countDown();
+                try {
+                  ((CountDownLatch) sync[1]).await(5, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                }
+                ((AtomicBoolean) sync[2]).set(true);
+              }
+            }
+          }
+          """
+            .trimIndent(),
+        )
+      )
+    val classPath = listOf(classesDir.absolutePath)
+    val outputDir = tmpFolder.newFolder("slow_compose_dispose").absolutePath
+    val screenshot =
+      ComposeScreenshot(
+        previewId = "preview_slow_dispose",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview",
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example.myapplication",
+        classPath = classPath,
+        projectClassPath = classPath,
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+
+    val disposeStarted = CountDownLatch(1)
+    val allowDisposeToFinish = CountDownLatch(1)
+    val disposeFinished = AtomicBoolean(false)
+    val executor = Executors.newSingleThreadExecutor()
+    System.getProperties()[propertyKey] = arrayOf<Any>(disposeStarted, allowDisposeToFinish, disposeFinished)
+    try {
+      bootstrapper.bootstrap().use { renderer ->
+        val firstResults = renderer.render(screenshot, outputDir)
+        assertThat(firstResults).hasSize(1)
+        assertThat(firstResults.single().error).isNull()
+        assertThat(disposeStarted.await(5, TimeUnit.SECONDS)).isTrue()
+
+        // End-of-batch disposal times out after 250ms while ComposeViewAdapter.dispose() is still blocked on allowDisposeToFinish.
+        renderer.disposeCompletedRenders()
+        assertThat(disposeFinished.get()).isFalse()
+
+        // Non-destructive snapshotting must keep the in-flight disposal queued so refreshClassPath() still waits for it to finish.
+        val refreshFuture = executor.submit { renderer.refreshClassPath(classPath, classPath) }
+        Thread.sleep(50)
+        assertThat(refreshFuture.isDone).isFalse()
+        allowDisposeToFinish.countDown()
+        refreshFuture.get(5, TimeUnit.SECONDS)
+        assertThat(disposeFinished.get()).isTrue()
+
+        // Also verify rendering again directly after disposeCompletedRenders() awaits any outstanding RenderTask disposal cleanly.
+        System.getProperties().remove(propertyKey)
+        val secondResults = renderer.render(screenshot, outputDir)
+        assertThat(secondResults.single().error).isNull()
+        renderer.disposeCompletedRenders()
+        val thirdResults = renderer.render(screenshot, outputDir)
+        assertThat(thirdResults.single().error).isNull()
+      }
+    } finally {
+      allowDisposeToFinish.countDown()
+      System.getProperties().remove(propertyKey)
+      executor.shutdownNow()
+    }
+  }
+
+  private fun captureSharedClassLoaderRef(renderer: Renderer): WeakReference<ClassLoader> =
+    WeakReference(renderer.module.environment.moduleClassLoaderManager.getShared(null).classLoader)
 }
 
 /** A [PreviewScreenshot] whose preview element cannot be created: [toPreviewElement] throws the result of [failure]. */

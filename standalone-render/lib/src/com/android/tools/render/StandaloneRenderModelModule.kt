@@ -196,7 +196,14 @@ class StandaloneRenderModelModule(
     throw UnsupportedOperationException("Should not be called in standalone rendering")
   }
 
-  override fun dispose() {
+  /**
+   * Intentionally a no-op because `RenderTask.disposeAsync()` calls `getModule().dispose()` when each individual task finishes, whereas
+   * this module is shared across [RenderTask]s in a warm [Renderer]. Callers that own this module must call [close] for actual teardown.
+   */
+  override fun dispose() {}
+
+  /** Disposes [parentDisposable] and releases resources held by this shared module when its owning [Renderer] closes. */
+  internal fun close() {
     Disposer.dispose(parentDisposable)
   }
 }
