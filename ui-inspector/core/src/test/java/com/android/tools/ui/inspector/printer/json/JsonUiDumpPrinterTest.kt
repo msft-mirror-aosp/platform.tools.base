@@ -29,6 +29,7 @@ import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.model.UiDump
 import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.model.UiWindow
+import com.android.tools.ui.inspector.tree.NO_COMPOSE_SOURCE_INFORMATION_WARNING
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.JsonParser
 import com.google.gson.Strictness
@@ -269,6 +270,34 @@ class JsonUiDumpPrinterTest {
     assertThat(warning.keySet()).containsExactly("id", "message").inOrder()
     assertThat(warning.get("id").asString).isEqualTo("someWarning")
     assertThat(warning.get("message").asString).isEqualTo("Something is missing.")
+  }
+
+  @Test
+  fun testStringsAreNotHtmlEscaped() {
+    val text = "a<b> & 'c' = d\u2028"
+    val parameter = UiNode.ComposeParameter.Single("text", UiNode.ComposeParameter.Value.StringVal(text))
+    val uiDump = EMPTY_DUMP.copy(warnings = listOf(NO_COMPOSE_SOURCE_INFORMATION_WARNING, DumpWarning(id = "someWarning", message = text)))
+
+    for (prettyPrint in listOf(false, true)) {
+      val dumpJson = printToString(prettyPrint) { it.printDump(uiDump) }
+      val parameterJson = printToString(prettyPrint) { it.printParameter(parameter) }
+
+      // The characters HTML escaping would write as \u003c, \u003e, \u0026, \u0027 and \u003d are written as they are.
+      assertThat(dumpJson).contains("includeSourceInformation = true")
+      assertThat(dumpJson).contains("a<b> & 'c' = d")
+      assertThat(parameterJson).contains("a<b> & 'c' = d")
+      assertThat(dumpJson + parameterJson).doesNotContainMatch("""\\u00(3c|3e|26|27|3d)""")
+      // U+2028 is still escaped, so that the output is also valid JavaScript.
+      assertThat(dumpJson).contains("\\u2028")
+      assertThat(parameterJson).contains("\\u2028")
+      assertParsesStrictly(dumpJson)
+      assertParsesStrictly(parameterJson)
+      val warnings = JsonParser.parseString(dumpJson).asJsonObject.getAsJsonArray("warnings")
+      assertThat(warnings.map { it.asJsonObject.get("message").asString })
+        .containsExactly(NO_COMPOSE_SOURCE_INFORMATION_WARNING.message, text)
+        .inOrder()
+      assertThat(JsonParser.parseString(parameterJson).asJsonObject.get("value").asString).isEqualTo(text)
+    }
   }
 
   @Test
@@ -666,6 +695,13 @@ class JsonUiDumpPrinterTest {
         .getAsJsonObject("configuration")
     // An empty locale has no representation: the property is omitted entirely.
     assertThat(emptyLocaleJson.has("locale")).isFalse()
+  }
+
+  /** What [block] prints with a [JsonUiDumpPrinter]. */
+  private fun printToString(prettyPrint: Boolean, block: (JsonUiDumpPrinter) -> Unit): String {
+    val output = ByteArrayOutputStream()
+    PrintStream(output).use { block(JsonUiDumpPrinter(out = it, prettyPrint = prettyPrint)) }
+    return output.toString(Charsets.UTF_8)
   }
 
   /** Parses [json] with a strict (spec-compliant) reader, failing on any non-JSON token such as a bare NaN or Infinity. */

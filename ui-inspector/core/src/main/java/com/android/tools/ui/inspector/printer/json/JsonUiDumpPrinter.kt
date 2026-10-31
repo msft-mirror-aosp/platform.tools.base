@@ -37,8 +37,9 @@ import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.util.Locale
 
-private val GSON_COMPACT: Gson = GsonBuilder().serializeNulls().create()
-private val GSON_PRETTY: Gson = GsonBuilder().serializeNulls().setPrettyPrinting().create()
+// No HTML escaping (e.g. "=" as "\u003d"): it is only needed to embed JSON in HTML, and makes strings harder to read.
+private val GSON_COMPACT: Gson = GsonBuilder().serializeNulls().disableHtmlEscaping().create()
+private val GSON_PRETTY: Gson = GsonBuilder().serializeNulls().disableHtmlEscaping().setPrettyPrinting().create()
 
 /**
  * Runs [block] with a JSON printer targeting the destination selected by [output]: the given file, or standard output when null. File
