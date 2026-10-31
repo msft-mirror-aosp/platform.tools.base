@@ -20,6 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.logging.Handler
@@ -31,7 +32,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
@@ -1251,5 +1254,99 @@ class StaticPreviewCallbackRunnerTest {
 
     assertEquals(1, records.size)
     assertEquals(Level.FINE, records.single().level)
+  }
+
+  @Test
+  fun unrecoveredRenderThreadReasonIsOnlySetWhenRenderThreadIsStillBlockedAtTheNextRequest() {
+    val runner =
+      StaticPreviewCallbackRunner(
+        callbacksTimeoutMs = 50L,
+        renderThreadRecoveryTimeoutMs = 10L,
+        nanoTime = { 0L },
+        timeoutState = RenderThreadTimeoutState(),
+      )
+    val errors = mutableListOf<String>()
+    var probeCalls = 0
+    fun check(probe: () -> CompletableFuture<Void?>): Boolean =
+      runner.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = {
+          probeCalls++
+          probe()
+        },
+        reportError = { msg, _ -> errors.add(msg) },
+      )
+
+    // Request 1: the first preview finds the render thread available, then a preview wedges it and the next preview of the same request
+    // finds it still blocked. The stuck work may still finish before the next request, so it is not reported as unrecovered yet.
+    assertTrue(check { error("An available render thread must not be probed") })
+    val timedOutSession = FakePreviewRenderSession(onInflate = { throw TimeoutException("Timed out waiting 100000ms for render action") })
+    assertThrows(TimeoutException::class.java) {
+      runner.renderExecutingCallbacks(timedOutSession, "com.example.AppKt.InfiniteLoopPreview") {}
+    }
+    val pendingProbe = CompletableFuture<Void?>()
+    assertFalse(check { pendingProbe })
+    assertEquals(1, probeCalls)
+    assertNull(runner.unrecoveredRenderThreadReason)
+
+    // Request 2: the render thread is still blocked when the request probes it once, so the runner reports it as unrecovered.
+    runner.onRefreshClassPath()
+    assertFalse(check { CompletableFuture() })
+    assertEquals(2, probeCalls)
+    assertThat(runner.unrecoveredRenderThreadReason).contains("com.example.AppKt.InfiniteLoopPreview")
+    assertThat(runner.unrecoveredRenderThreadReason).contains("100000ms")
+    assertThat(errors.last()).isEqualTo(runner.unrecoveredRenderThreadReason)
+
+    // Later previews of request 2 keep failing fast without probing, and the reason stays set for the rest of the request.
+    assertFalse(check { CompletableFuture() })
+    assertEquals(2, probeCalls)
+    assertThat(runner.unrecoveredRenderThreadReason).isNotNull()
+
+    // Request 3: the stuck work finished in the meantime, so the render thread recovered in place and the reason is cleared.
+    pendingProbe.complete(null)
+    runner.onRefreshClassPath()
+    assertNull(runner.unrecoveredRenderThreadReason)
+    assertTrue(check { CompletableFuture() })
+    assertEquals("Recovery must reuse the completed pending probe", 2, probeCalls)
+    assertNull(runner.unrecoveredRenderThreadReason)
+  }
+
+  @Test
+  fun unrecoveredRenderThreadReasonStaysNullWhenTheNextRequestProbeSucceeds() {
+    val runner =
+      StaticPreviewCallbackRunner(
+        callbacksTimeoutMs = 50L,
+        renderThreadRecoveryTimeoutMs = 5_000L,
+        nanoTime = { 0L },
+        timeoutState = RenderThreadTimeoutState(),
+      )
+    // The last preview of a request times out, so nothing probed the render thread before the request ended.
+    val timedOutSession = FakePreviewRenderSession(onInflate = { throw TimeoutException("Timed out waiting 100000ms for render action") })
+    assertThrows(TimeoutException::class.java) {
+      runner.renderExecutingCallbacks(timedOutSession, "com.example.AppKt.SlowCleanupPreview") {}
+    }
+
+    // The next request probes it; the stuck work finishes within the recovery window, so the render thread is reused in place.
+    runner.onRefreshClassPath()
+    val executor = Executors.newSingleThreadExecutor()
+    try {
+      val available =
+        runner.ensureRenderThreadAvailable(
+          runAsyncOnRenderThread = { action ->
+            CompletableFuture.supplyAsync(
+              {
+                Thread.sleep(200L)
+                action.run()
+                null
+              },
+              executor,
+            )
+          },
+          reportError = { msg, _ -> fail("Unexpected error: $msg") },
+        )
+      assertTrue(available)
+      assertNull(runner.unrecoveredRenderThreadReason)
+    } finally {
+      executor.shutdownNow()
+    }
   }
 }

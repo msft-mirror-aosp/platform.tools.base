@@ -67,9 +67,13 @@ class StandalonePreviewRendererCacheTest {
     val activeRenderers = AtomicInteger(0)
     val maxConcurrentRenders = AtomicInteger(0)
     val recordedAllowShowDecorations = CopyOnWriteArrayList<Boolean>()
+    var poisonedReason: String? = null
 
     override val isDisposed: Boolean
       get() = disposed
+
+    override val renderThreadPoisonedReason: String?
+      get() = poisonedReason
 
     override fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>) {
       refreshCalls.incrementAndGet()
@@ -512,6 +516,32 @@ class StandalonePreviewRendererCacheTest {
     assertThat(createdRenderers).hasSize(2)
     assertThat(createdRenderers[0].recordedAllowShowDecorations).containsExactly(false, true).inOrder()
     assertThat(createdRenderers[1].recordedAllowShowDecorations).containsExactly(true)
+  }
+
+  /** Verifies that warm `StandalonePreviewRenderer.render()` batches surface the renderer's poisoned render-thread reason. */
+  @Test
+  fun surfacesPoisonedRenderThreadOnPreviewRenderingResult() {
+    val resApk = tempFolder.newFile("res.apk").apply { writeText("apk") }
+    val outDir = tempFolder.newFolder("out").absolutePath
+    val screenshot = ComposeScreenshot("com.example.PreviewKt.InfiniteLoopPreview", emptyList(), emptyMap(), "p1")
+    val managed = FakeManagedRenderer()
+    val factory: (RendererBootstrapRequest) -> ManagedRenderer = { managed }
+
+    val healthyResult = newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir)
+    assertThat(healthyResult.isRenderThreadPoisoned).isFalse()
+    assertThat(healthyResult.renderThreadPoisonedReason).isNull()
+
+    val reason =
+      "The layoutlib render thread is still blocked by a previous preview (com.example.PreviewKt.InfiniteLoopPreview) whose main thread work did not complete within 100000ms."
+    managed.poisonedReason = reason
+
+    val warmPoisonedResult = newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir)
+    assertThat(warmPoisonedResult.isRenderThreadPoisoned).isTrue()
+    assertThat(warmPoisonedResult.renderThreadPoisonedReason).isEqualTo(reason)
+
+    val oneShotPoisonedResult = newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir, reuseEnvironment = false)
+    assertThat(oneShotPoisonedResult.isRenderThreadPoisoned).isFalse()
+    assertThat(oneShotPoisonedResult.renderThreadPoisonedReason).isNull()
   }
 
   private fun newFakeRenderer(resApk: File, factory: (RendererBootstrapRequest) -> ManagedRenderer) =

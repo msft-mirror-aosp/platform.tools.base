@@ -89,6 +89,14 @@ class Renderer(
     callbackRunner.onRefreshClassPath()
   }
 
+  /**
+   * Reason why Layoutlib's single render thread is still blocked by the timed-out work of a previous request, or `null` if it is available
+   * or recovered in place. This only reports what the first preview of the current request observed when it probed the render thread (see
+   * [StaticPreviewCallbackRunner.unrecoveredRenderThreadReason]); it does not probe or block.
+   */
+  val renderThreadPoisonedReason: String?
+    get() = callbackRunner.unrecoveredRenderThreadReason
+
   companion object {
     private val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>| ]+""".toRegex()
     private val invalidPathCharsRegex = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()

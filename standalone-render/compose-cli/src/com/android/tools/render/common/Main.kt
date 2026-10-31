@@ -84,6 +84,13 @@ internal interface ManagedRenderer : Closeable {
     renderImage: Boolean,
     allowShowDecorations: Boolean = false,
   ): List<PreviewScreenshotResult>
+
+  /**
+   * Reason why Layoutlib's single render thread is still blocked by the timed-out work of a previous request, as observed when the current
+   * request probed it, or `null` if the render thread is available or recovered in place. Does not probe or block.
+   */
+  val renderThreadPoisonedReason: String?
+    get() = null
 }
 
 private class RealManagedRenderer(private val delegate: Renderer) : ManagedRenderer {
@@ -103,6 +110,9 @@ private class RealManagedRenderer(private val delegate: Renderer) : ManagedRende
     renderImage: Boolean,
     allowShowDecorations: Boolean,
   ): List<PreviewScreenshotResult> = delegate.render(screenshot, outputFolderPath, includeComponentTree, renderImage, allowShowDecorations)
+
+  override val renderThreadPoisonedReason: String?
+    get() = delegate.renderThreadPoisonedReason
 
   /** Disposes the underlying [Renderer]. */
   override fun close() {
@@ -265,25 +275,40 @@ internal constructor(
               }
               throw e
             }
-          val results =
+          val batchOutcome =
             try {
               acquired.handle.renderBatch(fullClassPath, projectClassPath, acquired.freshlyBootstrapped) { managedRenderer ->
-                renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
+                val screenshotResults =
+                  renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
+                val poisonedReason = managedRenderer.renderThreadPoisonedReason
+                screenshotResults to poisonedReason
               }
             } finally {
               acquired.handle.release()
             }
-          if (results != null) {
-            return PreviewRenderingResult(globalError = null, results)
+          if (batchOutcome != null) {
+            val (results, poisonedReason) = batchOutcome
+            return PreviewRenderingResult(
+              globalError = null,
+              screenshotResults = results,
+              fatalJvmError = null,
+              renderThreadPoisonedReason = poisonedReason,
+            )
           }
         }
         throw IllegalStateException("Warm renderer was repeatedly disposed or invalidated before rendering could start")
       }
 
-      // Cold / one-shot path: bootstrap a fresh Renderer and close it immediately via `.use {}`.
+      // Cold / one-shot path: bootstrap a fresh Renderer and close it immediately via `.use {}`. A fresh process cannot observe a render
+      // thread blocked by a previous request, and the JVM exits right after writing results, so `renderThreadPoisonedReason` stays null.
       rendererFactory(bootstrapRequest).use { managedRenderer ->
         val results = renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations)
-        PreviewRenderingResult(globalError = null, results)
+        PreviewRenderingResult(
+          globalError = null,
+          screenshotResults = results,
+          fatalJvmError = null,
+          renderThreadPoisonedReason = null,
+        )
       }
     } catch (e: StackOverflowError) {
       // The warm renderer has already been evicted (see the KDoc above), so the next request bootstraps a fresh one.
@@ -398,15 +423,15 @@ internal constructor(
        * Executes [block] under [renderLock], refreshing `projectClassPath` before each warm batch (except the first batch run by the caller
        * that freshly bootstrapped this handle with the same `projectClassPath`).
        *
-       * @return the rendered results, or `null` if this handle was disposed or corrupted while waiting on [renderLock] so the caller can
+       * @return the result of [block], or `null` if this handle was disposed or corrupted while waiting on [renderLock] so the caller can
        *   release this handle and acquire a fresh one.
        */
-      fun renderBatch(
+      fun <T> renderBatch(
         fullClassPath: List<String>,
         projectClassPath: List<String>,
         freshlyBootstrapped: Boolean,
-        block: (ManagedRenderer) -> List<PreviewScreenshotResult>,
-      ): List<PreviewScreenshotResult>? {
+        block: (ManagedRenderer) -> T,
+      ): T? {
         renderLock.lock()
         try {
           // An evicted (but not corrupted) handle still serves callers that retained it before eviction; it closes once the last

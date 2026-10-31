@@ -15,6 +15,12 @@
  */
 package com.android.tools.render.common
 
+/**
+ * Result of rendering a batch of previews.
+ *
+ * Note: Side-channel fields ([fatalJvmError], [renderThreadPoisonedReason]) are declared outside the `data class` primary constructor, so
+ * callers must not use [copy] on instances whose side-channel fields matter (as [copy] drops them).
+ */
 data class PreviewRenderingResult(
   // Exception that is not bound to a particular screenshot
   val globalError: String?,
@@ -37,11 +43,39 @@ data class PreviewRenderingResult(
   val isFatalJvmError: Boolean
     get() = fatalJvmError != null
 
+  /**
+   * Non-null reason when this request found Layoutlib's single render thread still blocked by the timed-out work of a previous request (for
+   * example, an infinite loop in a preview's composition) after the full recovery probe window, or `null` when the render thread was
+   * available or recovered in place. A long-lived host should replace the process when this is set, since every later preview would fail.
+   *
+   * This field is in-process only and is not serialized to JSON. Declared outside the `data class` primary constructor to preserve binary
+   * compatibility of generated `copy` and `componentN` methods; note that [copy] drops this field.
+   */
+  var renderThreadPoisonedReason: String? = null
+    private set
+
+  /**
+   * `true` when Layoutlib's single render thread remains poisoned after rendering this batch, indicating that a long-running daemon hosting
+   * this JVM should retire after delivering the response.
+   */
+  val isRenderThreadPoisoned: Boolean
+    get() = renderThreadPoisonedReason != null
+
   constructor(
     globalError: String?,
     screenshotResults: List<PreviewScreenshotResult>,
     fatalJvmError: String?,
   ) : this(globalError, screenshotResults) {
     this.fatalJvmError = fatalJvmError
+  }
+
+  constructor(
+    globalError: String?,
+    screenshotResults: List<PreviewScreenshotResult>,
+    fatalJvmError: String?,
+    renderThreadPoisonedReason: String?,
+  ) : this(globalError, screenshotResults) {
+    this.fatalJvmError = fatalJvmError
+    this.renderThreadPoisonedReason = renderThreadPoisonedReason
   }
 }
