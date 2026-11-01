@@ -178,13 +178,6 @@ dependencies {
     implementation libs.jetifier.processor
     implementation libs.javapoet
     implementation libs.kotlin.gradle.plugin
-    constraints {
-        // AGP doesn't directly depend on KSP, but if KSP is used, it needs to match the KGP version
-        //noinspection ForeignDelegate
-        implementation(libs.ksp.gradle.plugin) {
-            because("KSP version needs to match KGP version")
-        }
-    }
     implementation libs.protobuf
     implementation libs.protobuf.util
     implementation libs.gson
