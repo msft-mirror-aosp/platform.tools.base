@@ -161,7 +161,14 @@ private suspend fun <T> connectAndRunInspectors(
       }
 
       val composeInspectorConnected =
-        createComposeInspector(commandSender, injectionManager, logger, resolveComposeInspectorJar, composeInspectorOverrideJar)
+        createComposeInspector(
+          commandSender,
+          injectionManager,
+          logger,
+          resolveComposeInspectorJar,
+          composeInspectorOverrideJar,
+          injection.deviceVersion,
+        )
 
       block(commandSender, composeInspectorConnected)
     }

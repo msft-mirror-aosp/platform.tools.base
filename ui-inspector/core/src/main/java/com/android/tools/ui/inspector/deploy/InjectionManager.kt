@@ -24,6 +24,7 @@ import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.AgentSocketChecker
+import com.android.tools.ui.inspector.device.AndroidDeviceVersion
 import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.DebugViewAttributes
 import com.android.tools.ui.inspector.device.DeviceMetadata
@@ -108,7 +109,8 @@ internal class InjectionManager(
   private val forwardedPortSpec = AtomicReference<SocketSpec.Tcp?>(null)
 
   /**
-   * Ensures an agent server built from the host's artifact set is running in the target app, and returns an adb forward to its socket.
+   * Ensures an agent server built from the host's artifact set is running in the target app, and returns an adb forward to its socket, with
+   * the Android version of the device.
    *
    * The server socket name embeds the target pid and the digest of the artifact set this host intends to ship (including the Compose
    * inspector override jar when one is configured), so a live socket with the expected name proves the process was injected by a host with
@@ -123,7 +125,7 @@ internal class InjectionManager(
    *   [DebugViewAttributes.enable]) on both the reconnect and full paths — the setting is independent of the server lifecycle; when false,
    *   device settings are left untouched.
    * @param mode Whether a running agent server may be reused; see [InjectionMode].
-   * @return An [InjectionResult] carrying the forwarded TCP port and how the server was obtained.
+   * @return An [InjectionResult] carrying the forwarded TCP port, how the server was obtained, and the Android version of the device.
    */
   suspend fun injectAndAttach(needsDebugViewAttributes: Boolean, mode: InjectionMode): InjectionResult {
     // Fails fast on an unusable Compose inspector override, before any device work.
@@ -168,7 +170,7 @@ internal class InjectionManager(
       InjectionMode.RECONNECT_IF_AVAILABLE ->
         if (agentSocketChecker.isPresent(socketName)) {
           if (needsDebugViewAttributes) debugViewAttributes.enable()
-          InjectionResult.Reconnected(setupAdbForward(deviceSelector, socketName))
+          InjectionResult.Reconnected(setupAdbForward(deviceSelector, socketName), deviceVersion)
         } else {
           performFullInjection(
             needsDebugViewAttributes,
@@ -178,10 +180,20 @@ internal class InjectionManager(
             agentLocalPath,
             libraryDexLocalPath,
             payloadJarLocalPath,
+            deviceVersion,
           )
         }
       InjectionMode.FORCE_FULL_INJECTION ->
-        performFullInjection(needsDebugViewAttributes, pid, serverToken, digests, agentLocalPath, libraryDexLocalPath, payloadJarLocalPath)
+        performFullInjection(
+          needsDebugViewAttributes,
+          pid,
+          serverToken,
+          digests,
+          agentLocalPath,
+          libraryDexLocalPath,
+          payloadJarLocalPath,
+          deviceVersion,
+        )
     }
   }
 
@@ -200,6 +212,7 @@ internal class InjectionManager(
     agentLocalPath: Path,
     libraryDexLocalPath: Path,
     payloadJarLocalPath: Path,
+    deviceVersion: AndroidDeviceVersion,
   ): InjectionResult.Injected = coroutineScope {
     // Query the app data dir synchronously before mutating device settings or pushing files, to verify that the app is accessible
     // (installed, debuggable, and running under the current user).
@@ -245,7 +258,7 @@ internal class InjectionManager(
     val socketName = ProtocolConstants.getSocketName(serverToken)
     agentSocketChecker.waitUntilPresent(socketName, pid, attachStartTime)
 
-    InjectionResult.Injected(setupAdbForward(deviceSelector, socketName))
+    InjectionResult.Injected(setupAdbForward(deviceSelector, socketName), deviceVersion)
   }
 
   /** Sets up adb port forwarding to the agent. */
@@ -533,14 +546,20 @@ internal enum class InjectionMode {
   FORCE_FULL_INJECTION,
 }
 
-/** The outcome of [InjectionManager.injectAndAttach]: how the agent server was obtained, and the adb forward that reaches it. */
+/**
+ * The outcome of [InjectionManager.injectAndAttach]: how the agent server was obtained, the adb forward that reaches it, and the Android
+ * version of the device.
+ */
 internal sealed interface InjectionResult {
   /** The forwarded TCP port number on the host. Connect to this port to communicate with the agent. */
   val forwardedPort: String
 
+  /** The Android version of the device, which decides whether the app's Compose version can be inspected on it. */
+  val deviceVersion: AndroidDeviceVersion
+
   /** An already-running server was reused; no message has been exchanged with it yet, so its liveness is not established. */
-  data class Reconnected(override val forwardedPort: String) : InjectionResult
+  data class Reconnected(override val forwardedPort: String, override val deviceVersion: AndroidDeviceVersion) : InjectionResult
 
   /** The agent was freshly pushed and attached, and its server socket was observed. */
-  data class Injected(override val forwardedPort: String) : InjectionResult
+  data class Injected(override val forwardedPort: String, override val deviceVersion: AndroidDeviceVersion) : InjectionResult
 }

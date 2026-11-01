@@ -80,7 +80,9 @@ Android project being inspected:
 
 Pass the jar with `--compose-inspector` instead of letting the UI inspector
 download it from Maven. Use an absolute path, since `bazel run` does not run
-from the workspace directory:
+from the workspace directory. With `--compose-inspector`, the UI inspector
+doesn't check whether the app's Compose version is supported (see
+[jar resolution](../README.md#jar-resolution)):
 
 ```sh
 tools/base/bazel/bazel run //tools/base/ui-inspector/cli:dump-ui -- dump-ui \

@@ -21,6 +21,7 @@ import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InspectorMetadata
+import com.android.tools.ui.inspector.device.AndroidDeviceVersion
 import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.proto.parseTreeResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
@@ -41,12 +42,14 @@ private const val MAX_COLLECTION_ELEMENTS = 5
 /**
  * Creates the Compose Inspector on the agent if Jetpack Compose is detected in the target application process. Returns false when the app
  * does not use Compose. When it does, the inspector is created or the dump fails: a Compose app dumped without its Compose tree would be
- * silently incomplete, so a jar that cannot be resolved, an unknown Compose version without [overrideJar] or an agent that refuses to load
- * the jar fails the dump.
+ * silently incomplete, so a jar that cannot be resolved, an unknown Compose version without [overrideJar], a Compose version whose
+ * inspector must not be loaded on [deviceVersion] (see [getComposeVersionSupport]) or an agent that refuses to load the jar fails the dump.
  *
  * @param resolveJar Resolves the Compose inspector jar for the app's Compose version.
  * @param overrideJar The Compose inspector jar given explicitly, or null. It is used when the app's Compose version is unknown, since the
- *   version is only needed to resolve a jar. When the version is known, [resolveJar] already returns this jar.
+ *   version is only needed to resolve a jar. When the version is known, [resolveJar] already returns this jar. The Compose version is not
+ *   checked against [deviceVersion] when it is given: the check is about the inspector of that version, which this jar replaces.
+ * @param deviceVersion The Android version of the device.
  */
 internal suspend fun createComposeInspector(
   commandSender: CommandSender,
@@ -54,16 +57,24 @@ internal suspend fun createComposeInspector(
   logger: Logger,
   resolveJar: (version: String) -> Path,
   overrideJar: Path?,
+  deviceVersion: AndroidDeviceVersion,
 ): Boolean {
   val jar =
     when (val compose = detectCompose(commandSender, logger)) {
       ComposeDetection.Absent -> return false
-      is ComposeDetection.Present ->
+      is ComposeDetection.Present -> {
+        if (overrideJar == null) {
+          val support = getComposeVersionSupport(compose.version, deviceVersion)
+          if (support is ComposeVersionSupport.Unsupported) {
+            throw IOException(support.message)
+          }
+        }
         try {
           resolveJar(compose.version)
         } catch (e: IOException) {
           throw IOException("Could not resolve the Compose inspector for Compose ${compose.version}: ${e.message}", e)
         }
+      }
       ComposeDetection.PresentWithoutVersion -> {
         if (overrideJar == null) {
           throw IOException(COMPOSE_VERSION_UNKNOWN_MESSAGE)

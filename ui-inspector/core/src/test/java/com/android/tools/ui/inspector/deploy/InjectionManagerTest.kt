@@ -35,6 +35,7 @@ import com.android.tools.ui.inspector.client.ComposeInspectorResolution
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.device.AndroidDeviceVersion
 import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.PROCESS_PACKAGES_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
@@ -1825,6 +1826,64 @@ class InjectionManagerTest {
   }
 
   @Test
+  fun testInjectAndAttach_fullInjection_reportsTheDeviceVersion() = runTest {
+    configureSuccessfulInjection(deviceMetadata = "arm64-v8a\n36\n36.1\nCinnamonBun\n")
+
+    val result = createInjectionManager().injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+
+    assertThat(result)
+      .isEqualTo(InjectionResult.Injected("12345", AndroidDeviceVersion(apiLevel = 36, minorApiLevel = 1, codename = "CinnamonBun")))
+  }
+
+  @Test
+  fun testInjectAndAttach_reconnect_reportsTheDeviceVersion() = runTest {
+    configureSuccessfulInjection(deviceMetadata = "arm64-v8a\n37\n37.0\nREL\n")
+
+    val result = createInjectionManager().injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
+
+    assertThat(result)
+      .isEqualTo(InjectionResult.Reconnected("12345", AndroidDeviceVersion(apiLevel = 37, minorApiLevel = 0, codename = null)))
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_unsupportedComposeVersion_failsWithoutRetrying() = runBlocking {
+    // A reused server on an Android 17 device, in an app with a Compose version whose inspector is not supported there.
+    configureSuccessfulInjection(deviceMetadata = "arm64-v8a\n37\n37.0\nREL\n")
+    val viewJarRemotePath = "$STAGING_DIR/view-inspector.$EMPTY_FILE_DIGEST.jar"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(viewJarRemotePath), "8124 $viewJarRemotePath\n")
+    val liveServer = ServerSocket(0)
+    val serverThread = startScriptedLiveAgent(liveServer, composeVersion = "1.10.6")
+    testHostServices.queuedForwardPorts.add(liveServer.localPort.toString())
+
+    var thrown: Exception? = null
+    val logged = loggedDuring {
+      try {
+        runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run when the Compose version is not supported") }
+        fail("Expected the unsupported Compose version to fail the run")
+      } catch (e: Exception) {
+        thrown = e
+      }
+    }
+    serverThread.join(5000)
+    liveServer.close()
+
+    assertThat(thrown).isInstanceOf(IOException::class.java)
+    assertThat(thrown!!.message)
+      .isEqualTo(
+        "Compose version not supported: the app uses androidx.compose.ui:ui:1.10.6, whose Compose inspector is not supported on " +
+          "Android 17 and later. Update Compose to 1.11.0 or later."
+      )
+    assertThat(thrown!!.suppressed).isEmpty()
+    // A single attempt, on the reused server, which removed its forward. Nothing was pushed: not even the Compose inspector jar.
+    assertThat(logged).doesNotContain("attaching the agent again")
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
+      .isEmpty()
+  }
+
+  @Test
   fun testRunWithConnectedInspectors_reconnectWithMatchingViewJar_transfersNothing() = runBlocking {
     configureSuccessfulInjection()
     // The probe finds the running server and the staged view inspector jar already matches: the whole run transfers no file at all.
@@ -2262,15 +2321,19 @@ class InjectionManagerTest {
   private fun processRecordBlock(pid: String, packageList: String) =
     "  *APP* UID 10123 ProcessRecord{abc123 $pid:process.name/u0a123}\n    packageList={$packageList}\n"
 
-  /** Configures every shell command of the happy-path injection flow, except the debug-view-attributes settings commands. */
+  /**
+   * Configures every shell command of the happy-path injection flow, except the debug-view-attributes settings commands. The device answers
+   * [DEVICE_METADATA_SHELL_COMMAND] with [deviceMetadata].
+   */
   private fun configureSuccessfulInjection(
     targetPackage: String = packageName,
     pid: String = "1234",
     processName: String = targetPackage,
     token: String = serverToken(pid),
     socketGrepOutput: String = "ui_inspector_$token\n",
+    deviceMetadata: String = "arm64-v8a\n30\n",
   ) {
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, deviceMetadata)
     configurePackageUidAndProcesses(targetPackage, processOutput = "PID UID NAME\n$pid 10123 $processName\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $targetPackage pwd", "/data/data/$targetPackage\n")
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)

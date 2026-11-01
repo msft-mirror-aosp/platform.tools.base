@@ -317,6 +317,20 @@ the compose inspector jar:
     version 1.5.0+, the host automatically resolves the artifact ID to `ui`
     for versions < 1.5.0, and to `ui-android` for versions >= 1.5.0.
 
+Before resolving the jar, the host refuses the Compose 1.x versions that
+Android Studio's Layout Inspector refuses, failing with "Compose version not
+supported":
+
+* Before 1.11.0-beta01 on Android 17 (API level 37) and later: the inspector
+  sets a static final field, which Android 17 forbids in apps that target it,
+  so it fails to load. Like Android Studio, the host refuses it whatever the
+  app's target SDK.
+* 1.1.x and 1.2.x before 1.2.1, and the 1.3.0 pre-releases: the inspector can
+  crash the app.
+
+Locally built versions (`-SNAPSHOT`, `-dev`) are not checked, and neither is
+the app's version when `--compose-inspector` gives the jar.
+
 The host keeps the extracted jars in its own cache, so each Compose
 version is downloaded once. Like Android Studio's Layout Inspector, it
 only downloads from Google Maven: on a machine without access to it,

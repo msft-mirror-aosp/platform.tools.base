@@ -34,6 +34,7 @@ import com.android.tools.ui.inspector.deploy.InjectionMode
 import com.android.tools.ui.inspector.deploy.buildInstallCommand
 import com.android.tools.ui.inspector.deploy.computeContentDigest
 import com.android.tools.ui.inspector.deploy.fileNameWithHash
+import com.android.tools.ui.inspector.device.AndroidDeviceVersion
 import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.fetchParameter
 import com.android.tools.ui.inspector.fetchUiDump
@@ -64,6 +65,9 @@ import org.junit.rules.TemporaryFolder
 
 /** Content digest of an empty file: first 12 hex of its SHA-256. Every dummy base artifact these tests create is empty. */
 private const val EMPTY_FILE_DIGEST = "e3b0c44298fc"
+
+/** A device on which every Compose version these tests use, 1.6.0, can be inspected. */
+private val API_30_DEVICE = AndroidDeviceVersion(apiLevel = 30, minorApiLevel = 0, codename = null)
 
 /** The device staging directory every artifact is pushed into under its digest-carrying name. */
 private const val STAGING_DIR = "/data/local/tmp/ui-inspector"
@@ -226,6 +230,7 @@ class ComposeInspectorTest {
           fixedJar
         },
         overrideJar = null,
+        deviceVersion = API_30_DEVICE,
       )
     }
 
@@ -321,6 +326,7 @@ class ComposeInspectorTest {
           logger = logger,
           resolveJar = { fixedJar },
           overrideJar = null,
+          deviceVersion = API_30_DEVICE,
         )
       }
 
@@ -601,6 +607,7 @@ class ComposeInspectorTest {
               fixedJar
             },
             overrideJar = null,
+            deviceVersion = API_30_DEVICE,
           )
         assertThat(composeInspectorConnected).isTrue()
 
@@ -916,6 +923,7 @@ class ComposeInspectorTest {
               fixedJar
             },
             overrideJar = null,
+            deviceVersion = API_30_DEVICE,
           )
         assertThat(composeInspectorConnected).isTrue()
 
@@ -1242,6 +1250,7 @@ class ComposeInspectorTest {
               fixedJar
             },
             overrideJar = null,
+            deviceVersion = API_30_DEVICE,
           )
         assertThat(composeInspectorConnected).isTrue()
 
@@ -1368,6 +1377,7 @@ class ComposeInspectorTest {
               logger,
               resolveJar = { throw AssertionError("no jar resolution expected") },
               overrideJar = null,
+              deviceVersion = API_30_DEVICE,
             )
           }
         }
@@ -1396,6 +1406,7 @@ class ComposeInspectorTest {
               logger,
               resolveJar = { throw AssertionError("no jar resolution expected") },
               overrideJar = null,
+              deviceVersion = API_30_DEVICE,
             )
           }
         }
@@ -1421,6 +1432,7 @@ class ComposeInspectorTest {
           logger,
           resolveJar = { throw AssertionError("no jar resolution expected") },
           overrideJar = null,
+          deviceVersion = API_30_DEVICE,
         )
       }
 
@@ -1441,6 +1453,7 @@ class ComposeInspectorTest {
               logger,
               resolveJar = { throw AssertionError("no jar resolution expected") },
               overrideJar = null,
+              deviceVersion = API_30_DEVICE,
             )
           }
         }
@@ -1490,9 +1503,87 @@ class ComposeInspectorTest {
           logger,
           resolveJar = { throw AssertionError("no jar resolution expected") },
           overrideJar = overrideJar,
+          deviceVersion = API_30_DEVICE,
         )
       }
 
+    assertThat(connected).isTrue()
+    assertThat(createCommands.map { it.dexPath }).containsExactly(stagedJarPath)
+  }
+
+  @Test
+  fun testCreateComposeInspector_unsupportedComposeVersion_failsBeforeResolvingTheJar() {
+    // Any device work, such as staging a jar, fails on this session, which has nothing configured.
+    val injectionManager = unusedInjectionManager()
+    val createCommands = Collections.synchronizedList(mutableListOf<UiInspectorProtocol.CreateInspectorCommand>())
+    val exception =
+      assertThrows(IOException::class.java) {
+        runBlocking {
+          respondingWith({ command ->
+            if (!command.hasGetVersion()) createCommands.add(command.createInspector)
+            composeVersionResponse(command, "1.10.6")
+          }) { commandSender ->
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { throw AssertionError("no jar resolution expected") },
+              overrideJar = null,
+              deviceVersion = AndroidDeviceVersion(apiLevel = 37, minorApiLevel = 0, codename = null),
+            )
+          }
+        }
+      }
+
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo(
+        "Compose version not supported: the app uses androidx.compose.ui:ui:1.10.6, whose Compose inspector is not supported on " +
+          "Android 17 and later. Update Compose to 1.11.0 or later."
+      )
+    assertThat(createCommands).isEmpty()
+  }
+
+  @Test
+  fun testCreateComposeInspector_unsupportedComposeVersionWithOverrideJar_isNotChecked(): Unit = runBlocking {
+    val fakeSession = FakeAdbSession()
+    val testDeviceServices = TestAdbDeviceServices(fakeSession.deviceServices)
+    val testSession = TestAdbSession(fakeSession, testDeviceServices, TestAdbHostServices(fakeSession.hostServices))
+    testDeviceServices.session = testSession
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    // The override jar is already staged, so the only device work left is the agent's answer to the create command.
+    val overrideJar = tempFolder.newFile("compose-override.jar").toPath()
+    overrideJar.writeText("fake pre-compiled compose dex classes")
+    val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-override.jar", computeContentDigest(overrideJar))}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
+    val injectionManager = unusedInjectionManager(testSession)
+    val createCommands = Collections.synchronizedList(mutableListOf<UiInspectorProtocol.CreateInspectorCommand>())
+
+    val connected =
+      respondingWith({ command ->
+        if (command.hasGetVersion()) {
+          composeVersionResponse(command, "1.10.6")
+        } else {
+          createCommands.add(command.createInspector)
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(command.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+            .build()
+        }
+      }) { commandSender ->
+        createComposeInspector(
+          commandSender,
+          injectionManager,
+          logger,
+          // Like the production resolver, which returns the override jar when there is one.
+          resolveJar = { overrideJar },
+          overrideJar = overrideJar,
+          deviceVersion = AndroidDeviceVersion(apiLevel = 37, minorApiLevel = 0, codename = null),
+        )
+      }
+
+    // The version check is about the inspector of the app's Compose version, which the override jar replaces.
     assertThat(connected).isTrue()
     assertThat(createCommands.map { it.dexPath }).containsExactly(stagedJarPath)
   }
@@ -1505,7 +1596,14 @@ class ComposeInspectorTest {
       assertThrows(IOException::class.java) {
         runBlocking {
           respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw downloadFailure }, overrideJar = null)
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { throw downloadFailure },
+              overrideJar = null,
+              deviceVersion = API_30_DEVICE,
+            )
           }
         }
       }
@@ -1530,7 +1628,14 @@ class ComposeInspectorTest {
       assertThrows(IOException::class.java) {
         runBlocking {
           respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, logger, resolveJar, overrideJar = null)
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar,
+              overrideJar = null,
+              deviceVersion = API_30_DEVICE,
+            )
           }
         }
       }
@@ -1552,7 +1657,14 @@ class ComposeInspectorTest {
       assertThrows(NullPointerException::class.java) {
         runBlocking {
           respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw defect }, overrideJar = null)
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { throw defect },
+              overrideJar = null,
+              deviceVersion = API_30_DEVICE,
+            )
           }
         }
       }
@@ -1589,7 +1701,14 @@ class ComposeInspectorTest {
                 .build()
             }
           }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { fixedJar }, overrideJar = null)
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { fixedJar },
+              overrideJar = null,
+              deviceVersion = API_30_DEVICE,
+            )
           }
         }
       }
