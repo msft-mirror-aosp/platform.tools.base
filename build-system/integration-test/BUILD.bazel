@@ -1,5 +1,5 @@
 load("//tools/base/bazel:maven.bzl", "maven_repository")
-load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_2_3_10", "KGP_FOR_TESTS", "KSP_VERSION_FOR_TESTS")
+load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_2_2_10", "KGP_2_3_10", "KGP_2_4_20", "KGP_FOR_TESTS", "KSP_VERSION_FOR_TESTS")
 
 [
     filegroup(
@@ -187,6 +187,22 @@ maven_repository(
 maven_repository(
     name = "kotlin_gradle_plugin_latest_prebuilts",
     artifacts = KGP_FOR_TESTS,
+    visibility = ["//visibility:public"],
+)
+
+# Default Kotlin Gradle plugin dependencies
+# DO NOT MIX different versions in this list
+maven_repository(
+    name = "kotlin_gradle_plugin_default_prebuilts",
+    artifacts = KGP_2_4_20,
+    visibility = ["//visibility:public"],
+)
+
+# Minimum supported Kotlin Gradle plugin dependencies
+# DO NOT MIX different versions in this list
+maven_repository(
+    name = "kotlin_gradle_plugin_minimum_prebuilts",
+    artifacts = KGP_2_2_10,
     visibility = ["//visibility:public"],
 )
 

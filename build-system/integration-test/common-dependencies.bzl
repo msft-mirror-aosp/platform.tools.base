@@ -7,7 +7,10 @@ and can be combined together
 # when editing this consider making a copy below so that our recipe tests can use any versions of Kotlin
 KGP_VERSION_FOR_TESTS = "2.5.0-Beta2"
 
-# Kotlin Gradle plugin version that AGP depends on
+# Minimum Kotlin Gradle plugin version that AGP supports and compiles against
+MINIMUM_BUILT_IN_KOTLIN_VERSION = "2.2.10"
+
+# Default Kotlin Gradle plugin version that AGP depends on
 BUILT_IN_KOTLIN_VERSION = "2.2.10"
 
 # KSP version used in AGP tests
@@ -102,6 +105,33 @@ KGP_2_4_0 = [
     "@maven//:org.jetbrains.kotlin.kotlin-test-junit_2.4.0",
 ]
 
+KGP_2_4_20 = [
+    "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.4.20",
+    "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.4.20",
+    "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-compiler_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-dom-api-compat_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-js_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-test_2.4.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-test-junit_2.4.20",
+    "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.4.20",
+    "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.4.20",
+]
+
 # Previous versions of KGP. This is used for Gradle recipe testing
 KGP_2_2_21 = [
     "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.21",
@@ -111,15 +141,23 @@ KGP_2_2_21 = [
 
 KGP_2_2_10 = [
     "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.2.10",
+    "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
     "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.2.10",
+    "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.2.10",
     "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.2.10",
+    "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-compiler_2.2.10",
+    "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.2.10",
+    "@maven//:org.jetbrains.kotlin.kotlin-dom-api-compat_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-js_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     "@maven//:org.jetbrains.kotlin.kotlin-test_2.2.10",
