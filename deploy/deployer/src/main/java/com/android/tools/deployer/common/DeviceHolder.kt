@@ -17,7 +17,6 @@ package com.android.tools.deployer.common
 
 import com.android.adblib.AdbChannel
 import com.android.adblib.AdbPackageManagerException
-import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
@@ -37,7 +36,6 @@ import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.properties
 import com.android.adblib.write
-import com.android.ddmlib.IDevice
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.AndroidVersionUtil
 import com.android.tools.deploy.proto.Deploy
@@ -47,7 +45,6 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.time.Duration
-import java.util.Optional
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlinx.coroutines.CancellationException
@@ -56,25 +53,24 @@ import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.runBlocking
 
 class DeviceHolder(
-  private val iDevice: IDevice,
+  private val deviceSerial: String,
   /**
-   * The resolved [ConnectedDevice] from the [AdbSession] corresponding to the IDevice.
+   * The resolved [ConnectedDevice] corresponding to [deviceSerial].
    *
-   * Can be set to an empty Optional value if no matching [ConnectedDevice] was found, e.g. because the device got disconnected.
+   * Can be `null` if no matching [ConnectedDevice] was found, e.g. because the device got disconnected.
    */
-  private val connectedDevice: Optional<ConnectedDevice>,
+  private val connectedDevice: ConnectedDevice?,
 ) {
 
-  constructor(connectedDevice: ConnectedDevice) : this(iDevice = UnsupportedIDevice(), connectedDevice = Optional.of(connectedDevice))
+  init {
+    if (connectedDevice != null) {
+      require(connectedDevice.serialNumber == deviceSerial) {
+        "deviceSerial ($deviceSerial) does not match connectedDevice.serialNumber (${connectedDevice.serialNumber})"
+      }
+    }
+  }
 
-  constructor(
-    iDevice: IDevice,
-    connectedDevice: ConnectedDevice?,
-    session: AdbSession,
-  ) : this(
-    iDevice = iDevice,
-    connectedDevice = Optional.ofNullable(connectedDevice),
-  )
+  constructor(connectedDevice: ConnectedDevice) : this(deviceSerial = connectedDevice.serialNumber, connectedDevice = connectedDevice)
 
   val version: AndroidVersion
     get() {
@@ -98,10 +94,7 @@ class DeviceHolder(
     get() =
       runMigrated(
         onMigrated = { connectedDevice -> connectedDevice.serialNumber },
-        onMigratedWhenDeviceNotFound = {
-          // When removing IDevice from deployer we would have to pass `serialNumber` directly.
-          iDevice.serialNumber
-        },
+        onMigratedWhenDeviceNotFound = { deviceSerial },
       )
 
   val abis: List<String>
@@ -369,8 +362,8 @@ class DeviceHolder(
     crossinline onMigrated: (ConnectedDevice) -> T,
     crossinline onMigratedWhenDeviceNotFound: () -> T = { throw IOException("Connected device is not present") },
   ): T {
-    return if (connectedDevice.isPresent) {
-      onMigrated(connectedDevice.get())
+    return if (connectedDevice != null) {
+      onMigrated(connectedDevice)
     } else {
       onMigratedWhenDeviceNotFound()
     }

@@ -157,7 +157,6 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/PatchSetGenerator.java",
         "src/main/java/com/android/tools/deployer/common/Timeouts.java",
         "src/main/java/com/android/tools/deployer/common/UIService.java",
-        "src/main/java/com/android/tools/deployer/common/UnsupportedIDevice.kt",
     ],
     visibility = ["//visibility:public"],
     deps = [

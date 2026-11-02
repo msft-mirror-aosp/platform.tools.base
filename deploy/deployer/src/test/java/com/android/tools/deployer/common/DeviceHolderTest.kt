@@ -23,7 +23,6 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.waitForDevice
 import com.android.adblib.waitUntilOnline
-import com.android.ddmlib.IDevice
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
@@ -41,7 +40,6 @@ import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.channels.InterruptedByTimeoutException
 import java.time.Duration
-import java.util.Optional
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
@@ -55,8 +53,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 /**
  * Tests for [DeviceHolder] backed by an adblib [ConnectedDevice].
@@ -421,6 +417,14 @@ class DeviceHolderTest {
   }
 
   @Test
+  fun testConstructor_throwsIllegalArgumentException_whenSerialNumberMismatches(): Unit = runBlockingWithTimeout {
+    connectDevice()
+    val connectedDevice = fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(SERIAL_NUMBER)
+
+    assertThrows(IllegalArgumentException::class.java) { DeviceHolder("mismatched-serial", connectedDevice) }
+  }
+
+  @Test
   fun testSerialNumber_whenConnectedDeviceIsMissing() {
     assertEquals(SERIAL_NUMBER, createDeviceHolderWithoutConnectedDevice().serialNumber)
   }
@@ -533,10 +537,7 @@ class DeviceHolderTest {
 
   /** Creates a [DeviceHolder] for a device whose [ConnectedDevice] could not be found, e.g. because the device got disconnected. */
   private fun createDeviceHolderWithoutConnectedDevice(): DeviceHolder {
-    // The IDevice is only used to retrieve the serial number of the device
-    val iDevice = mock<IDevice>()
-    whenever(iDevice.serialNumber).thenReturn(SERIAL_NUMBER)
-    return DeviceHolder(iDevice, Optional.empty())
+    return DeviceHolder(SERIAL_NUMBER, null)
   }
 
   private fun DeployerConnectedSocket.readText(): String {
