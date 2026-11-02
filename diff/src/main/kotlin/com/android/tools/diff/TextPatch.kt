@@ -16,14 +16,19 @@
 package com.android.tools.diff
 
 import kotlin.math.abs
-import kotlin.math.max
+
+/** Maximum edit distance (in lines) the Myers engine searches for within a single bisected region before giving up on a minimal script. */
+internal const val MAX_MYERS_EDIT_DISTANCE = 10_000
 
 /** The algorithmic engine used to compute diffs. */
 enum class DiffAlgorithm {
   /** Standard dynamic programming LCS (Longest Common Subsequence) exact matching. O(NM). */
   LCS,
 
-  /** High-performance Myers' edit-graph shortest edit path algorithm. O(ND) time. */
+  /**
+   * High-performance Myers' edit-graph shortest edit path algorithm (linear-space variant). O((N+M) * min(D, [MAX_MYERS_EDIT_DISTANCE]))
+   * time, O(N+M) space. Regions whose edit distance exceeds [MAX_MYERS_EDIT_DISTANCE] lines receive a correct but non-minimal script.
+   */
   MYERS,
 }
 
@@ -422,15 +427,24 @@ data class TextPatch internal constructor(val chunks: List<DiffChunk>) {
       contextLines: Int = 3,
       algorithm: DiffAlgorithm = DiffAlgorithm.LCS,
       lineMatcher: (String, String) -> Boolean = LineMatchers.EXACT,
-    ): TextPatch {
-      val beforeLines = if (before.isEmpty()) emptyList() else before.splitWithLineSeparators()
-      val afterLines = if (after.isEmpty()) emptyList() else after.splitWithLineSeparators()
-      val diffLines =
+    ): TextPatch =
+      computeWith(before, after, contextLines) { beforeLines, afterLines ->
         when (algorithm) {
           DiffAlgorithm.LCS -> diffLinesLcs(beforeLines, afterLines, lineMatcher)
           DiffAlgorithm.MYERS -> myersDiff(beforeLines, afterLines, lineMatcher)
         }
-      return TextPatch(DiffChunk.createChunks(diffLines, contextLines))
+      }
+
+    /** Splits [before] and [after] into lines, diffs them with [engine], and groups the result into chunks with [contextLines]. */
+    private inline fun computeWith(
+      before: String,
+      after: String,
+      contextLines: Int,
+      engine: (List<String>, List<String>) -> List<DiffLine>,
+    ): TextPatch {
+      val beforeLines = if (before.isEmpty()) emptyList() else before.splitWithLineSeparators()
+      val afterLines = if (after.isEmpty()) emptyList() else after.splitWithLineSeparators()
+      return TextPatch(DiffChunk.createChunks(engine(beforeLines, afterLines), contextLines))
     }
 
     /** Creates a [TextPatch] that represents the binary-exact creation of a file with the given [content]. */
@@ -595,110 +609,261 @@ data class TextPatch internal constructor(val chunks: List<DiffChunk>) {
      * **Lineage & Provenance Details:**
      * - Extracted and promoted from the private implementation in the prediction module: `com.google.tools.aiplugin.editor.prediction.Diff`
      *   to be shared as a public standalone base utility.
-     * - Originally implements the standard greedy diff algorithm introduced by Eugene W. Myers in his 1986 paper: *"An O(ND) Difference
-     *   Algorithm and Its Variations"* (Algorithmica 1, 251–266).
-     * - Solves the Shortest Edit Script (SES) problem in $O(ND)$ time by searching greedily along diagonals $k = x - y$ in the edit graph.
-     *   `v` tracks the farthest reaching x-coordinate on each diagonal.
+     * - Implements the linear-space refinement (Section 4b) of the greedy diff algorithm introduced by Eugene W. Myers in his 1986 paper:
+     *   *"An O(ND) Difference Algorithm and Its Variations"* (Algorithmica 1, 251–266).
+     * - Solves the Shortest Edit Script (SES) problem in $O((N+M)D)$ time by searching greedily along diagonals $k = x - y$ in the edit
+     *   graph from both ends simultaneously, locating the "middle snake" of an optimal path, and recursing on the two halves.
      *
-     * **Space Complexity Note:** To enable backtrack path reconstruction, clones of `v` are appended to `history` at the start of each step
-     * $d$. This leads to $O(D(N+M))$ space complexity. While highly optimized for standard file sizes, this should be taken into account if
-     * diffing extremely large files with a massive number of changes.
+     * **Space Complexity Note:** Common prefix and suffix lines are stripped at every recursion level. The forward and reverse
+     * farthest-reaching vectors are allocated once ($O(\min(N+M, maxEditDistance))$ ints) and reused by every bisection, which only clears
+     * the diagonal window it explores. Within the budget, the recursion depth is $O(\log D)$ because each middle snake halves the remaining
+     * edit distance; each over-budget split additionally advances by at least `maxEditDistance / 2` lines, adding at most $O((N+M) /
+     * maxEditDistance)$ levels. Total auxiliary memory is therefore $O(N+M)$ regardless of edit distance, so arbitrarily large diffs never
+     * risk `OutOfMemoryError`.
+     *
+     * **Time Complexity Note:** Unbounded, the search is $O((N+M)D)$, which is quadratic for dissimilar inputs (D close to N+M). Each
+     * bisection therefore stops searching once the edit distance of its region provably exceeds [maxEditDistance]. It then splits the
+     * region at the farthest point either the forward or the reverse search reached (GNU diff's "too expensive" heuristic) and recurses, so
+     * the alignment found so far is kept. The resulting script is correct but may be non-minimal. Diffs whose edit distance is within the
+     * budget remain minimal.
+     *
+     * **Output Ordering:** Contiguous non-context edit blocks are normalized so that all [LineType.REMOVED] lines precede all
+     * [LineType.ADDED] lines, matching the [DiffAlgorithm.LCS] engine and standard unified diff convention.
      */
-    private fun myersDiff(a: List<String>, b: List<String>, lineMatcher: (String, String) -> Boolean): List<DiffLine> {
-      val n = a.size
-      val m = b.size
-      if (n == 0 && m == 0) return emptyList()
+    private fun myersDiff(
+      a: List<String>,
+      b: List<String>,
+      lineMatcher: (String, String) -> Boolean,
+      maxEditDistance: Int = MAX_MYERS_EDIT_DISTANCE,
+    ): List<DiffLine> {
+      require(maxEditDistance >= 0) { "maxEditDistance must be non-negative: $maxEditDistance" }
+      if (a.isEmpty() && b.isEmpty()) return emptyList()
+      return normalizeEditBlocks(LinearSpaceMyers(a, b, lineMatcher, maxEditDistance).diff())
+    }
 
-      val max = n + m
-      val v = IntArray(2 * max + 1) // Farthest reaching x on diagonal k
-      val history = mutableListOf<IntArray>()
+    /**
+     * Test-only entry point equivalent to [compute] with [DiffAlgorithm.MYERS], but with a custom [maxEditDistance] budget so the budget
+     * boundary can be exercised with small inputs.
+     */
+    internal fun computeMyers(
+      before: String,
+      after: String,
+      contextLines: Int,
+      maxEditDistance: Int,
+      lineMatcher: (String, String) -> Boolean = LineMatchers.EXACT,
+    ): TextPatch =
+      computeWith(before, after, contextLines) { beforeLines, afterLines ->
+        myersDiff(beforeLines, afterLines, lineMatcher, maxEditDistance)
+      }
 
-      var found = false
-      var d = 0
-      while (d <= max && !found) {
-        val currentV = v.clone()
-        history.add(currentV) // Record state before updating at step d
-        for (k in -d..d step 2) {
-          val idx = k + max
-          // Decide whether to move down (deletion) or right (insertion).
-          // Greedy choice: pick the transition that leads to the farthest-reaching x.
-          var x =
-            if (d == 0) {
-              0
-            } else if (k == -d || (k != d && history[d][idx - 1] < history[d][idx + 1])) {
-              history[d][idx + 1] // Move down from k+1 diagonal (deletion)
-            } else {
-              history[d][idx - 1] + 1 // Move right from k-1 diagonal (insertion)
+    /**
+     * Single-use state for one linear-space Myers diff of [a] against [b].
+     *
+     * Edits are appended to [out] in document order. CONTEXT and REMOVED lines carry the text of [a]; ADDED lines carry the text of [b].
+     */
+    private class LinearSpaceMyers(
+      private val a: List<String>,
+      private val b: List<String>,
+      private val lineMatcher: (String, String) -> Boolean,
+      requestedMaxEditDistance: Int,
+    ) {
+      // The edit distance can never exceed a.size + b.size, so clamping keeps the budget arithmetic below from overflowing without
+      // changing behavior: any budget >= a.size + b.size already searches every region exhaustively.
+      private val maxEditDistance = minOf(requestedMaxEditDistance, a.size + b.size)
+
+      private val out = ArrayList<DiffLine>(a.size + b.size)
+
+      // Forward / reverse farthest-reaching x per diagonal, reused by every bisection. A bisection only explores diagonals in
+      // [-dLimit, dLimit], where dLimit <= min((n + m + 1) / 2, (maxEditDistance + 1) / 2 + 1), so 2 * dLimit + 2 entries suffice.
+      private val vCapacity = minOf(a.size + b.size, maxEditDistance + 2) + 3
+      private val forwardV = IntArray(vCapacity)
+      private val reverseV = IntArray(vCapacity)
+
+      fun diff(): List<DiffLine> {
+        diffRange(0, a.size, 0, b.size)
+        return out
+      }
+
+      /** Emits the edit script transforming `a[aStart, aEnd)` into `b[bStart, bEnd)`. */
+      private fun diffRange(aStart: Int, aEnd: Int, bStart: Int, bEnd: Int) {
+        var aLo = aStart
+        var bLo = bStart
+        while (aLo < aEnd && bLo < bEnd && lineMatcher(a[aLo], b[bLo])) {
+          out.add(DiffLine.fromRawLine(a[aLo], LineType.CONTEXT))
+          aLo++
+          bLo++
+        }
+
+        var aHi = aEnd
+        var bHi = bEnd
+        while (aLo < aHi && bLo < bHi && lineMatcher(a[aHi - 1], b[bHi - 1])) {
+          aHi--
+          bHi--
+        }
+
+        when {
+          aLo == aHi -> addAll(LineType.ADDED, b, bLo, bHi)
+          bLo == bHi -> addAll(LineType.REMOVED, a, aLo, aHi)
+          else -> bisect(aLo, aHi, bLo, bHi)
+        }
+
+        addAll(LineType.CONTEXT, a, aHi, aEnd)
+      }
+
+      /**
+       * Finds the middle snake of an optimal path through the (non-empty, prefix/suffix-trimmed) region by running the forward and reverse
+       * greedy searches in lock-step, then recurses on both halves.
+       */
+      private fun bisect(aStart: Int, aEnd: Int, bStart: Int, bEnd: Int) {
+        val n = aEnd - aStart
+        val m = bEnd - bStart
+        val maxD = (n + m + 1) / 2
+        // A middle snake for edit distance D is found at step d = ceil(D / 2), so this limit covers every D <= maxEditDistance.
+        val dLimit = minOf(maxD, (maxEditDistance + 1) / 2 + 1)
+        // Only diagonals in [-dLimit, dLimit] are ever explored, so only that window needs clearing.
+        val vOffset = dLimit
+        val vLength = 2 * dLimit + 2
+        forwardV.fill(-1, 0, vLength)
+        reverseV.fill(-1, 0, vLength)
+        forwardV[vOffset + 1] = 0
+        reverseV[vOffset + 1] = 0
+
+        val delta = n - m
+        // If the total number of lines is odd, the forward path collides with the reverse path; otherwise the reverse path collides.
+        val front = delta % 2 != 0
+
+        // Shrink the explored diagonal range once paths run off the edges of the edit graph.
+        var k1Start = 0
+        var k1End = 0
+        var k2Start = 0
+        var k2End = 0
+        for (d in 0 until dLimit) {
+          // Forward search from (0, 0).
+          var k1 = -d + k1Start
+          while (k1 <= d - k1End) {
+            val k1Offset = vOffset + k1
+            var x1 =
+              if (k1 == -d || (k1 != d && forwardV[k1Offset - 1] < forwardV[k1Offset + 1])) {
+                forwardV[k1Offset + 1] // Move down from diagonal k + 1 (insertion).
+              } else {
+                forwardV[k1Offset - 1] + 1 // Move right from diagonal k - 1 (deletion).
+              }
+            var y1 = x1 - k1
+            while (x1 < n && y1 < m && lineMatcher(a[aStart + x1], b[bStart + y1])) {
+              x1++
+              y1++
             }
-          var y = x - k
-
-          // Follow diagonals (identical lines / context) as far as possible
-          while (x < n && y < m && lineMatcher(a[x], b[y])) {
-            x++
-            y++
+            forwardV[k1Offset] = x1
+            if (x1 > n) {
+              k1End += 2 // Ran off the right of the graph.
+            } else if (y1 > m) {
+              k1Start += 2 // Ran off the bottom of the graph.
+            } else if (front) {
+              val k2Offset = vOffset + delta - k1
+              if (k2Offset in 0 until vLength && reverseV[k2Offset] != -1) {
+                // Mirror the reverse x-coordinate back onto the forward coordinate system.
+                val x2 = n - reverseV[k2Offset]
+                if (x1 >= x2) {
+                  split(aStart, aEnd, bStart, bEnd, x1, y1)
+                  return
+                }
+              }
+            }
+            k1 += 2
           }
-          v[idx] = x
-          if (x >= n && y >= m) {
-            found = true
-            break
+
+          // Reverse search from (n, m).
+          var k2 = -d + k2Start
+          while (k2 <= d - k2End) {
+            val k2Offset = vOffset + k2
+            var x2 =
+              if (k2 == -d || (k2 != d && reverseV[k2Offset - 1] < reverseV[k2Offset + 1])) {
+                reverseV[k2Offset + 1]
+              } else {
+                reverseV[k2Offset - 1] + 1
+              }
+            var y2 = x2 - k2
+            while (x2 < n && y2 < m && lineMatcher(a[aEnd - 1 - x2], b[bEnd - 1 - y2])) {
+              x2++
+              y2++
+            }
+            reverseV[k2Offset] = x2
+            if (x2 > n) {
+              k2End += 2
+            } else if (y2 > m) {
+              k2Start += 2
+            } else if (!front) {
+              val k1Offset = vOffset + delta - k2
+              if (k1Offset in 0 until vLength && forwardV[k1Offset] != -1) {
+                val x1 = forwardV[k1Offset]
+                val y1 = x1 - (k1Offset - vOffset)
+                if (x1 >= n - x2) {
+                  split(aStart, aEnd, bStart, bEnd, x1, y1)
+                  return
+                }
+              }
+            }
+            k2 += 2
           }
         }
-        if (found) break
-        d++
-      }
 
-      // Path Reconstruction: Backtrack from the end point (n, m) back to (0, 0)
-      val path = mutableListOf<DiffLine>()
-      var x = n
-      var y = m
-      for (step in d downTo 1) {
-        val prevV = history[step] // State of V before step d ran
-        val k = x - y
-        val idx = k + max
-
-        // Determine which diagonal k-1 or k+1 we transitioned from at step
-        val prevK =
-          if (k == -step || (k != step && prevV[idx - 1] < prevV[idx + 1])) {
-            k + 1 // Came from k+1 via down-move (deletion)
-          } else {
-            k - 1 // Came from k-1 via right-move (insertion)
+        if (dLimit < maxD) {
+          // The edit distance exceeds maxEditDistance. Rather than discarding the alignment found so far, split at the point that made the
+          // most progress in either search direction (GNU diff's "too expensive" heuristic): the farthest point the forward search reached
+          // from (0, 0), or the farthest point the reverse search reached from (n, m). The side of the split adjacent to that point is
+          // reachable within the budget, so it is diffed minimally, and the other side gets its own budget. Every reached point advances
+          // by at least one line per step, so each split makes progress and the recursion terminates.
+          var bestProgress = 0
+          var bestX = -1
+          var bestY = -1
+          for (k in -dLimit..dLimit) {
+            val x1 = forwardV[vOffset + k]
+            val y1 = x1 - k
+            if (x1 in 0..n && y1 in 0..m && x1 + y1 > bestProgress && !(x1 == n && y1 == m)) {
+              bestProgress = x1 + y1
+              bestX = x1
+              bestY = y1
+            }
+            // Reverse coordinates measure distance from (n, m); mirror them back onto the forward coordinate system.
+            val x2 = reverseV[vOffset + k]
+            val y2 = x2 - k
+            if (x2 in 0..n && y2 in 0..m && x2 + y2 > bestProgress && !(x2 == n && y2 == m)) {
+              bestProgress = x2 + y2
+              bestX = n - x2
+              bestY = m - y2
+            }
           }
-        val prevX = prevV[prevK + max]
-        val prevY = prevX - prevK
-
-        // Trace diagonal moves (context lines) that occurred after the transition at this step
-        while (x > prevX && y > prevY) {
-          val line = a[x - 1]
-          val terminator = line.takeLastWhile { c -> c == '\n' || c == '\r' }
-          path.add(DiffLine(LineType.CONTEXT, line.removeSuffix(terminator), LineSeparator.from(terminator)))
-          x--
-          y--
+          if (bestProgress > 0) {
+            split(aStart, aEnd, bStart, bEnd, bestX, bestY)
+            return
+          }
         }
 
-        // Trace the horizontal or vertical move (the edit) made at this step
-        if (x > prevX) {
-          val line = a[x - 1]
-          val terminator = line.takeLastWhile { c -> c == '\n' || c == '\r' }
-          path.add(DiffLine(LineType.REMOVED, line.removeSuffix(terminator), LineSeparator.from(terminator)))
-          x--
-        } else if (y > prevY) {
-          val line = b[y - 1]
-          val terminator = line.takeLastWhile { c -> c == '\n' || c == '\r' }
-          path.add(DiffLine(LineType.ADDED, line.removeSuffix(terminator), LineSeparator.from(terminator)))
-          y--
+        // Either the full search found no overlap (the region has no common lines, so deleting / inserting everything is the shortest
+        // script), or no usable heuristic split point exists.
+        addAll(LineType.REMOVED, a, aStart, aEnd)
+        addAll(LineType.ADDED, b, bStart, bEnd)
+      }
+
+      /** Recurses on the two sub-regions on either side of the split point `(aStart + x, bStart + y)`. */
+      private fun split(aStart: Int, aEnd: Int, bStart: Int, bEnd: Int, x: Int, y: Int) {
+        val n = aEnd - aStart
+        val m = bEnd - bStart
+        if (x !in 0..n || y !in 0..m || (x == 0 && y == 0) || (x == n && y == m)) {
+          // Defensive: a degenerate split would recurse forever. Unreachable for a correct middle snake on a trimmed region.
+          addAll(LineType.REMOVED, a, aStart, aEnd)
+          addAll(LineType.ADDED, b, bStart, bEnd)
+          return
+        }
+        diffRange(aStart, aStart + x, bStart, bStart + y)
+        diffRange(aStart + x, aEnd, bStart + y, bEnd)
+      }
+
+      private fun addAll(type: LineType, lines: List<String>, from: Int, to: Int) {
+        for (i in from until to) {
+          out.add(DiffLine.fromRawLine(lines[i], type))
         }
       }
-
-      // Reconstruct remaining diagonal context before step 1
-      while (x > 0 && y > 0) {
-        val line = a[x - 1]
-        val terminator = line.takeLastWhile { c -> c == '\n' || c == '\r' }
-        path.add(DiffLine(LineType.CONTEXT, line.removeSuffix(terminator), LineSeparator.from(terminator)))
-        x--
-        y--
-      }
-
-      return path.reversed()
     }
 
     private val LINE_SEPARATOR_REGEX = Regex("\r\n|\n|\r")

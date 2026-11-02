@@ -15,8 +15,10 @@
  */
 package com.android.tools.diff
 
+import com.android.tools.diff.TextPatch.Companion.LineMatchers
 import com.android.tools.diff.TextPatch.Companion.splitWithLineSeparators
 import com.google.common.truth.Truth.assertThat
+import kotlin.random.Random
 import kotlin.test.assertFailsWith
 import org.junit.Test
 
@@ -1515,5 +1517,333 @@ class TextPatchTest {
         """
           .trimIndent()
       )
+  }
+
+  @Test
+  fun testCompute_myersLargeInsertionReplacingSingleLine() {
+    // After prefix/suffix trimming the middle region has no common lines and an edit distance far above the budget.
+    val prefix = (1..300).joinToString("") { "prefix line $it\n" }
+    val suffix = (1..300).joinToString("") { "suffix line $it\n" }
+    val inserted = (1..45_000).joinToString("") { "inserted json line $it\n" }
+
+    val before = prefix + "old middle line\n" + suffix
+    val after = prefix + inserted + suffix
+
+    val patch = TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.MYERS)
+
+    assertThat(patch.linesRemoved).isEqualTo(1)
+    assertThat(patch.linesAdded).isEqualTo(45_000)
+    assertThat(patch.apply(before)).isEqualTo(after)
+  }
+
+  @Test
+  fun testCompute_myersLargeInterleavedInsertionIsMinimal() {
+    // 20,000 shared lines with a new unique line inserted after every 5th one: D = 4,000, within the budget, which forces deep recursion
+    // through the middle-snake split path.
+    val beforeLines = (0 until 20_000).map { "shared line $it\n" }
+    val afterLines = buildList {
+      beforeLines.forEachIndexed { i, line ->
+        add(line)
+        if (i % 5 == 4) add("inserted line $i\n")
+      }
+    }
+    val before = beforeLines.joinToString("")
+    val after = afterLines.joinToString("")
+
+    val patch = TextPatch.compute(before, after, contextLines = 3, algorithm = DiffAlgorithm.MYERS)
+
+    assertThat(patch.linesRemoved).isEqualTo(0)
+    assertThat(patch.linesAdded).isEqualTo(4_000)
+    assertThat(patch.apply(before)).isEqualTo(after)
+  }
+
+  @Test
+  fun testCompute_myersFullyReplacedBodyWithLargeEditDistance() {
+    val prefix = "header 1\nheader 2\n"
+    val suffix = "footer 1\nfooter 2"
+    val oldBody = (1..2_500).joinToString("") { "old_body_$it\n" }
+    val newBody = (1..2_500).joinToString("") { "new_body_$it\n" }
+
+    val before = prefix + oldBody + suffix
+    val after = prefix + newBody + suffix
+
+    val patch = TextPatch.compute(before, after, contextLines = 1, algorithm = DiffAlgorithm.MYERS)
+
+    assertThat(patch.linesRemoved).isEqualTo(2_500)
+    assertThat(patch.linesAdded).isEqualTo(2_500)
+    assertThat(patch.apply(before)).isEqualTo(after)
+  }
+
+  @Test
+  fun testCompute_myersInterleavedEditsAndLineSeparators() {
+    val before = "keep1\r\ndel1\r\nkeep2\r\nreplace_old\r\nkeep3"
+    val after = "keep1\r\nkeep2\r\nadd1\r\nreplace_new\r\nkeep3\r\ntrailing"
+
+    val patch = TextPatch.compute(before, after, contextLines = 1, algorithm = DiffAlgorithm.MYERS)
+
+    assertThat(patch.apply(before)).isEqualTo(after)
+    assertThat(patch.invert().apply(after)).isEqualTo(before)
+  }
+
+  @Test
+  fun testCompute_myersLargeScatteredEditDistanceIsMinimal() {
+    // 20,000 unique lines per side; every 10th line is replaced, so LCS = 18,000 and the minimal edit distance D = 4,000.
+    val lineCount = 20_000
+    val beforeLines = (0 until lineCount).map { "line $it\n" }
+    val afterLines = beforeLines.mapIndexed { i, line -> if (i % 10 == 5) "changed $i\n" else line }
+    val before = beforeLines.joinToString("")
+    val after = afterLines.joinToString("")
+
+    val patch = TextPatch.compute(before, after, contextLines = 3, algorithm = DiffAlgorithm.MYERS)
+
+    assertThat(patch.linesRemoved).isEqualTo(2_000)
+    assertThat(patch.linesAdded).isEqualTo(2_000)
+    assertThat(patch.linesAdded + patch.linesRemoved).isEqualTo(4_000)
+    assertThat(patch.apply(before)).isEqualTo(after)
+  }
+
+  @Test
+  fun testCompute_myersLargeDisjointInputsHitEditDistanceBudget() {
+    // No common lines and D = 60,000 far exceeds the edit-distance budget, so each bisection must stop early and split heuristically
+    // instead of running the full O((N+M)D) search (~2 * 10^9 line comparisons). With nothing to align, the result is still a full
+    // removal / addition.
+    val lineCount = 30_000
+    val before = (1..lineCount).joinToString("") { "old line $it\n" }
+    val after = (1..lineCount).joinToString("") { "new line $it\n" }
+
+    val patch = TextPatch.compute(before, after, contextLines = 3, algorithm = DiffAlgorithm.MYERS)
+
+    assertThat(patch.linesRemoved).isEqualTo(lineCount)
+    assertThat(patch.linesAdded).isEqualTo(lineCount)
+    assertThat(patch.apply(before)).isEqualTo(after)
+    assertEditBlocksNormalized(patch)
+  }
+
+  @Test
+  fun testCompute_myersMatchesLcsEditDistanceOnRandomInputs() {
+    // Both engines compute a shortest edit script, so their total edit counts must agree, and every Myers patch must apply cleanly.
+    val random = Random(42)
+    repeat(500) {
+      val before = (0 until random.nextInt(0, 40)).joinToString("") { "${'a' + random.nextInt(4)}\n" }
+      val after = (0 until random.nextInt(0, 40)).joinToString("") { "${'a' + random.nextInt(4)}\n" }
+
+      val myers = TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.MYERS)
+      val lcs = TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.LCS)
+
+      assertThat(myers.apply(before)).isEqualTo(after)
+      assertThat(myers.linesAdded + myers.linesRemoved).isEqualTo(lcs.linesAdded + lcs.linesRemoved)
+    }
+  }
+
+  @Test
+  fun testCompute_myersScatteredEditsAboveBudgetKeepAlignment() {
+    // 60,000 unique lines per side; every 10th line is replaced, so D = 12,000 exceeds the 10,000 budget. The over-budget split must keep
+    // the alignment found so far instead of replacing the whole file.
+    val lineCount = 60_000
+    val trueEditDistance = 12_000
+    val beforeLines = (0 until lineCount).map { "line $it\n" }
+    val afterLines = beforeLines.mapIndexed { i, line -> if (i % 10 == 5) "changed $i\n" else line }
+    val before = beforeLines.joinToString("")
+    val after = afterLines.joinToString("")
+
+    val patch = TextPatch.compute(before, after, contextLines = 3, algorithm = DiffAlgorithm.MYERS)
+
+    assertThat(patch.apply(before)).isEqualTo(after)
+    assertThat(patch.linesAdded + patch.linesRemoved).isAtMost(3 * trueEditDistance)
+    assertThat(patch.linesAdded + patch.linesRemoved).isLessThan(2 * lineCount)
+  }
+
+  @Test
+  fun testComputeMyers_editDistanceAtBudgetIsMinimal() {
+    // Shared line "c" in the middle; the shortest script deletes a1..a4 and inserts b1..b4, so D = 8 == budget.
+    val before = "a1\na2\na3\na4\nc\n"
+    val after = "c\nb1\nb2\nb3\nb4\n"
+
+    val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = 8)
+    val lcs = TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.LCS)
+
+    assertThat(myers.apply(before)).isEqualTo(after)
+    assertThat(myers.linesRemoved).isEqualTo(4)
+    assertThat(myers.linesAdded).isEqualTo(4)
+    assertThat(myers.linesAdded + myers.linesRemoved).isEqualTo(lcs.linesAdded + lcs.linesRemoved)
+  }
+
+  @Test
+  fun testComputeMyers_editDistanceAboveBudgetUsesHeuristicSplit() {
+    // Shared line "c" in the middle; the shortest script has D = 10 > budget 8, so the search stops before reaching "c" and the heuristic
+    // split produces a correct but non-minimal script.
+    val before = "a1\na2\na3\na4\na5\nc\n"
+    val after = "c\nb1\nb2\nb3\nb4\nb5\n"
+
+    val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = 8)
+    val lcs = TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.LCS)
+
+    assertThat(lcs.linesAdded + lcs.linesRemoved).isEqualTo(10)
+    assertThat(myers.apply(before)).isEqualTo(after)
+    assertThat(myers.invert().apply(after)).isEqualTo(before)
+    assertThat(myers.linesAdded + myers.linesRemoved).isGreaterThan(lcs.linesAdded + lcs.linesRemoved)
+  }
+
+  @Test
+  fun testComputeMyers_tinyBudgetOnRandomInputsAppliesCleanly() {
+    // Tiny budgets force the over-budget heuristic split at almost every recursion level.
+    val random = Random(7)
+    for (budget in 0..4) {
+      repeat(500) {
+        val before = (0 until random.nextInt(0, 40)).joinToString("") { "${'a' + random.nextInt(4)}\n" }
+        val after = (0 until random.nextInt(0, 40)).joinToString("") { "${'a' + random.nextInt(4)}\n" }
+
+        val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = budget)
+
+        assertThat(myers.apply(before)).isEqualTo(after)
+      }
+    }
+  }
+
+  @Test
+  fun testComputeMyers_heuristicSplitNormalizesEditBlocks() {
+    // D = 10 > budget 8 forces the heuristic split, which produces adjacent edit regions with no context line between them.
+    val before = "a1\na2\na3\na4\na5\nc\n"
+    val after = "c\nb1\nb2\nb3\nb4\nb5\n"
+
+    val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = 8)
+
+    assertThat(myers.apply(before)).isEqualTo(after)
+    assertEditBlocksNormalized(myers)
+  }
+
+  @Test
+  fun testComputeMyers_editDistanceAtOddBudgetIsMinimal() {
+    // Shared line "c"; the shortest script deletes a1, a2 and inserts b1, so D = 3 == budget.
+    val before = "a1\na2\nc\n"
+    val after = "c\nb1\n"
+
+    val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = 3)
+    val lcs = TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.LCS)
+
+    assertThat(myers.apply(before)).isEqualTo(after)
+    assertThat(myers.linesRemoved).isEqualTo(2)
+    assertThat(myers.linesAdded).isEqualTo(1)
+    assertThat(myers.linesAdded + myers.linesRemoved).isEqualTo(lcs.linesAdded + lcs.linesRemoved)
+  }
+
+  @Test
+  fun testComputeMyers_budgetEqualToEditDistanceIsMinimalOnRandomInputs() {
+    // A budget exactly equal to the true edit distance D (odd or even) must still yield a minimal script.
+    val random = Random(11)
+    repeat(500) {
+      val before = (0 until random.nextInt(0, 40)).joinToString("") { "${'a' + random.nextInt(4)}\n" }
+      val after = (0 until random.nextInt(0, 40)).joinToString("") { "${'a' + random.nextInt(4)}\n" }
+
+      val lcs = TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.LCS)
+      val editDistance = lcs.linesAdded + lcs.linesRemoved
+      val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = editDistance)
+
+      assertThat(myers.apply(before)).isEqualTo(after)
+      assertThat(myers.linesAdded + myers.linesRemoved).isEqualTo(editDistance)
+    }
+  }
+
+  @Test
+  fun testComputeMyers_tinyBudgetWithMatchesNearEndAppliesCleanly() {
+    // Each region starts with unrelated lines and ends with shared lines (followed by a differing last line so suffix trimming does not
+    // remove them), so the reverse search makes more progress than the forward search and drives the heuristic split.
+    val random = Random(13)
+    for (budget in 0..4) {
+      repeat(500) {
+        val shared = (0 until random.nextInt(0, 15)).map { "${'a' + random.nextInt(4)}\n" }
+        val before = (0 until random.nextInt(0, 20)).joinToString("") { "old $it\n" } + shared.joinToString("") + "old end\n"
+        val after = (0 until random.nextInt(0, 20)).joinToString("") { "new $it\n" } + shared.joinToString("") + "new end\n"
+
+        val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = budget)
+
+        assertThat(myers.apply(before)).isEqualTo(after)
+        assertThat(myers.invert().apply(after)).isEqualTo(before)
+        assertEditBlocksNormalized(myers)
+      }
+    }
+  }
+
+  @Test
+  fun testComputeMyers_negativeBudgetIsRejected() {
+    assertFailsWith<IllegalArgumentException> { TextPatch.computeMyers("a\n", "b\n", contextLines = 0, maxEditDistance = -1) }
+    assertFailsWith<IllegalArgumentException> { TextPatch.computeMyers("", "", contextLines = 0, maxEditDistance = -1) }
+  }
+
+  @Test
+  fun testComputeMyers_maxIntBudgetIsUnboundedOnRandomInputs() {
+    // Int.MAX_VALUE must behave as an unbounded search without overflowing the budget arithmetic.
+    val random = Random(23)
+    repeat(500) {
+      val before = (0 until random.nextInt(0, 40)).joinToString("") { "${'a' + random.nextInt(4)}\n" }
+      val after = (0 until random.nextInt(0, 40)).joinToString("") { "${'a' + random.nextInt(4)}\n" }
+
+      val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = Int.MAX_VALUE)
+      val lcs = TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.LCS)
+
+      assertThat(myers.apply(before)).isEqualTo(after)
+      assertThat(myers.linesAdded + myers.linesRemoved).isEqualTo(lcs.linesAdded + lcs.linesRemoved)
+    }
+  }
+
+  @Test
+  fun testCompute_myersIgnoreWhitespaceMatchesLcsOnRandomInputs() {
+    // Fuzzy matches are found by prefix/suffix trimming and by both the forward and reverse searches. Context lines must carry the original
+    // text so the patch applies, and IGNORE_WHITESPACE is an equivalence relation, so both engines must agree on the minimal edit count.
+    val random = Random(17)
+    repeat(500) {
+      val before = randomWhitespacePaddedText(random)
+      val after = randomWhitespacePaddedText(random)
+
+      val myers =
+        TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.MYERS, lineMatcher = LineMatchers.IGNORE_WHITESPACE)
+      val lcs =
+        TextPatch.compute(before, after, contextLines = 0, algorithm = DiffAlgorithm.LCS, lineMatcher = LineMatchers.IGNORE_WHITESPACE)
+
+      val result = myers.apply(before)
+      assertThat(result.splitWithLineSeparators().map { it.trim() }).isEqualTo(after.splitWithLineSeparators().map { it.trim() })
+      assertThat(myers.linesAdded + myers.linesRemoved).isEqualTo(lcs.linesAdded + lcs.linesRemoved)
+    }
+  }
+
+  @Test
+  fun testComputeMyers_ignoreWhitespaceWithTinyBudgetAppliesCleanly() {
+    // A tiny budget forces the heuristic split, which must also honor the fuzzy matcher and keep the original text on context lines.
+    val random = Random(19)
+    repeat(500) {
+      val before = randomWhitespacePaddedText(random)
+      val after = randomWhitespacePaddedText(random)
+
+      val myers = TextPatch.computeMyers(before, after, contextLines = 0, maxEditDistance = 2, lineMatcher = LineMatchers.IGNORE_WHITESPACE)
+
+      val result = myers.apply(before)
+      assertThat(result.splitWithLineSeparators().map { it.trim() }).isEqualTo(after.splitWithLineSeparators().map { it.trim() })
+      assertEditBlocksNormalized(myers)
+    }
+  }
+
+  /** Returns up to 40 newline-terminated lines over a 4-letter alphabet, each padded with random leading and trailing whitespace. */
+  private fun randomWhitespacePaddedText(random: Random): String {
+    val padding = listOf("", " ", "  ", "\t")
+    return (0 until random.nextInt(0, 40)).joinToString("") {
+      padding.random(random) + ('a' + random.nextInt(4)) + padding.random(random) + "\n"
+    }
+  }
+
+  /** Asserts that within every run of non-CONTEXT lines, no REMOVED line follows an ADDED line. */
+  private fun assertEditBlocksNormalized(patch: TextPatch) {
+    for (chunk in patch.chunks) {
+      var seenAddedInBlock = false
+      for ((index, line) in chunk.lines.withIndex()) {
+        when (line.type) {
+          LineType.CONTEXT -> seenAddedInBlock = false
+          LineType.ADDED -> seenAddedInBlock = true
+          LineType.REMOVED ->
+            if (seenAddedInBlock) {
+              throw AssertionError("REMOVED line after ADDED line at index $index of chunk starting at old line ${chunk.oldStart}")
+            }
+        }
+      }
+    }
   }
 }
