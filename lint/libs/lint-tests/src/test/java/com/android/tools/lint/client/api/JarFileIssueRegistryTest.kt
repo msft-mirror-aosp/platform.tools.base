@@ -16,6 +16,7 @@
 package com.android.tools.lint.client.api
 
 import com.android.testutils.TestUtils
+import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.LintCliFlags
 import com.android.tools.lint.MainTest
 import com.android.tools.lint.checks.AbstractCheckTest
@@ -31,7 +32,9 @@ import com.google.common.io.ByteStreams
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.StringWriter
+import java.lang.ref.Reference
 import java.nio.file.Files
 import java.util.jar.JarFile
 import java.util.zip.ZipEntry
@@ -4037,6 +4040,51 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
                 which was compiled against an older version of lint
                 than this one.\E"""
       )
+  }
+
+  /** Regression test for b/401168188: Gradle custom lint jars must not remain locked after load. */
+  fun testGradleCustomLintJarNotLocked() {
+    val targetDir = TestUtils.createTempDirDeletedOnExit().toFile()
+    val lintJar = base64gzip("lint.jar", CustomRuleTest.LINT_JAR_BASE64_GZIP).createFile(targetDir)
+    assertTrue(lintJar.path, lintJar.exists())
+
+    val client = LintCliClient(LintClient.CLIENT_GRADLE)
+    try {
+      val registries = JarFileIssueRegistry.get(client, listOf(lintJar))
+      assertThat(registries).hasSize(1)
+      val detectors =
+        registries.single().issues.map {
+          it.implementation.detectorClass.getDeclaredConstructor().newInstance()
+        }
+      assertThat(detectors).isNotEmpty()
+
+      // Verify no open OS file descriptors remain on Linux while classloader is strongly reachable.
+      val procFdDir = File("/proc/self/fd").toPath()
+      if (Files.isDirectory(procFdDir)) {
+        val canonicalJarPath = lintJar.canonicalPath
+        val openFds = mutableListOf<String>()
+        Files.newDirectoryStream(procFdDir).use { stream ->
+          for (fd in stream) {
+            try {
+              if (Files.readSymbolicLink(fd).toString() == canonicalJarPath) {
+                openFds.add(fd.toString())
+              }
+            } catch (_: IOException) {}
+          }
+        }
+        assertThat(openFds).isEmpty()
+      }
+
+      // Verify the jar file can be deleted immediately while the loaded registry and classloader
+      // are still strongly reachable (on Windows, any open ZipFile handle fails deletion).
+      Files.delete(lintJar.toPath())
+      assertFalse(lintJar.exists())
+      Reference.reachabilityFence(detectors)
+      Reference.reachabilityFence(registries)
+      Reference.reachabilityFence(client)
+    } finally {
+      JarFileIssueRegistry.clearCache()
+    }
   }
 
   companion object {

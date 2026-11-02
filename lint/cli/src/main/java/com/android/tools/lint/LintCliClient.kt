@@ -1439,14 +1439,11 @@ open class LintCliClient : LintClient {
 
   override fun createUrlClassLoader(files: List<File>, parent: ClassLoader): ClassLoader {
     return if (isGradle || currentPlatform() == PLATFORM_WINDOWS) {
-      // When lint is invoked from Gradle, it's normally running in the Gradle
-      // daemon which sticks around for a while, And URLClassLoader will on
-      // Windows lock the jar files which is problematic if the jar files are
-      // in build/ -- that will prevent a subsequent ./gradlew clean from
-      // succeeding. So here we'll use the IntelliJ platform's UrlClassLoader
-      // instead which does not lock files. See
-      // JarFileIssueRegistry#loadAndCloseURLClassLoader for more details.
-      UrlClassLoader.build().parent(parent).files(files.map { it.toPath() }).get()
+      // In the long-lived Gradle daemon and on Windows, java.net.URLClassLoader keeps custom lint
+      // jars in build/ open, preventing subsequent `./gradlew clean` runs from deleting them. Use
+      // IntelliJ's UrlClassLoader with allowLock(false) instead (lockJars defaults to true since
+      // IntelliJ commit a0eaf7329d39; see b/401168188).
+      UrlClassLoader.build().allowLock(false).parent(parent).files(files.map { it.toPath() }).get()
     } else {
       super.createUrlClassLoader(files, parent)
     }
