@@ -386,8 +386,8 @@ constructor(
         onMigrated = { connectedDevice ->
           try {
             runBlocking {
-              val characteristics = connectedDevice.deviceProperties().allReadonly()["ro.build.characteristics"] ?: ""
-              characteristics.split(",").contains(IDevice.HardwareFeature.EMBEDDED.characteristic)
+              val characteristics = connectedDevice.deviceProperties().allReadonly()[DevicePropertyNames.RO_BUILD_CHARACTERISTICS] ?: ""
+              characteristics.split(",").contains("embedded")
             }
           } catch (_: Exception) {
             false
