@@ -884,6 +884,7 @@
             - cause = (null)
    < unitTestArtifact
    - testFixturesArtifact = (null)
+   - testSuiteArtifacts   = []
    > libraries:
       > :|:app|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.usage>java-api|com.test.composite1:app:1.0:
          - type               = PROJECT

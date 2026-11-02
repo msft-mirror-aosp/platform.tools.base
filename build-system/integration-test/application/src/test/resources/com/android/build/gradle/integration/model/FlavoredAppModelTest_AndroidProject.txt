@@ -85,10 +85,12 @@
             - runtimeResourceFolder = (null)
          < unitTestArtifact
          - testFixturesArtifact   = (null)
+         - testSuiteArtifacts     = []
          - testedTargetVariant    = (null)
          - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}]
       < proDebug
    < variants
+   - testSuites            = []
    - javaCompileOptions:
       - encoding                       = "UTF-8"
       - sourceCompatibility            = "11"

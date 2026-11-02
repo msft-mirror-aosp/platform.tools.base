@@ -44,12 +44,14 @@
          - androidTestArtifact    = (null)
          - unitTestArtifact       = (null)
          - testFixturesArtifact   = (null)
+         - testSuiteArtifacts     = []
          - testedTargetVariant:
             - targetProjectPath = ":app"
             - targetVariant     = "debug"
          - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}]
       < debug
    < variants
+   - testSuites            = []
    - javaCompileOptions:
       - encoding                       = "UTF-8"
       - sourceCompatibility            = "11"

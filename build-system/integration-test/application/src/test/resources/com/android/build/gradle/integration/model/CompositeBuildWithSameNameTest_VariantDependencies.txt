@@ -62,6 +62,7 @@
       - unresolvedDependencies = []
    < unitTestArtifact
    - testFixturesArtifact = (null)
+   - testSuiteArtifacts   = []
    > libraries:
       > :includedBuild1|:lib|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|com.androidlib:lib:1.0:
          - type               = PROJECT

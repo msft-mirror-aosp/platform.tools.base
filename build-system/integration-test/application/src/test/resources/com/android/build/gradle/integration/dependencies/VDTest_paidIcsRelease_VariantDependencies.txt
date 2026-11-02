@@ -549,6 +549,7 @@
    - androidTestArtifact  = (null)
    - unitTestArtifact     = (null)
    - testFixturesArtifact = (null)
+   - testSuiteArtifacts   = []
    > libraries:
       > androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.activity:activity:1.6.0:
          - type        = ANDROID_LIBRARY

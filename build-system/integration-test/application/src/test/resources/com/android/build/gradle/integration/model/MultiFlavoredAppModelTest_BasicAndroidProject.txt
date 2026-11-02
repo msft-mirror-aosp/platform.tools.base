@@ -428,6 +428,8 @@
             < multiFlavorSourceProvider
          < unitTestArtifact
          - testFixturesArtifact = (null)
+         - testSuiteArtifacts   = []
       < proPlayDebug
    < variants
+   - testSuites  = []
 < BasicAndroidProject

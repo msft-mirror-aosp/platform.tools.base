@@ -73,6 +73,8 @@
          - androidTestArtifact  = (null)
          - unitTestArtifact     = (null)
          - testFixturesArtifact = (null)
+         - testSuiteArtifacts   = []
       < debug
    < variants
+   - testSuites     = []
 < BasicAndroidProject

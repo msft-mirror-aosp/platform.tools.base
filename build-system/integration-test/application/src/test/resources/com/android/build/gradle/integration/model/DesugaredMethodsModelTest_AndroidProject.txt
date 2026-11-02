@@ -85,6 +85,7 @@
             - runtimeResourceFolder = (null)
          < unitTestArtifact
          - testFixturesArtifact   = (null)
+         - testSuiteArtifacts     = []
          - testedTargetVariant    = (null)
          - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}, {GRADLE_CACHE}/{CHECKSUM}/transformed/desugar_jdk_libs_configuration-1.1.5-desugar-lint.txt{F}]
       < debug
@@ -126,10 +127,12 @@
          - androidTestArtifact    = (null)
          - unitTestArtifact       = (null)
          - testFixturesArtifact   = (null)
+         - testSuiteArtifacts     = []
          - testedTargetVariant    = (null)
          - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}, {GRADLE_CACHE}/{CHECKSUM}/transformed/desugar_jdk_libs_configuration-1.1.5-desugar-lint.txt{F}]
       < release
    < variants
+   - testSuites            = []
    - javaCompileOptions:
       - encoding                       = "UTF-8"
       - sourceCompatibility            = "11"

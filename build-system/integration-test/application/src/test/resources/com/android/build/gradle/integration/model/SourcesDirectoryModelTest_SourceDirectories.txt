@@ -192,6 +192,7 @@
             - variantSourceProvider     = (null)
             - multiFlavorSourceProvider = (null)
          - testFixturesArtifact = (null)
+         - testSuiteArtifacts   = []
       < debug
       > release:
          - name                 = "release"
@@ -204,6 +205,8 @@
          - androidTestArtifact  = (null)
          - unitTestArtifact     = (null)
          - testFixturesArtifact = (null)
+         - testSuiteArtifacts   = []
       < release
    < variants
+   - testSuites     = []
 < BasicAndroidProject

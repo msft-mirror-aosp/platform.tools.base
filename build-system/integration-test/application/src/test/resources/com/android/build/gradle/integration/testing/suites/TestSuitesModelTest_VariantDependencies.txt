@@ -1,0 +1,144 @@
+> VariantDependencies:
+   > testSuiteArtifacts:
+      > hostJarSuite{ADDED}:
+         > sourcesDependencies:
+            > debugHostJarSuite:
+               - name = "debugHostJarSuite"
+               - type = HOST_JAR
+               > artifactDependencies:
+                  > compileDependencies:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                              - requestedCoordinates = (null)
+                              - dependencies         = []
+                     - :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.libraryelements>jar, org.gradle.usage>java-api|project:app:unspecified:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                              - dependencies = "*visited*"
+                  < compileDependencies
+                  - runtimeDependencies    = (null)
+                  - unresolvedDependencies = []
+               < artifactDependencies
+            < debugHostJarSuite
+         < sourcesDependencies
+      < hostJarSuite{ADDED}
+      > mixedSuite{ADDED}:
+         > sourcesDependencies:
+            > debugMixedSuiteAndroidTest:
+               - name = "debugMixedSuiteAndroidTest"
+               - type = TEST_APK
+               > artifactDependencies:
+                  > compileDependencies:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                              - requestedCoordinates = (null)
+                              - dependencies         = []
+                     - :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.libraryelements>jar, org.gradle.usage>java-api|project:app:unspecified:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                              - dependencies = "*visited*"
+                  < compileDependencies
+                  - runtimeDependencies    = (null)
+                  - unresolvedDependencies = []
+               < artifactDependencies
+            < debugMixedSuiteAndroidTest
+            > debugMixedSuiteAssets:
+               - name = "debugMixedSuiteAssets"
+               - type = ASSETS
+               > artifactDependencies:
+                  > compileDependencies:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                              - requestedCoordinates = (null)
+                              - dependencies         = []
+                     - :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.libraryelements>jar, org.gradle.usage>java-api|project:app:unspecified:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                              - dependencies = "*visited*"
+                  < compileDependencies
+                  - runtimeDependencies    = (null)
+                  - unresolvedDependencies = []
+               < artifactDependencies
+            < debugMixedSuiteAssets
+            > debugMixedSuiteTest:
+               - name = "debugMixedSuiteTest"
+               - type = HOST_JAR
+               > artifactDependencies:
+                  > compileDependencies:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                              - requestedCoordinates = (null)
+                              - dependencies         = []
+                     - :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.libraryelements>jar, org.gradle.usage>java-api|project:app:unspecified:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                              - dependencies = "*visited*"
+                  < compileDependencies
+                  - runtimeDependencies    = (null)
+                  - unresolvedDependencies = []
+               < artifactDependencies
+            < debugMixedSuiteTest
+         < sourcesDependencies
+      < mixedSuite{ADDED}
+      > testApkSuite{ADDED}:
+         > sourcesDependencies:
+            > debugTestApkSuite:
+               - name = "debugTestApkSuite"
+               - type = TEST_APK
+               > artifactDependencies:
+                  > compileDependencies:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                              - requestedCoordinates = (null)
+                              - dependencies         = []
+                     - :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.libraryelements>jar, org.gradle.usage>java-api|project:app:unspecified:
+                        - requestedCoordinates = (null)
+                        - dependencies:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                              - dependencies = "*visited*"
+                  < compileDependencies
+                  - runtimeDependencies    = (null)
+                  - unresolvedDependencies = []
+               < artifactDependencies
+            < debugTestApkSuite
+         < sourcesDependencies
+      < testApkSuite{ADDED}
+   < testSuiteArtifacts
+   > libraries:
+      > :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.libraryelements>jar, org.gradle.usage>java-api|project:app:unspecified{ADDED}:
+         - type               = PROJECT
+         - artifact           = {PROJECT}/app/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar{!}
+         > projectInfo:
+            - buildId        = ":"
+            - projectPath    = ":app"
+            - isTestFixtures = false
+            - buildType      = "debug"
+            - productFlavors = []
+            - attributes:
+               * "com.android.build.api.attributes.AgpVersionAttr -> {AGP_Version}"
+               * "com.android.build.gradle.internal.attributes.VariantAttr -> debug"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.usage -> java-api"
+            - capabilities:
+               * "project:app:unspecified"
+         < projectInfo
+         - libraryInfo        = (null)
+         - lintJar            = (null)
+         - androidLibraryData = (null)
+      < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.libraryelements>jar, org.gradle.usage>java-api|project:app:unspecified{ADDED}
+   < libraries
+< VariantDependencies

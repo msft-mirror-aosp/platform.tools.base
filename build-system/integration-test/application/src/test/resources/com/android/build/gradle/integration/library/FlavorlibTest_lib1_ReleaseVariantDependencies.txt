@@ -7,5 +7,6 @@
    - androidTestArtifact  = (null)
    - unitTestArtifact     = (null)
    - testFixturesArtifact = (null)
+   - testSuiteArtifacts   = []
    - libraries            = []
 < VariantDependencies

@@ -35,11 +35,13 @@ import com.android.builder.model.v2.ide.AndroidLibraryData
 import com.android.builder.model.v2.ide.ApiVersion
 import com.android.builder.model.v2.ide.ArtifactDependencies
 import com.android.builder.model.v2.ide.BasicArtifact
+import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
 import com.android.builder.model.v2.ide.BasicVariant
 import com.android.builder.model.v2.ide.BundleInfo
 import com.android.builder.model.v2.ide.ComponentInfo
 import com.android.builder.model.v2.ide.GraphItem
 import com.android.builder.model.v2.ide.Installation
+import com.android.builder.model.v2.ide.JUnitEngineInfo
 import com.android.builder.model.v2.ide.JavaArtifact
 import com.android.builder.model.v2.ide.JavaCompileOptions
 import com.android.builder.model.v2.ide.Library
@@ -49,6 +51,11 @@ import com.android.builder.model.v2.ide.ProjectInfo
 import com.android.builder.model.v2.ide.SourceProvider
 import com.android.builder.model.v2.ide.SourceSetContainer
 import com.android.builder.model.v2.ide.TestInfo
+import com.android.builder.model.v2.ide.TestSuite
+import com.android.builder.model.v2.ide.TestSuiteArtifact
+import com.android.builder.model.v2.ide.TestSuiteTarget
+import com.android.builder.model.v2.ide.TestSuiteTestInfo
+import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 import com.android.builder.model.v2.ide.TestedTargetVariant
 import com.android.builder.model.v2.ide.UnresolvedDependency
 import com.android.builder.model.v2.ide.Variant
@@ -56,8 +63,14 @@ import com.android.builder.model.v2.ide.VectorDrawablesOptions
 import com.android.builder.model.v2.ide.ViewBindingOptions
 import com.android.builder.model.v2.models.AndroidDsl
 import com.android.builder.model.v2.models.AndroidProject
+import com.android.builder.model.v2.models.AssetsTestSuiteSource
 import com.android.builder.model.v2.models.BasicAndroidProject
+import com.android.builder.model.v2.models.BasicTestSuite
+import com.android.builder.model.v2.models.HostJarTestSuiteSource
 import com.android.builder.model.v2.models.ProjectGraph
+import com.android.builder.model.v2.models.TestApkTestSuiteSource
+import com.android.builder.model.v2.models.TestSuiteDependencies
+import com.android.builder.model.v2.models.TestSuiteSourceDependencies
 import com.android.builder.model.v2.models.VariantDependencies
 import com.android.builder.model.v2.models.Versions
 import com.android.builder.model.v2.models.Versions.Version
@@ -120,6 +133,23 @@ internal fun ModelSnapshotter<BasicAndroidProject>.snapshotBasicAndroidProject()
   ) {
     snapshotBasicVariant()
   }
+  objectList(
+    name = "testSuites",
+    propertyAction = BasicAndroidProject::testSuites,
+    nameAction = { name },
+    sortAction = { collection -> collection?.sortedBy { it.name } },
+  ) {
+    item("name", BasicTestSuite::name)
+    snapshotTestSuiteSources(assets = { assets }, hostJars = { hostJars }, testApks = { testApks })
+    objectList(
+      name = "targetsByVariant",
+      propertyAction = BasicTestSuite::targetsByVariant,
+      nameAction = { targetedVariant },
+      sortAction = { collection -> collection?.sortedBy { it.targetedVariant } },
+    ) {
+      snapshotTestSuiteVariantTarget()
+    }
+  }
 }
 
 internal fun ModelSnapshotter<AndroidProject>.snapshotAndroidProject() {
@@ -135,6 +165,23 @@ internal fun ModelSnapshotter<AndroidProject>.snapshotAndroidProject() {
     sortAction = { collection -> collection?.sortedBy { it.name } },
   ) {
     snapshotVariant()
+  }
+  objectList(
+    name = "testSuites",
+    propertyAction = AndroidProject::testSuites,
+    nameAction = { name },
+    sortAction = { collection -> collection?.sortedBy { it.name } },
+  ) {
+    item("name", TestSuite::name)
+    dataObject("junitEngineInfo", TestSuite::junitEngineInfo) { snapshotJUnitEngineInfo() }
+    snapshotTestSuiteSources(
+      assetsName = "generatedAssets",
+      assets = { generatedAssets },
+      hostJarsName = "generatedHostJars",
+      hostJars = { generatedHostJars },
+      testApksName = "generatedTestApks",
+      testApks = { generatedTestApks },
+    )
   }
   dataObject("javaCompileOptions", AndroidProject::javaCompileOptions) {
     item("encoding", JavaCompileOptions::encoding)
@@ -382,6 +429,15 @@ private fun ModelSnapshotter<BasicVariant>.snapshotBasicVariant() {
   dataObject("androidTestArtifact", BasicVariant::androidTestArtifact) { snapshotBasicArtifact() }
   dataObject("unitTestArtifact", BasicVariant::unitTestArtifact) { snapshotBasicArtifact() }
   dataObject("testFixturesArtifact", BasicVariant::testFixturesArtifact) { snapshotBasicArtifact() }
+  convertedObjectList(
+    name = "testSuiteArtifacts",
+    propertyAction = { testSuiteArtifacts.entries },
+    nameAction = { key },
+    objectAction = { value },
+    sortAction = { collection -> collection?.sortedBy { it.key } },
+  ) {
+    item("testSuiteName", BasicTestSuiteArtifact::testSuiteName)
+  }
 }
 
 private fun ModelSnapshotter<Variant>.snapshotVariant() {
@@ -392,6 +448,27 @@ private fun ModelSnapshotter<Variant>.snapshotVariant() {
   dataObject("androidTestArtifact", Variant::androidTestArtifact) { snapshotAndroidArtifact() }
   dataObject("unitTestArtifact", Variant::unitTestArtifact) { snapshotJavaArtifact() }
   dataObject("testFixturesArtifact", Variant::testFixturesArtifact) { snapshotAndroidArtifact() }
+  convertedObjectList(
+    name = "testSuiteArtifacts",
+    propertyAction = { testSuiteArtifacts.entries },
+    nameAction = { key },
+    objectAction = { value },
+    sortAction = { collection -> collection?.sortedBy { it.key } },
+  ) {
+    snapshotBaseArtifact()
+    dataObject("testInfo", TestSuiteArtifact::testInfo) {
+      dataObject("junitInfo", TestSuiteTestInfo::junitInfo) { snapshotJUnitEngineInfo() }
+      convertedObjectList(
+        name = "targets",
+        propertyAction = { targets.entries },
+        nameAction = { key },
+        objectAction = { value },
+        sortAction = { collection -> collection?.sortedBy { it.key } },
+      ) {
+        snapshotTestSuiteTarget()
+      }
+    }
+  }
   dataObject("testedTargetVariant", Variant::testedTargetVariant) {
     item("targetProjectPath", TestedTargetVariant::targetProjectPath)
     item("targetVariant", TestedTargetVariant::targetVariant)
@@ -402,6 +479,69 @@ private fun ModelSnapshotter<Variant>.snapshotVariant() {
 private fun ModelSnapshotter<BasicArtifact>.snapshotBasicArtifact() {
   dataObject("variantSourceProvider", BasicArtifact::variantSourceProvider) { snapshotSourceProvider() }
   dataObject("multiFlavorSourceProvider", BasicArtifact::multiFlavorSourceProvider) { snapshotSourceProvider() }
+}
+
+private fun <ModelT> ModelSnapshotter<ModelT>.snapshotTestSuiteSources(
+  assetsName: String = "assets",
+  assets: ModelT.() -> Collection<AssetsTestSuiteSource>?,
+  hostJarsName: String = "hostJars",
+  hostJars: ModelT.() -> Collection<HostJarTestSuiteSource>?,
+  testApksName: String = "testApks",
+  testApks: ModelT.() -> Collection<TestApkTestSuiteSource>?,
+) {
+  objectList(
+    name = assetsName,
+    propertyAction = assets,
+    nameAction = { name },
+    sortAction = { collection -> collection?.sortedBy { it.name } },
+  ) {
+    item("name", AssetsTestSuiteSource::name)
+    valueList("directories", AssetsTestSuiteSource::directories) { it?.sorted() }
+  }
+  objectList(
+    name = hostJarsName,
+    propertyAction = hostJars,
+    nameAction = { name },
+    sortAction = { collection -> collection?.sortedBy { it.name } },
+  ) {
+    item("name", HostJarTestSuiteSource::name)
+    item("defaultTopLevel", HostJarTestSuiteSource::defaultTopLevel)
+    valueList("java", HostJarTestSuiteSource::java) { it?.sorted() }
+    valueList("kotlin", HostJarTestSuiteSource::kotlin) { it?.sorted() }
+    valueList("resources", HostJarTestSuiteSource::resources) { it?.sorted() }
+    item("manifestFile", HostJarTestSuiteSource::manifestFile)
+  }
+  objectList(
+    name = testApksName,
+    propertyAction = testApks,
+    nameAction = { name },
+    sortAction = { collection -> collection?.sortedBy { it.name } },
+  ) {
+    item("name", TestApkTestSuiteSource::name)
+    dataObject("sourceProvider", TestApkTestSuiteSource::sourceProvider) { snapshotSourceProvider() }
+  }
+}
+
+private fun ModelSnapshotter<JUnitEngineInfo>.snapshotJUnitEngineInfo() {
+  valueList("includedEngines", JUnitEngineInfo::includedEngines) { it?.sorted() }
+}
+
+private fun ModelSnapshotter<TestSuiteVariantTarget>.snapshotTestSuiteVariantTarget() {
+  item("targetedVariant", TestSuiteVariantTarget::targetedVariant)
+  objectList(
+    name = "targets",
+    propertyAction = TestSuiteVariantTarget::targets,
+    nameAction = { name },
+    sortAction = { collection -> collection?.sortedBy { it.name } },
+  ) {
+    snapshotTestSuiteTarget()
+  }
+}
+
+private fun ModelSnapshotter<TestSuiteTarget>.snapshotTestSuiteTarget() {
+  item("name", TestSuiteTarget::name)
+  item("testTaskName", TestSuiteTarget::testTaskName)
+  list("targetedDevices", TestSuiteTarget::targetedDevices)
 }
 
 private fun ModelSnapshotter<AndroidArtifact>.snapshotAndroidArtifact() {
@@ -503,6 +643,24 @@ internal fun ModelSnapshotter<VariantDependencies>.snapshotVariantDependencies()
   dataObject("androidTestArtifact", VariantDependencies::androidTestArtifact) { snapshotArtifactDependencies() }
   dataObject("unitTestArtifact", VariantDependencies::unitTestArtifact) { snapshotArtifactDependencies() }
   dataObject("testFixturesArtifact", VariantDependencies::testFixturesArtifact) { snapshotArtifactDependencies() }
+  convertedObjectList(
+    name = "testSuiteArtifacts",
+    propertyAction = { testSuiteArtifacts.entries },
+    nameAction = { key },
+    objectAction = { value },
+    sortAction = { collection -> collection?.sortedBy { it.key } },
+  ) {
+    objectList(
+      name = "sourcesDependencies",
+      propertyAction = TestSuiteDependencies::sourcesDependencies,
+      nameAction = { name },
+      sortAction = { collection -> collection?.sortedBy { it.name } },
+    ) {
+      item("name", TestSuiteSourceDependencies::name)
+      item("type", TestSuiteSourceDependencies::type)
+      dataObject("artifactDependencies", TestSuiteSourceDependencies::artifactDependencies) { snapshotArtifactDependencies() }
+    }
+  }
 
   objectList(
     name = "libraries",

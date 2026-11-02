@@ -5,6 +5,7 @@
    - resourcePrefix        = (null)
    - dynamicFeatures       = []
    - variants              = []
+   - testSuites            = []
    - javaCompileOptions:
       - encoding                       = "UTF-8"
       - sourceCompatibility            = "11"

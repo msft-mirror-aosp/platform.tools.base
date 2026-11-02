@@ -8,4 +8,5 @@
    - buildTypes     = []
    - productFlavors = []
    - variants       = []
+   - testSuites     = []
 < BasicAndroidProject
