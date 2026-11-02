@@ -98,19 +98,6 @@ def java_jarjar(name, rules, srcs = [], visibility = None, rename_services = Fal
         visibility = visibility,
     )
 
-def merged_properties(name, srcs, mappings, visibility = None):
-    native.genrule(
-        name = name,
-        srcs = srcs,
-        outs = [name + ".properties"],
-        tools = ["//tools/base/bazel:properties_merger"],
-        visibility = visibility,
-        cmd = ("$(location //tools/base/bazel:properties_merger) " +
-               " ".join(["--mapping " + m for m in mappings]) + " " +
-               " ".join(["--input $(location " + src + ") " for src in srcs]) + " " +
-               "--output '$@'"),
-    )
-
 def srcjar(name, java_library, visibility = None):
     implicit_jar = ":lib" + java_library[1:] + "-src.jar"
     native.genrule(

@@ -189,13 +189,6 @@ java_binary(
     deps = ["@maven//:com.google.guava.guava"],
 )
 
-java_binary(
-    name = "properties_merger",
-    main_class = "com.android.tools.utils.PropertiesMerger",
-    visibility = ["//visibility:public"],
-    runtime_deps = [":utils"],
-)
-
 java_library(
     name = "maven",
     srcs = glob(["src/com/android/tools/maven/**/*.java"]),

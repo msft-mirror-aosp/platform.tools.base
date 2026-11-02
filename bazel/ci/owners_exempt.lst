@@ -4836,7 +4836,6 @@ tools/base/bazel/src/com/android/tools/repository_generator/ResolutionResult.jav
 tools/base/bazel/src/com/android/tools/utils/BazelMultiplexWorker.java
 tools/base/bazel/src/com/android/tools/utils/Buildifier.java
 tools/base/bazel/src/com/android/tools/utils/JarOutputCompiler.java
-tools/base/bazel/src/com/android/tools/utils/PropertiesMerger.java
 tools/base/bazel/src/com/android/tools/utils/Unzipper.java
 tools/base/bazel/src/com/android/tools/utils/Utils.java
 tools/base/bazel/src/com/android/tools/utils/WorkspaceUtils.java
