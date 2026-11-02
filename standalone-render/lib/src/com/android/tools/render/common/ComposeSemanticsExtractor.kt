@@ -19,6 +19,8 @@ package com.android.tools.render.common
 import com.android.tools.render.common.ComponentTreeExtractor.findZeroArgMethod
 import com.android.tools.render.common.ComponentTreeExtractor.invokeGetter
 import java.lang.reflect.Method
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -307,6 +309,21 @@ internal object ComposeSemanticsExtractor {
     }
   }
 
+  private class ColorKtMethods(val isSpecified: Method?, val toArgb: Method?)
+
+  private val missingColorKtLoaders =
+    Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>()))
+  private val colorKtMethodsByClass =
+    object : ClassValue<ColorKtMethods>() {
+      override fun computeValue(cls: Class<*>): ColorKtMethods {
+        val allMethods = cls.methods
+        return ColorKtMethods(
+          isSpecified = allMethods.firstOrNull { it.name.startsWith("isSpecified") && it.parameterCount == 1 },
+          toArgb = allMethods.firstOrNull { it.name.startsWith("toArgb") && it.parameterCount == 1 },
+        )
+      }
+    }
+
   internal fun formatColorValue(colorObj: Any, cl: ClassLoader?): String? {
     val value = (colorObj as? Number)?.toLong() ?: (invokeGetter(colorObj, "value") as? Number)?.toLong() ?: return colorObj.toString()
 
@@ -316,18 +333,28 @@ internal object ComposeSemanticsExtractor {
       return null
     }
 
-    if (cl != null) {
+    if (cl != null && !missingColorKtLoaders.contains(cl)) {
       try {
-        val colorKtClass = Class.forName("androidx.compose.ui.graphics.ColorKt", true, cl)
-        val isSpecifiedMethod = colorKtClass.methods.firstOrNull { it.name.startsWith("isSpecified") && it.parameterCount == 1 }
-        if (isSpecifiedMethod != null) {
-          val isSpecified = isSpecifiedMethod.invoke(null, value) as? Boolean
-          if (isSpecified == false) return null
-        }
-        val toArgbMethod = colorKtClass.methods.firstOrNull { it.name.startsWith("toArgb") && it.parameterCount == 1 }
-        if (toArgbMethod != null) {
-          val argb = (toArgbMethod.invoke(null, value) as? Number)?.toInt()
-          if (argb != null) return "#%08X".format(argb)
+        val colorKtClass =
+          try {
+            Class.forName("androidx.compose.ui.graphics.ColorKt", true, cl)
+          } catch (_: ClassNotFoundException) {
+            missingColorKtLoaders.add(cl)
+            null
+          } catch (_: LinkageError) {
+            missingColorKtLoaders.add(cl)
+            null
+          }
+        if (colorKtClass != null) {
+          val methods = colorKtMethodsByClass.get(colorKtClass)
+          if (methods.isSpecified != null) {
+            val isSpecified = methods.isSpecified.invoke(null, value) as? Boolean
+            if (isSpecified == false) return null
+          }
+          if (methods.toArgb != null) {
+            val argb = (methods.toArgb.invoke(null, value) as? Number)?.toInt()
+            if (argb != null) return "#%08X".format(argb)
+          }
         }
       } catch (e: Exception) {
         val msg = e.cause?.message ?: e.message ?: ""

@@ -109,7 +109,13 @@ class StandaloneRenderModelModule(
     if (isRClassesInitialized(classLoader)) return
     synchronized(rClassInitLock) {
       if (isRClassesInitialized(classLoader)) return
+      val warmDepsParent = (classLoader as? DefaultModuleClassLoader)?.parent as? WarmDepsClassLoader
+      if (warmDepsParent != null && warmDepsParent.isLibraryRInitializedFor(packages, resourceIdManager)) {
+        (classLoader as DefaultModuleClassLoader).rClassesInitialized = true
+        return
+      }
       doInitializeLibraryResourceIds(classLoader, packages, resourceIdManager)
+      warmDepsParent?.markLibraryRInitialized(packages, resourceIdManager)
       if (classLoader is DefaultModuleClassLoader) {
         classLoader.rClassesInitialized = true
       } else {

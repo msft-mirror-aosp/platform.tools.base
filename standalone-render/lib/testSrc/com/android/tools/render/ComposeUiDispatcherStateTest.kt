@@ -18,12 +18,16 @@ package com.android.tools.render
 
 import androidx.compose.ui.platform.GlobalSnapshotManagerTestStandIn
 import com.android.testutils.TestUtils
+import com.intellij.util.ref.GCUtil
 import java.io.File
+import java.lang.ref.WeakReference
+import java.net.URL
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Handler
 import java.util.logging.Level
 import java.util.logging.LogRecord
@@ -34,6 +38,8 @@ import kotlin.coroutines.CoroutineContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -594,58 +600,8 @@ class ComposeUiDispatcherStateTest {
 
   @Test
   fun realAndroidUiDispatcherAndGlobalSnapshotManagerFromComposePrebuiltsMatchReflectiveContract() {
-    val aarPaths =
-      listOf(
-        "androidx/compose/ui/ui-android/1.9.5/ui-android-1.9.5.aar",
-        "androidx/compose/runtime/runtime-android/1.9.5/runtime-android-1.9.5.aar",
-        "androidx/core/core/1.15.0/core-1.15.0.aar",
-      )
-    val extractedJars = aarPaths.mapIndexed { index, mavenPath ->
-      val aarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
-      assertTrue("Missing prebuilt AAR: $aarFile", aarFile.isFile)
-      val outJar = File(tmpFolder.root, "classes_$index.jar")
-      ZipFile(aarFile).use { zip ->
-        val entry = zip.getEntry("classes.jar")
-        assertNotNull("Missing classes.jar in $aarFile", entry)
-        zip.getInputStream(entry).use { input ->
-          Files.copy(input, outJar.toPath())
-        }
-      }
-      outJar.toURI().toURL()
-    }
-    // Compile minimal pure-Java android.os.Looper, android.os.Handler, and android.view.Choreographer so the real
-    // AndroidUiDispatcher.Main from ui-android.aar can be initialized in a unit test without loading layoutlib's native JNI library.
-    val androidStubsDir = compileAndroidUiDispatcherPlatformStubs()
-    val urls = (listOf(androidStubsDir.toURI().toURL()) + extractedJars).toTypedArray()
-
-    val isolatedClassLoader =
-      object : URLClassLoader(urls, ComposeUiDispatcherStateTest::class.java.classLoader) {
-        override fun loadClass(name: String, resolve: Boolean): Class<*> =
-          synchronized(getClassLoadingLock(name)) {
-            val loaded = findLoadedClass(name)
-            val clazz =
-              loaded
-                ?: if (
-                  name == "android.os.Looper" ||
-                    name == "android.os.Handler" ||
-                    name.startsWith("android.os.Build") ||
-                    name.startsWith("android.view.Choreographer") ||
-                    name.startsWith("androidx.")
-                ) {
-                  try {
-                    findClass(name)
-                  } catch (_: ClassNotFoundException) {
-                    super.loadClass(name, false)
-                  }
-                } else {
-                  super.loadClass(name, false)
-                }
-            if (resolve) resolveClass(clazz)
-            clazz
-          }
-      }
-
-    isolatedClassLoader.use { composeClassLoader ->
+    val urls = buildIsolatedComposeClassLoaderUrls()
+    newIsolatedComposeClassLoader(urls).use { composeClassLoader ->
       // Verify the real GlobalSnapshotManager coroutine class in ui-android matches isGlobalSnapshotManagerClassName.
       val gsmLambdaClass = Class.forName("androidx.compose.ui.platform.GlobalSnapshotManager\$ensureStarted\$1", false, composeClassLoader)
       assertTrue(isGlobalSnapshotManagerClassName(gsmLambdaClass.name))
@@ -727,6 +683,159 @@ class ComposeUiDispatcherStateTest {
     }
   }
 
+  @Test
+  fun warmGlobalSnapshotObserverRestoresAfterSnapshotKtClearAndDoesNotRetainClosedClassLoader() {
+    val urls = buildIsolatedComposeClassLoaderUrls()
+    val loaderRef = exerciseWarmGlobalSnapshotObserverAndCloseLoader(urls)
+
+    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+    while (System.nanoTime() < deadline && loaderRef.get() != null) {
+      GCUtil.tryGcSoftlyReachableObjects()
+      System.gc()
+      Thread.sleep(10)
+    }
+    assertNull("Closed Compose ClassLoader must not be retained by ClassValue caches", loaderRef.get())
+  }
+
+  private fun exerciseWarmGlobalSnapshotObserverAndCloseLoader(urls: Array<URL>): WeakReference<ClassLoader> {
+    newIsolatedComposeClassLoader(urls).use { composeClassLoader ->
+      // Verify non-DefaultModuleClassLoader fallback in findAlreadyLoadedModuleOrWarmClass.
+      assertNull(findAlreadyLoadedModuleOrWarmClass(composeClassLoader, "com.example.NonExistentClass"))
+      val snapshotKtClass = findAlreadyLoadedModuleOrWarmClass(composeClassLoader, "androidx.compose.runtime.snapshots.SnapshotKt")
+      assertNotNull("Expected SnapshotKt to be resolved via non-DefaultModuleClassLoader fallback", snapshotKtClass)
+      assertSame(composeClassLoader, snapshotKtClass!!.classLoader)
+
+      val dispatcherClass = Class.forName("androidx.compose.ui.platform.AndroidUiDispatcher", false, composeClassLoader)
+      val gsmClass = Class.forName("androidx.compose.ui.platform.GlobalSnapshotManager", false, composeClassLoader)
+      val snapshotStateKtClass = Class.forName("androidx.compose.runtime.SnapshotStateKt", false, composeClassLoader)
+      val mutableStateClass = Class.forName("androidx.compose.runtime.MutableState", false, composeClassLoader)
+      val policyClass = Class.forName("androidx.compose.runtime.SnapshotMutationPolicy", false, composeClassLoader)
+
+      val executor = Executors.newSingleThreadExecutor()
+      try {
+        executor
+          .submit(
+            Callable {
+              // Initialize AndroidUiDispatcher.Main and start GlobalSnapshotManager.
+              val companion = dispatcherClass.getDeclaredField("Companion").apply { isAccessible = true }.get(null)
+              companion.javaClass.getMethod("getMain").invoke(companion)
+              val gsmInstance = gsmClass.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null)
+              gsmClass.getMethod("ensureStarted").apply { isAccessible = true }.invoke(gsmInstance)
+
+              // Draining per-render work captures GlobalSnapshotManager$ensureStarted$2 into ClassValue and suspends the GSM coroutine on
+              // channel.receive().
+              clearComposeUiDispatcherWork(composeClassLoader)
+              assertFalse(hasPendingComposeUiDispatcherWork(composeClassLoader))
+
+              val policy = snapshotStateKtClass.getMethod("structuralEqualityPolicy").invoke(null)
+              val mutableState = snapshotStateKtClass.getMethod("mutableStateOf", Any::class.java, policyClass).invoke(null, "v0", policy)
+              val setValueMethod = mutableStateClass.getMethod("setValue", Any::class.java)
+
+              val observersField = snapshotKtClass.getDeclaredField("globalWriteObservers").apply { isAccessible = true }
+              val advanceGlobalSnapshotMethod =
+                snapshotKtClass.declaredMethods.first { it.name == "advanceGlobalSnapshot" && it.parameterCount == 0 }.apply {
+                  isAccessible = true
+                }
+
+              // Simulate RenderSessionCleaner.dispose() clearing SnapshotKt.globalWriteObservers while SnapshotKt and GlobalSnapshotManager
+              // remain warm in the parent ClassLoader.
+              val oldObserversList = observersField.get(null) as MutableCollection<*>
+              assertEquals(1, oldObserversList.size)
+              oldObserversList.clear()
+              advanceGlobalSnapshotMethod.invoke(null)
+              assertTrue((observersField.get(null) as Collection<*>).isEmpty())
+
+              // While cleared, mutating state does not notify GlobalSnapshotManager.
+              setValueMethod.invoke(mutableState, "while-cleared")
+              assertFalse(hasPendingComposeUiDispatcherWork(composeClassLoader))
+
+              // Restoring the warm write observer replaces globalWriteObservers with a fresh ArrayList (immune to delayed old-list clears)
+              // and advances the global snapshot so subsequent state mutations trigger GlobalSnapshotManager again.
+              restoreWarmGlobalSnapshotObserver(composeClassLoader)
+              val restoredList = observersField.get(null) as Collection<*>
+              assertEquals(1, restoredList.size)
+              assertNotSame(oldObserversList, restoredList)
+              oldObserversList.clear()
+              assertEquals(1, (observersField.get(null) as Collection<*>).size)
+
+              setValueMethod.invoke(mutableState, "after-restore")
+              assertTrue(hasPendingComposeUiDispatcherWork(composeClassLoader))
+              clearComposeUiDispatcherWork(composeClassLoader)
+              assertFalse(hasPendingComposeUiDispatcherWork(composeClassLoader))
+
+              // If an off-thread write raced with queue teardown (leaving sent == true with no GSM continuation queued), restoring resets
+              // sent and started so the next ensureStarted() cleanly re-registers GlobalSnapshotManager.
+              val sentFlag = gsmClass.getDeclaredField("sent").apply { isAccessible = true }.get(null) as AtomicBoolean
+              val startedFlag = gsmClass.getDeclaredField("started").apply { isAccessible = true }.get(null) as AtomicBoolean
+              sentFlag.set(true)
+              restoreWarmGlobalSnapshotObserver(composeClassLoader)
+              assertFalse(sentFlag.get())
+              assertFalse(startedFlag.get())
+            }
+          )
+          .get(30, TimeUnit.SECONDS)
+      } finally {
+        executor.shutdownNow()
+      }
+      return WeakReference(composeClassLoader)
+    }
+  }
+
+  private fun buildIsolatedComposeClassLoaderUrls(): Array<URL> {
+    val aarPaths =
+      listOf(
+        "androidx/compose/ui/ui-android/1.9.5/ui-android-1.9.5.aar",
+        "androidx/compose/runtime/runtime-android/1.9.5/runtime-android-1.9.5.aar",
+        "androidx/core/core/1.15.0/core-1.15.0.aar",
+      )
+    val extractedJars = aarPaths.map { mavenPath ->
+      val aarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
+      assertTrue("Missing prebuilt AAR: $aarFile", aarFile.isFile)
+      val outJar = tmpFolder.newFile()
+      ZipFile(aarFile).use { zip ->
+        val entry = zip.getEntry("classes.jar")
+        assertNotNull("Missing classes.jar in $aarFile", entry)
+        zip.getInputStream(entry).use { input ->
+          Files.copy(input, outJar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        }
+      }
+      outJar.toURI().toURL()
+    }
+    val collectionJar = TestUtils.getLocalMavenRepoFile("androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0.jar").toFile()
+    assertTrue("Missing prebuilt JAR: $collectionJar", collectionJar.isFile)
+    // Compile minimal pure-Java android.os.Looper, android.os.Handler, and android.view.Choreographer so the real
+    // AndroidUiDispatcher.Main from ui-android.aar can be initialized in a unit test without loading layoutlib's native JNI library.
+    val androidStubsDir = compileAndroidUiDispatcherPlatformStubs()
+    return (listOf(androidStubsDir.toURI().toURL(), collectionJar.toURI().toURL()) + extractedJars).toTypedArray()
+  }
+
+  private fun newIsolatedComposeClassLoader(urls: Array<URL>): URLClassLoader =
+    object : URLClassLoader(urls, ComposeUiDispatcherStateTest::class.java.classLoader) {
+      override fun loadClass(name: String, resolve: Boolean): Class<*> =
+        synchronized(getClassLoadingLock(name)) {
+          val loaded = findLoadedClass(name)
+          val clazz =
+            loaded
+              ?: if (
+                name == "android.os.Looper" ||
+                  name == "android.os.Handler" ||
+                  name.startsWith("android.os.Build") ||
+                  name.startsWith("android.view.Choreographer") ||
+                  name.startsWith("androidx.")
+              ) {
+                try {
+                  findClass(name)
+                } catch (_: ClassNotFoundException) {
+                  super.loadClass(name, false)
+                }
+              } else {
+                super.loadClass(name, false)
+              }
+          if (resolve) resolveClass(clazz)
+          clazz
+        }
+    }
+
   private fun compileAndroidUiDispatcherPlatformStubs(): File {
     val srcDir = tmpFolder.newFolder()
     val outDir = tmpFolder.newFolder()
@@ -754,6 +863,7 @@ class ComposeUiDispatcherStateTest {
             private static final Looper MAIN = new Looper();
             public static Looper myLooper() { return MAIN; }
             public static Looper getMainLooper() { return MAIN; }
+            public Thread getThread() { return Thread.currentThread(); }
           }
           """
             .trimIndent(),
@@ -806,5 +916,65 @@ class ComposeUiDispatcherStateTest {
     val args = (listOf("-d", outDir.absolutePath) + javaFiles).toTypedArray()
     assertEquals(0, compiler.run(null, null, null, *args))
     return outDir
+  }
+
+  @Test
+  fun restoreWarmGlobalSnapshotObserverRestoresInPlaceWhenGlobalWriteObserversFieldIsStaticFinal() {
+    val srcDir = tmpFolder.newFolder()
+    val outDir = tmpFolder.newFolder()
+    val snapshotPkg = File(srcDir, "androidx/compose/runtime/snapshots").apply { mkdirs() }
+    val uiPkg = File(srcDir, "androidx/compose/ui/platform").apply { mkdirs() }
+    val snapshotFile =
+      File(snapshotPkg, "SnapshotKt.java").apply {
+        writeText(
+          """
+          package androidx.compose.runtime.snapshots;
+          import java.util.ArrayList;
+          import java.util.List;
+          public final class SnapshotKt {
+            private static final Object lock = new Object();
+            // Mirrors Compose 1.5.x where globalWriteObservers is `private static final List`.
+            private static final List<Object> globalWriteObservers = new ArrayList<>();
+            public static int advanceCount = 0;
+            public static List<Object> getObserversForTest() { return globalWriteObservers; }
+            public static void advanceGlobalSnapshot() { advanceCount++; }
+          }
+          """
+            .trimIndent()
+        )
+      }
+    val gsmFile =
+      File(uiPkg, "GlobalSnapshotManager.java").apply {
+        writeText(
+          """
+          package androidx.compose.ui.platform;
+          public final class GlobalSnapshotManager {
+            public static final class WriteObserver {}
+          }
+          """
+            .trimIndent()
+        )
+      }
+    val compiler = javax.tools.ToolProvider.getSystemJavaCompiler()
+    assertNotNull("System Java compiler is required", compiler)
+    assertEquals(0, compiler.run(null, null, null, "-d", outDir.absolutePath, snapshotFile.absolutePath, gsmFile.absolutePath))
+
+    java.net.URLClassLoader(arrayOf(outDir.toURI().toURL()), null).use { cl ->
+      val snapshotKtClass = Class.forName("androidx.compose.runtime.snapshots.SnapshotKt", true, cl)
+      val observerClass = Class.forName("androidx.compose.ui.platform.GlobalSnapshotManager\$WriteObserver", true, cl)
+      val observer = observerClass.getDeclaredConstructor().newInstance()
+      @Suppress("UNCHECKED_CAST")
+      val observers = snapshotKtClass.getMethod("getObserversForTest").invoke(null) as MutableList<Any?>
+      observers.add(observer)
+
+      captureWarmGlobalSnapshotObserver(cl)
+      observers.clear()
+      assertTrue(observers.isEmpty())
+
+      restoreWarmGlobalSnapshotObserver(cl)
+      assertEquals(1, observers.size)
+      assertSame(observer, observers.single())
+      assertEquals(1, snapshotKtClass.getField("advanceCount").getInt(null))
+    }
   }
 }

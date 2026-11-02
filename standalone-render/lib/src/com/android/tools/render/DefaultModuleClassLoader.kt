@@ -27,6 +27,11 @@ import java.util.concurrent.ConcurrentHashMap
 /** Default implementation of [ModuleClassLoader] for standalone rendering. */
 class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private val loader: DefaultLoader) :
   ModuleClassLoader(parent, loader) {
+  internal constructor(
+    warmDepsParent: WarmDepsClassLoader,
+    projectClassPath: List<String>,
+  ) : this(warmDepsParent, DefaultLoader(warmDepsParent, projectClassPath))
+
   constructor(
     parent: ClassLoader?,
     classPath: List<String>,
@@ -47,7 +52,11 @@ class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private
   override val stats: ModuleClassLoaderDiagnosticsRead = NopModuleClassLoadedDiagnostics
   override val isUserCodeUpToDate: Boolean = true
 
-  override fun hasLoadedClass(fqcn: String): Boolean = loadedClasses.contains(fqcn)
+  override fun hasLoadedClass(fqcn: String): Boolean =
+    loadedClasses.contains(fqcn) ||
+      (parent as? WarmDepsClassLoader)?.hasLoadedOnDiskClass(fqcn) == true
+
+  internal fun hasLoadedOwnClass(fqcn: String): Boolean = loadedClasses.contains(fqcn)
 
   override val projectLoadedClasses: Set<String> = emptySet()
   override val nonProjectLoadedClasses: Set<String>

@@ -22,7 +22,10 @@ import com.android.tools.render.common.ComponentTreeExtractor.invokeGetter
 import com.android.tools.render.common.ComponentTreeExtractor.isMeaningfulGroupName
 import com.android.tools.render.common.ComposeSemanticsExtractor.DEFAULT_OBJECT_TO_STRING_REGEX
 import com.android.tools.render.common.ComposeSemanticsExtractor.formatColorValue
+import java.lang.reflect.Method
+import java.util.Collections
 import java.util.IdentityHashMap
+import java.util.WeakHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -30,6 +33,24 @@ import java.util.logging.Logger
 internal object ComposeParameterExtractor {
   private val logger = Logger.getLogger(ComposeParameterExtractor::class.java.name)
   private val syntheticParamRegex = Regex("""^(?:arg\$|f\$?)(\d+)$""")
+
+  /**
+   * Private dummy target method used as a sentinel [Method] for negative reflection cache lookups.
+   *
+   * Cached in [textUnitToStringMethod] when `toString-impl` is missing on [type]. Using a unique method declared on this
+   * internal extractor avoids false cache hits from common methods like [Any.toString] while ensuring zero ClassLoader retention.
+   */
+  @Suppress("unused") private fun noMethodSentinelTarget() {}
+
+  private val noMethodSentinel: Method =
+    ComposeParameterExtractor::class.java.getDeclaredMethod("noMethodSentinelTarget")
+  private val missingTextUnitLoaders =
+    Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>()))
+  private val textUnitToStringMethod =
+    object : ClassValue<Method>() {
+      override fun computeValue(type: Class<*>): Method =
+        type.methods.firstOrNull { it.name.startsWith("toString-impl") && it.parameterCount == 1 } ?: noMethodSentinel
+    }
 
   /**
    * Compose `TextUnit` packs its unit type in the upper 32 bits (`0` = Unspecified, `0x100000000L` -> `1` = Sp, `0x200000000L` -> `2` = Em)
@@ -329,14 +350,25 @@ internal object ComposeParameterExtractor {
   }
 
   internal fun formatTextUnitValue(value: Long, cl: ClassLoader?): String? {
-    if (cl != null) {
+    if (cl != null && !missingTextUnitLoaders.contains(cl)) {
       try {
-        val tuClass = Class.forName("androidx.compose.ui.unit.TextUnit", true, cl)
-        val toStringMethod = tuClass.methods.firstOrNull { it.name.startsWith("toString-impl") && it.parameterCount == 1 }
-        if (toStringMethod != null) {
-          val str = toStringMethod.invoke(null, value).toString()
-          if (str.contains("Unspecified") || str.contains("Invalid")) return null
-          return str
+        val tuClass =
+          try {
+            Class.forName("androidx.compose.ui.unit.TextUnit", true, cl)
+          } catch (_: ClassNotFoundException) {
+            missingTextUnitLoaders.add(cl)
+            null
+          } catch (_: LinkageError) {
+            missingTextUnitLoaders.add(cl)
+            null
+          }
+        if (tuClass != null) {
+          val toStringMethod = textUnitToStringMethod.get(tuClass)
+          if (toStringMethod !== noMethodSentinel) {
+            val str = toStringMethod.invoke(null, value).toString()
+            if (str.contains("Unspecified") || str.contains("Invalid")) return null
+            return str
+          }
         }
       } catch (_: Exception) {} catch (_: LinkageError) {}
     }

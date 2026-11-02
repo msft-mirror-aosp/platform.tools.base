@@ -24,6 +24,7 @@ import com.android.tools.rendering.classloading.ModuleClassLoader
 import com.android.tools.rendering.classloading.ModuleClassLoaderManager
 import com.intellij.openapi.module.Module
 import com.intellij.util.containers.ContainerUtil
+import java.lang.ref.WeakReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -36,13 +37,14 @@ import kotlin.concurrent.withLock
  *   [currentSharedClassLoader] via [getShared] so that library `R` classes initialized on the first preview remain initialized for
  *   subsequent previews in the same batch.
  * - Between render RPCs, [refreshClassPath] disposes [currentSharedClassLoader] so the next render RPC creates a fresh
- *   [DefaultModuleClassLoader] that picks up newly recompiled project `.class` files from [projectClassPath] while reusing pre-transformed
- *   external library bytecode from [LibraryClassBinaryCache].
+ *   [DefaultModuleClassLoader] that picks up newly recompiled project `.class` files from [projectClassPath] while reusing both the
+ *   persistent [WarmDepsClassLoader] (which retains loaded, verified, initialized, and JIT-compiled external library and `R` classes) and
+ *   [LibraryClassBinaryCache].
  *
- * Note that both external library classes (`classPath - projectClassPath`) and user project classes ([projectClassPath]) are defined inside
- * the same flat [DefaultModuleClassLoader] instance (via [DefaultLoader]) rather than a parent-child `ClassLoader` hierarchy. This is
- * required because framework/tooling classes loaded from the library classpath (such as `ComposableInvoker`, `PreviewParameterProvider`,
- * and `TileServiceViewAdapter`) resolve user project classes via 1-arg `Class.forName(name)` or from their own defining classloader.
+ * Preview tooling adapter classes (such as `ComposableInvoker`, `ComposeViewAdapter`, and `TileServiceViewAdapter`, matched by
+ * [isPreviewToolingAdapterClass]) are excluded from [WarmDepsClassLoader] and defined inside the per-RPC child [DefaultModuleClassLoader]
+ * alongside user project classes ([projectClassPath]), because those adapters resolve user `@Preview` and `PreviewParameterProvider`
+ * classes via 1-arg `Class.forName(name)` or from their own defining classloader.
  */
 class StandaloneModuleClassLoaderManager(
   @Volatile private var classPath: List<String>,
@@ -50,6 +52,8 @@ class StandaloneModuleClassLoaderManager(
 ) : ModuleClassLoaderManager<ModuleClassLoader>, AutoCloseable {
 
   companion object {
+    /** Maximum number of distinct wrapped parent [WarmDepsClassLoader] instances retained per manager. */
+    private const val MAX_WARM_DEPS_LOADERS = 4
     /**
      * Canonical wrapped parent [ClassLoader] for the standard standalone rendering hierarchy: `FirewalledResourcesClassLoader ->
      * FilteringClassLoader -> LayoutlibClassLoader -> host ClassLoader`.
@@ -103,21 +107,57 @@ class StandaloneModuleClassLoaderManager(
 
   private val sharedClassLoadersLock = ReentrantLock()
   @GuardedBy("sharedClassLoadersLock") private var currentSharedClassLoader: DefaultModuleClassLoader? = null
+  @GuardedBy("sharedClassLoadersLock") private var refreshGeneration: Long = 1L
+  @GuardedBy("sharedClassLoadersLock") private var cachedProjectScan: ProjectClassPathScan? = null
+  @GuardedBy("sharedClassLoadersLock") private var cachedProjectScanGeneration: Long = 0L
+  @GuardedBy("sharedClassLoadersLock")
+  private val warmDepsClassLoaders = LinkedHashMap<ClassLoader, WarmDepsClassLoader>(4, 0.75f, true)
+  @GuardedBy("sharedClassLoadersLock") private val pendingRetiredClassLoaders = ArrayList<WeakReference<ClassLoader>>()
 
-  /** Disposes the active shared [DefaultModuleClassLoader] (if any) and clears wrapped parent caches. */
+  @GuardedBy("sharedClassLoadersLock")
+  private fun recordRetiredClassLoaderLocked(loader: ClassLoader?) {
+    if (loader == null) return
+    pendingRetiredClassLoaders.removeIf { it.get() == null }
+    pendingRetiredClassLoaders.add(WeakReference(loader))
+  }
+
+  /**
+   * Drains weak references to [DefaultModuleClassLoader] and [WarmDepsClassLoader] instances that were disposed or evicted since the last
+   * drain so [Renderer] can clear any render-thread `ThreadLocalEventLoop` state associated with them.
+   */
+  internal fun drainRetiredClassLoaders(): List<WeakReference<ClassLoader>> {
+    return sharedClassLoadersLock.withLock {
+      pendingRetiredClassLoaders.removeIf { it.get() == null }
+      if (pendingRetiredClassLoaders.isEmpty()) {
+        emptyList()
+      } else {
+        ArrayList(pendingRetiredClassLoaders).also { pendingRetiredClassLoaders.clear() }
+      }
+    }
+  }
+
+  /** Disposes the active shared [DefaultModuleClassLoader] and retained [WarmDepsClassLoader]s (if any), and clears wrapped parent caches. */
   override fun close() {
     closeAndReturnRetired()
   }
 
   /**
-   * Disposes the active shared [DefaultModuleClassLoader] (if any), clears wrapped parent caches, and returns the retired
-   * [DefaultModuleClassLoader] so the caller can release any thread-local state associated with it.
+   * Disposes the active shared [DefaultModuleClassLoader] and retained [WarmDepsClassLoader]s (if any), clears wrapped parent caches, and
+   * returns the retired [DefaultModuleClassLoader] so the caller can release any thread-local state associated with it.
    */
   internal fun closeAndReturnRetired(): DefaultModuleClassLoader? {
     val retired = sharedClassLoadersLock.withLock {
+      refreshGeneration++
+      cachedProjectScan = null
       val prev = currentSharedClassLoader
       prev?.dispose()
+      recordRetiredClassLoaderLocked(prev)
       currentSharedClassLoader = null
+      warmDepsClassLoaders.values.forEach { warm ->
+        warm.close()
+        recordRetiredClassLoaderLocked(warm)
+      }
+      warmDepsClassLoaders.clear()
       prev
     }
     // Clear soft-valued wrapper entries because each value (FirewalledResourcesClassLoader ->
@@ -128,25 +168,99 @@ class StandaloneModuleClassLoaderManager(
 
   /**
    * Updates the active [classPath] and [projectClassPath], disposes the current per-RPC [DefaultModuleClassLoader] so the next render
-   * creates a fresh project classloader while reusing the warm [LibraryClassBinaryCache], and returns the retired
-   * [DefaultModuleClassLoader] (if any) so the caller can release any thread-local state associated with it.
+   * creates a fresh project classloader while reusing the persistent [WarmDepsClassLoader] and [LibraryClassBinaryCache], and returns the
+   * retired [DefaultModuleClassLoader] (if any) so the caller can release any thread-local state associated with it.
    */
   fun refreshClassPath(
     newClassPath: List<String>,
     newProjectClassPath: List<String>,
   ): DefaultModuleClassLoader? {
     return sharedClassLoadersLock.withLock {
+      refreshGeneration++
+      cachedProjectScan = null
+      LibraryClassBinaryCache.invalidateDirectoryTimestampCache()
       classPath = newClassPath
       projectClassPath = newProjectClassPath
       val prev = currentSharedClassLoader
       prev?.dispose()
+      recordRetiredClassLoaderLocked(prev)
       currentSharedClassLoader = null
       prev
     }
   }
 
+  @GuardedBy("sharedClassLoadersLock")
+  private fun getOrCreateWarmDepsClassLoaderLocked(
+    wrappedParent: ClassLoader,
+    currentClassPath: List<String>,
+    currentProjectClassPath: List<String>,
+  ): WarmDepsClassLoader {
+    val existing = warmDepsClassLoaders[wrappedParent]
+    if (existing != null && currentSharedClassLoader != null && existing.verifiedAtGeneration == refreshGeneration) {
+      return existing
+    }
+    val stableDeps = LibraryClassBinaryCache.computeStableDepsClassPath(currentClassPath, currentProjectClassPath)
+    val state = LibraryClassBinaryCache.prepareState(currentClassPath, currentProjectClassPath)
+    val projectScan =
+      if (cachedProjectScanGeneration == refreshGeneration && cachedProjectScan != null) {
+        cachedProjectScan!!
+      } else {
+        scanProjectClassPath(currentProjectClassPath).also {
+          cachedProjectScan = it
+          cachedProjectScanGeneration = refreshGeneration
+        }
+      }
+    val desiredKey =
+      WarmDepsKey(
+        wrappedParentIdentity = System.identityHashCode(wrappedParent),
+        stableDepsClassPath = stableDeps,
+        libraryIdentities = state.libraryIdentities,
+        projectRSignature = projectScan.rSignature,
+      )
+    if (
+      existing != null &&
+        existing.key == desiredKey &&
+        projectScan.nonRClassNames.none { existing.hasLoadedOnDiskClass(it) }
+    ) {
+      existing.projectNonRClasses = projectScan.nonRClassNames
+      existing.verifiedAtGeneration = refreshGeneration
+      return existing
+    }
+    if (existing != null) {
+      existing.close()
+      recordRetiredClassLoaderLocked(existing)
+    }
+    warmDepsClassLoaders.remove(wrappedParent)
+    val activeParent = currentSharedClassLoader?.parent
+    if (warmDepsClassLoaders.size >= MAX_WARM_DEPS_LOADERS) {
+      val iterator = warmDepsClassLoaders.entries.iterator()
+      while (warmDepsClassLoaders.size >= MAX_WARM_DEPS_LOADERS && iterator.hasNext()) {
+        val eldest = iterator.next()
+        if (eldest.value === activeParent) continue
+        iterator.remove()
+        eldest.value.close()
+        recordRetiredClassLoaderLocked(eldest.value)
+      }
+    }
+    return WarmDepsClassLoader(
+        wrappedParent = wrappedParent,
+        key = desiredKey,
+        state = state,
+        projectRClassEntries = projectScan.rClassEntries,
+        projectNonRClasses = projectScan.nonRClassNames,
+      )
+      .also {
+        it.verifiedAtGeneration = refreshGeneration
+        warmDepsClassLoaders[wrappedParent] = it
+      }
+  }
+
   private fun createClassLoader(parent: ClassLoader?): DefaultModuleClassLoader {
-    return DefaultModuleClassLoader(wrapParent(parent), classPath, projectClassPath)
+    val wrapped = wrapParent(parent)
+    return sharedClassLoadersLock.withLock {
+      val warmDeps = getOrCreateWarmDepsClassLoaderLocked(wrapped, classPath, projectClassPath)
+      DefaultModuleClassLoader(warmDeps, projectClassPath)
+    }
   }
 
   /**
@@ -175,8 +289,18 @@ class StandaloneModuleClassLoaderManager(
 
   override fun clearCache(module: Module) {
     sharedClassLoadersLock.withLock {
-      currentSharedClassLoader?.dispose()
+      refreshGeneration++
+      cachedProjectScan = null
+      LibraryClassBinaryCache.invalidateDirectoryTimestampCache()
+      val prev = currentSharedClassLoader
+      prev?.dispose()
+      recordRetiredClassLoaderLocked(prev)
       currentSharedClassLoader = null
+      warmDepsClassLoaders.values.forEach { warm ->
+        warm.close()
+        recordRetiredClassLoaderLocked(warm)
+      }
+      warmDepsClassLoaders.clear()
     }
     wrappedParents.clear()
   }

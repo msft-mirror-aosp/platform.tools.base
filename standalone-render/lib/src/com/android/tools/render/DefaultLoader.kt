@@ -34,20 +34,32 @@ import com.android.tools.rendering.classloading.loaders.ListeningLoader
 import com.android.tools.rendering.classloading.loaders.MultiLoaderWithAffinity
 import com.android.tools.rendering.classloading.loaders.NameRemapperLoader
 import com.android.tools.rendering.classloading.toClassTransform
+import com.android.tools.res.ids.ResourceIdManager
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.lang.UrlClassLoader
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStreamWriter
+import java.lang.ref.WeakReference
 import java.net.URL
 import java.net.URLConnection
 import java.net.URLStreamHandler
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.Collections
 import java.util.Enumeration
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.zip.ZipFile
 import kotlin.io.path.Path
+import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 
 /**
@@ -57,7 +69,7 @@ import org.objectweb.asm.ClassWriter
  * executed during rendering), allowing their transformed bytecode to be cached across renders via [ClassBinaryCacheManager] and
  * [ClassBinaryCacheLoader].
  */
-private val DEPS_CLASS_TRANSFORMS =
+internal val DEPS_CLASS_TRANSFORMS =
   toClassTransform(
     ::ResourcesCompatTransform,
     ::SdkIntReplacer,
@@ -83,7 +95,7 @@ private val PROJECT_CLASS_TRANSFORMS =
  * Maps internal repackaged class names (e.g. `_layoutlib_._internal_.kotlin.Unit`) back to their original on-disk class names
  * (`kotlin.Unit`) before looking up `.class` files in JARs or output directories.
  */
-private val ON_DISK_LOOKUP: (String) -> String = { fqcn ->
+internal val ON_DISK_LOOKUP: (String) -> String = { fqcn ->
   if (fqcn.startsWith(INTERNAL_PACKAGE)) fqcn.removePrefix(INTERNAL_PACKAGE) else fqcn
 }
 
@@ -242,12 +254,17 @@ object LibraryClassBinaryCache {
     return URL("metainfservices", "", -1, originalUrl.toString(), handler)
   }
 
+  internal fun invalidateDirectoryTimestampCache() {
+    directoryTimestampCache.clear()
+  }
+
   fun clearForTest() {
     synchronized(lock) {
       currentLibraryIdentities = null
       cacheScope = Any()
       serviceUrlCache.clear()
       directoryTimestampCache.clear()
+      clearProjectJarScanCacheForTest()
       _asmTransformCount.set(0)
       ExternalLibraryClassLoaderPool.clearForTest()
     }
@@ -255,116 +272,65 @@ object LibraryClassBinaryCache {
 }
 
 /**
- * Returns `true` if [fqcn] is a top-level or inner Android resource (`R` or `R$*`) class.
- *
- * Resource classes must always be resolved in strict `projectLoader` -> `depsLoader` order rather than via [MultiLoaderWithAffinity]:
- * 1. In Android builds (e.g., library screenshot tests), AGP places the linked `R.jar` (containing finalized `0x7f...` resource IDs for
- *    both project and transitive library packages such as `androidx.compose.ui.R$id`) on `projectClassPath` (`projectLoader`), while
- *    unlinked compile-time `R.jar`s (where all resource IDs are `0`) remain on `depsClassPath` (`depsLoader`). Using package-affinity
- *    dispatch for `R` classes would cause `depsLoader` (which has affinity for `androidx.compose.ui` after loading Compose library code) to
- *    shadow the linked `R.jar` in `projectLoader` with uninitialized `0` resource IDs.
- * 2. Conversely, scanning `rClassJars` (on `depsClassPath`) during bootstrap loads `R` classes in the module's own package from
- *    `depsLoader`, which would otherwise assign `depsLoader` affinity to the user module's package before user project classes are loaded.
+ * [DelegatingClassLoader.Loader] responsible for loading user project classes (and preview tooling adapter classes when paired with a
+ * persistent parent [WarmDepsClassLoader]) into a per-RPC [DefaultModuleClassLoader].
  */
-private fun isResourceClass(fqcn: String): Boolean {
-  val simpleName = fqcn.substringAfterLast('.')
-  return simpleName == "R" || simpleName.startsWith("R$")
-}
-
-/**
- * [DelegatingClassLoader.Loader] responsible for loading both user project classes and external library classes into a single out-of-studio
- * [DefaultModuleClassLoader].
- *
- * Shares the same classloading components as Android Studio's `ModuleClassLoaderImpl` (`ModuleClassLoaderUtil.kt`):
- * 1. **Project tier (`projectClassPath`)**: Uses a per-RPC [projectClassLoader] built with `useCache(false)` so newly recompiled user
- *    `.class` files on disk are always read freshly on every render RPC and transformed via [PROJECT_CLASS_TRANSFORMS].
- * 2. **Library tier (`classPath - projectClassPath`)**: Reuses the warm external-library [UrlClassLoader] and negative-lookup set from
- *    [ExternalLibraryClassLoaderPool] (backed by the shared `ourLoaderCachePool`) and caches ASM-transformed library class bytes in
- *    [ClassBinaryCacheManager] via [ClassBinaryCacheLoader].
- * 3. **Package-affinity dispatch**: Combines `projectLoader` and `depsLoader` using [MultiLoaderWithAffinity] so once a package prefix is
- *    resolved in `depsLoader`, subsequent classes in that package check `depsLoader` first without probing `projectClassLoader` on disk.
- */
-internal class DefaultLoader(parent: ClassLoader?, classPath: List<String>, projectClassPath: List<String>) :
-  DelegatingClassLoader.Loader, AutoCloseable {
+internal class DefaultLoader : DelegatingClassLoader.Loader, AutoCloseable {
   val classesToPaths = ConcurrentHashMap<String, String>()
 
-  private val state: LibraryLoaderState = LibraryClassBinaryCache.prepareState(classPath, projectClassPath)
+  private val warmDepsParent: WarmDepsClassLoader?
   private val projectLoader: DelegatingClassLoader.Loader
   private val depsLoader: DelegatingClassLoader.Loader
-  private val loader: DelegatingClassLoader.Loader
-  private val depsClassLoader: ClassLoader = state.externalLibraryEntry.classLoader
+  private val loader: DelegatingClassLoader.Loader?
+  private val depsClassLoader: ClassLoader?
   private val projectClassLoader: ClassLoader
 
-  init {
-    val parentLoader = parent?.let { ClassLoaderLoader(it) }
-    // Keying by the parent classloader identity ensures that if different parents lead to
-    // different supertype resolution results during ASM's stack map frame computation
-    // (COMPUTE_MAXS/FRAMES via PseudoClassLocatorForLoader), their transformed bytecode does not
-    // collide in the cache.
-    val depsTransformationId = "${DEPS_CLASS_TRANSFORMS.id}@${parent?.let { System.identityHashCode(it) } ?: "null"}"
-    val fqcnToLibraryIdentity = ConcurrentHashMap<String, String>()
-    val underlyingJarLoader =
-      state.externalLibraryEntry.createCachingJarLoader(state.libraryIdentities) { fqcn, libraryIdentity ->
-        fqcnToLibraryIdentity[fqcn] = libraryIdentity
-      }
-    val jarLoader = NameRemapperLoader(underlyingJarLoader, ON_DISK_LOOKUP)
-    depsLoader =
-      ClassBinaryCacheLoader(
-        delegate =
-          ListeningLoader(
-            delegate =
-              AsmTransformingLoader(
-                transform = DEPS_CLASS_TRANSFORMS,
-                delegate = jarLoader,
-                pseudoClassLocator =
-                  PseudoClassLocatorForLoader(
-                    loaders = listOfNotNull(jarLoader, parentLoader).asSequence(),
-                    fallbackClassloader = parent,
-                  ),
-                // COMPUTE_MAXS is required because some transforms (e.g. CodeExecutionTrackerTransform) inject method calls that alter the
-                // maximum stack size.
-                asmFlags = ClassWriter.COMPUTE_MAXS,
-                onRewrite = { _, _, _ -> LibraryClassBinaryCache.recordAsmTransform() },
-              ),
-            onAfterLoad = { fqcn, bytes ->
-              // `fqcn` is the requested name (potentially remapped with INTERNAL_PACKAGE prefix),
-              // while `fqcnToLibraryIdentity` is keyed by the on-disk name returned by the underlying JAR loader.
-              fqcnToLibraryIdentity.remove(ON_DISK_LOOKUP(fqcn))?.let { libraryIdentity ->
-                state.binaryCache.put(fqcn, depsTransformationId, libraryIdentity, bytes)
-              }
-            },
-          ),
-        transformationId = depsTransformationId,
-        binaryCache = state.binaryCache,
-      )
-
-    // Disable UrlClassLoader caching (`useCache(false)`) for projectClassPath so in-place edits to
-    // user `.class` files on disk are never served from a stale directory/JAR index.
-    projectClassLoader = UrlClassLoader.build().useCache(false).parent(parent).files(projectClassPath.map { Path(it) }).get()
+  /** Fast constructor used by [StandaloneModuleClassLoaderManager] with a retained [WarmDepsClassLoader] parent. */
+  constructor(warmDepsParent: WarmDepsClassLoader, projectClassPath: List<String>) {
+    this.warmDepsParent = warmDepsParent
+    this.depsLoader = warmDepsParent.depsBytecodeLoader
+    this.depsClassLoader = null
+    this.loader = null
+    // Parent of `projectClassLoader` MUST be `null` so `ClassLoaderLoader`'s `getResource` probe only inspects `projectClassPath` files.
+    this.projectClassLoader =
+      UrlClassLoader.build().useCache(false).allowLock(!SystemInfo.isWindows).parent(null).files(projectClassPath.map { Path(it) }).get()
     val projectClassLoaderLoaderRaw = ClassLoaderLoader(projectClassLoader) { fqcn, path, _ -> classesToPaths[fqcn] = path }
     val projectClassLoaderLoader = NameRemapperLoader(projectClassLoaderLoaderRaw, ON_DISK_LOOKUP)
-    projectLoader =
+    val parentLoader = ClassLoaderLoader(warmDepsParent)
+    this.projectLoader =
+      AsmTransformingLoader(
+        PROJECT_CLASS_TRANSFORMS,
+        projectClassLoaderLoader,
+        PseudoClassLocatorForLoader(sequenceOf(projectClassLoaderLoader, depsLoader, parentLoader), warmDepsParent),
+        asmFlags = ClassWriter.COMPUTE_MAXS,
+      )
+  }
+
+  /** Standalone constructor used when [DefaultModuleClassLoader] is instantiated directly without a [WarmDepsClassLoader]. */
+  constructor(parent: ClassLoader?, classPath: List<String>, projectClassPath: List<String>) {
+    this.warmDepsParent = null
+    val state = LibraryClassBinaryCache.prepareState(classPath, projectClassPath)
+    this.depsClassLoader = state.externalLibraryEntry.classLoader
+    this.depsLoader = buildDepsBytecodeLoader(parent, state)
+    val parentLoader = parent?.let { ClassLoaderLoader(it) }
+    this.projectClassLoader =
+      UrlClassLoader.build().useCache(false).allowLock(!SystemInfo.isWindows).parent(null).files(projectClassPath.map { Path(it) }).get()
+    val projectClassLoaderLoaderRaw = ClassLoaderLoader(projectClassLoader) { fqcn, path, _ -> classesToPaths[fqcn] = path }
+    val projectClassLoaderLoader = NameRemapperLoader(projectClassLoaderLoaderRaw, ON_DISK_LOOKUP)
+    this.projectLoader =
       AsmTransformingLoader(
         PROJECT_CLASS_TRANSFORMS,
         projectClassLoaderLoader,
         PseudoClassLocatorForLoader(listOfNotNull(projectClassLoaderLoader, depsLoader, parentLoader).asSequence(), parent),
-        // COMPUTE_MAXS is required because some transforms (e.g. CodeExecutionTrackerTransform) inject method calls that alter the
-        // maximum stack size.
         asmFlags = ClassWriter.COMPUTE_MAXS,
       )
-    // Search `projectLoader` before `depsLoader` by default so user project classes take precedence,
-    // while recording package-prefix affinity via `MultiLoaderWithAffinity` to avoid probing
-    // `projectClassLoader` on disk for known external library packages.
-    loader = MultiLoaderWithAffinity(projectLoader, depsLoader)
+    this.loader = MultiLoaderWithAffinity(projectLoader, depsLoader)
   }
 
   fun getResource(name: String): URL? {
-    // Strip `_layoutlib_._internal_.` from resource lookups initiated by repackaged classes (e.g.
-    // `ServiceLoader.load(_layoutlib_._internal_.kotlinx.coroutines.internal.MainDispatcherFactory)`
-    // looking up `META-INF/services/_layoutlib_._internal_.kotlinx.coroutines...`).
     val internalPrefix = INTERNAL_PACKAGE.replace('.', '/')
     val mappedName = name.replace("META-INF/services/$INTERNAL_PACKAGE", "META-INF/services/").removePrefix(internalPrefix)
-    val url = projectClassLoader.getResource(mappedName) ?: depsClassLoader.getResource(mappedName)
+    val url = projectClassLoader.getResource(mappedName) ?: depsClassLoader?.getResource(mappedName)
     if (url != null && name.startsWith("META-INF/services/")) {
       return LibraryClassBinaryCache.wrapServiceUrl(url)
     }
@@ -375,7 +341,7 @@ internal class DefaultLoader(parent: ClassLoader?, classPath: List<String>, proj
     val internalPrefix = INTERNAL_PACKAGE.replace('.', '/')
     val mappedName = name.replace("META-INF/services/$INTERNAL_PACKAGE", "META-INF/services/").removePrefix(internalPrefix)
     val res1 = projectClassLoader.getResources(mappedName).toList()
-    val res2 = depsClassLoader.getResources(mappedName).toList()
+    val res2 = depsClassLoader?.getResources(mappedName)?.toList().orEmpty()
     var allRes = (res1 + res2).distinctBy { it.toString() }
     if (name.startsWith("META-INF/services/")) {
       allRes = allRes.map { LibraryClassBinaryCache.wrapServiceUrl(it) }
@@ -384,10 +350,16 @@ internal class DefaultLoader(parent: ClassLoader?, classPath: List<String>, proj
   }
 
   override fun loadClass(fqcn: String): ByteArray? {
+    if (warmDepsParent != null) {
+      // Non-excluded library & R classes were already loaded by `warmDepsParent` via parent delegation;
+      // here we only load user `projectClassPath` classes and excluded preview-tooling adapter classes.
+      return projectLoader.loadClass(fqcn)
+        ?: if (isPreviewToolingAdapterClass(fqcn)) depsLoader.loadClass(fqcn) else null
+    }
     if (isResourceClass(fqcn)) {
       return projectLoader.loadClass(fqcn) ?: depsLoader.loadClass(fqcn)
     }
-    return loader.loadClass(fqcn)
+    return loader!!.loadClass(fqcn)
   }
 
   override fun close() {

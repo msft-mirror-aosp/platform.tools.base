@@ -55,6 +55,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Base64
 import java.util.concurrent.Callable
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
@@ -64,6 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import javax.imageio.ImageIO
 import javax.tools.ToolProvider
@@ -2599,6 +2601,365 @@ class RendererTest {
       Disposer.dispose(result)
       renderer.disposeCompletedRenders()
     }
+  }
+
+  @Test
+  fun testWarmComposeRendersRetainWarmDepsClassLoaderReleaseChildLoadersAndPreserveGlobalSnapshotManager() {
+    val childLoaderKey = "RendererTest.warmDeps.childLoader.${System.nanoTime()}"
+    val warmLoaderKey = "RendererTest.warmDeps.warmLoader.${System.nanoTime()}"
+    val snapshotClassKey = "RendererTest.warmDeps.snapshotClass.${System.nanoTime()}"
+    val appliedEventsKey = "RendererTest.warmDeps.appliedEvents.${System.nanoTime()}"
+    val disposedAdaptersKey = "RendererTest.warmDeps.disposedAdapters.${System.nanoTime()}"
+
+    val childLoaderHolder = AtomicReference<WeakReference<ClassLoader>>()
+    val warmLoaderHolder = AtomicReference<WeakReference<ClassLoader>>()
+    val snapshotClassHolder = AtomicReference<WeakReference<Class<*>>>()
+    val appliedEvents = CopyOnWriteArrayList<String>()
+    val disposedAdapters = AtomicInteger(0)
+
+    System.getProperties()[childLoaderKey] = childLoaderHolder
+    System.getProperties()[warmLoaderKey] = warmLoaderHolder
+    System.getProperties()[snapshotClassKey] = snapshotClassHolder
+    System.getProperties()[appliedEventsKey] = appliedEvents
+    System.getProperties()[disposedAdaptersKey] = disposedAdapters
+
+    try {
+      val composeDepsJars = extractComposeRuntimeAndUiDepsJars()
+      val mutableDepJar = File(tmpFolder.root, "mutable-dep.jar")
+      writeMinimalEmptyJar(mutableDepJar, lastModifiedMs = 1_000_000L)
+      val depsClassPath = composeDepsJars + mutableDepJar.absolutePath
+
+      val projectDirV1 =
+        compileWarmComposeAdapterClasses(
+          composeDepsJars,
+          versionTag = "v1",
+          childLoaderKey = childLoaderKey,
+          warmLoaderKey = warmLoaderKey,
+          snapshotClassKey = snapshotClassKey,
+          appliedEventsKey = appliedEventsKey,
+          disposedAdaptersKey = disposedAdaptersKey,
+        )
+      val projectDirV2 =
+        compileWarmComposeAdapterClasses(
+          composeDepsJars,
+          versionTag = "v2",
+          childLoaderKey = childLoaderKey,
+          warmLoaderKey = warmLoaderKey,
+          snapshotClassKey = snapshotClassKey,
+          appliedEventsKey = appliedEventsKey,
+          disposedAdaptersKey = disposedAdaptersKey,
+        )
+
+      // language=xml
+      val adapterLayout =
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:orientation="vertical" >
+            <androidx.compose.ui.tooling.ComposeViewAdapter
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        """
+          .trimIndent()
+
+      val classPathV1 = depsClassPath + projectDirV1.absolutePath
+      val projectClassPathV1 = listOf(projectDirV1.absolutePath)
+      val classPathV2 = depsClassPath + projectDirV2.absolutePath
+      val projectClassPathV2 = listOf(projectDirV2.absolutePath)
+
+      val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+      val bootstrapper =
+        RenderEnvironmentBootstrapper(
+          fontsPath = null,
+          resourceApkPath = null,
+          namespace = "com.example",
+          classPath = classPathV1,
+          projectClassPath = projectClassPathV1,
+          layoutlibPath = layoutlibPath.absolutePathString(),
+        )
+      val outputDir = tmpFolder.newFolder("output_warm_deps_gsm")
+
+      bootstrapper.bootstrap().use { renderer ->
+        // Batch 1: initializes AndroidUiDispatcher.Main + GlobalSnapshotManager in WarmDepsClassLoader,
+        // mutates a MutableState inside a posted main-looper callback (modeling LaunchedEffect), and
+        // verifies GlobalSnapshotManager dispatches Snapshot.sendApplyNotifications().
+        val batch1Refs =
+          renderWarmComposeBatchAndCaptureRefs(
+            renderer = renderer,
+            adapterLayout = adapterLayout,
+            outputDir = outputDir,
+            methodFqn = "com.example.PreviewKt.Batch1Preview",
+            childLoaderHolder = childLoaderHolder,
+            warmLoaderHolder = warmLoaderHolder,
+            snapshotClassHolder = snapshotClassHolder,
+          )
+        renderer.disposeCompletedRenders()
+        assertThat(appliedEvents).containsExactly("v1:v1-effect")
+
+        // Refreshing projectClassPath drains RenderTask.disposeAsync() (which runs RenderSessionCleaner.dispose
+        // and clears SnapshotKt.globalWriteObservers), retires child DefaultModuleClassLoader #1, retains
+        // WarmDepsClassLoader, and restores GlobalSnapshotManager's write observer.
+        renderer.refreshClassPath(classPathV2, projectClassPathV2)
+        assertThat(disposedAdapters.get()).isEqualTo(1)
+
+        // Batch 2: reloads ComposeViewAdapter in a fresh child DefaultModuleClassLoader while retaining
+        // the same WarmDepsClassLoader and Snapshot class, and verifies MutableState mutation inside a
+        // posted main-looper callback still triggers GlobalSnapshotManager apply notifications!
+        val batch2Refs =
+          renderWarmComposeBatchAndCaptureRefs(
+            renderer = renderer,
+            adapterLayout = adapterLayout,
+            outputDir = outputDir,
+            methodFqn = "com.example.PreviewKt.Batch2Preview",
+            childLoaderHolder = childLoaderHolder,
+            warmLoaderHolder = warmLoaderHolder,
+            snapshotClassHolder = snapshotClassHolder,
+          )
+        renderer.disposeCompletedRenders()
+        assertThat(appliedEvents).containsExactly("v1:v1-effect", "v2:v2-effect").inOrder()
+        assertThat(batch2Refs.warmLoaderRef.get()).isNotNull()
+        assertThat(batch2Refs.warmLoaderRef.get()).isSameInstanceAs(batch1Refs.warmLoaderRef.get())
+        assertThat(batch2Refs.snapshotClassRef.get()).isSameInstanceAs(batch1Refs.snapshotClassRef.get())
+
+        // Retired child DefaultModuleClassLoader from batch 1 must be garbage-collected while
+        // WarmDepsClassLoader remains alive.
+        awaitWeakRefCollected("retired batch-1 child DefaultModuleClassLoader", batch1Refs.childLoaderRef)
+        assertThat(batch1Refs.warmLoaderRef.get()).isNotNull()
+
+        // Updating a library JAR timestamp evicts and closes WarmDepsClassLoader #1 (even after
+        // ThreadLocalEventLoop was populated on the render thread); verify both batch-2 child loader
+        // and evicted WarmDepsClassLoader #1 are garbage-collected while Renderer remains open.
+        writeMinimalEmptyJar(mutableDepJar, lastModifiedMs = 2_000_000L)
+        renderer.refreshClassPath(classPathV2, projectClassPathV2)
+        assertThat(disposedAdapters.get()).isEqualTo(2)
+
+        val batch3Refs =
+          renderWarmComposeBatchAndCaptureRefs(
+            renderer = renderer,
+            adapterLayout = adapterLayout,
+            outputDir = outputDir,
+            methodFqn = "com.example.PreviewKt.Batch3Preview",
+            childLoaderHolder = childLoaderHolder,
+            warmLoaderHolder = warmLoaderHolder,
+            snapshotClassHolder = snapshotClassHolder,
+          )
+        renderer.disposeCompletedRenders()
+        assertThat(appliedEvents).containsExactly("v1:v1-effect", "v2:v2-effect", "v2:v2-effect").inOrder()
+        assertThat(batch3Refs.warmLoaderRef.get()).isNotNull()
+        assertThat(batch3Refs.warmLoaderRef.get()).isNotSameInstanceAs(batch1Refs.warmLoaderRef.get())
+
+        awaitWeakRefCollected("retired batch-2 child DefaultModuleClassLoader", batch2Refs.childLoaderRef)
+        awaitWeakRefCollected("evicted batch-1 WarmDepsClassLoader", batch1Refs.warmLoaderRef)
+      }
+      assertThat(disposedAdapters.get()).isEqualTo(3)
+    } finally {
+      System.getProperties().remove(childLoaderKey)
+      System.getProperties().remove(warmLoaderKey)
+      System.getProperties().remove(snapshotClassKey)
+      System.getProperties().remove(appliedEventsKey)
+      System.getProperties().remove(disposedAdaptersKey)
+      LibraryClassBinaryCache.clearForTest()
+    }
+  }
+
+  private class WarmComposeBatchRefs(
+    val childLoaderRef: WeakReference<ClassLoader>,
+    val warmLoaderRef: WeakReference<ClassLoader>,
+    val snapshotClassRef: WeakReference<Class<*>>,
+  )
+
+  private fun renderWarmComposeBatchAndCaptureRefs(
+    renderer: Renderer,
+    adapterLayout: String,
+    outputDir: File,
+    methodFqn: String,
+    childLoaderHolder: AtomicReference<WeakReference<ClassLoader>>,
+    warmLoaderHolder: AtomicReference<WeakReference<ClassLoader>>,
+    snapshotClassHolder: AtomicReference<WeakReference<Class<*>>>,
+  ): WarmComposeBatchRefs {
+    val results =
+      renderer.render(
+        xmlPreviewScreenshot(methodFqn, adapterLayout),
+        outputDir.absolutePath,
+        includeComponentTree = false,
+        renderImage = true,
+      )
+    assertThat(results).hasSize(1)
+    assertThat(results.single().error).isNull()
+    val childRef = childLoaderHolder.getAndSet(null)
+    val warmRef = warmLoaderHolder.getAndSet(null)
+    val snapshotRef = snapshotClassHolder.getAndSet(null)
+    assertThat(childRef).isNotNull()
+    assertThat(warmRef).isNotNull()
+    assertThat(snapshotRef).isNotNull()
+    return WarmComposeBatchRefs(childRef!!, warmRef!!, snapshotRef!!)
+  }
+
+  private fun awaitWeakRefCollected(description: String, ref: WeakReference<*>) {
+    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+    while (System.nanoTime() < deadline && ref.get() != null) {
+      GCUtil.tryGcSoftlyReachableObjects()
+      System.gc()
+      Thread.sleep(10)
+    }
+    assertWithMessage("Expected $description to be garbage-collected").that(ref.get()).isNull()
+  }
+
+  private fun extractComposeRuntimeAndUiDepsJars(): List<String> {
+    val aarPaths =
+      listOf(
+        "androidx/compose/ui/ui-android/1.9.5/ui-android-1.9.5.aar",
+        "androidx/compose/runtime/runtime-android/1.9.5/runtime-android-1.9.5.aar",
+        "androidx/core/core/1.15.0/core-1.15.0.aar",
+      )
+    val extractedAarJars =
+      aarPaths.mapIndexed { index, mavenPath ->
+        val aarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
+        assertWithMessage("Missing prebuilt AAR: $aarFile").that(aarFile.isFile).isTrue()
+        val outJar = File(tmpFolder.root, "compose_dep_$index.jar")
+        ZipFile(aarFile).use { zip ->
+          val entry = zip.getEntry("classes.jar")
+          assertWithMessage("Missing classes.jar in $aarFile").that(entry).isNotNull()
+          zip.getInputStream(entry).use { input ->
+            Files.copy(input, outJar.toPath())
+          }
+        }
+        outJar.absolutePath
+      }
+    val directJarPaths =
+      listOf(
+        "androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0.jar",
+        "org/jetbrains/kotlin/kotlin-stdlib/2.0.21/kotlin-stdlib-2.0.21.jar",
+        "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.8.1/kotlinx-coroutines-core-jvm-1.8.1.jar",
+        "org/jetbrains/kotlinx/kotlinx-coroutines-android/1.8.1/kotlinx-coroutines-android-1.8.1.jar",
+      ).map { mavenPath ->
+        val jarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
+        assertWithMessage("Missing prebuilt JAR: $jarFile").that(jarFile.isFile).isTrue()
+        jarFile.absolutePath
+      }
+    return extractedAarJars + directJarPaths
+  }
+
+  private fun writeMinimalEmptyJar(jarFile: File, lastModifiedMs: Long) {
+    ZipOutputStream(FileOutputStream(jarFile)).use { zos ->
+      zos.putNextEntry(ZipEntry("META-INF/MANIFEST.MF"))
+      zos.write("Manifest-Version: 1.0\n".toByteArray(StandardCharsets.UTF_8))
+      zos.closeEntry()
+    }
+    jarFile.setLastModified(lastModifiedMs)
+  }
+
+  private fun compileWarmComposeAdapterClasses(
+    composeDepsJars: List<String>,
+    versionTag: String,
+    childLoaderKey: String,
+    warmLoaderKey: String,
+    snapshotClassKey: String,
+    appliedEventsKey: String,
+    disposedAdaptersKey: String,
+  ): File {
+    val srcDir = tmpFolder.newFolder()
+    val outDir = tmpFolder.newFolder()
+    val pkgDir = File(srcDir, "androidx/compose/ui/tooling").apply { mkdirs() }
+    val javaFile =
+      File(pkgDir, "ComposeViewAdapter.java").apply {
+        writeText(
+          """
+          package androidx.compose.ui.tooling;
+          import android.content.Context;
+          import android.util.AttributeSet;
+          import android.widget.TextView;
+          import androidx.compose.runtime.MutableState;
+          import androidx.compose.runtime.SnapshotStateKt;
+          import androidx.compose.runtime.snapshots.ObserverHandle;
+          import androidx.compose.runtime.snapshots.Snapshot;
+          import androidx.compose.ui.platform.AndroidUiDispatcher;
+          import androidx.compose.ui.platform.GlobalSnapshotManager;
+          import java.lang.ref.WeakReference;
+          import java.util.List;
+          import java.util.Set;
+          import java.util.concurrent.atomic.AtomicInteger;
+          import java.util.concurrent.atomic.AtomicReference;
+          import kotlin.Unit;
+          import kotlin.coroutines.ContinuationInterceptor;
+          import kotlin.coroutines.CoroutineContext;
+          import kotlin.jvm.functions.Function2;
+          import kotlinx.coroutines.CoroutineDispatcher;
+          import kotlinx.coroutines.ThreadLocalEventLoop;
+
+          public class ComposeViewAdapter extends TextView {
+            private final ObserverHandle applyObserverHandle;
+
+            @SuppressWarnings("unchecked")
+            public ComposeViewAdapter(Context context, AttributeSet attrs) {
+              super(context, attrs);
+              setText("$versionTag");
+
+              ClassLoader childLoader = ComposeViewAdapter.class.getClassLoader();
+              ((AtomicReference<WeakReference<ClassLoader>>) System.getProperties().get("$childLoaderKey"))
+                  .set(new WeakReference<>(childLoader));
+              ((AtomicReference<WeakReference<ClassLoader>>) System.getProperties().get("$warmLoaderKey"))
+                  .set(new WeakReference<>(childLoader.getParent()));
+              ((AtomicReference<WeakReference<Class<?>>>) System.getProperties().get("$snapshotClassKey"))
+                  .set(new WeakReference<>(Snapshot.class));
+
+              // Populate ThreadLocalEventLoop on the Layoutlib render thread inside WarmDepsClassLoader.
+              ThreadLocalEventLoop.INSTANCE.getEventLoop${'$'}kotlinx_coroutines_core();
+
+              // Initialize AndroidUiDispatcher.Main and start GlobalSnapshotManager (no-op on warm render #2+).
+              CoroutineContext mainContext = AndroidUiDispatcher.Companion.getMain();
+              GlobalSnapshotManager.INSTANCE.ensureStarted();
+
+              final MutableState<String> state =
+                  SnapshotStateKt.mutableStateOf("init", SnapshotStateKt.structuralEqualityPolicy());
+              final List<String> appliedEvents =
+                  (List<String>) System.getProperties().get("$appliedEventsKey");
+
+              applyObserverHandle =
+                  Snapshot.Companion.registerApplyObserver(
+                      new Function2<Set<?>, Snapshot, Unit>() {
+                        @Override
+                        public Unit invoke(Set<?> changed, Snapshot snapshot) {
+                          if (changed.contains(state)) {
+                            appliedEvents.add("$versionTag:" + state.getValue());
+                          }
+                          return Unit.INSTANCE;
+                        }
+                      });
+
+              // Dispatch a task onto AndroidUiDispatcher.Main that mutates MutableState (modeling LaunchedEffect),
+              // which relies on GlobalSnapshotManager's write observer to trigger Snapshot.sendApplyNotifications().
+              CoroutineDispatcher mainDispatcher =
+                  (CoroutineDispatcher) mainContext.get(ContinuationInterceptor.Key);
+              mainDispatcher.dispatch(
+                  mainContext,
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      state.setValue("$versionTag-effect");
+                    }
+                  });
+            }
+
+            public void dispose() {
+              applyObserverHandle.dispose();
+              ((AtomicInteger) System.getProperties().get("$disposedAdaptersKey")).incrementAndGet();
+            }
+          }
+          """
+            .trimIndent()
+        )
+      }
+    val compiler = ToolProvider.getSystemJavaCompiler()
+    assertWithMessage("System Java compiler is required").that(compiler).isNotNull()
+    val layoutlibJar = Paths.get(Class.forName("android.view.View").protectionDomain.codeSource.location.toURI()).toString()
+    val classpath = (listOf(layoutlibJar) + composeDepsJars).joinToString(File.pathSeparator)
+    val args = arrayOf("-cp", classpath, "-d", outDir.absolutePath, javaFile.absolutePath)
+    assertThat(compiler.run(null, null, null, *args)).isEqualTo(0)
+    return outDir
   }
 
   private fun assertWarmRendersReleaseClassLoaders(

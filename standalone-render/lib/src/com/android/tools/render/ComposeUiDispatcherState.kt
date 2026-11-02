@@ -18,12 +18,17 @@ package com.android.tools.render
 
 import java.lang.reflect.Field
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.logging.Level
 import java.util.logging.Logger
 
 private const val ANDROID_UI_DISPATCHER_FQN = "androidx.compose.ui.platform.AndroidUiDispatcher"
+private const val ANDROID_COMPOSE_VIEW_FQN = "androidx.compose.ui.platform.AndroidComposeView"
+private const val WINDOW_RECOMPOSER_ANDROID_KT_FQN = "androidx.compose.ui.platform.WindowRecomposer_androidKt"
+private const val SNAPSHOT_KT_FQN = "androidx.compose.runtime.snapshots.SnapshotKt"
 private const val GLOBAL_SNAPSHOT_MANAGER_FQN = "androidx.compose.ui.platform.GlobalSnapshotManager"
 private const val GLOBAL_SNAPSHOT_MANAGER_TEST_STAND_IN_FQN = "androidx.compose.ui.platform.GlobalSnapshotManagerTestStandIn"
 
@@ -39,6 +44,20 @@ private const val MAX_CONTINUATION_UNWRAP_DEPTH = 8
 private val logger = Logger.getLogger("com.android.tools.render.ComposeUiDispatcherState")
 
 private val EMPTY_RUNNABLE = Runnable {}
+
+/**
+ * Retains the `GlobalSnapshotManager$ensureStarted$2` write observer registered in `SnapshotKt.globalWriteObservers` for a given
+ * `SnapshotKt` class.
+ *
+ * Keyed via [ClassValue] on `SnapshotKt::class.java` so the cached observer (defined by the same [ClassLoader] as `SnapshotKt`) is stored
+ * inside that [ClassLoader]'s own `ClassValueMap` and never prevents unloading of a closed [WarmDepsClassLoader] or disposed
+ * [DefaultModuleClassLoader], while keeping the observer reachable across `RenderSessionCleaner.dispose()` clearing
+ * `SnapshotKt.globalWriteObservers`.
+ */
+private val capturedGlobalWriteObserverBySnapshotClass =
+  object : ClassValue<AtomicReference<Any?>>() {
+    override fun computeValue(type: Class<*>): AtomicReference<Any?> = AtomicReference(null)
+  }
 
 /**
  * Makes sure that the work queued in the Compose `AndroidUiDispatcher.Main` loaded by [classLoader] runs the next time layoutlib callbacks
@@ -60,6 +79,7 @@ private val EMPTY_RUNNABLE = Runnable {}
  * Does nothing if [classLoader] cannot load `AndroidUiDispatcher` or `AndroidUiDispatcher.Main` has not been initialized yet.
  */
 internal fun resetComposeUiDispatcherScheduling(classLoader: ClassLoader) {
+  restoreWarmGlobalSnapshotObserver(classLoader)
   val dispatcherClass = findAndroidUiDispatcherClass(classLoader) ?: return
   resetAndroidUiDispatcherScheduling(dispatcherClass)
 }
@@ -73,8 +93,10 @@ internal fun resetComposeUiDispatcherScheduling(classLoader: ClassLoader) {
  * preview cannot leak into and execute during the next preview.
  */
 internal fun clearComposeUiDispatcherWork(classLoader: ClassLoader) {
-  val dispatcherClass = findAndroidUiDispatcherClass(classLoader) ?: return
-  clearAndroidUiDispatcherWork(dispatcherClass)
+  captureWarmGlobalSnapshotObserver(classLoader)
+  findAndroidUiDispatcherClass(classLoader)?.let(::clearAndroidUiDispatcherWork)
+  clearWindowRecomposerAnimationScale(classLoader)
+  clearWarmAndroidComposeViewList(classLoader)
 }
 
 /**
@@ -246,12 +268,190 @@ private fun findAndroidUiDispatcherClass(classLoader: ClassLoader): Class<*>? =
     message = { "Unable to load $ANDROID_UI_DISPATCHER_FQN" },
     defaultValue = null,
   ) {
-    try {
-      Class.forName(ANDROID_UI_DISPATCHER_FQN, false, classLoader)
-    } catch (_: ClassNotFoundException) {
+    findAlreadyLoadedModuleOrWarmClass(classLoader, ANDROID_UI_DISPATCHER_FQN)
+  }
+
+private fun isDefiningClassLoaderClosed(loader: ClassLoader?): Boolean =
+  (loader as? DefaultModuleClassLoader)?.isDisposed == true ||
+    (loader as? WarmDepsClassLoader)?.isClosed == true
+
+/**
+ * Captures `GlobalSnapshotManager`'s write observer from `SnapshotKt.globalWriteObservers` (if `SnapshotKt` is already loaded in
+ * [classLoader] or its [WarmDepsClassLoader] parent) before `RenderSessionCleaner.dispose()` clears `globalWriteObservers`.
+ */
+internal fun captureWarmGlobalSnapshotObserver(classLoader: ClassLoader) {
+  val snapshotKtClass = findAlreadyLoadedModuleOrWarmClass(classLoader, SNAPSHOT_KT_FQN) ?: return
+  if (isDefiningClassLoaderClosed(snapshotKtClass.classLoader)) return
+  val holder = capturedGlobalWriteObserverBySnapshotClass.get(snapshotKtClass)
+  if (holder.get() != null) return
+  logged(
+    level = Level.FINE,
+    message = { "Unable to capture GlobalSnapshotManager write observer from $SNAPSHOT_KT_FQN" },
+    defaultValue = Unit,
+  ) {
+    val lock = snapshotKtClass.accessibleFieldOrNull("lock")?.get(null) ?: snapshotKtClass
+    val observersField = snapshotKtClass.accessibleFieldOrNull("globalWriteObservers") ?: return@logged
+    val observer =
+      synchronized(lock) {
+        (observersField.get(null) as? Iterable<*>)?.firstOrNull { candidate ->
+          candidate != null && isGlobalSnapshotManagerClassName(candidate.javaClass.name)
+        }
+      }
+    if (observer != null) {
+      holder.compareAndSet(null, observer)
+    }
+  }
+}
+
+/**
+ * Restores `GlobalSnapshotManager`'s write observer into `SnapshotKt.globalWriteObservers` after `RenderSessionCleaner.dispose()` clears
+ * `globalWriteObservers` while `SnapshotKt` and `GlobalSnapshotManager` remain alive in a retained [WarmDepsClassLoader] (or active
+ * [ClassLoader]).
+ */
+internal fun restoreWarmGlobalSnapshotObserver(classLoader: ClassLoader) {
+  val snapshotKtClass = findAlreadyLoadedModuleOrWarmClass(classLoader, SNAPSHOT_KT_FQN) ?: return
+  if (isDefiningClassLoaderClosed(snapshotKtClass.classLoader)) return
+  logged(
+    level = Level.FINE,
+    message = { "Unable to restore GlobalSnapshotManager write observer into $SNAPSHOT_KT_FQN" },
+    defaultValue = Unit,
+  ) {
+    // If an off-thread write raced with RenderSessionCleaner clearing `toRunTrampolined`, `GlobalSnapshotManager.sent` could be left
+    // `true` with no GSM continuation queued; reset `sent` and `started` so the next Compose attachment restarts cleanly.
+    val gsmClass = findAlreadyLoadedModuleOrWarmClass(classLoader, GLOBAL_SNAPSHOT_MANAGER_FQN)
+    val sentFlag = gsmClass?.accessibleFieldOrNull("sent")?.get(null) as? AtomicBoolean
+    val startedFlag = gsmClass?.accessibleFieldOrNull("started")?.get(null) as? AtomicBoolean
+    if (sentFlag?.get() == true && isAndroidUiDispatcherInitializedAndMissingGsmTask(classLoader)) {
+      capturedGlobalWriteObserverBySnapshotClass.get(snapshotKtClass).set(null)
+      sentFlag.set(false)
+      startedFlag?.set(false)
+      return@logged
+    }
+
+    val observer = capturedGlobalWriteObserverBySnapshotClass.get(snapshotKtClass).get() ?: return@logged
+    val lock = snapshotKtClass.accessibleFieldOrNull("lock")?.get(null) ?: snapshotKtClass
+    val observersField = snapshotKtClass.accessibleFieldOrNull("globalWriteObservers") ?: return@logged
+    val restored =
+      synchronized(lock) {
+        val current = observersField.get(null) as? Collection<*> ?: emptyList<Any?>()
+        if (current.any { it === observer }) {
+          false
+        } else if (Modifier.isFinal(observersField.modifiers)) {
+          // In Compose 1.5.x, `SnapshotKt.globalWriteObservers` is `private static final List` mutated in place under `lock`.
+          @Suppress("UNCHECKED_CAST")
+          val mutableCurrent = current as? MutableCollection<Any?> ?: return@synchronized false
+          mutableCurrent.add(observer)
+          true
+        } else {
+          // In Compose 1.6+, assign a fresh ArrayList copy (matching Snapshot.Companion.registerGlobalWriteObserver) so any concurrent or
+          // delayed RenderSessionCleaner `.clear()` on an earlier list reference cannot wipe the restored observer.
+          observersField.set(null, ArrayList<Any?>(current).apply { add(observer) })
+          true
+        }
+      }
+    if (restored) {
+      snapshotKtClass.declaredMethods
+        .firstOrNull { it.name == "advanceGlobalSnapshot" && it.parameterCount == 0 }
+        ?.apply { isAccessible = true }
+        ?.invoke(null)
+    }
+  }
+}
+
+private fun isAndroidUiDispatcherInitializedAndMissingGsmTask(classLoader: ClassLoader): Boolean {
+  val dispatcherClass = findAndroidUiDispatcherClass(classLoader) ?: return false
+  return withInitializedHandle(dispatcherClass, defaultValue = false, onLookupFailure = false) { handle ->
+    val tasks =
+      synchronized(handle.lock) {
+        (handle.toRunTrampolined.get(handle.dispatcher) as? Collection<*>)?.mapNotNull { it as? Runnable } ?: return@withInitializedHandle false
+      }
+    tasks.none(::isGlobalSnapshotManagerTask)
+  }
+}
+
+/**
+ * Clears `WindowRecomposer_androidKt.animationScale` (`java.util.Map` in Compose <= 1.10, `androidx.collection.MutableScatterMap` in
+ * Compose 1.11+) when `WindowRecomposer_androidKt` is already loaded in [classLoader] or its retained [WarmDepsClassLoader] parent so
+ * per-render Layoutlib `BridgeContext` keys do not accumulate across previews.
+ */
+private fun clearWindowRecomposerAnimationScale(classLoader: ClassLoader) {
+  val windowRecomposerClass = findAlreadyLoadedModuleOrWarmClass(classLoader, WINDOW_RECOMPOSER_ANDROID_KT_FQN) ?: return
+  logged(
+    level = Level.FINE,
+    message = { "Unable to clear $WINDOW_RECOMPOSER_ANDROID_KT_FQN.animationScale" },
+    defaultValue = Unit,
+  ) {
+    val animationScale = windowRecomposerClass.accessibleFieldOrNull("animationScale")?.get(null) ?: return@logged
+    if (animationScale is MutableMap<*, *>) {
+      synchronized(animationScale) { animationScale.clear() }
+      return@logged
+    }
+    val clearMethod =
+      animationScale.javaClass.methods.firstOrNull { it.name == "clear" && it.parameterCount == 0 }?.apply { isAccessible = true }
+        ?: return@logged
+    synchronized(animationScale) { clearMethod.invoke(animationScale) }
+  }
+}
+
+/**
+ * Clears `AndroidComposeView.composeViews` (`androidx.collection.MutableObjectList`) after each preview when `AndroidComposeView` is
+ * already loaded in [classLoader] or its [WarmDepsClassLoader] parent, without nulling `systemPropertiesChangedRunnable` (which remains
+ * registered once per [WarmDepsClassLoader] until [WarmDepsClassLoader.close]).
+ */
+private fun clearWarmAndroidComposeViewList(classLoader: ClassLoader) {
+  val acvClass = findAlreadyLoadedModuleOrWarmClass(classLoader, ANDROID_COMPOSE_VIEW_FQN) ?: return
+  logged(
+    level = Level.FINE,
+    message = { "Unable to clear $ANDROID_COMPOSE_VIEW_FQN.composeViews" },
+    defaultValue = Unit,
+  ) {
+    val composeViews = acvClass.accessibleFieldOrNull("composeViews")?.get(null) ?: return@logged
+    val clearMethod =
+      composeViews.javaClass.methods.firstOrNull { it.name == "clear" && it.parameterCount == 0 }?.apply { isAccessible = true }
+        ?: return@logged
+    synchronized(composeViews) { clearMethod.invoke(composeViews) }
+  }
+}
+
+/**
+ * Finds an already-loaded [Class] by [fqcn] in [classLoader] (or its [WarmDepsClassLoader] parent) without triggering
+ * new class loading or initialization if the class has not yet been loaded.
+ *
+ * This ensures post-render and disposal state cleanups (such as [clearWindowRecomposerAnimationScale] and
+ * [clearWarmAndroidComposeViewList]) inspect only classes that were actually loaded and used during previous renders,
+ * preventing accidental premature class loading or `<clinit>` static initialization during cleanup.
+ *
+ * If [classLoader] is not a [DefaultModuleClassLoader] (e.g. in non-daemon IDE renders using `ModuleClassLoaderImpl`),
+ * falls back to resolving via [Class.forName] with `initialize = false`.
+ */
+internal fun findAlreadyLoadedModuleOrWarmClass(classLoader: ClassLoader, fqcn: String): Class<*>? {
+  if (classLoader is WarmDepsClassLoader) {
+    return if (classLoader.hasLoadedOnDiskClass(fqcn)) classLoader.findLoadedClassOrNull(fqcn) else null
+  }
+  val warmDepsParent = (classLoader as? DefaultModuleClassLoader)?.parent as? WarmDepsClassLoader
+  if (warmDepsParent != null && warmDepsParent.hasLoadedOnDiskClass(fqcn)) {
+    warmDepsParent.findLoadedClassOrNull(fqcn)?.let { return it }
+  }
+  if ((classLoader as? DefaultModuleClassLoader)?.hasLoadedClass(fqcn) == true) {
+    return try {
+      Class.forName(fqcn, false, classLoader)
+    } catch (_: Exception) {
+      null
+    } catch (_: LinkageError) {
       null
     }
   }
+  if (warmDepsParent == null && classLoader !is DefaultModuleClassLoader) {
+    return try {
+      Class.forName(fqcn, false, classLoader)
+    } catch (_: Exception) {
+      null
+    } catch (_: LinkageError) {
+      null
+    }
+  }
+  return null
+}
 
 private inline fun <T> logged(
   level: Level,

@@ -92,16 +92,30 @@ class Renderer(
   private val pendingDisposeTasks = ConcurrentLinkedQueue<() -> Future<*>>()
   private val inFlightDisposals = ConcurrentLinkedQueue<CompletableFuture<Void>>()
   private val outstandingDisposeFutures = ConcurrentLinkedQueue<Future<*>>()
-  private val retiredClassLoaders = ConcurrentLinkedQueue<WeakReference<DefaultModuleClassLoader>>()
+  private val retiredClassLoaders = ConcurrentLinkedQueue<WeakReference<ClassLoader>>()
+
+  private fun collectRetiredClassLoaders(): Boolean {
+    val drained = moduleClassLoaderManager.drainRetiredClassLoaders()
+    var added = false
+    for (ref in drained) {
+      if (ref.get() != null) {
+        retiredClassLoaders.add(ref)
+        added = true
+      }
+    }
+    return added
+  }
 
   private fun snapshotInFlightDisposals(): List<CompletableFuture<Void>> {
     inFlightDisposals.removeIf { it.isDone }
-    return inFlightDisposals.toList()
+    // Use ArrayList(queue) (ConcurrentLinkedQueue.toArray) rather than Kotlin's Iterable.toList(), whose `size == 1 -> iterator().next()`
+    // fast path throws NoSuchElementException when the render thread concurrently removes the sole element.
+    return ArrayList(inFlightDisposals)
   }
 
   private fun awaitOutstandingDisposals() {
     outstandingDisposeFutures.removeIf { it.isDone }
-    val futures = outstandingDisposeFutures.toList()
+    val futures = ArrayList(outstandingDisposeFutures)
     if (futures.isEmpty()) return
     try {
       awaitFutures(futures, DISPOSAL_DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS, "RenderTask disposals")
@@ -146,6 +160,7 @@ class Renderer(
   }
 
   private fun sweepRetiredClassLoaders() {
+    collectRetiredClassLoaders()
     val iter = retiredClassLoaders.iterator()
     while (iter.hasNext()) {
       val retired = iter.next().get()
@@ -159,22 +174,40 @@ class Renderer(
 
   /**
    * Removes any `BlockingEventLoop` cached in `_layoutlib_._internal_.kotlinx.coroutines.ThreadLocalEventLoop` on the current thread (the
-   * Layoutlib render thread) for [classLoader].
+   * Layoutlib render thread) for a retired [DefaultModuleClassLoader] or closed [WarmDepsClassLoader].
    *
    * `ThreadLocalEventLoop` stores a `ThreadLocal<EventLoop>` (`ref`) whose value is a `BlockingEventLoop` defined by [classLoader]. Because
    * the `ThreadLocal` key is referenced by `ThreadLocalEventLoop` (which is kept alive by the `BlockingEventLoop` value's class ->
    * [classLoader] -> static `ref` chain), leaving the entry in the render thread's `ThreadLocalMap` prevents [classLoader] from ever being
    * garbage-collected or unloaded.
    */
-  private fun clearThreadLocalEventLoop(classLoader: DefaultModuleClassLoader) {
-    if (!classLoader.hasLoadedClass(THREAD_LOCAL_EVENT_LOOP_FQN)) {
-      return
-    }
+  private fun clearThreadLocalEventLoop(classLoader: ClassLoader) {
+    val eventLoopClass =
+      when (classLoader) {
+        is WarmDepsClassLoader ->
+          if (classLoader.hasLoadedOnDiskClass(THREAD_LOCAL_EVENT_LOOP_FQN)) {
+            classLoader.findLoadedClassOrNull(THREAD_LOCAL_EVENT_LOOP_FQN)
+          } else {
+            null
+          }
+        is DefaultModuleClassLoader ->
+          if (classLoader.hasLoadedOwnClass(THREAD_LOCAL_EVENT_LOOP_FQN)) {
+            try {
+              Class.forName(THREAD_LOCAL_EVENT_LOOP_FQN, false, classLoader).takeIf { it.classLoader === classLoader }
+            } catch (t: Throwable) {
+              rethrowIfFatalOrCancelled(t)
+              null
+            }
+          } else {
+            null
+          }
+        else -> null
+      } ?: return
     try {
-      val eventLoopClass = Class.forName(THREAD_LOCAL_EVENT_LOOP_FQN, false, classLoader)
       val refField = eventLoopClass.getDeclaredField("ref").apply { isAccessible = true }
       (refField.get(null) as? ThreadLocal<*>)?.remove()
     } catch (t: Throwable) {
+      rethrowIfFatalOrCancelled(t)
       logger.log(Level.FINE, "Unable to clear ThreadLocalEventLoop for retired classloader", t)
     }
   }
@@ -205,11 +238,16 @@ class Renderer(
     disposePendingRenderTasks()
     awaitOutstandingDisposals()
     val retiredClassLoader = moduleClassLoaderManager.refreshClassPath(newClassPath, newProjectClassPath)
-    if (retiredClassLoader != null) {
-      retiredClassLoaders.add(WeakReference(retiredClassLoader))
+    val hasNewlyRetired = collectRetiredClassLoaders()
+    (retiredClassLoader?.parent as? WarmDepsClassLoader)?.let { warmParent ->
+      if (!warmParent.isClosed) {
+        restoreWarmGlobalSnapshotObserver(warmParent)
+      }
+    }
+    if (hasNewlyRetired || retiredClassLoaders.isNotEmpty()) {
       logFailure("Unable to schedule ThreadLocalEventLoop cleanup") {
         RenderService.getRenderAsyncActionExecutor().runAsyncAction {
-          clearThreadLocalEventLoop(retiredClassLoader)
+          sweepRetiredClassLoaders()
         }
       }
     }
@@ -687,6 +725,7 @@ class Renderer(
             return createRenderTaskErrorResult(logger)
           }
       val moduleClassLoader: ClassLoader = moduleClassLoaderManager.getShared(null).classLoader
+      restoreWarmGlobalSnapshotObserver(moduleClassLoader)
 
       if (allowShowDecorations) {
         renderTask.setDecorations(true)
@@ -894,10 +933,8 @@ class Renderer(
         }
       } finally {
         try {
-          val retiredClassLoader = moduleClassLoaderManager.closeAndReturnRetired()
-          if (retiredClassLoader != null) {
-            retiredClassLoaders.add(WeakReference(retiredClassLoader))
-          }
+          moduleClassLoaderManager.closeAndReturnRetired()
+          collectRetiredClassLoaders()
           if (retiredClassLoaders.isNotEmpty()) {
             logFailure("Unable to schedule ThreadLocalEventLoop cleanup") {
               RenderService.getRenderAsyncActionExecutor().runAsyncAction {
