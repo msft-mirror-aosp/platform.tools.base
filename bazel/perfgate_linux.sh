@@ -53,6 +53,7 @@ readonly invocation_id="$(uuidgen)"
   --tool_tag=${script_name} \
   --profile=${dist_dir}/perfgate-profile-${build_number}.json.gz \
   --nocache_test_results \
+  --test_env=studio.collect.extended.memory.reports=true \
   --runs_per_test=//prebuilts/studio/buildbenchmarks:.*@5 \
   --runs_per_test=//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark1000Cpu@5 \
   --runs_per_test=//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000Cpu@5 \

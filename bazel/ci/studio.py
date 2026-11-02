@@ -119,6 +119,9 @@ def run_bazel_test(
     flags.extend([
         '--bes_keywords=ab-postsubmit',
         '--nocache_test_results',
+        # Perfgate data is only uploaded from postsubmit (see collect_logs), so
+        # the slow E2E memory usage statistics collection is enabled only here.
+        '--test_env=studio.collect.extended.memory.reports=true',
     ])
 
   if dist_path.exists():

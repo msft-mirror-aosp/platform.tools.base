@@ -48,6 +48,7 @@ CALL %SCRIPTDIR%bazel.cmd ^
  --test_tag_filters=%TESTTAGFILTERS% ^
  --profile=%DISTDIR%\winprof%BUILDNUMBER%.json.gz ^
  --nocache_test_results ^
+ --test_env=studio.collect.extended.memory.reports=true ^
  --runs_per_test=//prebuilts/studio/buildbenchmarks:.*@5 ^
  --runs_per_test=//tools/adt/idea/sync-perf-tests:intellij.android.sync-perf-tests.*@5 ^
  --runs_per_test=//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000Cpu@5 ^
