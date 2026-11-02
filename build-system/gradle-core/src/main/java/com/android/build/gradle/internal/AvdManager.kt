@@ -34,7 +34,7 @@ import com.android.sdklib.repository.LoggerProgressIndicatorWrapper
 import com.android.testing.utils.isTvOrAutoDevice
 import com.android.utils.FileUtils
 import com.android.utils.ILogger
-import com.sun.xml.bind.v2.util.EditDistance
+import com.android.utils.text.editDistance
 import java.io.File
 import java.nio.file.Path
 import kotlin.math.min
@@ -173,7 +173,7 @@ class AvdManager(
       .map { it.displayName }
       .filterNot(::isTvOrAutoDevice)
       .distinct()
-      .map { it to EditDistance.editDistance(hardwareProfile, it) }
+      .map { it to editDistance(hardwareProfile, it, maxEditDistance) }
       .filter { (_, distance) -> distance <= maxEditDistance }
       .sortedBy { (_, distance) -> distance }
       .map { (name, _) -> name }

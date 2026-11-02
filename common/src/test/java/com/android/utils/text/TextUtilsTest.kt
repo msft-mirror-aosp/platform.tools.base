@@ -62,4 +62,27 @@ class TextUtilsTest {
     assertThat("foobar".truncate(6)).isEqualTo("foobar")
     assertThat("foobar".truncate(7)).isEqualTo("foobar")
   }
+
+  @Test
+  fun editDistance() {
+    assertThat(editDistance("", "")).isEqualTo(0)
+    assertThat(editDistance("", "abc")).isEqualTo(3)
+    assertThat(editDistance("abc", "")).isEqualTo(3)
+    assertThat(editDistance("kitten", "kitten")).isEqualTo(0)
+
+    // editing kitten to sitting has edit distance 3:
+    //   replace k with s
+    //   replace e with i
+    //   append g
+    assertThat(editDistance("kitten", "sitting")).isEqualTo(3)
+
+    assertThat(editDistance("saturday", "sunday")).isEqualTo(3)
+    assertThat(editDistance("button", "bitton")).isEqualTo(1)
+    assertThat(editDistance("radiobutton", "bitton")).isEqualTo(6)
+    assertThat(editDistance("Pixel 300", "Pixel 3")).isEqualTo(2)
+
+    assertThat(editDistance("radiobutton", "bitton", 10)).isEqualTo(6)
+    assertThat(editDistance("radiobutton", "bitton", 6)).isEqualTo(6)
+    assertThat(editDistance("radiobutton", "bitton", 3)).isEqualTo(Integer.MAX_VALUE)
+  }
 }

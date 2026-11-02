@@ -528,40 +528,7 @@ fun isEditableTo(s: String, t: String, max: Int): Boolean {
  *   `max` parameter
  */
 fun editDistance(s: String, t: String, max: Int = Integer.MAX_VALUE): Int {
-  if (s == t) {
-    return 0
-  }
-
-  if (Math.abs(s.length - t.length) > max) {
-    // The string lengths differ more than the allowed edit distance;
-    // no point in even attempting to compute the edit distance (requires
-    // O(n*m) storage and O(n*m) speed, where n and m are the string lengths)
-    return Integer.MAX_VALUE
-  }
-
-  val m = s.length
-  val n = t.length
-  val d = Array(m + 1) { IntArray(n + 1) }
-  for (i in 0..m) {
-    d[i][0] = i
-  }
-  for (j in 0..n) {
-    d[0][j] = j
-  }
-  for (j in 1..n) {
-    for (i in 1..m) {
-      if (s[i - 1] == t[j - 1]) {
-        d[i][j] = d[i - 1][j - 1]
-      } else {
-        val deletion = d[i - 1][j] + 1
-        val insertion = d[i][j - 1] + 1
-        val substitution = d[i - 1][j - 1] + 1
-        d[i][j] = Math.min(deletion, Math.min(insertion, substitution))
-      }
-    }
-  }
-
-  return d[m][n]
+  return com.android.utils.text.editDistance(s, t, max)
 }
 
 /**

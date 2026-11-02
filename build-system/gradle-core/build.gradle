@@ -171,7 +171,6 @@ dependencies {
     implementation libs.asm.analysis
     implementation libs.asm.commons
     implementation libs.asm.util
-    implementation libs.jaxb.runtime
     implementation libs.jopt
     implementation libs.bundle.tool
     implementation libs.jetifier.core

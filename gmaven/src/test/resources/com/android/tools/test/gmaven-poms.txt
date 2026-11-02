@@ -541,7 +541,6 @@ com.android.tools.build:gradle:$BUILD_VERSION
     org.ow2.asm:asm-analysis:9.9 (runtime)
     org.ow2.asm:asm-commons:9.9 (runtime)
     org.ow2.asm:asm-util:9.9 (runtime)
-    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
     net.sf.jopt-simple:jopt-simple:4.9 (runtime)
     com.android.tools.build:bundletool:1.18.3 (runtime)
     com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10 (runtime)
