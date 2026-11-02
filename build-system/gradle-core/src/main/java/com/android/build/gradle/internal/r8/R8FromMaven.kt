@@ -104,3 +104,15 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
     }
   }
 }
+
+/**
+ * Returns the R8 classpath that tasks should load into the isolated R8 ClassLoader, or `null` to run the R8 bundled with AGP.
+ *
+ * The Maven-resolved [R8FromMaven.r8Classpath] is only used when [StringOption.R8_VERSION_OVERRIDE] is set. Otherwise tasks use AGP's
+ * bundled R8, which needs no dependency resolution and works offline. Overrides older than [R8Version.VERSION_AGP_WAS_SHIPPED_WITH] are
+ * rejected by [R8FromMaven.create].
+ *
+ * TODO: always return [R8FromMaven.r8Classpath] once R8 is no longer bundled with AGP.
+ */
+fun isolatedR8Classpath(projectOptions: ProjectOptions, r8FromMaven: R8FromMaven?): FileCollection? =
+  if (projectOptions[StringOption.R8_VERSION_OVERRIDE].isNullOrBlank()) null else r8FromMaven?.r8Classpath

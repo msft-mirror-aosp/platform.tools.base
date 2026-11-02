@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.DUPLICATE_CLASSES_CHECK
 import com.android.build.gradle.internal.scope.Java8LangSupport
@@ -38,7 +39,6 @@ import com.android.build.gradle.internal.utils.getDesugarLibConfig
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
-import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.build.gradle.tasks.PackageAndroidArtifact.Companion.THROW_ON_ERROR_ISSUE_REPORTER
 import com.android.buildanalyzer.common.TaskCategory
@@ -249,9 +249,7 @@ abstract class BaseR8Task(projectLayout: ProjectLayout) : ProguardConfigurableTa
       task.featureClassJars.disallowChanges()
       task.featureJavaResourceJars.disallowChanges()
 
-      if (!creationConfig.services.projectOptions[StringOption.R8_VERSION_OVERRIDE].isNullOrBlank()) {
-        creationConfig.services.r8FromMaven?.r8Classpath?.let { task.r8Classpath.from(it) }
-      }
+      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
       task.r8Classpath.disallowChanges()
 
       if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {

@@ -249,4 +249,31 @@ class R8FromMavenTest {
 
     assertThat(r8FromMaven.version).isEqualTo(R8Version.VERSION_AGP_WAS_SHIPPED_WITH)
   }
+
+  @Test
+  fun testIsolatedR8ClasspathWithoutOverrideIsNull() {
+    val r8FromMaven = R8FromMaven.create(project) { null }
+
+    for (options in listOf(emptyMap(), mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to " "))) {
+      val projectOptions = ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, options))
+
+      // Without the override, tasks run the R8 bundled with AGP.
+      assertThat(isolatedR8Classpath(projectOptions, r8FromMaven)).isNull()
+    }
+  }
+
+  @Test
+  fun testIsolatedR8ClasspathWithOverrideIsR8FromMavenClasspath() {
+    val projectOptions =
+      ProjectOptions(
+        FakeProviderFactory(
+          FakeProviderFactory.factory,
+          mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to R8Version.VERSION_AGP_WAS_SHIPPED_WITH),
+        )
+      )
+    val r8FromMaven = R8FromMaven.create(project, projectOptions)
+
+    assertThat(isolatedR8Classpath(projectOptions, r8FromMaven)).isSameInstanceAs(r8FromMaven.r8Classpath)
+    assertThat(isolatedR8Classpath(projectOptions, null)).isNull()
+  }
 }

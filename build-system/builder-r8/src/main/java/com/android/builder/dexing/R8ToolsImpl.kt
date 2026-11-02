@@ -82,4 +82,51 @@ class R8ToolsImpl : R8Tools {
     // Fully qualified for the same reason as runR8 above.
     com.android.builder.dexing.runTraceReferences(sourceFiles, libraryFiles, libraryInMemoryClasses)
   }
+
+  override fun runTraceReferenceTool(
+    fullBootClasspath: List<Path>,
+    desugaredDesugarLib: Collection<Path>,
+    dexFiles: Collection<Path>,
+    keepRuleOutput: Path,
+  ) {
+    // Fully qualified for the same reason as runR8 above.
+    com.android.builder.dexing.runTraceReferenceTool(fullBootClasspath, desugaredDesugarLib, dexFiles, keepRuleOutput)
+  }
+
+  override fun runL8(
+    inputClasses: Collection<Path>,
+    output: Path,
+    libConfiguration: String,
+    libraries: Collection<Path>,
+    minSdkVersion: Int,
+    keepRules: KeepRulesConfig,
+    isDebuggable: Boolean,
+    outputMode: L8OutputMode,
+    inputArtProfile: Path?,
+    outputArtProfile: Path?,
+    inputMappingFile: Path?,
+    outputMappingFile: Path?,
+    inputPartitionMappingFile: Path?,
+    outputPartitionMappingFile: Path?,
+    tempDir: Path?,
+  ) {
+    // Fully qualified for the same reason as runR8 above.
+    com.android.builder.dexing.runL8(
+      inputClasses,
+      output,
+      libConfiguration,
+      libraries,
+      minSdkVersion,
+      keepRules,
+      isDebuggable,
+      outputMode,
+      inputArtProfile,
+      outputArtProfile,
+      inputMappingFile,
+      outputMappingFile,
+      inputPartitionMappingFile,
+      outputPartitionMappingFile,
+      tempDir,
+    )
+  }
 }

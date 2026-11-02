@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
@@ -29,7 +30,6 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
-import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.symbols.exportToCompiledJava
 import com.android.ide.common.symbols.SymbolTable
@@ -162,9 +162,7 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
         ),
       )
       task.symbolTableBuildService.setDisallowChanges(getBuildService(creationConfig.services.buildServiceRegistry))
-      if (!creationConfig.services.projectOptions[StringOption.R8_VERSION_OVERRIDE].isNullOrBlank()) {
-        creationConfig.services.r8FromMaven?.r8Classpath?.let { task.r8Classpath.from(it) }
-      }
+      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
       task.r8Classpath.disallowChanges()
       task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
     }

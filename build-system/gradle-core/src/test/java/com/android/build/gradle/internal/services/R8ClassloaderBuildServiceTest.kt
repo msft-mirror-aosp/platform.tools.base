@@ -62,9 +62,15 @@ class R8ClassloaderBuildServiceTest {
         .isSameInstanceAs(com.android.builder.dexing.KeepRuleFile.MavenOrigin::class.java)
       assertThat(classLoader.loadClass("com.android.builder.dexing.R8Tools"))
         .isSameInstanceAs(com.android.builder.dexing.R8Tools::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.KeepRulesConfig"))
+        .isSameInstanceAs(com.android.builder.dexing.KeepRulesConfig::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.L8OutputMode"))
+        .isSameInstanceAs(com.android.builder.dexing.L8OutputMode::class.java)
 
       // Still child-first: the code that actually calls R8.
       assertThat(classLoader.loadClass("com.android.builder.dexing.R8Tool").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.L8Tool").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.TraceReferenceToolKt").classLoader).isSameInstanceAs(classLoader)
     }
   }
 

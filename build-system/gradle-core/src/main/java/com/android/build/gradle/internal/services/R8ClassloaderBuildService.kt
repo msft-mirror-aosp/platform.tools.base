@@ -67,6 +67,8 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
     private val PARENT_DELEGATED_DEXING_CLASSES =
       setOf(
         "com.android.builder.dexing.KeepRuleFile",
+        "com.android.builder.dexing.KeepRulesConfig",
+        "com.android.builder.dexing.L8OutputMode",
         "com.android.builder.dexing.MainDexListConfig",
         "com.android.builder.dexing.PartialShrinking",
         "com.android.builder.dexing.PartialShrinkingConfig",

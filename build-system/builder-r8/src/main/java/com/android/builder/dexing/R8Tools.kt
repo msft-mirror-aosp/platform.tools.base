@@ -56,4 +56,31 @@ interface R8Tools {
 
   /** Same parameters as runTraceReferences in TraceReferences.kt, so the implementation just forwards them. */
   fun runTraceReferences(sourceFiles: List<Path>, libraryFiles: List<Path>, libraryInMemoryClasses: Map<String, ByteArray>)
+
+  /** Same parameters as runTraceReferenceTool in TraceReferenceTool.kt, so the implementation just forwards them. */
+  fun runTraceReferenceTool(
+    fullBootClasspath: List<Path>,
+    desugaredDesugarLib: Collection<Path>,
+    dexFiles: Collection<Path>,
+    keepRuleOutput: Path,
+  )
+
+  /** Same parameters as runL8 in L8Tool.kt, so the implementation just forwards them. Unlike runL8, no parameter has a default value. */
+  fun runL8(
+    inputClasses: Collection<Path>,
+    output: Path,
+    libConfiguration: String,
+    libraries: Collection<Path>,
+    minSdkVersion: Int,
+    keepRules: KeepRulesConfig,
+    isDebuggable: Boolean,
+    outputMode: L8OutputMode,
+    inputArtProfile: Path?,
+    outputArtProfile: Path?,
+    inputMappingFile: Path?,
+    outputMappingFile: Path?,
+    inputPartitionMappingFile: Path?,
+    outputPartitionMappingFile: Path?,
+    tempDir: Path?,
+  )
 }
