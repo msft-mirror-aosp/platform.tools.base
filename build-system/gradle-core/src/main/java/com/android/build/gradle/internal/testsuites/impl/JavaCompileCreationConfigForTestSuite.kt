@@ -96,7 +96,7 @@ internal class JavaCompileCreationConfigForTestSuite(
     get() = getTestSuiteSourcesCompileClasspath(sourceContainer, services)
 
   override val builtInKotlincOutput: Provider<Directory>?
-    get() = null
+    get() = sourceContainer.creationConfig?.getBuiltInKotlincOutput()
 
   override val builtInKaptArtifact: Provider<Directory>?
     get() = null

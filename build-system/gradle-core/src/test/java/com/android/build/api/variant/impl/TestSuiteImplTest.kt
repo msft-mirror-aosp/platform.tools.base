@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.manifest.ManifestData
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
@@ -42,6 +43,7 @@ import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.services.createVariantPropertiesApiServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
+import com.android.build.gradle.internal.testsuites.impl.JavaCompileCreationConfigForTestSuite
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
@@ -442,5 +444,34 @@ class TestSuiteImplTest {
     val hostJarSources = TestSuiteHostJarSources(delegate, sourceContainer)
     assertThat(hostJarSources.manifestFile).isEqualTo(suiteManifest)
     assertThat(hostJarSources.manifestOverlayFiles.get()).isEmpty()
+  }
+
+  @Test
+  fun testJavaCompileCreationConfigForTestSuiteBuiltInKotlincOutput() {
+    val testSuite = mock(TestSuiteCreationConfig::class.java)
+    val testedVariant = mock(ApplicationCreationConfig::class.java, withSettings().extraInterfaces(Component::class.java))
+    `when`(testSuite.testedVariant).thenReturn(testedVariant)
+
+    val sourceContainer = mock(TestSuiteSourceContainer::class.java)
+    val sourceContainerArtifacts = mock(ArtifactsImpl::class.java)
+    `when`(sourceContainer.artifacts).thenReturn(sourceContainerArtifacts)
+
+    @Suppress("UNCHECKED_CAST") val suiteKotlincDir = mock(Provider::class.java) as Provider<Directory>
+    `when`(sourceContainerArtifacts.get(InternalArtifactType.BUILT_IN_KOTLINC)).thenReturn(suiteKotlincDir)
+    `when`(testedVariant.useBuiltInKotlinSupport).thenReturn(true)
+
+    val sourceSet = mock(HostJarTestSuiteSourceSet::class.java)
+    val services = mock(TaskCreationServices::class.java)
+    val taskContainer = mock(MutableTaskContainer::class.java)
+    val javaCompileConfig = JavaCompileCreationConfigForTestSuite(sourceContainer, sourceSet, testedVariant, services, taskContainer)
+
+    assertThat(javaCompileConfig.builtInKotlincOutput).isNull()
+
+    val hostJarConfig = TestSuiteHostJarCreationConfig(testSuite, sourceContainer)
+    `when`(sourceContainer.creationConfig).thenReturn(hostJarConfig)
+    assertThat(javaCompileConfig.builtInKotlincOutput).isSameInstanceAs(suiteKotlincDir)
+
+    `when`(testedVariant.useBuiltInKotlinSupport).thenReturn(false)
+    assertThat(javaCompileConfig.builtInKotlincOutput).isNull()
   }
 }

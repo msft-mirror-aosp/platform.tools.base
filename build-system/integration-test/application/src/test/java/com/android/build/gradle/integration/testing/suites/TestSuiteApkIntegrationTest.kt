@@ -224,6 +224,47 @@ class TestSuiteApkIntegrationTest {
     }
   }
 
+  @Test
+  fun testJavaSourceReferencesSuiteKotlinClass() {
+    val build = rule.build {
+      androidApplication(":app") {
+        files {
+          add(
+            "src/customTest/kotlin/com/example/test/SuiteKotlinHelper.kt",
+            """
+            package com.example.test
+
+            class SuiteKotlinHelper {
+              fun value(): String = "ok"
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/customTest/java/com/example/test/SuiteJavaCaller.java",
+            """
+            package com.example.test;
+
+            public class SuiteJavaCaller {
+              public String callKotlin() {
+                return new SuiteKotlinHelper().value();
+              }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":app:packageDebugCustomTest")
+
+    assertThatApk(customTestApk()).apply {
+      containsClass("Lcom/example/test/SuiteKotlinHelper;")
+      containsClass("Lcom/example/test/SuiteJavaCaller;")
+    }
+  }
+
   private fun customTestApk(): File {
     val buildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val testApk = buildDir.walkTopDown().firstOrNull { it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true) }

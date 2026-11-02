@@ -61,7 +61,7 @@ class VerifyingHostJarTestSuiteMixedLangCompilationTest {
                 // Specify expected classes to be found and loaded
                 addInputProperty(
                   "com.android.junit.engine.expected.classes",
-                  "some.random.TestTargetKt, some.random.TestTargetJ, some.random.Test1, some.random.Test2",
+                  "some.random.TestTargetKt, some.random.TestTargetJ, some.random.Test1, some.random.Test2, some.random.Test3",
                 )
               }
               it.hostJar {}
@@ -107,6 +107,7 @@ class VerifyingHostJarTestSuiteMixedLangCompilationTest {
                       testTargetKt.someFunctionToBeTested("some!")
                       val testTargetJ = TestTargetJ()
                       testTargetJ.someFunctionToBeTested("some!")
+                      Test2().testSomething()
                   }
               }
               """
@@ -123,6 +124,19 @@ class VerifyingHostJarTestSuiteMixedLangCompilationTest {
                       testTargetKt.someFunctionToBeTested("some!");
                       TestTargetJ testTargetJ = new TestTargetJ();
                       testTargetJ.someFunctionToBeTested("some!");
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/first/java/some/random/Test3.java",
+              """
+              package some.random;
+
+              public class Test3 {
+                  public void testSomething() {
+                      new Test1().testSomething();
                   }
               }
               """
