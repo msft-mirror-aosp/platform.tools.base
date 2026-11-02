@@ -604,7 +604,8 @@ object AnimationPreviewRunner {
 
   /**
    * Drives `PreviewAnimationClock` on an already-inflated and callback-settled [RenderTask], configuring initial/target states, extracting
-   * [TransitionInfo] curves, and rendering `options.frameCount` PNG frames.
+   * [TransitionInfo] curves, and rendering PNG frames at either `options.atMillis` (when non-empty) or `options.frameCount` adaptive
+   * timestamps.
    */
   internal fun stepAndCaptureAnimation(
     previewId: String,
@@ -617,6 +618,7 @@ object AnimationPreviewRunner {
     saveFrameImage: (Int, BufferedImage) -> String,
     renderLogger: RenderLogger? = null,
   ): PreviewAnimationManifest {
+    val explicitTimestamps = normalizeExplicitAtMillis(options.atMillis)
     val adapter =
       findComposeViewAdapters(initialResult.rootViews).firstOrNull()
         ?: return singleFrameFallbackManifest(previewId, methodFQN, displayName, initialResult, postProcessImage, saveFrameImage)
@@ -706,25 +708,14 @@ object AnimationPreviewRunner {
       }
 
     val (maxDurationMs, maxIterationMs) = durations
-    val effectiveDurationMs =
-      (options.durationMillisOverride
-          ?: maxDurationMs.takeIf { it > 0L }
-          ?: maxIterationMs.takeIf { it > 0L }
-          ?: animations.maxOfOrNull { it.durationMillis }?.takeIf { it > 0L }
-          ?: 500L)
-        .coerceIn(0L, 15_000L)
-
-    val requestedFrames = options.frameCount.coerceIn(2, 60)
-    val effectiveFrameCount = if (effectiveDurationMs == 0L && animations.isEmpty()) 1 else requestedFrames
-    // Adaptive sampling: spend the frame budget where the extracted curves move fastest (e.g. the
-    // rise into a spring overshoot), keeping 0 and effectiveDurationMs, a 16 ms minimum gap, and
-    // falling back to even spacing when no numeric curve is available.
-    val timestamps =
-      if (effectiveFrameCount <= 1) {
-        listOf(0L)
-      } else {
-        AnimationFrameSampler.sampleTimestampsForAnimations(effectiveDurationMs, effectiveFrameCount, animations)
-      }
+    val (effectiveDurationMs, timestamps) =
+      selectFrameTimestamps(
+        maxDurationMs = maxDurationMs,
+        maxIterationMs = maxIterationMs,
+        options = options,
+        animations = animations,
+        normalizedExplicitTimestamps = explicitTimestamps,
+      )
 
     val renderedFrames = mutableListOf<RenderedAnimationFrame>()
     var frameWidth = 0
@@ -783,6 +774,45 @@ object AnimationPreviewRunner {
       unsupportedAnimations = unsupported,
       frames = renderedFrames,
     )
+  }
+
+  /**
+   * Resolves `(effectiveDurationMillis, timestamps)` for a `PreviewAnimationClock` session:
+   * - When [options] specifies non-empty `atMillis`, uses those exact normalized (sorted, deduplicated) timestamps directly and ensures
+   *   `effectiveDurationMillis` covers at least the last requested timestamp.
+   * - When `atMillis` is empty, preserves adaptive [AnimationFrameSampler] placement across `0..effectiveDurationMillis` unchanged.
+   */
+  @VisibleForTesting
+  internal fun selectFrameTimestamps(
+    maxDurationMs: Long,
+    maxIterationMs: Long,
+    options: AnimationRenderOptions,
+    animations: List<SubscribedAnimationInfo>,
+    normalizedExplicitTimestamps: List<Long> = normalizeExplicitAtMillis(options.atMillis),
+  ): Pair<Long, List<Long>> {
+    val baseEffectiveDurationMs =
+      (options.durationMillisOverride
+          ?: maxDurationMs.takeIf { it > 0L }
+          ?: maxIterationMs.takeIf { it > 0L }
+          ?: animations.maxOfOrNull { it.durationMillis }?.takeIf { it > 0L }
+          ?: 500L)
+        .coerceIn(0L, 15_000L)
+    if (normalizedExplicitTimestamps.isNotEmpty()) {
+      val effectiveDurationMs = maxOf(baseEffectiveDurationMs, normalizedExplicitTimestamps.last())
+      return effectiveDurationMs to normalizedExplicitTimestamps
+    }
+    val requestedFrames = options.frameCount.coerceIn(2, 60)
+    val effectiveFrameCount = if (baseEffectiveDurationMs == 0L && animations.isEmpty()) 1 else requestedFrames
+    // Adaptive sampling: spend the frame budget where the extracted curves move fastest (e.g. the
+    // rise into a spring overshoot), keeping 0 and effectiveDurationMs, a 16 ms minimum gap, and
+    // falling back to even spacing when no numeric curve is available.
+    val timestamps =
+      if (effectiveFrameCount <= 1) {
+        listOf(0L)
+      } else {
+        AnimationFrameSampler.sampleTimestampsForAnimations(baseEffectiveDurationMs, effectiveFrameCount, animations)
+      }
+    return baseEffectiveDurationMs to timestamps
   }
 
   private fun getPreviewAnimationClock(adapter: Any): Any? =

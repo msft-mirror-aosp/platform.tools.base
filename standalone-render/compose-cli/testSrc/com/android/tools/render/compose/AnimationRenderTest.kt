@@ -17,10 +17,13 @@
 package com.android.tools.render.compose
 
 import com.android.tools.render.animation.AnimationRenderOptions
+import com.android.tools.render.animation.readAnimationManifestFromJson
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.StandalonePreviewRenderer
 import com.android.tools.render.common.readComponentTreeFromJson
 import com.android.tools.render.common.readPreviewRenderingJson
+import com.android.tools.render.common.readPreviewRenderingResultJson
+import com.android.tools.render.common.writePreviewRenderingToJson
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
@@ -164,7 +167,7 @@ class AnimationRenderTest {
       assertWithMessage("Child AnimatedVisibility height must be measured for ${animRes.previewId}").that(measuredHeight).isGreaterThan(0)
     }
 
-    checkAnimationsAreDetectedAndKeyframesPeakIsCaptured(renderer, rendering.screenshots.subList(3, 5))
+    checkAnimationsAreDetectedAndKeyframesPeakIsCaptured(renderer, rendering, rendering.screenshots.subList(3, 5))
   }
 
   /**
@@ -173,9 +176,12 @@ class AnimationRenderTest {
    *   ones (`hasAnimations: false`), e.g. to find the animations or animation opportunities of a project.
    * - The height of `PreviewKeyframesPeak` peaks at 50% of its 400 ms `keyframes` animation: both its curve (`tracks[].points`) and the
    *   adaptively placed frames capture that peak, e.g. to verify "make the height peak at 50% of the animation".
+   * - Explicit `atMillis` / `--animation-at-ms` captures frame PNGs at exact requested timestamps (sorted and deduplicated) while keeping
+   *   full `tracks[].points` curves populated.
    */
   private fun checkAnimationsAreDetectedAndKeyframesPeakIsCaptured(
     renderer: StandalonePreviewRenderer,
+    baseRendering: com.android.tools.render.common.PreviewRendering,
     screenshots: List<PreviewScreenshot>,
   ) {
     val outputFolder = tmpFolder.newFolder()
@@ -236,5 +242,49 @@ class AnimationRenderTest {
     assertThat(tallestFrameTime.toDouble()).isWithin(16.0).of(200.0)
     assertThat(frameHeights.getValue(tallestFrameTime)).isGreaterThan(frameHeights.getValue(400L))
     assertThat(frameHeights.getValue(400L)).isGreaterThan(frameHeights.getValue(0L))
+
+    // Explicit `atMillis` via both `StandalonePreviewRenderer.renderAnimations` and CLI `--animation-at-ms`:
+    // captures exact requested timestamps (sorted & deduplicated) while still populating full `tracks[].points` curves.
+    val peakScreenshots = screenshots.filter { it.methodFQN.endsWith(".PreviewKeyframesPeak") }
+    val explicitApiFolder = tmpFolder.newFolder()
+    val explicitApiResult =
+      renderer.renderAnimations(
+        peakScreenshots,
+        explicitApiFolder.absolutePath,
+        AnimationRenderOptions(atMillis = listOf(400L, 0L, 200L, 200L), fromState = "false", toState = "true"),
+      )
+    assertThat(explicitApiResult.globalError).isNull()
+    val explicitManifest = checkNotNull(explicitApiResult.animationResults.single().manifest)
+    assertThat(explicitManifest.frames.map { it.timeMillis }).containsExactly(0L, 200L, 400L).inOrder()
+    assertThat(explicitManifest.frameCount).isEqualTo(3)
+    val explicitCurvePoints = explicitManifest.animations.flatMap { it.tracks }.single { it.propertyLabel == "height" }.points
+    assertThat(explicitCurvePoints.size).isGreaterThan(10)
+    val explicitHeights = explicitManifest.frames.associate { it.timeMillis to ImageIO.read(File(explicitApiFolder, it.imagePath)).height }
+    assertThat(explicitHeights.getValue(200L)).isGreaterThan(explicitHeights.getValue(400L))
+    assertThat(explicitHeights.getValue(400L)).isGreaterThan(explicitHeights.getValue(0L))
+
+    val cliOutputFolder = tmpFolder.newFolder()
+    val cliResultsFile = tmpFolder.newFile("cli-anim-results.json")
+    val cliSettingsFile = tmpFolder.newFile("cli-anim-settings.json")
+    cliSettingsFile.bufferedWriter().use {
+      writePreviewRenderingToJson(
+        it,
+        baseRendering.copy(
+          screenshots = peakScreenshots,
+          outputFolder = cliOutputFolder.absolutePath,
+          resultsFilePath = cliResultsFile.absolutePath,
+        ),
+      )
+    }
+    val cliStdout = runComposeCliRender(listOf("--animation-at-ms=400,0,200,200", cliSettingsFile.absolutePath))
+    val cliLines = cliStdout.lines().map { it.trim() }.filter { it.isNotEmpty() }
+    val cliManifestFile = File(cliLines.first { it.endsWith(".animation.json") })
+    assertThat(cliManifestFile.isFile).isTrue()
+    val cliManifest = cliManifestFile.bufferedReader().use { readAnimationManifestFromJson(it) }
+    assertThat(cliManifest.frames.map { it.timeMillis }).containsExactly(0L, 200L, 400L).inOrder()
+    assertThat(cliManifest.animations.flatMap { it.tracks }.single { it.propertyLabel == "height" }.points.size).isGreaterThan(10)
+    val cliResultSummary = cliResultsFile.bufferedReader().use { readPreviewRenderingResultJson(it) }
+    assertThat(cliResultSummary.globalError).isNull()
+    assertThat(cliResultSummary.screenshotResults.single().error).isNull()
   }
 }

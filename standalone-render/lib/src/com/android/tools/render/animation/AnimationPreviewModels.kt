@@ -34,12 +34,18 @@ data class DetectedAnimationSummary(
   val sourceLocation: ComponentSourceLocation? = null,
 ) : Serializable
 
+/** Maximum number of distinct explicit timestamps accepted in [AnimationRenderOptions.atMillis]. */
+const val MAX_EXPLICIT_AT_MILLIS_COUNT: Int = 60
+
+/** Maximum explicit timestamp value (1 hour in milliseconds), preventing nanosecond overflow in `PreviewAnimationClock`. */
+const val MAX_EXPLICIT_AT_MILLIS_VALUE: Long = 3_600_000L
+
 /** Configuration for a multi-frame `PreviewAnimationClock` render session. */
 data class AnimationRenderOptions(
   /**
-   * Frame budget across `[0..effectiveDurationMillis]` (clamped to `2..60`). Frames are placed adaptively by [AnimationFrameSampler]:
-   * always including both endpoints, denser where the animated values change fastest, and at least 16 ms apart (so short animations may get
-   * fewer frames); evenly spaced when no numeric curve is available.
+   * Frame budget across `[0..effectiveDurationMillis]` (clamped to `2..60`) when [atMillis] is empty. Frames are placed adaptively by
+   * [AnimationFrameSampler]: always including both endpoints, denser where the animated values change fastest, and at least 16 ms apart (so
+   * short animations may get fewer frames); evenly spaced when no numeric curve is available.
    */
   val frameCount: Int = 16,
   /** Optional explicit total duration override in milliseconds. */
@@ -50,7 +56,68 @@ data class AnimationRenderOptions(
   val toState: String? = null,
   /** Optional label of the specific animation whose `fromState`/`toState` is being targeted (`null` targets all applicable). */
   val animationLabel: String? = null,
-) : Serializable
+  /**
+   * Optional explicit timestamps (in milliseconds, `>= 0`) at which to capture rendered frame PNGs.
+   *
+   * When non-empty, timestamps are normalized via [normalizeExplicitAtMillis] (validated non-negative, deduplicated, and sorted ascending)
+   * and stepped directly in place of [frameCount] and adaptive [AnimationFrameSampler] placement, while full `tracks[].points` curves are
+   * still populated across the animation segment. When empty, [frameCount] and [AnimationFrameSampler] govern frame placement as usual.
+   */
+  val atMillis: List<Long> = emptyList(),
+) : Serializable {
+  constructor(
+    frameCount: Int,
+    durationMillisOverride: Long?,
+    fromState: String?,
+    toState: String?,
+    animationLabel: String?,
+  ) : this(
+    frameCount = frameCount,
+    durationMillisOverride = durationMillisOverride,
+    fromState = fromState,
+    toState = toState,
+    animationLabel = animationLabel,
+    atMillis = emptyList(),
+  )
+}
+
+/**
+ * Validates, deduplicates, and sorts [atMillis] in ascending millisecond order.
+ *
+ * @throws IllegalArgumentException if any timestamp is outside `0..MAX_EXPLICIT_AT_MILLIS_VALUE` or if more than
+ *   [MAX_EXPLICIT_AT_MILLIS_COUNT] distinct timestamps are requested.
+ */
+fun normalizeExplicitAtMillis(atMillis: List<Long>): List<Long> {
+  if (atMillis.isEmpty()) return emptyList()
+  for (timestamp in atMillis) {
+    require(timestamp >= 0L) { "Animation timestamps must be non-negative milliseconds (got $timestamp)." }
+    require(timestamp <= MAX_EXPLICIT_AT_MILLIS_VALUE) {
+      "Animation timestamp ${timestamp}ms exceeds maximum supported timestamp (${MAX_EXPLICIT_AT_MILLIS_VALUE}ms)."
+    }
+  }
+  val normalized = atMillis.distinct().sorted()
+  require(normalized.size <= MAX_EXPLICIT_AT_MILLIS_COUNT) {
+    "Too many explicit animation timestamps (${normalized.size}); maximum is $MAX_EXPLICIT_AT_MILLIS_COUNT."
+  }
+  return normalized
+}
+
+/**
+ * Parses a comma-separated list of non-negative millisecond timestamps (e.g. `"0,150,300"`), returning distinct timestamps sorted
+ * ascending.
+ *
+ * @throws IllegalArgumentException if [raw] is blank, contains empty or non-integer tokens, or violates [normalizeExplicitAtMillis].
+ */
+fun parseAnimationAtMillis(raw: String): List<Long> {
+  require(raw.isNotBlank()) { "Explicit animation timestamps cannot be blank (expected comma-separated ms, e.g. '0,150,300')." }
+  val parsed =
+    raw.split(',').map { token ->
+      val trimmed = token.trim()
+      require(trimmed.isNotEmpty()) { "Invalid empty timestamp in '$raw' (expected comma-separated ms, e.g. '0,150,300')." }
+      trimmed.toLongOrNull() ?: throw IllegalArgumentException("Invalid millisecond timestamp '$trimmed' in '$raw'.")
+    }
+  return normalizeExplicitAtMillis(parsed)
+}
 
 /** Serialized parameters of a Compose `AnimationSpec` (`SpringSpec`, `TweenSpec`, `KeyframesSpec`, etc.). */
 data class AnimationSpecSummary(

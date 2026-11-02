@@ -326,6 +326,90 @@ class AnimationPreviewRunnerTest {
   }
 
   @Test
+  fun explicitAtMillis_parsesNormalizesValidatesAndPreservesAdaptiveFallback() {
+    assertThat(parseAnimationAtMillis("300, 0, 150, 150")).containsExactly(0L, 150L, 300L).inOrder()
+    assertThat(parseAnimationAtMillis("200")).containsExactly(200L)
+
+    for (invalidRaw in listOf("", "   ", "0,,150", "0,abc", "0,-5")) {
+      val err = runCatching { parseAnimationAtMillis(invalidRaw) }.exceptionOrNull()
+      assertThat(err).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    assertThat(runCatching { normalizeExplicitAtMillis(listOf(-1L)) }.exceptionOrNull()).isInstanceOf(IllegalArgumentException::class.java)
+    assertThat(runCatching { normalizeExplicitAtMillis(listOf(MAX_EXPLICIT_AT_MILLIS_VALUE + 1L)) }.exceptionOrNull())
+      .isInstanceOf(IllegalArgumentException::class.java)
+    assertThat(runCatching { normalizeExplicitAtMillis((0L..MAX_EXPLICIT_AT_MILLIS_COUNT.toLong()).toList()) }.exceptionOrNull())
+      .isInstanceOf(IllegalArgumentException::class.java)
+
+    // 5-arg legacy constructor sets atMillis = emptyList().
+    val legacyOpts = AnimationRenderOptions(12, 400L, "false", "true", "expand")
+    assertThat(legacyOpts.atMillis).isEmpty()
+
+    val sampleAnim =
+      SubscribedAnimationInfo(
+        id = "0",
+        type = "TRANSITION_ANIMATION",
+        label = "peak",
+        states = listOf("false", "true"),
+        fromState = "false",
+        toState = "true",
+        durationMillis = 400L,
+        tracks =
+          listOf(
+            AnimationTransitionTrack(
+              propertyLabel = "height",
+              valueKind = "Dp",
+              specType = "KeyframesSpec",
+              startTimeMillis = 0L,
+              endTimeMillis = 400L,
+              initialValue = "24.0.dp",
+              targetValue = "48.0.dp",
+              points =
+                listOf(
+                  AnimatedPropertyPoint(0L, "24.0.dp", 24.0),
+                  AnimatedPropertyPoint(200L, "120.0.dp", 120.0),
+                  AnimatedPropertyPoint(400L, "48.0.dp", 48.0),
+                ),
+            )
+          ),
+      )
+
+    // Explicit timestamps bypass the 16 ms adaptive minimum gap, deduplicate, and sort ascending.
+    val (durSubGap, explicitSubGap) =
+      AnimationPreviewRunner.selectFrameTimestamps(
+        maxDurationMs = 400L,
+        maxIterationMs = 400L,
+        options = AnimationRenderOptions(atMillis = listOf(205L, 195L, 200L, 200L)),
+        animations = listOf(sampleAnim),
+      )
+    assertThat(durSubGap).isEqualTo(400L)
+    assertThat(explicitSubGap).containsExactly(195L, 200L, 205L).inOrder()
+
+    // Explicit timestamps beyond maxDurationMs extend effectiveDurationMillis to cover the last timestamp.
+    val (durExtended, explicitExtended) =
+      AnimationPreviewRunner.selectFrameTimestamps(
+        maxDurationMs = 400L,
+        maxIterationMs = 400L,
+        options = AnimationRenderOptions(atMillis = listOf(0L, 650L)),
+        animations = listOf(sampleAnim),
+      )
+    assertThat(durExtended).isEqualTo(650L)
+    assertThat(explicitExtended).containsExactly(0L, 650L).inOrder()
+
+    // When atMillis is empty, adaptive AnimationFrameSampler placement is 100% unchanged.
+    val (adaptiveDur, adaptiveTimestamps) =
+      AnimationPreviewRunner.selectFrameTimestamps(
+        maxDurationMs = 400L,
+        maxIterationMs = 400L,
+        options = AnimationRenderOptions(frameCount = 8),
+        animations = listOf(sampleAnim),
+      )
+    assertThat(adaptiveDur).isEqualTo(400L)
+    assertThat(adaptiveTimestamps)
+      .isEqualTo(AnimationFrameSampler.sampleTimestampsForAnimations(400L, 8, listOf(sampleAnim)))
+  }
+
+  @Test
   fun previewAnimationManifest_serializesDetectedAnimationsAndNormalizesLegacyManifests() {
     val summary = DetectedAnimationSummary(type = "ANIMATE_CONTENT_SIZE", label = "animateContentSize")
     val manifest =

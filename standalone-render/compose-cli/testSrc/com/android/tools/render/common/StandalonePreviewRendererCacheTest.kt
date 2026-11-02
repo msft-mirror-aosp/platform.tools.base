@@ -627,6 +627,60 @@ class StandalonePreviewRendererCacheTest {
     assertThat(createdRenderers[1].closeCalls.get()).isEqualTo(1)
   }
 
+  @Test
+  fun parseCliArgumentsAndRenderAnimations_normalizesAndValidatesAnimationAtMillis() {
+    val staticArgs = parseCliArguments(arrayOf("/tmp/settings.json"))
+    assertThat(staticArgs.settingsFile).isEqualTo(File("/tmp/settings.json"))
+    assertThat(staticArgs.animationOptions).isNull()
+
+    val eqArgs = parseCliArguments(arrayOf("--animation-at-ms=300,0,150,150", "/tmp/settings.json"))
+    assertThat(eqArgs.settingsFile).isEqualTo(File("/tmp/settings.json"))
+    assertThat(eqArgs.animationOptions?.atMillis).containsExactly(0L, 150L, 300L).inOrder()
+
+    val splitArgs = parseCliArguments(arrayOf("/tmp/settings.json", "--animation-at-ms", "200", "--animation-at-ms=50,200"))
+    assertThat(splitArgs.animationOptions?.atMillis).containsExactly(50L, 200L).inOrder()
+
+    for (invalidCli in
+      listOf(
+        arrayOf("--animation-at-ms"),
+        arrayOf("--animation-at-ms=", "/tmp/settings.json"),
+        arrayOf("--animation-at-ms=-10,100", "/tmp/settings.json"),
+        arrayOf("--unknown-flag", "/tmp/settings.json"),
+        arrayOf("/tmp/a.json", "/tmp/b.json"),
+      )) {
+      assertThat(runCatching { parseCliArguments(invalidCli) }.exceptionOrNull()).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    val resApk = tempFolder.newFile("res_at_ms.apk").apply { writeText("apk") }
+    var forwardedAtMillis: List<Long>? = null
+    val factory: (RendererBootstrapRequest) -> ManagedRenderer = {
+      FakeManagedRenderer(
+        onRenderAnimations = { screenshot, opts ->
+          forwardedAtMillis = opts.atMillis
+          listOf(
+            PreviewAnimationResult(
+              previewId = screenshot.previewId,
+              methodFQN = screenshot.methodFQN,
+              manifestPath = "pkg/${screenshot.previewId}_0.animation.json",
+              framePaths = opts.atMillis.mapIndexed { idx, _ -> "pkg/${screenshot.previewId}_0_frame_0$idx.png" },
+            )
+          )
+        }
+      )
+    }
+    val outDir = tempFolder.newFolder("out_anim_at_ms").absolutePath
+    val anim = ComposeScreenshot("com.example.PreviewKt.Anim", emptyList(), emptyMap(), "Anim")
+    val okResult =
+      newFakeRenderer(resApk, factory).renderAnimations(listOf(anim), outDir, AnimationRenderOptions(atMillis = listOf(250L, 0L, 250L)))
+    assertThat(okResult.globalError).isNull()
+    assertThat(forwardedAtMillis).containsExactly(0L, 250L).inOrder()
+
+    val negativeResult =
+      newFakeRenderer(resApk, factory).renderAnimations(listOf(anim), outDir, AnimationRenderOptions(atMillis = listOf(-5L, 100L)))
+    assertThat(negativeResult.globalError).contains("non-negative")
+    assertThat(negativeResult.isFatalJvmError).isFalse()
+  }
+
   private fun newFakeRenderer(resApk: File, factory: (RendererBootstrapRequest) -> ManagedRenderer) =
     StandalonePreviewRenderer(
       fontsPath = null,

@@ -22,6 +22,8 @@ import com.android.tools.render.Renderer
 import com.android.tools.render.animation.AnimationRenderOptions
 import com.android.tools.render.animation.PreviewAnimationRenderingResult
 import com.android.tools.render.animation.PreviewAnimationResult
+import com.android.tools.render.animation.normalizeExplicitAtMillis
+import com.android.tools.render.animation.parseAnimationAtMillis
 import com.android.tools.render.framework.IJFramework
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Disposer
@@ -436,6 +438,7 @@ internal constructor(
     reuseEnvironment: Boolean = true,
   ): PreviewAnimationRenderingResult {
     return try {
+      val normalizedOptions = options.copy(atMillis = normalizeExplicitAtMillis(options.atMillis))
       val resolvedRClassJars = rClassJars.ifEmpty {
         classPath.filter { it.endsWith("/R.jar") || it.endsWith("\\R.jar") || it.endsWith("-R.jar") }
       }
@@ -474,7 +477,7 @@ internal constructor(
           val batchOutcome =
             try {
               acquired.handle.renderBatch(fullClassPath, projectClassPath, acquired.freshlyBootstrapped) { managedRenderer ->
-                val animationResults = renderAllAnimations(managedRenderer, screenshots, outputFolder, options, animComparator)
+                val animationResults = renderAllAnimations(managedRenderer, screenshots, outputFolder, normalizedOptions, animComparator)
                 val poisonedReason = managedRenderer.renderThreadPoisonedReason
                 animationResults to poisonedReason
               }
@@ -496,7 +499,7 @@ internal constructor(
       }
 
       rendererFactory(bootstrapRequest).use { managedRenderer ->
-        val results = renderAllAnimations(managedRenderer, screenshots, outputFolder, options, animComparator)
+        val results = renderAllAnimations(managedRenderer, screenshots, outputFolder, normalizedOptions, animComparator)
         PreviewAnimationRenderingResult(
           globalError = null,
           animationResults = results,
@@ -863,6 +866,56 @@ internal constructor(
   }
 }
 
+internal data class CliArguments(
+  val settingsFile: File,
+  val animationOptions: AnimationRenderOptions? = null,
+)
+
+private const val ANIMATION_AT_MS_FLAG = "--animation-at-ms"
+
+/**
+ * Parses `compose-preview-renderer` CLI arguments.
+ *
+ * Supports `<path-to-rendering-settings-json>` and optional `--animation-at-ms <ms[,ms...]>` (or `--animation-at-ms=<ms[,ms...]>`),
+ * normalizing explicit millisecond timestamps in ascending deduplicated order.
+ */
+internal fun parseCliArguments(args: Array<String>): CliArguments {
+  var settingsPath: String? = null
+  val rawAtMillisValues = mutableListOf<String>()
+  var i = 0
+  while (i < args.size) {
+    val arg = args[i]
+    when {
+      arg == ANIMATION_AT_MS_FLAG -> {
+        require(i + 1 < args.size) { "Missing value for $ANIMATION_AT_MS_FLAG (expected comma-separated ms, e.g. '0,150,300')." }
+        rawAtMillisValues.add(args[i + 1])
+        i += 2
+      }
+      arg.startsWith("$ANIMATION_AT_MS_FLAG=") -> {
+        rawAtMillisValues.add(arg.substringAfter('='))
+        i++
+      }
+      arg.startsWith("-") -> {
+        throw IllegalArgumentException("Unknown option '$arg'. Run with --help for usage.")
+      }
+      else -> {
+        require(settingsPath == null) { "Unexpected extra argument '$arg' (settings file already set to '$settingsPath')." }
+        settingsPath = arg
+        i++
+      }
+    }
+  }
+  val resolvedSettings = requireNotNull(settingsPath) { "Missing <path-to-rendering-settings-json> argument." }
+  val animationOptions =
+    if (rawAtMillisValues.isNotEmpty()) {
+      val combinedTimestamps = normalizeExplicitAtMillis(rawAtMillisValues.flatMap { parseAnimationAtMillis(it) })
+      AnimationRenderOptions(atMillis = combinedTimestamps)
+    } else {
+      null
+    }
+  return CliArguments(settingsFile = File(resolvedSettings), animationOptions = animationOptions)
+}
+
 fun main(args: Array<String>) {
   if (args.isEmpty() || args.contains("--help") || args.contains("-h")) {
     printUsage()
@@ -870,7 +923,7 @@ fun main(args: Array<String>) {
   }
   var exitCode = 0
   try {
-    renderPreview(File(args[0]))
+    renderPreview(parseCliArguments(args))
   } catch (t: Throwable) {
     System.err.println("Error: ${t.message ?: t.javaClass.simpleName}")
     exitCode = 1
@@ -881,12 +934,13 @@ fun main(args: Array<String>) {
 }
 
 private fun printUsage() {
-  println("Usage: compose-preview-renderer <path-to-rendering-settings-json>")
+  println("Usage: compose-preview-renderer [options] <path-to-rendering-settings-json>")
   println()
   println("Renders Compose previews as screenshots based on the provided JSON settings file.")
   println()
   println("Options:")
-  println("  -h, --help  Show this help message")
+  println("  -h, --help                     Show this help message")
+  println("  --animation-at-ms <ms[,ms...]> Capture animation frame PNGs at explicit timestamps (ms >= 0, sorted & deduplicated)")
   println()
   println("JSON Settings File Format:")
   println("  The JSON file must contain the following fields:")
@@ -927,8 +981,21 @@ private fun printUsage() {
   )
 }
 
-private fun renderPreview(previewRenderingJson: File) {
-  val previewRendering = previewRenderingJson.reader().use { readPreviewRenderingJson(it) }
+private fun reportScreenshotError(previewId: String, error: ScreenshotError) {
+  System.err.println("Error rendering $previewId: ${error.message}")
+  if (error.stackTrace.isNotEmpty()) {
+    System.err.println(error.stackTrace)
+  }
+  error.problems.forEach { problem ->
+    System.err.println("  Problem: ${problem.html}")
+    if (problem.stackTrace != null) {
+      System.err.println(problem.stackTrace)
+    }
+  }
+}
+
+private fun renderPreview(cliArgs: CliArguments) {
+  val previewRendering = cliArgs.settingsFile.reader().use { readPreviewRenderingJson(it) }
   val renderer =
     StandalonePreviewRenderer(
       fontsPath = previewRendering.fontsPath,
@@ -940,10 +1007,59 @@ private fun renderPreview(previewRenderingJson: File) {
       resourceDirs = previewRendering.resourceDirs,
       rClassJars = previewRendering.rClassJars,
     )
-  val previewRenderingResult = renderer.render(previewRendering.screenshots, previewRendering.outputFolder, reuseEnvironment = false)
 
+  val outputFolder = File(previewRendering.outputFolder)
   val resultsFile = File(previewRendering.resultsFilePath)
   resultsFile.parentFile?.mkdirs()
+
+  if (cliArgs.animationOptions != null) {
+    val animationResult =
+      renderer.renderAnimations(
+        previewRendering.screenshots,
+        previewRendering.outputFolder,
+        cliArgs.animationOptions,
+        reuseEnvironment = false,
+      )
+    val summaryResult =
+      PreviewRenderingResult(
+        globalError = animationResult.globalError,
+        screenshotResults =
+          animationResult.animationResults.map { res ->
+            PreviewScreenshotResult(
+              previewId = res.previewId,
+              methodFQN = res.methodFQN,
+              imagePath = res.framePaths.firstOrNull().orEmpty(),
+              error = res.error,
+              displayName = res.displayName,
+            )
+          },
+      )
+    resultsFile.writer().use { writePreviewRenderingResult(it, summaryResult) }
+
+    var hasErrors = false
+    if (animationResult.globalError != null) {
+      System.err.println("Global error: ${animationResult.globalError}")
+      hasErrors = true
+    }
+    animationResult.animationResults.forEach { result ->
+      val error = result.error
+      if (error != null) {
+        reportScreenshotError(result.previewId, error)
+        hasErrors = true
+      } else {
+        if (result.manifestPath.isNotEmpty()) {
+          println(File(outputFolder, result.manifestPath).absolutePath)
+        }
+        result.framePaths.forEach { relFramePath -> println(File(outputFolder, relFramePath).absolutePath) }
+      }
+    }
+    if (hasErrors) {
+      throw RuntimeException("Rendering failed with errors")
+    }
+    return
+  }
+
+  val previewRenderingResult = renderer.render(previewRendering.screenshots, previewRendering.outputFolder, reuseEnvironment = false)
   resultsFile.writer().use { writePreviewRenderingResult(it, previewRenderingResult) }
 
   var hasErrors = false
@@ -952,20 +1068,10 @@ private fun renderPreview(previewRenderingJson: File) {
     hasErrors = true
   }
 
-  val outputFolder = File(previewRendering.outputFolder)
   previewRenderingResult.screenshotResults.forEach { result ->
     val error = result.error
     if (error != null) {
-      System.err.println("Error rendering ${result.previewId}: ${error.message}")
-      if (error.stackTrace.isNotEmpty()) {
-        System.err.println(error.stackTrace)
-      }
-      error.problems.forEach { problem ->
-        System.err.println("  Problem: ${problem.html}")
-        if (problem.stackTrace != null) {
-          System.err.println(problem.stackTrace)
-        }
-      }
+      reportScreenshotError(result.previewId, error)
       hasErrors = true
     } else {
       val absolutePath = File(outputFolder, result.imagePath).absolutePath
