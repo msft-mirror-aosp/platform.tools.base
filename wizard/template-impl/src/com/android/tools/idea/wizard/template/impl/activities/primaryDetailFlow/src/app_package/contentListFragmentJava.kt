@@ -98,7 +98,6 @@ import android.widget.Toast;
 ${renderIf(applicationPackage != null) { "import ${applicationPackage}.R;" }}
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Java)}
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, itemListContentLayout, Language.Java)}
-
 import ${packageName}.placeholder.PlaceholderContent;
 
 import java.util.List;

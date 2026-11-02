@@ -64,7 +64,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Java)}
-
 import ${packageName}.R;
 
 public class ${fragmentClass} extends Fragment {
