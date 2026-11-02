@@ -19,6 +19,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
 import com.android.resources.ResourceUrl;
+
 import com.google.common.base.MoreObjects;
 
 /**
@@ -66,8 +67,7 @@ public class StyleItemResourceValueImpl extends ResourceValueImpl implements Sty
      * with layoutlib. Don't call this method, the item may be in a different namespace than the
      * attribute and the value being referenced, use {@link #getAttr()} instead.
      *
-     * @deprecated TODO(namespaces): Throw in this method, once layoutlib correctly calls {@link
-     *     #getAttr()} instead.
+     * @deprecated Use {@link #getAttr()} instead.
      */
     @Deprecated
     @Override

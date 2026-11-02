@@ -93,7 +93,6 @@ public class ResourceValueImpl implements ResourceValue {
 
     @Override
     public boolean isUserDefined() {
-        // TODO: namespaces
         return !isFramework() && libraryName == null;
     }
 

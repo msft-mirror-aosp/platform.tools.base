@@ -503,7 +503,6 @@ public class ResourceMergerItem extends DataItem<ResourceFile>
 
     @NonNull
     private static ResourceNamespace.Resolver getNamespaceResolver(@NonNull Node node) {
-        // TODO(namespaces): precompute this?
         return new ResourceNamespace.Resolver() {
             @Nullable
             @Override

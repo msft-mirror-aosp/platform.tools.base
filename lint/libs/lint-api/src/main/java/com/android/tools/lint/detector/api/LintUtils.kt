@@ -1129,7 +1129,6 @@ fun getStyleAttributes(
           }
         }
 
-        // TODO: namespaces
         val parent = srv.parentStyleName
         if (parent != null && !parent.startsWith(ANDROID_PREFIX)) {
           val p = ResourceUrl.parse(parent)
@@ -1187,7 +1186,6 @@ fun getInheritedStyles(project: Project, client: LintClient, styleUrl: String): 
         }
         result.add(rv)
 
-        // TODO: namespaces
         val parent = rv.parentStyleName
         if (parent != null && !parent.startsWith(ANDROID_PREFIX)) {
           val p = ResourceUrl.parse(parent)

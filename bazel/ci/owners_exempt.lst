@@ -6226,7 +6226,6 @@ tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceIte
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceMergerTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceNameKeyedMapTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceRepositoryFixture.java
-tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceResolverNamespacesTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceResolverNoNamespacesTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceSetTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/resources/ResourceUrlTest.kt

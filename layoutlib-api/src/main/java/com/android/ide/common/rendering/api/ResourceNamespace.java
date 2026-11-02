@@ -79,7 +79,6 @@ public class ResourceNamespace implements Comparable<ResourceNamespace>, Seriali
 
         @Nullable
         default String uriToPrefix(@NonNull String namespaceUri) {
-            // TODO(namespaces): remove the default implementation once layoutlib provides one.
             return null;
         }
 
@@ -192,7 +191,6 @@ public class ResourceNamespace implements Comparable<ResourceNamespace>, Seriali
         if (uri != null) {
             return fromNamespaceUri(uri);
         } else {
-            // TODO(namespaces): What is considered a good package name by aapt?
             return fromPackageName(prefix);
         }
     }
@@ -218,7 +216,6 @@ public class ResourceNamespace implements Comparable<ResourceNamespace>, Seriali
             return AAPT;
         }
         if (uri.startsWith(AndroidConstants.URI_PREFIX)) {
-            // TODO(namespaces): What is considered a good package name by aapt?
             String packageName = uri.substring(AndroidConstants.URI_PREFIX.length());
             if (!packageName.isEmpty()) {
                 return fromPackageName(packageName);

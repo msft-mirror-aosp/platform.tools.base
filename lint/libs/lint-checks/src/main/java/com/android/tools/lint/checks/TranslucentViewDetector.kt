@@ -157,7 +157,6 @@ class TranslucentViewDetector : Detector(), XmlScanner, SourceCodeScanner {
   private fun getThemeName(themeUrl: String?): String? {
     themeUrl ?: return null
 
-    // TODO(namespaces)
     val theme = ResourceUrl.parse(themeUrl)
     return if (theme?.type == ResourceType.STYLE && !theme.isFramework) {
       theme.name

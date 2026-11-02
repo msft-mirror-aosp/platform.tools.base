@@ -233,7 +233,6 @@ public class ResourceResolver extends RenderResources {
         // a null so it gets ignored.
         String parentName = Strings.emptyToNull(deviceDefaultParent);
 
-        // TODO(namespaces): why only framework styles?
         ResourceValueMap frameworkStyles =
                 getResourceValueMap(ResourceNamespace.ANDROID, ResourceType.STYLE);
         if (frameworkStyles == null) {
@@ -259,7 +258,6 @@ public class ResourceResolver extends RenderResources {
      * styles when using a CompatibilityTarget.
      */
     private void patchFrameworkStyleParent(String childStyleName, String parentName) {
-        // TODO(namespaces): why only framework styles?
         ResourceValueMap map = getResourceValueMap(ResourceNamespace.ANDROID, ResourceType.STYLE);
         if (map != null) {
             StyleResourceValue from = (StyleResourceValue)map.get(childStyleName);
@@ -277,16 +275,6 @@ public class ResourceResolver extends RenderResources {
     @Nullable
     public StyleResourceValue getTheme() {
         return mDefaultTheme;
-    }
-
-    @Deprecated // TODO(namespaces)
-    public Map<ResourceType, ResourceValueMap> getProjectResources() {
-        return mResources.get(ResourceNamespace.RES_AUTO);
-    }
-
-    @Deprecated // TODO(namespaces)
-    public Map<ResourceType, ResourceValueMap> getFrameworkResources() {
-        return mResources.get(ResourceNamespace.ANDROID);
     }
 
     // ---- RenderResources Methods

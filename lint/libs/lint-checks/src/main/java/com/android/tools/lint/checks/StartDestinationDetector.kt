@@ -78,7 +78,6 @@ class StartDestinationDetector : ResourceXmlDetector() {
     if (destinationAttrValue == null || destinationAttrValue.isBlank()) {
       context.report(ISSUE, element, context.getNameLocation(element), "No start destination specified")
     } else {
-      // TODO(namespaces): Support namespaces in ids
       val url = ResourceUrl.parse(destinationAttrValue)
       if (url == null || url.type != ResourceType.ID) {
         context.report(ISSUE, element, context.getNameLocation(element), "`startDestination` must be an id")

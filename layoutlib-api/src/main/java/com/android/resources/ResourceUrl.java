@@ -25,6 +25,7 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.rendering.api.AndroidConstants;
 import com.android.ide.common.rendering.api.ResourceNamespace;
 import com.android.ide.common.rendering.api.ResourceReference;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -102,10 +103,8 @@ public class ResourceUrl implements Serializable {
      * @param type the resource type
      * @param name the name
      * @param framework whether it's a framework resource
-     * @deprecated This factory method is used where we have no way of knowing the namespace. We
-     *     need to migrate every call site to the other factory method that takes a namespace.
      */
-    @Deprecated // TODO: namespaces
+    @NonNull
     public static ResourceUrl create(
             @NonNull ResourceType type, @NonNull String name, boolean framework) {
         return new ResourceUrl(
@@ -182,7 +181,6 @@ public class ResourceUrl implements Serializable {
      * @param url the resource url to be parsed
      * @param defaultToFramework defaults the returned value to be a framework resource if no
      *     namespace is specified.
-     *     <p>TODO(namespaces): remove the defaultToFramework argument.
      */
     @Nullable
     public static ResourceUrl parse(@NonNull String url, boolean defaultToFramework) {
@@ -433,7 +431,7 @@ public class ResourceUrl implements Serializable {
     }
 
     public static boolean isValidName(@NonNull String input, @NonNull ResourceType type) {
-        // TODO(namespaces): This (almost) duplicates ValueResourceNameValidator.
+        // Note: This (almost) duplicates ValueResourceNameValidator.
 
         // Make sure it looks like a resource name; if not, it could just be a string
         // which starts with a ?, etc.

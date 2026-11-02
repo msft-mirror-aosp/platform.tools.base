@@ -59,7 +59,6 @@ fun ResourceRepository.getConfiguredResources(
   val result = Tables.newCustomTable(backingMap) { EnumMap(ResourceType::class.java) }
 
   for (namespace in namespaces) {
-    // TODO(namespaces): Move this method to ResourceResolverCache.
     // For performance reasons don't mix framework and non-framework resources since
     // they have different life spans.
     assert(namespaces.size == 1 || namespace !== ResourceNamespace.ANDROID)

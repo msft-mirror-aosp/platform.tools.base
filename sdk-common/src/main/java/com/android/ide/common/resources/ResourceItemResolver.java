@@ -173,7 +173,6 @@ public class ResourceItemResolver extends RenderResources {
                 }
             }
 
-            // TODO(namespaces)
             return findResValue(url);
         }
 
