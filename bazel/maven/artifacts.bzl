@@ -241,7 +241,7 @@ ARTIFACTS = [
     "org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.9.22.2",
     "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.9.22.2",
     "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.9.22.2",
-    "org.jsoup:jsoup:1.16.1",
+    "org.jsoup:jsoup:1.23.2",
     "org.jspecify:jspecify:0.2.0",
     "org.junit.jupiter:junit-jupiter-api:5.12.0",
     "org.junit.jupiter:junit-jupiter-engine:5.12.0",

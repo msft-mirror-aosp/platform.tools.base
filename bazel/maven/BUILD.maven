@@ -10398,6 +10398,26 @@ maven_import(
 )
 
 maven_artifact(
+    name = "io.netty.netty-bom_4.2.17.Final",
+    pom = "io/netty/netty-bom/4.2.17.Final/netty-bom-4.2.17.Final.pom",
+    repo_root_path = "",
+    repo_path = "io/netty/netty-bom/4.2.17.Final",
+    parent = "org.sonatype.oss.oss-parent_7",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "io.netty.netty-bom",
+    classifiers = [],
+    parent = "org.sonatype.oss.oss-parent_7",
+    original_deps = [],
+    pom = "io/netty/netty-bom/4.2.17.Final/netty-bom-4.2.17.Final.pom",
+    repo_root_path = "",
+    repo_path = "io/netty/netty-bom/4.2.17.Final",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "io.netty.netty-buffer_4.1.115.Final",
     pom = "io/netty/netty-buffer/4.1.115.Final/netty-buffer-4.1.115.Final.pom",
     repo_root_path = "",
@@ -20968,10 +20988,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jsoup.jsoup_1.16.1",
-    pom = "org/jsoup/jsoup/1.16.1/jsoup-1.16.1.pom",
+    name = "org.jsoup.jsoup_1.23.2",
+    pom = "org/jsoup/jsoup/1.23.2/jsoup-1.23.2.pom",
     repo_root_path = "",
-    repo_path = "org/jsoup/jsoup/1.16.1",
+    repo_path = "org/jsoup/jsoup/1.23.2",
+    deps = [
+        "io.netty.netty-bom_4.2.17.Final",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -20979,12 +21002,14 @@ maven_import(
     name = "org.jsoup.jsoup",
     classifiers = [],
     jars = [
-        "org/jsoup/jsoup/1.16.1/jsoup-1.16.1.jar"
+        "org/jsoup/jsoup/1.23.2/jsoup-1.23.2.jar"
     ],
-    original_deps = [],
-    pom = "org/jsoup/jsoup/1.16.1/jsoup-1.16.1.pom",
+    original_deps = [
+        "io.netty.netty-bom_4.2.17.Final",
+    ],
+    pom = "org/jsoup/jsoup/1.23.2/jsoup-1.23.2.pom",
     repo_root_path = "",
-    repo_path = "org/jsoup/jsoup/1.16.1",
+    repo_path = "org/jsoup/jsoup/1.23.2",
     visibility = ["//visibility:public"],
 )
 
@@ -109959,6 +109984,14 @@ maven_artifact(
     pom = "org/jsoup/jsoup/1.15.1/jsoup-1.15.1.pom",
     repo_root_path = "",
     repo_path = "org/jsoup/jsoup/1.15.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jsoup.jsoup_1.16.1",
+    pom = "org/jsoup/jsoup/1.16.1/jsoup-1.16.1.pom",
+    repo_root_path = "",
+    repo_path = "org/jsoup/jsoup/1.16.1",
     visibility = ["//visibility:public"],
 )
 
