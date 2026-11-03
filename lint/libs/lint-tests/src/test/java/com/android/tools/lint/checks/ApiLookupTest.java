@@ -850,7 +850,8 @@ public class ApiLookupTest extends AbstractCheckTest {
             fail("Lookup for future version should have thrown an unsupported version exception");
         } catch (ApiLookup.UnsupportedVersionException e) {
             assertEquals(
-                    "Android API 100.0, future preview, extension level 3 (Preview) requires a newer version of Lint Unit Tests than unittest",
+                    "Android API 100.0, future preview, extension level 3 (Preview) requires a"
+                            + " newer version of Lint Unit Tests than unittest",
                     e.getDisplayMessage(client));
             // Make sure second attempt doesn't throw an exception
             assertNull(ApiLookup.get(client, target));
@@ -1107,11 +1108,11 @@ public class ApiLookupTest extends AbstractCheckTest {
                         + " name=\"getRecentExternalVolumeNames(Landroid/content/Context;)Ljava/util/Set;\""
                         + " since=\"30\"/>\n"
                         + "        </class>\n"
+                        + "        <class name=\"android/app/GameManager\" since=\"31\">\n"
+                        + "                <extends name=\"java/lang/Object\"/>\n"
                         // This is supposed to be 31, but here we're testing codename handling
                         // (10_000)
-                        + "        <class name=\"android/app/GameManager\" since=\"10000\">\n"
-                        + "                <extends name=\"java/lang/Object\"/>\n"
-                        + "                <method name=\"getGameMode()I\"/>\n"
+                        + "                <method name=\"getGameMode()I\" since=\"10000\"/>\n"
                         // Made up extra numbers (for testing purposes in
                         // ApiDetectorTest#testSdkExtensionOrder3 where
                         // we need a particular order)
@@ -1251,6 +1252,113 @@ public class ApiLookupTest extends AbstractCheckTest {
                 lookup.getClassVersions("android.os.ext.SdkExtensions").toString());
     }
 
+    public void testMembersLaterThanClassDoNotInheritClassSdks() throws IOException {
+        getTempDir();
+        @Language("XML")
+        String apiVersionsXml =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<api version=\"3\">\n"
+                        + "        <sdk id=\"33\" shortname=\"T-ext\" name=\"T Extensions\"\n"
+                        + "             reference=\"android/os/Build$VERSION_CODES$TIRAMISU\"/>\n"
+                        + "        <class name=\"java/lang/Object\" since=\"1\">\n"
+                        + "                <method name=\"&lt;init>()V\"/>\n"
+                        + "        </class>\n"
+                        + "        <class name=\"test/SuperClass\" since=\"30\">\n"
+                        + "                <extends name=\"java/lang/Object\"/>\n"
+                        + "                <method name=\"laterSuperMethod()V\" since=\"36\"/>\n"
+                        + "                <method name=\"overriddenInitialSuperMethod()V\"/>\n"
+                        + "                <method name=\"overriddenLaterSuperMethod()V\""
+                        + " since=\"36\"/>\n"
+                        + "        </class>\n"
+                        + "        <class name=\"test/SdkClass\" since=\"34\" sdks=\"0:34,33:4\">\n"
+                        + "                <extends name=\"test/SuperClass\"/>\n"
+                        + "                <method name=\"&lt;init>()V\"/>\n"
+                        + "                <method name=\"&lt;init>(I)V\" since=\"36\"/>\n"
+                        + "                <method name=\"initialMethod()V\"/>\n"
+                        + "                <method name=\"laterMethod()V\" since=\"36\"/>\n"
+                        + "                <method name=\"overriddenInitialSuperMethod()V\"/>\n"
+                        + "                <method name=\"overriddenLaterSuperMethod()V\""
+                        + " since=\"36\"/>\n"
+                        + "                <field name=\"INITIAL_FIELD\"/>\n"
+                        + "                <field name=\"LATER_FIELD\" since=\"36\"/>\n"
+                        + "        </class>\n"
+                        + "</api>\n";
+
+        for (boolean force2ByteFormat : new boolean[] {false, true}) {
+            ApiLookup lookup = createMultiSdkLookup(true, force2ByteFormat, apiVersionsXml);
+            assertNotNull(lookup);
+            assertEquals(
+                    "API level ≥ 34 or SDK 33: version ≥ 4",
+                    lookup.getMethodVersions("test.SdkClass", "<init>", "()").toString());
+            assertEquals(
+                    "API level ≥ 36",
+                    lookup.getMethodVersions("test.SdkClass", "<init>", "(I)").toString());
+            assertEquals(
+                    "API level ≥ 34 or SDK 33: version ≥ 4",
+                    lookup.getMethodVersions("test.SdkClass", "initialMethod", "()").toString());
+            assertEquals(
+                    "API level ≥ 36",
+                    lookup.getMethodVersions("test.SdkClass", "laterMethod", "()").toString());
+            assertEquals(
+                    "API level ≥ 36",
+                    lookup.getMethodVersions("test.SdkClass", "laterSuperMethod", "()").toString());
+            assertEquals(
+                    "API level ≥ 30",
+                    lookup.getMethodVersions(
+                                    "test.SuperClass", "overriddenInitialSuperMethod", "()")
+                            .toString());
+            assertEquals(
+                    "API level ≥ 34 or SDK 33: version ≥ 4",
+                    lookup.getMethodVersions("test.SdkClass", "overriddenInitialSuperMethod", "()")
+                            .toString());
+            assertEquals(
+                    "API level ≥ 36",
+                    lookup.getMethodVersions("test.SuperClass", "overriddenLaterSuperMethod", "()")
+                            .toString());
+            assertEquals(
+                    "API level ≥ 36",
+                    lookup.getMethodVersions("test.SdkClass", "overriddenLaterSuperMethod", "()")
+                            .toString());
+            assertEquals(
+                    "API level ≥ 34 or SDK 33: version ≥ 4",
+                    lookup.getFieldVersions("test.SdkClass", "INITIAL_FIELD").toString());
+            assertEquals(
+                    "API level ≥ 36",
+                    lookup.getFieldVersions("test.SdkClass", "LATER_FIELD").toString());
+        }
+    }
+
+    public void testMemberEarlierThanClassClampedToClassSince() throws IOException {
+        getTempDir();
+        @Language("XML")
+        String apiVersionsXml =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<api version=\"3\">\n"
+                        + "        <sdk id=\"33\" shortname=\"T-ext\" name=\"T Extensions\"\n"
+                        + "             reference=\"android/os/Build$VERSION_CODES$TIRAMISU\"/>\n"
+                        + "        <class name=\"java/lang/Object\" since=\"1\">\n"
+                        + "                <method name=\"&lt;init>()V\"/>\n"
+                        + "        </class>\n"
+                        + "        <class name=\"test/SdkClass\" since=\"34\" sdks=\"0:34,33:4\">\n"
+                        + "                <extends name=\"java/lang/Object\"/>\n"
+                        + "                <method name=\"&lt;init>()V\"/>\n"
+                        + "                <method name=\"earlierMethod()V\" since=\"30\"/>\n"
+                        + "                <field name=\"EARLIER_FIELD\" since=\"30\"/>\n"
+                        + "        </class>\n"
+                        + "</api>\n";
+
+        for (boolean force2ByteFormat : new boolean[] {false, true}) {
+            ApiLookup lookup = createMultiSdkLookup(true, force2ByteFormat, apiVersionsXml);
+            assertNotNull(lookup);
+            assertEquals(
+                    "API level ≥ 34 or SDK 33: version ≥ 4",
+                    lookup.getMethodVersions("test.SdkClass", "earlierMethod", "()").toString());
+            assertEquals(
+                    "API level ≥ 34 or SDK 33: version ≥ 4",
+                    lookup.getFieldVersions("test.SdkClass", "EARLIER_FIELD").toString());
+        }
+    }
+
     @Nullable
     public static ApiLookup createMultiSdkLookupWithMinorVersions(boolean disposeAfter)
             throws IOException {
@@ -1263,8 +1371,10 @@ public class ApiLookupTest extends AbstractCheckTest {
         String apiVersionsOverride =
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                     + "<api version=\"4\">\n"
-                    + "        <sdk id=\"36\" shortname=\"B-ext\" name=\"VANILLA_ICE_CREAM Extensions\"\n"
-                    + "             reference=\"android/os/Build$VERSION_CODES$VANILLA_ICE_CREAM\"/>\n"
+                    + "        <sdk id=\"36\" shortname=\"B-ext\" name=\"VANILLA_ICE_CREAM"
+                    + " Extensions\"\n"
+                    + "            "
+                    + " reference=\"android/os/Build$VERSION_CODES$VANILLA_ICE_CREAM\"/>\n"
                     + "\n"
                     + "        <class name=\"java/lang/Object\" since=\"1\">\n"
                     + "                <method name=\"&lt;init>()V\"/>\n"

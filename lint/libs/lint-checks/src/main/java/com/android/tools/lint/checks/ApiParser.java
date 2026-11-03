@@ -85,14 +85,13 @@ class ApiParser extends DefaultHandler {
         try {
             if (NODE_METHOD.equals(localName)) {
                 String name = attributes.getValue(ATTR_NAME);
-                String sdks = getSdks(attributes, true);
                 int since = getSince(attributes);
+                String sdks = getMemberSdks(attributes, since);
                 int deprecatedIn = getDeprecatedIn(attributes);
                 int removedIn = getRemovedIn(attributes);
                 mCurrentClass.addMethod(name, sdks, since, deprecatedIn, removedIn);
             } else if (NODE_FIELD.equals(localName)) {
                 String name = attributes.getValue(ATTR_NAME);
-                String sdks = getSdks(attributes, true);
                 int since = getSince(attributes);
                 int deprecatedIn = getDeprecatedIn(attributes);
                 int removedIn = getRemovedIn(attributes);
@@ -105,6 +104,7 @@ class ApiParser extends DefaultHandler {
                     since = toVersionInt(27, 0);
                 }
 
+                String sdks = getMemberSdks(attributes, since);
                 mCurrentClass.addField(name, sdks, since, deprecatedIn, removedIn);
             } else if (NODE_IMPLEMENTS.equals(localName)) {
                 String name = attributes.getValue(ATTR_NAME);
@@ -118,7 +118,7 @@ class ApiParser extends DefaultHandler {
                 mCurrentClass.addSuperClass(name, since, removedIn);
             } else if (NODE_CLASS.equals(localName)) {
                 String name = attributes.getValue(ATTR_NAME);
-                String sdks = getSdks(attributes, false);
+                String sdks = attributes.getValue(ATTR_SDKS);
                 int since = getVersionAttribute(attributes, ATTR_SINCE, 1);
                 int deprecatedIn = getVersionAttribute(attributes, ATTR_DEPRECATED, 0);
                 int removedIn = getVersionAttribute(attributes, ATTR_REMOVED, 0);
@@ -174,7 +174,15 @@ class ApiParser extends DefaultHandler {
     }
 
     private int getSince(Attributes attributes) {
-        return getVersionAttribute(attributes, ATTR_SINCE, mCurrentClass.getSince());
+        int since = getVersionAttribute(attributes, ATTR_SINCE, mCurrentClass.getSince());
+        if (since < mCurrentClass.getSince()) {
+            // A member cannot be introduced earlier than its enclosing class; if an
+            // api-versions.xml file contains an inconsistent entry (e.g. from SDK extensions
+            // or codename generation), clamp to the class since version so lint can stagger on
+            // instead of failing to load the API database.
+            since = mCurrentClass.getSince();
+        }
+        return since;
     }
 
     private int getDeprecatedIn(Attributes attributes) {
@@ -186,9 +194,9 @@ class ApiParser extends DefaultHandler {
     }
 
     @Nullable
-    private String getSdks(Attributes attributes, boolean inherit) {
+    private String getMemberSdks(Attributes attributes, int since) {
         String sdks = attributes.getValue(ATTR_SDKS);
-        if (sdks == null && inherit) {
+        if (sdks == null && since == mCurrentClass.getSince()) {
             sdks = mCurrentClass.getSdks();
         }
         return sdks;

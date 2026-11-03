@@ -201,8 +201,9 @@ public final class ApiClass extends ApiClassBase {
 
         if (apiLevel > mSince
                 && mSdks != null
-                && maxFrom != null
-                && ((ApiClass) maxFrom).getMemberSdks(name, info) == null) {
+                && (maxFrom != null
+                        ? ((ApiClass) maxFrom).getMemberSdks(name, info) == null
+                        : mMemberSdks.get(name) == null)) {
             mMemberSdks.put(
                     name,
                     ANDROID_SDK_ID
@@ -328,9 +329,9 @@ public final class ApiClass extends ApiClassBase {
         // Present in C in API 7.
         // The answer is 10, which is when C became the super class.
         int apiLevel = getValueWithDefault(mMethods, methodSignature, 0);
+        ApiClassBase maxFrom = null;
         // Constructors aren't inherited.
         if (!methodSignature.startsWith(CONSTRUCTOR_NAME)) {
-            ApiClassBase maxFrom = null;
             // Look at the super classes and interfaces.
             for (Pair<String, Integer> pair : Iterables.concat(mSuperClasses, mInterfaces)) {
                 ApiClassBase superClass = info.getClass(pair.getFirst());
@@ -345,23 +346,24 @@ public final class ApiClass extends ApiClassBase {
                     }
                 }
             }
+        }
 
-            // If the method requires a more recent API level than the current class inheriting
-            // it defaults to, but there is an SDKs attribute on the current class, override that
-            // SDK
-            // attribute for this method.
-            if (apiLevel > mSince
-                    && mSdks != null
-                    && maxFrom != null
-                    && ((ApiClass) maxFrom).getMemberSdks(methodSignature, info) == null) {
-                mMemberSdks.put(
-                        methodSignature,
-                        ANDROID_SDK_ID
-                                + ":"
-                                + ApiParser.getMajorVersion(apiLevel)
-                                + '.'
-                                + ApiParser.getMinorVersion(apiLevel));
-            }
+        // If the method requires a more recent API level than the current class inheriting
+        // it defaults to, but there is an SDKs attribute on the current class, override that
+        // SDK
+        // attribute for this method.
+        if (apiLevel > mSince
+                && mSdks != null
+                && (maxFrom != null
+                        ? ((ApiClass) maxFrom).getMemberSdks(methodSignature, info) == null
+                        : mMemberSdks.get(methodSignature) == null)) {
+            mMemberSdks.put(
+                    methodSignature,
+                    ANDROID_SDK_ID
+                            + ":"
+                            + ApiParser.getMajorVersion(apiLevel)
+                            + '.'
+                            + ApiParser.getMinorVersion(apiLevel));
         }
 
         return apiLevel;
