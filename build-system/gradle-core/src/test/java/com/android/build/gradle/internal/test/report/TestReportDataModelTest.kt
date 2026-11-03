@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.test.report
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
 import org.junit.Test
 
 class TestReportDataModelTest {
@@ -91,7 +92,7 @@ class TestReportDataModelTest {
 
     val expectedJson =
       """
-      {"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"testSuites":["unitTest"],"targets":["$UNKNOWN_TARGET"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","targets":[{"name":"$UNKNOWN_TARGET","testSuiteSummaries":[],"testSuiteResults":[{"testSuiteName":"unitTest","variantResults":{"debug":{"status":"pass"}}}],"commonStackTraces":[]}]}]}]}]}],"relativeRootDir":""}
+      {"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"testSuites":["unitTest"],"targets":["$UNKNOWN_TARGET"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","targets":[{"name":"$UNKNOWN_TARGET","testSuiteSummaries":[],"testSuiteResults":[{"testSuiteName":"unitTest","variantResults":{"debug":{"status":"pass"}}}],"commonStackTraces":[]}]}]}]}]}],"relativeRootDir":"","suiteDescriptors":{},"suiteEnvironments":[]}
       """
         .trimIndent()
         .replace(Regex("\\s"), "")
@@ -120,5 +121,140 @@ class TestReportDataModelTest {
 
     val deserialized = gson.fromJson(jsonString, RootReport::class.java)
     assertThat(deserialized.relativeRootDir).isEqualTo("../../../../../../")
+  }
+
+  @Test
+  fun testExtensibleSuiteWireJsonKeys() {
+    val descriptor =
+      SuiteDescriptor(
+        adapterId = "backupRestore",
+        suiteType = "androidx.test.backup",
+        title = "Backup & Restore",
+        likelyCauseHeading = "Backup rule that left the data out · Likely cause",
+        summaryColumns =
+          listOf(
+            SummaryColumnDef(key = "transport", label = "Transport", filterable = true, sortable = true),
+            SummaryColumnDef(key = "devices", label = "Devices", filterable = true, sortable = true),
+          ),
+        docsUrl = "https://developer.android.com/identity/data/testing",
+      )
+    val descriptorJson = JsonParser.parseString(gson.toJson(descriptor)).asJsonObject
+    assertThat(descriptorJson.keySet())
+      .containsExactly("adapterId", "suiteType", "title", "likelyCauseHeading", "summaryColumns", "docsUrl")
+    assertThat(descriptorJson.get("title").asString).isEqualTo("Backup & Restore")
+    assertThat(descriptorJson.get("likelyCauseHeading").asString).isEqualTo("Backup rule that left the data out · Likely cause")
+    assertThat(descriptorJson.getAsJsonArray("summaryColumns")[0].asJsonObject.keySet())
+      .containsExactly("key", "label", "filterable", "sortable")
+
+    val envInfo =
+      SuiteEnvironmentInfo(
+        envId = "env_01",
+        modulePath = ":app",
+        variantName = "debug",
+        suiteName = "backupTest",
+        targetName = "default",
+        suiteType = "androidx.test.backup",
+        applicationId = "com.example.journalingapp",
+        applicationName = "JournalingApp",
+        versionName = "1.2.0",
+        versionCode = 12,
+        targetSdkVersion = 34,
+        agpVersion = "9.6.0-dev",
+        gradleVersion = "9.7.1",
+        testLibraryVersion = "1.0.0-alpha04",
+        runner = "junit-jupiter",
+        backupRules =
+          BackupRulesInfo(
+            allowBackup = true,
+            fullBackupContent = "@xml/backup_rules",
+            fullBackupContentFile = "backup_rules.xml",
+            fullBackupContentArtifactPath = "artifacts/env_01/backup_rules.xml",
+            dataExtractionRules = "@xml/data_extraction_rules",
+            dataExtractionRulesFile = "data_extraction_rules.xml",
+            dataExtractionRulesArtifactPath = "artifacts/env_01/data_extraction_rules.xml",
+          ),
+      )
+    val envJson = JsonParser.parseString(gson.toJson(envInfo)).asJsonObject
+    assertThat(envJson.get("suiteType").asString).isEqualTo("androidx.test.backup")
+    assertThat(envJson.get("targetSdkVersion").asInt).isEqualTo(34)
+    assertThat(envJson.getAsJsonObject("backupRules").keySet())
+      .containsExactly(
+        "allowBackup",
+        "fullBackupContent",
+        "fullBackupContentFile",
+        "fullBackupContentArtifactPath",
+        "dataExtractionRules",
+        "dataExtractionRulesFile",
+        "dataExtractionRulesArtifactPath",
+      )
+
+    val variantResult =
+      VariantTestResult(
+        status = "fail",
+        stackTraceId = "st-1",
+        durationMs = 41420L,
+        suiteType = "androidx.test.backup",
+        adapterId = "backupRestore",
+        detailId = "t_0001",
+        envId = "env_01",
+        properties = mapOf("customTag" to "smoke"),
+        summaryAttributes =
+          mapOf("transport" to SummaryAttributeValue(value = "DEVICE_TO_DEVICE", displayValue = "Device to device", label = "Transport")),
+        sourceLocation = SourceLocationInfo(file = "CrossDeviceMigrationTests.kt", line = 47, className = "pkg.Tests", methodName = "t1"),
+        callout = CalloutInfo(kind = "ASSERTION_FAILURE", failedStep = 5, title = "Failed", message = "msg", likelyCause = "cause"),
+        actors = listOf(ActorInfo(id = "source", role = "SOURCE", name = "Pixel 6", api = 31, serial = "emulator-5554")),
+        steps =
+          listOf(
+            StepInfo(n = 1, name = "Verify", on = "target", shared = false, call = "runOnDevice()", durationMs = 980L, status = "FAILED")
+          ),
+        artifacts = listOf(ArtifactInfo(name = "Backup file summary", values = mapOf("app_backup" to "1.8 MB"), path = null)),
+        logMeta = listOf(LogMetaInfo(title = "Host log", lineCount = 42, artifactPath = "artifacts/t_0001/host-log.txt")),
+      )
+    val resultJson = JsonParser.parseString(gson.toJson(variantResult)).asJsonObject
+    val transportAttr = resultJson.getAsJsonObject("summaryAttributes").getAsJsonObject("transport")
+    assertThat(transportAttr.keySet()).containsExactly("value", "displayValue", "label")
+    assertThat(transportAttr.get("label").asString).isEqualTo("Transport")
+    assertThat(resultJson.get("detailId").asString).isEqualTo("t_0001")
+
+    val lazyTestDetail =
+      LazyTestDetail(
+        logs =
+          listOf(
+            LazyLogEntry(
+              title = "Host log",
+              content = "line 1",
+              lineCount = 1,
+              capturedTruncated = true,
+              previewTruncated = false,
+              artifactPath = "artifacts/t_0001/host-log.txt",
+            )
+          ),
+        systemOut = "stdout",
+        systemOutTruncated = true,
+        systemErr = "stderr",
+        systemErrTruncated = false,
+      )
+    val lazyTestJson = JsonParser.parseString(gson.toJson(lazyTestDetail)).asJsonObject
+    assertThat(lazyTestJson.keySet()).containsExactly("logs", "systemOut", "systemOutTruncated", "systemErr", "systemErrTruncated")
+    assertThat(lazyTestJson.has("backupRules")).isFalse()
+    assertThat(lazyTestJson.getAsJsonArray("logs")[0].asJsonObject.keySet())
+      .containsExactly("title", "content", "lineCount", "capturedTruncated", "previewTruncated", "artifactPath")
+
+    val lazyEnvDetail =
+      LazyEnvironmentDetail(
+        backupRules =
+          listOf(
+            LazyBackupRuleEntry(
+              label = "backup_rules.xml",
+              attribute = "@xml/backup_rules",
+              artifactPath = "artifacts/env_01/backup_rules.xml",
+              content = "<full-backup-content/>",
+            )
+          )
+      )
+    val lazyEnvJson = JsonParser.parseString(gson.toJson(lazyEnvDetail)).asJsonObject
+    assertThat(lazyEnvJson.keySet()).containsExactly("backupRules")
+    assertThat(lazyEnvJson.getAsJsonArray("backupRules")[0].asJsonObject.keySet())
+      .containsExactly("label", "attribute", "artifactPath", "content")
   }
 }
