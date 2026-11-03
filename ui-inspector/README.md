@@ -313,9 +313,11 @@ the compose inspector jar:
 * Upon receiving the `GetVersionResponse` with the version number, the
   host connects to Google’s public Maven, downloads the `.aar` and
   unpacks the internal `inspector.jar`.
-  * *Note:* To support Jetpack Compose's Kotlin Multiplatform (KMP) transition in
-    version 1.5.0+, the host automatically resolves the artifact ID to `ui`
-    for versions < 1.5.0, and to `ui-android` for versions >= 1.5.0.
+  * *Note:* To support Jetpack Compose's Kotlin Multiplatform (KMP) transition,
+    the host resolves the artifact ID of Compose releases like Android Studio:
+    `ui` for versions before 1.5.0-beta01, the first `ui-android` release, and
+    `ui-android` from it. From 1.6.0-beta01, `ui` publishes an AAR again, but
+    it's an empty stub.
 
 Before resolving the jar, the host refuses the Compose 1.x versions that
 Android Studio's Layout Inspector refuses, failing with "Compose version not

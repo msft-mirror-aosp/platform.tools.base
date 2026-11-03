@@ -222,7 +222,10 @@ class ComposeInspectorResolutionTest {
 
   @Test
   fun testResolve_acceptsTypicalVersions() {
-    for (version in listOf("1.10.4", "1.11.0-alpha05", "1.5.0-beta01", "1.7.2+build_4")) {
+    val artifactsByVersion =
+      listOf("1.10.4" to "ui-android", "1.11.0-alpha05" to "ui-android", "1.5.0-beta01" to "ui-android", "1.7.2+build_4" to "ui-android") +
+        listOf("1.5.0-alpha04" to "ui", "1.4.3" to "ui")
+    for ((version, artifact) in artifactsByVersion) {
       val downloader = FakeDownloader { it.writeBytes(aarWithInspectorJar("downloaded")) }
       val resolution = ComposeInspectorResolution(overrideJar = null, tempFolder.newFolder().toPath(), downloader)
 
@@ -230,7 +233,7 @@ class ComposeInspectorResolutionTest {
 
       assertWithMessage("version=$version")
         .that(downloader.urls)
-        .containsExactly("https://maven.google.com/androidx/compose/ui/ui-android/$version/ui-android-$version.aar")
+        .containsExactly("https://maven.google.com/androidx/compose/ui/$artifact/$version/$artifact-$version.aar")
     }
   }
 

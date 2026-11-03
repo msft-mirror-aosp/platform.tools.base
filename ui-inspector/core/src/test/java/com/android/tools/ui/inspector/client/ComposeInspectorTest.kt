@@ -45,6 +45,7 @@ import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.statProbeCommand
 import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.io.IOException
 import java.net.ServerSocket
 import java.nio.file.Path
@@ -115,21 +116,23 @@ class ComposeInspectorTest {
   private val serverToken = "1234_66687aadf862"
 
   @Test
-  fun testGetComposeArtifactId_legacyAndKmpVersions() {
-    // Legacy (Pre-KMP) versions should return "ui"
-    assertThat(getComposeArtifactId("1.4.3")).isEqualTo("ui")
-    assertThat(getComposeArtifactId("1.0.0")).isEqualTo("ui")
-    assertThat(getComposeArtifactId("0.9.0")).isEqualTo("ui")
+  fun testGetComposeArtifactId_aroundTheKmpMigration() {
+    // The versions of Android Studio's test, plus 1.4.3, 1.5.0-alpha04, the last version published under "ui" only, and 1.6.0-rc01.
+    for (version in listOf("0.9.9", "1.4.0-alpha01", "1.4.0", "1.4.3", "1.5.0-alpha01", "1.5.0-alpha04")) {
+      assertWithMessage(version).that(getComposeArtifactId(version)).isEqualTo("ui")
+    }
+    for (version in
+      listOf("1.5.0-beta01", "1.5.0-beta02", "1.5.0-rc01", "1.5.0", "1.5.1-alpha01", "1.5.1", "1.6.0-rc01", "2.0.0-alpha01")) {
+      assertWithMessage(version).that(getComposeArtifactId(version)).isEqualTo("ui-android")
+    }
+  }
 
-    // Modern (KMP) versions should return "ui-android"
-    assertThat(getComposeArtifactId("1.5.0")).isEqualTo("ui-android")
-    assertThat(getComposeArtifactId("1.6.0-rc01")).isEqualTo("ui-android")
-    assertThat(getComposeArtifactId("2.0.0-alpha01")).isEqualTo("ui-android")
-
-    // Malformed/empty versions should gracefully fallback to "ui"
-    assertThat(getComposeArtifactId("invalid")).isEqualTo("ui")
-    assertThat(getComposeArtifactId("")).isEqualTo("ui")
-    assertThat(getComposeArtifactId("1")).isEqualTo("ui")
+  @Test
+  fun testGetComposeArtifactId_versionsThatAreNotComposeReleases() {
+    // None of them has an inspector on Google Maven, under either artifact.
+    for (version in listOf("1.4.0-SNAPSHOT", "1.12.0-SNAPSHOT", "0.1.0-dev17", "1.7.2+build_4", "invalid", "1")) {
+      assertWithMessage(version).that(getComposeArtifactId(version)).isEqualTo("ui-android")
+    }
   }
 
   @Test

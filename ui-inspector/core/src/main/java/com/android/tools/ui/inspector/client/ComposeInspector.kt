@@ -292,17 +292,21 @@ private suspend fun launchComposeInspector(
 }
 
 /**
- * Resolves the Maven Artifact ID for Jetpack Compose core UI based on its version.
+ * Resolves the Maven Artifact ID for Jetpack Compose core UI based on its version, like Android Studio (`determineArtifactCoordinate` in
+ * `ComposeLayoutInspectorClient`).
  *
- * Prior to the Kotlin Multiplatform (KMP) transition in Compose 1.5.0, all Android specific binaries were published under the unified "ui"
- * artifact. From 1.5.0 onwards, they were split into platform-specific modules, with the Android-specific classes packaged inside the
- * "ui-android" artifact.
+ * Before the Kotlin Multiplatform (KMP) transition, all Android-specific binaries were published under the unified "ui" artifact. From
+ * [FIRST_UI_ANDROID_VERSION] onwards, the Android-specific classes, and the inspector, are packaged inside the "ui-android" artifact.
+ * Checking which artifact exists on Google Maven can't decide it: "ui" is published for every version, and from 1.6.0-beta01 with an AAR
+ * again, but one that is an empty stub.
+ *
+ * A version that is not a Compose release, like 1.12.0-SNAPSHOT from an androidx snapshot build, has no inspector on Google Maven under
+ * either artifact, so it gets "ui-android".
  */
 internal fun getComposeArtifactId(version: String): String {
-  val parts = version.split('.')
-  if (parts.size < 2) return "ui" // Fallback to legacy
-  val major = parts[0].toIntOrNull() ?: 0
-  val minor = parts[1].toIntOrNull() ?: 0
-  val isPreKmp = major < 1 || (major == 1 && minor < 5)
-  return if (isPreKmp) "ui" else "ui-android"
+  val composeVersion = ComposeVersion.parse(version)
+  return if (composeVersion != null && composeVersion < FIRST_UI_ANDROID_VERSION) "ui" else "ui-android"
 }
+
+/** The first Compose version published under the "ui-android" artifact: the 1.5.0 alphas are only under "ui". */
+private val FIRST_UI_ANDROID_VERSION = ComposeVersion.of("1.5.0-beta01")
