@@ -40,5 +40,10 @@ class KgpVersionTest {
     assertThat(kgp_2_1_0_beta1).isLessThan(kgp_2_1_20_rc)
     assertThat(kgp_2_1_20_rc).isLessThan(kgp_2_2_20_dev_7502)
     assertThat(kgp_2_2_20_dev_7502).isLessThan(kgp_2_2_20)
+
+    assertThat(KgpVersion.MINIMUM_BUILT_IN_KOTLIN_VERSION).isEqualTo(KgpVersion.parse("2.2.10"))
+    assertThat(KgpVersion.MINIMUM_BUILT_IN_KOTLIN_VERSION.hashCode())
+      .isEqualTo(KgpVersion.parse("2.2.10").hashCode())
+    assertThat(KgpVersion.MINIMUM_BUILT_IN_KOTLIN_VERSION).isNotEqualTo(kgp_2_2_20)
   }
 }

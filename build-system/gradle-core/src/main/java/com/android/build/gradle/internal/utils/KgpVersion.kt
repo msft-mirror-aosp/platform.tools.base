@@ -24,6 +24,10 @@ class KgpVersion(private val version: Version) : Comparable<KgpVersion> {
 
   override fun compareTo(other: KgpVersion) = version.compareTo(other.version)
 
+  override fun equals(other: Any?) = other is KgpVersion && version == other.version
+
+  override fun hashCode() = version.hashCode()
+
   override fun toString() = version.toString()
 
   companion object {
@@ -32,9 +36,7 @@ class KgpVersion(private val version: Version) : Comparable<KgpVersion> {
       return KgpVersion(Version.parse(version))
     }
 
-    val KGP_2_1_0: KgpVersion = parse("2.1.0")
-
     /** The minimum version of KGP required to be on the buildscript classpath for built-in Kotlin support in AGP. */
-    val MINIMUM_BUILT_IN_KOTLIN_VERSION: KgpVersion = parse("1.9.20")
+    val MINIMUM_BUILT_IN_KOTLIN_VERSION: KgpVersion = parse("2.2.10")
   }
 }

@@ -19,7 +19,6 @@ package com.android.build.gradle.tasks
 import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
-import com.android.build.gradle.internal.utils.KgpVersion
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
 import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
@@ -45,15 +44,12 @@ class KaptStubGenerationCreationAction(
   override val taskName: String = creationConfig.computeTaskNameInternal("kaptGenerateStubs", "Kotlin")
 
   override fun getTaskProvider(): TaskProvider<out KaptGenerateStubs> {
-    if (kotlinServices.kgpVersion >= KgpVersion.KGP_2_1_0) {
-      return kotlinJvmFactory.registerKaptGenerateStubsTask(
-        taskName,
-        kotlinCompileTaskProvider,
-        kaptExtension,
-        creationConfig.services.provider { creationConfig.getExplicitApiMode() },
-      )
-    }
-    return kotlinJvmFactory.registerKaptGenerateStubsTask(taskName)
+    return kotlinJvmFactory.registerKaptGenerateStubsTask(
+      taskName,
+      kotlinCompileTaskProvider,
+      kaptExtension,
+      creationConfig.services.provider { creationConfig.getExplicitApiMode() },
+    )
   }
 
   override fun handleProvider(task: TaskProvider<out KaptGenerateStubs>) {

@@ -21,7 +21,6 @@ import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
-import com.android.build.gradle.internal.utils.KgpVersion
 import com.android.build.gradle.internal.utils.maybeRegister
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import org.gradle.api.Project
@@ -54,10 +53,7 @@ class KaptCreationAction(
   override val taskName: String = creationConfig.computeTaskNameInternal("kapt", "Kotlin")
 
   override fun getTaskProvider(): TaskProvider<out Kapt> {
-    if (kotlinServices.kgpVersion >= KgpVersion.KGP_2_1_0) {
-      return kotlinJvmFactory.registerKaptTask(taskName, kaptExtension)
-    }
-    return kotlinJvmFactory.registerKaptTask(taskName)
+    return kotlinJvmFactory.registerKaptTask(taskName, kaptExtension)
   }
 
   override fun handleProvider(task: TaskProvider<out Kapt>) {

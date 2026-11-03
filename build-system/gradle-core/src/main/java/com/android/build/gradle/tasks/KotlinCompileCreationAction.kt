@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAP
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_GENERATED_JAVA_SOURCES
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_GENERATED_KOTLIN_SOURCES
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
-import com.android.build.gradle.internal.utils.KgpVersion
 import org.gradle.api.JavaVersion
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
@@ -41,15 +40,12 @@ class KotlinCompileCreationAction(creationConfig: BuiltInKotlinCreationConfig, p
   override val taskName: String = creationConfig.computeTaskNameInternal("compile", "Kotlin")
 
   override fun getTaskProvider(): TaskProvider<out KotlinJvmCompile> {
-    if (kotlinServices.kgpVersion >= KgpVersion.KGP_2_1_0) {
-      val kotlinAndroidProjectExtension = kotlinServices.kotlinAndroidProjectExtension
-      return kotlinJvmFactory.registerKotlinJvmCompileTask(
-        taskName,
-        kotlinAndroidProjectExtension.compilerOptions,
-        creationConfig.services.provider { creationConfig.getExplicitApiMode() },
-      )
-    }
-    return kotlinJvmFactory.registerKotlinJvmCompileTask(taskName, creationConfig.name)
+    val kotlinAndroidProjectExtension = kotlinServices.kotlinAndroidProjectExtension
+    return kotlinJvmFactory.registerKotlinJvmCompileTask(
+      taskName,
+      kotlinAndroidProjectExtension.compilerOptions,
+      creationConfig.services.provider { creationConfig.getExplicitApiMode() },
+    )
   }
 
   override fun handleProvider(task: TaskProvider<out KotlinJvmCompile>) {

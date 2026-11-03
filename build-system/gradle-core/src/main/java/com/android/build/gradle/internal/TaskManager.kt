@@ -81,7 +81,6 @@ import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
-import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.services.createKotlinCompilation
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
@@ -154,9 +153,6 @@ import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
-import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
-import com.android.build.gradle.internal.utils.KgpVersion
-import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
@@ -912,9 +908,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     val kotlinCompileTaskProvider = KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
     val kaptGenerateStubsProvider =
       if (creationConfig.useBuiltInKaptSupport) {
-        if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
-          copyKaptExtensionProperties(kotlinServices)
-        }
         val kaptExtensionConfig = creationConfig.services.projectInfo.getExtension(KaptExtensionConfig::class.java)
         val kaptCreationAction = KaptCreationAction(creationConfig, project, kotlinServices, kaptExtensionConfig)
         kaptCreationAction.registerTask()
@@ -933,33 +926,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
     val kotlinCompilation = creationConfig.createKotlinCompilation(creationConfig.javacTask)
     addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
-  }
-
-  /**
-   * If the Jetbrains KAPT plugin is applied, copy the properties from its kapt extension to the kotlinServices.factory.kaptExtension.
-   *
-   * TODO(b/341765853) - remove this after [MINIMUM_BUILT_IN_KOTLIN_VERSION] >= 2.1.0-Beta2 because the kapt extension is passed to the task
-   *   registration functions starting with Kotlin 2.1.0-Beta2
-   */
-  private fun copyKaptExtensionProperties(kotlinServices: BuiltInKotlinServices) {
-    project.pluginManager.withPlugin(KOTLIN_KAPT_PLUGIN_ID) {
-      project.afterEvaluate {
-        val jetbrainsKaptExtension = project.extensions.findByName("kapt") as? KaptExtensionConfig ?: return@afterEvaluate
-        kotlinServices.kotlinBaseApiPlugin.kaptExtension.also {
-          it.correctErrorTypes = jetbrainsKaptExtension.correctErrorTypes
-          it.detectMemoryLeaks = jetbrainsKaptExtension.detectMemoryLeaks
-          it.dumpDefaultParameterValues = jetbrainsKaptExtension.dumpDefaultParameterValues
-          it.includeCompileClasspath = jetbrainsKaptExtension.includeCompileClasspath
-          it.keepJavacAnnotationProcessors = jetbrainsKaptExtension.keepJavacAnnotationProcessors
-          it.mapDiagnosticLocations = jetbrainsKaptExtension.mapDiagnosticLocations
-          it.showProcessorStats = jetbrainsKaptExtension.showProcessorStats
-          it.strictMode = jetbrainsKaptExtension.strictMode
-          it.stripMetadata = jetbrainsKaptExtension.stripMetadata
-          it.useBuildCache = jetbrainsKaptExtension.useBuildCache
-          it.useLightAnalysis = jetbrainsKaptExtension.useLightAnalysis
-        }
-      }
-    }
   }
 
   // Similar to SubpluginEnvironment.addSubpluginOptions in KGP
