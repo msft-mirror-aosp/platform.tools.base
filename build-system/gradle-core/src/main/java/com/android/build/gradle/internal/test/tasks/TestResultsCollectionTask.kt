@@ -34,6 +34,9 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.internal.test.report.SUITE_DETAILS_DIR_NAME
+import com.android.build.gradle.internal.test.report.SUITE_ENVIRONMENT_FILE_NAME
+import com.android.build.gradle.internal.test.report.SUITE_ENVIRONMENT_FILE_PREFIX
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.TestSuiteTestTask
@@ -134,33 +137,19 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
   override fun doTaskAction() {
     val outputDir = this.outputDir.get().asFile
 
-    val copyXmls = { directory: File ->
-      if (directory.exists()) {
-        directory
-          .listFiles { file -> file.extension == "xml" }
-          ?.forEach { xmlFile ->
-            val targetFile = outputDir.resolve(xmlFile.name)
-            xmlFile.copyTo(targetFile, overwrite = true)
-          }
-      }
-    }
-
     if (testSuiteResults.isPresent) {
-      testSuiteResults.get().forEach { directory -> copyXmls(directory.asFile) }
+      testSuiteResults.get().forEach { directory -> copyCollectedTestResults(directory.asFile, outputDir) }
     }
 
     if (unitTestResults.isPresent) {
-      copyXmls(unitTestResults.get().asFile)
+      copyCollectedTestResults(unitTestResults.get().asFile, outputDir)
     }
 
     if (androidTestResults.isPresent) {
-      copyXmls(androidTestResults.get().asFile)
+      copyCollectedTestResults(androidTestResults.get().asFile, outputDir)
     }
 
-    dependentModuleTestResults.asFileTree.forEach { xmlFile ->
-      val targetFile = outputDir.resolve(xmlFile.name)
-      xmlFile.copyTo(targetFile, overwrite = true)
-    }
+    dependentModuleTestResults.files.forEach { sourceRoot -> copyCollectedTestResults(sourceRoot, outputDir) }
 
     // --- CODE COVERAGE GENERATION ---
     if (coverageOutputDir.isPresent) {
@@ -195,6 +184,38 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
       }
     }
   }
+
+  private fun copyCollectedTestResults(sourceRoot: File, outputDir: File) {
+    if (!sourceRoot.isDirectory) return
+
+    sourceRoot.listFiles()?.forEach { file ->
+      if (file.isFile && isTopLevelReportResultFile(file)) {
+        file.copyTo(outputDir.resolve(file.name), overwrite = true)
+      }
+    }
+
+    val suiteDetailsDir = sourceRoot.resolve(SUITE_DETAILS_DIR_NAME)
+    if (suiteDetailsDir.isDirectory && !Files.isSymbolicLink(suiteDetailsDir.toPath())) {
+      val sourceRootPath = sourceRoot.toPath()
+      val outputRootPath = outputDir.toPath()
+      Files.walk(suiteDetailsDir.toPath()).use { paths ->
+        paths.forEach { path ->
+          if (!Files.isSymbolicLink(path) && Files.isRegularFile(path)) {
+            val targetFile = outputRootPath.resolve(sourceRootPath.relativize(path)).toFile()
+            targetFile.parentFile?.mkdirs()
+            path.toFile().copyTo(targetFile, overwrite = true)
+          }
+        }
+      }
+    }
+  }
+
+  private fun isTopLevelReportResultFile(file: File): Boolean =
+    file.extension.equals("xml", ignoreCase = true) || isSuiteEnvironmentFile(file)
+
+  private fun isSuiteEnvironmentFile(file: File): Boolean =
+    file.name == SUITE_ENVIRONMENT_FILE_NAME ||
+      (file.name.startsWith(SUITE_ENVIRONMENT_FILE_PREFIX) && file.extension.equals("json", ignoreCase = true))
 
   class AggregatedTestResultsCollectionCreationAction(creationConfig: TestReportCreationConfig) :
     BaseTestResultsCollectionCreationAction(creationConfig) {

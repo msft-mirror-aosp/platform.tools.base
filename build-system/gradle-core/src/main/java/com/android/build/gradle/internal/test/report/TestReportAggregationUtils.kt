@@ -30,6 +30,7 @@ import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.security.MessageDigest
+import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -37,21 +38,17 @@ import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logger
-import org.w3c.dom.Node
 
 /**
- * Processes test results for aggregation by enriching XML files with suite metadata.
+ * Enriches raw JUnit XML test results in [sourceDir] with suite metadata into [xmlResultsDirectory].
  *
- * This function orchestrates the copying and property injection of JUnit XML results. Enriched results are copied from [sourceDir] to the
- * directory specified by [xmlResultsDirectory].
- *
- * @param sourceDir The directory containing the raw XML test results from the test engine.
- * @param xmlResultsDirectory Property specifying where the enriched results should be written.
- * @param modulePath The Gradle project path (e.g., ":app").
- * @param variantName The name of the variant being tested.
- * @param suiteName The name of the test suite (e.g., "unitTest").
- * @param target The target platform or device description.
- * @param logger The logger to use for reporting issues during processing.
+ * @param sourceDir Directory containing raw XML test results and sidecars from the test engine.
+ * @param xmlResultsDirectory Destination directory property for enriched XML results and sidecars.
+ * @param modulePath Gradle project path (for example, `":app"`).
+ * @param variantName Name of the tested variant.
+ * @param suiteName Name of the test suite (for example, `"unitTest"`).
+ * @param target Target platform or device identifier.
+ * @param logger Logger used to report processing warnings.
  */
 fun processTestReportAggregation(
   sourceDir: File,
@@ -76,10 +73,10 @@ fun processTestReportAggregation(
 }
 
 /**
- * Removes the results of previous runs from [xmlResultsDirectory], such as the results of test classes that have since been deleted.
+ * Removes results of previous runs from [xmlResultsDirectory].
  *
- * Tasks that don't clear their outputs before running, unlike a `NonIncrementalTask` (e.g. `Test` tasks), call this before
- * [processTestReportAggregation], so that only the results of the current run are aggregated.
+ * Tasks that do not clear outputs automatically call this before [processTestReportAggregation] so deleted test classes do not linger in
+ * aggregated reports.
  */
 fun clearTestReportAggregationResults(xmlResultsDirectory: DirectoryProperty) {
   if (xmlResultsDirectory.isPresent) {
@@ -88,12 +85,10 @@ fun clearTestReportAggregationResults(xmlResultsDirectory: DirectoryProperty) {
 }
 
 /**
- * Injects properties into all XML files in the given directory (recursively) and writes them to the outputDir.
+ * Enriches JUnit XML files and namespaces suite sidecars from [directory] into [outputDir].
  *
- * @param directory The directory containing the XML files to process.
- * @param properties The properties to inject into the XML files.
- * @param outputDir The directory where the processed XML files will be written.
- * @param logger The logger to use for warnings.
+ * Injects [properties] into `TEST-*.xml` files, hashes [SUITE_ENVIRONMENT_FILE_NAME] to `suite-environment_<hash>.json`, namespaces
+ * [SUITE_DETAILS_DIR_NAME] files under `suite-details/<hash>/`, and copies remaining files verbatim.
  */
 private fun injectPropertiesToXmlResults(directory: File, properties: Map<String, String>, outputDir: File, logger: Logger) {
   if (!directory.exists()) return
@@ -102,22 +97,43 @@ private fun injectPropertiesToXmlResults(directory: File, properties: Map<String
 
   try {
     val docFactory = XmlUtils.createDocumentBuilderFactory()
-    val transformerFactory = TransformerFactory.newInstance()
+    val transformerFactory = createSafeTransformerFactory()
 
     Files.walk(directory.toPath()).use { allPaths ->
       allPaths.forEach { sourcePath ->
+        if (Files.isSymbolicLink(sourcePath)) return@forEach
         val sourceFile = sourcePath.toFile()
         val relativePath = directory.toPath().relativize(sourcePath)
-        val targetPath = outputDir.toPath().resolve(relativePath)
+        val isUnderSuiteDetails = relativePath.nameCount > 0 && relativePath.getName(0).toString() == SUITE_DETAILS_DIR_NAME
 
-        if (sourceFile.isDirectory) {
-          Files.createDirectories(targetPath)
-        } else if (sourceFile.name.endsWith(".xml", ignoreCase = true)) {
-          val newFileName = "${sourceFile.nameWithoutExtension}_${hashString}.xml"
-          val xmlTargetFile = targetPath.parent.resolve(newFileName).toFile()
-          injectProperties(sourceFile, properties, xmlTargetFile, docFactory, transformerFactory, logger)
+        if (isUnderSuiteDetails) {
+          val namespacedBase = outputDir.toPath().resolve(SUITE_DETAILS_DIR_NAME).resolve(hashString)
+          val suiteDetailsTargetPath =
+            if (relativePath.nameCount == 1) {
+              namespacedBase
+            } else {
+              namespacedBase.resolve(relativePath.subpath(1, relativePath.nameCount))
+            }
+          if (sourceFile.isDirectory) {
+            Files.createDirectories(suiteDetailsTargetPath)
+          } else {
+            FileUtils.copyFile(sourceFile, suiteDetailsTargetPath.toFile())
+          }
         } else {
-          FileUtils.copyFile(sourceFile, targetPath.toFile())
+          val targetPath = outputDir.toPath().resolve(relativePath)
+
+          if (sourceFile.isDirectory) {
+            Files.createDirectories(targetPath)
+          } else if (sourceFile.name.startsWith(JUNIT_XML_FILE_PREFIX) && sourceFile.name.endsWith(".xml", ignoreCase = true)) {
+            val newFileName = "${sourceFile.nameWithoutExtension}_${hashString}.xml"
+            val xmlTargetFile = targetPath.parent.resolve(newFileName).toFile()
+            injectProperties(sourceFile, properties, xmlTargetFile, docFactory, transformerFactory, logger)
+          } else if (sourceFile.name == SUITE_ENVIRONMENT_FILE_NAME) {
+            val envTargetFile = targetPath.parent.resolve("${SUITE_ENVIRONMENT_FILE_PREFIX}${hashString}.json").toFile()
+            FileUtils.copyFile(sourceFile, envTargetFile)
+          } else {
+            FileUtils.copyFile(sourceFile, targetPath.toFile())
+          }
         }
       }
     }
@@ -133,16 +149,7 @@ private fun calculateHash(properties: Map<String, String>): String {
   return BigInteger(1, digest.digest(content.toByteArray(StandardCharsets.UTF_8))).toString(16).padStart(32, '0')
 }
 
-/**
- * Injects properties into a single XML file and writes it to the targetFile.
- *
- * @param xmlFile The XML file to process.
- * @param properties The properties to inject into the XML file.
- * @param targetFile The file where the processed XML will be written.
- * @param docFactory The factory to use for creating DocumentBuilders.
- * @param transformerFactory The factory to use for creating Transformers.
- * @param logger The logger to use for warnings.
- */
+/** Injects [properties] into [xmlFile] and writes the updated XML document to [targetFile]. */
 private fun injectProperties(
   xmlFile: File,
   properties: Map<String, String>,
@@ -155,20 +162,31 @@ private fun injectProperties(
     val docBuilder = docFactory.newDocumentBuilder()
     val document = docBuilder.parse(xmlFile)
 
-    val propertiesList = document.getElementsByTagName("properties")
+    val root = document.documentElement
+    val suiteElements =
+      when (root.tagName) {
+        TAG_TESTSUITE -> listOf(root)
+        TAG_TESTSUITES -> XmlUtils.getSubTagsAsList(root).filter { it.tagName == TAG_TESTSUITE }.ifEmpty { listOf(root) }
+        else -> listOf(root)
+      }
 
-    val propertiesNode: Node
-    if (propertiesList.length == 0) {
-      propertiesNode = document.createElement("properties")
-      document.documentElement.appendChild(propertiesNode)
-    } else {
-      propertiesNode = propertiesList.item(0)
-    }
-    properties.forEach { (key, value) ->
-      val propertyElement = document.createElement("property")
-      propertyElement.setAttribute("name", key)
-      propertyElement.setAttribute("value", value)
-      propertiesNode.appendChild(propertyElement)
+    for (suiteElement in suiteElements) {
+      val propertiesNode =
+        XmlUtils.getSubTagsAsList(suiteElement).firstOrNull { it.tagName == TAG_PROPERTIES }
+          ?: document.createElement(TAG_PROPERTIES).also { created ->
+            val firstChild = suiteElement.firstChild
+            if (firstChild != null) {
+              suiteElement.insertBefore(created, firstChild)
+            } else {
+              suiteElement.appendChild(created)
+            }
+          }
+      properties.forEach { (key, value) ->
+        val propertyElement = document.createElement(TAG_PROPERTY)
+        propertyElement.setAttribute(ATTR_NAME, key)
+        propertyElement.setAttribute(ATTR_VALUE, value)
+        propertiesNode.appendChild(propertyElement)
+      }
     }
 
     val transformer = transformerFactory.newTransformer()
@@ -184,3 +202,10 @@ private fun injectProperties(
     xmlFile.copyTo(targetFile, overwrite = true)
   }
 }
+
+private fun createSafeTransformerFactory(): TransformerFactory =
+  TransformerFactory.newInstance().apply {
+    runCatching { setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true) }
+    runCatching { setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "") }
+    runCatching { setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "") }
+  }
