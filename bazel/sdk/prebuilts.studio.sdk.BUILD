@@ -180,7 +180,7 @@ filegroup(
 
 filegroup(
     name = "platforms/latest",
-    srcs = [":platforms/android-34"],
+    srcs = [":platforms/android-36"],
     visibility = ["//visibility:public"],
 )
 

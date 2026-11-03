@@ -28,6 +28,7 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.xml.XmlFormatPreferences;
 import com.android.ide.common.xml.XmlFormatStyle;
 import com.android.ide.common.xml.XmlPrettyPrinter;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
@@ -590,8 +591,10 @@ public class XmlDocument {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(attributeVersion));
         if (Character.isDigit(attributeVersion.charAt(0))) {
             try {
-                return Integer.parseInt(attributeVersion);
-            } catch (NumberFormatException e) {
+                return AndroidVersion.fromString(attributeVersion)
+                        .getAndroidApiLevel()
+                        .getMajorVersion();
+            } catch (IllegalArgumentException e) {
                 return INVALID_SDK_VERSION;
             }
         }

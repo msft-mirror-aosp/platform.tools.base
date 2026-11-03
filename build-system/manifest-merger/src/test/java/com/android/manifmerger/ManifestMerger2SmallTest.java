@@ -3529,16 +3529,32 @@ public class ManifestMerger2SmallTest {
                         + "    package=\"com.example.app1\">\n"
                         + "</manifest>";
 
+        String libInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.lib1\">\n"
+                        + "    <uses-sdk android:targetSdkVersion=\"36.0\" />\n"
+                        + "</manifest>";
+
         MockLog mockLog = new MockLog();
 
         File appFile = TestUtils.inputAsFile("appManifest", appInput);
         assertTrue(appFile.exists());
+        File libFile = TestUtils.inputAsFile("libManifest", libInput);
+        assertTrue(libFile.exists());
 
-        MergingReport mergingReport =
-                ManifestMerger2.newMerger(appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
-                        .setOverride(ManifestSystemProperty.UsesSdk.TARGET_SDK_VERSION, "36.0")
-                        .merge();
-        assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(
+                                    appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .addLibraryManifest(libFile)
+                            .setOverride(ManifestSystemProperty.UsesSdk.TARGET_SDK_VERSION, "36.0")
+                            .merge();
+            assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+        } finally {
+            assertThat(appFile.delete()).named("appFile was deleted").isTrue();
+            assertThat(libFile.delete()).named("libFile was deleted").isTrue();
+        }
     }
 
     /** Test related to purpose tag in uses-permission. */

@@ -2080,6 +2080,57 @@ public class XmlDocumentTest extends TestCase {
         assertTrue("Error message not found in merging report", foundError);
     }
 
+    public void testMajorMinorTargetSdkVersion()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app\">\n"
+                        + "    <uses-sdk android:targetSdkVersion=\"36.0\" />\n"
+                        + "</manifest>";
+        String library =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.lib\">\n"
+                        + "</manifest>";
+
+        XmlDocument mainDocument =
+                loadXmlDoc(TestUtils.sourceFile(getClass(), "main"), main);
+        XmlDocument libraryDocument =
+                loadXmlLib(TestUtils.sourceFile(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder, () -> {});
+
+        assertTrue(mergedDocument.isPresent());
+        assertFalse(mergingReportBuilder.hasErrors());
+        assertEquals("36.0", mergedDocument.get().getTargetSdkVersion(mergingReportBuilder));
+    }
+
+    public void testInvalidMajorMinorTargetSdkVersion()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app\">\n"
+                        + "    <uses-sdk android:targetSdkVersion=\"36.invalid\" />\n"
+                        + "</manifest>";
+        String library =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.lib\">\n"
+                        + "</manifest>";
+
+        XmlDocument mainDocument =
+                loadXmlDoc(TestUtils.sourceFile(getClass(), "main"), main);
+        XmlDocument libraryDocument =
+                loadXmlLib(TestUtils.sourceFile(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        mainDocument.merge(libraryDocument, mergingReportBuilder, () -> {});
+
+        assertTrue(mergingReportBuilder.hasErrors());
+    }
+
     private static List<XmlElement> getAllElementsOfType(
             XmlDocument xmlDocument,
             ManifestModel.NodeTypes nodeType) {
