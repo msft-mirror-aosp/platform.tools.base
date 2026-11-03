@@ -58,64 +58,62 @@ interface DependentMonotone<K, V> : ((K) -> V, K) -> V {
  * An example of a reasonable [Monotone] implementation is an abstract interpreter or type inference that structurally recurses on
  * expressions, but relies on the bootstrapping function for assumptions on top-level bindings.
  */
-fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(domain: Collection<K>, bootstrap: Memo<K, V> = persistentMapOf()): Memo<K, V> {
-  tailrec fun loop(domain: Collection<K>, bootstrap: Memo<K, V>): Memo<K, V> {
-    if (domain.isEmpty()) return bootstrap
-    val (remaining, learned) = step(domain, bootstrap)
-    return loop(remaining, learned)
-  }
-  return loop(domain, bootstrap)
-}
+fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(domain: Collection<K>, bootstrap: Memo<K, V> = persistentMapOf()): Memo<K, V> =
+  FixPoint(this, domain, bootstrap).compute()
 
 fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(vararg points: K): Memo<K, V> = leastFixPoint(points.asList())
 
-/**
- * Given a [Monotone] describing a function ([K] -> [V]) and a [bootstrap], make progress computing the function's mappings over the
- * [domain] of interest.
- *
- * @return a more computed function that subsumes [bootstrap], paired with parts of [domain] that need re-iteration.
- */
-private fun <K : Any, V> DependentMonotone<K, V>.step(domain: Collection<K>, bootstrap: Memo<K, V>): Pair<Collection<K>, Memo<K, V>> {
-  val learned = bootstrap.builder()
-  val cacheDependents = hashMapOf<K, MutableSet<K>>()
-  val cacheUpdates = mutableSetOf<K>()
-  val cacheUpdateTriggers = hashMapOf<K, MutableSet<K>>()
+private class FixPoint<K : Any, V>(private val eval: DependentMonotone<K, V>, private var domain: Collection<K>, bootstrap: Memo<K, V>) {
+  private val learned = bootstrap.builder()
 
-  class Step(private val caller: K?) : (K) -> V {
-    override fun invoke(point: K): V =
-      when (val deps = cacheDependents[point]) {
-        null -> {
-          ProgressManager.checkCanceled()
-          cacheDependents[point] = if (caller != null) mutableSetOf(caller) else mutableSetOf()
-          val lattice = latticeAt(point)
-          val knownAnswer = if (point in bootstrap) bootstrap[point] as V else lattice.bottom
-          when (val iteratedAnswer = lattice.joinOf(knownAnswer, invoke(Step(point), point))) {
-            knownAnswer -> knownAnswer
-            else ->
-              iteratedAnswer.also {
-                cacheUpdates.add(point)
-                learned[point] = iteratedAnswer
-              }
-          }
-        }
-        else -> {
-          if (caller != null) {
-            deps.add(caller)
-            if (point !in cacheUpdates) cacheUpdateTriggers.getOrPut(point, ::mutableSetOf).add(caller)
-          }
-          if (point in learned) learned[point] as V else latticeAt(point).bottom
-        }
-      }
+  private fun known(point: K): V = if (point in learned) learned[point] as V else eval.latticeAt(point).bottom
+
+  fun compute(): Memo<K, V> {
+    while (domain.isNotEmpty()) step()
+    return learned.build()
   }
 
-  for (d in domain) Step(null)(d)
+  /** Demands [domain] once, and keeps the invalidated roots. */
+  private fun step() {
+    val cacheDependents = hashMapOf<K, MutableSet<K>>()
+    val cacheUpdates = mutableSetOf<K>()
+    val cacheUpdateTriggers = hashMapOf<K, MutableSet<K>>()
 
-  val invalidated = buildSet {
-    fun visit(k: K) {
-      if (add(k)) cacheDependents[k]?.forEach(::visit)
+    class Step(private val caller: K?) : (K) -> V {
+      override fun invoke(point: K): V =
+        when (val deps = cacheDependents[point]) {
+          null -> {
+            ProgressManager.checkCanceled()
+            cacheDependents[point] = if (caller != null) mutableSetOf(caller) else mutableSetOf()
+            val knownAnswer = known(point)
+            when (val iteratedAnswer = eval.latticeAt(point).joinOf(knownAnswer, eval(Step(point), point))) {
+              knownAnswer -> knownAnswer
+              else ->
+                iteratedAnswer.also {
+                  cacheUpdates.add(point)
+                  learned[point] = iteratedAnswer
+                }
+            }
+          }
+          else -> {
+            if (caller != null) {
+              deps.add(caller)
+              if (point !in cacheUpdates) cacheUpdateTriggers.getOrPut(point, ::mutableSetOf).add(caller)
+            }
+            known(point)
+          }
+        }
     }
-    for (p in cacheUpdates) cacheUpdateTriggers[p]?.forEach(::visit)
-  }
 
-  return domain.filter(invalidated::contains) to learned.build()
+    for (d in domain) Step(null)(d)
+
+    val invalidated = buildSet {
+      fun visit(k: K) {
+        if (add(k)) cacheDependents[k]?.forEach(::visit)
+      }
+      for (p in cacheUpdates) cacheUpdateTriggers[p]?.forEach(::visit)
+    }
+
+    domain = domain.filter(invalidated::contains)
+  }
 }
