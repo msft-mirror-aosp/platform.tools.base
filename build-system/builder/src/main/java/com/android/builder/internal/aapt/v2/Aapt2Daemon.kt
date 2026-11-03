@@ -23,7 +23,6 @@ import com.android.ide.common.resources.CompileResourceRequest
 import com.android.utils.ILogger
 import java.lang.IllegalStateException
 import java.util.concurrent.TimeoutException
-import javax.annotation.concurrent.NotThreadSafe
 
 /**
  * Manages an AAPT2 daemon process. Implementations are not expected to be thread safe.
@@ -36,7 +35,6 @@ import javax.annotation.concurrent.NotThreadSafe
  *
  * The state tracking in this class is separated from the actual process handling to allow test fakes that do not actually use AAPT.
  */
-@NotThreadSafe
 abstract class Aapt2Daemon(protected val displayName: String, protected val logger: ILogger) : Aapt2 {
   enum class State {
     NEW,

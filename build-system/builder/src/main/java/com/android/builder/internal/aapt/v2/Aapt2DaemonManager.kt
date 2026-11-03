@@ -17,6 +17,7 @@
 
 package com.android.builder.internal.aapt.v2
 
+import com.android.annotations.concurrency.GuardedBy
 import com.android.builder.internal.aapt.AaptConvertConfig
 import com.android.builder.internal.aapt.AaptPackageConfig
 import com.android.builder.internal.aapt.v2.Aapt2DaemonManager.LeasedAaptDaemon
@@ -26,12 +27,9 @@ import com.google.common.base.Preconditions
 import com.google.common.base.Ticker
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
-import javax.annotation.concurrent.GuardedBy
-import javax.annotation.concurrent.NotThreadSafe
-import javax.annotation.concurrent.ThreadSafe
 
 /**
- * Maintains a pool of AAPT2 daemon processes.
+ * Maintains a pool of AAPT2 daemon processes. This class is thread-safe.
  *
  * The pool is expanded if all processes are busy when a request is received. No attempt is made to limit the size of the pool. Users of
  * this class are expected to manage the desired concurrency level through the use of gradle workers, a thread pool or similar.
@@ -39,7 +37,6 @@ import javax.annotation.concurrent.ThreadSafe
  * Users of this class are expected to call leaseProcess on a worker thread in a try-with-resources/use block. The operations on the
  * [LeasedAaptDaemon] are then blocking on that thread.
  */
-@ThreadSafe
 class Aapt2DaemonManager(
   val logger: ILogger,
   private val daemonFactory: (Int) -> Aapt2Daemon,
@@ -142,10 +139,9 @@ class Aapt2DaemonManager(
   /**
    * A wrapper for an AAPT daemon that can return it to the pool of daemons once the processes are finished.
    *
-   * The underlying daemon is exclusively owned by the thread that called "leaseDaemon()" until it is closed, after which it is returned to
-   * the pool and this lease object can no longer be used.
+   * Not thread-safe: the underlying daemon is exclusively owned by the thread that called "leaseDaemon()" until it is closed, after which
+   * it is returned to the pool and this lease object can no longer be used.
    */
-  @NotThreadSafe
   class LeasedAaptDaemon
   internal constructor(private val leasableDaemon: LeasableAaptDaemon, private val closeAction: (LeasableAaptDaemon) -> Unit) :
     Aapt2, Closeable {

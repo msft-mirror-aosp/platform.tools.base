@@ -49,8 +49,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-
 final class D8DexArchiveMerger implements DexArchiveMerger {
 
     @NonNull
@@ -66,7 +64,7 @@ final class D8DexArchiveMerger implements DexArchiveMerger {
     @NonNull private final ExecutorService d8ExecutorService;
 
     public D8DexArchiveMerger(
-            @Nonnull MessageReceiver messageReceiver,
+            @NonNull MessageReceiver messageReceiver,
             @NonNull DexingType dexingType,
             int minSdkVersion,
             @NonNull CompilationMode compilationMode,

@@ -11,7 +11,7 @@ androidx.databinding:databinding-compiler:$BUILD_VERSION
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.google.auto:auto-common:1.2.1 (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.googlecode.juniversalchardet:juniversalchardet:1.0.3 (runtime)
     com.squareup:javapoet:1.13.0 (runtime)
     commons-io:commons-io:2.16.1 (runtime)
@@ -27,7 +27,7 @@ androidx.databinding:databinding-compiler-common:$BUILD_VERSION
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10 (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.googlecode.juniversalchardet:juniversalchardet:1.0.3 (runtime)
     com.squareup:javapoet:1.13.0 (runtime)
     commons-io:commons-io:2.16.1 (runtime)
@@ -157,7 +157,7 @@ com.android.tools:common:$BASE_VERSION
   description=common library used by other Android tools libraries.
   dependencies:
     com.android.tools:annotations:$BASE_VERSION (compile)
-    com.google.guava:guava:33.4.0-jre (compile)
+    com.google.guava:guava:33.7.2-jre (compile)
     net.java.dev.jna:jna-platform:5.6.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
@@ -175,7 +175,7 @@ com.android.tools:ninepatch:$BASE_VERSION
   pomName=NinePatch
   description=draws a bitmap in nine or more sections
   dependencies:
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
 
 com.android.tools:play-sdk-proto:$BASE_VERSION
   pomName=com.android.tools.play-sdk-proto
@@ -203,7 +203,7 @@ com.android.tools:sdk-common:$BASE_VERSION
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     javax.inject:javax.inject:1 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
@@ -278,7 +278,7 @@ com.android.tools.analytics-library:crash:$BASE_VERSION
   description=Helper Library for uploading crash reports.
   dependencies:
     com.android.tools:annotations:$BASE_VERSION (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     org.apache.httpcomponents:httpclient:4.5.14 (runtime)
     org.apache.httpcomponents:httpcore:4.4.16 (runtime)
     org.apache.httpcomponents:httpmime:4.5.6 (runtime)
@@ -291,7 +291,7 @@ com.android.tools.analytics-library:inspector:$BASE_VERSION
     com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
 
 com.android.tools.analytics-library:protos:$BASE_VERSION
@@ -309,7 +309,7 @@ com.android.tools.analytics-library:publisher:$BASE_VERSION
     com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
@@ -321,7 +321,7 @@ com.android.tools.analytics-library:shared:$BASE_VERSION
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     net.java.dev.jna:jna-platform:5.6.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
@@ -336,7 +336,7 @@ com.android.tools.analytics-library:testing:$BASE_VERSION
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
     com.android.tools:testutils:$BASE_VERSION (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
@@ -348,7 +348,7 @@ com.android.tools.analytics-library:tracker:$BASE_VERSION
     com.android.tools.analytics-library:shared:$BASE_VERSION (compile)
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
@@ -399,7 +399,7 @@ com.android.tools.apkdeployer:apkdeployer:$BUILD_VERSION
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android:zipflinger:$BUILD_VERSION (runtime)
     com.android.tools:r8 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains:annotations:23.0.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
@@ -416,13 +416,13 @@ com.android.tools.apkparser:apkanalyzer:$BASE_VERSION
     com.android.tools:sdklib:$BASE_VERSION (runtime)
     com.android.tools.smali:smali-baksmali:3.0.9 (runtime)
     com.android.tools.smali:smali-dexlib2:3.0.9 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
 
 com.android.tools.apkparser:binary-resources:$BASE_VERSION
   pomName=Binary Resources parser
   description=Library for parsing the resources.arsc file
   dependencies:
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
 
 com.android.tools.backup:backup-restore:$BASE_VERSION
   pomName=com.android.tools.backup.backup-restore
@@ -452,7 +452,7 @@ com.android.tools.build:aaptcompiler:$BUILD_VERSION
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
-    com.google.guava:guava:33.3.1-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
 com.android.tools.build:apksig:$BUILD_VERSION
@@ -465,7 +465,7 @@ com.android.tools.build:apkzlib:$BUILD_VERSION
   dependencies:
     com.android.tools.build:apksig:$BUILD_VERSION (runtime)
     com.google.code.findbugs:jsr305:3.0.2 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     org.bouncycastle:bcpkix-jdk18on:1.86 (runtime)
     org.bouncycastle:bcprov-jdk18on:1.86 (runtime)
 
@@ -507,7 +507,7 @@ com.android.tools.build:builder-test-api:$BUILD_VERSION
     com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
-    com.google.guava:guava:33.3.1-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
 
 com.android.tools.build:gradle:$BUILD_VERSION
   pomName=com.android.tools.build.gradle
@@ -561,7 +561,7 @@ com.android.tools.build:gradle-api:$BUILD_VERSION
     org.ow2.asm:asm:9.9 (compile)
     org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.2.10 (compile)
     com.android.tools.build:builder-test-api:$BUILD_VERSION (runtime)
-    com.google.guava:guava:33.3.1-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
     com.android.tools.build:gradle:$BUILD_VERSION (runtime)
 
@@ -635,7 +635,7 @@ com.android.tools.emulator:proto:$BASE_VERSION
   description=A protobuf messages to control Android Emulator
   dependencies:
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     io.grpc:grpc-core:1.69.1 (runtime)
     io.grpc:grpc-netty:1.69.1 (runtime)
     io.grpc:grpc-protobuf:1.69.1 (runtime)
@@ -694,7 +694,7 @@ com.android.tools.lint:lint:$BASE_VERSION
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
@@ -719,7 +719,7 @@ com.android.tools.lint:lint-api:$BASE_VERSION
     org.ow2.asm:asm-commons:9.9 (compile)
     org.ow2.asm:asm-tree:9.9 (compile)
     com.android.tools.build:builder-model:$BUILD_VERSION (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
 
 com.android.tools.lint:lint-checks:$BASE_VERSION
   pomName=com.android.tools.lint.lint-checks
@@ -736,7 +736,7 @@ com.android.tools.lint:lint-checks:$BASE_VERSION
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.11.0 (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
     org.ow2.asm:asm-analysis:9.9 (runtime)
@@ -790,7 +790,7 @@ com.android.tools.lint:lint-typedef-remover:$BASE_VERSION
   description=Utility to remove typedef annotations from classes
   dependencies:
     com.android.tools:annotations:$BASE_VERSION (runtime)
-    com.google.guava:guava:33.4.0-jre (runtime)
+    com.google.guava:guava:33.7.2-jre (runtime)
     org.ow2.asm:asm:9.9 (runtime)
 
 com.android.tools.pixelprobe:pixelprobe:$BASE_VERSION

@@ -21,6 +21,7 @@ maven_library(
     name = "tools.binary-resources",
     srcs = glob(["binary-resources/src/main/java/**"]),
     bundled_deps = [
+        ":jsr305_neverlink",
         "@maven//:com.google.auto.value.auto-value-annotations",
         "@maven//:org.checkerframework.checker-compat-qual",
         "//tools/adt/idea/aswb/third_party/java/auto_value",
@@ -35,6 +36,15 @@ maven_library(
     visibility = ["//visibility:public"],
     deps = [
         "@maven//:com.google.guava.guava",
+    ],
+)
+
+# Compile-time only dependency on jsr305 (Guava 33.4.5+ no longer exports jsr305).
+java_library(
+    name = "jsr305_neverlink",
+    neverlink = 1,
+    exports = [
+        "@maven//:com.google.code.findbugs.jsr305",
     ],
 )
 

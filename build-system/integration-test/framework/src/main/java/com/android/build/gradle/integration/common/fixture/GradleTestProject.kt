@@ -328,16 +328,12 @@ constructor(
         // when testing cross product of versions of buildtools, compile sdks, plugin versions,
         // there are corresponding system environment variable that you are able to set.
         val envBuildToolVersion = Strings.emptyToNull(System.getenv("CUSTOM_BUILDTOOLS"))
-        DEFAULT_BUILD_TOOL_VERSION =
-          MoreObjects.firstNonNull(envBuildToolVersion, ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION.toString())
+        DEFAULT_BUILD_TOOL_VERSION = envBuildToolVersion ?: ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION.toString()
         val envVersion = Strings.emptyToNull(System.getenv("CUSTOM_PLUGIN_VERSION"))
-        ANDROID_GRADLE_PLUGIN_VERSION = MoreObjects.firstNonNull(envVersion, Version.ANDROID_GRADLE_PLUGIN_VERSION)
+        ANDROID_GRADLE_PLUGIN_VERSION = envVersion ?: checkNotNull(Version.ANDROID_GRADLE_PLUGIN_VERSION)
         val envCustomCompileSdk = Strings.emptyToNull(System.getenv("CUSTOM_COMPILE_SDK"))
         DEFAULT_COMPILE_SDK_VERSION =
-          MoreObjects.firstNonNull(
-            envCustomCompileSdk,
-            com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION.toString(),
-          )
+          envCustomCompileSdk ?: com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION.toString()
       } catch (t: Throwable) {
         // Print something to stdout, to give us a chance to debug initialization problems.
         println(Throwables.getStackTraceAsString(t))
@@ -1151,8 +1147,8 @@ ext {
     return executor().withArguments(arguments).run(*tasks)
   }
 
-  fun executeExpectingFailure(vararg tasks: String): GradleConnectionException? {
-    return executor().expectFailure().run(*tasks).exception
+  fun executeExpectingFailure(vararg tasks: String): GradleConnectionException {
+    return checkNotNull(executor().expectFailure().run(*tasks).exception)
   }
 
   fun setLastBuildResult(lastBuildResult: GradleBuildResult) {

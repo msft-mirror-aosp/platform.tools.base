@@ -25,8 +25,6 @@ import com.android.build.gradle.internal.plugins.AppPlugin
 import com.android.build.gradle.internal.plugins.BasePlugin
 import com.android.build.gradle.internal.plugins.LibraryPlugin
 import com.android.build.gradle.options.BooleanOption
-import com.google.common.collect.Lists
-import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 
 interface VariantCreationConfigChecker {
@@ -186,7 +184,7 @@ fun countVariants(variants: MutableMap<String?, Int?>): Int {
 }
 
 fun checkDefaultVariants(components: MutableList<ComponentCreationConfig?>) {
-  Truth.assertThat(Lists.transform<ComponentCreationConfig?, String>(components, ComponentCreationConfig::name))
+  assertThat(components.map { it!!.name })
     .containsExactly("release", "debug", "debugAndroidTest", "debugUnitTest")
 }
 

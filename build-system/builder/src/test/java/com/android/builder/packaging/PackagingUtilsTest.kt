@@ -21,9 +21,9 @@ import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import com.google.common.truth.BooleanSubject
 import com.google.common.truth.Truth.assertThat
+import com.google.errorprone.annotations.CheckReturnValue
 import java.nio.file.FileSystem
 import java.util.function.Predicate
-import javax.annotation.CheckReturnValue
 import org.junit.Test
 
 class PackagingUtilsTest {

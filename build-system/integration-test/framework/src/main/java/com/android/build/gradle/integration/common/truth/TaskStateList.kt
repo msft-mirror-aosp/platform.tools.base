@@ -117,9 +117,9 @@ class TaskStateList(progressEvents: List<ProgressEvent>, gradleOutput: Scanner) 
     }
     taskInfoMap = taskInfoMapBuilder.build()
 
-    val taskStateMapBuilder = ImmutableMap.builder<ExecutionState?, Set<String>>()
+    val taskStateMapBuilder = ImmutableMap.builder<ExecutionState, Set<String>>()
     for (state in ExecutionState.entries) {
-      taskStateMapBuilder.put(state, ImmutableSet.copyOf<String>(taskMap[state]))
+      taskStateMapBuilder.put(state, ImmutableSet.copyOf(checkNotNull(taskMap[state])))
     }
     taskStateMap = taskStateMapBuilder.build()
   }

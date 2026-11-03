@@ -1059,7 +1059,7 @@ _CLASS_JARS = [
     "com.google.guava:guava:32.1.2-jre",
     "com.google.guava:guava:33.0.0-jre",
     "com.google.guava:guava:33.2.1-jre",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
-    "com.google.guava:guava:33.4.0-android",
+    "com.google.guava:guava:33.7.2-android",
     "com.google.guava:guava-testlib:33.2.1-jre",
     "com.google.http-client:google-http-client-bom:pom:1.42.0",
     "com.google.http-client:google-http-client-bom:pom:1.42.3",

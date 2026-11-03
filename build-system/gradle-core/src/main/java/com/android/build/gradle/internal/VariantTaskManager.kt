@@ -63,7 +63,6 @@ import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.utils.usLocaleCapitalize
-import com.google.common.base.MoreObjects
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
 import java.util.function.Consumer
@@ -345,7 +344,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
       project.dependencies.add("api", "$groupAndArtifact:$version")
     }
     if (dataBindingEnabled) {
-      val version = MoreObjects.firstNonNull(dataBindingOptions.version, dataBindingBuilder.compilerVersion)
+      val version = dataBindingOptions.version ?: checkNotNull(dataBindingBuilder.compilerVersion)
       val baseLibArtifact =
         if (useAndroidX) SdkConstants.ANDROIDX_DATA_BINDING_BASELIB_ARTIFACT else SdkConstants.DATA_BINDING_BASELIB_ARTIFACT
       project.dependencies.add("api", baseLibArtifact + ":" + dataBindingBuilder.getBaseLibraryVersion(version))
@@ -519,7 +518,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
           // if 2+ flavor dimensions, then make an assemble for the flavor combo
           if (flavorDimensionCount > 1) {
-            assembleMap.put(creationConfig.flavorName, assembleTask)
+            creationConfig.flavorName?.let { assembleMap.put(it, assembleTask) }
           }
 
           // fill the bundle map only if the variant supports bundles.
@@ -534,7 +533,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
             // if 2+ flavor dimensions, then make an assemble for the flavor combo
             if (flavorDimensionCount > 1) {
-              bundleMap.put(creationConfig.flavorName, bundleTask)
+              creationConfig.flavorName?.let { bundleMap.put(it, bundleTask) }
             }
           }
         }

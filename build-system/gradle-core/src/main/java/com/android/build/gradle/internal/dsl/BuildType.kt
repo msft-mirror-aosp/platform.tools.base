@@ -35,7 +35,6 @@ import com.android.builder.errors.IssueReporter
 import com.android.builder.internal.ClassFieldImpl
 import com.android.builder.model.BaseConfig
 import com.google.common.base.Preconditions
-import com.google.common.collect.Iterables
 import java.io.File
 import java.io.Serializable
 import javax.inject.Inject
@@ -342,7 +341,7 @@ constructor(
    */
   fun setTestProguardFiles(files: Iterable<*>): BuildType {
     testProguardFiles.clear()
-    testProguardFiles(*Iterables.toArray(files, Any::class.java))
+    testProguardFiles(*files.filterNotNull().toTypedArray())
     return this
   }
 
@@ -372,7 +371,7 @@ constructor(
    */
   fun setConsumerProguardFiles(proguardFileIterable: Iterable<*>): BuildType {
     consumerProguardFiles.clear()
-    consumerProguardFiles(*Iterables.toArray(proguardFileIterable, Any::class.java))
+    consumerProguardFiles(*proguardFileIterable.filterNotNull().toTypedArray())
     return this
   }
 

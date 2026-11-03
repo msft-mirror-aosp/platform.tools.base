@@ -200,10 +200,11 @@ class CxxRegularBuilder(val abi: CxxAbiModel) : CxxBuilder {
     val matchingTargets = Sets.newHashSet<String>()
     val unmatchedTargets = Sets.newHashSet<String>()
     for (libraryValue in config.libraries.values) {
-      if (targets.contains(libraryValue.artifactName)) {
-        matchingTargets.add(libraryValue.artifactName)
+      val artifactName = libraryValue.artifactName ?: continue
+      if (targets.contains(artifactName)) {
+        matchingTargets.add(artifactName)
       } else {
-        unmatchedTargets.add(libraryValue.artifactName)
+        unmatchedTargets.add(artifactName)
       }
     }
 

@@ -183,7 +183,7 @@ class VariantModelImpl(
       val dimension = productFlavor.dimension
 
       @Suppress("DEPRECATION")
-      if (productFlavor.getIsDefault().get()) {
+      if (dimension != null && productFlavor.getIsDefault().get()) {
         userDefaults.put(dimension, productFlavor.name)
       }
     }

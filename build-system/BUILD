@@ -669,7 +669,7 @@ maven_repository(
         "@maven//:com.google.crypto.tink.tink",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.guava.guava-testlib",
-        "@maven//:com.google.guava.guava_33.4.0-android",
+        "@maven//:com.google.guava.guava_33.7.2-android",
         "@maven//:com.google.http-client.google-http-client-bom_1.42.0",
         "@maven//:com.google.http-client.google-http-client-bom_1.42.3",
         "@maven//:com.google.http-client.google-http-client-bom_1.43.3",

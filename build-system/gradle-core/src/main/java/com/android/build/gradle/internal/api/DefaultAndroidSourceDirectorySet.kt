@@ -49,7 +49,7 @@ class DefaultAndroidSourceDirectorySet(
   private val project: Project,
   private val type: SourceArtifactType,
 ) : AndroidSourceDirectorySet {
-  private val source = Lists.newArrayList<Any>()
+  private val source = Lists.newArrayList<Any?>()
   override val filter = PatternSet()
   /**
    * Set once the sourceset is read to produce the android components, so that subsequent additions (e.g. during the applicationVariants
@@ -197,7 +197,7 @@ class DefaultAndroidSourceDirectorySet(
     return source
       .stream()
       .map { sourceDir ->
-        project.fileTree(sourceDir) {
+        project.fileTree(checkNotNull(sourceDir)) {
           it.include(filter.asIncludeSpec)
           it.exclude(filter.asExcludeSpec)
         }

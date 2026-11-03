@@ -105,7 +105,7 @@ class GradleBuildResult(
             // there can be several levels of PlaceholderException when dealing with
             // Worker API failures.
             while (isPlaceholderEx(throwableType) && cause.cause != null) {
-              cause = cause.cause
+              cause = checkNotNull(cause.cause)
             }
             return cause.message
           }
