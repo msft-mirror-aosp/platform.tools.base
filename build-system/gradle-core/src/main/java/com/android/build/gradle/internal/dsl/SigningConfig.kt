@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.signing.SigningConfigData
 import com.android.builder.signing.DefaultSigningConfig
 import com.google.common.base.MoreObjects
 import java.io.File
@@ -67,9 +68,9 @@ abstract class SigningConfig @Inject constructor(name: String, dslServices: DslS
     return MoreObjects.toStringHelper(this)
       .add("name", name)
       .add("storeFile", storeFile?.absolutePath ?: "null")
-      .add("storePassword", storePassword)
+      .add("storePassword", if (storePassword != null) SigningConfigData.REDACTED_PASSWORD else null)
       .add("keyAlias", keyAlias)
-      .add("keyPassword", keyPassword)
+      .add("keyPassword", if (keyPassword != null) SigningConfigData.REDACTED_PASSWORD else null)
       .add("storeType", storeType)
       .add("v1SigningEnabled", isV1SigningEnabled)
       .add("v2SigningEnabled", isV2SigningEnabled)

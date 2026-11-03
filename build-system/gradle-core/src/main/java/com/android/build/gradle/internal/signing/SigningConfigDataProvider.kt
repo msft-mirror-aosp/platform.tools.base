@@ -60,10 +60,12 @@ abstract class SigningConfigDataProvider {
 
   @get:Internal abstract val keyPassword: Property<String>
 
+  @get:Internal abstract val signingConfigFileCollection: ConfigurableFileCollection
+
   @get:InputFiles
-  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:PathSensitive(PathSensitivity.NONE)
   @get:Optional
-  abstract val signingConfigFileCollection: ConfigurableFileCollection
+  abstract val signingConfigFingerprintFileCollection: ConfigurableFileCollection
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val signingConfigValidationResultDir: DirectoryProperty
 
@@ -78,9 +80,17 @@ abstract class SigningConfigDataProvider {
     get() = keyPassword.map { Hashing.sha256().hashUnencodedChars(it).toString() }
 
   /** Resolves this provider to get the signing config information. It may be `null`. */
-  fun resolve(): SigningConfigData? {
+  fun resolve(encryptionService: SigningConfigPasswordCipher? = null): SigningConfigData? {
+    return resolve { encryptionService }
+  }
+
+  /**
+   * Resolves this provider to get the signing config information, lazily obtaining a [SigningConfigPasswordCipher] from
+   * [encryptionServiceProvider] only if encrypted passwords need to be decrypted from disk.
+   */
+  fun resolve(encryptionServiceProvider: () -> SigningConfigPasswordCipher?): SigningConfigData? {
     if (!signingConfigFileCollection.isEmpty) {
-      return SigningConfigUtils.loadSigningConfigData(signingConfigFileCollection.singleFile)
+      return SigningConfigUtils.loadSigningConfigData(signingConfigFileCollection.singleFile, encryptionServiceProvider)
     }
     val file = storeFile.orNull ?: return null
     return SigningConfigData(
@@ -94,11 +104,26 @@ abstract class SigningConfigDataProvider {
   }
 
   /** Converts this provider to [SigningConfigProviderParams] to be used by Gradle workers. */
-  fun convertToParams(): SigningConfigProviderParams {
-    return SigningConfigProviderParams(resolve(), if (signingConfigFileCollection.isEmpty) null else signingConfigFileCollection.singleFile)
+  fun convertToParams(encryptionService: SigningConfigPasswordCipher? = null): SigningConfigProviderParams {
+    return convertToParams { encryptionService }
+  }
+
+  /** Converts this provider to [SigningConfigProviderParams] to be used by Gradle workers. */
+  fun convertToParams(encryptionServiceProvider: () -> SigningConfigPasswordCipher?): SigningConfigProviderParams {
+    return SigningConfigProviderParams(resolve(encryptionServiceProvider))
   }
 
   companion object {
+
+    @JvmStatic
+    fun needsEncryptionService(creationConfig: ApkCreationConfig): Boolean {
+      return isInDynamicFeature(creationConfig) && SigningConfigData.fromProjectOptions(creationConfig.services.projectOptions) == null
+    }
+
+    private fun isInDynamicFeature(creationConfig: ApkCreationConfig): Boolean {
+      return creationConfig.componentType.isDynamicFeature ||
+        (creationConfig is TestComponentCreationConfig && creationConfig.mainVariant.componentType.isDynamicFeature)
+    }
 
     @JvmStatic
     fun create(objectFactory: ObjectFactory, signingConfig: SigningConfig): SigningConfigDataProvider {
@@ -114,9 +139,7 @@ abstract class SigningConfigDataProvider {
 
     @JvmStatic
     fun create(creationConfig: ApkCreationConfig): SigningConfigDataProvider {
-      val isInDynamicFeature =
-        creationConfig.componentType.isDynamicFeature ||
-          (creationConfig is TestComponentCreationConfig && creationConfig.mainVariant.componentType.isDynamicFeature)
+      val isInDynamicFeature = isInDynamicFeature(creationConfig)
 
       val provider = creationConfig.services.newInstance(SigningConfigDataProvider::class.java)
       provider.name.set("")
@@ -164,6 +187,13 @@ abstract class SigningConfigDataProvider {
               AndroidArtifacts.ArtifactType.FEATURE_SIGNING_CONFIG_DATA,
             )
           )
+          provider.signingConfigFingerprintFileCollection.from(
+            creationConfig.variantDependencies.getArtifactFileCollection(
+              AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+              AndroidArtifacts.ArtifactScope.PROJECT,
+              AndroidArtifacts.ArtifactType.FEATURE_SIGNING_CONFIG_DATA_FINGERPRINT,
+            )
+          )
         }
       }
       return provider
@@ -171,15 +201,15 @@ abstract class SigningConfigDataProvider {
   }
 }
 
-/** Similar to [SigningConfigDataProvider], but uses a [File] instead of a [FileCollection] to be used by Gradle workers. */
-class SigningConfigProviderParams(private val signingConfigData: SigningConfigData?, private val signingConfigFile: File?) : Serializable {
+/** Encapsulates resolved [SigningConfigData] to be used by Gradle workers. */
+class SigningConfigProviderParams(private val signingConfigData: SigningConfigData?) : Serializable {
 
   /** Resolves this provider to get the signing config information. It may be `null`. */
   fun resolve(): SigningConfigData? {
-    return signingConfigData ?: signingConfigFile?.let { SigningConfigUtils.loadSigningConfigData(it) }
+    return signingConfigData
   }
 
   companion object {
-    private const val serialVersionUID = 1L
+    private const val serialVersionUID = 2L
   }
 }

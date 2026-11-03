@@ -88,6 +88,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_APP_
 import com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_LIBRARY_CLASSES_DIR
 import com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_LIBRARY_CLASSES_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.SIGNING_CONFIG_DATA
+import com.android.build.gradle.internal.scope.InternalArtifactType.SIGNING_CONFIG_DATA_FINGERPRINT
 import com.android.build.gradle.internal.scope.InternalArtifactType.SIGNING_CONFIG_VERSIONS
 import com.android.build.gradle.internal.scope.InternalArtifactType.SOURCE_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.SUPPORTED_LOCALE_LIST
@@ -171,6 +172,7 @@ class PublishingSpecs {
         api(FEATURE_SET_METADATA, ArtifactType.FEATURE_SET_METADATA)
         api(BASE_MODULE_METADATA, ArtifactType.BASE_MODULE_METADATA)
         api(SIGNING_CONFIG_DATA, ArtifactType.FEATURE_SIGNING_CONFIG_DATA)
+        api(SIGNING_CONFIG_DATA_FINGERPRINT, ArtifactType.FEATURE_SIGNING_CONFIG_DATA_FINGERPRINT)
         api(SIGNING_CONFIG_VERSIONS, ArtifactType.FEATURE_SIGNING_CONFIG_VERSIONS)
         runtime(LINT_MODEL, ArtifactType.LINT_MODEL)
         // publish the LINT_MODEL again as BASE_MODULE_LINT_MODEL for consumption by dynamic

@@ -45,7 +45,7 @@ import org.gradle.api.tasks.TaskProvider
 /** Task that generates APKs from a bundle. All the APKs are bundled into a single zip file. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.APK_PACKAGING)
-abstract class BundleToApkTask : NonIncrementalTask() {
+abstract class BundleToApkTask : NonIncrementalTask(), UsesSigningConfigEncryptionBuildService {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val bundle: RegularFileProperty
 
@@ -65,13 +65,15 @@ abstract class BundleToApkTask : NonIncrementalTask() {
       it.bundleFile.set(bundle)
       it.aapt2File.set(aapt2.getAapt2Executable().toFile())
       it.outputFile.set(outputFile)
-      signingConfigData.resolve()?.let { config ->
-        it.keystoreType.set(config.storeType)
-        it.keystoreFile.set(config.storeFile)
-        it.keystorePassword.set(config.storePassword)
-        it.keyAlias.set(config.keyAlias)
-        it.keyPassword.set(config.keyPassword)
-      }
+      signingConfigData
+        .resolve { signingConfigEncryptionService.orNull }
+        ?.let { config ->
+          it.keystoreType.set(config.storeType)
+          it.keystoreFile.set(config.storeFile)
+          it.keystorePassword.set(config.storePassword)
+          it.keyAlias.set(config.keyAlias)
+          it.keyPassword.set(config.keyPassword)
+        }
       it.enableLocalTesting.set(enableLocalTesting)
     }
   }
@@ -134,6 +136,9 @@ abstract class BundleToApkTask : NonIncrementalTask() {
 
       creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.INTERMEDIARY_BUNDLE, task.bundle)
       creationConfig.services.initializeAapt2Input(task.aapt2, task)
+      if (SigningConfigDataProvider.needsEncryptionService(creationConfig)) {
+        UsesSigningConfigEncryptionBuildService.ConfigureAction.configure(task)
+      }
       task.signingConfigData = SigningConfigDataProvider.create(creationConfig)
       task.enableLocalTesting.set(creationConfig.services.projectOptions[BooleanOption.ENABLE_LOCAL_TESTING])
     }

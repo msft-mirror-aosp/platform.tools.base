@@ -160,6 +160,8 @@ public class AndroidArtifacts {
             "android-feature-shrunk-resources-proto-format";
     private static final String TYPE_FEATURE_SIGNING_CONFIG_DATA =
             "android-feature-signing-config-data";
+    private static final String TYPE_FEATURE_SIGNING_CONFIG_DATA_FINGERPRINT =
+            "android-feature-signing-config-data-fingerprint";
     private static final String TYPE_FEATURE_SIGNING_CONFIG_VERSIONS =
             "android-feature-signing-config-versions";
     private static final String TYPE_FEATURE_NAME = "android-feature-name";
@@ -521,6 +523,9 @@ public class AndroidArtifacts {
         // file containing the signing config data to be used by any features. Published by the base
         // for the features to consume.
         FEATURE_SIGNING_CONFIG_DATA(TYPE_FEATURE_SIGNING_CONFIG_DATA),
+        // deterministic non-secret fingerprint of FEATURE_SIGNING_CONFIG_DATA for up-to-date
+        // checks without invalidating downstream tasks when ephemeral encryption keys rotate.
+        FEATURE_SIGNING_CONFIG_DATA_FINGERPRINT(TYPE_FEATURE_SIGNING_CONFIG_DATA_FINGERPRINT),
         // file containing the signing config versions to be used by any features. Published by the
         // base for the features to consume.
         FEATURE_SIGNING_CONFIG_VERSIONS(TYPE_FEATURE_SIGNING_CONFIG_VERSIONS),

@@ -26,6 +26,7 @@ abstract class DefaultSigningConfig constructor(private val mName: String) : Sig
   companion object {
     const val DEFAULT_PASSWORD = "android"
     const val DEFAULT_ALIAS = "AndroidDebugKey"
+    const val REDACTED_PASSWORD = "<redacted>"
 
     /** Creates a [DebugSigningConfig] that uses the default debug alias and passwords. */
     @JvmStatic
@@ -158,9 +159,9 @@ abstract class DefaultSigningConfig constructor(private val mName: String) : Sig
     @Suppress("DEPRECATION") // Legacy support
     return MoreObjects.toStringHelper(this)
       .add("storeFile", storeFile?.absolutePath)
-      .add("storePassword", storePassword)
+      .add("storePassword", if (storePassword != null) REDACTED_PASSWORD else null)
       .add("keyAlias", keyAlias)
-      .add("keyPassword", keyPassword)
+      .add("keyPassword", if (keyPassword != null) REDACTED_PASSWORD else null)
       .add("storeType", storeType)
       .add("v1SigningEnabled", isV1SigningEnabled)
       .add("v2SigningEnabled", isV2SigningEnabled)

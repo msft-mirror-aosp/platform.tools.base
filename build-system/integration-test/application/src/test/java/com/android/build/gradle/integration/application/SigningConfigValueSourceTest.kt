@@ -26,6 +26,7 @@ import com.android.ide.common.signing.KeystoreHelper
 import com.android.testutils.apk.Apk
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.util.Properties
 import org.junit.Before
 import org.junit.Rule
@@ -258,5 +259,54 @@ class SigningConfigValueSourceTest {
     // This should fail because assembleRelease needs the release signing config
     val failure = executor.expectFailure().run("assembleRelease")
     failure.assertErrorContains("FailingSigningConfigValueSource should not be evaluated")
+  }
+
+  @Test
+  fun testSigningConfigWriterWithProjectIsolationAndStableConfigurationCache() {
+    val build = rule.build { settings { enableFeaturePreview("STABLE_CONFIGURATION_CACHE") } }
+    val app = build.androidApplication()
+
+    val keyStoreFile = build.directory.resolve("isolated-keystore.jks").toFile()
+    KeystoreHelper.createNewStore("jks", keyStoreFile, "isolatedStorePass", "isolatedKeyPass", "isolatedAlias", "CN=Isolated", 100)
+
+    app.files
+      .update("build.gradle.kts")
+      .append(
+        """
+        android {
+            compileSdk = ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}
+            signingConfigs {
+                create("release") {
+                    storeFile = file("${keyStoreFile.invariantSeparatorsPath}")
+                    storePassword = "isolatedStorePass"
+                    keyAlias = "isolatedAlias"
+                    keyPassword = "isolatedKeyPass"
+                }
+            }
+            buildTypes {
+                release {
+                    signingConfig = signingConfigs.getByName("release")
+                }
+            }
+        }
+        """
+          .trimIndent()
+      )
+
+    val executor = build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION)
+    val result1 = executor.run(":app:signingConfigWriterRelease", ":app:assembleRelease")
+    result1.assertConfigurationCacheMiss()
+    assertThat(result1.didWorkTasks).contains(":app:signingConfigWriterRelease")
+
+    val signingConfigDataFile =
+      app.intermediatesDir.resolve("signing_config_data/release/signingConfigWriterRelease/signing-config-data.json").toFile()
+    assertThat(signingConfigDataFile.exists()).isTrue()
+    val rawJson = signingConfigDataFile.readText(StandardCharsets.UTF_8)
+    assertThat(rawJson).doesNotContain("isolatedStorePass")
+    assertThat(rawJson).doesNotContain("isolatedKeyPass")
+
+    val result2 = executor.run(":app:signingConfigWriterRelease", ":app:assembleRelease")
+    result2.assertConfigurationCacheHit()
+    assertThat(result2.upToDateTasks).contains(":app:signingConfigWriterRelease")
   }
 }

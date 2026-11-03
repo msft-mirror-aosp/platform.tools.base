@@ -20,6 +20,7 @@ import com.android.build.api.dsl.SigningConfig
 import com.android.build.api.variant.impl.SigningConfigImpl
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.SigningOptions
+import com.android.builder.signing.DefaultSigningConfig
 import com.google.common.hash.Hashing
 import java.io.File
 import java.io.Serializable
@@ -61,8 +62,21 @@ data class SigningConfigData(
 
   @Input @Optional fun getKeyPasswordHash(): String? = keyPassword?.let { Hashing.sha256().hashUnencodedChars(it).toString() }
 
+  internal fun hasPasswords(): Boolean = storePassword != null || keyPassword != null
+
+  override fun toString(): String {
+    return "SigningConfigData(" +
+      "name=$name, " +
+      "storeType=$storeType, " +
+      "storeFile=$storeFile, " +
+      "storePassword=${if (storePassword != null) REDACTED_PASSWORD else null}, " +
+      "keyAlias=$keyAlias, " +
+      "keyPassword=${if (keyPassword != null) REDACTED_PASSWORD else null})"
+  }
+
   companion object {
 
+    internal const val REDACTED_PASSWORD = DefaultSigningConfig.REDACTED_PASSWORD
     private const val serialVersionUID = 2L
 
     fun fromSigningConfig(signingConfig: SigningConfigImpl): SigningConfigData {

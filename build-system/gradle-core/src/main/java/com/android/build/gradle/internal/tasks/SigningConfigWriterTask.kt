@@ -25,8 +25,10 @@ import com.android.buildanalyzer.common.TaskCategory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
@@ -44,9 +46,11 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.APK_PACKAGING)
-abstract class SigningConfigWriterTask : NonIncrementalTask() {
+abstract class SigningConfigWriterTask : NonIncrementalTask(), UsesSigningConfigEncryptionBuildService {
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
+
+  @get:OutputFile @get:Optional abstract val fingerprintFile: RegularFileProperty
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val validatedSigningOutput: DirectoryProperty
 
@@ -57,8 +61,23 @@ abstract class SigningConfigWriterTask : NonIncrementalTask() {
   // 135509623#comment6).
   @get:Input @get:Optional abstract val storeFilePath: Property<String>
 
+  @get:Internal abstract val emptyEncryptionKeyId: Property<String>
+
+  @get:Input
+  @get:Optional
+  val encryptionKeyId: Provider<String>
+    get() = signingConfigData.flatMap { data ->
+      if (data.hasPasswords()) {
+        signingConfigEncryptionService.map { it.getKeyId() }
+      } else {
+        emptyEncryptionKeyId
+      }
+    }
+
   public override fun doTaskAction() {
-    SigningConfigUtils.saveSigningConfigData(outputFile.get().asFile, signingConfigData.orNull)
+    val data = signingConfigData.orNull
+    SigningConfigUtils.saveSigningConfigData(outputFile.get().asFile, data) { signingConfigEncryptionService.orNull }
+    fingerprintFile.orNull?.asFile?.let { file -> SigningConfigUtils.saveSigningConfigFingerprint(file, data) }
   }
 
   class CreationAction(creationConfig: ApkCreationConfig) :
@@ -76,10 +95,21 @@ abstract class SigningConfigWriterTask : NonIncrementalTask() {
         .setInitialProvider(taskProvider, SigningConfigWriterTask::outputFile)
         .withName("signing-config-data.json")
         .on(InternalArtifactType.SIGNING_CONFIG_DATA)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, SigningConfigWriterTask::fingerprintFile)
+        .withName("signing-config-data.fingerprint")
+        .on(InternalArtifactType.SIGNING_CONFIG_DATA_FINGERPRINT)
     }
 
     override fun configure(task: SigningConfigWriterTask) {
       super.configure(task)
+
+      task.emptyEncryptionKeyId.disallowChanges()
+
+      val signingConfig = creationConfig.signingConfig
+      if (signingConfig != null && (!signingConfig.name.isNullOrEmpty() || signingConfig.hasConfig())) {
+        UsesSigningConfigEncryptionBuildService.ConfigureAction.configure(task)
+      }
 
       creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.VALIDATE_SIGNING_CONFIG, task.validatedSigningOutput)
 
@@ -88,8 +118,10 @@ abstract class SigningConfigWriterTask : NonIncrementalTask() {
       task.signingConfigData.setDisallowChanges(
         creationConfig.services.provider {
           val signingConfig = creationConfig.signingConfig
-          if (signingConfig != null && !signingConfig.name.isNullOrEmpty()) {
-            SigningConfigData.fromSigningConfig(signingConfig)
+          if (signingConfig != null && (!signingConfig.name.isNullOrEmpty() || signingConfig.hasConfig())) {
+            SigningConfigData.fromSigningConfig(signingConfig).takeIf {
+              !signingConfig.name.isNullOrEmpty() || it.storeFile != null
+            }
           } else null
         }
       )

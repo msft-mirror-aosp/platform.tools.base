@@ -34,7 +34,7 @@ import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.BUNDLE_PACKAGING)
-abstract class SignAsbTask : NonIncrementalGlobalTask() {
+abstract class SignAsbTask : NonIncrementalGlobalTask(), UsesSigningConfigEncryptionBuildService {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val inputAsb: RegularFileProperty
 
@@ -43,7 +43,7 @@ abstract class SignAsbTask : NonIncrementalGlobalTask() {
   @get:OutputFile abstract val outputSignedAsb: RegularFileProperty
 
   override fun doTaskAction() {
-    val signingConfig = signingConfig.get().resolve()
+    val signingConfig = signingConfig.get().resolve { signingConfigEncryptionService.orNull }
     if (signingConfig != null) {
       val certificateInfo =
         KeystoreHelper.getCertificateInfo(

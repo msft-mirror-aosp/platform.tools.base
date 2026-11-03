@@ -655,6 +655,10 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   // been validated
   object SIGNING_CONFIG_DATA : InternalArtifactType<RegularFile>(FILE), Replaceable
 
+  // Deterministic non-secret fingerprint of SIGNING_CONFIG_DATA used by downstream tasks for
+  // up-to-date checks so ephemeral encryption key rotations do not invalidate them.
+  object SIGNING_CONFIG_DATA_FINGERPRINT : InternalArtifactType<RegularFile>(FILE), Replaceable
+
   // The information about which signature versions the application module is using. The feature
   // modules should use the same versions.
   object SIGNING_CONFIG_VERSIONS : InternalArtifactType<RegularFile>(FILE), Replaceable

@@ -53,7 +53,7 @@ import org.gradle.work.DisableCachingByDefault
 /** Task that generates the standalone from a bundle. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.APK_PACKAGING)
-abstract class BundleToStandaloneApkTask : NonIncrementalTask() {
+abstract class BundleToStandaloneApkTask : NonIncrementalTask(), UsesSigningConfigEncryptionBuildService {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val bundle: RegularFileProperty
 
@@ -82,12 +82,14 @@ abstract class BundleToStandaloneApkTask : NonIncrementalTask() {
       it.aapt2File.set(aapt2.getAapt2Executable().toFile())
       it.outputFile.set(outputFile)
       it.temporaryDir.set(tempDirectory)
-      signingConfigData.resolve()?.let { config ->
-        it.keystoreFile.set(config.storeFile)
-        it.keystorePassword.set(config.storePassword)
-        it.keyAlias.set(config.keyAlias)
-        it.keyPassword.set(config.keyPassword)
-      }
+      signingConfigData
+        .resolve { signingConfigEncryptionService.orNull }
+        ?.let { config ->
+          it.keystoreFile.set(config.storeFile)
+          it.keystorePassword.set(config.storePassword)
+          it.keyAlias.set(config.keyAlias)
+          it.keyPassword.set(config.keyPassword)
+        }
     }
   }
 
@@ -176,6 +178,9 @@ abstract class BundleToStandaloneApkTask : NonIncrementalTask() {
 
       creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.INTERMEDIARY_BUNDLE, task.bundle)
       creationConfig.services.initializeAapt2Input(task.aapt2, task)
+      if (SigningConfigDataProvider.needsEncryptionService(creationConfig)) {
+        UsesSigningConfigEncryptionBuildService.ConfigureAction.configure(task)
+      }
       task.tempDirectory = creationConfig.paths.getIncrementalDir(name)
       task.signingConfigData = SigningConfigDataProvider.create(creationConfig)
     }

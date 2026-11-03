@@ -67,7 +67,7 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.BUNDLE_PACKAGING)
-abstract class FinalizeBundleTask : NonIncrementalTask(), SigningInputs {
+abstract class FinalizeBundleTask : NonIncrementalTask(), SigningInputs, UsesSigningConfigEncryptionBuildService {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val intermediaryBundleFile: RegularFileProperty
 
@@ -97,9 +97,9 @@ abstract class FinalizeBundleTask : NonIncrementalTask(), SigningInputs {
       it.initializeFromBaseTask(this)
       it.intermediaryBundleFile.set(intermediaryBundleFile)
       it.finalBundleFile.set(finalBundleFile)
-      signingConfigData?.convertToParams()?.let { signing -> it.signingConfig.set(signing) }
+      signingConfigData?.convertToParams { signingConfigEncryptionService.orNull }?.let { signing -> it.signingConfig.set(signing) }
       codeTransparencySigningConfigData?.let { signingData ->
-        it.codeTransparencySigningConfig.set(SigningConfigProviderParams(signingData, null))
+        it.codeTransparencySigningConfig.set(SigningConfigProviderParams(signingData))
       }
       it.tmpDir.set(tmpDir.orNull)
     }
@@ -231,6 +231,10 @@ abstract class FinalizeBundleTask : NonIncrementalTask(), SigningInputs {
 
     override fun configure(task: FinalizeBundleTask) {
       super.configure(task)
+
+      if (SigningConfigDataProvider.needsEncryptionService(creationConfig)) {
+        UsesSigningConfigEncryptionBuildService.ConfigureAction.configure(task)
+      }
 
       creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.INTERMEDIARY_BUNDLE, task.intermediaryBundleFile)
 

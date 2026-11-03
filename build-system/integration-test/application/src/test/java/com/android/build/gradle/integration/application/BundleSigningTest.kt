@@ -71,7 +71,20 @@ class BundleSigningTest {
             """
         .trimIndent(),
     )
-    project.executor().run(":bundleDebug")
+    val inspectServicesInitScript = project.file("inspect-services.init.gradle")
+    inspectServicesInitScript.writeText(
+      """
+      gradle.taskGraph.whenReady { graph ->
+          def globalKeyService = gradle.sharedServices.registrations.findByName(
+              "com.android.build.gradle.internal.signing.GlobalSigningConfigKeyService"
+          )
+          println("GLOBAL_KEY_SERVICE_REGISTERED=" + (globalKeyService != null))
+      }
+      """
+        .trimIndent()
+    )
+    val result = project.executor().withArgument("--init-script").withArgument(inspectServicesInitScript.absolutePath).run(":bundleDebug")
+    result.assertOutputContains("GLOBAL_KEY_SERVICE_REGISTERED=false")
     val aab = project.getBundle(GradleTestProject.ApkType.DEBUG)
     assertThat(aab).contains("META-INF/KEY0.SF")
     assertThat(aab).contains("META-INF/KEY0.RSA")

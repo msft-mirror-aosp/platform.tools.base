@@ -18,11 +18,12 @@ package com.android.build.gradle.internal.dsl;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.android.build.gradle.internal.fixtures.FakeObjectFactory;
 import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.internal.services.FakeServices;
 import com.android.testutils.internal.CopyOfTester;
+
 import groovy.util.Eval;
+
 import org.junit.Test;
 
 public class SigningConfigTest {
@@ -49,6 +50,21 @@ public class SigningConfigTest {
         // Check that groovy can invoke initWith
         Eval.xy(copy, original, "x.initWith(y)");
         assertThat(copy.getEnableV1Signing()).isFalse();
+    }
+
+    @Test
+    public void testToStringRedactsPasswords() {
+        SigningConfig config = signingConfig("release");
+        assertThat(config.toString()).contains("storePassword=null");
+        assertThat(config.toString()).contains("keyPassword=null");
+
+        config.setStorePassword("secretStorePassword");
+        config.setKeyPassword("secretKeyPassword");
+        String rendered = config.toString();
+        assertThat(rendered).doesNotContain("secretStorePassword");
+        assertThat(rendered).doesNotContain("secretKeyPassword");
+        assertThat(rendered).contains("storePassword=<redacted>");
+        assertThat(rendered).contains("keyPassword=<redacted>");
     }
 
     private SigningConfig signingConfig(String name) {

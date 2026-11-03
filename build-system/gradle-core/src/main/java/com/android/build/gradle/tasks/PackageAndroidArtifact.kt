@@ -49,6 +49,7 @@ import com.android.build.gradle.internal.signing.SigningInputs
 import com.android.build.gradle.internal.tasks.ModuleMetadata.Companion.load
 import com.android.build.gradle.internal.tasks.NewIncrementalTask
 import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.loadSigningConfigVersions
+import com.android.build.gradle.internal.tasks.UsesSigningConfigEncryptionBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.internal.workeractions.DecoratedWorkParameters
@@ -101,7 +102,7 @@ import org.gradle.work.InputChanges
 
 /** Abstract task to package an Android artifact. */
 @DisableCachingByDefault
-abstract class PackageAndroidArtifact : NewIncrementalTask(), SigningInputs {
+abstract class PackageAndroidArtifact : NewIncrementalTask(), SigningInputs, UsesSigningConfigEncryptionBuildService {
   @get:PathSensitive(PathSensitivity.RELATIVE) @get:Incremental @get:InputFiles abstract val manifests: DirectoryProperty
 
   @get:PathSensitive(PathSensitivity.RELATIVE) @get:Incremental @get:InputFiles abstract val resourceFiles: DirectoryProperty
@@ -287,7 +288,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask(), SigningInputs {
       } else {
         parameter.versionControlInfoFile.set(SerializableInputChanges(listOf(), listOf()))
       }
-      parameter.getSigningConfigData().set(signingConfigData!!.convertToParams())
+      parameter.getSigningConfigData().set(signingConfigData!!.convertToParams { signingConfigEncryptionService.orNull })
       parameter.signingConfigVersionsFile.set(signingConfigVersions.singleFile)
       if (baseModuleMetadata.isEmpty) {
         if (!buildAllAbis.get()) {
@@ -673,6 +674,9 @@ abstract class PackageAndroidArtifact : NewIncrementalTask(), SigningInputs {
 
     protected open fun finalConfigure(task: TaskT) {
       task.jniFolders.from(creationConfig.artifacts.get(STRIPPED_NATIVE_LIBS))
+      if (SigningConfigDataProvider.needsEncryptionService(creationConfig)) {
+        UsesSigningConfigEncryptionBuildService.ConfigureAction.configure(task)
+      }
       task.signingConfigData = SigningConfigDataProvider.create(creationConfig)
       creationConfig.signingConfig?.let { config -> task.signingKeystoreFile.from(config.storeFile.map { listOf(it) }.orElse(emptyList())) }
       task.signingKeystoreFile.disallowChanges()
