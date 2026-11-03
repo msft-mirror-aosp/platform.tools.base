@@ -84,7 +84,6 @@ ARTIFACTS = [
     "com.google.http-client:google-http-client:1.43.3",
     "com.google.http-client:google-http-client-apache-v2:1.42.0",
     "com.google.http-client:google-http-client-gson:1.43.3",
-    "com.google.http-client:google-http-client-jackson2:1.22.0",
     "com.google.jimfs:jimfs:1.1",
     "com.google.oauth-client:google-oauth-client:1.35.0",
     "com.google.oauth-client:google-oauth-client-java6:1.35.0",
