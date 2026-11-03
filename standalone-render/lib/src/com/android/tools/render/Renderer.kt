@@ -45,6 +45,7 @@ import java.awt.AlphaComposite
 import java.awt.Dimension
 import java.awt.Shape
 import java.awt.image.BufferedImage
+import java.io.BufferedOutputStream
 import java.io.Closeable
 import java.io.File
 import java.io.IOException
@@ -56,7 +57,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
+import javax.imageio.IIOImage
 import javax.imageio.ImageIO
+import javax.imageio.ImageWriteParam
+import javax.imageio.stream.MemoryCacheImageOutputStream
 
 /**
  * A renderer that can handle [RenderRequest].
@@ -412,6 +416,28 @@ class Renderer(
         return
       }
       Files.createDirectories(imagePath.parent)
+      val writers = ImageIO.getImageWritersByFormatName("png")
+      if (writers.hasNext()) {
+        val writer = writers.next()
+        try {
+          val writeParam = writer.defaultWriteParam
+          if (writeParam.canWriteCompressed()) {
+            writeParam.compressionMode = ImageWriteParam.MODE_EXPLICIT
+            // PNG is always 100% lossless; in JDK's PNGImageWriter, deflate level = 9 - round(9 * quality),
+            // so 0.89f selects Deflater.BEST_SPEED (level 1) instead of level 4, cutting PNG encode latency.
+            writeParam.compressionQuality = 0.89f
+          }
+          BufferedOutputStream(Files.newOutputStream(imagePath), 65_536).use { fileOut ->
+            MemoryCacheImageOutputStream(fileOut).use { imageOut ->
+              writer.output = imageOut
+              writer.write(null, IIOImage(image, null, null), writeParam)
+            }
+          }
+          return
+        } finally {
+          writer.dispose()
+        }
+      }
       val imgFile = imagePath.toFile()
       imgFile.createNewFile()
       ImageIO.write(image, "png", imgFile)
