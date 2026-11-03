@@ -49,7 +49,7 @@ kotlin_library(
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.google.truth.truth",
         "@maven//:commons-io.commons-io",  # TODO: remove?
-        "@maven//:commons-lang.commons-lang",  # TODO: remove?
+        "@maven//:org.apache.commons.commons-lang3",
         "@maven//:org.jacoco.org.jacoco.agent",
         "@maven//:org.jacoco.org.jacoco.core",
         "@maven//:org.jacoco.org.jacoco.report",

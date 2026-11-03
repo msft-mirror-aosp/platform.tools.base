@@ -1597,6 +1597,7 @@ _CLASS_JARS = [
     "org.junit:junit-bom:pom:5.10.1",
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.11.0-M2",
+    "org.junit:junit-bom:pom:5.14.4",  # imported by org.apache.commons:commons-parent:105
     "org.junit:junit-bom:pom:5.9.2",
     "org.junit:junit-bom:pom:5.9.3",
     "org.junit.jupiter:junit-jupiter-api:5.10.0",
@@ -1606,6 +1607,7 @@ _CLASS_JARS = [
     "org.junit.platform:junit-platform-engine:1.10.0",
     "org.junit.platform:junit-platform-launcher:1.10.0",
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
+    "org.mockito:mockito-bom:pom:4.11.0",  # imported by org.apache.commons:commons-parent:105
     "org.mockito:mockito-core:5.20.0",
     "org.mockito:mockito-core:5.4.0",
     "org.ow2.asm:asm:9.6",
