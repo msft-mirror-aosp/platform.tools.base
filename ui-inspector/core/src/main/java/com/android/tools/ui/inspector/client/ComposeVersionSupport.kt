@@ -16,13 +16,11 @@
 
 package com.android.tools.ui.inspector.client
 
-import com.android.tools.ui.inspector.device.AndroidDeviceVersion
+import com.android.sdklib.AndroidApiLevel
+import com.android.sdklib.AndroidVersion
 
-/** The API level of Android 17. */
-private const val ANDROID_17_API_LEVEL = 37
-
-/** The codename of Android 17. Its preview builds report it, and some of them an earlier API level, like 36.1 in Android Studio's tests. */
-private const val ANDROID_17_CODENAME = "CinnamonBun"
+/** Android Studio's threshold for Android 17: API level 36.1 with the codename CinnamonBun (`CINNAMON_BUN_VERSION`). */
+private val CINNAMON_BUN_VERSION = AndroidVersion(AndroidApiLevel(36, 1), "CinnamonBun", null, true)
 
 /** Whether the Compose inspector of the app's Compose version can be loaded on the device. See [getComposeVersionSupport]. */
 internal sealed interface ComposeVersionSupport {
@@ -90,7 +88,7 @@ private val VERSIONS_THAT_CAN_CRASH_THE_APP =
  * Versions that are not Compose releases, including locally built ones (-SNAPSHOT, -dev, which Android Studio doesn't check either), are
  * [ComposeVersionSupport.Supported]: they are not checked, since no inspector can be downloaded for them anyway.
  */
-internal fun getComposeVersionSupport(composeVersion: String, deviceVersion: AndroidDeviceVersion): ComposeVersionSupport {
+internal fun getComposeVersionSupport(composeVersion: String, deviceVersion: AndroidVersion): ComposeVersionSupport {
   val version = ComposeVersion.parse(composeVersion) ?: return ComposeVersionSupport.Supported
   if (deviceVersion.isAndroid17OrLater() && version < FIRST_VERSION_SUPPORTED_ON_ANDROID_17) {
     return ComposeVersionSupport.UnsupportedOnAndroid17(composeVersion)
@@ -100,11 +98,11 @@ internal fun getComposeVersionSupport(composeVersion: String, deviceVersion: And
 }
 
 /**
- * Whether the device runs Android 17 or later: API level 37 and later, or a build with the codename of Android 17, whatever API level it
- * reports. Android Studio compares the device with `AndroidVersion(AndroidApiLevel(36, 1), "CinnamonBun")` instead, which also counts API
- * levels 36.2 to 36.x and the codenames after "CinnamonBun" at API level 36.1, but not the CinnamonBun builds before API level 36.1.
+ * Whether the device runs Android 17 or later, compared like Android Studio does: with the API level and the codename only, so a beta or
+ * canary build counts as its preview. A release of API level 36.1 is Android 16 QPR2, and at API level 36.1 the codenames are compared as
+ * text: a codename before "CinnamonBun", like "CANARY", is not Android 17.
  */
-private fun AndroidDeviceVersion.isAndroid17OrLater(): Boolean = apiLevel >= ANDROID_17_API_LEVEL || codename == ANDROID_17_CODENAME
+private fun AndroidVersion.isAndroid17OrLater(): Boolean = AndroidVersion(androidApiLevel, codename, null, true) >= CINNAMON_BUN_VERSION
 
 /**
  * A Compose release, as published on Google Maven: `MAJOR.MINOR.PATCH`, optionally followed by `-alphaNN`, `-betaNN` or `-rcNN`. Ordered by

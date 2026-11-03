@@ -21,6 +21,8 @@ import com.android.adblib.DeviceList
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.sdklib.AndroidApiLevel
+import com.android.sdklib.AndroidVersion
 import com.android.tools.ui.inspector.InjectionManagerFactory
 import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.RecordingLogger
@@ -35,7 +37,6 @@ import com.android.tools.ui.inspector.client.ComposeInspectorResolution
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
-import com.android.tools.ui.inspector.device.AndroidDeviceVersion
 import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.PROCESS_PACKAGES_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
@@ -1831,8 +1832,7 @@ class InjectionManagerTest {
 
     val result = createInjectionManager().injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
-    assertThat(result)
-      .isEqualTo(InjectionResult.Injected("12345", AndroidDeviceVersion(apiLevel = 36, minorApiLevel = 1, codename = "CinnamonBun")))
+    assertThat(result).isEqualTo(InjectionResult.Injected("12345", AndroidVersion(AndroidApiLevel(36, 1), "CinnamonBun", null, true)))
   }
 
   @Test
@@ -1841,8 +1841,7 @@ class InjectionManagerTest {
 
     val result = createInjectionManager().injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
 
-    assertThat(result)
-      .isEqualTo(InjectionResult.Reconnected("12345", AndroidDeviceVersion(apiLevel = 37, minorApiLevel = 0, codename = null)))
+    assertThat(result).isEqualTo(InjectionResult.Reconnected("12345", AndroidVersion(AndroidApiLevel(37, 0), null, null, true)))
   }
 
   @Test

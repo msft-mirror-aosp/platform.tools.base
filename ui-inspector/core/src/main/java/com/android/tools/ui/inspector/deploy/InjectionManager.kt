@@ -20,11 +20,11 @@ import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
 import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
+import com.android.sdklib.AndroidVersion
 import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.AgentSocketChecker
-import com.android.tools.ui.inspector.device.AndroidDeviceVersion
 import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.DebugViewAttributes
 import com.android.tools.ui.inspector.device.DeviceMetadata
@@ -131,9 +131,9 @@ internal class InjectionManager(
     // Fails fast on an unusable Compose inspector override, before any device work.
     validateComposeInspectorOverride()
     val (deviceAbi, deviceVersion) = retrieveDeviceMetadata(deviceSelector)
-    if (deviceVersion.apiLevel < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
+    if (deviceVersion.androidApiLevel.majorVersion < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
       throw IllegalStateException(
-        "The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above. The target device is running API level ${deviceVersion.apiLevel}."
+        "The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above. The target device is running API level ${deviceVersion.androidApiLevel.majorVersion}."
       )
     }
 
@@ -212,7 +212,7 @@ internal class InjectionManager(
     agentLocalPath: Path,
     libraryDexLocalPath: Path,
     payloadJarLocalPath: Path,
-    deviceVersion: AndroidDeviceVersion,
+    deviceVersion: AndroidVersion,
   ): InjectionResult.Injected = coroutineScope {
     // Query the app data dir synchronously before mutating device settings or pushing files, to verify that the app is accessible
     // (installed, debuggable, and running under the current user).
@@ -555,11 +555,11 @@ internal sealed interface InjectionResult {
   val forwardedPort: String
 
   /** The Android version of the device, which decides whether the app's Compose version can be inspected on it. */
-  val deviceVersion: AndroidDeviceVersion
+  val deviceVersion: AndroidVersion
 
   /** An already-running server was reused; no message has been exchanged with it yet, so its liveness is not established. */
-  data class Reconnected(override val forwardedPort: String, override val deviceVersion: AndroidDeviceVersion) : InjectionResult
+  data class Reconnected(override val forwardedPort: String, override val deviceVersion: AndroidVersion) : InjectionResult
 
   /** The agent was freshly pushed and attached, and its server socket was observed. */
-  data class Injected(override val forwardedPort: String, override val deviceVersion: AndroidDeviceVersion) : InjectionResult
+  data class Injected(override val forwardedPort: String, override val deviceVersion: AndroidVersion) : InjectionResult
 }

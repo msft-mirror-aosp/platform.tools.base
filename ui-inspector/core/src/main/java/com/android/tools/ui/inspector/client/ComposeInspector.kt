@@ -16,12 +16,12 @@
 
 package com.android.tools.ui.inspector.client
 
+import com.android.sdklib.AndroidVersion
 import com.android.tools.ui.inspector.LogLevel
 import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InspectorMetadata
-import com.android.tools.ui.inspector.device.AndroidDeviceVersion
 import com.android.tools.ui.inspector.model.ParameterReference
 import com.android.tools.ui.inspector.proto.parseTreeResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
@@ -57,7 +57,7 @@ internal suspend fun createComposeInspector(
   logger: Logger,
   resolveJar: (version: String) -> Path,
   overrideJar: Path?,
-  deviceVersion: AndroidDeviceVersion,
+  deviceVersion: AndroidVersion,
 ): Boolean {
   val jar =
     when (val compose = detectCompose(commandSender, logger)) {

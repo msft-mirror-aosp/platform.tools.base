@@ -21,6 +21,8 @@ import com.android.adblib.DeviceList
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.sdklib.AndroidApiLevel
+import com.android.sdklib.AndroidVersion
 import com.android.tools.ui.inspector.RecordingLogger
 import com.android.tools.ui.inspector.TestAdbDeviceServices
 import com.android.tools.ui.inspector.TestAdbHostServices
@@ -34,7 +36,6 @@ import com.android.tools.ui.inspector.deploy.InjectionMode
 import com.android.tools.ui.inspector.deploy.buildInstallCommand
 import com.android.tools.ui.inspector.deploy.computeContentDigest
 import com.android.tools.ui.inspector.deploy.fileNameWithHash
-import com.android.tools.ui.inspector.device.AndroidDeviceVersion
 import com.android.tools.ui.inspector.device.DEVICE_METADATA_SHELL_COMMAND
 import com.android.tools.ui.inspector.fetchParameter
 import com.android.tools.ui.inspector.fetchUiDump
@@ -67,7 +68,7 @@ import org.junit.rules.TemporaryFolder
 private const val EMPTY_FILE_DIGEST = "e3b0c44298fc"
 
 /** A device on which every Compose version these tests use, 1.6.0, can be inspected. */
-private val API_30_DEVICE = AndroidDeviceVersion(apiLevel = 30, minorApiLevel = 0, codename = null)
+private val API_30_DEVICE = AndroidVersion(AndroidApiLevel(30, 0), null, null, true)
 
 /** The device staging directory every artifact is pushed into under its digest-carrying name. */
 private const val STAGING_DIR = "/data/local/tmp/ui-inspector"
@@ -1529,7 +1530,7 @@ class ComposeInspectorTest {
               logger,
               resolveJar = { throw AssertionError("no jar resolution expected") },
               overrideJar = null,
-              deviceVersion = AndroidDeviceVersion(apiLevel = 37, minorApiLevel = 0, codename = null),
+              deviceVersion = AndroidVersion(AndroidApiLevel(37, 0), null, null, true),
             )
           }
         }
@@ -1579,7 +1580,7 @@ class ComposeInspectorTest {
           // Like the production resolver, which returns the override jar when there is one.
           resolveJar = { overrideJar },
           overrideJar = overrideJar,
-          deviceVersion = AndroidDeviceVersion(apiLevel = 37, minorApiLevel = 0, codename = null),
+          deviceVersion = AndroidVersion(AndroidApiLevel(37, 0), null, null, true),
         )
       }
 
