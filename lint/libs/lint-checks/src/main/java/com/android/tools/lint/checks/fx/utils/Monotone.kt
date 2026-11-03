@@ -51,6 +51,8 @@ interface DependentMonotone<K, V> : ((K) -> V, K) -> V {
  * shouldn't keep applying its bootstrapping procedure to fresh arguments), although it's ok for [domain] to span larger as computation
  * progresses. (2) the lattice on [V] must have a finite height.
  *
+ * [Monotone] must be a pure function of its bootstrapping function's results: Evaluations with unchanged reads may be skipped.
+ *
  * The [Monotone] implementation has the freedom to call its bootstrapping function as much or as little as it wants, as long as it runs
  * finitely. Calling the bootstrapping function too often will only produce excessive and ineffective "checkpoints", while too little will
  * result in suboptimal sharing of intermediate results.
@@ -65,6 +67,7 @@ fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(vararg points: K): Memo<K
 
 private class FixPoint<K : Any, V>(private val eval: DependentMonotone<K, V>, private var domain: Collection<K>, bootstrap: Memo<K, V>) {
   private val learned = bootstrap.builder()
+  private val status = hashMapOf<K, Status<K, V>>()
 
   private fun known(point: K): V = if (point in learned) learned[point] as V else eval.latticeAt(point).bottom
 
@@ -73,47 +76,49 @@ private class FixPoint<K : Any, V>(private val eval: DependentMonotone<K, V>, pr
     return learned.build()
   }
 
-  /** Demands [domain] once, and keeps the invalidated roots. */
+  /** Demands [domain] once, re-evaluating only points whose recorded reads changed, and keeps the invalidated roots. */
   private fun step() {
-    val cacheDependents = hashMapOf<K, MutableSet<K>>()
-    val cacheUpdates = mutableSetOf<K>()
-    val cacheUpdateTriggers = hashMapOf<K, MutableSet<K>>()
+    val visited = hashMapOf<K, Map<K, V>>() // maps each point demanded in this step to the reads backing its value
 
-    class Step(private val caller: K?) : (K) -> V {
-      override fun invoke(point: K): V =
-        when (val deps = cacheDependents[point]) {
-          null -> {
-            ProgressManager.checkCanceled()
-            cacheDependents[point] = if (caller != null) mutableSetOf(caller) else mutableSetOf()
-            val knownAnswer = known(point)
-            when (val iteratedAnswer = eval.latticeAt(point).joinOf(knownAnswer, eval(Step(point), point))) {
-              knownAnswer -> knownAnswer
-              else ->
-                iteratedAnswer.also {
-                  cacheUpdates.add(point)
-                  learned[point] = iteratedAnswer
-                }
-            }
-          }
-          else -> {
-            if (caller != null) {
-              deps.add(caller)
-              if (point !in cacheUpdates) cacheUpdateTriggers.getOrPut(point, ::mutableSetOf).add(caller)
-            }
-            known(point)
-          }
-        }
+    fun demand(point: K): V {
+      val pointStatus = status[point]
+      if (pointStatus is Status.Converged || point in visited) return known(point)
+      ProgressManager.checkCanceled()
+      if (pointStatus is Status.Evaluated) {
+        visited[point] = pointStatus.reads
+        if (pointStatus.reads.isConsistentWith(::demand)) return known(point)
+      }
+      val knownAnswer = known(point)
+      val reads = LinkedHashMap<K, V>(4)
+      visited[point] = reads
+      fun rec(callee: K): V = if (callee in reads) reads[callee] as V else demand(callee).also { reads[callee] = it }
+      val iteratedAnswer = eval.latticeAt(point).joinOf(knownAnswer, eval(::rec, point))
+      if (iteratedAnswer != knownAnswer) learned[point] = iteratedAnswer
+      return iteratedAnswer
     }
 
-    for (d in domain) Step(null)(d)
+    for (d in domain) demand(d)
 
+    // A point is invalidated if it read, directly or transitively, a value that changed later in the iteration.
+    val dependents = buildMap {
+      for ((p, reads) in visited) for (callee in reads.keys) getOrPut(callee, ::mutableListOf).add(p)
+    }
     val invalidated = buildSet {
       fun visit(k: K) {
-        if (add(k)) cacheDependents[k]?.forEach(::visit)
+        if (add(k)) dependents[k]?.forEach(::visit)
       }
-      for (p in cacheUpdates) cacheUpdateTriggers[p]?.forEach(::visit)
+      for ((p, reads) in visited) if (!reads.isConsistentWith(::known)) visit(p)
     }
 
+    for ((p, reads) in visited) status[p] = if (p in invalidated) Status.Evaluated(reads) else Status.Converged
     domain = domain.filter(invalidated::contains)
   }
+
+  private sealed interface Status<out K, out V> {
+    object Converged : Status<Nothing, Nothing>
+
+    class Evaluated<K, V>(val reads: Map<K, V>) : Status<K, V>
+  }
 }
+
+private inline fun <K, V> Map<K, V>.isConsistentWith(compute: (K) -> V): Boolean = all { (k, v) -> compute(k) == v }

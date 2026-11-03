@@ -364,4 +364,64 @@ class MonotoneTest {
     val m = system.leastFixPoint(roots)
     for (r in roots) assertThat(m[r] ?: 0).isEqualTo(reference[r])
   }
+
+  /*
+   * Example 7: skipping converged subgraphs and unchanged re-evaluations across passes
+   */
+
+  @Test
+  fun `converged subgraphs are not re-evaluated while upstream cycles climb`() {
+    val evalCounts = hashMapOf<String, Int>()
+    val system =
+      object : Monotone<String, Int>, Lattice<Int> by order4 {
+        override fun invoke(rec: (String) -> Int, k: String): Int {
+          evalCounts.merge(k, 1, Int::plus)
+          return when (k) {
+            "fast" -> min(rec("fast") + 1, 1)
+            "slow" -> max(rec("fast"), min(rec("slow") + 1, 3))
+            else -> error("unknown $k")
+          }
+        }
+      }
+
+    assertThat(system.leastFixPoint("slow")["slow"]).isEqualTo(3)
+    assertThat(evalCounts["fast"]).isEqualTo(2)
+  }
+
+  @Test
+  fun `callers with unchanged inputs skip re-evaluation`() {
+    val evalCounts = hashMapOf<String, Int>()
+    val system =
+      object : Monotone<String, Int>, Lattice<Int> by order4 {
+        override fun invoke(rec: (String) -> Int, k: String): Int {
+          evalCounts.merge(k, 1, Int::plus)
+          return when (k) {
+            "climber" -> min(rec("climber") + 1, 3)
+            "capped" -> min(rec("climber"), 1)
+            "caller" -> rec("capped")
+            else -> error("unknown $k")
+          }
+        }
+      }
+
+    assertThat(system.leastFixPoint("caller")["caller"]).isEqualTo(1)
+    assertThat(evalCounts["caller"]).isEqualTo(1)
+  }
+
+  @Test
+  fun `caller skipped by dependency verification is invalidated when its in-progress ancestor updates`() {
+    val system =
+      object : Monotone<String, Int>, Lattice<Int> by order4 {
+        override fun invoke(rec: (String) -> Int, k: String): Int =
+          when (k) {
+            "p" -> max(rec("q"), min(rec("s1"), rec("s2")))
+            "q" -> if (rec("p") >= 1) 2 else 0
+            "s1" -> min(rec("s2") + 1, 1)
+            "s2" -> rec("s1")
+            else -> error("unknown $k")
+          }
+      }
+
+    assertThat(system.leastFixPoint("p")["p"]).isEqualTo(2)
+  }
 }
