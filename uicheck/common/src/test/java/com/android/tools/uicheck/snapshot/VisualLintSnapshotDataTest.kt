@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.visuallint.snapshot
+package com.android.tools.uicheck.snapshot
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

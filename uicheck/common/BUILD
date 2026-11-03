@@ -9,6 +9,7 @@ kotlin_library(
     ],
     deps = [
         "//tools/base/visual-lint:visual-lint-core",
+        "@maven//:com.google.code.gson.gson",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],
 )
