@@ -251,6 +251,8 @@ public interface BaseVariant {
      *
      * <p>If renderscript feature is disabled via {@link BuildFeatures#getRenderScript()} this will
      * throw an exception (or return <code>null</code> during sync.)
+     *
+     * @deprecated Use of Renderscript APIs is deprecated since Android 12.
      */
     @Nullable
     TaskProvider<RenderscriptCompile> getRenderscriptCompileProvider();
