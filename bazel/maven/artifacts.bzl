@@ -70,7 +70,7 @@ ARTIFACTS = [
     "com.google.auto.value:auto-value:1.10.1",
     "com.google.auto.value:auto-value-annotations:1.10.1",
     "com.google.code.findbugs:jsr305:3.0.2",
-    "com.google.code.gson:gson:2.11.0",
+    "com.google.code.gson:gson:2.15.0",
     "com.google.crypto.tink:tink:1.15.0",
     "com.google.dagger:dagger-compiler:2.48",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.10-2.0.2",  # AGP dependencies

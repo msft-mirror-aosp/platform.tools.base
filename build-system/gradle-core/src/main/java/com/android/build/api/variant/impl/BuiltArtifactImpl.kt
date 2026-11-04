@@ -186,6 +186,7 @@ internal object ArtifactTypeTypeAdapter : TypeAdapter<Artifact<*>>() {
     out.endObject()
   }
 
+  @Suppress("CheckResult")
   @Throws(IOException::class)
   override fun read(reader: JsonReader): Artifact<*> {
     reader.beginObject()

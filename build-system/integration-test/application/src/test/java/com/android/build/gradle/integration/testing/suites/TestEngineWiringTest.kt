@@ -118,7 +118,7 @@ class TestEngineWiringTest(
               }
               it.hostJar {
                 dependencies.apply {
-                  implementation.add("com.google.code.gson:gson:2.11.0")
+                  implementation.add("com.google.code.gson:gson:2.15.0")
                 }
               }
               it.targetVariants.add("debug")

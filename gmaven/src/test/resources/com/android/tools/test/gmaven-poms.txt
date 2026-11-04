@@ -10,7 +10,7 @@ androidx.databinding:databinding-compiler:$BUILD_VERSION
     androidx.databinding:databinding-compiler-common:$BUILD_VERSION (runtime)
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.google.auto:auto-common:1.2.1 (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     com.googlecode.juniversalchardet:juniversalchardet:1.0.3 (runtime)
     com.squareup:javapoet:1.13.0 (runtime)
@@ -26,7 +26,7 @@ androidx.databinding:databinding-compiler-common:$BUILD_VERSION
     com.android.databinding:baseLibrary:$BUILD_VERSION (runtime)
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10 (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     com.googlecode.juniversalchardet:juniversalchardet:1.0.3 (runtime)
     com.squareup:javapoet:1.13.0 (runtime)
@@ -202,7 +202,7 @@ com.android.tools:sdk-common:$BASE_VERSION
     com.android.tools:common:$BASE_VERSION (runtime)
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     javax.inject:javax.inject:1 (runtime)
@@ -222,7 +222,7 @@ com.android.tools:sdklib:$BASE_VERSION
     com.android.tools:common:$BASE_VERSION (runtime)
     com.android.tools:dvlib:$BASE_VERSION (runtime)
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     org.apache.httpcomponents:httpcore:4.4.16 (runtime)
     org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
 
@@ -290,7 +290,7 @@ com.android.tools.analytics-library:inspector:$BASE_VERSION
     com.android.tools.analytics-library:protos:$BASE_VERSION (runtime)
     com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
     com.android.tools:annotations:$BASE_VERSION (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
 
@@ -320,7 +320,7 @@ com.android.tools.analytics-library:shared:$BASE_VERSION
     com.android.tools.analytics-library:protos:$BASE_VERSION (compile)
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     net.java.dev.jna:jna-platform:5.6.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
@@ -491,7 +491,7 @@ com.android.tools.build:builder:$BUILD_VERSION
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
     javax.inject:javax.inject:1 (runtime)
     org.ow2.asm:asm-commons:9.9 (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
 
 com.android.tools.build:builder-model:$BUILD_VERSION
   pomName=com.android.tools.build.builder-model
@@ -549,7 +549,7 @@ com.android.tools.build:gradle:$BUILD_VERSION
     org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10 (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     com.google.protobuf:protobuf-java-util:3.25.5 (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.crypto.tink:tink:1.15.0 (runtime)
     org.tensorflow:tensorflow-lite-metadata:0.2.0 (runtime)
 
@@ -599,7 +599,7 @@ com.android.tools.build:manifest-merger:$BASE_VERSION
     com.android.tools:common:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
 com.android.tools.build:standalone-tools:$BUILD_VERSION
@@ -634,7 +634,7 @@ com.android.tools.emulator:proto:$BASE_VERSION
   pomName=Emulator protos for Android Tools
   description=A protobuf messages to control Android Emulator
   dependencies:
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     io.grpc:grpc-core:1.69.1 (runtime)
     io.grpc:grpc-netty:1.69.1 (runtime)
@@ -693,7 +693,7 @@ com.android.tools.lint:lint:$BASE_VERSION
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
@@ -735,7 +735,7 @@ com.android.tools.lint:lint-checks:$BASE_VERSION
     com.android.tools:play-sdk-proto:$BASE_VERSION (runtime)
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
@@ -778,7 +778,7 @@ com.android.tools.lint:lint-tests:$BASE_VERSION
     com.android.tools.lint:lint:$BASE_VERSION (runtime)
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
-    com.google.code.gson:gson:2.11.0 (runtime)
+    com.google.code.gson:gson:2.15.0 (runtime)
     junit:junit:4.13.2 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
     org.apache.groovy:groovy:4.0.29 (runtime)

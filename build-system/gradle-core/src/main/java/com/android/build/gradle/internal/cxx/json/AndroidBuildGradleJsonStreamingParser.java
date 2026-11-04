@@ -83,6 +83,7 @@ public class AndroidBuildGradleJsonStreamingParser implements Closeable {
      * the case where an older gradle plugin finds itself trying to build or clean against a folder
      * created by a more recent gradle plugin.
      */
+    @SuppressWarnings({"CheckResult", "CheckReturnValue"})
     private void parseUnknown() throws IOException {
         JsonToken peek = reader.peek();
         switch (peek) {

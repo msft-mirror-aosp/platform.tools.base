@@ -132,6 +132,7 @@ abstract class ExtractApksTask : NonIncrementalTask() {
 
   abstract class BundleToolRunnable : ProfileAwareWorkAction<Params>() {
 
+    @Suppress("CheckResult")
     override fun run() {
       FileUtils.cleanOutputDir(parameters.outputDir.asFile.get())
 

@@ -708,6 +708,7 @@ class JsonUiDumpPrinterTest {
   private fun assertParsesStrictly(json: String) {
     val reader = JsonReader(StringReader(json))
     reader.strictness = Strictness.STRICT
+    @Suppress("CheckResult")
     JsonParser.parseReader(reader)
     assertThat(reader.peek()).isEqualTo(JsonToken.END_DOCUMENT)
   }
