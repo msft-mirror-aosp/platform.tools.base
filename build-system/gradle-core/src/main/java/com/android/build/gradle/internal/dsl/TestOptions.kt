@@ -196,7 +196,8 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
   override val suites: PolymorphicDomainObjectContainer<AgpTestSuite> =
     dslServices.polymorphicDomainObjectContainer(AgpTestSuite::class.java).apply {
       registerFactory(AgpTestSuite::class.java) { name ->
-        dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, unitTests.isIncludeAndroidResources)
+        // Custom suites start with Android resources off. A suite opts in with hostJar { enableAndroidResources = true }.
+        dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, false)
       }
 
       if (dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_SCREENSHOT_TEST)) {

@@ -40,7 +40,7 @@ import org.gradle.api.tasks.testing.Test
  * @param dslServices internal services
  * @param androidResourcesIncluded whether Android resources are enabled by default for this suite type, used to seed
  *   [TestSuiteHostJarSpecImpl.enableAndroidResources] when a `hostJar {}` source container is first created and as the fallback when no
- *   `hostJar {}` container is configured.
+ *   `hostJar {}` container is configured. This is `false` for custom suites.
  */
 abstract class AgpTestSuiteImpl
 @Inject

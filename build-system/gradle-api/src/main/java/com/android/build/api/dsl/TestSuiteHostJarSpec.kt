@@ -47,6 +47,8 @@ interface TestSuiteHostJarSpec {
    * `android_custom_package`: the package name (namespace) of the final R class.
    *
    * Note that the paths above are relative paths (relative to the current project directory, not the root project directory).
+   *
+   * Defaults to `false` for custom suites.
    */
   @get:Incubating @set:Incubating var enableAndroidResources: Boolean
 }

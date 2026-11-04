@@ -162,4 +162,17 @@ class TestOptionsTest {
     assertThat(suite.backupTestLibraryVersion).isEqualTo("0.0.1-dev")
     assertThat(suite.targetVariants).containsExactly("debug")
   }
+
+  @Test
+  fun testCustomSuiteDoesNotInheritUnitTestAndroidResources() {
+    testOptions {
+      unitTests.isIncludeAndroidResources = true
+      customSuites.create("unit") { it.hostJar {} }
+    }
+
+    val suite = testOptionsWrapper.testOptions.customSuites.getByName("unit") as AgpTestSuiteImpl
+    assertThat(suite.androidResourcesIncluded).isFalse()
+    val hostJar = suite.getSourceContainers().filterIsInstance<TestSuiteHostJarSpecImpl>().single()
+    assertThat(hostJar.enableAndroidResources).isFalse()
+  }
 }
