@@ -71,6 +71,7 @@ class R8ClassloaderBuildServiceTest {
       assertThat(classLoader.loadClass("com.android.builder.dexing.R8Tool").classLoader).isSameInstanceAs(classLoader)
       assertThat(classLoader.loadClass("com.android.builder.dexing.L8Tool").classLoader).isSameInstanceAs(classLoader)
       assertThat(classLoader.loadClass("com.android.builder.dexing.TraceReferenceToolKt").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.D8DesugaredMethodsGenerator").classLoader).isSameInstanceAs(classLoader)
     }
   }
 

@@ -43,6 +43,7 @@ import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.ProjectServices
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.utils.MUTUALLY_EXCLUSIVE_ANDROID_GRADLE_PLUGINS
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptionService
@@ -135,6 +136,9 @@ abstract class AndroidPluginBaseServices(
 
     this.project = project
     AndroidLocationsBuildService.RegistrationAction(project).execute()
+    // Register early: artifact transforms can't use @ServiceReference, so they look the service up with getBuildService(), which fails if
+    // no task or other configuration code has registered it yet.
+    R8ClassloaderBuildService.RegistrationAction(project).execute()
     checkPluginsCompatibility(project)
     checkMinJvmVersion()
     val projectOptions: ProjectOptions = projectServices.projectOptions

@@ -68,7 +68,9 @@ import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
+import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.services.ProjectServices
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -97,6 +99,7 @@ import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIB
 import org.gradle.api.attributes.AttributesSchema
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
+import org.gradle.api.services.BuildServiceParameters
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 
 /** configures the dependencies for a set of variant inputs. */
@@ -543,6 +546,9 @@ class DependencyConfigurator(private val project: Project, private val projectSe
       )
 
       val d8Version = R8Version.getVersionString()
+      val r8Classpath = isolatedR8Classpath(projectOptions, services.r8FromMaven)
+      val r8ClassloaderBuildService =
+        getBuildService<R8ClassloaderBuildService, BuildServiceParameters.None>(projectServices.buildServiceRegistry)
 
       allComponents
         .mapTo(linkedSetOf()) { it.minSdk.apiLevel }
@@ -554,6 +560,8 @@ class DependencyConfigurator(private val project: Project, private val projectSe
               parameters.d8Version.set(d8Version)
               parameters.desugarLibConfigFiles.setFrom(getDesugarLibConfigFiles(services))
               parameters.bootclasspath.from(bootClasspath)
+              r8Classpath?.let { parameters.r8Classpath.from(it) }
+              parameters.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
             }
             spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
             spec.from.attribute(ATTR_ENABLE_CORE_LIBRARY_DESUGARING, TRUE.toString())
@@ -568,6 +576,8 @@ class DependencyConfigurator(private val project: Project, private val projectSe
             spec.parameters { parameters ->
               parameters.minSdkVersion.set(minSdkVersion)
               parameters.d8Version.set(d8Version)
+              r8Classpath?.let { parameters.r8Classpath.from(it) }
+              parameters.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
             }
             spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
             spec.from.attribute(ATTR_ENABLE_CORE_LIBRARY_DESUGARING, FALSE.toString())

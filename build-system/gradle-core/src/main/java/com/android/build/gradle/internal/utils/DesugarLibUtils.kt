@@ -24,10 +24,13 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.dependency.GenericTransformParameters
 import com.android.build.gradle.internal.dependency.L8DesugarLibTransformRegistration
 import com.android.build.gradle.internal.dependency.VariantDependencies.Companion.CONFIG_NAME_CORE_LIBRARY_DESUGARING
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.withR8ClassLoader
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.utils.DesugarConfigJson.Companion.combineFileContents
-import com.android.builder.dexing.D8DesugaredMethodsGenerator
 import com.android.sdklib.AndroidTargetHash
 import com.google.common.io.ByteStreams
 import java.io.File
@@ -51,9 +54,11 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -365,19 +370,28 @@ abstract class D8BackportedMethodsGenerator : TransformAction<D8BackportedMethod
     @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val desugarLibConfigFiles: ConfigurableFileCollection
 
     @get:CompileClasspath @get:Optional val bootclasspath: ConfigurableFileCollection
+
+    /** Maven-resolved R8 to run D8 from, or empty to use the R8 bundled with AGP. */
+    @get:Classpath val r8Classpath: ConfigurableFileCollection
+
+    @get:Internal val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
   }
 
   @get:InputArtifact @get:PathSensitive(PathSensitivity.NONE) abstract val inputArtifact: Provider<FileSystemLocation>
 
   override fun transform(outputs: TransformOutputs) {
     val outputFile = outputs.file("D8BackportedDesugaredMethods.txt")
-    outputFile.printWriter().use {
-      D8DesugaredMethodsGenerator.generate(
-          combineFileContents(parameters.desugarLibConfigFiles.files),
-          parameters.bootclasspath.files,
-          parameters.minSdkVersion.get(),
-        )
-        .forEach { method -> it.println(method) }
-    }
+    val methods =
+      withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
+        val r8Tools = createR8Tools(r8ClassLoader)
+        wrapIsolatedR8Failures(r8ClassLoader) {
+          r8Tools.generateDesugaredMethods(
+            combineFileContents(parameters.desugarLibConfigFiles.files),
+            parameters.bootclasspath.files,
+            parameters.minSdkVersion.get(),
+          )
+        }
+      }
+    outputFile.printWriter().use { writer -> methods.forEach { method -> writer.println(method) } }
   }
 }

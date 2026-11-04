@@ -198,6 +198,29 @@ class CreateR8ToolsTest {
     assertThatDex(l8Dex.toFile()).doesNotContainClasses("Lj$/time/LocalTime;")
   }
 
+  @Test
+  fun generateDesugaredMethods_throughIsolatedClassLoader_matchesBundledR8() {
+    val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
+    val desugarLibConfig = TestUtils.getDesugarLibConfigContent()
+    val bundled = createR8Tools(null)
+
+    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+      val isolated = createR8Tools(isolatedLoader)
+      assertThat(isolated.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
+
+      // Without core library desugaring: only the methods D8 backports.
+      val backported = isolated.generateDesugaredMethods(null, emptySet(), 21)
+      assertThat(backported).isNotEmpty()
+      assertThat(backported).containsExactlyElementsIn(bundled.generateDesugaredMethods(null, emptySet(), 21))
+
+      // With core library desugaring, the desugared library APIs are listed too.
+      val withDesugarLib = isolated.generateDesugaredMethods(desugarLibConfig, setOf(androidJar), 21)
+      assertThat(withDesugarLib).containsAtLeastElementsIn(backported)
+      assertThat(withDesugarLib.size).isGreaterThan(backported.size)
+      assertThat(withDesugarLib).containsExactlyElementsIn(bundled.generateDesugaredMethods(desugarLibConfig, setOf(androidJar), 21))
+    }
+  }
+
   /** Writes a jar with `test.App`, whose `static Object get()` returns `java.util.Optional.empty()`. */
   private fun writeClassUsingOptional(jar: Path) {
     val classWriter = ClassWriter(ClassWriter.COMPUTE_MAXS)

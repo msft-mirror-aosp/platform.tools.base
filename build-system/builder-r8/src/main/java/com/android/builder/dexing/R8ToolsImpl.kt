@@ -17,6 +17,7 @@
 package com.android.builder.dexing
 
 import com.android.ide.common.blame.MessageReceiver
+import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
 
@@ -129,4 +130,7 @@ class R8ToolsImpl : R8Tools {
       tempDir,
     )
   }
+
+  override fun generateDesugaredMethods(coreLibDesugarConfig: String?, bootclasspath: Set<File>, minSdkVersion: Int): List<String> =
+    D8DesugaredMethodsGenerator.generate(coreLibDesugarConfig, bootclasspath, minSdkVersion)
 }

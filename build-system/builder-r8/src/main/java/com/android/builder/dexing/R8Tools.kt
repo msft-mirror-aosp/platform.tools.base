@@ -17,6 +17,7 @@
 package com.android.builder.dexing
 
 import com.android.ide.common.blame.MessageReceiver
+import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
 
@@ -83,4 +84,7 @@ interface R8Tools {
     outputPartitionMappingFile: Path?,
     tempDir: Path?,
   )
+
+  /** Same parameters as D8DesugaredMethodsGenerator.generate, so the implementation just forwards them. */
+  fun generateDesugaredMethods(coreLibDesugarConfig: String?, bootclasspath: Set<File>, minSdkVersion: Int): List<String>
 }

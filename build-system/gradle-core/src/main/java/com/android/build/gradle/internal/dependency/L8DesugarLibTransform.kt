@@ -19,14 +19,19 @@ package com.android.build.gradle.internal.dependency
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.withR8ClassLoader
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
+import com.android.build.gradle.internal.r8.isolatedR8Classpath
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.utils.DESUGARED_DESUGAR_LIB
 import com.android.build.gradle.internal.utils.DesugarConfigJson.Companion.combineFileContents
 import com.android.build.gradle.internal.utils.getDesugarLibConfigFiles
 import com.android.builder.dexing.KeepRulesConfig
 import com.android.builder.dexing.L8OutputMode
-import com.android.builder.dexing.runL8
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
@@ -44,6 +49,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 
@@ -57,6 +63,11 @@ abstract class L8DesugarLibTransform : TransformAction<L8DesugarLibTransform.Par
     @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val desugarLibConfigFiles: ConfigurableFileCollection
     @get:Input val minSdkVersion: Property<Int>
     @get:Classpath val fullBootClasspath: ConfigurableFileCollection
+
+    /** Maven-resolved R8 to run L8 from, or empty to use the R8 bundled with AGP. */
+    @get:Classpath val r8Classpath: ConfigurableFileCollection
+
+    @get:Internal val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
   }
 
   @get:Classpath @get:InputArtifact abstract val primaryInput: Provider<FileSystemLocation>
@@ -74,16 +85,29 @@ abstract class L8DesugarLibTransform : TransformAction<L8DesugarLibTransform.Par
     inputFiles.addAll(dependencies.files.map { it.toPath() })
     val outputDir = outputs.dir(primaryInput.get().asFile.nameWithoutExtension)
 
-    runL8(
-      inputFiles,
-      outputDir.toPath(),
-      combineFileContents(parameters.desugarLibConfigFiles.files) ?: error("desugarLibConfigFiles is empty"),
-      parameters.fullBootClasspath.files.map { it.toPath() },
-      parameters.minSdkVersion.get(),
-      KeepRulesConfig(emptyList(), emptyList()),
-      false,
-      L8OutputMode.ClassFile,
-    )
+    val libConfiguration = combineFileContents(parameters.desugarLibConfigFiles.files) ?: error("desugarLibConfigFiles is empty")
+    withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
+      val r8Tools = createR8Tools(r8ClassLoader)
+      wrapIsolatedR8Failures(r8ClassLoader) {
+        r8Tools.runL8(
+          inputFiles,
+          outputDir.toPath(),
+          libConfiguration,
+          parameters.fullBootClasspath.files.map { it.toPath() },
+          parameters.minSdkVersion.get(),
+          KeepRulesConfig(emptyList(), emptyList()),
+          false,
+          L8OutputMode.ClassFile,
+          inputArtProfile = null,
+          outputArtProfile = null,
+          inputMappingFile = null,
+          outputMappingFile = null,
+          inputPartitionMappingFile = null,
+          outputPartitionMappingFile = null,
+          tempDir = null,
+        )
+      }
+    }
   }
 }
 
@@ -96,6 +120,8 @@ object L8DesugarLibTransformRegistration {
   ) {
     val desugarLibConfigFiles: FileCollection = getDesugarLibConfigFiles(taskCreationServices)
     val fullBootClasspath: FileCollection = globalTaskCreationConfig.fullBootClasspath
+    val r8Classpath: FileCollection? = isolatedR8Classpath(taskCreationServices.projectOptions, taskCreationServices.r8FromMaven)
+    val r8ClassloaderBuildService: Provider<R8ClassloaderBuildService> = getBuildService(taskCreationServices.buildServiceRegistry)
   }
 
   /**
@@ -140,6 +166,8 @@ object L8DesugarLibTransformRegistration {
         desugarLibConfigFiles.setFrom(sharedParameters.desugarLibConfigFiles)
         fullBootClasspath.from(sharedParameters.fullBootClasspath)
         minSdkVersion.set(parameters.minSdkVersion)
+        sharedParameters.r8Classpath?.let { r8Classpath.from(it) }
+        r8ClassloaderBuildService.set(sharedParameters.r8ClassloaderBuildService)
       }
       parameters.getAttributes().apply {
         addAttributesToContainer(spec.from)
