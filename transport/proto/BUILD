@@ -8,10 +8,10 @@ android_java_proto_library(
     srcs = glob(["**/*.proto"]),
     grpc_support = True,
     java_deps = [
-        "@perfetto_repo//:perfetto_config_java_proto",
+        "//tools/base/profiler:perfetto_config_java_proto",
     ],
     proto_deps = [
-        "@perfetto_repo//:perfetto_config_java_proto_srcs",
+        "//tools/base/profiler:perfetto_config_java_proto_srcs",
     ],
 )
 
@@ -24,7 +24,7 @@ cc_grpc_proto_library(
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
-    deps = ["@perfetto_repo//:cc_proto"],
+    deps = ["//tools/base/profiler:perfetto_config_cc_proto"],
 )
 
 # Makes small (lite) Java classes from leakcanary_data.proto for the studio-leakcanary library.

@@ -1,0 +1,16 @@
+diff --git a/BUILD b/BUILD
+--- a/BUILD
++++ b/BUILD
+@@ -52,6 +52,12 @@ licenses(["notice"])
+ 
+ exports_files(["NOTICE"])
+ 
++# Studio generates code from these protos with its own rules.
++exports_files(
++    glob(["protos/**/*.proto"]),
++    visibility = ["//visibility:public"],
++)
++
+ # ##############################################################################
+ # Internal targets
+ # ##############################################################################

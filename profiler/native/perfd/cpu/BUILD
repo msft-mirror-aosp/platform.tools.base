@@ -27,10 +27,10 @@ cc_library(
     copts = ANDROID_COPTS + [
         "-Itools/base/profiler/native",
         "-Itools/base/profiler/native/perfd/common",
-        "-I$(GENDIR)/external/perfetto_repo",
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//tools/base/profiler:perfetto_config_cc_proto",
         "//tools/base/profiler/native/perfd:perfd_internal_headers",
         "//tools/base/profiler/native/perfd/common:atrace",
         "//tools/base/profiler/native/perfd/common:perfetto",
@@ -40,7 +40,6 @@ cc_library(
         "//tools/base/transport/native/daemon",
         "//tools/base/transport/native/utils",
         "//tools/base/transport/proto:cc_proto",
-        "@perfetto_repo//:cc_proto",
     ],
 )
 
@@ -54,7 +53,6 @@ cc_test(
     copts = [
         "-Itools/base/profiler/native",
         "-Itools/base/profiler/native/tests",
-        "-I$(GENDIR)/external/perfetto_repo",
     ],
     data = [
         "//tools/base/profiler/native/testdata:perfd/cpu",
@@ -65,6 +63,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":profiler_cpu",
+        "//tools/base/profiler:perfetto_config_cc_proto",
         "//tools/base/profiler/native/perfd",
         "//tools/base/profiler/native/perfd/common:perfd_atrace_tests",
         "//tools/base/profiler/native/test:testutils",
@@ -72,6 +71,5 @@ cc_test(
         "//tools/base/transport/native/utils",
         "//tools/base/transport/proto:cc_proto",
         "@googletest//:gtest_main",
-        "@perfetto_repo//:cc_proto",
     ],
 )

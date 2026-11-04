@@ -344,8 +344,9 @@ def cc_grpc_proto_library(
     hdrs = []
     proto_deps = []  # Assumes c++ deps point to *_grpc_proto_library packages
     for src in srcs:
-        # .proto suffix should not be present in the output files
-        p_name = src[:-len(".proto")]
+        # .proto suffix should not be present in the output files. They are named after the path of
+        # the proto within its package, which also supports protos from other repositories.
+        p_name = native.package_relative_label(src).name[:-len(".proto")]
         outs.append(p_name + ".pb.cc")
         hdrs.append(p_name + ".pb.h")
         if grpc_support:

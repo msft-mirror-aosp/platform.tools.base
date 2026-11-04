@@ -60,8 +60,8 @@ cc_library(
         ":atrace",
         ":perfetto",
         ":simpleperf",
+        "//tools/base/profiler:perfetto_config_cc_proto",
         "//tools/base/transport/native/utils",
-        "@perfetto_repo//:cc_proto",
     ],
 )
 
@@ -106,12 +106,11 @@ cc_library(
     ],
     copts = ANDROID_COPTS + [
         "-Itools/base/profiler/native",
-        "-I$(GENDIR)/external/perfetto_repo",
     ],
     visibility = ["//visibility:public"],
     deps = [
         ":trace_utils",
-        "@perfetto_repo//:cc_proto",
+        "//tools/base/profiler:perfetto_config_cc_proto",
     ],
 )
 
@@ -171,10 +170,10 @@ cc_test(
         ":perfetto",
         ":simpleperf",
         ":trace_manager",
+        "//tools/base/profiler:perfetto_config_cc_proto",
         "//tools/base/profiler/native/perfd/common:perfd_atrace_tests",
         "//tools/base/transport/native/utils",
         "@googletest//:gtest_main",
-        "@perfetto_repo//:cc_proto",
     ],
 )
 
