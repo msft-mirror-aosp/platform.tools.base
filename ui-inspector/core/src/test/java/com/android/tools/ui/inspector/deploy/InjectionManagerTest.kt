@@ -278,7 +278,7 @@ class InjectionManagerTest {
     // A resident server from different artifacts listens on a different name: only the exact digest-scoped socket satisfies the wait, a
     // legacy pid-only socket does not.
     configureSuccessfulInjection(socketGrepOutput = "ui_inspector_1234\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E", "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "logcat -d -v threadtime -t '06-24 15:44:32.000' --pid=1234 *:W", "")
 
     try {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
@@ -491,7 +491,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "")
 
     // 2. Configure logcat command to return a mock agent crash log
-    val logcatCmd = "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E"
+    val logcatCmd = "logcat -d -v threadtime -t '06-24 15:44:32.000' --pid=1234 *:W"
     val mockErrorLog =
       "06-24 15:44:32.764  7191  7191 E studio.arttooling: Exception in com/android/tools/arttooling/AgentLoader.attach\n" +
         "06-24 15:44:32.764  7191  7191 E studio.arttooling: java.lang.RuntimeException: Simulated bootstrap failure"
@@ -504,6 +504,109 @@ class InjectionManagerTest {
       assertThat(e.message).contains("Failed to attach UI Inspector agent. Agent error in logcat:")
       assertThat(e.message).contains("Exception in com/android/tools/arttooling/AgentLoader.attach")
       assertThat(e.message).contains("java.lang.RuntimeException: Simulated bootstrap failure")
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_artFailsToAttachAnotherAgent_keepsWaitingForTheSocket() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    // The socket shows up on the 4th check, after the 3rd check read logcat.
+    testDeviceServices.queuedShellOutputs["cat /proc/net/unix"] = ArrayDeque(listOf("", "", "", "${socketName("1234")}\n"))
+    // ART failed to attach other agents to the same process: another tool's, and another build of this one.
+    val logcatCommand = "logcat -d -v threadtime -t '06-24 15:44:32.000' --pid=1234 *:W"
+    val otherAgentPaths =
+      listOf("/data/data/$packageName/code_cache/libjvmtiagent_arm64-v8a.so", "/data/data/$packageName/libarttooling_agent.aaaaaaaaaaaa.so")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      logcatCommand,
+      otherAgentPaths.joinToString(separator = "") { path ->
+        "06-24 15:44:32.764  7191  7191 W om.example: Agent attach failed (result=1) : Unable to dlopen $path: dlopen failed: " +
+          "library \"$path\" not found\n"
+      },
+    )
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+
+    assertThat(result).isInstanceOf(InjectionResult.Injected::class.java)
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }).contains(logcatCommand)
+  }
+
+  @Test
+  fun testInjectAndAttach_artFailsToAttachTheAgent_failsFastWithTheArtWarning() = runTest {
+    val injectionManager = createInjectionManager()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, DEVICE_METADATA_SHELL_COMMAND, "arm64-v8a\n30\n")
+    configurePackageUidAndProcesses()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, installCommand(), "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCommand(), "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "")
+    // ART can't load the agent, e.g. a truncated one, and logs it as a warning tagged with a truncated process name.
+    val agentPath = "/data/data/$packageName/libarttooling_agent.$EMPTY_FILE_DIGEST.so"
+    val artWarning =
+      "06-24 15:44:32.764  7191  7191 W om.example: Agent attach failed (result=1) : Unable to dlopen $agentPath: " +
+        "dlopen failed: file offset for the library \"$agentPath\" >= file size: 0 >= 0"
+    // The other warnings are not errors of the agent, even those with the agent's logging tags.
+    val logcat =
+      "06-24 15:44:32.700  7191  7191 W $packageName: An unrelated warning of the app\n" +
+        "$artWarning\n" +
+        "06-24 15:44:32.800  7191  7191 W studio.ui-inspector.ViewNodes: A warning of the agent\n"
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "logcat -d -v threadtime -t '06-24 15:44:32.000' --pid=1234 *:W",
+      logcat,
+    )
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+      fail("Expected IllegalStateException due to ART failing to attach the agent")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).isEqualTo("Failed to attach UI Inspector agent. Agent error in logcat:\n$artWarning")
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_deviceTimeUnknown_ignoresArtsAttachFailuresOfTheAgent() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    // Without the device time, the logcat search is unbounded.
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"", "", exitCode = 1)
+    // The socket shows up on the 4th check, after the 3rd check read logcat.
+    testDeviceServices.queuedShellOutputs["cat /proc/net/unix"] = ArrayDeque(listOf("", "", "", "${socketName("1234")}\n"))
+    // An earlier run found the agent truncated, before this run repaired it: ART's report stays in logcat under the same name.
+    val agentPath = "/data/data/$packageName/libarttooling_agent.$EMPTY_FILE_DIGEST.so"
+    val logcatCommand = "logcat -d -v threadtime --pid=1234 *:W"
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      logcatCommand,
+      "06-24 15:40:12.764  1234  1234 W om.example: Agent attach failed (result=1) : Unable to dlopen $agentPath: " +
+        "dlopen failed: file offset for the library \"$agentPath\" >= file size: 0 >= 0\n",
+    )
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+
+    assertThat(result).isInstanceOf(InjectionResult.Injected::class.java)
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }).contains(logcatCommand)
+  }
+
+  @Test
+  fun testInjectAndAttach_deviceTimeUnknown_stillFailsFastWithTheAgentsErrors() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(socketGrepOutput = "")
+    // Without the device time, the logcat search is unbounded.
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"", "", exitCode = 1)
+    val agentError = "06-24 15:44:32.764  1234  1234 E studio.arttooling: Exception in com/android/tools/arttooling/AgentLoader.attach"
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "logcat -d -v threadtime --pid=1234 *:W",
+      "06-24 15:44:32.700  1234  1234 W studio.arttooling: A warning of the agent\n$agentError\n",
+    )
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+      fail("Expected IllegalStateException due to the agent's error")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).isEqualTo("Failed to attach UI Inspector agent. Agent error in logcat:\n$agentError")
     }
   }
 
@@ -543,7 +646,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
       statProbeCommand(*BASE_STAGING_PATHS),
-      BASE_STAGING_PATHS.joinToString(separator = "") { "8124 $it\n" },
+      BASE_STAGING_PATHS.joinToString(separator = "") { "8124 0 $it\n" },
     )
 
     val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
@@ -565,7 +668,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
       statProbeCommand(*BASE_STAGING_PATHS),
-      "8124 ${BASE_STAGING_PATHS[0]}\n8180 ${BASE_STAGING_PATHS[1]}\n",
+      "8124 0 ${BASE_STAGING_PATHS[0]}\n8180 0 ${BASE_STAGING_PATHS[1]}\n",
       exitCode = 1,
     )
 
@@ -580,7 +683,7 @@ class InjectionManagerTest {
     val injectionManager = createInjectionManager()
     val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
     val remotePath = "$STAGING_DIR/my-inspector.$EMPTY_FILE_DIGEST.jar"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(remotePath), "8124 $remotePath\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(remotePath), "8124 0 $remotePath\n")
 
     val returned = injectionManager.stageInspectorPayload(InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar))
 
@@ -596,14 +699,15 @@ class InjectionManagerTest {
     val remotePath = "$STAGING_DIR/my-inspector.$EMPTY_FILE_DIGEST.jar"
     // The staged path holds an entry whose permissions are not the staging protocol's 0444 regular file (here 0400): it may be unreadable
     // by the app, so it is replaced.
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(remotePath), "8100 $remotePath\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(remotePath), "8100 0 $remotePath\n")
 
     injectionManager.stageInspectorPayload(InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar))
 
     assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }).containsExactly("$remotePath.test.tmp")
     assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command })
       .contains(
-        "rm -f $STAGING_DIR/my-inspector.$CONTENT_DIGEST_PATTERN.jar && test ! -d '$remotePath' && mv -f '$remotePath.test.tmp' '$remotePath'"
+        "rm -f $STAGING_DIR/my-inspector.$CONTENT_DIGEST_PATTERN.jar && test ! -d '$remotePath' && " +
+          "sync && mv -f '$remotePath.test.tmp' '$remotePath'"
       )
   }
 
@@ -650,42 +754,80 @@ class InjectionManagerTest {
   }
 
   @Test
-  fun testParseStagedFileModes_records() {
+  fun testParseStagedFiles_records() {
     val paths = listOf("/tmp/a", "/tmp/b")
-    val stdout = "8124 /tmp/b\n81a4 /tmp/a\n"
+    val stdout = "8124 870912 /tmp/b\n81a4 0 /tmp/a\n"
 
-    assertThat(parseStagedFileModes(stdout, paths)).containsExactly("/tmp/a", "81a4", "/tmp/b", "8124")
+    assertThat(parseStagedFiles(stdout, paths)).containsExactly("/tmp/a", StagedFile("81a4", 0), "/tmp/b", StagedFile("8124", 870912))
   }
 
   @Test
-  fun testParseStagedFileModes_pathWithoutRecordIsAbsent() {
-    val states = parseStagedFileModes("8124 /tmp/a\n", listOf("/tmp/a", "/tmp/b"))
+  fun testParseStagedFiles_pathWithoutRecordIsAbsent() {
+    val states = parseStagedFiles("8124 3 /tmp/a\n", listOf("/tmp/a", "/tmp/b"))
 
     assertThat(states!!.keys).containsExactly("/tmp/a")
   }
 
   @Test
-  fun testParseStagedFileModes_emptyOutputIsEmptyMap() {
-    assertThat(parseStagedFileModes("", listOf("/tmp/a"))).isEmpty()
+  fun testParseStagedFiles_emptyOutputIsEmptyMap() {
+    assertThat(parseStagedFiles("", listOf("/tmp/a"))).isEmpty()
   }
 
   @Test
-  fun testParseStagedFileModes_malformedLineIsUnusable() {
-    assertThat(parseStagedFileModes("not a stat line\n", listOf("/tmp/a"))).isNull()
-    assertThat(parseStagedFileModes("81G4 /tmp/a\n", listOf("/tmp/a"))).isNull()
-    assertThat(parseStagedFileModes("8124\n", listOf("/tmp/a"))).isNull()
+  fun testParseStagedFiles_malformedLineIsUnusable() {
+    assertThat(parseStagedFiles("not a stat line\n", listOf("/tmp/a"))).isNull()
+    assertThat(parseStagedFiles("81G4 3 /tmp/a\n", listOf("/tmp/a"))).isNull()
+    assertThat(parseStagedFiles("8124\n", listOf("/tmp/a"))).isNull()
+    // The size is missing, negative, not a number, or too large.
+    assertThat(parseStagedFiles("8124 /tmp/a\n", listOf("/tmp/a"))).isNull()
+    assertThat(parseStagedFiles("8124 -1 /tmp/a\n", listOf("/tmp/a"))).isNull()
+    assertThat(parseStagedFiles("8124 3k /tmp/a\n", listOf("/tmp/a"))).isNull()
+    assertThat(parseStagedFiles("8124 99999999999999999999 /tmp/a\n", listOf("/tmp/a"))).isNull()
   }
 
   @Test
-  fun testParseStagedFileModes_unexpectedPathIsUnusable() {
-    assertThat(parseStagedFileModes("8124 /tmp/other\n", listOf("/tmp/a"))).isNull()
+  fun testParseStagedFiles_unexpectedPathIsUnusable() {
+    assertThat(parseStagedFiles("8124 3 /tmp/other\n", listOf("/tmp/a"))).isNull()
     // A path that merely extends a requested one is unexpected, not a match.
-    assertThat(parseStagedFileModes("8124 /tmp/a.bak\n", listOf("/tmp/a"))).isNull()
+    assertThat(parseStagedFiles("8124 3 /tmp/a.bak\n", listOf("/tmp/a"))).isNull()
   }
 
   @Test
-  fun testParseStagedFileModes_duplicateRecordIsUnusable() {
-    assertThat(parseStagedFileModes("8124 /tmp/a\n81a4 /tmp/a\n", listOf("/tmp/a"))).isNull()
+  fun testParseStagedFiles_duplicateRecordIsUnusable() {
+    assertThat(parseStagedFiles("8124 3 /tmp/a\n81a4 3 /tmp/a\n", listOf("/tmp/a"))).isNull()
+  }
+
+  @Test
+  fun testStageInspectorPayload_truncatedStagedCopy_pushes() = runTest {
+    val injectionManager = createInjectionManager()
+    val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
+    Files.write(inspectorJar, byteArrayOf(1, 2, 3))
+    val remotePath = "$STAGING_DIR/my-inspector.${computeContentDigest(inspectorJar)}.jar"
+    configureStagedPush("my-inspector.jar", computeContentDigest(inspectorJar))
+    // The staged path holds a file with the staged mode, but truncated, as a device killed right after a push can leave it: it is replaced.
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(remotePath), "8124 0 $remotePath\n")
+
+    injectionManager.stageInspectorPayload(InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar))
+
+    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }).containsExactly("$remotePath.test.tmp")
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command })
+      .contains(
+        "rm -f $STAGING_DIR/my-inspector.$CONTENT_DIGEST_PATTERN.jar && test ! -d '$remotePath' && " +
+          "sync && mv -f '$remotePath.test.tmp' '$remotePath'"
+      )
+  }
+
+  @Test
+  fun testStageInspectorPayload_stagedCopyOfTheRightSize_skipsTransfer() = runTest {
+    val injectionManager = createInjectionManager()
+    val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
+    Files.write(inspectorJar, byteArrayOf(1, 2, 3))
+    val remotePath = "$STAGING_DIR/my-inspector.${computeContentDigest(inspectorJar)}.jar"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(remotePath), "8124 3 $remotePath\n")
+
+    injectionManager.stageInspectorPayload(InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar))
+
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
   }
 
   @Test
@@ -712,7 +854,8 @@ class InjectionManagerTest {
     // A directory occupies the staging path: mv onto it would silently move the temp file into it, so the guarded rename fails instead.
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "rm -f $STAGING_DIR/my-inspector.$CONTENT_DIGEST_PATTERN.jar && test ! -d '$remotePath' && mv -f '$remotePath.test.tmp' '$remotePath'",
+      "rm -f $STAGING_DIR/my-inspector.$CONTENT_DIGEST_PATTERN.jar && test ! -d '$remotePath' && " +
+        "sync && mv -f '$remotePath.test.tmp' '$remotePath'",
       stdout = "",
       exitCode = 1,
     )
@@ -756,6 +899,7 @@ class InjectionManagerTest {
         agentName = "libarttooling_agent.aaaaaaaaaaaa.so",
         libraryDexName = "libarttooling.bbbbbbbbbbbb.jar",
         payloadJarName = "lib_ui_inspector_payload.cccccccccccc.jar",
+        agentDigest = "aaaaaaaaaaaa",
         tempSuffix = "suffix.tmp",
       )
 
@@ -774,10 +918,10 @@ class InjectionManagerTest {
           "chmod 444 libarttooling.bbbbbbbbbbbb.jar.suffix.tmp lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp && " +
           "mv -f libarttooling.bbbbbbbbbbbb.jar.suffix.tmp libarttooling.bbbbbbbbbbbb.jar && " +
           "mv -f lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp lib_ui_inspector_payload.cccccccccccc.jar && " +
-          "if test ! -f libarttooling_agent.aaaaaaaaaaaa.so; then " +
-          "cat $STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so > libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp && " +
-          "chmod 444 libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp && " +
-          "mv -f libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp libarttooling_agent.aaaaaaaaaaaa.so; fi'"
+          "case \"\$(sha256sum libarttooling_agent.aaaaaaaaaaaa.so 2>/dev/null)\" in aaaaaaaaaaaa*) ;; " +
+          "*) cat $STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so > libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp && " +
+          "chmod 444 libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp && sync && " +
+          "mv -f libarttooling_agent.aaaaaaaaaaaa.so.suffix.tmp libarttooling_agent.aaaaaaaaaaaa.so ;; esac'"
       )
   }
 
@@ -1774,8 +1918,8 @@ class InjectionManagerTest {
     // Both the view inspector jar and the override jar are already correctly staged.
     val viewJarRemotePath = "$STAGING_DIR/view-inspector.$EMPTY_FILE_DIGEST.jar"
     val overrideRemotePath = "$STAGING_DIR/${fileNameWithHash("compose-override.jar", computeContentDigest(overrideJar))}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(viewJarRemotePath), "8124 $viewJarRemotePath\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(overrideRemotePath), "8124 $overrideRemotePath\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(viewJarRemotePath), "8124 0 $viewJarRemotePath\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(overrideRemotePath), "8124 3 $overrideRemotePath\n")
     val composeCreateCmd = CompletableDeferred<UiInspectorProtocol.Command>()
     val liveServer = ServerSocket(0)
     val serverThread = thread {
@@ -1849,7 +1993,7 @@ class InjectionManagerTest {
     // A reused server on an Android 17 device, in an app with a Compose version whose inspector is not supported there.
     configureSuccessfulInjection(deviceMetadata = "arm64-v8a\n37\n37.0\nREL\n")
     val viewJarRemotePath = "$STAGING_DIR/view-inspector.$EMPTY_FILE_DIGEST.jar"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(viewJarRemotePath), "8124 $viewJarRemotePath\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(viewJarRemotePath), "8124 0 $viewJarRemotePath\n")
     val liveServer = ServerSocket(0)
     val serverThread = startScriptedLiveAgent(liveServer, composeVersion = "1.10.6")
     testHostServices.queuedForwardPorts.add(liveServer.localPort.toString())
@@ -1887,7 +2031,7 @@ class InjectionManagerTest {
     configureSuccessfulInjection()
     // The probe finds the running server and the staged view inspector jar already matches: the whole run transfers no file at all.
     val viewJarRemotePath = "$STAGING_DIR/view-inspector.$EMPTY_FILE_DIGEST.jar"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(viewJarRemotePath), "8124 $viewJarRemotePath\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(viewJarRemotePath), "8124 0 $viewJarRemotePath\n")
     val liveServer = ServerSocket(0)
     val serverThread = startScriptedLiveAgent(liveServer)
     testHostServices.queuedForwardPorts.add(liveServer.localPort.toString())
@@ -2350,7 +2494,7 @@ class InjectionManagerTest {
     val staleVersionsPattern = "$STAGING_DIR/${fileNameWithHash(baseName, CONTENT_DIGEST_PATTERN)}"
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "rm -f $staleVersionsPattern && test ! -d '$target' && mv -f '$target.test.tmp' '$target'",
+      "rm -f $staleVersionsPattern && test ! -d '$target' && sync && mv -f '$target.test.tmp' '$target'",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "rm -f '$target.test.tmp'", "")
@@ -2378,6 +2522,7 @@ class InjectionManagerTest {
       agentName = fileNameWithHash("libarttooling_agent.so", digests.agentBinary),
       libraryDexName = fileNameWithHash("libarttooling.jar", digests.libraryDex),
       payloadJarName = fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar),
+      agentDigest = digests.agentBinary,
       tempSuffix = "test.tmp",
     )
   }

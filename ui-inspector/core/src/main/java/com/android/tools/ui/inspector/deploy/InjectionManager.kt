@@ -242,6 +242,7 @@ internal class InjectionManager(
       agentName = agentName,
       libraryDexName = libraryDexName,
       payloadJarName = payloadJarName,
+      agentDigest = digests.agentBinary,
     )
 
     val attachStartTime = captureAttachStartTime()
@@ -256,7 +257,7 @@ internal class InjectionManager(
     )
 
     val socketName = ProtocolConstants.getSocketName(serverToken)
-    agentSocketChecker.waitUntilPresent(socketName, pid, attachStartTime)
+    agentSocketChecker.waitUntilPresent(socketName, pid, attachStartTime, agentName)
 
     InjectionResult.Injected(setupAdbForward(deviceSelector, socketName), deviceVersion)
   }
@@ -420,6 +421,7 @@ internal class InjectionManager(
     agentName: String,
     libraryDexName: String,
     payloadJarName: String,
+    agentDigest: String,
   ) {
     val installCmd =
       buildInstallCommand(
@@ -430,6 +432,7 @@ internal class InjectionManager(
         agentName = agentName,
         libraryDexName = libraryDexName,
         payloadJarName = payloadJarName,
+        agentDigest = agentDigest,
         tempSuffix = tempFileSuffixGenerator(),
       )
     adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, installCmd)
@@ -499,8 +502,12 @@ private class UnverifiableProcessException(packageName: String, cause: Exception
  * Builds the `run-as` shell command that installs the staged artifacts into the app's data directory. Each file is written to a run-unique
  * temporary name and renamed onto its final name once the install is complete.
  *
- * The agent is only installed when [agentName] is absent. The dynamic linker recognizes an already-loaded library by its inode, not by its
- * path. Replacing the file would give it a new inode. The next attach would then load a second copy of the agent into the process.
+ * The agent is only installed when [agentName] is absent or its content does not match [agentDigest], e.g. because it was truncated when
+ * the device lost power or was killed right after an install that didn't sync it before the rename. The dynamic linker recognizes an
+ * already-loaded library by its inode, not by its path. Replacing the file would give it a new inode. The next attach would then load a
+ * second copy of the agent into the process. So an installed agent with the expected content is never replaced, and the check compares it
+ * with [agentDigest], the digest of the local file, never with the staged copy: a staged copy that is not what it should be must not
+ * replace a good installed agent.
  */
 internal fun buildInstallCommand(
   packageName: String,
@@ -510,6 +517,7 @@ internal fun buildInstallCommand(
   agentName: String,
   libraryDexName: String,
   payloadJarName: String,
+  agentDigest: String,
   tempSuffix: String,
 ): String {
   val agentTmp = "$agentName.$tempSuffix"
@@ -531,9 +539,12 @@ internal fun buildInstallCommand(
     "chmod 444 $libraryDexTmp $payloadTmp && " +
     "mv -f $libraryDexTmp $libraryDexName && " +
     "mv -f $payloadTmp $payloadJarName && " +
-    "if test ! -f $agentName; then " +
-    "cat $agentStagePath > $agentTmp && chmod 444 $agentTmp && mv -f $agentTmp $agentName; " +
-    "fi'"
+    // The installed agent is kept when its SHA-256 starts with agentDigest, the truncated SHA-256 of the local agent. A new agent is synced
+    // to the disk before the rename, so that a device killed right after doesn't keep it truncated under its final name. The jars need no
+    // sync: every run replaces them before the attach.
+    "case \"\$(sha256sum $agentName 2>/dev/null)\" in $agentDigest*) ;; " +
+    "*) cat $agentStagePath > $agentTmp && chmod 444 $agentTmp && sync && mv -f $agentTmp $agentName ;; " +
+    "esac'"
 }
 
 /** Whether [InjectionManager.injectAndAttach] may reuse an already-running agent server. */

@@ -48,6 +48,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.IOException
 import java.net.ServerSocket
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Collections
 import kotlin.io.path.writeText
@@ -91,6 +92,7 @@ private fun emptyArtifactsInstallCommand(packageName: String): String =
     agentName = EMPTY_AGENT_NAME,
     libraryDexName = EMPTY_LIBRARY_DEX_NAME,
     payloadJarName = EMPTY_PAYLOAD_JAR_NAME,
+    agentDigest = EMPTY_FILE_DIGEST,
     tempSuffix = "test.tmp",
   )
 
@@ -306,7 +308,11 @@ class ComposeInspectorTest {
     val fixedJar = tempFolder.newFile("compose-inspector.jar").toPath()
     fixedJar.writeText("fake pre-compiled compose dex classes")
     val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-inspector.jar", computeContentDigest(fixedJar))}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      statProbeCommand(stagedJarPath),
+      "8124 ${Files.size(fixedJar)} $stagedJarPath\n",
+    )
 
     val injectionManager =
       InjectionManager(
@@ -1484,7 +1490,11 @@ class ComposeInspectorTest {
     val overrideJar = tempFolder.newFile("compose-override.jar").toPath()
     overrideJar.writeText("fake pre-compiled compose dex classes")
     val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-override.jar", computeContentDigest(overrideJar))}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      statProbeCommand(stagedJarPath),
+      "8124 ${Files.size(overrideJar)} $stagedJarPath\n",
+    )
     val injectionManager = unusedInjectionManager(testSession)
     val createCommands = Collections.synchronizedList(mutableListOf<UiInspectorProtocol.CreateInspectorCommand>())
 
@@ -1559,7 +1569,11 @@ class ComposeInspectorTest {
     val overrideJar = tempFolder.newFile("compose-override.jar").toPath()
     overrideJar.writeText("fake pre-compiled compose dex classes")
     val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-override.jar", computeContentDigest(overrideJar))}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      statProbeCommand(stagedJarPath),
+      "8124 ${Files.size(overrideJar)} $stagedJarPath\n",
+    )
     val injectionManager = unusedInjectionManager(testSession)
     val createCommands = Collections.synchronizedList(mutableListOf<UiInspectorProtocol.CreateInspectorCommand>())
 
@@ -1688,7 +1702,11 @@ class ComposeInspectorTest {
     val fixedJar = tempFolder.newFile("compose-inspector.jar").toPath()
     fixedJar.writeText("fake pre-compiled compose dex classes")
     val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-inspector.jar", computeContentDigest(fixedJar))}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      statProbeCommand(stagedJarPath),
+      "8124 ${Files.size(fixedJar)} $stagedJarPath\n",
+    )
     val injectionManager = unusedInjectionManager(testSession)
 
     val exception =
@@ -2241,7 +2259,7 @@ class ComposeInspectorTest {
         val staleVersionsPattern = "$STAGING_DIR/${fileNameWithHash(baseName, CONTENT_DIGEST_PATTERN)}"
         fakeSession.deviceServices.configureShellCommand(
           deviceSelector,
-          "rm -f $staleVersionsPattern && test ! -d '$target' && mv -f '$target.test.tmp' '$target'",
+          "rm -f $staleVersionsPattern && test ! -d '$target' && sync && mv -f '$target.test.tmp' '$target'",
           "",
         )
         fakeSession.deviceServices.configureShellCommand(deviceSelector, "rm -f '$target.test.tmp'", "")
