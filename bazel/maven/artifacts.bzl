@@ -75,7 +75,7 @@ ARTIFACTS = [
     "com.google.dagger:dagger-compiler:2.48",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.10-2.0.2",  # AGP dependencies
     "com.google.errorprone:error_prone_annotations:2.28.0",
-    "com.google.flatbuffers:flatbuffers-java:1.12.0",
+    "com.google.flatbuffers:flatbuffers-java:25.2.10",
     "com.google.flogger:flogger:0.8",
     "com.google.flogger:flogger-system-backend:0.8",
     "com.google.flogger:google-extensions:0.8",
