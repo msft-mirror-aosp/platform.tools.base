@@ -605,7 +605,7 @@ public class SigningTest {
         assertThat(apk).doesNotContain("META-INF/" + certEntryName);
         assertThat(apk).doesNotContain("META-INF/CERT.SF");
         assertThat(apk).containsApkSigningBlock();
-        ApkVerifier.Result verificationResult = SigningHelper.assertApkSignaturesVerify(apk, 24);
+        ApkVerifier.Result verificationResult = SigningHelper.assertApkSignaturesVerify(apk, 28);
         assertThat(verificationResult.isVerifiedUsingV2Scheme()).isFalse();
         assertThat(verificationResult.isVerifiedUsingV3Scheme()).isTrue();
         assertThat(verificationResult.isVerifiedUsingV4Scheme()).isTrue();
