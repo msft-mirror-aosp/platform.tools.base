@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDef
 import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType.PluginTypeWithExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
-import com.android.testutils.TestUtils
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Path
@@ -251,7 +250,7 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
       customPluginMap,
       isRoot = false,
       useOldPluginStyle,
-      useLatestKgpVersion = false, // useLatestKgpVersion is relevant only for root project
+      kgpTestLayer = KgpTestLayer.DEFAULT, // kgpTestLayer is relevant only for root project
       projectRepositories,
       buildWriter,
     )
@@ -262,11 +261,11 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
     allPlugins: Map<PluginType, Set<String>>,
     customPluginMap: Map<String, Set<String>>,
     useOldPluginStyle: Boolean,
-    useLatestKgpVersion: Boolean,
+    kgpTestLayer: KgpTestLayer,
     projectRepositories: Collection<Path>,
     buildWriter: BuildWriter,
   ) {
-    write(location, allPlugins, customPluginMap, isRoot = true, useOldPluginStyle, useLatestKgpVersion, projectRepositories, buildWriter)
+    write(location, allPlugins, customPluginMap, isRoot = true, useOldPluginStyle, kgpTestLayer, projectRepositories, buildWriter)
   }
 
   @VisibleForTesting
@@ -280,7 +279,7 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
     customPluginMap: Map<String, Set<String>>,
     isRoot: Boolean,
     useOldPluginStyle: Boolean,
-    useLatestKgpVersion: Boolean, // Note: useLatestKgpVersion is relevant only when isRoot=true
+    kgpTestLayer: KgpTestLayer, // Note: kgpTestLayer is relevant only when isRoot=true
     projectRepositories: Collection<Path>,
     buildWriter: BuildWriter,
   ) {
@@ -347,9 +346,9 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
 
           val pluginsWithNoMarkers = allPlugins.keys.filter { !it.hasMarker && it.artifact != null }
           val isRootWithNonMarkerPlugin = isRoot && pluginsWithNoMarkers.isNotEmpty()
-          val isRootAndUseLatestKgpVersion = isRoot && useLatestKgpVersion
+          val explicitKgpVersion = if (isRoot) kgpTestLayer.explicitKgpVersion else null
 
-          if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin || isRootAndUseLatestKgpVersion) {
+          if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin || explicitKgpVersion != null) {
             block("buildscript") {
               block("dependencies") {
                 writeDependencyBuilderContent(location)
@@ -361,8 +360,8 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
                     dependency("classpath", "${plugin.artifact}:${plugin.version}")
                   }
                 }
-                if (isRootAndUseLatestKgpVersion) {
-                  dependency("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                if (explicitKgpVersion != null) {
+                  dependency("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:$explicitKgpVersion")
                 }
               }
             }

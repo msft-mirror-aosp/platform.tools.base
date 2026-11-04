@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.Version
+import com.android.testutils.TestUtils
 import com.google.common.truth.Truth
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
@@ -264,6 +265,70 @@ class GradleBuildDefinitionTest {
 
       dependencies {
         api(project(':library'))
+      }
+
+
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testKgpTestLayer() {
+    val defaultFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.DEFAULT
+      androidApplication {}
+    }
+    checkFile(
+      defaultFolder.resolve("build.gradle"),
+      "root build file for DEFAULT layer",
+      """
+      plugins {
+        id('com.android.application') version '${Version.ANDROID_GRADLE_PLUGIN_VERSION}' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val minimumFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.MINIMUM
+      androidApplication {}
+    }
+    checkFile(
+      minimumFolder.resolve("build.gradle"),
+      "root build file for MINIMUM layer",
+      """
+      buildscript {
+        dependencies {
+          classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION}')
+        }
+      }
+      plugins {
+        id('com.android.application') version '${Version.ANDROID_GRADLE_PLUGIN_VERSION}' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val latestFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.LATEST
+      androidApplication {}
+    }
+    checkFile(
+      latestFolder.resolve("build.gradle"),
+      "root build file for LATEST layer",
+      """
+      buildscript {
+        dependencies {
+          classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}')
+        }
+      }
+      plugins {
+        id('com.android.application') version '${Version.ANDROID_GRADLE_PLUGIN_VERSION}' apply false
       }
 
 

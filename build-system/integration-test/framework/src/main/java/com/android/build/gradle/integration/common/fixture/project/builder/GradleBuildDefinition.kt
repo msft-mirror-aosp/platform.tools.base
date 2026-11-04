@@ -33,7 +33,32 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
+import com.android.testutils.TestUtils
 import com.google.common.base.Strings
+
+/**
+ * Represents the KGP version layer to use when configuring the root project's buildscript classpath
+ * in tests.
+ */
+enum class KgpTestLayer(val explicitKgpVersion: String?) {
+  /**
+   * Modifies the root buildscript classpath to pin KGP to the minimum supported version
+   * ([TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION]).
+   */
+  MINIMUM(TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION),
+
+  /**
+   * Does not add an explicit KGP classpath dependency, so AGP resolves its default KGP version
+   * ([TestUtils.BUILT_IN_KOTLIN_VERSION]).
+   */
+  DEFAULT(null),
+
+  /**
+   * Modifies the root buildscript classpath to upgrade KGP to the latest version used in tests
+   * ([TestUtils.KOTLIN_VERSION_FOR_TESTS]).
+   */
+  LATEST(TestUtils.KOTLIN_VERSION_FOR_TESTS),
+}
 
 /** Represents a Gradle Build that can be configured before being written on disk */
 @GradleDefinitionDsl
@@ -61,6 +86,14 @@ interface GradleBuildDefinition {
    * on each project using [GradleProjectDefinition.buildscript] to achieve this.
    */
   var useOldPluginStyleForSeparateClassloaders: Boolean
+
+  /**
+   * Which [KgpTestLayer] to use for the root buildscript classpath.
+   *
+   * Defaults to the JVM system property `test.android.build.gradle.integration.kgp.layer` if set,
+   * or [KgpTestLayer.DEFAULT].
+   */
+  var kgpTestLayer: KgpTestLayer
 
   /**
    * Whether to modify the buildscript classpath to upgrade KGP from the version that AGP depends on to the latest version

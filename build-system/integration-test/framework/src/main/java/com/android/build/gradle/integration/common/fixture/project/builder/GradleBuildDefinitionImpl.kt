@@ -69,7 +69,16 @@ internal class GradleBuildDefinitionImpl(
 
   override var buildFileType: BuildFileType = BuildFileType.GROOVY
   override var useOldPluginStyleForSeparateClassloaders: Boolean = false
-  override var useLatestKgpVersion: Boolean = false
+  override var kgpTestLayer: KgpTestLayer =
+    System.getProperty("test.android.build.gradle.integration.kgp.layer")?.let {
+      KgpTestLayer.valueOf(it)
+    } ?: KgpTestLayer.DEFAULT
+
+  override var useLatestKgpVersion: Boolean
+    get() = kgpTestLayer == KgpTestLayer.LATEST
+    set(value) {
+      kgpTestLayer = if (value) KgpTestLayer.LATEST else KgpTestLayer.DEFAULT
+    }
 
   internal lateinit var globalDefinitionState: GlobalDefinitionState
 
@@ -415,7 +424,7 @@ internal class GradleBuildDefinitionImpl(
       allPlugins,
       customPluginMap,
       useOldPluginStyleForSeparateClassloaders,
-      useLatestKgpVersion,
+      kgpTestLayer,
       projectRepositories,
       buildFileType.getNewWriter(),
     )

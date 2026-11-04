@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.kotlin
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
@@ -34,17 +35,19 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
+class BuiltInKotlinForAppTest(private val kgpTestLayer: KgpTestLayer) {
 
   companion object {
 
-    @Parameterized.Parameters(name = "useLatestKgpVersion_{0}") @JvmStatic fun parameters() = listOf(false, true)
+    @Parameterized.Parameters(name = "kgpTestLayer_{0}")
+    @JvmStatic
+    fun parameters() = KgpTestLayer.entries
   }
 
   @get:Rule
   val rule = GradleRule.from {
     androidApplication { HelloWorldAndroid.setupKotlin(files) }
-    useLatestKgpVersion = this@BuiltInKotlinForAppTest.useLatestKgpVersion
+    kgpTestLayer = this@BuiltInKotlinForAppTest.kgpTestLayer
   }
 
   @Test

@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.kotlin
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.options.BooleanOption
@@ -30,11 +31,13 @@ import org.junit.runners.Parameterized
 
 /** Tests built-in Kotlin when the user applies the `com.android.built-in-kotlin` plugin. */
 @RunWith(Parameterized::class)
-class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
+class BuiltInKotlinPluginTest(private val kgpTestLayer: KgpTestLayer) {
 
   companion object {
 
-    @Parameterized.Parameters(name = "useLatestKgpVersion_{0}") @JvmStatic fun parameters() = listOf(false, true)
+    @Parameterized.Parameters(name = "kgpTestLayer_{0}")
+    @JvmStatic
+    fun parameters() = KgpTestLayer.entries
   }
 
   @get:Rule
@@ -48,7 +51,7 @@ class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
       add(BooleanOption.BUILT_IN_KOTLIN, false)
       add(BooleanOption.USE_NEW_DSL, false)
     }
-    useLatestKgpVersion = this@BuiltInKotlinPluginTest.useLatestKgpVersion
+    kgpTestLayer = this@BuiltInKotlinPluginTest.kgpTestLayer
   }
 
   @Test
@@ -72,7 +75,7 @@ class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
 
     val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
 
-    if (useLatestKgpVersion) {
+    if (kgpTestLayer == KgpTestLayer.LATEST) {
       result.assertErrorContains(
         "The 'org.jetbrains.kotlin.android' plugin in project ':app' is no longer required for Kotlin support since AGP 9.0."
       )
