@@ -8,14 +8,11 @@ java_proto_library(
     srcs = ["protos/perfetto/config/perfetto_config.proto"],
 )
 
-# Studio only uses UiState and FrameTimelineEvent of the trace schema. It detects Perfetto traces by
-# parsing their first packet against the descriptor set of the full schema, shipped as a resource.
+# Studio only uses UiState of the trace schema. It detects Perfetto traces by parsing their first
+# packet against the descriptor set of the full schema, shipped as a resource.
 java_proto_library(
     name = "java_proto",
-    srcs = [
-        "protos/perfetto/trace/android/frame_timeline_event.proto",
-        "protos/perfetto/trace/ui_state.proto",
-    ],
+    srcs = ["protos/perfetto/trace/ui_state.proto"],
     resources = [":perfetto_trace_proto"],
 )
 

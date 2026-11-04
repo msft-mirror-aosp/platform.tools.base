@@ -95,13 +95,14 @@ sh_binary(
 
 # TODO(b/415841192) Migrate @perfetto_repo to @perfetto.
 # This repo exposes only proto libraries, and does not need the patch applied
-# to the @perfetto repo.
+# to the @perfetto repo. Keep its version in sync with @perfetto in
+# toplevel.MODULE.bazel.
 http_archive(
     name = "perfetto_repo",
     build_file = "@//tools/base/profiler:native/external/perfetto.BUILD",
-    sha256 = "9741938a7fc534ed302723c2b2c3c949273aa92dbf725d0e1b7229a9320b6c07",
-    strip_prefix = "perfetto-56.0",
-    url = "https://github.com/google/perfetto/archive/refs/tags/v56.0.tar.gz",
+    sha256 = "ad566546d5c461135a41962e95b680f374e438cf2d9936867608b84132ec610a",
+    strip_prefix = "perfetto-58.2",
+    url = "https://github.com/google/perfetto/archive/refs/tags/v58.2.tar.gz",
 )
 
 # An empty local repository which must be overridden according to the instructions at
