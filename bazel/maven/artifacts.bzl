@@ -260,7 +260,7 @@ ARTIFACTS = [
     "org.robolectric:robolectric:4.14.1",
     "org.slf4j:slf4j-nop:2.0.17",
     "org.slf4j:slf4j-simple:1.7.2",
-    "org.tensorflow:tensorflow-lite-metadata:0.2.0",
+    "org.tensorflow:tensorflow-lite-metadata:0.4.4",
     "org.tomlj:tomlj:1.1.0",
     "org.xerial:sqlite-jdbc:3.43.0.0",
 ]
