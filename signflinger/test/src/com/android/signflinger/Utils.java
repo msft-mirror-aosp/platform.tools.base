@@ -23,6 +23,9 @@ import com.android.apksig.util.DataSource;
 import com.android.apksig.util.DataSources;
 import com.android.apksig.util.RunnablesExecutor;
 import com.android.apksig.util.RunnablesProvider;
+
+import org.junit.Assert;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -34,7 +37,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
-import org.junit.Assert;
 
 public final class Utils {
 
@@ -70,11 +72,16 @@ public final class Utils {
 
     public static void verifyApk(File toVerify, File v4SignatureFile)
             throws ApkFormatException, NoSuchAlgorithmException, IOException {
+        verifyApk(toVerify, v4SignatureFile, 24);
+    }
+
+    public static void verifyApk(File toVerify, File v4SignatureFile, int minCheckedPlatformVersion)
+            throws ApkFormatException, NoSuchAlgorithmException, IOException {
         ApkVerifier.Builder apkVerifierBuilder = new ApkVerifier.Builder(toVerify);
         apkVerifierBuilder.setV4SignatureFile(v4SignatureFile);
         // Note, Android Nougat (API 24) introduced v2 signing (it still supports
         // v1 signing).
-        apkVerifierBuilder.setMinCheckedPlatformVersion(24);
+        apkVerifierBuilder.setMinCheckedPlatformVersion(minCheckedPlatformVersion);
         ApkVerifier verifier = apkVerifierBuilder.build();
         ApkVerifier.Result result = verifier.verify();
         if (result.containsErrors()) {

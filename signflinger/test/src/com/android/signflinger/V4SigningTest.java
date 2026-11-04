@@ -17,13 +17,15 @@
 package com.android.signflinger;
 
 import com.android.apksig.apk.ApkFormatException;
+
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import org.junit.Rule;
-import org.junit.Test;
 
 public class V4SigningTest {
 
@@ -52,7 +54,7 @@ public class V4SigningTest {
         SignedApkOptions options = builder.build();
 
         try (SignedApk signedApk = new SignedApk(file, options)) {}
-        Utils.verifyApk(file, v4File);
+        Utils.verifyApk(file, v4File, 30);
     }
 
     @Test

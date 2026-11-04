@@ -18,12 +18,14 @@ package com.android.signflinger;
 
 import com.android.apksig.apk.ApkFormatException;
 import com.android.zipflinger.BytesSource;
+
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import org.junit.Rule;
-import org.junit.Test;
 
 public class V3SigningTest {
 
@@ -47,7 +49,7 @@ public class V3SigningTest {
         SignedApkOptions options = builder.build();
 
         try (SignedApk signedApk = new SignedApk(file, options)) {}
-        Utils.verifyApk(file);
+        Utils.verifyApk(file, null, 28);
     }
 
     @Test
@@ -68,11 +70,11 @@ public class V3SigningTest {
         SignedApkOptions options = builder.build();
 
         try (SignedApk signedApk = new SignedApk(file, options)) {}
-        Utils.verifyApk(file);
+        Utils.verifyApk(file, null, 28);
 
         try (SignedApk signedApk = new SignedApk(file, options)) {
             signedApk.add(new BytesSource(new byte[1024], "test1", 0));
         }
-        Utils.verifyApk(file);
+        Utils.verifyApk(file, null, 28);
     }
 }
