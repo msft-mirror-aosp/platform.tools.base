@@ -410,6 +410,7 @@ protected constructor(
             GradleDetector.DUPLICATE_CLASSES,
             GradleDetector.EXPIRED_TARGET_SDK_VERSION,
             GradleDetector.EXPIRING_TARGET_SDK_VERSION,
+            GradleDetector.GRADLE_VERSION,
             GradleDetector.JAVA_PLUGIN_LANGUAGE_LEVEL,
             GradleDetector.JCENTER_REPOSITORY_OBSOLETE,
             GradleDetector.KTX_EXTENSION_AVAILABLE,

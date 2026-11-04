@@ -42,6 +42,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.EXPIRED_TARGET_SDK
 import com.android.tools.lint.checks.GradleDetector.Companion.EXPIRING_TARGET_SDK_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.GRADLE_GETTER
 import com.android.tools.lint.checks.GradleDetector.Companion.GRADLE_PLUGIN_COMPATIBILITY
+import com.android.tools.lint.checks.GradleDetector.Companion.GRADLE_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.HIGH_APP_VERSION_CODE
 import com.android.tools.lint.checks.GradleDetector.Companion.INSTANT_APP_DEPRECATION
 import com.android.tools.lint.checks.GradleDetector.Companion.JAVA_PLUGIN_LANGUAGE_LEVEL
@@ -2195,14 +2196,14 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented(),
       )
-      .issues(DEPENDENCY, AGP_DEPENDENCY)
+      .issues(DEPENDENCY, AGP_DEPENDENCY, GRADLE_VERSION)
       .run()
       .expect(
         """
         build.gradle:2: Warning: A newer version of com.android.application than 8.0.0 is available: 8.0.2 [AndroidGradlePluginVersion]
           id 'com.android.application' version '8.0.0'
                                                ~~~~~~~
-        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.2 is available: 8.1.1 [AndroidGradlePluginVersion]
+        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.2 is available: 8.1.1 [GradleVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-7.2-bin.zip
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
@@ -2247,14 +2248,14 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented(),
       )
-      .issues(DEPENDENCY, AGP_DEPENDENCY)
+      .issues(DEPENDENCY, AGP_DEPENDENCY, GRADLE_VERSION)
       .run()
       .expect(
         """
         build.gradle:2: Warning: A newer version of com.android.application than 7.3.0 is available: 8.0.2 [AndroidGradlePluginVersion]
           id 'com.android.application' version '7.3.0'
                                                ~~~~~~~
-        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.3.3 is available: 7.6.4 [AndroidGradlePluginVersion]
+        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.3.3 is available: 7.6.4 [GradleVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-7.3.3-bin.zip
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
@@ -2278,11 +2279,11 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
-      .issues(DEPENDENCY, AGP_DEPENDENCY)
+      .issues(DEPENDENCY, AGP_DEPENDENCY, GRADLE_VERSION)
       .run()
       .expect(
         """
-        gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 8.2-milestone-1 is available: 8.2-rc-1 [AndroidGradlePluginVersion]
+        gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 8.2-milestone-1 is available: 8.2-rc-1 [GradleVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-milestone-1-bin.zip
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
@@ -2308,11 +2309,11 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
-      .issues(DEPENDENCY, AGP_DEPENDENCY)
+      .issues(DEPENDENCY, AGP_DEPENDENCY, GRADLE_VERSION)
       .run()
       .expect(
         """
-        gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 8.0-rc-3 is available: 8.1.1 [AndroidGradlePluginVersion]
+        gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 8.0-rc-3 is available: 8.1.1 [GradleVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-rc-3-bin.zip
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
@@ -10877,7 +10878,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       LintClient.clientName = LintClient.CLIENT_UNIT_TESTS
       for (issue in TestIssueRegistry().issues) {
         if (issue.implementation.detectorClass == GradleDetector::class.java) {
-          if (issue.implementation.scope.size > 1) {
+          if (issue.implementation.scope != Scope.GRADLE_SCOPE) {
             issue.implementation =
               Implementation(GroovyGradleDetector::class.java, issue.implementation.scope, *issue.implementation.analysisScopes)
           } else {

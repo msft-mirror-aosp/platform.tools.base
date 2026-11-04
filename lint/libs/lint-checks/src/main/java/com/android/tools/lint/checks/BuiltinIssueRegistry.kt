@@ -191,6 +191,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           GradleDetector.EXPIRING_TARGET_SDK_VERSION,
           GradleDetector.GRADLE_GETTER,
           GradleDetector.GRADLE_PLUGIN_COMPATIBILITY,
+          GradleDetector.GRADLE_VERSION,
           GradleDetector.HIGH_APP_VERSION_CODE,
           GradleDetector.IDE_SUPPORT,
           GradleDetector.INSTANT_APP_DEPRECATION,

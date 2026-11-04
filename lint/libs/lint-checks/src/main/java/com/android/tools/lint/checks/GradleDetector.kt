@@ -2609,7 +2609,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     val location = Location.create(context.file, contents, offset + valueStart, offset + line.length)
     val message = "A newer version of Gradle than $currentVersion is available: $newVersion"
     val fix = fix().name("Update to $newVersion").replace().text(currentVersion.toString()).with(newVersion.toString()).build()
-    val incident = Incident(AGP_DEPENDENCY, location, message, fix)
+    val incident = Incident(GRADLE_VERSION, location, message, fix)
     context.report(incident)
   }
 
@@ -2639,14 +2639,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     private val IMPLEMENTATION = Implementation(GradleDetector::class.java, Scope.GRADLE_SCOPE)
     private val IMPLEMENTATION_WITH_TOML =
       Implementation(GradleDetector::class.java, Scope.GRADLE_AND_TOML_SCOPE, Scope.GRADLE_SCOPE, Scope.TOML_SCOPE)
-    private val IMPLEMENTATION_WITH_TOML_AND_PROPERTIES =
-      Implementation(
-        GradleDetector::class.java,
-        EnumSet.of(Scope.GRADLE_FILE, Scope.TOML_FILE, Scope.PROPERTY_FILE),
-        Scope.GRADLE_SCOPE,
-        Scope.TOML_SCOPE,
-        Scope.PROPERTY_SCOPE,
-      )
     private val IMPLEMENTATION_WITH_TOML_AND_MANIFEST =
       Implementation(
         GradleDetector::class.java,
@@ -2749,7 +2741,27 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         priority = 4,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation = IMPLEMENTATION_WITH_TOML_AND_PROPERTIES,
+        implementation = IMPLEMENTATION_WITH_TOML,
+      )
+
+    /** Obsolete version of Gradle in the Gradle Wrapper properties. */
+    @JvmField
+    val GRADLE_VERSION =
+      Issue.create(
+        id = "GradleVersion",
+        briefDescription = "Obsolete Gradle Version",
+        explanation =
+          """
+                This detector looks for usage of the Gradle Wrapper where the version of Gradle \
+                you are using is not the current stable release. Using older versions is fine, \
+                and there are cases where you deliberately want to stick with an older version. \
+                However, you may simply not be aware that a more recent version is available, \
+                and that is what this lint check helps find.""",
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(GradleDetector::class.java, Scope.PROPERTY_SCOPE),
       )
 
     /** Deprecated Gradle constructs. */
