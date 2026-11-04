@@ -94,6 +94,12 @@ class TrackMdnsServicesCommandHandler : HostCommandHandler() {
               .setService(fakeService.serviceName)
               .setIpv4(fakeService.deviceAddress.hostString)
               .setPort(fakeService.deviceAddress.port)
+          fakeService.hostname?.let { protoMdnsServiceBuilder.setHostname(it) }
+          fakeService.deviceModel?.let { protoMdnsServiceBuilder.setDeviceModel(it) }
+          fakeService.buildVersionSdkFull?.let { protoMdnsServiceBuilder.setBuildVersionSdkFull(it) }
+          fakeService.givenName?.let { protoMdnsServiceBuilder.setGivenName(it) }
+          fakeService.serial?.let { protoMdnsServiceBuilder.setSerial(it) }
+          fakeService.mdnsServiceVersion?.let { protoMdnsServiceBuilder.setMdnsServiceVersion(it) }
 
           when (fakeService.serviceType) {
             ServiceType.TLS -> {

@@ -17,11 +17,19 @@ package com.android.fakeadbserver
 
 import java.net.InetSocketAddress
 
-data class MdnsService(
+data class MdnsService
+@JvmOverloads
+constructor(
   val instanceName: String,
   val serviceName: String,
   val deviceAddress: InetSocketAddress,
   val serviceType: ServiceType,
+  val hostname: String? = null,
+  val deviceModel: String? = null,
+  val buildVersionSdkFull: String? = null,
+  val givenName: String? = null,
+  val serial: String? = null,
+  val mdnsServiceVersion: String? = null,
 )
 
 enum class ServiceType {

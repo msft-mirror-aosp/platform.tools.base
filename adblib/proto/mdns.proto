@@ -56,4 +56,5 @@ message MdnsService {
     optional string given_name = 9;
     optional string serial = 10;
     optional string mdns_service_version = 11;
+    optional string hostname = 12;
 }

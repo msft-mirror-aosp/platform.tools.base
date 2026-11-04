@@ -376,6 +376,12 @@ class AdbHostServicesTest {
       Assert.assertEquals("service1", service.service.serviceInstanceName.service)
       Assert.assertEquals("192.168.1.1", service.service.ipv4)
       Assert.assertEquals(10, service.service.port)
+      Assert.assertNull(service.service.deviceModel)
+      Assert.assertNull(service.service.buildVersionSdkFull)
+      Assert.assertNull(service.service.givenName)
+      Assert.assertNull(service.service.serial)
+      Assert.assertNull(service.service.mdnsServiceVersion)
+      Assert.assertNull(service.service.hostname)
     }
 
     Assert.assertEquals(1, result.tcpMdnsServices.size)
@@ -384,6 +390,12 @@ class AdbHostServicesTest {
       Assert.assertEquals("service2", service.mdnsService.serviceInstanceName.service)
       Assert.assertEquals("192.168.1.2", service.mdnsService.ipv4)
       Assert.assertEquals(11, service.mdnsService.port)
+      Assert.assertNull(service.mdnsService.deviceModel)
+      Assert.assertNull(service.mdnsService.buildVersionSdkFull)
+      Assert.assertNull(service.mdnsService.givenName)
+      Assert.assertNull(service.mdnsService.serial)
+      Assert.assertNull(service.mdnsService.mdnsServiceVersion)
+      Assert.assertNull(service.mdnsService.hostname)
     }
 
     Assert.assertEquals(1, result.pairingMdnsServices.size)
@@ -392,6 +404,86 @@ class AdbHostServicesTest {
       Assert.assertEquals("service3", service.mdnsService.serviceInstanceName.service)
       Assert.assertEquals("192.168.1.3", service.mdnsService.ipv4)
       Assert.assertEquals(12, service.mdnsService.port)
+      Assert.assertNull(service.mdnsService.deviceModel)
+      Assert.assertNull(service.mdnsService.buildVersionSdkFull)
+      Assert.assertNull(service.mdnsService.givenName)
+      Assert.assertNull(service.mdnsService.serial)
+      Assert.assertNull(service.mdnsService.mdnsServiceVersion)
+      Assert.assertNull(service.mdnsService.hostname)
+    }
+  }
+
+  @Test
+  fun testTrackMdnsServicesHostname() {
+    // Prepare: non-empty ipv4 + hostname + optional metadata, empty ipv4 + hostname, and both empty
+    fakeAdb.addMdnsService(
+      MdnsService(
+        "pair-ipv4-and-host",
+        "_adb-tls-pairing._tcp",
+        InetSocketAddress.createUnresolved("192.168.1.3", 12),
+        serviceType = ServiceType.PAIRING,
+        hostname = "device1.local",
+        deviceModel = "Pixel 10",
+        buildVersionSdkFull = "36.0",
+        givenName = "My Pixel",
+        serial = "serial-123",
+        mdnsServiceVersion = "2.0",
+      )
+    )
+    fakeAdb.addMdnsService(
+      MdnsService(
+        "pair-host-only",
+        "_adb-tls-pairing._tcp",
+        InetSocketAddress.createUnresolved("", 13),
+        serviceType = ServiceType.PAIRING,
+        hostname = "device2.local",
+      )
+    )
+    fakeAdb.addMdnsService(
+      MdnsService(
+        "pair-both-empty",
+        "_adb-tls-pairing._tcp",
+        InetSocketAddress.createUnresolved("", 14),
+        serviceType = ServiceType.PAIRING,
+      )
+    )
+
+    // Act
+    val result = runBlocking { hostServices.trackMdnsServices().first() }
+
+    // Assert
+    val byInstance = result.pairingMdnsServices.associateBy { it.mdnsService.serviceInstanceName.instance }
+    Assert.assertEquals(3, byInstance.size)
+
+    byInstance.getValue("pair-ipv4-and-host").mdnsService.let { info ->
+      Assert.assertEquals("192.168.1.3", info.ipv4)
+      Assert.assertEquals("device1.local", info.hostname)
+      Assert.assertEquals(12, info.port)
+      Assert.assertEquals("Pixel 10", info.deviceModel)
+      Assert.assertEquals("36.0", info.buildVersionSdkFull)
+      Assert.assertEquals("My Pixel", info.givenName)
+      Assert.assertEquals("serial-123", info.serial)
+      Assert.assertEquals("2.0", info.mdnsServiceVersion)
+    }
+    byInstance.getValue("pair-host-only").mdnsService.let { info ->
+      Assert.assertEquals("", info.ipv4)
+      Assert.assertEquals("device2.local", info.hostname)
+      Assert.assertEquals(13, info.port)
+      Assert.assertNull(info.deviceModel)
+      Assert.assertNull(info.buildVersionSdkFull)
+      Assert.assertNull(info.givenName)
+      Assert.assertNull(info.serial)
+      Assert.assertNull(info.mdnsServiceVersion)
+    }
+    byInstance.getValue("pair-both-empty").mdnsService.let { info ->
+      Assert.assertEquals("", info.ipv4)
+      Assert.assertNull(info.hostname)
+      Assert.assertEquals(14, info.port)
+      Assert.assertNull(info.deviceModel)
+      Assert.assertNull(info.buildVersionSdkFull)
+      Assert.assertNull(info.givenName)
+      Assert.assertNull(info.serial)
+      Assert.assertNull(info.mdnsServiceVersion)
     }
   }
 

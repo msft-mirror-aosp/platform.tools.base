@@ -64,4 +64,6 @@ data class MdnsTrackServiceInfo(
   val serial: String?,
   // Used by clients to manage changes to the MdnsService.
   val mdnsServiceVersion: String?,
+  // The target host name of the mDNS service, e.g. "Android.local".
+  val hostname: String? = null,
 )
