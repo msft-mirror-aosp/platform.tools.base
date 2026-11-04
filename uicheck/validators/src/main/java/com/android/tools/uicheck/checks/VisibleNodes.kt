@@ -61,22 +61,25 @@ private fun ComponentBounds.intersection(other: ComponentBounds): ComponentBound
 
 /**
  * Returns every visible node in pre-order whose bounds intersect the screen and any enclosing scrollable container's viewport. The subtree
- * of an invisible or scrolled-off node is skipped.
+ * of an invisible or scrolled-off node is skipped, and when [stopAt] returns true for a node, that node is yielded and its descendants are
+ * skipped.
  */
-internal fun CheckContext.visibleNodes(): Sequence<ComponentTreeNode> = sequence {
+internal fun CheckContext.visibleNodes(stopAt: (ComponentTreeNode) -> Boolean = { false }): Sequence<ComponentTreeNode> = sequence {
   val screenClip = ComponentBounds(0, 0, screenWidthPx.coerceAtLeast(0), screenHeightPx.coerceAtLeast(0))
-  roots.forEach { yieldVisibleNode(it, screenClip) }
+  roots.forEach { yieldVisibleNode(it, screenClip, stopAt) }
 }
 
-/** Recursively yields [node] and its visible descendants that intersect [clip]. */
+/** Recursively yields [node] and its visible descendants that intersect [clip], stopping recursion into children when [stopAt] matches. */
 private suspend fun SequenceScope<ComponentTreeNode>.yieldVisibleNode(
   node: ComponentTreeNode,
   clip: ComponentBounds,
+  stopAt: (ComponentTreeNode) -> Boolean,
 ) {
   if (!node.isVisible() || !node.bounds.intersects(clip)) return
   yield(node)
+  if (stopAt(node)) return
   val childClip = if (node.isScrollableContainer()) clip.intersection(node.bounds) else clip
-  node.children?.forEach { yieldVisibleNode(it, childClip) }
+  node.children?.forEach { yieldVisibleNode(it, childClip, stopAt) }
 }
 
 /** Returns true if this node is non-zero in size and not hidden by visibility or alpha modifiers. */
@@ -90,7 +93,7 @@ internal fun ComponentTreeNode.isVisible(): Boolean {
 }
 
 /** Returns true if this node exposes an accessibility action matching [actionName]. */
-private fun ComponentTreeNode.hasAction(actionName: String): Boolean =
+internal fun ComponentTreeNode.hasAction(actionName: String): Boolean =
   semantics?.get("actions")?.split(',')?.any {
     it.trim().equals(actionName, ignoreCase = true)
   } == true

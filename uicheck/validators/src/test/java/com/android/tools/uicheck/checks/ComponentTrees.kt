@@ -39,6 +39,7 @@ internal fun node(
   sourceLocation: ComponentSourceLocation? = null,
   children: List<ComponentTreeNode>? = null,
   semantics: Map<String, String>? = null,
+  parameters: Map<String, String>? = null,
   modifiers: Map<String, String>? = null,
 ): ComponentTreeNode =
   ComponentTreeNode(
@@ -47,6 +48,7 @@ internal fun node(
     sourceLocation = sourceLocation,
     children = children,
     semantics = semantics,
+    parameters = parameters,
     modifiers = modifiers,
   )
 
