@@ -52,7 +52,10 @@ import java.util.jar.JarFile;
  */
 public class TestUtils {
 
-    /** Kotlin Gradle plugin version that AGP depends on. */
+    /** Minimum Kotlin Gradle plugin version that AGP supports and compiles against. */
+    public static final String MINIMUM_BUILT_IN_KOTLIN_VERSION = "2.2.10";
+
+    /** Default Kotlin Gradle plugin version that AGP recommends using. */
     public static final String BUILT_IN_KOTLIN_VERSION = "2.2.10";
 
     /**
