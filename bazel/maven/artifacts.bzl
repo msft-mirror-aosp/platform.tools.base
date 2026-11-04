@@ -114,7 +114,7 @@ ARTIFACTS = [
     "com.squareup.okio:okio-jvm:3.0.0",
     "com.squareup.wire:wire-runtime-jvm:6.0.0",
     "commons-cli:commons-cli:1.4",
-    "commons-io:commons-io:2.16.1",
+    "commons-io:commons-io:2.22.0",
     "commons-logging:commons-logging:1.2",
     "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.8.1",
     "info.picocli:picocli:4.7.4",

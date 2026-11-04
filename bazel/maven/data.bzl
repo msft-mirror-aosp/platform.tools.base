@@ -1640,6 +1640,7 @@ _CLASS_JARS = [
     "org.junit:junit-bom:pom:5.10.1",
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.11.0-M2",
+    "org.junit:junit-bom:pom:5.14.2",  # imported by org.apache.commons:commons-parent:98
     "org.junit:junit-bom:pom:5.14.4",  # imported by org.apache.commons:commons-parent:105
     "org.junit:junit-bom:pom:5.9.2",
     "org.junit:junit-bom:pom:5.9.3",

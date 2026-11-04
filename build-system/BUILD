@@ -755,6 +755,7 @@ maven_repository(
         "@maven//:org.jetbrains.markdown",
         "@maven//:org.junit.junit-bom_5.10.2",
         "@maven//:org.junit.junit-bom_5.11.0-M2",
+        "@maven//:org.junit.junit-bom_5.14.2",
         "@maven//:org.junit.junit-bom_5.14.4",
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",

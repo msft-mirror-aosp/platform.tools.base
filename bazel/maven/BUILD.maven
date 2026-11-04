@@ -7571,25 +7571,25 @@ maven_import(
 )
 
 maven_artifact(
-    name = "commons-io.commons-io_2.16.1",
-    pom = "commons-io/commons-io/2.16.1/commons-io-2.16.1.pom",
+    name = "commons-io.commons-io_2.22.0",
+    pom = "commons-io/commons-io/2.22.0/commons-io-2.22.0.pom",
     repo_root_path = "",
-    repo_path = "commons-io/commons-io/2.16.1",
-    parent = "org.apache.commons.commons-parent_69",
+    repo_path = "commons-io/commons-io/2.22.0",
+    parent = "org.apache.commons.commons-parent_98",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "commons-io.commons-io",
     classifiers = [],
-    parent = "org.apache.commons.commons-parent_69",
+    parent = "org.apache.commons.commons-parent_98",
     jars = [
-        "commons-io/commons-io/2.16.1/commons-io-2.16.1.jar"
+        "commons-io/commons-io/2.22.0/commons-io-2.22.0.jar"
     ],
     original_deps = [],
-    pom = "commons-io/commons-io/2.16.1/commons-io-2.16.1.pom",
+    pom = "commons-io/commons-io/2.22.0/commons-io-2.22.0.pom",
     repo_root_path = "",
-    repo_path = "commons-io/commons-io/2.16.1",
+    repo_path = "commons-io/commons-io/2.22.0",
     visibility = ["//visibility:public"],
 )
 
@@ -90013,6 +90013,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "commons-io.commons-io_2.16.1",
+    pom = "commons-io/commons-io/2.16.1/commons-io-2.16.1.pom",
+    repo_root_path = "",
+    repo_path = "commons-io/commons-io/2.16.1",
+    parent = "org.apache.commons.commons-parent_69",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "commons-io.commons-io_2.4",
     pom = "commons-io/commons-io/2.4/commons-io-2.4.pom",
     repo_root_path = "",
@@ -110983,6 +110992,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.junit-bom_5.14.2",
+    pom = "org/junit/junit-bom/5.14.2/junit-bom-5.14.2.pom",
+    repo_root_path = "",
+    repo_path = "org/junit/junit-bom/5.14.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.junit-bom_5.14.4",
     pom = "org/junit/junit-bom/5.14.4/junit-bom-5.14.4.pom",
     repo_root_path = "",
@@ -114634,6 +114651,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.commons.commons-parent_98",
+    pom = "org/apache/commons/commons-parent/98/commons-parent-98.pom",
+    repo_root_path = "",
+    repo_path = "org/apache/commons/commons-parent/98",
+    parent = "org.apache.apache_37",
+)
+
+maven_artifact(
     name = "org.apache.geronimo.genesis.genesis-default-flava_2.0",
     pom = "org/apache/geronimo/genesis/genesis-default-flava/2.0/genesis-default-flava-2.0.pom",
     repo_root_path = "",
@@ -115007,6 +115032,13 @@ maven_artifact(
     pom = "org/apache/apache/33/apache-33.pom",
     repo_root_path = "",
     repo_path = "org/apache/apache/33",
+)
+
+maven_artifact(
+    name = "org.apache.apache_37",
+    pom = "org/apache/apache/37/apache-37.pom",
+    repo_root_path = "",
+    repo_path = "org/apache/apache/37",
 )
 
 maven_artifact(
