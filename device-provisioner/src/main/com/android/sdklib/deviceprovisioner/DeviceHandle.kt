@@ -96,10 +96,6 @@ interface DeviceHandle : Extensible {
   val wifiPairDeviceAction: PairDeviceAction?
     get() = null
 
-  /** Attempts to hide the device from DeviceManager. */
-  val hideDeviceAction: HideDeviceAction?
-    get() = null
-
   val pairGlassesAction: PairGlassesAction?
     get() = null
 
