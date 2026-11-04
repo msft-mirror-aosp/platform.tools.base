@@ -16,9 +16,14 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.component.HostTestCreationConfig
+import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.profile.AnalyticsService
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.getBuildServiceName
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.builder.core.ComponentTypeImpl
@@ -26,10 +31,12 @@ import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when` as whenever
 
@@ -178,5 +185,65 @@ class GenerateComposePreviewRunfilesTaskTest {
 
     val result = GenerateComposePreviewRunfilesTask.computePackageName(creationConfig)
     assertThat(result.get()).isEqualTo("com.example.library")
+  }
+
+  private fun configureWithCreationAction(
+    componentType: ComponentTypeImpl,
+    variantName: String,
+    nestedComponents: List<ComponentCreationConfig>,
+  ): GenerateComposePreviewRunfilesTask {
+    val creationConfig = mock(VariantCreationConfig::class.java, Mockito.RETURNS_DEEP_STUBS)
+    whenever(creationConfig.name).thenReturn(variantName)
+    whenever(creationConfig.componentType).thenReturn(componentType)
+    whenever(creationConfig.services.projectInfo.path).thenReturn(":test")
+    whenever(creationConfig.services.provider(Mockito.any<() -> Any>() ?: {})).thenAnswer { invocation ->
+      val action = invocation.getArgument<() -> Any>(0)
+      project.provider { action() }
+    }
+    whenever(creationConfig.applicationId).thenReturn(project.provider { "com.example.test" })
+    whenever(creationConfig.namespace).thenReturn(project.provider { "com.example.test" })
+    whenever(creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES))
+      .thenReturn(project.files())
+    whenever(creationConfig.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR))
+      .thenReturn(project.provider { project.layout.projectDirectory.file("app_R.jar") })
+    whenever(creationConfig.nestedComponents).thenReturn(nestedComponents)
+    whenever(creationConfig.variantDependencies.runtimeClasspath.incoming.artifactView(Mockito.any() ?: {}).files)
+      .thenReturn(project.files())
+
+    val configuredTask =
+      project.tasks
+        .register(
+          "configureTest${variantName.replaceFirstChar(Char::uppercase)}ComposePreviewRunfiles",
+          GenerateComposePreviewRunfilesTask::class.java,
+        )
+        .get()
+    GenerateComposePreviewRunfilesTask.CreationAction(creationConfig).configure(configuredTask)
+    return configuredTask
+  }
+
+  @Test
+  fun testCreationActionDefersDisabledUnitTestsErrorToInputResolution() {
+    val configuredTask = configureWithCreationAction(ComponentTypeImpl.BASE_APK, "release", emptyList())
+
+    assertThat(configuredTask.rJar.get().asFile.name).isEqualTo("app_R.jar")
+    val error = assertThrows(RuntimeException::class.java) { configuredTask.resourceApk.get() }
+    assertThat(error.cause).isInstanceOf(IllegalStateException::class.java)
+    assertThat(error.cause).hasMessageThat().contains("Unit tests are disabled for this variant")
+  }
+
+  @Test
+  fun testCreationActionDefersExcludedUnitTestResourcesErrorToInputResolution() {
+    val unitTestComponent = mock(HostTestCreationConfig::class.java)
+    whenever(unitTestComponent.componentType).thenReturn(ComponentTypeImpl.UNIT_TEST)
+    whenever(unitTestComponent.androidResourcesIncluded).thenReturn(false)
+
+    val configuredTask = configureWithCreationAction(ComponentTypeImpl.LIBRARY, "debug", listOf(unitTestComponent))
+
+    val resApkError = assertThrows(RuntimeException::class.java) { configuredTask.resourceApk.get() }
+    assertThat(resApkError.cause).isInstanceOf(IllegalStateException::class.java)
+    assertThat(resApkError.cause).hasMessageThat().contains("Android resources are excluded from unit tests")
+    val rJarError = assertThrows(RuntimeException::class.java) { configuredTask.rJar.get() }
+    assertThat(rJarError.cause).isInstanceOf(IllegalStateException::class.java)
+    assertThat(rJarError.cause).hasMessageThat().contains("Android resources are excluded from unit tests")
   }
 }

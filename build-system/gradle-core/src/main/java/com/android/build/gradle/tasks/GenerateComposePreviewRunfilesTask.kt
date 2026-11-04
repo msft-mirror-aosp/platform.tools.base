@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.builder.core.ComponentTypeImpl
 import java.io.File
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -146,33 +147,36 @@ abstract class GenerateComposePreviewRunfilesTask : NonIncrementalTask() {
           it.componentType == ComponentTypeImpl.UNIT_TEST
         }
 
-      val testComponent =
-        unitTestComponent
-          ?: error(
-            "Compose Preview failed for '${creationConfig.services.projectInfo.path}' (variant '${creationConfig.name}'): " +
+      val projectPath = creationConfig.services.projectInfo.path
+      val variantName = creationConfig.name
+      fun failingArtifactProvider(reason: String): Provider<RegularFile> =
+        creationConfig.services.provider {
+          error("Compose Preview failed for '$projectPath' (variant '$variantName'): $reason")
+        }
+
+      fun unitTestArtifact(artifactType: InternalArtifactType<RegularFile>): Provider<RegularFile> =
+        when {
+          unitTestComponent == null ->
+            failingArtifactProvider(
               "Unit tests are disabled for this variant (enableUnitTest = false in beforeVariants). " +
-              "Compose Preview requires unit tests to package Android XML resources and themes into the resource APK for Layoutlib."
-          )
+                "Compose Preview requires unit tests to package Android XML resources and themes into the resource APK for Layoutlib."
+            )
+          !unitTestComponent.androidResourcesIncluded ->
+            failingArtifactProvider(
+              "Android resources are excluded from unit tests ('testOptions.unitTests.isIncludeAndroidResources = false' in finalizeDsl). " +
+                "Compose Preview requires compiled Android resources to resolve layout XML and theme attributes."
+            )
+          else -> unitTestComponent.artifacts.get(artifactType)
+        }
 
-      if (!testComponent.androidResourcesIncluded) {
-        error(
-          "Compose Preview failed for '${creationConfig.services.projectInfo.path}' (variant '${creationConfig.name}'): " +
-            "Android resources are excluded from unit tests ('testOptions.unitTests.isIncludeAndroidResources = false' in finalizeDsl). " +
-            "Compose Preview requires compiled Android resources to resolve layout XML and theme attributes."
-        )
-      }
+      task.resourceApk.setDisallowChanges(unitTestArtifact(InternalArtifactType.APK_FOR_LOCAL_TEST))
 
-      task.resourceApk.setDisallowChanges(testComponent.artifacts.get(InternalArtifactType.APK_FOR_LOCAL_TEST))
-
+      val componentType = creationConfig.componentType
       val rJarProvider =
         when {
-          creationConfig.componentType.isAar -> testComponent.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
-          creationConfig.componentType.isApk -> artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
-          else ->
-            error(
-              "Compose Preview failed for '${creationConfig.services.projectInfo.path}' (variant '${creationConfig.name}'): " +
-                "Unsupported component type '${creationConfig.componentType}'."
-            )
+          componentType.isAar -> unitTestArtifact(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
+          componentType.isApk -> artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
+          else -> failingArtifactProvider("Unsupported component type '$componentType'.")
         }
       task.rJar.setDisallowChanges(rJarProvider)
 
