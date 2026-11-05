@@ -16,6 +16,11 @@
 
 package com.android.manifmerger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
@@ -29,7 +34,8 @@ import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -42,19 +48,19 @@ import org.xml.sax.SAXException;
 /**
  * Tests for the {@link ElementsTrimmer} class
  */
-public class ElementsTrimmerTest extends TestCase {
+public final class ElementsTrimmerTest {
 
     private ManifestModel mModel = new ManifestModel();
 
     @Mock
     ILogger mILogger;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
 
+    @Test
     public void testNoUseFeaturesDeclaration()
             throws ParserConfigurationException, SAXException, IOException {
         String input = ""
@@ -79,6 +85,7 @@ public class ElementsTrimmerTest extends TestCase {
     }
 
 
+    @Test
     public void testNothingToTrim()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -105,6 +112,7 @@ public class ElementsTrimmerTest extends TestCase {
     }
 
 
+    @Test
     public void testMultipleAboveTwoResults()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -143,6 +151,7 @@ public class ElementsTrimmerTest extends TestCase {
         checkResults(xmlDocument, ImmutableList.of("0x00030000", "0x00022000"));
     }
 
+    @Test
     public void testSingleAboveTwoResults()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -173,6 +182,7 @@ public class ElementsTrimmerTest extends TestCase {
         checkResults(xmlDocument, ImmutableList.of("0x00030000"));
     }
 
+    @Test
     public void testMultipleBelowTwoResults()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -208,6 +218,7 @@ public class ElementsTrimmerTest extends TestCase {
         checkResults(xmlDocument, ImmutableList.of("0x00011000", "0x00012000"));
     }
 
+    @Test
     public void testSingleBelowTwoResults()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -238,6 +249,7 @@ public class ElementsTrimmerTest extends TestCase {
         checkResults(xmlDocument, ImmutableList.of("0x00012000"));
     }
 
+    @Test
     public void testMultipleAboveAndBelowTwoResults()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -287,6 +299,7 @@ public class ElementsTrimmerTest extends TestCase {
                 ImmutableList.of("0x00011000", "0x00012000", "0x00022000", "0x00030000"));
     }
 
+    @Test
     public void testUsesFeatureSplit_attributeDeleted()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -329,6 +342,7 @@ public class ElementsTrimmerTest extends TestCase {
         }
     }
 
+    @Test
     public void testUsesFeatureSplit_elementDeleted()
             throws ParserConfigurationException, SAXException, IOException {
 

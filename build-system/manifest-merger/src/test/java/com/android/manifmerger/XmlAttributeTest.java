@@ -16,6 +16,9 @@
 
 package com.android.manifmerger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
@@ -24,7 +27,8 @@ import com.android.manifmerger.MergingReport.Record;
 import com.android.manifmerger.MergingReport.Record.Severity;
 import com.android.utils.StdLogger;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -40,7 +44,7 @@ import java.util.stream.Collectors;
 import javax.xml.parsers.ParserConfigurationException;
 
 /** Tests for {@link XmlAttribute} class */
-public class XmlAttributeTest extends TestCase {
+public final class XmlAttributeTest {
 
     private final ManifestModel mModel = new ManifestModel();
 
@@ -53,9 +57,8 @@ public class XmlAttributeTest extends TestCase {
     @Mock
     Attr mAttr;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         when(mAttr.getNamespaceURI()).thenReturn(SdkConstants.ANDROID_URI);
@@ -67,6 +70,7 @@ public class XmlAttributeTest extends TestCase {
         when(mXmlDocument.getNamespace()).thenReturn("com.foo.bar");
     }
 
+    @Test
     public void testPackageSubstitution_noDot() {
 
         when(mAttr.getValue()).thenReturn("ActivityOne");
@@ -76,6 +80,7 @@ public class XmlAttributeTest extends TestCase {
         Mockito.verify(mAttr).setValue("com.foo.bar.ActivityOne");
     }
 
+    @Test
     public void testPackageSubstitution_withDot() {
 
         when(mAttr.getValue()).thenReturn(".ActivityOne");
@@ -85,6 +90,7 @@ public class XmlAttributeTest extends TestCase {
         Mockito.verify(mAttr).setValue("com.foo.bar.ActivityOne");
     }
 
+    @Test
     public void testNoPackageSubstitution() {
 
         when(mAttr.getValue()).thenReturn("com.foo.foo2.ActivityOne");
@@ -95,6 +101,7 @@ public class XmlAttributeTest extends TestCase {
         Mockito.verifyNoMoreInteractions(mAttr);
     }
 
+    @Test
     public void testAttributeRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         String higherPriority = ""
@@ -157,6 +164,7 @@ public class XmlAttributeTest extends TestCase {
         assertEquals(6, attributeRecord.getActionLocation().getPosition().getStartLine());
     }
 
+    @Test
     public void testNamespaceAwareAttributeRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         String higherPriority = ""
@@ -206,6 +214,7 @@ public class XmlAttributeTest extends TestCase {
                 XmlNode.fromNSName(SdkConstants.TOOLS_URI, "tools", "remove")).isPresent());
     }
 
+    @Test
     public void testMultipleAttributesRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         String higherPriority = ""
@@ -256,6 +265,7 @@ public class XmlAttributeTest extends TestCase {
                 XmlNode.fromNSName(SdkConstants.TOOLS_URI, "tools", "remove")).isPresent());
     }
 
+    @Test
     public void testDeepAttributeRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         String higherPriority = ""
@@ -348,6 +358,7 @@ public class XmlAttributeTest extends TestCase {
         assertEquals(6, attributeRecord.getActionLocation().getPosition().getStartLine());
     }
 
+    @Test
     public void testDefaultValueIllegalOverriding()
             throws ParserConfigurationException, SAXException, IOException {
         String higherPriority = ""
@@ -387,6 +398,7 @@ public class XmlAttributeTest extends TestCase {
 
     }
 
+    @Test
     public void testToolsAttributeMerging()
             throws ParserConfigurationException, SAXException, IOException {
         String higherPriority = ""
@@ -440,6 +452,7 @@ public class XmlAttributeTest extends TestCase {
 
     }
 
+    @Test
     public void testToolsNodeAttributeNotMerging()
             throws ParserConfigurationException, SAXException, IOException {
         String higherPriority = ""
@@ -504,6 +517,7 @@ public class XmlAttributeTest extends TestCase {
         return TestUtils.xmlLibraryFromString(location, input, mModel);
     }
 
+    @Test
     public void testConflictErrorProvenance()
             throws ParserConfigurationException, SAXException, IOException {
         String highPriority =
@@ -547,6 +561,7 @@ public class XmlAttributeTest extends TestCase {
                 errorMessage.contains("value=(false)"));
     }
 
+    @Test
     public void testAutomaticallyRejectedWarningProvenance()
             throws ParserConfigurationException, SAXException, IOException {
         String highPriority =
@@ -599,6 +614,7 @@ public class XmlAttributeTest extends TestCase {
                 warningMessage.contains("value=(true) from XmlAttributeTest#HighSource"));
     }
 
+    @Test
     public void testDeepConflictErrorProvenance()
             throws ParserConfigurationException, SAXException, IOException {
         String activityName = "com.example.common.MainActivity";
@@ -667,6 +683,7 @@ public class XmlAttributeTest extends TestCase {
                 errorMessage.contains("value=(false)"));
     }
 
+    @Test
     public void testDeepConflictWarningProvenance()
             throws ParserConfigurationException, SAXException, IOException {
         String activityName = "com.example.common.MainActivity";

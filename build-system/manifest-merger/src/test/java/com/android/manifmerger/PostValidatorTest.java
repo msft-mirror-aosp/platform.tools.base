@@ -16,6 +16,11 @@
 
 package com.android.manifmerger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.SdkConstants;
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.ILogger;
@@ -24,7 +29,8 @@ import com.android.utils.XmlUtils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -43,19 +49,19 @@ import java.util.Set;
 import javax.xml.parsers.ParserConfigurationException;
 
 /** Tests for the {@link PostValidator} class. */
-public class PostValidatorTest extends TestCase {
+public final class PostValidatorTest {
 
     private ManifestModel mModel = new ManifestModel();
 
     @Mock
     ILogger mILogger;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
 
+    @Test
     public void testIncorrectRemove()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -104,6 +110,7 @@ public class PostValidatorTest extends TestCase {
                 Joiner.on("\n    ").join(mergingReportBuilder.build().getLoggingRecords()));
     }
 
+    @Test
     public void testIncorrectReplace()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -153,6 +160,7 @@ public class PostValidatorTest extends TestCase {
                 Joiner.on("\n    ").join(mergingReportBuilder.build().getLoggingRecords()));
     }
 
+    @Test
     public void testActivityAliasInvalidOrder() throws Exception {
         String input =
                 "<manifest\n"
@@ -183,6 +191,7 @@ public class PostValidatorTest extends TestCase {
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
     }
 
+    @Test
     public void testActivityAliasInvalidOrder_NamespaceCheck() throws Exception {
         String input = ""
                 + "<manifest\n"
@@ -212,6 +221,7 @@ public class PostValidatorTest extends TestCase {
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
     }
 
+    @Test
     public void testMultipleActivityAliasInvalidOrder() throws Exception {
         String input =
                 "<manifest\n"
@@ -254,6 +264,7 @@ public class PostValidatorTest extends TestCase {
                 "com.example.lib3.aliasThree");
     }
 
+    @Test
     public void testActivityAliasInvalidOrder_withComments() throws Exception {
         String input =
                 "<manifest\n"
@@ -299,6 +310,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(Node.COMMENT_NODE, alias.get().getXml().getPreviousSibling().getNodeType());
     }
 
+    @Test
     public void testActivityAliasValidOrder() throws Exception {
         String input =
                 "<manifest\n"
@@ -329,6 +341,7 @@ public class PostValidatorTest extends TestCase {
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
     }
 
+    @Test
     public void testActivityAliasImmediatelyFollowing() throws Exception {
         String input =
                 "<manifest\n"
@@ -357,6 +370,7 @@ public class PostValidatorTest extends TestCase {
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
     }
 
+    @Test
     public void testActivityAliasImmediatelyFollowing_withComments() throws Exception {
         String input =
                 "<manifest\n"
@@ -455,6 +469,7 @@ public class PostValidatorTest extends TestCase {
                 "The test manifest should have an activity-alias element named " + aliasName);
     }
 
+    @Test
     public void testApplicationInvalidOrder()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -486,6 +501,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(ManifestModel.NodeTypes.APPLICATION, xmlElement.getType());
     }
 
+    @Test
     public void testApplicationInvalidOrder_withComments()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -521,6 +537,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(Node.COMMENT_NODE, lastChild.getPreviousSibling().getNodeType());
     }
 
+    @Test
     public void testApplicationValidOrder()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -553,6 +570,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(ManifestModel.NodeTypes.APPLICATION, xmlElement.getType());
     }
 
+    @Test
     public void testUsesSdkInvalidOrder()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -585,6 +603,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(ManifestModel.NodeTypes.USES_SDK, xmlElement.getType());
     }
 
+    @Test
     public void testUsesSdkInvalidOrder_withComments()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -621,6 +640,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(Node.COMMENT_NODE, firstChild.getPreviousSibling().getNodeType());
     }
 
+    @Test
     public void testUsesSdkValidOrder()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -653,6 +673,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(ManifestModel.NodeTypes.USES_SDK, xmlElement.getType());
     }
 
+    @Test
     public void testAndroidNamespacePresence()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -678,6 +699,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(SdkConstants.ANDROID_URI, attribute);
     }
 
+    @Test
     public void testAndroidNamespacePresence_differentPrefix()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -703,6 +725,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(SdkConstants.ANDROID_URI, attribute);
     }
 
+    @Test
     public void testAndroidNamespaceAbsence()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -724,6 +747,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(SdkConstants.ANDROID_URI, attribute);
     }
 
+    @Test
     public void testToolsNamespaceAbsence()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -762,6 +786,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(SdkConstants.TOOLS_URI, attribute);
     }
 
+    @Test
     public void testElementUsesNamespacePrefix()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -786,6 +811,7 @@ public class PostValidatorTest extends TestCase {
         assertFalse(xmlDocument.getRootNode().elementUsesNamespacePrefix("tools"));
     }
 
+    @Test
     public void testWithIgnoreWarningAttribute()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -815,6 +841,7 @@ public class PostValidatorTest extends TestCase {
         }
     }
 
+    @Test
     public void testWithoutIgnoreWarningAttribute()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -839,6 +866,7 @@ public class PostValidatorTest extends TestCase {
         assertFalse(PostValidator.checkIgnoreWarning(xmlDocument.getRootNode()));
     }
 
+    @Test
     public void testIgnoreWarningAttributeWithTwoElements()
             throws ParserConfigurationException, SAXException, IOException {
         String input =
@@ -870,6 +898,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(warningCount, 1);
     }
 
+    @Test
     public void testMultipleUsesSdk()
             throws ParserConfigurationException, SAXException, IOException {
         assertMultipleUsesSdk(
@@ -886,6 +915,7 @@ public class PostValidatorTest extends TestCase {
                 true);
     }
 
+    @Test
     public void testMultipleUsesSdkWithFeatureFlag()
             throws ParserConfigurationException, SAXException, IOException {
         assertMultipleUsesSdk(
@@ -902,6 +932,7 @@ public class PostValidatorTest extends TestCase {
                 true);
     }
 
+    @Test
     public void testMultipleUsesSdkWithMatchingFeatureFlag()
             throws ParserConfigurationException, SAXException, IOException {
         assertMultipleUsesSdk(
@@ -918,6 +949,7 @@ public class PostValidatorTest extends TestCase {
                 false);
     }
 
+    @Test
     public void testMultipleUsesSdkWithDifferentFeatureFlag()
             throws ParserConfigurationException, SAXException, IOException {
         assertMultipleUsesSdk(

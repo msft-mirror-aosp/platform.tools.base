@@ -19,6 +19,9 @@ package com.android.manifmerger;
 import static com.android.manifmerger.Actions.DecisionTreeRecord;
 import static com.android.manifmerger.XmlNode.NodeKey;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +37,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -48,10 +51,11 @@ import javax.xml.parsers.ParserConfigurationException;
 /**
  * Tests for {@link Actions} class
  */
-public class ActionsTest extends TestCase {
+public final class ActionsTest {
 
     private ManifestModel mModel = new ManifestModel();
 
+    @Test
     public void testGetNodeKeys() {
         Element xmlElement = mock(Element.class);
         when(xmlElement.getNodeName()).thenReturn("activity");
@@ -68,6 +72,7 @@ public class ActionsTest extends TestCase {
         assertTrue(actions.getNodeKeys().contains(nodeKey));
     }
 
+    @Test
     public void testGetNodeRecords() {
         Element xmlElement = mock(Element.class);
         when(xmlElement.getNodeName()).thenReturn("activity");
@@ -92,6 +97,7 @@ public class ActionsTest extends TestCase {
         assertEquals(1, nodeRecords.size());
     }
 
+    @Test
     public void testGetAttributesRecords() {
         Element xmlElement = mock(Element.class);
         when(xmlElement.getNodeName()).thenReturn("activity");
@@ -132,6 +138,7 @@ public class ActionsTest extends TestCase {
     /**
      * test tools:node="removeAll" with several target elements to be removed.
      */
+    @Test
     public void testActionsPersistenceAndLoading()
             throws ParserConfigurationException, SAXException, IOException {
         String higherPriority = ""
@@ -283,6 +290,7 @@ public class ActionsTest extends TestCase {
         }
     }
 
+    @Test
     public void testBlameWithInjectedAttribute()
             throws ParserConfigurationException, SAXException, IOException {
         String xml =
@@ -337,6 +345,7 @@ public class ActionsTest extends TestCase {
         assertTrue("Blame should contain INJECTED marker", blame.contains("-->INJECTED"));
     }
 
+    @Test
     public void testBlameWithInjectedNode()
             throws ParserConfigurationException, SAXException, IOException {
         String xml =

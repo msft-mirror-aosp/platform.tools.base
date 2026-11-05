@@ -16,20 +16,25 @@
 
 package com.android.manifmerger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.testutils.MockLog;
 import java.io.IOException;
 import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
-import junit.framework.TestCase;
+import org.junit.Test;
 import org.xml.sax.SAXException;
 
 /**
  * Tests for the {@link com.android.manifmerger.PreValidator} class.
  */
-public class PreValidatorTest extends TestCase {
+public final class PreValidatorTest {
 
     private final ManifestModel mModel = new ManifestModel();
 
+    @Test
     public void testCorrectInstructions()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -59,6 +64,7 @@ public class PreValidatorTest extends TestCase {
         assertTrue(mockLog.toString().isEmpty());
     }
 
+    @Test
     public void testIncorrectReplace()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -88,6 +94,7 @@ public class PreValidatorTest extends TestCase {
         assertStringPresenceInLogRecords(mergingReport, "tools:replace");
     }
 
+    @Test
     public void testIncorrectRemove()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -118,6 +125,7 @@ public class PreValidatorTest extends TestCase {
         assertStringPresenceInLogRecords(mergingReport, "tools:remove");
     }
 
+    @Test
     public void testIncorrectRemoveAll()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -149,6 +157,7 @@ public class PreValidatorTest extends TestCase {
     }
 
 
+    @Test
     public void testIncorrectSelector()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -179,6 +188,7 @@ public class PreValidatorTest extends TestCase {
         assertStringPresenceInLogRecords(mergingReport, "tools:selector=\"foo\"");
     }
 
+    @Test
     public void testNoKeyElement()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -212,6 +222,7 @@ public class PreValidatorTest extends TestCase {
         assertEquals(MergingReport.Result.SUCCESS, validated);
     }
 
+    @Test
     public void testMultipleIntentFilterWithSameKeyValue()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -256,6 +267,7 @@ public class PreValidatorTest extends TestCase {
         assertEquals(MergingReport.Result.SUCCESS, validated);
     }
 
+    @Test
     public void testValidateExtractNativeLibsFromSources()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -286,6 +298,7 @@ public class PreValidatorTest extends TestCase {
                 mergingReport, "The AGP Upgrade Assistant can remove the attribute");
     }
 
+    @Test
     public void testValidateExtractNativeLibsFromDependencies()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();

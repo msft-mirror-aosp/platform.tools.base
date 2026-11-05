@@ -16,6 +16,10 @@
 
 package com.android.manifmerger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.SdkConstants;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.xml.XmlFormatPreferences;
@@ -24,7 +28,7 @@ import com.android.ide.common.xml.XmlPrettyPrinter;
 import java.io.IOException;
 import java.util.Optional;
 import javax.xml.parsers.ParserConfigurationException;
-import junit.framework.TestCase;
+import org.junit.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -33,10 +37,11 @@ import org.xml.sax.SAXException;
 /**
  * Tests for {@link XmlLoader}
  */
-public class XmlLoaderTest extends TestCase {
+public final class XmlLoaderTest {
 
     private final ManifestModel mModel = new ManifestModel();
 
+    @Test
     public void testAndroidPrefix() throws IOException, SAXException, ParserConfigurationException {
 
         String input = ""
@@ -60,6 +65,7 @@ public class XmlLoaderTest extends TestCase {
         assertEquals("android:label", label.getNodeName());
     }
 
+    @Test
     public void testPrettyPrint() throws IOException, SAXException, ParserConfigurationException {
 
         String input = ""
@@ -97,6 +103,7 @@ public class XmlLoaderTest extends TestCase {
         assertEquals(input, prettyPrinted.replace(System.lineSeparator(), "\n"));
     }
 
+    @Test
     public void testToolsPrefix() throws IOException, SAXException, ParserConfigurationException {
 
         String input = ""
@@ -137,6 +144,7 @@ public class XmlLoaderTest extends TestCase {
         assertEquals(51, toolsPosition.getStartColumn() + 1);
     }
 
+    @Test
     public void testUnusualPrefixes()
             throws IOException, SAXException, ParserConfigurationException {
 

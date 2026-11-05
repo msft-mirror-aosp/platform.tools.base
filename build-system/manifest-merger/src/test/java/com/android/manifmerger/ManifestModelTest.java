@@ -18,6 +18,10 @@ package com.android.manifmerger;
 
 import static com.android.manifmerger.XmlNode.NodeKey;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -26,16 +30,17 @@ import com.android.xml.AndroidManifest;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
-import junit.framework.TestCase;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.xml.sax.SAXException;
 
 /** Tests for the {@link ManifestModel} class. */
-public class ManifestModelTest extends TestCase {
+public final class ManifestModelTest {
 
     private final ManifestModel mModel = new ManifestModel();
 
+    @Test
     public void testNameResolution()
             throws ParserConfigurationException, SAXException, IOException {
         String input = ""
@@ -59,6 +64,7 @@ public class ManifestModelTest extends TestCase {
         assertEquals("camera", xmlElement.getKey());
     }
 
+    @Test
     public void testGlEsKeyResolution()
             throws ParserConfigurationException, SAXException, IOException {
         String input = ""
@@ -83,6 +89,7 @@ public class ManifestModelTest extends TestCase {
     }
 
 
+    @Test
     public void testInvalidGlEsVersion()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -106,6 +113,7 @@ public class ManifestModelTest extends TestCase {
                 argumentCaptor.getValue());
     }
 
+    @Test
     public void testTooLowGlEsVersion()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -130,6 +138,7 @@ public class ManifestModelTest extends TestCase {
                 argumentCaptor.getValue());
     }
 
+    @Test
     public void testOkGlEsVersion()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -144,6 +153,7 @@ public class ManifestModelTest extends TestCase {
         verifyNoMoreInteractions(xmlAttribute);
     }
 
+    @Test
     public void testTooBigGlEsVersion()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -168,6 +178,7 @@ public class ManifestModelTest extends TestCase {
                 argumentCaptor.getValue());
     }
 
+    @Test
     public void testNoKeyResolution()
             throws ParserConfigurationException, SAXException, IOException {
         String input = ""
@@ -191,6 +202,7 @@ public class ManifestModelTest extends TestCase {
         assertNull(xmlElement.getKey());
     }
 
+    @Test
     public void testTwoAttributesKeyResolution()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -223,6 +235,7 @@ public class ManifestModelTest extends TestCase {
         assertEquals("normal+mdpi", screenDefinitions.get(3).getKey());
     }
 
+    @Test
     public void testIntentFilterKeyResolution()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -273,6 +286,7 @@ public class ManifestModelTest extends TestCase {
     }
 
 
+    @Test
     public void testProtectionLevelValues()
             throws ParserConfigurationException, SAXException, IOException {
         for (String protectionLevel :

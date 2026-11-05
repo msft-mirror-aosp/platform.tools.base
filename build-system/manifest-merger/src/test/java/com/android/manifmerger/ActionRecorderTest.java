@@ -16,12 +16,18 @@
 
 package com.android.manifmerger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.ILogger;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -36,7 +42,7 @@ import javax.xml.parsers.ParserConfigurationException;
 /**
  * Tests for the {@link ActionRecorder} class
  */
-public class ActionRecorderTest extends TestCase {
+public final class ActionRecorderTest {
 
     private static final String REFERENCE = ""
             + "<manifest\n"
@@ -60,12 +66,12 @@ public class ActionRecorderTest extends TestCase {
 
     ActionRecorder mActionRecorderBuilder = new ActionRecorder();
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
 
+    @Test
     public void testDoNothing() {
         Actions actions = mActionRecorderBuilder.build();
         actions.log(mLoggerMock);
@@ -74,6 +80,7 @@ public class ActionRecorderTest extends TestCase {
         assertTrue(actions.getNodeKeys().isEmpty());
     }
 
+    @Test
     public void testSingleElement_withoutAttributes()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -101,6 +108,7 @@ public class ActionRecorderTest extends TestCase {
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
+    @Test
     public void testSingleElement_withoutAttributes_withRejection()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -151,6 +159,7 @@ public class ActionRecorderTest extends TestCase {
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
+    @Test
     public void testSingleElement_withNoNamespaceAttributes()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -186,6 +195,7 @@ public class ActionRecorderTest extends TestCase {
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
+    @Test
     public void testSingleElement_withNamespaceAttributes()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -220,6 +230,7 @@ public class ActionRecorderTest extends TestCase {
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
+    @Test
     public void testMultipleElements_withRejection()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -278,6 +289,7 @@ public class ActionRecorderTest extends TestCase {
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
+    @Test
     public void testChangingNodeKey()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -308,6 +320,7 @@ public class ActionRecorderTest extends TestCase {
                 actions.getNodeRecords(originalNodeKey), actions.getNodeRecords(changedNodeKey));
     }
 
+    @Test
     public void testRecordAddedNodeAction()
             throws ParserConfigurationException, SAXException, IOException {
 
@@ -410,6 +423,7 @@ public class ActionRecorderTest extends TestCase {
         return TestUtils.xmlDocumentFromString(location, input, mModel);
     }
 
+    @Test
     public void testAttributeReplacement_returnsLastAddedRecord() throws Exception {
         // Create a dummy document to generate valid XmlElement/XmlAttribute objects
         String xml =

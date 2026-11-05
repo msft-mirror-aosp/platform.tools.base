@@ -19,27 +19,33 @@ import com.android.manifmerger.AttributeModel.BooleanValidator
 import com.android.manifmerger.AttributeModel.IntegerValueValidator
 import com.android.manifmerger.AttributeModel.SeparatedValuesValidator
 import com.android.manifmerger.XmlNode.NodeKey
-import junit.framework.TestCase
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
 
 /** Tests for the [AttributeModel] class */
-class AttributeModelTest : TestCase() {
+class AttributeModelTest {
   @Mock private lateinit var mValidator: AttributeModel.Validator
 
   @Mock lateinit var mXmlAttribute: XmlAttribute
 
   @Mock lateinit var mMergingReport: MergingReport.Builder
 
+  @Before
   @Throws(Exception::class)
-  protected override fun setUp() {
-    super.setUp()
+  fun setUp() {
     MockitoAnnotations.initMocks(this)
     Mockito.`when`(mXmlAttribute.id).thenReturn(NodeKey("Id"))
     Mockito.`when`(mXmlAttribute.printPosition()).thenReturn("Position")
   }
 
+  @Test
   fun testGetters() {
     var attributeModel =
       AttributeModel.newModel("someName").setIsPackageDependent().setDefaultValue("default_value").setOnReadValidator(mValidator).build()
@@ -57,6 +63,7 @@ class AttributeModelTest : TestCase() {
     Mockito.verifyNoMoreInteractions(mValidator)
   }
 
+  @Test
   fun testBooleanValidator() {
     val booleanValidator = BooleanValidator()
     assertTrue(booleanValidator.validates(mMergingReport, mXmlAttribute, "false"))
@@ -84,6 +91,7 @@ class AttributeModelTest : TestCase() {
       )
   }
 
+  @Test
   fun testSeparatedValuesValidator() {
     val separatedValuesValidator = SeparatedValuesValidator(",", "foo", "bar", "doh !")
     assertTrue(separatedValuesValidator.validates(mMergingReport, mXmlAttribute, "foo"))
@@ -104,6 +112,7 @@ class AttributeModelTest : TestCase() {
       )
   }
 
+  @Test
   fun testIntegerValueValidator() {
     val integerValueValidator = IntegerValueValidator()
     assertTrue(integerValueValidator.validates(mMergingReport, mXmlAttribute, "@integer/abc"))
@@ -125,11 +134,13 @@ class AttributeModelTest : TestCase() {
       )
   }
 
+  @Test
   fun testStrictMergingPolicy() {
     assertEquals("ok", AttributeModel.STRICT_MERGING_POLICY.merge("ok", "ok"))
     assertNull(AttributeModel.STRICT_MERGING_POLICY.merge("one", "two"))
   }
 
+  @Test
   fun testOrMergingPolicy() {
     assertEquals("true", AttributeModel.OR_MERGING_POLICY.merge("true", "true"))
     assertEquals("true", AttributeModel.OR_MERGING_POLICY.merge("true", "false"))
@@ -137,6 +148,7 @@ class AttributeModelTest : TestCase() {
     assertEquals("false", AttributeModel.OR_MERGING_POLICY.merge("false", "false"))
   }
 
+  @Test
   fun testNumericalSuperiorityPolicy() {
     assertEquals("5", AttributeModel.NO_MERGING_POLICY.merge("5", "10"))
     assertEquals("10", AttributeModel.NO_MERGING_POLICY.merge("10", "5"))

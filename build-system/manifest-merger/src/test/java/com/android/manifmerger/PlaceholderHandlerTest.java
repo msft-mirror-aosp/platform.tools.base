@@ -17,6 +17,8 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
@@ -31,14 +33,15 @@ import com.android.utils.StdLogger;
 import java.io.IOException;
 import java.util.Optional;
 import javax.xml.parsers.ParserConfigurationException;
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 import org.jetbrains.annotations.NotNull;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.xml.sax.SAXException;
 
 /** Tests for the {@link PlaceholderHandler} */
-public class PlaceholderHandlerTest extends TestCase {
+public final class PlaceholderHandlerTest {
     private static final ILogger logger = new StdLogger(StdLogger.Level.INFO);
 
     private final ManifestModel mModel = new ManifestModel();
@@ -59,14 +62,14 @@ public class PlaceholderHandlerTest extends TestCase {
         }
     };
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         when(mBuilder.getLogger()).thenReturn(mMockLog);
         when(mBuilder.getActionRecorder()).thenReturn(mActionRecorder);
     }
 
+    @Test
     public void testPlaceholders() throws ParserConfigurationException, SAXException, IOException {
 
         String xml = ""
@@ -117,6 +120,7 @@ public class PlaceholderHandlerTest extends TestCase {
         }
     }
 
+    @Test
     public void testSeveralPlaceholders() throws ParserConfigurationException, SAXException, IOException {
 
         String xml = ""
@@ -180,6 +184,7 @@ public class PlaceholderHandlerTest extends TestCase {
         }
     }
 
+    @Test
     public void testPlaceHolder_notProvided()
             throws ParserConfigurationException, SAXException, IOException {
         String xml = ""
@@ -203,6 +208,7 @@ public class PlaceholderHandlerTest extends TestCase {
                         anyString());
     }
 
+    @Test
     public void testPlaceHolder_notProvided_inLibrary()
             throws ParserConfigurationException, SAXException, IOException {
         String xml = ""
@@ -226,6 +232,7 @@ public class PlaceholderHandlerTest extends TestCase {
                         anyString());
     }
 
+    @Test
     public void testPlaceHolder_change_keyId()
             throws ParserConfigurationException, SAXException, IOException {
         String xml =

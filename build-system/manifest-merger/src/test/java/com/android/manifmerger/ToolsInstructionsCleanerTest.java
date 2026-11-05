@@ -17,13 +17,18 @@
 package com.android.manifmerger;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.android.ide.common.blame.SourceFile;
 import com.android.testutils.MockLog;
 
 import com.google.common.base.Strings;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -38,10 +43,11 @@ import javax.xml.parsers.ParserConfigurationException;
 /**
  * Tests for the {@link com.android.manifmerger.ToolsInstructionsCleaner} class.
  */
-public class ToolsInstructionsCleanerTest extends TestCase {
+public final class ToolsInstructionsCleanerTest {
 
     private final ManifestModel mModel = new ManifestModel();
 
+    @Test
     public void testNodeRemoveOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -73,6 +79,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertFalse(activity.isPresent());
     }
 
+    @Test
     public void testNodeWithChildrenRemoveOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -116,6 +123,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertFalse(intentFilter.isPresent());
     }
 
+    @Test
     public void testInvalidToolsRemoveOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -141,6 +149,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 .contains("tools:node=\"remove\" not allowed on top level manifest element");
     }
 
+    @Test
     public void testInvalidToolsRemoveAllOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -166,6 +175,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 .contains("tools:node=\"removeAll\" not allowed on top level manifest element");
     }
 
+    @Test
     public void testInvalidToolsNamespacedRootElement()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -192,6 +202,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 .contains("tools namespace not allowed on top level manifest element");
     }
 
+    @Test
     public void testNodeReplaceOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -222,6 +233,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertTrue(activity.isPresent());
     }
 
+    @Test
     public void testAttributeRemoveOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -253,6 +265,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertNotNull(activity.get().getAttribute("android:name"));
     }
 
+    @Test
     public void testSelectorRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -285,6 +298,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertTrue(Strings.isNullOrEmpty(activity.get().getAttribute("tools:selector")));
     }
 
+    @Test
     public void testRemoveAllWithSelectorRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
@@ -318,6 +332,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertFalse(activity.isPresent());
     }
 
+    @Test
     public void testOtherToolInstructionRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();

@@ -16,6 +16,9 @@
 
 package com.android.manifmerger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -26,7 +29,8 @@ import com.android.utils.StdLogger;
 
 import com.google.common.collect.ImmutableList;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.jetbrains.annotations.NotNull;
 import org.mockito.Mock;
@@ -46,7 +50,7 @@ import java.util.List;
 /**
  * Tests for {@link Merger} class
  */
-public class MergerTest extends TestCase {
+public final class MergerTest {
 
     @Mock
     ManifestMerger2.Invoker mInvoker;
@@ -54,9 +58,8 @@ public class MergerTest extends TestCase {
     @Mock
     MergingReport mMergingReport;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
     }
 
@@ -81,6 +84,7 @@ public class MergerTest extends TestCase {
         }
     }
 
+    @Test
     public void testMainParameter() throws IOException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml" };
         new MergerWithMock() {
@@ -92,6 +96,7 @@ public class MergerTest extends TestCase {
         }.process(args);
     }
 
+    @Test
     public void testDefaultLoggerParameter() throws IOException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml" };
         new MergerWithMock() {
@@ -103,6 +108,7 @@ public class MergerTest extends TestCase {
         }.process(args);
     }
 
+    @Test
     public void testLoggerParameter() throws IOException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
                                 "--log", "VERBOSE" };
@@ -115,6 +121,7 @@ public class MergerTest extends TestCase {
         }.process(args);
     }
 
+    @Test
     public void testRemoveToolsDeclarationsParameter()
             throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = {
@@ -126,6 +133,7 @@ public class MergerTest extends TestCase {
         verifyNoMoreInteractions(mInvoker);
     }
 
+    @Test
     public void testLibParameter() throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
                 "--libs", "src/lib/AndroidManifest.xml" };
@@ -135,6 +143,7 @@ public class MergerTest extends TestCase {
         verifyNoMoreInteractions(mInvoker);
     }
 
+    @Test
     public void testLibsParameter() throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
                 "--libs", "src/lib1/AndroidManifest.xml" + File.pathSeparator
@@ -148,6 +157,7 @@ public class MergerTest extends TestCase {
         verifyNoMoreInteractions(mInvoker);
     }
 
+    @Test
     public void testOverlayParameter() throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
                 "--overlays", "src/flavor1/AndroidManifest.xml" };
@@ -157,6 +167,7 @@ public class MergerTest extends TestCase {
         verifyNoMoreInteractions(mInvoker);
     }
 
+    @Test
     public void testOverlaysParameter() throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
                 "--overlays", "src/flavor1/AndroidManifest.xml" + File.pathSeparator
@@ -170,6 +181,7 @@ public class MergerTest extends TestCase {
         verifyNoMoreInteractions(mInvoker);
     }
 
+    @Test
     public void testPropertyParameter() throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
                 "--property", "min_sdk_version=19" };
@@ -179,6 +191,7 @@ public class MergerTest extends TestCase {
         verifyNoMoreInteractions(mInvoker);
     }
 
+    @Test
     public void testInvalidPropertyParameter()
             throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
@@ -197,6 +210,7 @@ public class MergerTest extends TestCase {
                 "E Invalid property name Foo, allowed properties are :"));
     }
 
+    @Test
     public void testInvalidFormatPropertyParameter()
             throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
@@ -215,6 +229,7 @@ public class MergerTest extends TestCase {
                 iLogger.getMessages().get(0));
     }
 
+    @Test
     public void testPlaceholderParameter()
             throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
@@ -225,6 +240,7 @@ public class MergerTest extends TestCase {
         verifyNoMoreInteractions(mInvoker);
     }
 
+    @Test
     public void testInvalidFormatPlaceholderParameter()
             throws IOException, ManifestMerger2.MergeFailureException {
         final String[] args = { "--main", "src/main/AndroidManifest.xml",
@@ -243,6 +259,7 @@ public class MergerTest extends TestCase {
                 iLogger.getMessages().get(0));
     }
 
+    @Test
     public void testCombinedParameters()
             throws IOException, ManifestMerger2.MergeFailureException {
 
@@ -321,6 +338,7 @@ public class MergerTest extends TestCase {
         assertTrue(outFile.delete());
     }
 
+    @Test
     public void testCombinedParametersFileArgs()
             throws IOException, ManifestMerger2.MergeFailureException {
 
@@ -408,6 +426,7 @@ public class MergerTest extends TestCase {
         assertTrue(outFile.delete());
     }
 
+    @Test
     public void testMergeSuccess() throws IOException, ManifestMerger2.MergeFailureException {
 
         final String input =
@@ -429,6 +448,7 @@ public class MergerTest extends TestCase {
         assertTrue(tmpFile.delete());
     }
 
+    @Test
     public void testMergeFailure() throws IOException, ManifestMerger2.MergeFailureException {
 
         final String input =
