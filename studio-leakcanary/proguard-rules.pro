@@ -53,6 +53,27 @@
 # getProgressPercent(), read by StudioLeakCanaryEventListener.
 -keep class leakcanary.EventListener$Event$HeapAnalysisProgress { *; }
 
+# getHeapAnalysis(), read by StudioLeakCanaryEventListener (ON_DEVICE result).
+-keep class leakcanary.EventListener$Event$HeapAnalysisDone { *; }
+
+# getWillRetryLater() and getException(), read by StudioLeakCanaryEventListener (ON_DEVICE
+# failed dump).
+-keep class leakcanary.EventListener$Event$HeapDumpFailed { *; }
+
+# Shark result classes read by SharkResultConverter. Enum values are read by name, so the enum
+# constants must keep their names too.
+-keep class shark.HeapAnalysis { *; }
+-keep class shark.HeapAnalysisSuccess { *; }
+-keep class shark.HeapAnalysisFailure { *; }
+-keep class shark.Leak { *; }
+-keep class shark.LeakTrace { *; }
+-keep class shark.LeakTrace$GcRootType { *; }
+-keep class shark.LeakTraceReference { *; }
+-keep class shark.LeakTraceReference$ReferenceType { *; }
+-keep class shark.LeakTraceObject { *; }
+-keep class shark.LeakTraceObject$ObjectType { *; }
+-keep class shark.LeakTraceObject$LeakingStatus { *; }
+
 # Proto classes made from leakcanary_data.proto. Protobuf reads their fields by name, so R8 must not
 # remove or rename those fields. protobuf-javalite has no such rule of its own. Only our classes
 # are kept; the app's own protos are not affected.

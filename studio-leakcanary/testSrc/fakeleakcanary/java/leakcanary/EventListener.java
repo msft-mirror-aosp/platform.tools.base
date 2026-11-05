@@ -16,6 +16,10 @@
 
 package leakcanary;
 
+import shark.HeapAnalysis;
+import shark.HeapAnalysisFailure;
+import shark.HeapAnalysisSuccess;
+
 /** Test fake of LeakCanary's EventListener, with only the events our tests use. */
 public interface EventListener {
 
@@ -39,5 +43,56 @@ public interface EventListener {
 
         /** An event that is not a progress event. */
         public static final class DumpingHeap extends Event {}
+
+        /**
+         * A finished analysis. Like LeakCanary 2.14, the real events are the two subclasses, and
+         * getHeapAnalysis() is on this parent class.
+         */
+        public abstract static class HeapAnalysisDone<T extends HeapAnalysis> extends Event {
+            private final T heapAnalysis;
+
+            HeapAnalysisDone(T heapAnalysis) {
+                this.heapAnalysis = heapAnalysis;
+            }
+
+            public final T getHeapAnalysis() {
+                return heapAnalysis;
+            }
+
+            /** A finished analysis with a result. */
+            public static final class HeapAnalysisSucceeded
+                    extends HeapAnalysisDone<HeapAnalysisSuccess> {
+                public HeapAnalysisSucceeded(HeapAnalysisSuccess heapAnalysis) {
+                    super(heapAnalysis);
+                }
+            }
+
+            /** A finished analysis that failed. */
+            public static final class HeapAnalysisFailed
+                    extends HeapAnalysisDone<HeapAnalysisFailure> {
+                public HeapAnalysisFailed(HeapAnalysisFailure heapAnalysis) {
+                    super(heapAnalysis);
+                }
+            }
+        }
+
+        /** A failed heap dump. willRetryLater is true when LeakCanary will try again by itself. */
+        public static final class HeapDumpFailed extends Event {
+            private final Throwable exception;
+            private final boolean willRetryLater;
+
+            public HeapDumpFailed(Throwable exception, boolean willRetryLater) {
+                this.exception = exception;
+                this.willRetryLater = willRetryLater;
+            }
+
+            public Throwable getException() {
+                return exception;
+            }
+
+            public boolean getWillRetryLater() {
+                return willRetryLater;
+            }
+        }
     }
 }

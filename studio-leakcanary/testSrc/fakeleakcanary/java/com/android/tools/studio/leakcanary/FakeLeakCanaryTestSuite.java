@@ -21,5 +21,10 @@ import org.junit.runners.Suite;
 
 /** All tests that use the LeakCanary fakes. */
 @RunWith(Suite.class)
-@Suite.SuiteClasses({RetainedCountModeTest.class, AnalysisProgressTest.class})
+@Suite.SuiteClasses({
+    RetainedCountModeTest.class,
+    AnalysisProgressTest.class,
+    SharkResultConverterTest.class,
+    OnDeviceResultTest.class
+})
 public class FakeLeakCanaryTestSuite {}

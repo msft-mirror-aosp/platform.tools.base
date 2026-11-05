@@ -85,6 +85,42 @@ final class HelperConfig {
     static final String VERSION_EXTRA = "studio_leakcanary_version";
 
     /**
+     * The broadcast action sent by the app when LeakCanary's analysis result is saved to a file
+     * (ON_DEVICE).
+     */
+    static final String ANALYSIS_RESULT_INTENT = "studio.leakcanary.ANALYSIS_RESULT";
+
+    /** The key for the full file path extra in the analysis result intent. */
+    static final String ANALYSIS_RESULT_FILE_PATH_EXTRA = "file_path";
+
+    /**
+     * The file in the app's cache folder that holds the latest ON_DEVICE analysis result, as a
+     * LeakCanaryAnalysisData proto. Always the same name, so each result replaces the last one.
+     */
+    static final String ON_DEVICE_ANALYSIS_FILE_NAME = "studio_leakcanary_on_device_analysis.pb";
+
+    /** The broadcast action sent by the app when something fails on the device (ON_DEVICE). */
+    static final String DEVICE_ERROR_INTENT = "studio.leakcanary.DEVICE_ERROR";
+
+    /** The key for the error code extra in the device error intent. */
+    static final String DEVICE_ERROR_CODE_EXTRA = "error_code";
+
+    // Device error codes. They must match LeakCanaryDeviceError.ErrorType in common.proto. This
+    // library does not include common.proto, so it sends the plain numbers.
+
+    /** The analysis result could not be converted: the LeakCanary version is not supported. */
+    static final int ERROR_CODE_UNSUPPORTED_VERSION = 4;
+
+    /** LeakCanary failed to dump the heap on the device, and will not try again. */
+    static final int ERROR_CODE_ON_DEVICE_HEAP_DUMP_FAILED = 5;
+
+    /**
+     * The analysis result could not be saved to a file on the device (for example, the storage is
+     * full).
+     */
+    static final int ERROR_CODE_ON_DEVICE_SAVE_FAILED = 6;
+
+    /**
      * Suffix for the internal permission used to protect broadcast receivers on API < 33. The full
      * permission is usually "${applicationId}" + INTERNAL_PERMISSION_SUFFIX.
      */
@@ -130,6 +166,60 @@ final class HelperConfig {
     static final String EVENT_LISTENERS_FIELD = "eventListeners";
     static final String ON_EVENT_METHOD = "onEvent";
     static final String GET_PROGRESS_PERCENT_METHOD = "getProgressPercent";
+
+    // LeakCanary events for the analysis result and a failed heap dump (ON_DEVICE).
+    static final String HEAP_ANALYSIS_DONE_CLASS =
+            "leakcanary.EventListener$Event$HeapAnalysisDone";
+    static final String GET_HEAP_ANALYSIS_METHOD = "getHeapAnalysis";
+    static final String HEAP_DUMP_FAILED_CLASS = "leakcanary.EventListener$Event$HeapDumpFailed";
+    static final String GET_WILL_RETRY_LATER_METHOD = "getWillRetryLater";
+    static final String GET_HEAP_DUMP_FAILED_EXCEPTION_METHOD = "getException";
+
+    // Shark classes in LeakCanary's analysis result, read by SharkResultConverter. Enum values are
+    // read with Enum.name(). GcRootType also uses getDescription() for values we don't know.
+    static final String SHARK_HEAP_ANALYSIS_CLASS = "shark.HeapAnalysis";
+    static final String GET_CREATED_AT_TIME_MILLIS_METHOD = "getCreatedAtTimeMillis";
+    static final String GET_DUMP_DURATION_MILLIS_METHOD = "getDumpDurationMillis";
+    static final String GET_ANALYSIS_DURATION_MILLIS_METHOD = "getAnalysisDurationMillis";
+
+    static final String SHARK_HEAP_ANALYSIS_SUCCESS_CLASS = "shark.HeapAnalysisSuccess";
+    static final String GET_METADATA_METHOD = "getMetadata";
+    static final String GET_APPLICATION_LEAKS_METHOD = "getApplicationLeaks";
+    static final String GET_LIBRARY_LEAKS_METHOD = "getLibraryLeaks";
+
+    static final String SHARK_HEAP_ANALYSIS_FAILURE_CLASS = "shark.HeapAnalysisFailure";
+    static final String GET_EXCEPTION_METHOD = "getException";
+
+    static final String SHARK_LEAK_CLASS = "shark.Leak";
+    static final String GET_LEAK_TRACES_METHOD = "getLeakTraces";
+    static final String GET_SIGNATURE_METHOD = "getSignature";
+    static final String GET_TOTAL_RETAINED_HEAP_BYTE_SIZE_METHOD = "getTotalRetainedHeapByteSize";
+
+    static final String SHARK_LEAK_TRACE_CLASS = "shark.LeakTrace";
+    static final String GET_GC_ROOT_TYPE_METHOD = "getGcRootType";
+    static final String GET_REFERENCE_PATH_METHOD = "getReferencePath";
+    static final String GET_LEAKING_OBJECT_METHOD = "getLeakingObject";
+    static final String REFERENCE_PATH_ELEMENT_IS_SUSPECT_METHOD = "referencePathElementIsSuspect";
+    static final String SHARK_GC_ROOT_TYPE_CLASS = "shark.LeakTrace$GcRootType";
+    static final String GET_DESCRIPTION_METHOD = "getDescription";
+
+    static final String SHARK_LEAK_TRACE_REFERENCE_CLASS = "shark.LeakTraceReference";
+    static final String GET_ORIGIN_OBJECT_METHOD = "getOriginObject";
+    static final String GET_REFERENCE_TYPE_METHOD = "getReferenceType";
+    static final String GET_OWNING_CLASS_SIMPLE_NAME_METHOD = "getOwningClassSimpleName";
+    static final String GET_REFERENCE_NAME_METHOD = "getReferenceName";
+    static final String SHARK_REFERENCE_TYPE_CLASS = "shark.LeakTraceReference$ReferenceType";
+
+    static final String SHARK_LEAK_TRACE_OBJECT_CLASS = "shark.LeakTraceObject";
+    static final String GET_TYPE_METHOD = "getType";
+    static final String GET_CLASS_NAME_METHOD = "getClassName";
+    static final String GET_LABELS_METHOD = "getLabels";
+    static final String GET_LEAKING_STATUS_METHOD = "getLeakingStatus";
+    static final String GET_LEAKING_STATUS_REASON_METHOD = "getLeakingStatusReason";
+    static final String GET_RETAINED_HEAP_BYTE_SIZE_METHOD = "getRetainedHeapByteSize";
+    static final String GET_NODE_RETAINED_OBJECT_COUNT_METHOD = "getRetainedObjectCount";
+    static final String SHARK_OBJECT_TYPE_CLASS = "shark.LeakTraceObject$ObjectType";
+    static final String SHARK_LEAKING_STATUS_CLASS = "shark.LeakTraceObject$LeakingStatus";
 
     /** Default fallback value for the retained visible threshold. */
     static final int DEFAULT_THRESHOLD = 5;

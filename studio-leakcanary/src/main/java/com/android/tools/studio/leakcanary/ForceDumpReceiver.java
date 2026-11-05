@@ -24,9 +24,10 @@ import android.util.Log;
 /**
  * Receives the broadcast to trigger a manual heap dump on the device.
  *
- * <p>This is only applicable when the application is running in ON_DEVICE mode. It checks if there
- * are actually any retained objects before delegating to LeakCanary's internal heap dumper to avoid
- * unnecessary freezes.
+ * <p>This is only applicable when the application is running in ON_DEVICE mode. Studio decides when
+ * to ask for a dump, so this always calls LeakCanary.dumpHeap(). LeakCanary runs GC first, then
+ * dumps. Usually this ends with a result or a failed dump error. In rare cases nothing comes back
+ * (for example, when LeakCanary analyzes in a separate process).
  */
 public class ForceDumpReceiver extends BroadcastReceiver {
 
@@ -43,19 +44,8 @@ public class ForceDumpReceiver extends BroadcastReceiver {
                 return;
             }
 
-            int retainedCount = LeakCanaryReflectionHelper.getRetainedObjectCount();
-            if (retainedCount > 0) {
-                Log.d(
-                        HelperConfig.LOG_TAG,
-                        "Retained objects found ("
-                                + retainedCount
-                                + "). Triggering LeakCanary.dumpHeap().");
-                LeakCanaryReflectionHelper.triggerDumpHeap();
-            } else {
-                Log.d(
-                        HelperConfig.LOG_TAG,
-                        "No retained objects found. Skipping LeakCanary.dumpHeap().");
-            }
+            Log.d(HelperConfig.LOG_TAG, "Triggering LeakCanary.dumpHeap().");
+            LeakCanaryReflectionHelper.triggerDumpHeap();
         }
     }
 }

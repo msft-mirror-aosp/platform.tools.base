@@ -18,6 +18,8 @@ package com.android.tools.studio.leakcanary;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -118,5 +120,25 @@ public class LeakCanaryReflectionHelperTest {
     public void testGetHeapAnalysisProgressPercentFailsGracefully() {
         assertThat(LeakCanaryReflectionHelper.getHeapAnalysisProgressPercent(new Object()))
                 .isEqualTo(HelperConfig.NO_ANALYSIS_PROGRESS);
+    }
+
+    /** Without LeakCanary, no event is seen as a result or a failed dump. */
+    @Test
+    public void testResultAndFailedDumpChecksFailGracefully() {
+        assertThat(LeakCanaryReflectionHelper.isInitialized()).isFalse();
+        assertThat(LeakCanaryReflectionHelper.isHeapAnalysisDone(new Object())).isFalse();
+        assertThat(LeakCanaryReflectionHelper.isHeapDumpFailed(new Object())).isFalse();
+    }
+
+    /** Without LeakCanary, the converter refuses to run instead of using empty lookups. */
+    @Test
+    public void testConverterThrowsWhenReflectionFailed() {
+        assertThrows(IllegalStateException.class, () -> SharkResultConverter.convert(new Object()));
+    }
+
+    /** A missing Shark class makes the lookups throw, so the start-up check fails. */
+    @Test
+    public void testSharkLookupsThrowWhenSharkIsMissing() {
+        assertThrows(ClassNotFoundException.class, SharkResultConverter::loadReflection);
     }
 }

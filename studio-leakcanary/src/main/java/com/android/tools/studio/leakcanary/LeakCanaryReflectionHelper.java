@@ -72,6 +72,13 @@ public class LeakCanaryReflectionHelper {
     private static Class<?> heapAnalysisProgressClass;
     private static Method getProgressPercentMethod;
 
+    // Cached HeapAnalysisDone and HeapDumpFailed lookups
+    private static Class<?> heapAnalysisDoneClass;
+    private static Method getHeapAnalysisMethod;
+    private static Class<?> heapDumpFailedClass;
+    private static Method getWillRetryLaterMethod;
+    private static Method getHeapDumpFailedExceptionMethod;
+
     private LeakCanaryReflectionHelper() {}
 
     /**
@@ -151,6 +158,21 @@ public class LeakCanaryReflectionHelper {
                 getProgressPercentMethod =
                         heapAnalysisProgressClass.getMethod(
                                 HelperConfig.GET_PROGRESS_PERCENT_METHOD);
+
+                // 6. Initialize HeapAnalysisDone and HeapDumpFailed cache (ON_DEVICE result and
+                // errors)
+                heapAnalysisDoneClass = Class.forName(HelperConfig.HEAP_ANALYSIS_DONE_CLASS);
+                getHeapAnalysisMethod =
+                        heapAnalysisDoneClass.getMethod(HelperConfig.GET_HEAP_ANALYSIS_METHOD);
+                heapDumpFailedClass = Class.forName(HelperConfig.HEAP_DUMP_FAILED_CLASS);
+                getWillRetryLaterMethod =
+                        heapDumpFailedClass.getMethod(HelperConfig.GET_WILL_RETRY_LATER_METHOD);
+                getHeapDumpFailedExceptionMethod =
+                        heapDumpFailedClass.getMethod(
+                                HelperConfig.GET_HEAP_DUMP_FAILED_EXCEPTION_METHOD);
+
+                // 7. Initialize the Shark lookups used to convert the analysis result.
+                SharkResultConverter.loadReflection();
 
                 // If we reached this point without throwing an exception, reflection was completely
                 // successful.
@@ -314,6 +336,51 @@ public class LeakCanaryReflectionHelper {
             Log.e(HelperConfig.LOG_TAG, "Failed to read LeakCanary analysis progress.", t);
             return HelperConfig.NO_ANALYSIS_PROGRESS;
         }
+    }
+
+    /** Returns true if every lookup in the start-up check passed. */
+    static boolean isInitialized() {
+        ensureInitialized();
+        return state == ReflectionState.COMPLETED;
+    }
+
+    /**
+     * Returns true if the event is LeakCanary's HeapAnalysisDone event (a finished analysis, good
+     * or failed). Returns false for other events, or if reflection failed.
+     */
+    static boolean isHeapAnalysisDone(Object event) {
+        return isInitialized() && heapAnalysisDoneClass.isInstance(event);
+    }
+
+    /**
+     * Returns the Shark HeapAnalysis inside a HeapAnalysisDone event. Call only when {@link
+     * #isHeapAnalysisDone} is true.
+     */
+    static Object getHeapAnalysis(Object event) throws ReflectiveOperationException {
+        return getHeapAnalysisMethod.invoke(event);
+    }
+
+    /**
+     * Returns true if the event is LeakCanary's HeapDumpFailed event. Returns false for other
+     * events, or if reflection failed.
+     */
+    static boolean isHeapDumpFailed(Object event) {
+        return isInitialized() && heapDumpFailedClass.isInstance(event);
+    }
+
+    /**
+     * Returns true if LeakCanary will try the failed heap dump again by itself. This is true for
+     * dumps LeakCanary started on its own, and false for dumps a user asked for (Studio's
+     * LeakCanary.dumpHeap() call, or a tap on LeakCanary's notification). Call only when {@link
+     * #isHeapDumpFailed} is true.
+     */
+    static boolean heapDumpWillRetryLater(Object event) throws ReflectiveOperationException {
+        return (Boolean) getWillRetryLaterMethod.invoke(event);
+    }
+
+    /** Returns why the heap dump failed. Call only when {@link #isHeapDumpFailed} is true. */
+    static Throwable getHeapDumpFailedException(Object event) throws ReflectiveOperationException {
+        return (Throwable) getHeapDumpFailedExceptionMethod.invoke(event);
     }
 
     /** Natively checks the AppWatcher object watcher to get the retained object count. */

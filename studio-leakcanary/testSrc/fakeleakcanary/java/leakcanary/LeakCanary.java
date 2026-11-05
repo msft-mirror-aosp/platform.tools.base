@@ -26,18 +26,24 @@ public final class LeakCanary {
 
     private Config config = new Config();
 
+    /** How many times dumpHeap() was called. */
+    public int dumpHeapCount;
+
     private LeakCanary() {}
 
     public Config getConfig() {
         return config;
     }
 
-    /** Needed because our reflection looks it up. Does nothing. */
-    public void dumpHeap() {}
+    /** Only counts the calls. */
+    public void dumpHeap() {
+        dumpHeapCount++;
+    }
 
     /** Puts the fake back to its first state. */
     public void reset() {
         config = new Config();
+        dumpHeapCount = 0;
     }
 
     /**
