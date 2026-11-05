@@ -69,6 +69,7 @@ _EXTRA_TARGETS = [
 # TODO: b/497702794 - old custom packaging deleted.
 #    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
     '//tools/base/bazel:owners.zip',
+    '//tools/vendor/google/lume-release/dist:lightbuild',
     '//tools/vendor/google/lume/dist:lightbuild',
     '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
 ]
@@ -145,7 +146,8 @@ _ARTIFACTS = [
     ('tools/vendor/google/android-cli/dist/deb/android-cli-linux-arm64.deb.zip', 'artifacts'),
     ('tools/vendor/google/android-cli/dist/deb/android-cli.deb', 'artifacts'),
     ('tools/vendor/google/android-cli/dist/deb/android-cli-linux-arm64.deb', 'artifacts'),
-    ('tools/vendor/google/lume/dist/lightbuild.zip', 'artifacts'),
+    ('tools/vendor/google/lume-release/dist/lightbuild.zip', 'artifacts'),
+    ('tools/vendor/google/lume/dist/lightbuild.zip', 'artifacts/lightbuild-dev.zip'),
     ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),

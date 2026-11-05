@@ -40,6 +40,7 @@ kotlin_library(
     srcs = glob(["src/**/*.kt"]),
     visibility = [
         "//tools/vendor/google/android-cli:__subpackages__",
+        "//tools/vendor/google/lume-release/lightbuild-cli:__subpackages__",
         "//tools/vendor/google/lume/lightbuild-cli:__subpackages__",
     ],
     deps = [

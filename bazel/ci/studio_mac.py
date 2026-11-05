@@ -30,6 +30,7 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
       '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
       '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
+      '//tools/vendor/google/lume-release/dist:lightbuild',
       '//tools/vendor/google/lume/dist:lightbuild',
       '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
   ]
@@ -64,7 +65,8 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
                   '',
               ),
               ('tools/vendor/google/android-cli/android-cli.zip', ''),
-              ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
+              ('tools/vendor/google/lume-release/dist/lightbuild.zip', ''),
+              ('tools/vendor/google/lume/dist/lightbuild.zip', 'lightbuild-dev.zip'),
               ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', ''),
           ],
       )
@@ -91,6 +93,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
       '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/adt/idea/android/native/diagnostics/heap:libjni_object_tagger',
+      '//tools/vendor/google/lume-release/dist:lightbuild',
       '//tools/vendor/google/lume/dist:lightbuild',
       '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
   ]
@@ -129,7 +132,8 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
                   '',
               ),
               ('tools/vendor/google/android-cli/android-cli.zip', ''),
-              ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
+              ('tools/vendor/google/lume-release/dist/lightbuild.zip', ''),
+              ('tools/vendor/google/lume/dist/lightbuild.zip', 'lightbuild-dev.zip'),
               ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', ''),
           ],
       )
