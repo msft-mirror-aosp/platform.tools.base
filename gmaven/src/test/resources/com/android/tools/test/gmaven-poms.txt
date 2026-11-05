@@ -281,7 +281,7 @@ com.android.tools.analytics-library:crash:$BASE_VERSION
     com.google.guava:guava:33.7.2-jre (runtime)
     org.apache.httpcomponents:httpclient:4.5.14 (runtime)
     org.apache.httpcomponents:httpcore:4.4.16 (runtime)
-    org.apache.httpcomponents:httpmime:4.5.6 (runtime)
+    org.apache.httpcomponents:httpmime:4.5.14 (runtime)
 
 com.android.tools.analytics-library:inspector:$BASE_VERSION
   pomName=Android Tools Analytics Inspector
@@ -535,7 +535,7 @@ com.android.tools.build:gradle:$BUILD_VERSION
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.android.tools.utp:gradle-work-action-api:$BASE_VERSION (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
-    org.apache.httpcomponents:httpmime:4.5.6 (runtime)
+    org.apache.httpcomponents:httpmime:4.5.14 (runtime)
     commons-io:commons-io:2.22.0 (runtime)
     org.ow2.asm:asm:9.9 (runtime)
     org.ow2.asm:asm-analysis:9.9 (runtime)

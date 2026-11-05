@@ -14035,13 +14035,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.apache.httpcomponents.httpmime_4.5.6",
-    pom = "org/apache/httpcomponents/httpmime/4.5.6/httpmime-4.5.6.pom",
+    name = "org.apache.httpcomponents.httpmime_4.5.14",
+    pom = "org/apache/httpcomponents/httpmime/4.5.14/httpmime-4.5.14.pom",
     repo_root_path = "",
-    repo_path = "org/apache/httpcomponents/httpmime/4.5.6",
-    parent = "org.apache.httpcomponents.httpcomponents-client_4.5.6",
+    repo_path = "org/apache/httpcomponents/httpmime/4.5.14",
+    parent = "org.apache.httpcomponents.httpcomponents-client_4.5.14",
     deps = [
-        "org.apache.httpcomponents.httpclient_4.5.6",
+        "org.apache.httpcomponents.httpclient_4.5.14",
     ],
     visibility = ["//visibility:public"],
 )
@@ -14049,19 +14049,19 @@ maven_artifact(
 maven_import(
     name = "org.apache.httpcomponents.httpmime",
     classifiers = [],
-    parent = "org.apache.httpcomponents.httpcomponents-client_4.5.6",
+    parent = "org.apache.httpcomponents.httpcomponents-client_4.5.14",
     jars = [
-        "org/apache/httpcomponents/httpmime/4.5.6/httpmime-4.5.6.jar"
+        "org/apache/httpcomponents/httpmime/4.5.14/httpmime-4.5.14.jar"
     ],
     exports = [
         "org.apache.httpcomponents.httpclient",
     ],
     original_deps = [
-        "org.apache.httpcomponents.httpclient_4.5.6",
+        "org.apache.httpcomponents.httpclient_4.5.14",
     ],
-    pom = "org/apache/httpcomponents/httpmime/4.5.6/httpmime-4.5.6.pom",
+    pom = "org/apache/httpcomponents/httpmime/4.5.14/httpmime-4.5.14.pom",
     repo_root_path = "",
-    repo_path = "org/apache/httpcomponents/httpmime/4.5.6",
+    repo_path = "org/apache/httpcomponents/httpmime/4.5.14",
     visibility = ["//visibility:public"],
 )
 
@@ -93217,6 +93217,18 @@ maven_artifact(
     deps = [
         "org.apache.httpcomponents.httpcore_4.1",
         "commons-logging.commons-logging_1.1.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.httpcomponents.httpmime_4.5.6",
+    pom = "org/apache/httpcomponents/httpmime/4.5.6/httpmime-4.5.6.pom",
+    repo_root_path = "",
+    repo_path = "org/apache/httpcomponents/httpmime/4.5.6",
+    parent = "org.apache.httpcomponents.httpcomponents-client_4.5.6",
+    deps = [
+        "org.apache.httpcomponents.httpclient_4.5.6",
     ],
     visibility = ["//visibility:public"],
 )
