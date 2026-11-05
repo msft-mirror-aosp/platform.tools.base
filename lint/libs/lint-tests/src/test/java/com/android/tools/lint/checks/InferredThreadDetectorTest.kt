@@ -6815,6 +6815,97 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test calls on a union of instantiations keep their type arguments paired`() {
+    // `make` returns either pairing, and `self` dispatches on each. Mixing them up would let `Runner` run a `UiJob`.
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+            import java.util.function.Consumer;
+
+            class Tasks {
+              static class UiJob implements Runnable { @UiThread public void run() {} }
+              static class BgJob implements Runnable { @WorkerThread public void run() {} }
+
+              static class Runner<J extends Runnable> implements Consumer<J> { public void accept(J job) { job.run(); } }
+              static class Dropper<J> implements Consumer<J> { public void accept(J job) {} }
+
+              static class Task<H extends Consumer<J>, J> {
+                H handler;
+                J job;
+                Task(H handler, J job) { this.handler = handler; this.job = job; }
+                Task<H, J> self() { return this; }
+                void go() { handler.accept(job); }
+              }
+
+              static Task<?, ?> make(boolean f) {
+                return f ? new Task<>(new Runner<BgJob>(), new BgJob()) : new Task<>(new Dropper<UiJob>(), new UiJob());
+              }
+
+              @WorkerThread static void work(boolean f) { make(f).self().go(); }
+
+              @UiThread static void ui(boolean f) { make(f).self().go(); }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Tasks.java:27: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          @UiThread static void ui(boolean f) { make(f).self().go(); }
+                                                               ~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test long chain of calls swapping type arguments`() {
+    // Each `maybeSwap` may swap the type arguments. The analysis must not track every combination of them.
+    val n = 30
+    val classes = (0 until n).joinToString(" ") { "static final class V$it {}" }
+    val steps = (0 until n).joinToString("") { ".put(new V$it()).maybeSwap(f)" }
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.UiThread;
+
+            class Registry {
+              $classes
+
+              static class Pair<X, Y> {
+                Pair<X, Y> put(X x) {
+                  return this;
+                }
+                Pair<Y, X> swap() {
+                  return new Pair<Y, X>();
+                }
+                Pair maybeSwap(boolean f) {
+                  return f ? this : swap();
+                }
+              }
+
+              @UiThread static Object chain(boolean f) {
+                return new Pair<Object, Object>()$steps;
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
+
   fun `test long chain of calls accumulating type arguments`() {
     // Each `put` joins a new value type into the builder's type argument. The analysis must not track every subset of them.
     val n = 40

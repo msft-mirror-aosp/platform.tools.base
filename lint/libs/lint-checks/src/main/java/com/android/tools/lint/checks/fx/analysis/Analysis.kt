@@ -49,8 +49,10 @@ import com.android.tools.lint.checks.fx.result.emptySubst
 import com.android.tools.lint.checks.fx.result.errorSetLattice
 import com.android.tools.lint.checks.fx.result.isExtension
 import com.android.tools.lint.checks.fx.result.isFinal
+import com.android.tools.lint.checks.fx.result.isParameterized
 import com.android.tools.lint.checks.fx.result.isStatic
 import com.android.tools.lint.checks.fx.result.renderAbbrev
+import com.android.tools.lint.checks.fx.result.shape
 import com.android.tools.lint.checks.fx.result.showSubst
 import com.android.tools.lint.checks.fx.result.translate
 import com.android.tools.lint.checks.fx.utils.DependentMonotone
@@ -1081,7 +1083,7 @@ internal open class Analysis<FX : Any>(
     fun go(receiver: Type<FX>): InstAns<FX> =
       when (receiver) {
         is Type.Sym -> applyType(rec, receiver to rSubst, method, args, name)
-        is Type.Union -> receiver.cases.joinedOver(instantiationLattice, ::go)
+        is Type.Union -> receiver.cases.dispatchedOver(::go)
         else -> applyType(rec, receiver to rSubst, method, args, name)
       }
     return go(receiver)
@@ -1106,7 +1108,7 @@ internal open class Analysis<FX : Any>(
       is Type.Lambda -> apply(rec, receiver, listOf(receiver) + args)
       is Type.MethodRef -> apply(rec, receiver, args)
       is Type.SpecializedMethodRef -> apply(rec, receiver.ref, listOf(receiver.receiver) + args)
-      is Type.Union -> receiver.cases.joinedOver(instantiationLattice) { invokeWildGuess(rec, it, methodName, args, notFound) }
+      is Type.Union -> receiver.cases.dispatchedOver { invokeWildGuess(rec, it, methodName, args, notFound) }
       is Type.Sym,
       is Type.WildCard -> notFound(Module.MethodLookupException.NotFound(methodName))
       is Type.Ellipsis -> throw IllegalArgumentException("Unexpected invocation $receiver.$methodName($args)")
@@ -1287,7 +1289,7 @@ internal open class Analysis<FX : Any>(
           else -> havocked
         }
       }
-      is Type.Union -> r.cases.joinedOver(instantiationLattice) { applyType(rec, it to receiver.second, method, args, name) }
+      is Type.Union -> r.cases.dispatchedOver { applyType(rec, it to receiver.second, method, args, name) }
       else -> havocTypeApp(rec, receiver, method, args)
     }
 
@@ -1312,9 +1314,11 @@ internal open class Analysis<FX : Any>(
             val (receiver1, fx1) = rec[receiverSubst, receiver]
             go(receiver1, fx1.subst!!.gc(receiver1))
           } else instantiationLattice.bottom
-        is Type.Union -> receiver.cases.joinedOver(instantiationLattice) { go(it, receiverSubst.gc(it)) }
+        is Type.Union -> receiver.cases.dispatchedOver { go(it, receiverSubst.gc(it)) }
         is Type.Application ->
-          (substLattice.joinOf(receiverSubst, aSubst))!!.apply(rec, Type.MethodRef(receiver.constructor, method), listOf(receiver) + args)
+          (substLattice.joinOf(receiverSubst, aSubst))!!
+            .apply(rec, Type.MethodRef(receiver.constructor, method), listOf(receiver) + args)
+            .mergedByShape()
         is Type.Lambda ->
           if (receiver.params.size == args.size)
             (substLattice.joinOf(receiverSubst, aSubst))!!.apply(rec, receiver, listOf(receiver) + args)
@@ -1327,6 +1331,12 @@ internal open class Analysis<FX : Any>(
       }
     return go(receiver.first, receiver.second.gc(receiver.first))
   }
+
+  /** Joins [f] over a union receiver's cases, merging each case's result by shape */
+  private fun Iterable<Type<FX>>.dispatchedOver(f: (Type<FX>) -> InstAns<FX>): InstAns<FX> =
+    joinedOver(instantiationLattice) { f(it).mergedByShape() }
+
+  private fun InstAns<FX>.mergedByShape(): InstAns<FX> = Result(value.mergedByShape(typeLattice), effect)
 
   /** Check whether the [type] expression has free variable (i.e. not explained by [subst]) */
   private fun <FX> isOpen(type: Type<FX>, subst: Subst<FX>): Boolean {
@@ -1948,6 +1958,19 @@ private fun Type<*>.isConstant(): Boolean =
 private fun <FX> Constraint<FX>.terms(): Array<Type.Sym<FX>> = concreteUpperbounds?.keys?.toTypedArray() ?: emptyArray()
 
 private fun <FX> Effect<FX>.terms(): Array<Type.Sym<FX>> = (invocations?.toTypedArray() ?: emptyArray()) + constraint.terms()
+
+/** Merges [this] union's applications of the same constructor and arity, joining their arguments */
+private fun <FX> Type<FX>.mergedByShape(typeLattice: Lattice<Type<FX>>): Type<FX> {
+  if (this !is Type.Union) return this
+  val applications = cases.filter { it.isParameterized() } as List<Type.Application<FX>>
+  if (applications.size < 2) return this
+  val merged =
+    applications.groupingBy(Type.Application<FX>::shape).reduce { (c, _), t1, t2 ->
+      Type.Application(c, t1.args.zip(t2.args, typeLattice::joinOf))
+    }
+  if (merged.size == applications.size) return this
+  return Type.Union(cases.removeAll(applications).addAll(merged.values))
+}
 
 /**
  * @return A substitution like [this], but only covering free variables from [roots].
