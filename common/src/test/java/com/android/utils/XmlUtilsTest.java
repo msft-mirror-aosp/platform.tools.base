@@ -18,6 +18,11 @@ package com.android.utils;
 import static com.android.SdkConstants.XMLNS;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.SdkConstants;
 import com.android.annotations.Nullable;
@@ -27,7 +32,9 @@ import com.android.ide.common.blame.SourcePosition;
 
 import com.google.common.collect.Maps;
 
-import junit.framework.TestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -54,7 +61,10 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 @SuppressWarnings("javadoc")
-public class XmlUtilsTest extends TestCase {
+public final class XmlUtilsTest {
+    @Rule public TestName name = new TestName();
+
+    @Test
     public void testlookupNamespacePrefix() throws Exception {
         // Setup
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -109,6 +119,7 @@ public class XmlUtilsTest extends TestCase {
         return false;
     }
 
+    @Test
     public void testToXmlAttributeValue() throws Exception {
         assertEquals("", XmlUtils.toXmlAttributeValue(""));
         assertEquals("foo", XmlUtils.toXmlAttributeValue("foo"));
@@ -122,6 +133,7 @@ public class XmlUtilsTest extends TestCase {
         assertEquals("&lt;&quot;&apos;>&amp;", XmlUtils.toXmlAttributeValue("<\"'>&"));
     }
 
+    @Test
     public void testFromXmlAttributeValue() throws Exception {
         assertEquals("", XmlUtils.fromXmlAttributeValue(""));
         assertEquals("foo", XmlUtils.fromXmlAttributeValue("foo"));
@@ -136,22 +148,26 @@ public class XmlUtilsTest extends TestCase {
         assertEquals("a\nb\nc", XmlUtils.fromXmlAttributeValue("a&#xA;b&#xA;c"));
     }
 
+    @Test
     public void testAppendXmlAttributeValue() throws Exception {
         StringBuilder sb = new StringBuilder();
         XmlUtils.appendXmlAttributeValue(sb, "<\"'>&\n\n]]>");
         assertEquals("&lt;&quot;&apos;>&amp;&#xA;&#xA;]]&gt;", sb.toString());
     }
 
+    @Test
     public void testToXmlTextValue() throws Exception {
         assertEquals("&lt;\"'>&amp;\n", XmlUtils.toXmlTextValue("<\"'>&\n"));
     }
 
+    @Test
     public void testAppendXmlTextValue() throws Exception {
         StringBuilder sb = new StringBuilder();
         XmlUtils.appendXmlTextValue(sb, "<\"'>&\n");
         assertEquals("&lt;\"'>&amp;\n", sb.toString());
     }
 
+    @Test
     public void testHasChildren() throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -170,6 +186,7 @@ public class XmlUtilsTest extends TestCase {
         assertFalse(XmlUtils.hasElementChildren(b));
     }
 
+    @Test
     public void testToXml() throws Exception {
         Document doc = createEmptyPlainDocument();
         assertNotNull(doc);
@@ -196,6 +213,7 @@ public class XmlUtilsTest extends TestCase {
                 xml);
     }
 
+    @Test
     public void testToXml2() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -224,6 +242,7 @@ public class XmlUtilsTest extends TestCase {
                 formatted);
     }
 
+    @Test
     public void testToXml3() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -238,6 +257,7 @@ public class XmlUtilsTest extends TestCase {
         assertEquals(xml, formatted);
     }
 
+    @Test
     public void testToXml3b() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -262,6 +282,7 @@ public class XmlUtilsTest extends TestCase {
     }
 
 
+    @Test
     public void testToXml4() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -278,6 +299,7 @@ public class XmlUtilsTest extends TestCase {
                 xml);
     }
 
+    @Test
     public void testToXml5() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -290,6 +312,7 @@ public class XmlUtilsTest extends TestCase {
         assertEquals(xml, formatted);
     }
 
+    @Test
     public void testToXml6() throws Exception {
         // Check CDATA
         String xml = ""
@@ -320,6 +343,7 @@ public class XmlUtilsTest extends TestCase {
                 formatted);
     }
 
+    @Test
     public void testPositionAwareXmlXmlBuilder() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -385,6 +409,7 @@ public class XmlUtilsTest extends TestCase {
         return XmlUtils.parseDocumentSilently(xml, true);
     }
 
+    @Test
     public void testFormatFloatValue() throws Exception {
         assertEquals("1", XmlUtils.formatFloatValue(1.0f));
         assertEquals("2", XmlUtils.formatFloatValue(2.0f));
@@ -397,6 +422,7 @@ public class XmlUtilsTest extends TestCase {
         assertEquals("-1", XmlUtils.formatFloatValue(-1f));
     }
 
+    @Test
     public void testFormatFloatValueLocale() throws Exception {
         // Ensure that the layout float values aren't affected by
         // locale settings, like using commas instead of of periods
@@ -415,8 +441,9 @@ public class XmlUtilsTest extends TestCase {
         }
     }
 
+    @Test
     public void testGetUtfReader() throws IOException {
-        File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
+        File file = File.createTempFile(name.getMethodName(), SdkConstants.DOT_XML);
 
         BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
         try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
@@ -435,12 +462,14 @@ public class XmlUtilsTest extends TestCase {
         file.delete();
     }
 
+    @Test
     public void testStripBom() {
         assertEquals("", XmlUtils.stripBom(""));
         assertEquals("Hello", XmlUtils.stripBom("Hello"));
         assertEquals("Hello", XmlUtils.stripBom("\uFEFFHello"));
     }
 
+    @Test
     public void testParseDocument() throws Exception {
         String xml = "" +
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -471,6 +500,7 @@ public class XmlUtilsTest extends TestCase {
         assertEquals("LinearLayout", document.getDocumentElement().getTagName());
     }
 
+    @Test
     public void testDisallowDocType() throws Exception {
         String xml = "" +
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -497,8 +527,9 @@ public class XmlUtilsTest extends TestCase {
         assertEquals("LinearLayout", document.getDocumentElement().getTagName());
     }
 
+    @Test
     public void testParseUtfXmlFile() throws Exception {
-        File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
+        File file = File.createTempFile(name.getMethodName(), SdkConstants.DOT_XML);
         String xml = "" +
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
@@ -532,6 +563,7 @@ public class XmlUtilsTest extends TestCase {
         file.delete();
     }
 
+    @Test
     public void testGetSubTags() {
         String xml = "<root><child1/><child2/><child3><grancdhild/></child3></root>";
         Document document = XmlUtils.parseDocumentSilently(xml, true);
@@ -566,6 +598,7 @@ public class XmlUtilsTest extends TestCase {
         assertThat(iterator.hasNext()).isFalse();
     }
 
+    @Test
     public void testGetSubTagsByName() {
         String xml = "<root><child1/><child2/><child1/><child3><grancdhild/></child3></root>";
         Document document = XmlUtils.parseDocumentSilently(xml, true);
@@ -595,6 +628,7 @@ public class XmlUtilsTest extends TestCase {
         assertThat(next.getTagName()).isEqualTo(child1.getTagName());
     }
 
+    @Test
     public void testIsProtoXml() {
         byte[] proto = new byte[] {0x0A, (byte) 0x96, 0x04, 0x0A};
         byte[] text = new byte[] {'\n', '\n', '\n', '\t', '<'};
@@ -604,6 +638,7 @@ public class XmlUtilsTest extends TestCase {
         assertThat(XmlUtils.isProtoXml(textWithBom)).isFalse();
     }
 
+    @Test
     public void testCreateXmlInputFactoryDisablesDtdAndExternalEntities() throws Exception {
         XMLInputFactory factory = XmlUtils.createXmlInputFactory();
 
@@ -613,6 +648,7 @@ public class XmlUtilsTest extends TestCase {
     }
 
     /** Callers that construct their own factory must get the same hardening. */
+    @Test
     public void testHardenDisablesDtdAndExternalEntities() throws Exception {
         XMLInputFactory factory = XmlUtils.harden(XMLInputFactory.newFactory());
 
@@ -628,6 +664,7 @@ public class XmlUtilsTest extends TestCase {
      * <p>The host is intentionally unroutable: were the DTD fetched, this would fail or hang
      * instead of passing.
      */
+    @Test
     public void testCreateXmlInputFactoryIgnoresExternalDtd() throws Exception {
         XMLInputFactory factory = XmlUtils.createXmlInputFactory();
 
@@ -651,6 +688,7 @@ public class XmlUtilsTest extends TestCase {
      * ServiceLoader}, and the JDK and Aalto parsers word this differently. What matters is that the
      * reference fails rather than expanding.
      */
+    @Test
     public void testCreateXmlInputFactoryDoesNotResolveDeclaredEntities() throws Exception {
         XMLInputFactory factory = XmlUtils.createXmlInputFactory();
 

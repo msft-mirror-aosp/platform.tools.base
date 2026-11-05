@@ -16,10 +16,17 @@
 
 package com.android.io;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.annotations.NonNull;
 import com.android.io.NonClosingInputStream.CloseBehavior;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -32,21 +39,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 /** */
-public class NonClosingInputStreamTest extends TestCase {
+public final class NonClosingInputStreamTest {
 
     private File mFile;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         mFile = File.createTempFile("test", "txt");
         FileWrapper fw = new FileWrapper(mFile);
         fw.setContents(new ByteArrayInputStream("1234".getBytes(StandardCharsets.UTF_8)));
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    @After
+    public void tearDown() throws Exception {
         if (!mFile.delete()) {
             mFile.deleteOnExit();
         }
@@ -56,6 +61,7 @@ public class NonClosingInputStreamTest extends TestCase {
      * Tests the normal case where a method parses a stream closes it.
      * Next parser/reset operation fails with an IOException since the stream is closed.
      */
+    @Test
     public void testFailure() throws IOException {
         InputStream is = loadResource();
         try {
@@ -81,6 +87,7 @@ public class NonClosingInputStreamTest extends TestCase {
      * Tests with a NonClosingInputStream using CLOSE behavior.
      * This should do exactly like in the previous testFailure case.
      */
+    @Test
     public void testCloseBehavior() throws IOException {
         InputStream is = loadResource();
         try {
@@ -108,6 +115,7 @@ public class NonClosingInputStreamTest extends TestCase {
      * Tests with a NonClosingInputStream using IGNORE behavior.
      * In this case, when the parser tries to close the stream, nothing happens.
      */
+    @Test
     public void testIgnoreBehavior() throws IOException {
         InputStream is = loadResource();
         try {
@@ -151,6 +159,7 @@ public class NonClosingInputStreamTest extends TestCase {
      * In this case, when the parser tries to close the stream, it actually
      * calls reset and reverts it the last marked position.
      */
+    @Test
     public void testResetBehavior() throws IOException {
         InputStream is = loadResource();
         try {

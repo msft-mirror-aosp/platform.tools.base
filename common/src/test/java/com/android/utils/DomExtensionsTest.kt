@@ -16,9 +16,12 @@
 
 package com.android.utils
 
-import junit.framework.TestCase
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
 
-class DomExtensionsTest : TestCase() {
+class DomExtensionsTest {
+  @Test
   fun testXmlExtensionMethods() {
     val xml =
       """

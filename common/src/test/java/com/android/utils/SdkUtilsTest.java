@@ -23,20 +23,27 @@ import static com.android.utils.SdkUtils.fileToUrlString;
 import static com.android.utils.SdkUtils.globToRegexp;
 import static com.android.utils.SdkUtils.parseDecoratedFileUrlString;
 import static com.android.utils.SdkUtils.urlToFile;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.SdkConstants;
 import com.android.utils.SdkUtils.FileLineColumnUrlData;
 import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 @SuppressWarnings("javadoc")
-public class SdkUtilsTest extends TestCase {
+public final class SdkUtilsTest {
 
-    @Override
+    @Before
     public void setUp() throws Exception {
         // TODO: Use Files.createTempDir() to avoid this.
         if (new File("/tmp/foo").isDirectory()) {
@@ -44,6 +51,7 @@ public class SdkUtilsTest extends TestCase {
         }
     }
 
+    @Test
     public void testEndsWithIgnoreCase() {
         assertTrue(SdkUtils.endsWithIgnoreCase("foo", "foo"));
         assertTrue(SdkUtils.endsWithIgnoreCase("foo", "Foo"));
@@ -56,6 +64,7 @@ public class SdkUtilsTest extends TestCase {
         assertFalse(SdkUtils.endsWithIgnoreCase("foo", "fo"));
     }
 
+    @Test
     public void testStartsWithIgnoreCase() {
         assertTrue(SdkUtils.startsWithIgnoreCase("foo", "foo"));
         assertTrue(SdkUtils.startsWithIgnoreCase("foo", "Foo"));
@@ -68,6 +77,7 @@ public class SdkUtilsTest extends TestCase {
         assertFalse(SdkUtils.startsWithIgnoreCase("fo", "foo"));
     }
 
+    @Test
     public void testEndsWith() {
         assertTrue(SdkUtils.endsWith("foo", "foo"));
         assertTrue(SdkUtils.endsWith("foobar", "obar"));
@@ -85,12 +95,14 @@ public class SdkUtilsTest extends TestCase {
         assertFalse(SdkUtils.endsWith("foobar", "longfoobar"));
     }
 
+    @Test
     public void testEndsWith2() {
         assertTrue(SdkUtils.endsWith("foo", "foo".length(), "foo"));
         assertTrue(SdkUtils.endsWith("foo", "fo".length(), "fo"));
         assertTrue(SdkUtils.endsWith("foo", "f".length(), "f"));
     }
 
+    @Test
     public void testWrap() {
         String s =
             "Hardcoding text attributes directly in layout files is bad for several reasons:\n" +
@@ -114,6 +126,7 @@ public class SdkUtilsTest extends TestCase {
             wrapped);
     }
 
+    @Test
     public void testWrapLongContinuousLine() {
         String s =
           "Very_long_continuous_line_that_needs_wrapping";
@@ -127,12 +140,14 @@ public class SdkUtilsTest extends TestCase {
           wrapped);
     }
 
+    @Test
     public void testWrapLongContinuousLineNoBreak() {
         String s = "Space after very_long_word not present";
         String wrapped = SdkUtils.wrap(s, 10, 10, null, false);
         assertEquals("Space\nafter\nvery_long_word\nnot\npresent\n", wrapped);
     }
 
+    @Test
     public void testWrapPrefix() {
         String s =
             "Hardcoding text attributes directly in layout files is bad for several reasons:\n" +
@@ -156,6 +171,7 @@ public class SdkUtilsTest extends TestCase {
             wrapped);
     }
 
+    @Test
     public void testParseDecoratedFileUrlString() {
         FileLineColumnUrlData data = parseDecoratedFileUrlString("file://tmp/foo/bar");
         assertEquals("file://tmp/foo/bar", data.urlString);
@@ -208,6 +224,7 @@ public class SdkUtilsTest extends TestCase {
         assertNull(data.column);
     }
 
+    @Test
     public void testFileToUrl() throws Exception {
         // path -- drive "C:" used as prefix in paths, empty for mac/linux.
         String pDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "C:" : "";
@@ -222,6 +239,7 @@ public class SdkUtilsTest extends TestCase {
                 fileToUrlString(new File(pDrive + "/tmp/$&+,:;=?@/foo bar%")));
     }
 
+    @Test
     public void testUrlToFile() throws Exception {
         // path -- drive "C:" used as prefix in paths, empty for mac/linux.
         String pDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "C:" : "";
@@ -243,6 +261,7 @@ public class SdkUtilsTest extends TestCase {
                 urlToFile(new URL("file:" + uDrive + "/tmp/$&+,:;=%3F@/foo%20bar%25")));
     }
 
+    @Test
     public void testCreatePathComment() throws Exception {
         // path -- drive "C:" used as prefix in paths, empty for mac/linux.
         String pDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "C:" : "";
@@ -279,6 +298,7 @@ public class SdkUtilsTest extends TestCase {
                 urlToFile(new URL(urlString)).getPath());
     }
 
+    @Test
     public void testFormattedComment() throws Exception {
         // path -- drive "C:" used as prefix in paths, empty for mac/linux.
         String pDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "C:" : "";
@@ -311,6 +331,7 @@ public class SdkUtilsTest extends TestCase {
                 urlToFile(new URL(urlString)).getPath());
     }
 
+    @Test
     public void testNameConversionRoutines() {
         assertEquals("xml-name", SdkUtils.constantNameToXmlName("XML_NAME"));
         assertEquals("XML_NAME", SdkUtils.xmlNameToConstantName("xml-name"));
@@ -319,6 +340,7 @@ public class SdkUtilsTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test
     public void testGlobToRegexp() {
         assertEquals("^foo$", globToRegexp("foo"));
         assertEquals("^foo/bar$", globToRegexp("foo/bar"));
@@ -351,6 +373,7 @@ public class SdkUtilsTest extends TestCase {
         assertTrue(Pattern.compile(globToRegexp("f(o*)b**(")).matcher("f(oaa)b/c/d(").matches());
     }
 
+    @Test
     public void testFileNameToResourceName() {
         assertEquals("foo", fileNameToResourceName("foo.png"));
         assertEquals("foo", fileNameToResourceName("foo.9.png"));
@@ -361,6 +384,7 @@ public class SdkUtilsTest extends TestCase {
         assertEquals(".9.png", fileNameToResourceName(".9.png"));
     }
 
+    @Test
     public void testIsBitmapFile() {
         assertFalse(SdkUtils.isBitmapFile(new File("foo" + File.separator + "bar.txt")));
         assertTrue(SdkUtils.isBitmapFile(new File("foo" + File.separator + "bar.png")));

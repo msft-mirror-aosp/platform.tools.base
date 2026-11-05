@@ -15,14 +15,17 @@
  */
 package com.android.utils;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 
-public class HtmlBuilderTest extends TestCase {
+public final class HtmlBuilderTest {
 
+    @Test
     public void testAddLink() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.add("Plain.");
@@ -32,6 +35,7 @@ public class HtmlBuilderTest extends TestCase {
         assertEquals("Plain. <A HREF=\"runnable:0\">(link)</A>Plain.", builder.getHtml());
     }
 
+    @Test
     public void testAddLinkEscaping() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addLink("click here", "http://example.com/foo?bar=baz&qux=quz");
@@ -40,18 +44,21 @@ public class HtmlBuilderTest extends TestCase {
                 builder.getHtml());
     }
 
+    @Test
     public void testAddMultiline() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addMultiline("Line 1\n<Line 2>\nLine 3");
         assertEquals("Line 1<BR/>&lt;Line 2><BR/>Line 3<BR/>", builder.getHtml());
     }
 
+    @Test
     public void testAddBold() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addBold("This is bold");
         assertEquals("<B>This is bold</B>", builder.getHtml());
     }
 
+    @Test
     public void testAddUnderlined() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addUnderlined("This is underlined.");
@@ -59,18 +66,21 @@ public class HtmlBuilderTest extends TestCase {
     }
 
 
+    @Test
     public void testAddBulletedItem() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addBulletedItem("This is bulleted item.");
         assertEquals("<li>This is bulleted item.</li>", builder.getHtml());
     }
 
+    @Test
     public void testAddItalic() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addItalic("This is italic");
         assertEquals("<I>This is italic</I>", builder.getHtml());
     }
 
+    @Test
     public void testNestLinkInBold() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.add("Plain. ");
@@ -82,6 +92,7 @@ public class HtmlBuilderTest extends TestCase {
                      builder.getHtml());
     }
 
+    @Test
     public void testNestInUnderline() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.add("Plain. ");
@@ -93,6 +104,7 @@ public class HtmlBuilderTest extends TestCase {
                      builder.getHtml());
     }
 
+    @Test
     public void testAddList() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.add("Plain").newline();
@@ -103,12 +115,14 @@ public class HtmlBuilderTest extends TestCase {
                 builder.getHtml());
     }
 
+    @Test
     public void testAddLinkWithBeforeAndAfterText() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addLink("This is the ", "linked text", "!", "foo://bar");
         assertEquals("This is the <A HREF=\"foo://bar\">linked text</A>!", builder.getHtml());
     }
 
+    @Test
     public void testAddTable() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.beginTable().addTableRow(true, "Header1", "Header2")
@@ -119,6 +133,7 @@ public class HtmlBuilderTest extends TestCase {
                 builder.getHtml());
     }
 
+    @Test
     public void testAddTableWithAlignment() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.beginTable("valign=\"top\"").addTableRow("Data1", "Data2").endTable();
@@ -128,11 +143,13 @@ public class HtmlBuilderTest extends TestCase {
                 builder.getHtml());
     }
 
+    @Test
     public void testAddDiv() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<div>Hello</div>", builder.beginDiv().add("Hello").endDiv().getHtml());
     }
 
+    @Test
     public void testAddDivWithPadding() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<div style=\"padding: 10px; text-color: gray\">Hello</div>",
@@ -140,12 +157,14 @@ public class HtmlBuilderTest extends TestCase {
                              .getHtml());
     }
 
+    @Test
     public void testAddParagraph() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals(
                 "<p>Hello</p>", builder.beginParagraph().add("Hello").endParagraph().getHtml());
     }
 
+    @Test
     public void testAddParagraphWithPadding() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals(
@@ -156,11 +175,13 @@ public class HtmlBuilderTest extends TestCase {
                         .getHtml());
     }
 
+    @Test
     public void testAddSpan() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<span>Hello</span>", builder.beginSpan().add("Hello").endSpan().getHtml());
     }
 
+    @Test
     public void testAddSpanWithPadding() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<span style=\"padding: 10px; text-color: gray\">Hello</span>",
@@ -168,12 +189,14 @@ public class HtmlBuilderTest extends TestCase {
                              .getHtml());
     }
 
+    @Test
     public void testColoredText() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<FONT color=\"#804020\">This is a test</FONT>",
                      builder.coloredText(new Color(128, 64, 32), "This is a test").getHtml());
     }
 
+    @Test
     public void testAddImage() throws IOException {
         File f = File.createTempFile("img", "png");
         f.deleteOnExit();
@@ -193,6 +216,7 @@ public class HtmlBuilderTest extends TestCase {
         assertEquals(expected, actual);
     }
 
+    @Test
     public void testNewlineIfNecessary() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.newlineIfNecessary();
@@ -209,6 +233,7 @@ public class HtmlBuilderTest extends TestCase {
         assertEquals("<BR/>a<BR/><BR/>", builder.getHtml());
     }
 
+    @Test
     public void testAddHeading() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addHeading("Welcome to Android Studio!", "black");
@@ -217,6 +242,7 @@ public class HtmlBuilderTest extends TestCase {
                 builder.getHtml());
     }
 
+    @Test
     public void testTable() {
         {
             HtmlBuilder builder = new HtmlBuilder();

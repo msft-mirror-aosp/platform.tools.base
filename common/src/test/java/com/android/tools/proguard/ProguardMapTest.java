@@ -16,12 +16,14 @@
 
 package com.android.tools.proguard;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class ProguardMapTest extends TestCase {
+public final class ProguardMapTest {
     private static final String TEST_MAP =
             "# compiler: R8\n"
                     + "# compiler_version: 1.4.14-dev\n"
@@ -54,6 +56,7 @@ public class ProguardMapTest extends TestCase {
                     + "    80:80:void lineObfuscatedMethod():8:8 -> o\n"
                     + "    90:90:void lineObfuscatedMethod2():9 -> p\n";
 
+    @Test
     public void testProguardMap() throws IOException, ParseException {
         ProguardMap map = new ProguardMap();
 

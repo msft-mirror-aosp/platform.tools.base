@@ -15,12 +15,15 @@
  */
 package com.android.utils;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 /**
  * Test for OffsetTrackingDecodedXmlValue class.
  */
-public class OffsetTrackingDecodedXmlValueTest extends TestCase {
+public final class OffsetTrackingDecodedXmlValueTest {
+    @Test
     public void testUnescaping() throws Exception {
         OffsetTrackingDecodedXmlValue decoded =
                 new OffsetTrackingDecodedXmlValue("&lt;&gt;&amp;&apos;&quot;&quot");
@@ -36,6 +39,7 @@ public class OffsetTrackingDecodedXmlValueTest extends TestCase {
         }
     }
 
+    @Test
     public void testNoEscapedCharacters() throws Exception {
         String original = "no encoded characters";
         OffsetTrackingDecodedXmlValue decoded = new OffsetTrackingDecodedXmlValue(original);

@@ -22,12 +22,18 @@ import static com.android.utils.CharSequences.lastIndexOf;
 import static com.android.utils.CharSequences.regionMatches;
 import static com.android.utils.CharSequences.startsWith;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.Reader;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class CharSequencesTest extends TestCase {
+public final class CharSequencesTest {
+    @Test
     public void testIndexOf() {
         assertEquals(-1, indexOf("foo", 'a'));
         assertEquals(0, indexOf("foo", 'f'));
@@ -47,6 +53,7 @@ public class CharSequencesTest extends TestCase {
         assertEquals(-1, indexOf("foo", "o", 3));
     }
 
+    @Test
     public void testLastIndexOf() {
         assertEquals(-1, lastIndexOf("foo", 'b'));
         assertEquals(2, lastIndexOf("foo", 'o'));
@@ -62,6 +69,7 @@ public class CharSequencesTest extends TestCase {
         assertEquals(1, lastIndexOf("foo", "o", 1));
     }
 
+    @Test
     public void testStartsWith() {
         assertTrue(startsWith("", ""));
         assertTrue(startsWith("haystack", ""));
@@ -79,6 +87,7 @@ public class CharSequencesTest extends TestCase {
         assertFalse(startsWith("hay", "stack", 4));
     }
 
+    @Test
     public void testEndsWith() {
         assertTrue(endsWith("", "", true));
         assertFalse(endsWith("", "suffix", true));
@@ -92,6 +101,7 @@ public class CharSequencesTest extends TestCase {
         assertFalse(endsWith("stack", "haystack", true));
     }
 
+    @Test
     public void testRegionMatches() {
         assertTrue(regionMatches("", 0, "", 0, 0));
         assertTrue(regionMatches("foo", 0, "foo", 0, 3));
@@ -110,6 +120,7 @@ public class CharSequencesTest extends TestCase {
         assertFalse(regionMatches("For", 0, "fobfoo", 0, 20));
     }
 
+    @Test
     public void testContainsUpperCase() {
         assertTrue(CharSequences.containsUpperCase("A"));
         assertTrue(CharSequences.containsUpperCase("abcA"));
@@ -117,6 +128,7 @@ public class CharSequencesTest extends TestCase {
         assertFalse(CharSequences.containsUpperCase(""));
     }
 
+    @Test
     public void testCreateSequence() {
         String string = "Hello World";
         char[] charArray = string.toCharArray();
@@ -132,6 +144,7 @@ public class CharSequencesTest extends TestCase {
         }
     }
 
+    @Test
     public void testCreateSequenceWithOffset() {
         String string = "Hello World";
         char[] charArray = ("offset" + string).toCharArray();
@@ -145,6 +158,7 @@ public class CharSequencesTest extends TestCase {
         assertEquals("ello World", sequence.subSequence(1, sequence.length()).toString());
     }
 
+    @Test
     public void testGetCharArray() {
         String string = "Hello World";
         char[] charArray = string.toCharArray();
@@ -155,6 +169,7 @@ public class CharSequencesTest extends TestCase {
         assertArrayEquals(charArray, CharSequences.getCharArray(string));
     }
 
+    @Test
     public void testGetReader() throws IOException {
         String s = "\uFEFFfoo";
 
