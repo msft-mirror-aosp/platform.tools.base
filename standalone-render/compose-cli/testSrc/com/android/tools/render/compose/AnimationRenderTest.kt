@@ -16,6 +16,7 @@
 
 package com.android.tools.render.compose
 
+import com.android.tools.render.RenderConfiguration
 import com.android.tools.render.animation.AnimationRenderOptions
 import com.android.tools.render.animation.readAnimationManifestFromJson
 import com.android.tools.render.common.PreviewScreenshot
@@ -190,9 +191,12 @@ class AnimationRenderTest {
       renderer.render(
         screenshots = screenshots,
         outputFolder = treeFolder.absolutePath,
-        includeComponentTree = true,
-        renderImage = false,
-        detectAnimations = true,
+        configuration =
+          RenderConfiguration(
+            includeComponentTree = true,
+            renderImage = false,
+            detectAnimations = true,
+          ),
       )
     assertThat(trees.globalError).isNull()
     val treesByPreview =

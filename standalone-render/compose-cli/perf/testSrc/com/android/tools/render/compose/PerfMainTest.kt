@@ -18,6 +18,7 @@ package com.android.tools.render.compose
 
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
+import com.android.tools.render.RenderConfiguration
 import com.android.tools.render.common.StandalonePreviewRenderer
 import com.android.tools.render.common.readPreviewRenderingJson
 import com.android.tools.render.common.readPreviewRenderingResultJson
@@ -226,10 +227,12 @@ class PerfMainTest {
           renderer.render(
             rendering.screenshots,
             outputFolder.absolutePath,
-            includeComponentTree = true,
-            renderImage = true,
+            RenderConfiguration(
+              includeComponentTree = true,
+              renderImage = true,
+              detectAnimations = detectAnimations,
+            ),
             reuseEnvironment = true,
-            detectAnimations = detectAnimations,
           )
         metric.afterTest()
         assertNull(result.globalError)

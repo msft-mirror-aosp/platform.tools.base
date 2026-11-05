@@ -16,6 +16,7 @@
 
 package com.android.tools.render.common
 
+import com.android.tools.render.RenderConfiguration
 import com.android.tools.render.animation.AnimationRenderOptions
 import com.android.tools.render.animation.PreviewAnimationResult
 import com.android.tools.render.compose.ComposeScreenshot
@@ -79,7 +80,7 @@ class StandalonePreviewRendererCacheTest {
     val closeCalls = AtomicInteger(0)
     val activeRenderers = AtomicInteger(0)
     val maxConcurrentRenders = AtomicInteger(0)
-    val recordedAllowShowDecorations = CopyOnWriteArrayList<Boolean>()
+    val recordedConfigurations = CopyOnWriteArrayList<RenderConfiguration>()
     var poisonedReason: String? = null
 
     override val isDisposed: Boolean
@@ -96,15 +97,13 @@ class StandalonePreviewRendererCacheTest {
     override fun render(
       screenshot: PreviewScreenshot,
       outputFolderPath: String,
-      includeComponentTree: Boolean,
-      renderImage: Boolean,
-      allowShowDecorations: Boolean,
+      configuration: RenderConfiguration,
     ): List<PreviewScreenshotResult> {
-      recordedAllowShowDecorations.add(allowShowDecorations)
+      recordedConfigurations.add(configuration)
       val current = activeRenderers.incrementAndGet()
       maxConcurrentRenders.updateAndGet { prev -> maxOf(prev, current) }
       try {
-        return onRender(screenshot, renderImage)
+        return onRender(screenshot, configuration.renderImage)
       } finally {
         activeRenderers.decrementAndGet()
       }
@@ -539,12 +538,98 @@ class StandalonePreviewRendererCacheTest {
     val factory: (RendererBootstrapRequest) -> ManagedRenderer = { FakeManagedRenderer().also { createdRenderers.add(it) } }
 
     newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir)
-    newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir, allowShowDecorations = true)
-    newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir, reuseEnvironment = false, allowShowDecorations = true)
+    newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir, RenderConfiguration(allowShowDecorations = true))
+    newFakeRenderer(resApk, factory)
+      .render(listOf(screenshot), outDir, RenderConfiguration(allowShowDecorations = true), reuseEnvironment = false)
 
     assertThat(createdRenderers).hasSize(2)
-    assertThat(createdRenderers[0].recordedAllowShowDecorations).containsExactly(false, true).inOrder()
-    assertThat(createdRenderers[1].recordedAllowShowDecorations).containsExactly(true)
+    assertThat(createdRenderers[0].recordedConfigurations)
+      .containsExactly(RenderConfiguration(), RenderConfiguration(allowShowDecorations = true))
+      .inOrder()
+    assertThat(createdRenderers[1].recordedConfigurations).containsExactly(RenderConfiguration(allowShowDecorations = true))
+  }
+
+  /**
+   * Verifies that `StandalonePreviewRenderer.render` forwards custom [RenderConfiguration] options (including `renderImage = false` error
+   * handling) and preserves the forwarding boolean overload for compatibility with external callers.
+   */
+  @Test
+  fun forwardsRenderConfigurationAndBooleanCompatibilityOverload() {
+    val resApk = tempFolder.newFile("res-config.apk").apply { writeText("apk") }
+    val outDir = tempFolder.newFolder("out_config").absolutePath
+    val healthy = ComposeScreenshot("com.example.PreviewKt.Healthy", emptyList(), emptyMap(), "Healthy")
+    val broken = ComposeScreenshot("com.example.PreviewKt.Broken", emptyList(), emptyMap(), "Broken")
+    val createdRenderers = mutableListOf<FakeManagedRenderer>()
+    val factory: (RendererBootstrapRequest) -> ManagedRenderer = {
+      FakeManagedRenderer(
+          onRender = { screenshot, renderImage ->
+            if (screenshot.previewId == "Broken") {
+              throw IllegalStateException("broken preview")
+            }
+            listOf(
+              PreviewScreenshotResult(
+                previewId = screenshot.previewId,
+                methodFQN = screenshot.methodFQN,
+                imagePath = if (renderImage) "com/example/${screenshot.previewId}_0.png" else "",
+                error = null,
+              )
+            )
+          }
+        )
+        .also { createdRenderers.add(it) }
+    }
+
+    val customTreeOnlyConfig =
+      RenderConfiguration(
+        includeComponentTree = true,
+        renderImage = false,
+        allowShowDecorations = true,
+        detectAnimations = true,
+      )
+    val warmResult = newFakeRenderer(resApk, factory).render(listOf(healthy, broken), outDir, customTreeOnlyConfig)
+    assertThat(warmResult.globalError).isNull()
+    val warmById = warmResult.screenshotResults.associateBy { it.previewId }
+    assertThat(warmById.getValue("Healthy").imagePath).isEmpty()
+    assertThat(warmById.getValue("Broken").imagePath).isEmpty()
+    assertThat(warmById.getValue("Broken").error).isNotNull()
+
+    val booleanOverloadResult =
+      newFakeRenderer(resApk, factory)
+        .render(
+          listOf(healthy),
+          outDir,
+          reuseEnvironment = true,
+          includeComponentTree = true,
+          renderImage = true,
+          allowShowDecorations = false,
+          detectAnimations = true,
+        )
+    assertThat(booleanOverloadResult.globalError).isNull()
+
+    val oneShotBooleanResult =
+      newFakeRenderer(resApk, factory)
+        .render(
+          listOf(healthy),
+          outDir,
+          reuseEnvironment = false,
+          includeComponentTree = true,
+          renderImage = false,
+          allowShowDecorations = false,
+          detectAnimations = false,
+        )
+    assertThat(oneShotBooleanResult.globalError).isNull()
+    assertThat(oneShotBooleanResult.screenshotResults.single().imagePath).isEmpty()
+
+    assertThat(createdRenderers).hasSize(2)
+    assertThat(createdRenderers[0].recordedConfigurations)
+      .containsExactly(
+        customTreeOnlyConfig,
+        customTreeOnlyConfig,
+        RenderConfiguration(includeComponentTree = true, renderImage = true, allowShowDecorations = false, detectAnimations = true),
+      )
+      .inOrder()
+    assertThat(createdRenderers[1].recordedConfigurations)
+      .containsExactly(RenderConfiguration(includeComponentTree = true, renderImage = false))
   }
 
   /** Verifies that warm `StandalonePreviewRenderer` batches surface the renderer's poisoned render-thread reason. */
@@ -576,8 +661,7 @@ class StandalonePreviewRendererCacheTest {
     assertThat(oneShotPoisonedResult.isRenderThreadPoisoned).isFalse()
     assertThat(oneShotPoisonedResult.renderThreadPoisonedReason).isNull()
 
-    val oneShotPoisonedAnimResult =
-      newFakeRenderer(resApk, factory).renderAnimations(listOf(screenshot), outDir, reuseEnvironment = false)
+    val oneShotPoisonedAnimResult = newFakeRenderer(resApk, factory).renderAnimations(listOf(screenshot), outDir, reuseEnvironment = false)
     assertThat(oneShotPoisonedAnimResult.isRenderThreadPoisoned).isFalse()
     assertThat(oneShotPoisonedAnimResult.renderThreadPoisonedReason).isNull()
   }

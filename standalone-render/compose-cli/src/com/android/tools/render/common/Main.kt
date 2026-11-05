@@ -17,6 +17,7 @@
 package com.android.tools.render.common
 
 import com.android.tools.render.LibraryClassBinaryCache
+import com.android.tools.render.RenderConfiguration
 import com.android.tools.render.RenderEnvironmentBootstrapper
 import com.android.tools.render.Renderer
 import com.android.tools.render.animation.AnimationRenderOptions
@@ -81,24 +82,12 @@ internal interface ManagedRenderer : Closeable {
   /** Reloads user project classes from [newProjectClassPath] while keeping warm external dependencies intact. */
   fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>)
 
-  /** Renders [screenshot] into [outputFolderPath], honoring `@Preview(showSystemUi = true)` when [allowShowDecorations] is `true`. */
+  /** Renders [screenshot] into [outputFolderPath] according to [configuration]. */
   fun render(
     screenshot: PreviewScreenshot,
     outputFolderPath: String,
-    includeComponentTree: Boolean,
-    renderImage: Boolean,
-    allowShowDecorations: Boolean = false,
+    configuration: RenderConfiguration = RenderConfiguration(),
   ): List<PreviewScreenshotResult>
-
-  /** Like [render], and also reports the Compose animations of each preview in its component tree when [detectAnimations] is `true`. */
-  fun render(
-    screenshot: PreviewScreenshot,
-    outputFolderPath: String,
-    includeComponentTree: Boolean,
-    renderImage: Boolean,
-    allowShowDecorations: Boolean,
-    detectAnimations: Boolean,
-  ): List<PreviewScreenshotResult> = render(screenshot, outputFolderPath, includeComponentTree, renderImage, allowShowDecorations)
 
   /**
    * Renders an animated [screenshot] across multiple `PreviewAnimationClock` timestamps into [outputFolderPath] according to [options],
@@ -135,28 +124,8 @@ private class RealManagedRenderer(private val delegate: Renderer) : ManagedRende
   override fun render(
     screenshot: PreviewScreenshot,
     outputFolderPath: String,
-    includeComponentTree: Boolean,
-    renderImage: Boolean,
-    allowShowDecorations: Boolean,
-  ): List<PreviewScreenshotResult> =
-    render(screenshot, outputFolderPath, includeComponentTree, renderImage, allowShowDecorations, detectAnimations = false)
-
-  override fun render(
-    screenshot: PreviewScreenshot,
-    outputFolderPath: String,
-    includeComponentTree: Boolean,
-    renderImage: Boolean,
-    allowShowDecorations: Boolean,
-    detectAnimations: Boolean,
-  ): List<PreviewScreenshotResult> =
-    delegate.render(
-      screenshot,
-      outputFolderPath,
-      includeComponentTree = includeComponentTree,
-      renderImage = renderImage,
-      allowShowDecorations = allowShowDecorations,
-      detectAnimations = detectAnimations,
-    )
+    configuration: RenderConfiguration,
+  ): List<PreviewScreenshotResult> = delegate.render(screenshot, outputFolderPath, configuration)
 
   override fun renderAnimations(
     screenshot: PreviewScreenshot,
@@ -270,7 +239,7 @@ internal constructor(
   )
 
   /**
-   * Renders the requested [screenshots] into [outputFolder].
+   * Renders the requested [screenshots] into [outputFolder] according to [configuration].
    *
    * This method does not throw: batch-level failures are returned in [PreviewRenderingResult.globalError]. Any [Error] evicts the warm
    * [Renderer] from the cache and closes it once no other caller is using it, since the error may have left it in an inconsistent state. A
@@ -280,25 +249,23 @@ internal constructor(
    * [PreviewRenderingResult.fatalJvmError] set to the error class name) so long-running daemon callers can retire after answering while CLI
    * callers still write the results JSON file.
    *
+   * Note: [configuration] intentionally has no default value on this overload so that 2-arg `render(screenshots, outputFolder)` and named
+   * `render(screenshots, outputFolder, reuseEnvironment = ...)` calls remain unambiguous alongside the boolean `@JvmOverloads` overload.
+   *
    * @param screenshots The list of preview configurations (method FQNs and parameters) to render.
    * @param outputFolder Destination directory for rendered PNG images and component tree JSON files.
-   * @param includeComponentTree Whether to extract and serialize the `ComposeViewInfo` hierarchy.
-   * @param renderImage Whether to produce PNG screenshots (can be `false` when only extracting the component tree).
+   * @param configuration Output and inspection options controlling image rendering, component tree extraction, system UI decorations, and
+   *   animation detection.
    * @param reuseEnvironment When `true`, acquires and reuses the process-wide warm [Renderer] via [acquireWarmRenderer] instead of
    *   bootstrapping and tearing down the environment on every call.
-   * @param allowShowDecorations When `true`, honors `@Preview(showSystemUi = true)` by rendering system UI decorations and device frames.
-   * @param detectAnimations Whether the component tree also reports the Compose animations of each preview (see [Renderer.render]).
    * @return the per-screenshot results, or a [PreviewRenderingResult.globalError] when the batch could not be rendered.
    */
   @JvmOverloads
   fun render(
     screenshots: List<PreviewScreenshot>,
     outputFolder: String,
-    includeComponentTree: Boolean = false,
-    renderImage: Boolean = true,
+    configuration: RenderConfiguration,
     reuseEnvironment: Boolean = true,
-    allowShowDecorations: Boolean = false,
-    detectAnimations: Boolean = false,
   ): PreviewRenderingResult {
     return try {
       // Some callers supply R.jar files inside the general `classPath` rather than via `rClassJars`.
@@ -338,16 +305,7 @@ internal constructor(
           val batchOutcome =
             try {
               acquired.handle.renderBatch(fullClassPath, projectClassPath, acquired.freshlyBootstrapped) { managedRenderer ->
-                val screenshotResults =
-                  renderAll(
-                    managedRenderer,
-                    screenshots,
-                    outputFolder,
-                    includeComponentTree,
-                    renderImage,
-                    allowShowDecorations,
-                    detectAnimations,
-                  )
+                val screenshotResults = renderAll(managedRenderer, screenshots, outputFolder, configuration)
                 val poisonedReason = managedRenderer.renderThreadPoisonedReason
                 screenshotResults to poisonedReason
               }
@@ -371,8 +329,7 @@ internal constructor(
       // Cold / one-shot path: bootstrap a fresh Renderer and close it immediately via `.use {}`. A fresh process cannot observe a render
       // thread blocked by a previous request, and the JVM exits right after writing results, so `renderThreadPoisonedReason` stays null.
       rendererFactory(bootstrapRequest).use { managedRenderer ->
-        val results =
-          renderAll(managedRenderer, screenshots, outputFolder, includeComponentTree, renderImage, allowShowDecorations, detectAnimations)
+        val results = renderAll(managedRenderer, screenshots, outputFolder, configuration)
         PreviewRenderingResult(
           globalError = null,
           screenshotResults = results,
@@ -392,20 +349,45 @@ internal constructor(
     }
   }
 
+  /**
+   * Compatibility overload forwarding individual boolean flags to [render] via [RenderConfiguration].
+   *
+   * Preserves the 2-arg JVM signature `render(List, String)` and named boolean call sites across repositories.
+   */
+  @JvmOverloads
+  fun render(
+    screenshots: List<PreviewScreenshot>,
+    outputFolder: String,
+    includeComponentTree: Boolean = false,
+    renderImage: Boolean = true,
+    reuseEnvironment: Boolean = true,
+    allowShowDecorations: Boolean = false,
+    detectAnimations: Boolean = false,
+  ): PreviewRenderingResult =
+    render(
+      screenshots = screenshots,
+      outputFolder = outputFolder,
+      configuration =
+        RenderConfiguration(
+          includeComponentTree = includeComponentTree,
+          renderImage = renderImage,
+          allowShowDecorations = allowShowDecorations,
+          detectAnimations = detectAnimations,
+        ),
+      reuseEnvironment = reuseEnvironment,
+    )
+
   /** Renders every screenshot in [screenshots] using [renderer], capturing non-fatal exceptions as per-screenshot errors. */
   private fun renderAll(
     renderer: ManagedRenderer,
     screenshots: List<PreviewScreenshot>,
     outputFolder: String,
-    includeComponentTree: Boolean,
-    renderImage: Boolean,
-    allowShowDecorations: Boolean,
-    detectAnimations: Boolean,
+    configuration: RenderConfiguration,
   ): List<PreviewScreenshotResult> =
     screenshots
       .flatMap { screenshot ->
         try {
-          renderer.render(screenshot, outputFolder, includeComponentTree, renderImage, allowShowDecorations, detectAnimations)
+          renderer.render(screenshot, outputFolder, configuration)
         } catch (e: InterruptedException) {
           Thread.currentThread().interrupt()
           throw e
@@ -418,7 +400,7 @@ internal constructor(
             PreviewScreenshotResult(
               previewId = screenshot.previewId,
               methodFQN = screenshot.methodFQN,
-              imagePath = defaultErrorImagePath(screenshot, renderImage),
+              imagePath = defaultErrorImagePath(screenshot, configuration.renderImage),
               error = e.toScreenshotError(),
             )
           )

@@ -278,20 +278,12 @@ class Renderer(
    * Renders a given [PreviewScreenshot] and saves the output as PNG files.
    *
    * Discovers all previews declared on the screenshot's method (including multi-previews), validates each preview's parameters, and renders
-   * them into PNG images.
+   * them into PNG images according to [configuration].
    *
    * @param screenshot The metadata of the Jetpack Compose `@Preview` to render.
-   * @param outputFolderPath The root directory where the resulting PNG images will be saved.
-   * @param includeComponentTree Whether to extract and write the component tree JSON.
-   * @param renderImage Whether to render and save the bitmap image. When `true`, layoutlib callbacks are executed before rendering and any
-   *   extracted component tree reflects the settled post-callback hierarchy. When `false` (component-tree-only mode), the layout is only
-   *   inflated without executing layoutlib callbacks or rendering a bitmap, so any extracted component tree reflects the initial
-   *   post-inflation hierarchy before `LaunchedEffect`s or animations run.
-   * @param allowShowDecorations Whether to honor [com.android.tools.preview.PreviewDisplaySettings.showDecoration] (for example,
-   *   `@Preview(showSystemUi = true)`) by rendering device system decorations (status/navigation bars, device frame). Defaults to `false`
-   *   so existing screenshot tests render composable content only.
-   * @param detectAnimations Whether the component tree also reports the Compose animations detected in the slot table (it walks the whole
-   *   slot table, so it is off by default).
+   * @param outputFolderPath The root directory where the resulting PNG images and component trees will be saved.
+   * @param configuration Output and inspection options controlling image rendering, component tree extraction, system UI decorations, and
+   *   animation detection.
    * @return A list of [PreviewScreenshotResult]s, each detailing the outcome of a single render operation, including the output path and
    *   any potential errors.
    */
@@ -299,10 +291,7 @@ class Renderer(
   fun render(
     screenshot: PreviewScreenshot,
     outputFolderPath: String,
-    includeComponentTree: Boolean = false,
-    renderImage: Boolean = true,
-    allowShowDecorations: Boolean = false,
-    detectAnimations: Boolean = false,
+    configuration: RenderConfiguration = RenderConfiguration(),
   ): List<PreviewScreenshotResult> {
     // If the screenshot is non-Compose or its preview and method parameters have already been resolved/specified,
     // bypass bytecode preview discovery and render it directly.
@@ -310,10 +299,7 @@ class Renderer(
       return renderResolvedScreenshot(
         screenshot,
         outputFolderPath,
-        includeComponentTree,
-        renderImage,
-        allowShowDecorations,
-        detectAnimations,
+        configuration,
       )
     }
 
@@ -324,7 +310,7 @@ class Renderer(
     return discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).flatMap { method ->
       if (method.methodValidationResult.hasErrors) {
         val index = imageCounter++
-        val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
+        val defaultRelativeImagePath = if (configuration.renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
         listOf(
           PreviewScreenshotResult(
             screenshot.previewId,
@@ -338,7 +324,8 @@ class Renderer(
           val validationResult = previewValidator.validate(currentScreenshot)
           if (validationResult.hasErrors) {
             val index = imageCounter++
-            val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
+            val defaultRelativeImagePath =
+              if (configuration.renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
             listOf(
               PreviewScreenshotResult(
                 currentScreenshot.previewId,
@@ -357,10 +344,7 @@ class Renderer(
               outputFolderPath,
               packagePath,
               baseResultId,
-              includeComponentTree,
-              renderImage,
-              allowShowDecorations,
-              detectAnimations,
+              configuration,
             ) {
               imageCounter++
             }
@@ -378,10 +362,7 @@ class Renderer(
   private fun renderResolvedScreenshot(
     screenshot: PreviewScreenshot,
     outputFolderPath: String,
-    includeComponentTree: Boolean,
-    renderImage: Boolean,
-    allowShowDecorations: Boolean = false,
-    detectAnimations: Boolean = false,
+    configuration: RenderConfiguration = RenderConfiguration(),
   ): List<PreviewScreenshotResult> {
     // Resource targets (for example R.layout.activity_main) are written to <resource type>/<resource name>_<n>.png.
     val resourceTarget = ResourceTarget.parse(screenshot.methodFQN) as? ResourceTarget.Valid
@@ -393,7 +374,7 @@ class Renderer(
     val baseResultId = sanitizeBaseResultId(previewTarget?.name ?: screenshot.previewId)
     val validationResult = previewValidator.validate(screenshot)
     return if (validationResult.hasErrors) {
-      val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_0.png" else ""
+      val defaultRelativeImagePath = if (configuration.renderImage) packagePath + File.separator + "${baseResultId}_0.png" else ""
       listOf(
         PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, defaultRelativeImagePath, validationResult.toScreenshotError())
       )
@@ -408,10 +389,7 @@ class Renderer(
         outputFolderPath,
         packagePath,
         baseResultId,
-        includeComponentTree,
-        renderImage,
-        allowShowDecorations,
-        detectAnimations,
+        configuration,
       ) {
         imageCounter++
       }
@@ -423,10 +401,7 @@ class Renderer(
     outputFolderPath: String,
     packagePath: String,
     baseResultId: String,
-    includeComponentTree: Boolean,
-    renderImage: Boolean,
-    allowShowDecorations: Boolean = false,
-    detectAnimations: Boolean = false,
+    configuration: RenderConfiguration = RenderConfiguration(),
     nextImageIndex: () -> Int,
   ): List<PreviewScreenshotResult> {
     // Creating the preview element can fail for reasons specific to a single screenshot (e.g. a class that cannot be loaded). Report
@@ -439,7 +414,7 @@ class Renderer(
         rethrowIfFatalOrCancelled(t)
         // Catch Throwable rather than Exception: class loading failures surface as Errors (e.g. NoClassDefFoundError, LinkageError).
         val index = nextImageIndex()
-        val defaultRelativeImagePath = if (renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
+        val defaultRelativeImagePath = if (configuration.renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
         return listOf(PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, defaultRelativeImagePath, t.toScreenshotError()))
       }
     val idAllocator = LayoutResultIdAllocator(screenshot, resolvedLayouts, baseResultId)
@@ -448,19 +423,19 @@ class Renderer(
       RenderRequest.withResolvedLayouts(
         configurationModifier = previewElement::applyTo,
         resolvedLayoutsProvider = { resolvedLayouts.asSequence() },
-        showDecorations = allowShowDecorations && previewElement.displaySettings.showDecoration,
+        showDecorations = configuration.allowShowDecorations && previewElement.displaySettings.showDecoration,
       )
 
-    return renderResolvedLayouts(renderRequest, renderImage, idAllocator.basePreviewName)
+    return renderResolvedLayouts(renderRequest, configuration.renderImage, idAllocator.basePreviewName)
       .map { (config, renderResult, layout) ->
         val resultId = idAllocator.nextResultId(layout, nextImageIndex)
         val imageName = "$resultId.png"
-        val relativeImagePath = if (renderImage) packagePath + File.separator + imageName else ""
+        val relativeImagePath = if (configuration.renderImage) packagePath + File.separator + imageName else ""
         val relativeComponentTreePath = packagePath + File.separator + "$resultId.json"
         try {
           val viewInfos = renderResult.rootViews.flatMap { parseViewInfo(it) }
           val imageRendered =
-            if (renderImage) {
+            if (configuration.renderImage) {
               val image = postProcessRenderedImage(config, renderResult)
               if (image != null) {
                 saveImage(image, outputFolderPath, relativeImagePath)
@@ -472,7 +447,7 @@ class Renderer(
 
           val savedComponentTreePath =
             if (
-              includeComponentTree &&
+              configuration.includeComponentTree &&
                 renderResult.renderResult.status == Result.Status.SUCCESS &&
                 saveComponentTree(
                   previewId = screenshot.previewId,
@@ -483,7 +458,7 @@ class Renderer(
                   config = config,
                   renderResult = renderResult,
                   viewInfos = viewInfos,
-                  detectAnimations = detectAnimations,
+                  detectAnimations = configuration.detectAnimations,
                 )
             ) {
               relativeComponentTreePath
@@ -491,7 +466,7 @@ class Renderer(
               null
             }
 
-          val screenshotError = renderResult.toScreenshotError(imageRendered, expectImage = renderImage)
+          val screenshotError = renderResult.toScreenshotError(imageRendered, expectImage = configuration.renderImage)
           // Pass the raw unsanitized display name so downstream test descriptors can display it in reports.
           PreviewScreenshotResult(
             screenshot.previewId,

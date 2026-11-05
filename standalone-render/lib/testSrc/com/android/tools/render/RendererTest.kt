@@ -748,8 +748,7 @@ class RendererTest {
         renderer.render(
           xmlScreenshot,
           outputDir.absolutePath,
-          includeComponentTree = true,
-          renderImage = false,
+          RenderConfiguration(includeComponentTree = true, renderImage = false),
         )
       }
 
@@ -850,8 +849,7 @@ class RendererTest {
         renderer.render(
           xmlScreenshot,
           outputDir.absolutePath,
-          includeComponentTree = true,
-          renderImage = true,
+          RenderConfiguration(includeComponentTree = true, renderImage = true),
         )
       }
 
@@ -872,18 +870,7 @@ class RendererTest {
   fun testBinaryCompatibilityOverloadsExist() {
     assertNotNull(Renderer::class.java.getMethod("render", PreviewScreenshot::class.java, String::class.java))
     assertNotNull(
-      Renderer::class.java.getMethod("render", PreviewScreenshot::class.java, String::class.java, Boolean::class.javaPrimitiveType)
-    )
-    assertNotNull(
-      Renderer::class
-        .java
-        .getMethod(
-          "render",
-          PreviewScreenshot::class.java,
-          String::class.java,
-          Boolean::class.javaPrimitiveType,
-          Boolean::class.javaPrimitiveType,
-        )
+      Renderer::class.java.getMethod("render", PreviewScreenshot::class.java, String::class.java, RenderConfiguration::class.java)
     )
     assertNotNull(Renderer::class.java.getMethod("renderResolvedLayouts", RenderRequest::class.java))
     assertNotNull(Renderer::class.java.getMethod("renderResolvedLayouts", RenderRequest::class.java, Boolean::class.javaPrimitiveType))
@@ -1017,8 +1004,7 @@ class RendererTest {
           renderer.render(
             xmlPreviewScreenshot("com.example.PreviewKt.HandlerRound2", handlerXmlLayout),
             outputDir.absolutePath,
-            includeComponentTree = true,
-            renderImage = true,
+            RenderConfiguration(includeComponentTree = true, renderImage = true),
           )
         }
 
@@ -1123,8 +1109,7 @@ class RendererTest {
           renderer.render(
             xmlPreviewScreenshot("com.example.PreviewKt.InfiniteAnimRound2", infiniteAnimXmlLayout),
             outputDir.absolutePath,
-            includeComponentTree = true,
-            renderImage = true,
+            RenderConfiguration(includeComponentTree = true, renderImage = true),
           )
         }
 
@@ -1204,8 +1189,7 @@ class RendererTest {
         renderer.render(
           xmlPreviewScreenshot("com.example.PreviewKt.ChoreographerRound2", xmlLayout),
           outputDir.absolutePath,
-          includeComponentTree = true,
-          renderImage = true,
+          RenderConfiguration(includeComponentTree = true, renderImage = true),
         )
       }
 
@@ -1299,8 +1283,7 @@ class RendererTest {
         renderer.render(
           xmlPreviewScreenshot("com.example.PreviewKt.AttachCallbackInflateOnly", xmlLayout),
           inflateOnlyOutputDir.absolutePath,
-          includeComponentTree = true,
-          renderImage = false,
+          RenderConfiguration(includeComponentTree = true, renderImage = false),
         )
       assertThat(inflateOnlyResults).hasSize(1)
       assertThat(inflateOnlyResults[0].error).isNull()
@@ -1315,8 +1298,7 @@ class RendererTest {
         renderer.render(
           xmlPreviewScreenshot("com.example.PreviewKt.AttachCallback", xmlLayout),
           outputDir.absolutePath,
-          includeComponentTree = true,
-          renderImage = true,
+          RenderConfiguration(includeComponentTree = true, renderImage = true),
         )
       assertThat(previewResults).hasSize(1)
       assertThat(previewResults[0].error).isNull()
@@ -1460,8 +1442,7 @@ class RendererTest {
             renderer.render(
               xmlPreviewScreenshot("com.example.PreviewKt.RecoveredInBatch", simpleXmlLayout),
               outputDir.absolutePath,
-              includeComponentTree = true,
-              renderImage = true,
+              RenderConfiguration(includeComponentTree = true, renderImage = true),
             )
           assertThat(recoveredInBatchResult).hasSize(1)
           assertThat(recoveredInBatchResult[0].error).isNull()
@@ -1502,8 +1483,7 @@ class RendererTest {
               renderer.render(
                 xmlPreviewScreenshot("com.example.PreviewKt.AfterRefresh", simpleXmlLayout),
                 outputDir.absolutePath,
-                includeComponentTree = true,
-                renderImage = true,
+                RenderConfiguration(includeComponentTree = true, renderImage = true),
               )
             assertThat(recoveredAfterRefreshResult).hasSize(1)
             assertThat(recoveredAfterRefreshResult[0].error).isNull()
@@ -1887,8 +1867,7 @@ class RendererTest {
           renderer.render(
             xmlPreviewScreenshot("com.example.PreviewKt.HealthyAdapterPreview", healthyAdapterLayout),
             outputDir.absolutePath,
-            includeComponentTree = true,
-            renderImage = true,
+            RenderConfiguration(includeComponentTree = true, renderImage = true),
           )
         assertThat(healthyResults).hasSize(1)
         assertThat(healthyResults[0].error).isNull()
@@ -1940,8 +1919,7 @@ class RendererTest {
           renderer.render(
             xmlPreviewScreenshot("com.example.PreviewKt.AfterRefreshHealthyPreview", healthyAdapterLayout),
             outputDir.absolutePath,
-            includeComponentTree = true,
-            renderImage = true,
+            RenderConfiguration(includeComponentTree = true, renderImage = true),
           )
         assertThat(afterRefreshResults).hasSize(1)
         assertThat(afterRefreshResults[0].error).isNull()
@@ -2035,13 +2013,15 @@ class RendererTest {
       assertThat(defaultImg.height).isLessThan(300)
 
       // 2. Opting in (allowShowDecorations = true) does NOT add system UI when showSystemUi = false.
-      val noSysUiResult = renderer.render(previewWithoutSystemUi, outputDir.absolutePath, allowShowDecorations = true).single()
+      val noSysUiResult =
+        renderer.render(previewWithoutSystemUi, outputDir.absolutePath, RenderConfiguration(allowShowDecorations = true)).single()
       assertNull(noSysUiResult.error)
       val noSysUiImg = ImageIO.read(File(outputDir, noSysUiResult.imagePath))
       assertThat(noSysUiImg.height).isLessThan(300)
 
       // 3. Opting in (allowShowDecorations = true) renders full device frame + decorations when showSystemUi = true.
-      val sysUiResult = renderer.render(previewWithSystemUi, outputDir.absolutePath, allowShowDecorations = true).single()
+      val sysUiResult =
+        renderer.render(previewWithSystemUi, outputDir.absolutePath, RenderConfiguration(allowShowDecorations = true)).single()
       assertNull(sysUiResult.error)
       val sysUiImg = ImageIO.read(File(outputDir, sysUiResult.imagePath))
       assertThat(sysUiImg.width).isEqualTo(1080)
@@ -2786,8 +2766,7 @@ class RendererTest {
       renderer.render(
         xmlPreviewScreenshot(methodFqn, adapterLayout),
         outputDir.absolutePath,
-        includeComponentTree = false,
-        renderImage = true,
+        RenderConfiguration(includeComponentTree = false, renderImage = true),
       )
     assertThat(results).hasSize(1)
     assertThat(results.single().error).isNull()
@@ -2817,31 +2796,31 @@ class RendererTest {
         "androidx/compose/runtime/runtime-android/1.9.5/runtime-android-1.9.5.aar",
         "androidx/core/core/1.15.0/core-1.15.0.aar",
       )
-    val extractedAarJars =
-      aarPaths.mapIndexed { index, mavenPath ->
-        val aarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
-        assertWithMessage("Missing prebuilt AAR: $aarFile").that(aarFile.isFile).isTrue()
-        val outJar = File(tmpFolder.root, "compose_dep_$index.jar")
-        ZipFile(aarFile).use { zip ->
-          val entry = zip.getEntry("classes.jar")
-          assertWithMessage("Missing classes.jar in $aarFile").that(entry).isNotNull()
-          zip.getInputStream(entry).use { input ->
-            Files.copy(input, outJar.toPath())
-          }
+    val extractedAarJars = aarPaths.mapIndexed { index, mavenPath ->
+      val aarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
+      assertWithMessage("Missing prebuilt AAR: $aarFile").that(aarFile.isFile).isTrue()
+      val outJar = File(tmpFolder.root, "compose_dep_$index.jar")
+      ZipFile(aarFile).use { zip ->
+        val entry = zip.getEntry("classes.jar")
+        assertWithMessage("Missing classes.jar in $aarFile").that(entry).isNotNull()
+        zip.getInputStream(entry).use { input ->
+          Files.copy(input, outJar.toPath())
         }
-        outJar.absolutePath
       }
+      outJar.absolutePath
+    }
     val directJarPaths =
       listOf(
-        "androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0.jar",
-        "org/jetbrains/kotlin/kotlin-stdlib/2.0.21/kotlin-stdlib-2.0.21.jar",
-        "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.8.1/kotlinx-coroutines-core-jvm-1.8.1.jar",
-        "org/jetbrains/kotlinx/kotlinx-coroutines-android/1.8.1/kotlinx-coroutines-android-1.8.1.jar",
-      ).map { mavenPath ->
-        val jarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
-        assertWithMessage("Missing prebuilt JAR: $jarFile").that(jarFile.isFile).isTrue()
-        jarFile.absolutePath
-      }
+          "androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0.jar",
+          "org/jetbrains/kotlin/kotlin-stdlib/2.0.21/kotlin-stdlib-2.0.21.jar",
+          "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.8.1/kotlinx-coroutines-core-jvm-1.8.1.jar",
+          "org/jetbrains/kotlinx/kotlinx-coroutines-android/1.8.1/kotlinx-coroutines-android-1.8.1.jar",
+        )
+        .map { mavenPath ->
+          val jarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
+          assertWithMessage("Missing prebuilt JAR: $jarFile").that(jarFile.isFile).isTrue()
+          jarFile.absolutePath
+        }
     return extractedAarJars + directJarPaths
   }
 
@@ -3106,9 +3085,74 @@ class RendererTest {
     }
   }
 
+  @Test
+  fun testRenderConfigurationDefaultsOverloadsAndSerialization() {
+    val defaults = RenderConfiguration()
+    assertThat(defaults.includeComponentTree).isFalse()
+    assertThat(defaults.renderImage).isTrue()
+    assertThat(defaults.allowShowDecorations).isFalse()
+    assertThat(defaults.detectAnimations).isFalse()
+
+    // Verify all @JvmOverloads constructors exist and initialize omitted properties to their defaults.
+    val zeroArg = RenderConfiguration::class.java.getConstructor().newInstance()
+    assertThat(zeroArg).isEqualTo(defaults)
+
+    val oneArg = RenderConfiguration::class.java.getConstructor(Boolean::class.javaPrimitiveType).newInstance(true)
+    assertThat(oneArg).isEqualTo(RenderConfiguration(includeComponentTree = true))
+
+    val twoArg =
+      RenderConfiguration::class
+        .java
+        .getConstructor(Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType)
+        .newInstance(true, false)
+    assertThat(twoArg).isEqualTo(RenderConfiguration(includeComponentTree = true, renderImage = false))
+
+    val threeArg =
+      RenderConfiguration::class
+        .java
+        .getConstructor(
+          Boolean::class.javaPrimitiveType,
+          Boolean::class.javaPrimitiveType,
+          Boolean::class.javaPrimitiveType,
+        )
+        .newInstance(true, false, true)
+    assertThat(threeArg).isEqualTo(RenderConfiguration(includeComponentTree = true, renderImage = false, allowShowDecorations = true))
+
+    val fourArg =
+      RenderConfiguration::class
+        .java
+        .getConstructor(
+          Boolean::class.javaPrimitiveType,
+          Boolean::class.javaPrimitiveType,
+          Boolean::class.javaPrimitiveType,
+          Boolean::class.javaPrimitiveType,
+        )
+        .newInstance(true, false, true, true)
+    assertThat(fourArg)
+      .isEqualTo(
+        RenderConfiguration(
+          includeComponentTree = true,
+          renderImage = false,
+          allowShowDecorations = true,
+          detectAnimations = true,
+        )
+      )
+
+    // Verify Serializable round-trip.
+    val serializedBytes =
+      ByteArrayOutputStream().use { baos ->
+        ObjectOutputStream(baos).use { it.writeObject(fourArg) }
+        baos.toByteArray()
+      }
+    val deserialized =
+      ByteArrayInputStream(serializedBytes).use { bais ->
+        ObjectInputStream(bais).use { it.readObject() as RenderConfiguration }
+      }
+    assertThat(deserialized).isEqualTo(fourArg)
+  }
+
   private fun captureSharedClassLoaderRef(renderer: Renderer): WeakReference<ClassLoader> =
     WeakReference(renderer.module.environment.moduleClassLoaderManager.getShared(null).classLoader)
-
 
   @Test
   fun testRenderUnsupportedResourceScreenshot_returnsError() {

@@ -18,6 +18,7 @@ package com.android.tools.render.compose
 
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
+import com.android.tools.render.RenderConfiguration
 import com.android.tools.render.common.ComponentTreeNode
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.render.common.ScreenshotError
@@ -281,8 +282,7 @@ class ScreenshotRenderTest {
       standaloneRenderer.render(
         screenshots = screenshots,
         outputFolder = treeOutputFolder.absolutePath,
-        includeComponentTree = true,
-        renderImage = false,
+        configuration = RenderConfiguration(includeComponentTree = true, renderImage = false),
       )
     assertNull(treeRenderResult.globalError)
     assertEquals(screenshots.size, treeRenderResult.screenshotResults.size)
@@ -317,23 +317,24 @@ class ScreenshotRenderTest {
       standaloneRenderer.render(
         screenshots = screenshots,
         outputFolder = treeOutputFolder.absolutePath,
-        includeComponentTree = true,
-        renderImage = false,
+        configuration = RenderConfiguration(includeComponentTree = true, renderImage = false),
       )
     assertNull(warmRenderResult.globalError)
     assertEquals(screenshots.size, warmRenderResult.screenshotResults.size)
     warmRenderResult.screenshotResults.forEach { assertNull(it.error) }
     assertNotNull(StandalonePreviewRenderer::class.java.getMethod("render", List::class.java, String::class.java))
     assertNotNull(
-      StandalonePreviewRenderer::class.java.getConstructor(
-        String::class.java,
-        String::class.java,
-        String::class.java,
-        List::class.java,
-        String::class.java,
-        List::class.java,
-        List::class.java,
-      )
+      StandalonePreviewRenderer::class
+        .java
+        .getConstructor(
+          String::class.java,
+          String::class.java,
+          String::class.java,
+          List::class.java,
+          String::class.java,
+          List::class.java,
+          List::class.java,
+        )
     )
 
     // Stop the daemon otherwise it could keep the lock on the temporary folder
