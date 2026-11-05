@@ -687,4 +687,42 @@ TEST(InstrumenterTest, DoesNotMatchGeneratedClassesOrTheCoverageRuntime) {
       "com/android/tools/coverage/CoverageTracker"));
 }
 
+TEST(RegisterScannerTest, FindsFirstUnusedLocalRegister) {
+  ir::EncodedMethod method{};
+  ir::Code code{};
+  code.registers = 4;
+  code.ins_count = 1;
+  method.code = &code;
+  lir::CodeIr code_ir(&method, nullptr);
+
+  lir::Bytecode instr{};
+  lir::VRegPair used_pair(0);
+  instr.operands.push_back(&used_pair);
+  code_ir.instructions.push_back(&instr);
+
+  bool found_unused = false;
+  EXPECT_EQ(RegisterScanner::FindUnusedScratchRegister(&method, code_ir,
+                                                       found_unused),
+            2u);
+  EXPECT_TRUE(found_unused);
+}
+
+TEST(RegisterScannerTest, DoesNotSelectParameterOrRegisterAboveFourBitLimit) {
+  ir::EncodedMethod method{};
+  ir::Code code{};
+  code.registers = 18;
+  code.ins_count = 1;
+  method.code = &code;
+  lir::CodeIr code_ir(&method, nullptr);
+
+  lir::Bytecode instr{};
+  lir::VRegRange used_low_regs(0, 16);
+  instr.operands.push_back(&used_low_regs);
+  code_ir.instructions.push_back(&instr);
+
+  bool found_unused = true;
+  RegisterScanner::FindUnusedScratchRegister(&method, code_ir, found_unused);
+  EXPECT_FALSE(found_unused);
+}
+
 }  // namespace coverage
