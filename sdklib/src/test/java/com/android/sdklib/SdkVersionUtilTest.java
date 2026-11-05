@@ -17,11 +17,14 @@ package com.android.sdklib;
 
 import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_API;
 import static com.android.sdklib.SdkVersionUtil.getVersion;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class SdkVersionUtilTest extends TestCase {
+public final class SdkVersionUtilTest {
     @SuppressWarnings("ConstantConditions")
+    @Test
     public void testGetAndroidVersion() {
         assertNull(getVersion("", null));
         assertNull(getVersion("4H", null));

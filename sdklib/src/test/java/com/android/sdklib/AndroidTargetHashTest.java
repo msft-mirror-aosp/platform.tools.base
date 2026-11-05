@@ -16,13 +16,20 @@
 
 package com.android.sdklib;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.sdklib.internal.androidTarget.MockAddonTarget;
 import com.android.sdklib.internal.androidTarget.MockPlatformTarget;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class AndroidTargetHashTest extends TestCase {
+public final class AndroidTargetHashTest {
 
+    @Test
     public final void testGetPlatformHashStringFromApiString() {
         assertEquals(
                 "android-10",
@@ -50,6 +57,7 @@ public class AndroidTargetHashTest extends TestCase {
         assertEquals("android-Tiramisu", AndroidTargetHash.getPlatformHashString("Tiramisu"));
     }
 
+    @Test
     public final void testGetAddonHashString() {
         assertEquals("The Vendor Inc.:My Addon:10",
                 AndroidTargetHash.getAddonHashString(
@@ -58,6 +66,7 @@ public class AndroidTargetHashTest extends TestCase {
                         new AndroidVersion(10, null)));
     }
 
+    @Test
     public final void testGetTargetHashString() {
         MockPlatformTarget t = new MockPlatformTarget(10, 1);
         assertEquals("android-10", AndroidTargetHash.getTargetHashString(t));
@@ -65,6 +74,7 @@ public class AndroidTargetHashTest extends TestCase {
         assertEquals("vendor 10:My Addon:10", AndroidTargetHash.getTargetHashString(a));
     }
 
+    @Test
     public void testGetPlatformVersion() {
         assertNull(AndroidTargetHash.getPlatformVersion("blah-5"));
         assertNull(AndroidTargetHash.getPlatformVersion("5-blah"));

@@ -16,16 +16,21 @@
 
 package com.android.sdklib.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 
-public class CommandLineParserTest extends TestCase {
+public final class CommandLineParserTest {
 
     private StdLogger mLog;
 
@@ -102,12 +107,12 @@ public class CommandLineParserTest extends TestCase {
         }
     }
 
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         mLog = new StdLogger(StdLogger.Level.VERBOSE);
-        super.setUp();
     }
 
+    @Test
     public void testPrintHelpAndExit() {
         MockCommandLineProcessor c = new MockCommandLineProcessor(mLog);
         assertFalse(c.wasExitCalled());
@@ -131,6 +136,7 @@ public class CommandLineParserTest extends TestCase {
         assertTrue(c.getStdErr().indexOf("Missing parameter") != -1);
     }
 
+    @Test
     public void testVerbose() {
         MockCommandLineProcessor c = new MockCommandLineProcessor(mLog);
 
@@ -149,6 +155,7 @@ public class CommandLineParserTest extends TestCase {
         assertTrue(c.getStdErr().indexOf("Missing verb name.") != -1);
     }
 
+    @Test
     public void testHelp() {
         MockCommandLineProcessor c = new MockCommandLineProcessor(mLog);
 
@@ -164,6 +171,7 @@ public class CommandLineParserTest extends TestCase {
         assertTrue(c.getStdErr().indexOf("Missing verb name.") == -1);
     }
 
+    @Test
     public void testMandatory() {
         MockCommandLineProcessor c = new MockCommandLineProcessor(mLog);
 
@@ -191,6 +199,7 @@ public class CommandLineParserTest extends TestCase {
         assertEquals(null, c.getValue("verb1", "action1", "second"));
     }
 
+    @Test
     public void testStringArray() {
         MockCommandLineProcessor c = new MockCommandLineProcessor(mLog);
 
@@ -208,6 +217,7 @@ public class CommandLineParserTest extends TestCase {
         assertEquals("value3", c.getValue("verb2", null, "third"));
     }
 
+    @Test
     public void testStringArray_DashDash() {
         MockCommandLineProcessor c = new MockCommandLineProcessor(mLog);
 
@@ -227,6 +237,7 @@ public class CommandLineParserTest extends TestCase {
         assertEquals("value3", c.getValue("verb2", null, "third"));
     }
 
+    @Test
     public void testStringArray_EmptyStringArray() {
         MockCommandLineProcessor c = new MockCommandLineProcessor(mLog);
 

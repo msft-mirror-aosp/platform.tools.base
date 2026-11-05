@@ -16,11 +16,15 @@
 
 package com.android.sdklib.util;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
 
 
-public class LineUtilTest extends TestCase {
+public final class LineUtilTest {
 
+    @Test
     public void testReflowLine() {
         boolean gotNpe = false;
         try {

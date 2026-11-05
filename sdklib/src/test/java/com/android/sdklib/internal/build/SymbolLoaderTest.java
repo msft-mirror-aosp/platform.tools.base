@@ -15,16 +15,20 @@
  */
 package com.android.sdklib.internal.build;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings({"javadoc", "deprecation"})
-public class SymbolLoaderTest extends TestCase {
+public final class SymbolLoaderTest {
+    @Test
     public void test() throws Exception {
         String r = "" +
                 "int xml authenticator 0x7f040000\n";
@@ -40,6 +44,7 @@ public class SymbolLoaderTest extends TestCase {
         assertEquals("0x7f040000", symbols.get("xml", "authenticator").getValue());
     }
 
+    @Test
     public void testStyleables() throws Exception {
         String r = "" +
             "int[] styleable LimitedSizeLinearLayout { 0x7f010000, 0x7f010001 }\n" +

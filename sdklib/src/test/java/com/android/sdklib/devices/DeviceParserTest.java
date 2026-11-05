@@ -17,6 +17,12 @@
 package com.android.sdklib.devices;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.dvlib.DeviceSchemaTest;
 import com.android.resources.Density;
@@ -37,7 +43,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.common.io.CharStreams;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import org.xml.sax.SAXParseException;
 
@@ -52,8 +58,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class DeviceParserTest extends TestCase {
+public final class DeviceParserTest {
 
+    @Test
     public void testValidDevicesMinimal() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_minimal.xml");
         try {
@@ -75,13 +82,13 @@ public class DeviceParserTest extends TestCase {
             Hardware hw = device.getDefaultHardware();
             Screen screen = hw.getScreen();
             assertEquals(screen.getSize(), ScreenSize.NORMAL);
-            assertEquals(4.65, screen.getDiagonalLength());
+            assertEquals(4.65, screen.getDiagonalLength(), 0.0);
             assertEquals(Density.XHIGH, screen.getPixelDensity());
             assertEquals(ScreenRatio.LONG, screen.getRatio());
             assertEquals(720, screen.getXDimension());
             assertEquals(1280, screen.getYDimension());
-            assertEquals(316.0, screen.getXdpi());
-            assertEquals(316.0, screen.getYdpi());
+            assertEquals(316.0, screen.getXdpi(), 0.0);
+            assertEquals(316.0, screen.getYdpi(), 0.0);
             assertEquals(Multitouch.JAZZ_HANDS, screen.getMultitouch());
             assertEquals(TouchScreen.FINGER, screen.getMechanism());
             assertEquals(ScreenType.CAPACITIVE, screen.getScreenType());
@@ -167,6 +174,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testValidDevicesFull_v1() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices.xml");
         try {
@@ -214,6 +222,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testValidDevicesFull_v2() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v2.xml");
         try {
@@ -260,6 +269,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testValidDevicesFull_v4() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v4.xml");
         try {
@@ -310,6 +320,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testValidDevicesFull_v5() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v5.xml");
         try {
@@ -341,6 +352,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testDevicesV8Abis() throws Exception {
         try (InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v8.xml")) {
             Table<String, String, Device> devices = DeviceParser.parse(stream);
@@ -358,6 +370,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testDevices_v8() throws Exception {
         try (InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v8.xml")) {
             Table<String, String, Device> devices = DeviceParser.parse(stream);
@@ -391,6 +404,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testDevices_v10() throws Exception {
         String xml = "<?xml version=\"1.0\"?>\n" +
                 "<d:devices\n" +
@@ -465,6 +479,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testDevices_v10_no_screen() throws Exception {
         String xml =
                 "<?xml version=\"1.0\"?>\n"
@@ -522,6 +537,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testApiRange() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("api-level", "1-");
@@ -555,6 +571,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testApiMinorRange() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("name", "Generic Device");
@@ -592,6 +609,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testBadNetworking() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("networking", "NFD");
@@ -613,6 +631,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testScreenDimension() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream(
                 "devices_minimal.xml");
@@ -631,6 +650,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testDPI() throws Exception {
         Map<String, Density> dpis =
                 ImmutableMap.of(

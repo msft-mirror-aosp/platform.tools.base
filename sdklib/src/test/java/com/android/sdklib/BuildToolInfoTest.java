@@ -16,15 +16,20 @@
 
 package com.android.sdklib;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.repository.Revision;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.testutils.file.InMemoryFileSystems;
 import java.nio.file.Path;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class BuildToolInfoTest extends TestCase {
+public final class BuildToolInfoTest {
 
+    @Test
     public void testGetCurrentJvmVersion() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         recordBuildTool23(sdkRoot);
@@ -42,6 +47,7 @@ public class BuildToolInfoTest extends TestCase {
         assertTrue(curr.compareTo(new Revision(42, 0, 0)) < 0);
     }
 
+    @Test
     public void testIsPresentIn_removedComponent() {
         // Jack and Jill were introduced in 21.1.0 and removed in 28
         Revision rev21_0_0 = new Revision(21, 0, 0);
@@ -65,6 +71,7 @@ public class BuildToolInfoTest extends TestCase {
         assertFalse(BuildToolInfo.PathId.JILL.isPresentIn(rev28_0_0));
     }
 
+    @Test
     public void testIsPresentIn_componentWithNoRemovedRevision() {
         // Daemon AAPT2 was introduced in 26.0.2
         Revision rev25_0_0 = new Revision(25, 0, 0);

@@ -16,10 +16,12 @@
 package com.android.sdklib
 
 import com.google.common.truth.Truth.assertThat
-import junit.framework.TestCase
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
-class AndroidVersionUtilsTest : TestCase() {
+class AndroidVersionUtilsTest {
 
+  @Test
   fun testGetApiNameAndDetails() {
     assertEquals(
       NameDetails("API 16", "\"Jelly Bean\"; Android 4.1"),
@@ -94,6 +96,7 @@ class AndroidVersionUtilsTest : TestCase() {
     assertEquals(NameDetails("API 500.0 ext. 12", null), AndroidVersion(500).withExtensionLevel(12).getApiNameAndDetails())
   }
 
+  @Test
   fun testGetFullApiName() {
     assertEquals(
       "API 16 (\"Jelly Bean\"; Android 4.1)",
@@ -123,6 +126,7 @@ class AndroidVersionUtilsTest : TestCase() {
     assertEquals("API Foo Preview", AndroidVersion(99, "Foo").getFullApiName(includeReleaseName = true, includeCodeName = true))
   }
 
+  @Test
   fun testGetReleaseNameAndDetails() {
     assertEquals(
       NameDetails("Android 4.1", "\"Jelly Bean\"; API 16"),
@@ -186,6 +190,7 @@ class AndroidVersionUtilsTest : TestCase() {
     assertEquals(NameDetails("Android API 500.0", null), AndroidVersion(500).withExtensionLevel(12).getReleaseNameAndDetails())
   }
 
+  @Test
   fun testGetFullReleaseName() {
     assertEquals(
       "Android 4.1 (\"Jelly Bean\"; API 16)",

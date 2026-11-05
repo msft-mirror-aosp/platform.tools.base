@@ -16,9 +16,14 @@
 
 package com.android.dvlib;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.utils.XmlUtils;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -47,10 +52,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-public class DeviceSchemaTest extends TestCase {
+public final class DeviceSchemaTest {
 
     //---- actual tests -----
 
+    @Test
     public void testValidXml_v1() throws Exception {
         InputStream xml = new BufferedInputStream(
                 DeviceSchemaTest.class.getResourceAsStream("devices.xml"));
@@ -75,6 +81,7 @@ public class DeviceSchemaTest extends TestCase {
                 baos.toString().trim().isEmpty());
     }
 
+    @Test
     public void testValidXml_v2() throws Exception {
         InputStream xml = new BufferedInputStream(
                 DeviceSchemaTest.class.getResourceAsStream("devices_v2.xml"));
@@ -99,6 +106,7 @@ public class DeviceSchemaTest extends TestCase {
                 baos.toString().trim().isEmpty());
     }
 
+    @Test
     public void testValidXml_v4() throws Exception {
         InputStream xml = new BufferedInputStream(
                 DeviceSchemaTest.class.getResourceAsStream("devices_v4.xml"));
@@ -123,6 +131,7 @@ public class DeviceSchemaTest extends TestCase {
                 baos.toString().trim().isEmpty());
     }
 
+    @Test
     public void testValidXml_v9() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("name", "Generic Device");
@@ -145,6 +154,7 @@ public class DeviceSchemaTest extends TestCase {
                 result);
     }
 
+    @Test
     public void testValidXml_v10() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("name", "Generic Device");
@@ -167,6 +177,7 @@ public class DeviceSchemaTest extends TestCase {
                 result);
     }
 
+    @Test
     public void testXmlWithDocTypeThrows() throws Exception {
         String xml =
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -190,6 +201,7 @@ public class DeviceSchemaTest extends TestCase {
         }
     }
 
+    @Test
     public void testNoHardware() throws Exception {
         String regex =
                 "Error: cvc-complex-type.2.4.a: Invalid content was found starting with "
@@ -197,6 +209,7 @@ public class DeviceSchemaTest extends TestCase {
         checkFailure("devices_no_hardware.xml", regex);
     }
 
+    @Test
     public void testNoSoftware() throws Exception {
         String regex =
                 "Error: cvc-complex-type.2.4.a: Invalid content was found starting with "
@@ -204,22 +217,26 @@ public class DeviceSchemaTest extends TestCase {
         checkFailure("devices_no_software.xml", regex);
     }
 
+    @Test
     public void testNoDefault() throws Exception {
         String regex = "Error: No default state for device Galaxy Nexus.*";
         checkFailure("devices_no_default.xml", regex);
     }
 
+    @Test
     public void testTooManyDefaults() throws Exception {
         String regex = "Error: More than one default state for device Galaxy Nexus.*";
         checkFailure("devices_too_many_defaults.xml", regex);
     }
 
+    @Test
     public void testNoStates() throws Exception {
         String regex = "Error: cvc-complex-type.2.4.b: The content of element 'd:device' is not "
                 + "complete.*\nError: No default state for device Galaxy Nexus.*";
         checkFailure("devices_no_states.xml", regex);
     }
 
+    @Test
     public void testBadMechanism() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_MECHANISM, "fanger");
@@ -228,6 +245,7 @@ public class DeviceSchemaTest extends TestCase {
                 + "'d:mechanism' is not valid.*");
     }
 
+    @Test
     public void testNegativeXdpi() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_XDPI, "-1.0");
@@ -235,6 +253,7 @@ public class DeviceSchemaTest extends TestCase {
                 + "Error: cvc-type.3.1.3: The value '-1.0' of element 'd:xdpi' is not valid.*");
     }
 
+    @Test
     public void testNegativeYdpi() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_YDPI, "-1");
@@ -243,6 +262,7 @@ public class DeviceSchemaTest extends TestCase {
 
     }
 
+    @Test
     public void testNegativeDiagonalLength() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_DIAGONAL_LENGTH, "-1.0");
@@ -251,6 +271,7 @@ public class DeviceSchemaTest extends TestCase {
                 + "Error: cvc-type.3.1.3: The value '-1.0' of element 'd:diagonal-length'.*");
     }
 
+    @Test
     public void testInvalidOpenGLVersion() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_GL_VERSION, "2");
@@ -258,24 +279,28 @@ public class DeviceSchemaTest extends TestCase {
                 + "Error: cvc-type.3.1.3: The value '2' of element 'd:gl-version' is not valid.*");
     }
 
+    @Test
     public void testEmptyOpenGLExtensions() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_GL_EXTENSIONS, "");
         checkSuccess(replacements);
     }
 
+    @Test
     public void testEmptySensors() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_SENSORS, "");
         checkSuccess(replacements);
     }
 
+    @Test
     public void testEmptyNetworking() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_NETWORKING, "");
         checkSuccess(replacements);
     }
 
+    @Test
     public void testEmptyCpu() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_CPU, "");
@@ -283,6 +308,7 @@ public class DeviceSchemaTest extends TestCase {
                 + "Error: cvc-type.3.1.3: The value '' of element 'd:cpu' is not valid.*");
     }
 
+    @Test
     public void testEmptyGpu() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put(DeviceSchema.NODE_GPU, "");
@@ -290,6 +316,7 @@ public class DeviceSchemaTest extends TestCase {
                 + "Error: cvc-type.3.1.3: The value '' of element 'd:gpu' is not valid.*");
     }
 
+    @Test
     public void testXmlWithDoctypeRejected() throws Exception {
         String xml =
                 "<?xml version=\"1.0\"?>\n"

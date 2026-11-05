@@ -16,11 +16,15 @@
 
 package com.android.sdklib.devices;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.android.dvlib.DeviceSchemaTest;
 
 import com.google.common.collect.Table;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,8 +33,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-public class DeviceWriterTest extends TestCase {
+public final class DeviceWriterTest {
 
+    @Test
     public void testWriteIsValid_Minimal() throws Exception {
         InputStream devicesFile =
             DeviceSchemaTest.class.getResourceAsStream("devices_minimal.xml");
@@ -45,6 +50,7 @@ public class DeviceWriterTest extends TestCase {
         assertEquals(devices, writtenDevices);
     }
 
+    @Test
     public void testWriteIsValid_Full() throws Exception {
         InputStream devicesFile =
             DeviceSchemaTest.class.getResourceAsStream("devices.xml");
@@ -59,6 +65,7 @@ public class DeviceWriterTest extends TestCase {
         assertEquals(devices, writtenDevices);
     }
 
+    @Test
     public void testLocale() throws Exception {
         Locale prevLocale = Locale.getDefault();
         try {
@@ -78,6 +85,7 @@ public class DeviceWriterTest extends TestCase {
         }
     }
 
+    @Test
     public void testApiLowerBound() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("api-level", "1-");
@@ -90,6 +98,7 @@ public class DeviceWriterTest extends TestCase {
         assertEquals(devices, writtenDevices);
     }
 
+    @Test
     public void testApiMinorBound() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("name", "Generic Device");
@@ -106,6 +115,7 @@ public class DeviceWriterTest extends TestCase {
         assertEquals(devices, writtenDevices);
     }
 
+    @Test
     public void testApiUpperBound() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("api-level", "-10");
@@ -118,6 +128,7 @@ public class DeviceWriterTest extends TestCase {
         assertEquals(devices, writtenDevices);
     }
 
+    @Test
     public void testApiNeitherBound() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("api-level", "-");
@@ -130,6 +141,7 @@ public class DeviceWriterTest extends TestCase {
         assertEquals(devices, writtenDevices);
     }
 
+    @Test
     public void testApiBothBound() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("api-level", "9-10");
@@ -141,6 +153,7 @@ public class DeviceWriterTest extends TestCase {
                 new ByteArrayInputStream(baos.toString().getBytes()));
         assertEquals(devices, writtenDevices);
     }
+    @Test
     public void testApiSingle() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("api-level", "10");

@@ -27,11 +27,16 @@ import static com.android.sdklib.SdkVersionInfo.getBuildCode;
 import static com.android.sdklib.SdkVersionInfo.getCodeName;
 import static com.android.sdklib.SdkVersionInfo.getVersionString;
 import static com.android.sdklib.SdkVersionInfo.underlinesToCamelCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class SdkVersionInfoTest extends TestCase {
+public final class SdkVersionInfoTest {
     @SuppressWarnings("ConstantConditions")
+    @Test
     public void testValidRanges() {
         assertTrue(1 < LOWEST_ACTIVE_API &&
                    LOWEST_ACTIVE_API <= RECOMMENDED_MIN_SDK_VERSION &&
@@ -39,6 +44,7 @@ public class SdkVersionInfoTest extends TestCase {
                    HIGHEST_KNOWN_STABLE_API <= HIGHEST_KNOWN_API);
     }
 
+    @Test
     public void testHighestSupportedVersion() {
         // Make sure we keep HIGHEST_SUPPORTED_API up to date along with the stable
         // SDKs. We should at least supported the latest stable known API; at times,
@@ -47,10 +53,12 @@ public class SdkVersionInfoTest extends TestCase {
         assertTrue(HIGHEST_SUPPORTED_API <= HIGHEST_KNOWN_API);
     }
 
+    @Test
     public void testGetBuildCode() {
         assertEquals("JELLY_BEAN", getBuildCode(16));
     }
 
+    @Test
     public void testGetApiByPreviewName() {
         assertEquals(5, getApiByPreviewName("Eclair", false));
         assertEquals(10, getApiByPreviewName("GINGERBREAD_MR1", false));
@@ -71,6 +79,7 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals(HIGHEST_KNOWN_API + 1, getApiByPreviewName("UnknownName", true));
     }
 
+    @Test
     public void testGetApiByBuildCode() {
         assertEquals(7, getApiByBuildCode("ECLAIR_MR1", false));
         assertEquals(16, getApiByBuildCode("JELLY_BEAN", false));
@@ -95,6 +104,7 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals(HIGHEST_KNOWN_API + 1, getApiByBuildCode("K_SURPRISE_SURPRISE", true));
     }
 
+    @Test
     public void testGetCodeName() {
         assertNull(getCodeName(1));
         assertNull(getCodeName(2));
@@ -125,6 +135,7 @@ public class SdkVersionInfoTest extends TestCase {
         }
     }
 
+    @Test
     public void testCamelCaseToUnderlines() {
         assertEquals("", camelCaseToUnderlines(""));
         assertEquals("foo", camelCaseToUnderlines("foo"));
@@ -135,6 +146,7 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("jelly_bean_mr2", camelCaseToUnderlines("JellyBeanMR2"));
     }
 
+    @Test
     public void testUnderlinesToCamelCase() {
         assertEquals("", underlinesToCamelCase(""));
         assertEquals("", underlinesToCamelCase("_"));
@@ -146,6 +158,7 @@ public class SdkVersionInfoTest extends TestCase {
     }
 
 
+    @Test
     public void testGetVersionString() {
         // make sure all known versions are non-null
         for (int i = 1; i <= HIGHEST_KNOWN_STABLE_API; i++) {
@@ -153,6 +166,7 @@ public class SdkVersionInfoTest extends TestCase {
         }
     }
 
+    @Test
     public void testAllNewStableApisBaseExtensionLevelDefined() {
         // When new stable APIs are added, we need to add their base extension level.
         for (int i = 33; i <= HIGHEST_KNOWN_STABLE_API; i++) {
