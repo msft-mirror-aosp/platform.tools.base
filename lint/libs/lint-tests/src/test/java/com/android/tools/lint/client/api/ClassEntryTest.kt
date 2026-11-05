@@ -123,7 +123,7 @@ class ClassEntryTest {
       assertEquals("java/lang/Object", classNode.superName)
     }
     assertEquals(
-      "Error: Error processing TESTROOT/parent.jar:x.class: broken class file? (Unsupported class file major version 255)",
+      "Error: Error processing TESTROOT/parent.jar:x.class: broken class file? (Unsupported class file version 255.0)",
       client.getLoggedOutput().replace(root.path, "TESTROOT").portablePath(),
     )
     assertEquals(2, successfulVisits)

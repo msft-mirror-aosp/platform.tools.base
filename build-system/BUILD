@@ -761,6 +761,7 @@ maven_repository(
         "@maven//:org.junit.junit-bom_5.9.3",
         "@maven//:org.mockito.mockito-bom_4.11.0",
         "@maven//:org.mockito.mockito-core",
+        "@maven//:org.ow2.asm.asm-bom_9.9",
         "@maven//:org.tensorflow.tensorflow-lite-metadata",
     ],
     visibility = ["//visibility:public"],

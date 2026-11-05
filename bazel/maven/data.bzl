@@ -1658,6 +1658,7 @@ _CLASS_JARS = [
     "org.ow2.asm:asm-bom:pom:9.6",
     "org.ow2.asm:asm-bom:pom:9.7",
     "org.ow2.asm:asm-bom:pom:9.8",
+    "org.ow2.asm:asm-bom:pom:9.9",
     "org.ow2.asm:asm-commons:9.6",
     "org.ow2.asm:asm-commons:9.8",
     "org.ow2.asm:asm-commons:9.9",
