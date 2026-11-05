@@ -91,7 +91,7 @@ class ProxyClassEval extends AndroidEval {
         if (clazz != null && clazz.isProxyClass()) {
             InterpreterLogger.v("(proxy) getStaticField: " + field);
             Object value = clazz.getStaticField(field.getName());
-            InterpreterLogger.v("        \tfield_type=" + value.getClass());
+            InterpreterLogger.v("        \tfield_type=" + typeName(value));
             return makeValue(value, Type.getType(field.getDesc()));
         }
 
@@ -104,10 +104,16 @@ class ProxyClassEval extends AndroidEval {
         if (clazz != null && clazz.isProxyClass()) {
             InterpreterLogger.v("(proxy) setStaticField: " + field);
             clazz.setStaticField(field.getName(), value.obj());
-            InterpreterLogger.v("        \tfield_type=" + value.obj().getClass());
+            InterpreterLogger.v("        \tfield_type=" + typeName(value.obj()));
         } else {
             super.setStaticField(field, value);
         }
+    }
+
+    // Static fields of proxy classes may legitimately be null; e.g. lazily initialized fields that
+    // have not been assigned yet, so logging must not dereference the value.
+    private static String typeName(Object value) {
+        return value == null ? "null" : value.getClass().toString();
     }
 
     @NonNull
