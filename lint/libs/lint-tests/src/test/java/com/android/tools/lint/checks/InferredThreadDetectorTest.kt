@@ -6814,6 +6814,41 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
           .trimIndent()
       )
   }
+
+  fun `test long chain of calls accumulating type arguments`() {
+    // Each `put` joins a new value type into the builder's type argument. The analysis must not track every subset of them.
+    val n = 40
+    val valueClasses = (0 until n).joinToString(" ") { "static final class V$it extends Value {}" }
+    val puts = (0 until n).joinToString("") { ".put(\"v$it\", new V$it())" }
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.UiThread;
+
+            class Registry {
+              static class Value {}
+              $valueClasses
+
+              static class Builder<K, V> {
+                Builder<K, V> put(K key, V value) {
+                  return this;
+                }
+              }
+
+              @UiThread static Builder<String, Value> registry() {
+                return new Builder<String, Value>()$puts;
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
 }
 
 class AndroidThreadConstraintLatticeTest : ThreadConstraintLatticeTest<Thread>(threadLattice) {

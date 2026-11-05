@@ -42,7 +42,39 @@ private val effectLattice =
   )
 
 class TypeLatticeTest :
-  LatticeTest<Type<IntsFx>>(lattice = Type.latticeOf(effectLattice), poolInits = listOf(Type.Int, Type.Boolean, x, x["f", y]))
+  LatticeTest<Type<IntsFx>>(
+    lattice = Type.latticeOf(effectLattice),
+    poolInits =
+      listOf(
+        Type.Int,
+        Type.Boolean,
+        x,
+        x["f", y],
+        box(),
+        box(Type.Int),
+        box(Type.Boolean),
+        box(Type.Union(persistentSetOf(Type.Int, Type.Boolean))),
+        box(x),
+        pair(Type.Int, Type.Boolean),
+        pair(Type.Boolean, Type.Int),
+      ),
+  ) {
+
+  @Test
+  fun `joining applications keeps the greater one if ordered, and both otherwise`() = forall { t1, t2 ->
+    val joined = box(t1) join box(t2)
+    when {
+      t1 precedes t2 -> joined == box(t2)
+      t2 precedes t1 -> joined == box(t1)
+      else -> joined == Type.Union(persistentSetOf(box(t1), box(t2)))
+    }
+  }
+
+  @Test
+  fun `joining an application into a union drops the cases it subsumes`() = forall { t1, t2, t3 ->
+    (box(t1) join t3) join box(t1 join t2) == box(t1 join t2) join t3
+  }
+}
 
 class EffectLatticeTest :
   LatticeTest<Effect<IntsFx>>(
@@ -82,6 +114,10 @@ class ConstraintLatticeTest :
 internal val x = Sym.Param("x", Scope.Generated(0))
 internal val y = Sym.Param("y", Scope.Generated(0))
 internal val z = Sym.Param("z", Scope.Generated(0))
+
+private fun box(vararg args: Type<IntsFx>) = Type.Application(ClassId.of("Box"), args.asList())
+
+private fun pair(first: Type<IntsFx>, second: Type<IntsFx>) = Type.Application(ClassId.of("Pair"), listOf(first, second))
 
 internal operator fun <FX> Sym<FX>.get(methodName: String, vararg args: Type<FX>): Invoke<FX> {
   // Method descriptor. Type signature unimportant for this test.

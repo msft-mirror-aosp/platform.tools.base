@@ -32,9 +32,7 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.javaMethod
 import kotlinx.collections.immutable.PersistentSet
-import kotlinx.collections.immutable.intersect
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.collections.immutable.plus
 
 sealed interface Instantiable<out FX>
 
@@ -57,6 +55,7 @@ sealed interface Type<out FX> {
     override fun toString() = "●"
   }
 
+  /** A union of [cases], none of which precedes another, which [latticeOf] relies on. */
   data class Union<out FX> private constructor(val cases: PersistentSet<Type<FX>>) : Type<FX> {
     override fun toString() =
       when {
@@ -261,56 +260,67 @@ sealed interface Type<out FX> {
         override val top = WildCard
 
         // Inconsequential for now
-        override fun meetOf(first: Type<FX>, second: Type<FX>) =
+        override fun meetOf(first: Type<FX>, second: Type<FX>): Type<FX> =
           when {
             top precedes first -> second
             top precedes second -> first
             first precedes bottom || second precedes bottom -> bottom
-            first == second -> first
-            second is Union -> meetUnion(first, second)
-            first is Union -> meetUnion(second, first)
+            first precedes second -> first
+            second precedes first -> second
+            second is Union -> second.cases.joinedOver { meetOf(first, it) }
+            first is Union -> first.cases.joinedOver { meetOf(it, second) }
+            first is Application && second is Application && first.shape() == second.shape() ->
+              Application(first.constructor, first.args.zip(second.args, ::meetOf))
             else -> bottom
-          }
-
-        private fun meetUnion(first: Type<FX>, second: Union<FX>): Type<FX> =
-          when (first) {
-            is Union -> Union(first.cases intersect second.cases)
-            else -> if (first in second.cases) first else bottom
           }
 
         override fun joinOf(first: Type<FX>, second: Type<FX>): Type<FX> =
           when {
+            first == second || second == bottom -> first
+            first == bottom -> second
             first is WildCard || second is WildCard -> WildCard
-            first is Union && second is Union -> Union(first.cases + second.cases)
-            first is Union -> Union(first.cases + second)
-            second is Union -> Union(second.cases + first)
+            first is Union && second is Union -> Union(second.cases.fold(first.cases, ::withCase))
+            first is Union -> Union(withCase(first.cases, second))
+            second is Union -> Union(withCase(second.cases, first))
             first is Lambda && second is Lambda && first.intf != null && first.intf == second.intf && first.params == second.params -> {
               val (bodyType1, bodyFx1) = first.body
               val (bodyType2, bodyFx2) = second.body
               first.copy(body = Result(joinOf(bodyType1, bodyType2), effectLattice.joinOf(bodyFx1, bodyFx2)))
             }
-
+            precede(first, second) -> second
+            precede(second, first) -> first
             else -> Union(persistentSetOf(first, second))
           }
 
-        override fun precede(first: Type<FX>, second: Type<FX>) =
+        /** Adds [case] to [cases] unless it precedes one of them, dropping those that precede it. */
+        private fun withCase(cases: PersistentSet<Type<FX>>, case: Type<FX>): PersistentSet<Type<FX>> =
+          when {
+            !case.isParameterized() -> cases.add(case) // only parameterized applications can precede another non-top case
+            case in cases || cases.any { precede(case, it) } -> cases
+            else -> cases.removeAll { precede(it, case) }.add(case)
+          }
+
+        override fun precede(first: Type<FX>, second: Type<FX>): Boolean =
           when {
             second == top -> true
             first == top -> false
             first == bottom -> true
             second == bottom -> false
             first == second -> true
-            second is Union ->
-              when (first) {
-                is Union -> second.cases.containsAll(first.cases)
-                else -> first in second.cases
-              }
-
+            first is Union -> first.cases.all { precede(it, second) }
+            second is Union -> first in second.cases || first.isParameterized() && second.cases.any { precede(first, it) }
+            first is Application && second is Application && first.shape() == second.shape() ->
+              first.args.indices.all { precede(first.args[it], second.args[it]) }
             else -> false
           }
       }
   }
 }
+
+/** Whether [this] is a [Type.Application] with arguments */
+internal fun <FX> Type<FX>.isParameterized() = this is Type.Application && args.isNotEmpty()
+
+internal fun Type.Application<*>.shape(): Pair<ClassId, Int> = constructor to args.size
 
 /** Erase a type's generic parameters for use in JVM's method descriptors */
 fun Type<*>.erased(): ClassId? =
