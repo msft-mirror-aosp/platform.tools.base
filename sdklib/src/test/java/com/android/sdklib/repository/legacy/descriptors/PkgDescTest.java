@@ -16,18 +16,24 @@
 
 package com.android.sdklib.repository.legacy.descriptors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repository.IdDisplay;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class PkgDescTest extends TestCase {
+public final class PkgDescTest {
 
     public final Path mRoot = Paths.get("/sdk");
 
+    @Test
     public final void testPkgDescTool_NotPreview() {
         IPkgDesc p = PkgDesc.Builder.newTool(
                 new Revision(1, 2, 3),
@@ -57,6 +63,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Android SDK Tools 1.2.3", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescTool_Preview() {
         IPkgDesc p = PkgDesc.Builder.newTool(
                 new Revision(1, 2, 3, 4),
@@ -86,6 +93,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Android SDK Tools 1.2.3 rc4", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescTool_Update() {
         final Revision min5670 = new Revision(5, 6, 7, 0);
         final IPkgDesc f123  =
@@ -144,6 +152,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescPlatformTool_NotPreview() {
         IPkgDesc p = PkgDesc.Builder.newPlatformTool(new Revision(1, 2, 3)).create();
 
@@ -171,6 +180,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Android SDK Platform-Tools 1.2.3", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescPlatformTool_Preview() {
         IPkgDesc p = PkgDesc.Builder.newPlatformTool(new Revision(1, 2, 3, 4)).create();
 
@@ -198,6 +208,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Android SDK Platform-Tools 1.2.3 rc4", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescPlatformTool_Update() {
         final IPkgDesc f123  =
                 PkgDesc.Builder.newPlatformTool(new Revision(1, 2, 3, 0)).create();
@@ -241,6 +252,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescDoc() throws Exception {
         IPkgDesc p =
                 PkgDesc.Builder.newDoc(new AndroidVersion(19), new Revision(1)).create();
@@ -268,6 +280,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Documentation for Android SDK", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescDoc_Update() throws Exception {
         final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
@@ -292,6 +305,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescBuildTool_NotPreview() {
         IPkgDesc p = PkgDesc.Builder.newBuildTool(new Revision(1, 2, 3)).create();
 
@@ -320,6 +334,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Android SDK Build-Tools 1.2.3", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescBuildTool_Preview() {
         IPkgDesc p = PkgDesc.Builder.newBuildTool(new Revision(1, 2, 3, 4)).create();
 
@@ -349,6 +364,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Android SDK Build-Tools 1.2.3 rc4", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescBuildTool_Update() {
         final IPkgDesc f123  = PkgDesc.Builder.newBuildTool(new Revision(1, 2, 3, 0)).create();
         final IPkgDesc f123b = PkgDesc.Builder.newBuildTool(new Revision(1, 2, 3, 0)).create();
@@ -393,6 +409,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescExtra() {
         IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         IPkgDesc p = PkgDesc.Builder
@@ -431,6 +448,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("[old_path1, old_path2]", Arrays.toString(e.getOldPaths()));
     }
 
+    @Test
     public final void testPkgDescExtra_Update() {
         IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         final Revision rev123 = new Revision(1, 2, 3);
@@ -479,6 +497,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescSource() throws Exception {
         IPkgDesc p =
                 PkgDesc.Builder.newSource(new AndroidVersion(19), new Revision(1)).create();
@@ -506,6 +525,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Sources for Android 19", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescSource_Update() throws Exception {
         final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
@@ -532,6 +552,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescSample() throws Exception {
         IPkgDesc p = PkgDesc.Builder.newSample(new AndroidVersion(19),
                                        new Revision(1),
@@ -562,6 +583,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Samples for Android 19", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescSample_Update() throws Exception {
         final Revision min5670 = new Revision(5, 6, 7, 0);
         final AndroidVersion api19 = new AndroidVersion(19);
@@ -598,6 +620,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescPlatform() throws Exception {
         IPkgDesc p = PkgDesc.Builder.newPlatform(new AndroidVersion(19),
                                          new Revision(1),
@@ -628,6 +651,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("Android SDK Platform 19", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescPlatform_Update() throws Exception {
         final Revision min5670 = new Revision(5, 6, 7, 0);
         final AndroidVersion api19 = new AndroidVersion(19);
@@ -664,6 +688,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescAddon() throws Exception {
         IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         IdDisplay name   = IdDisplay.create("addon_name", "The Add-on");
@@ -704,6 +729,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("The Add-on, Android 19", p1.getListDescription());
     }
 
+    @Test
     public final void testPkgDescAddon_Update() throws Exception {
         final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
@@ -752,6 +778,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
+    @Test
     public final void testPkgDescSysImg_Platform() throws Exception {
         IdDisplay tag = IdDisplay.create("tag", "My Tag");
         IPkgDesc p = PkgDesc.Builder.newSysImg(
@@ -787,6 +814,7 @@ public class PkgDescTest extends TestCase {
         assertEquals("eabi System Image, Android 19", p.getListDescription());
     }
 
+    @Test
     public final void testPkgDescSysImg_Platform_Update() throws Exception {
         IdDisplay tag1 = IdDisplay.create("tag1", "My Tag 1");
         final AndroidVersion api19 = new AndroidVersion(19);
@@ -827,6 +855,7 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_t2.compareTo(p19_1) > 0);
     }
 
+    @Test
     public final void testPkgDescSysImg_Addon() throws Exception {
         IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         IdDisplay name   = IdDisplay.create("addon_name", "The Add-on");

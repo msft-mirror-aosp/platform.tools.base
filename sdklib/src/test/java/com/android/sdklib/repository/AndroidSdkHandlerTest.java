@@ -16,6 +16,11 @@
 package com.android.sdklib.repository;
 
 import static com.android.repository.testframework.FakePackage.FakeLocalPackage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.prefs.AndroidLocationsSingleton;
 import com.android.repository.Revision;
@@ -30,13 +35,14 @@ import com.google.common.collect.ImmutableList;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests for {@link AndroidSdkHandler}
  */
-public class AndroidSdkHandlerTest extends TestCase {
+public final class AndroidSdkHandlerTest {
 
+    @Test
     public void testGetLatestPackage() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         FakeLocalPackage p1_1 = new FakeLocalPackage("p;1.1", sdkRoot.resolve("p/1.1"));
@@ -159,6 +165,7 @@ public class AndroidSdkHandlerTest extends TestCase {
         assertNull(latest);
     }
 
+    @Test
     public void testGetLatestPackageException() {
         FakeLocalPackage p1_1 = new FakeLocalPackage("p;1.1");
         p1_1.setRevision(Revision.parseRevision("1.1"));
@@ -177,6 +184,7 @@ public class AndroidSdkHandlerTest extends TestCase {
         }
     }
 
+    @Test
     public void testLocale() {
         Locale origDefault = Locale.getDefault();
         Locale.setDefault(new Locale("hi", "IN"));

@@ -16,6 +16,9 @@
 
 package com.android.sdklib.repository.legacy.local;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.android.sdklib.repository.legacy.FileOp;
 import com.android.sdklib.repository.legacy.io.FileOpImpl;
 import java.io.File;
@@ -23,29 +26,30 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-public class LocalDirInfoTest extends TestCase {
+public final class LocalDirInfoTest {
 
     private final FileOp mFOp = new FileOpImpl();
     private File mTempDir;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         mTempDir = File.createTempFile("test", "dir");
         assertTrue(mTempDir.delete());
         assertTrue(mTempDir.mkdirs());
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    @After
+    public void tearDown() throws Exception {
         mFOp.deleteFileOrFolder(mTempDir);
         mTempDir = null;
     }
 
     // Test: start with empty directory, removing the dir marks it as changed.
+    @Test
     public final void testHasChanged_Empty() {
         LocalDirInfo di = new LocalDirInfo(mFOp, mTempDir);
         assertFalse(di.hasChanged());
@@ -56,6 +60,7 @@ public class LocalDirInfoTest extends TestCase {
     }
 
     // Test: start with empty directory, adding a file marks it as changed.
+    @Test
     public final void testHasChanged_AddFile() throws Exception {
         LocalDirInfo di = new LocalDirInfo(mFOp, mTempDir);
         assertFalse(di.hasChanged());
@@ -66,6 +71,7 @@ public class LocalDirInfoTest extends TestCase {
     }
 
     // Test: removing any file marks it as changed.
+    @Test
     public final void testHasChanged_RemoveFile() throws Exception {
         File f = createFileContent(mTempDir, "some_file.txt", "whatever content");
 
@@ -78,6 +84,7 @@ public class LocalDirInfoTest extends TestCase {
     }
 
     // Test: start with empty directory, adding a directory marks it as changed.
+    @Test
     public final void testHasChanged_AddDir() throws Exception {
         LocalDirInfo di = new LocalDirInfo(mFOp, mTempDir);
         assertFalse(di.hasChanged());
@@ -89,6 +96,7 @@ public class LocalDirInfoTest extends TestCase {
     }
 
     // Test: removing any directory marks it as changed.
+    @Test
     public final void testHasChanged_RemoveDir() throws Exception {
         File dir = new File(mTempDir, "some_dir");
         assertTrue(dir.mkdirs());
@@ -102,6 +110,7 @@ public class LocalDirInfoTest extends TestCase {
     }
 
     // Test: directory that contains a source.properties, change source.properties's content
+    @Test
     public final void testHasChanged_SourceProps_Changed() throws Exception {
         createFileContent(mTempDir, "source.properties", "key=value");
 
@@ -114,6 +123,7 @@ public class LocalDirInfoTest extends TestCase {
     }
 
     // Test: directory that contains a source.properties, change source.properties's timestamp
+    @Test
     public final void testHasChanged_SourceProps_Timestamp() throws Exception {
         createFileContent(mTempDir, "source.properties", "key=value");
 
@@ -130,6 +140,7 @@ public class LocalDirInfoTest extends TestCase {
     }
 
     // Test: directory that contains a source.properties, change delete source.properties
+    @Test
     public final void testHasChanged_SourceProps_Deleted() throws Exception {
         File sp = createFileContent(mTempDir, "source.properties", "key=value");
 

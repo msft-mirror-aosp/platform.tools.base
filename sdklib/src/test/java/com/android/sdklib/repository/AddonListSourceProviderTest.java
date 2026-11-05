@@ -15,6 +15,8 @@
  */
 package com.android.sdklib.repository;
 
+import static org.junit.Assert.assertEquals;
+
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.testframework.FakeDownloader;
@@ -28,16 +30,17 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests for {@link RepositorySourceProvider}s.
  */
-public class AddonListSourceProviderTest extends TestCase {
+public final class AddonListSourceProviderTest {
 
     private static final Path androidFolder =
             InMemoryFileSystems.createInMemoryFileSystemAndFolder("android-home");
 
+    @Test
     public void testRemoteSource() throws Exception {
         FakeDownloader downloader = new FakeDownloader(androidFolder.getRoot().resolve("tmp"));
         AndroidSdkHandler handler = new AndroidSdkHandler(null, androidFolder);
@@ -84,6 +87,7 @@ public class AddonListSourceProviderTest extends TestCase {
         assertEquals("http://www.example.com/my_addons2.xml", sources.get(0).getUrl());
     }
 
+    @Test
     public void testLocalSource() throws Exception {
         Files.createDirectories(androidFolder);
         File testFile = TestResources.getFile(getClass(), "/repositories.xml");

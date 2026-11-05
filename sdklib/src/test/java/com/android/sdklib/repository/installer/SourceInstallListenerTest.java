@@ -18,6 +18,7 @@ package com.android.sdklib.repository.installer;
 import static com.android.sdklib.IAndroidTarget.SOURCES;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.repository.api.Installer;
@@ -39,7 +40,7 @@ import com.android.testutils.file.InMemoryFileSystems;
 
 import com.google.common.collect.ImmutableList;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -52,11 +53,12 @@ import java.util.zip.ZipOutputStream;
 /**
  * Tests for {@link SourceInstallListener}
  */
-public class SourceInstallListenerTest extends TestCase {
+public final class SourceInstallListenerTest {
 
     private static final Path sdkRoot =
             InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
 
+    @Test
     public void testSourcePathUpdatedWithInstall() throws Exception {
         // Create remote package for sources;android-23
         FakePackage.FakeRemotePackage remote =
@@ -116,6 +118,7 @@ public class SourceInstallListenerTest extends TestCase {
                 .isEqualTo(InMemoryFileSystems.getPlatformSpecificPath("/sdk/sources/android-23"));
     }
 
+    @Test
     public void testSourcePathUpdatedWithUnInstall() {
         // Create local packages for platform;android-23 and sources;android-23
         LocalPackage localPlatform = getLocalPlatformPackage();

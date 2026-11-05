@@ -17,6 +17,8 @@
 package com.android.sdklib.repository.legacy;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -44,15 +46,16 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests parsing and rewriting legacy local packages.
  */
-public class LegacyLocalRepoTest extends TestCase {
+public final class LegacyLocalRepoTest {
 
     private final Path mSdkLocation = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
 
+    @Test
     public void testParseLegacy() {
         InMemoryFileSystems.recordExistingFile(
                 mSdkLocation.resolve("tools/source.properties"),
@@ -83,6 +86,7 @@ public class LegacyLocalRepoTest extends TestCase {
         assertEquals(new Revision(22, 3, 4), local.getVersion());
     }
 
+    @Test
     public void testParseNonBaseExtensions() {
         InMemoryFileSystems.recordExistingFile(
                 mSdkLocation.resolve("platforms/android-30-ext3/source.properties"),
@@ -114,6 +118,7 @@ public class LegacyLocalRepoTest extends TestCase {
                 .isEqualTo(new AndroidVersion(30, null, 3, false));
     }
 
+    @Test
     public void testParseBaseExtensions() {
         InMemoryFileSystems.recordExistingFile(
                 mSdkLocation.resolve("platforms/android-30/source.properties"),
@@ -145,6 +150,7 @@ public class LegacyLocalRepoTest extends TestCase {
                 .isEqualTo(new AndroidVersion(30, null, 3, true));
     }
 
+    @Test
     public void testReadNewInLegacyLocation() throws Exception {
         InMemoryFileSystems.recordExistingFile(
                 mSdkLocation.resolve("tools/source.properties"),
@@ -162,6 +168,7 @@ public class LegacyLocalRepoTest extends TestCase {
         assertEquals(0, revision[2]);
     }
 
+    @Test
     public void testRewriteLegacyTools() throws Exception {
         InMemoryFileSystems.recordExistingFile(
                 mSdkLocation.resolve("tools/source.properties"),
@@ -184,6 +191,7 @@ public class LegacyLocalRepoTest extends TestCase {
         assertEquals(0, revision[2]);
     }
 
+    @Test
     public void testRewriteLegacyAddon() throws Exception {
         recordLegacyGoogleApis23(mSdkLocation);
 
@@ -232,6 +240,7 @@ public class LegacyLocalRepoTest extends TestCase {
         return result;
     }
 
+    @Test
     public void testRewriteLegacyAddonWithMinimalSourceProperties() throws Exception {
         InMemoryFileSystems.recordExistingFile(
                 mSdkLocation.resolve("add-ons/addon-google_apis-google-23/source.properties"),
@@ -253,6 +262,7 @@ public class LegacyLocalRepoTest extends TestCase {
         assertThat(local.getDisplayName()).startsWith("Google APIs Test,");
     }
 
+    @Test
     public void testRewriteLegacyAddonGetNameFromManifest() throws Exception {
         InMemoryFileSystems.recordExistingFile(
                 mSdkLocation.resolve("add-ons/addon-google_apis-google-23/source.properties"),
@@ -273,6 +283,7 @@ public class LegacyLocalRepoTest extends TestCase {
         assertThat(local.getDisplayName()).startsWith("Google Apis,");
     }
 
+    @Test
     public void testRewriteLegacyAddonGetNameIdFromManifest() throws Exception {
         InMemoryFileSystems.recordExistingFile(
                 mSdkLocation.resolve("add-ons/addon-google_apis-google-23/source.properties"),

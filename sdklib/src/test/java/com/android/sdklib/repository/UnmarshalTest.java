@@ -16,6 +16,12 @@
 package com.android.sdklib.repository;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
@@ -40,11 +46,12 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /** Tests for unmarshalling an xml repository */
-public class UnmarshalTest extends TestCase {
+public final class UnmarshalTest {
 
+    @Test
     public void testLoadRepoV3() throws Exception {
         String filename = "/repository2-3_sample.xml";
         InputStream xmlStream = getClass().getResourceAsStream(filename);
@@ -128,6 +135,7 @@ public class UnmarshalTest extends TestCase {
         assertEquals("sha-256", checksum2.getType());
     }
 
+    @Test
     public void testLoadRepoV2() throws Exception {
         String filename = "/repository2-2_sample.xml";
         InputStream xmlStream = getClass().getResourceAsStream(filename);
@@ -191,6 +199,7 @@ public class UnmarshalTest extends TestCase {
         assertEquals("sha-256", checksum2.getType());
     }
 
+    @Test
     public void testLoadRepoV1() throws Exception {
         String filename = "/repository2-1_sample.xml";
         InputStream xmlStream = getClass().getResourceAsStream(filename);
@@ -254,6 +263,7 @@ public class UnmarshalTest extends TestCase {
         assertTrue(repo.getPackage().get(0).getTypeDetails() instanceof DetailsTypes.AddonDetailsType);*/
     }
 
+    @Test
     public void testUnmarshalSysImg04() throws Exception {
         String filename = "/sys-img-04_sample.xml";
 
@@ -310,6 +320,7 @@ public class UnmarshalTest extends TestCase {
                     + "    </localPackage>\n"
                     + "</repo:repository>";
 
+    @Test
     public void testLeniency() throws Exception {
         AndroidSdkHandler handler = getAndroidSdkHandler();
         FakeProgressIndicator progress = new FakeProgressIndicator();
@@ -355,6 +366,7 @@ public class UnmarshalTest extends TestCase {
                     + "    </localPackage>\n"
                     + "</repo:repository>";
 
+    @Test
     public void testNamespaceFallback() throws Exception {
         AndroidSdkHandler handler = getAndroidSdkHandler();
         FakeProgressIndicator progress = new FakeProgressIndicator();

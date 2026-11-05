@@ -15,6 +15,10 @@
  */
 package com.android.sdklib.repository.targets;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.repository.api.LocalPackage;
@@ -39,13 +43,14 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests for {@link AndroidTargetManager}.
  */
-public class AndroidTargetManagerTest extends TestCase {
+public final class AndroidTargetManagerTest {
 
+    @Test
     public void testNewTarget() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         recordPlatform13(sdkRoot);
@@ -75,6 +80,7 @@ public class AndroidTargetManagerTest extends TestCase {
         verifyAddon23(addon23, platform23, sdkRoot);
     }
 
+    @Test
     public void testLegacyAddon() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         recordPlatform23(sdkRoot);
@@ -96,6 +102,7 @@ public class AndroidTargetManagerTest extends TestCase {
         verifyAddon23(addon23, platform23, sdkRoot);
     }
 
+    @Test
     public void testInstalledLegacyAddon() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         recordPlatform23(sdkRoot);
@@ -117,6 +124,7 @@ public class AndroidTargetManagerTest extends TestCase {
         verifyPlatform23(platform23, sdkRoot);
     }
 
+    @Test
     public void testSources() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         recordPlatform23(sdkRoot);
@@ -731,6 +739,7 @@ public class AndroidTargetManagerTest extends TestCase {
     }
 
     @SuppressWarnings("ConstantConditions")
+    @Test
     public void testBuildTools() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         recordPlatform13(sdkRoot);
@@ -746,6 +755,7 @@ public class AndroidTargetManagerTest extends TestCase {
     }
 
     @SuppressWarnings("ConstantConditions")
+    @Test
     public void testBuildToolsWithPreviewOlderThanStable() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         recordPlatform13(sdkRoot);
@@ -762,6 +772,7 @@ public class AndroidTargetManagerTest extends TestCase {
         assertEquals("24.0.0", handler.getLatestBuildTool(progress, true).getRevision().toString());
     }
 
+    @Test
     public void testDuplicatePlatform() {
         Path sdkPath = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         Path bogus1Location = sdkPath.resolve("foo");

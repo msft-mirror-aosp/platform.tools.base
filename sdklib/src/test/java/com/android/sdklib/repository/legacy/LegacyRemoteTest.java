@@ -15,6 +15,9 @@
  */
 package com.android.sdklib.repository.legacy;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.android.repository.Revision;
 import com.android.repository.api.Channel;
 import com.android.repository.api.ConstantSourceProvider;
@@ -32,13 +35,14 @@ import com.google.common.collect.ImmutableList;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests for {@link LegacyRemoteRepoLoader}.
  */
-public class LegacyRemoteTest extends TestCase {
+public final class LegacyRemoteTest {
 
+    @Test
     public void testLegacyRemoteSdk() throws Exception {
         MockFileOp fop = new MockFileOp();
 

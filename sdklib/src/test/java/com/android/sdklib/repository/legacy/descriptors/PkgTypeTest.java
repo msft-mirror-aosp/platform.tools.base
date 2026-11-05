@@ -16,14 +16,19 @@
 
 package com.android.sdklib.repository.legacy.descriptors;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.sdklib.repository.legacy.descriptors.PkgType;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class PkgTypeTest extends TestCase {
+public final class PkgTypeTest {
 
+    @Test
     public final void testPkgTypeTool() {
         PkgType p = PkgType.PKG_TOOLS;
         assertFalse(p.hasAndroidVersion());
@@ -34,6 +39,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypePlatformTool() {
         PkgType p = PkgType.PKG_PLATFORM_TOOLS;
         assertFalse(p.hasAndroidVersion());
@@ -44,6 +50,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypeDoc() {
         PkgType p = PkgType.PKG_DOC;
         assertTrue (p.hasAndroidVersion());
@@ -54,6 +61,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypeBuildTool() {
         PkgType p = PkgType.PKG_BUILD_TOOLS;
 
@@ -65,6 +73,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypeExtra() {
         PkgType p = PkgType.PKG_EXTRA;
 
@@ -76,6 +85,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypeSource() throws Exception {
         PkgType p = PkgType.PKG_SOURCE;
 
@@ -87,6 +97,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypeSample() throws Exception {
         PkgType p = PkgType.PKG_SAMPLE;
 
@@ -98,6 +109,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypePlatform() throws Exception {
         PkgType p = PkgType.PKG_PLATFORM;
 
@@ -109,6 +121,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypeAddon() throws Exception {
         PkgType p = PkgType.PKG_ADDON;
 
@@ -120,6 +133,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypeSysImg() throws Exception {
         PkgType p = PkgType.PKG_SYS_IMAGE;
 
@@ -131,6 +145,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgTypeAddonSysImg() throws Exception {
         PkgType p = PkgType.PKG_ADDON_SYS_IMAGE;
 
@@ -142,6 +157,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
     }
 
+    @Test
     public final void testPkgType_UniqueIntValues() {
         // Check all types have a unique int value
         Map<Integer, PkgType> ints = new HashMap<Integer, PkgType>();

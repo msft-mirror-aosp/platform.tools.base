@@ -16,6 +16,12 @@
 
 package com.android.sdklib.repository.legacy.local;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import com.android.SdkConstants;
 import com.android.repository.Revision;
 import com.android.repository.io.FileOpUtils;
@@ -27,19 +33,20 @@ import com.android.testutils.file.InMemoryFileSystems;
 import java.io.File;
 import java.util.Arrays;
 import java.util.EnumSet;
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 // This is a test of deprecated stuff, and this test will be removed when the prod stuff is removed.
 @SuppressWarnings({"MethodMayBeStatic", "deprecation"})
-public class LocalSdkTest extends TestCase {
+public final class LocalSdkTest {
 
     private MockFileOp mFOp;
     private LocalSdk mLS;
 
     private File mRoot;
 
-    @Override
-    protected void setUp() {
+    @Before
+    public void setUp() {
         mFOp = new MockFileOp();
         mRoot =
                 FileOpUtils.toFile(
@@ -48,6 +55,7 @@ public class LocalSdkTest extends TestCase {
         mLS.setLocation(mRoot);
     }
 
+    @Test
     public final void testLocalSdkTest_allPkgTypes() {
         // Make sure getPkgInfo() can handle all defined package types.
         for(PkgType type : PkgType.values()) {
@@ -58,6 +66,7 @@ public class LocalSdkTest extends TestCase {
         assertNotNull(mLS.getPkgsInfos(PkgType.PKG_ALL));
     }
 
+    @Test
     public final void testLocalSdkTest_getLocation() {
         MockFileOp fop = new MockFileOp();
         LocalSdk ls = new LocalSdk(fop);
@@ -66,6 +75,7 @@ public class LocalSdkTest extends TestCase {
         assertEquals(mRoot, ls.getLocation());
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Tools() {
         // check empty
         assertNull(mLS.getPkgInfo(PkgType.PKG_TOOLS));
@@ -98,6 +108,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_PlatformTools() {
         // check empty
         assertNull(mLS.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS));
@@ -125,6 +136,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Docs() {
         // check empty
         assertNull(mLS.getPkgInfo(PkgType.PKG_DOC));
@@ -154,6 +166,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_BuildTools() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_BUILD_TOOLS)));
@@ -270,6 +283,7 @@ public class LocalSdkTest extends TestCase {
         assertEquals(new Revision(19, 0, 0, 2), previewInfo.getRevision());
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Extra() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_EXTRA)));
@@ -339,6 +353,7 @@ public class LocalSdkTest extends TestCase {
                      Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_EXTRA)));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Sources() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SOURCE)));
@@ -394,6 +409,7 @@ public class LocalSdkTest extends TestCase {
                      Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SOURCE)));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Samples() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SAMPLE)));
@@ -435,6 +451,7 @@ public class LocalSdkTest extends TestCase {
                  Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SAMPLE)));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_SysImages() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)));
@@ -575,6 +592,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Platforms() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_PLATFORM)));
@@ -601,6 +619,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi, pi2);
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Platforms_SysImages_Skins() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)));
@@ -663,6 +682,7 @@ public class LocalSdkTest extends TestCase {
         assertEquals("Android SDK Platform 18", pi.getListDescription());
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Platforms_Sources() {
         // setup fake files
         mLS.clearLocalPkg(PkgType.PKG_ALL);
@@ -698,6 +718,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi2, mLS.getPkgInfo(pi2.getDesc()));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Addon_NoSysImg() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
@@ -748,6 +769,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Addon_SysImgInLegacyFolder() {
         // "Legacy sys-img" means there's only one sys-img of armeabi type directly
         // in the folder addons/addon-name/images. This case is only supported for
@@ -817,6 +839,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Addon_SysImgInSubfolder() {
         // "sys-img in subfolder" means there is an addons/addon-name/images/ folder
         // which in turns contains any number of folders named after the system-image ABI.
@@ -910,6 +933,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
+    @Test
     public final void testLocalSdkTest_getPkgInfo_Addon_SysImgFolder() {
         // sys-img stored separately in the SDK/system-images/addon-id-name/abi/ folder.
 
