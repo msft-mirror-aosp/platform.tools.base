@@ -17,31 +17,37 @@
 package com.android.tools.lint.detector.api;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertSame;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class SeverityTest extends TestCase {
+public final class SeverityTest {
+    @Test
     public void testGetName() {
         assertThat(Severity.ERROR.name()).isEqualTo("ERROR");
         assertThat(Severity.WARNING.name()).isEqualTo("WARNING");
     }
 
+    @Test
     public void testGetDescription() {
         assertThat(Severity.ERROR.getDescription()).isEqualTo("Error");
         assertThat(Severity.WARNING.getDescription()).isEqualTo("Warning");
     }
 
+    @Test
     public void testName() {
         assertThat(Severity.ERROR.toName()).isEqualTo("error");
         assertThat(Severity.INFORMATIONAL.toName()).isEqualTo("informational");
     }
 
+    @Test
     public void testFromName() {
         for (Severity severity : Severity.values()) {
             assertThat(Severity.fromName(severity.toName())).isEqualTo(severity);
         }
     }
 
+    @Test
     public void testFromString() {
         assertThat(Severity.fromName("ERROR")).isSameAs(Severity.ERROR);
         assertThat(Severity.fromName("error")).isSameAs(Severity.ERROR);
@@ -54,6 +60,7 @@ public class SeverityTest extends TestCase {
         assertThat(Severity.fromName("IGNORE")).isSameAs(Severity.IGNORE);
     }
 
+    @Test
     public void testCompare() {
         assertThat(Severity.IGNORE).isLessThan(Severity.ERROR);
         assertThat(Severity.WARNING).isLessThan(Severity.ERROR);
@@ -63,6 +70,7 @@ public class SeverityTest extends TestCase {
         assertThat(Severity.INFORMATIONAL).isLessThan(Severity.ERROR);
     }
 
+    @Test
     public void testIsError() {
         assertThat(Severity.IGNORE.isError()).isFalse();
         assertThat(Severity.INFORMATIONAL.isError()).isFalse();
@@ -71,6 +79,7 @@ public class SeverityTest extends TestCase {
         assertThat(Severity.FATAL.isError()).isTrue();
     }
 
+    @Test
     public void testMin() {
         assertSame(Severity.INFORMATIONAL, Severity.min(Severity.ERROR, Severity.INFORMATIONAL));
         assertSame(Severity.INFORMATIONAL, Severity.min(Severity.INFORMATIONAL, Severity.ERROR));
@@ -78,6 +87,7 @@ public class SeverityTest extends TestCase {
         assertSame(Severity.ERROR, Severity.min(Severity.FATAL, Severity.ERROR));
     }
 
+    @Test
     public void testMax() {
         assertSame(Severity.ERROR, Severity.max(Severity.ERROR, Severity.INFORMATIONAL));
         assertSame(Severity.ERROR, Severity.max(Severity.INFORMATIONAL, Severity.ERROR));

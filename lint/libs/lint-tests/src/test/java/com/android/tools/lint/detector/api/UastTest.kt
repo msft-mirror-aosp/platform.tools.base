@@ -43,7 +43,6 @@ import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.impl.source.PsiImmediateClassType
-import junit.framework.TestCase
 import kotlin.test.assertContains
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaSession
@@ -107,9 +106,16 @@ import org.jetbrains.uast.toUElementOfType
 import org.jetbrains.uast.util.isAssignment
 import org.jetbrains.uast.util.isConstructorCall
 import org.jetbrains.uast.visitor.AbstractUastVisitor
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
+import org.junit.Test
 
 // Misc tests to verify type handling in the Kotlin UAST initialization.
-class UastTest : TestCase() {
+class UastTest {
   private fun check(
     source: TestFile,
     javaLanguageLevel: LanguageLevel? = null,
@@ -157,6 +163,7 @@ class UastTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun test263980844() {
     val testFiles =
       arrayOf(
@@ -231,6 +238,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun test257514416() {
     val testFiles =
       arrayOf(
@@ -304,6 +312,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testJavaAnnotationTarget_fromSource() {
     // Regression test from b/266740119: not applicable only for project-type dependency.
     val testFiles =
@@ -363,6 +372,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testJavaAnnotationTarget_fromBytecode() {
     // Regression test from b/266740119: applicable if prebuilt bytecode is given.
     val testFiles =
@@ -441,6 +451,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testExpressionTypeOfCallToInternalOperator() {
     // Regression test from b/270595352.
     val testFiles =
@@ -553,6 +564,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testExpressionTypeOfContractLambda() {
     // b/463436546
     // after https://youtrack.jetbrains.com/issue/KT-82846
@@ -613,6 +625,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testPropertiesInCompanionObject_fromBytecode() {
     // Regression test from b/301453029
     val testFiles =
@@ -889,6 +902,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolveCompiledKotlinProperty_pairFirst() {
     // b/556855454
     val testFiles =
@@ -922,6 +936,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun test126439418() {
     // Regression test for https://issuetracker.google.com/126439418 /
     //  https://youtrack.jetbrains.com/issue/KT-35801
@@ -961,6 +976,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testKt25298() {
     // Regression test for
     // 	KT-25298 UAST: NPE ClsFileImpl.getMirror during lambda inference session
@@ -1032,6 +1048,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testNodeIsConstructor() {
     // Regression test for
     // 206982645: UMethod#isConstructor returns false on actual constructor
@@ -1159,6 +1176,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun test123923544() {
     // Regression test for
     //  https://youtrack.jetbrains.com/issue/KT-30033
@@ -1258,6 +1276,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun test13Features() {
     check(
       kotlin(
@@ -1453,6 +1472,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testSuspend() {
     // Regression test for
     // https://youtrack.jetbrains.com/issue/KT-32031:
@@ -1516,6 +1536,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testReifiedTypes() {
     // Regression test for
     // https://youtrack.jetbrains.com/issue/KT-35610:
@@ -1590,6 +1611,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testModifiers() {
     // Regression test for
     // https://youtrack.jetbrains.com/issue/KT-35610:
@@ -1848,6 +1870,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testKtParameters() {
     // Regression test for
     // https://issuetracker.google.com/134093981
@@ -1893,6 +1916,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testParameterNameFromBinary() {
     // b/401248402
     // https://youtrack.jetbrains.com/issue/IDEA-370420
@@ -1970,6 +1994,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testCatchClausesKotlin() {
     // Regression test for
     // https://issuetracker.google.com/140154274
@@ -2066,6 +2091,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testErroneousTypeAliasInCatchClause() {
     // Regression test from b/376130268
     // https://youtrack.jetbrains.com/issue/KT-73156
@@ -2102,6 +2128,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testSamAst() { // See KT-28272
     val source =
       kotlin(
@@ -2183,6 +2210,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testJava11() {
     val source =
       java(
@@ -2283,6 +2311,7 @@ class UastTest : TestCase() {
     )
   }
 
+  @Test
   fun testRecord() {
     // b/380707645
     // https://youtrack.jetbrains.com/issue/IDEA-363783
@@ -2325,6 +2354,7 @@ class UastTest : TestCase() {
     assertEquals(3, count)
   }
 
+  @Test
   fun testPsiNewExpressionMultiResolve() {
     // b/469501865
     val source =
@@ -2378,6 +2408,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testSealedClassPermit_java() {
     val testFiles =
       arrayOf(
@@ -2427,6 +2458,7 @@ class UastTest : TestCase() {
     )
   }
 
+  @Test
   fun testSealedClassPermit_kt() {
     // b/428697839
     // TODO: https://youtrack.jetbrains.com/issue/KT-78773
@@ -2458,6 +2490,7 @@ class UastTest : TestCase() {
     )
   }
 
+  @Test
   fun testDeprecatedConstVal() {
     // b/428041337
     val source =
@@ -2505,6 +2538,7 @@ class UastTest : TestCase() {
     )
   }
 
+  @Test
   fun test125138962() {
     // Regression test for https://issuetracker.google.com/125138962
     val source =
@@ -2548,6 +2582,7 @@ class UastTest : TestCase() {
     )
   }
 
+  @Test
   fun testIdea234484() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-37200
     val source =
@@ -2585,6 +2620,7 @@ class UastTest : TestCase() {
     )
   }
 
+  @Test
   fun testKt27935() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-27935
     val source =
@@ -2604,6 +2640,7 @@ class UastTest : TestCase() {
     check(source, check = {})
   }
 
+  @Test
   fun testKt36275() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-36275
     val source =
@@ -2637,6 +2674,7 @@ class UastTest : TestCase() {
     )
   }
 
+  @Test
   fun testKt34187() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-34187
     val source =
@@ -2673,6 +2711,7 @@ class UastTest : TestCase() {
     )
   }
 
+  @Test
   fun testKt45676() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-45676,
     // in which backing field annotations were missing their attribute values.
@@ -2747,6 +2786,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolveLambdaVar() { // See KT-46628
     val source =
       kotlin(
@@ -2791,6 +2831,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testSamConstructorCallKind() {
     val source =
       kotlin(
@@ -2814,6 +2855,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testAbstractMapAsSuper() {
     val source =
       kotlin(
@@ -2838,6 +2880,7 @@ class UastTest : TestCase() {
     assertTrue(i > 0)
   }
 
+  @Test
   fun testCommentOnDataClass() {
     val source =
       kotlin(
@@ -2866,6 +2909,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testTextOfModifierListOfFunction() {
     val source =
       kotlin(
@@ -2907,6 +2951,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testTextOfModifierListOfPropertyAccessor() {
     val source =
       kotlin(
@@ -2954,6 +2999,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testConstructorDelegationType() {
     // https://youtrack.jetbrains.com/issue/KTIJ-31633
     val source =
@@ -2995,6 +3041,7 @@ class UastTest : TestCase() {
     assertEquals(5, count)
   }
 
+  @Test
   fun testConstructorReferences() {
     val source =
       kotlin(
@@ -3049,6 +3096,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolveInlineReifiedPropertyFromLibrary() {
     // b/400503220
     val testFiles =
@@ -3117,6 +3165,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun test263887242() {
     val source =
       kotlin(
@@ -3170,6 +3219,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testKT59564() {
     // Regression test from KT-59564
     val source =
@@ -3202,6 +3252,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testFindAnnotationOnObjectFunWithJvmStatic() {
     // Regression test from b/296891200
     val source =
@@ -3240,6 +3291,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testInheritedMethodsInJava() {
     // from b/296638723
     val source =
@@ -3292,6 +3344,7 @@ class UastTest : TestCase() {
     assertEquals(3, count)
   }
 
+  @Test
   fun testJavaFieldIntersectionOverride() {
     // b/400467551
     // https://youtrack.jetbrains.com/issue/KT-75894
@@ -3353,6 +3406,7 @@ class UastTest : TestCase() {
     assertEquals(2, count)
   }
 
+  @Test
   fun testImplicitLambdaParameterInTest() {
     // Example from b/302708854
     val testFiles =
@@ -3405,6 +3459,7 @@ class UastTest : TestCase() {
   }
 
   @OptIn(KaExperimentalApi::class)
+  @Test
   fun testFunInterfaceTypeForLambdaWithLabels() {
     // https://youtrack.jetbrains.com/issue/KT-69453
     // Regression test from b/347626696
@@ -3492,6 +3547,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolveToInlineInLibrary() {
     val testFiles =
       arrayOf(
@@ -3593,6 +3649,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testRecursiveTypeParameterReturnedAsReifiedInlineReturnType() {
     // b/434109500
     val testFiles =
@@ -3679,6 +3736,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolveToInlineInFacadeInLibrary() {
     // b/393435169
     // https://youtrack.jetbrains.com/issue/KTIJ-32941
@@ -3820,6 +3878,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolveProtectedInlineFromSuperClassWithTypeSubstitution() {
     val testFiles =
       arrayOf(
@@ -3937,6 +3996,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testAbstractDelegateToInterface() {
     val testFiles =
       arrayOf(
@@ -4101,6 +4161,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testRetrievingPsiOfLocalFun() {
     val source =
       kotlin(
@@ -4141,6 +4202,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testFunctionalInterfaceTypeForInterfaceWithoutFun() {
     // Regression test from b/325123657
     val testFiles =
@@ -4208,6 +4270,7 @@ class UastTest : TestCase() {
     assertEquals(2, count)
   }
 
+  @Test
   fun testIncorrectImplicitReturnInLambda() {
     val testFiles =
       arrayOf(
@@ -4377,6 +4440,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testReferenceQualifierType() {
     val testFiles =
       arrayOf(
@@ -4451,6 +4515,7 @@ class UastTest : TestCase() {
     assertEquals(expectedTypes.size, count)
   }
 
+  @Test
   fun testReferenceQualifierTypeForDispatchers() {
     // Regression test from b/325107804
     val testFiles =
@@ -4511,6 +4576,7 @@ class UastTest : TestCase() {
     assertEquals(8, count)
   }
 
+  @Test
   fun testContainingClassOfDelegatedImplementationMember() {
     // Regression test for: b/548670996
     val testFiles =
@@ -4553,6 +4619,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolutionToFunWithValueClass() {
     // Regression test from b/324087645
     val testFiles =
@@ -4806,6 +4873,7 @@ class UastTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolutionToJavaMock_source() {
     // Regression from b/325564559
     val testFiles =
@@ -4846,6 +4914,7 @@ class UastTest : TestCase() {
     check(*testFiles) { file -> checkJavaMock(file) }
   }
 
+  @Test
   fun testResolutionToJavaMock_fromBytecode() {
     // Regression from b/325564559
     val testFiles =
@@ -4921,6 +4990,7 @@ class UastTest : TestCase() {
     assertEquals(1, count)
   }
 
+  @Test
   fun testPropertyWithAnonymousObjectInitializer() {
     // b/517167108
     // https://youtrack.jetbrains.com/issue/KTIJ-39039
@@ -4953,6 +5023,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testJavaAnonymousClassImportSTR() {
     // Regression test from b/322179541
     val source =
@@ -4993,6 +5064,7 @@ interface Callback {
     assertEquals(2, count)
   }
 
+  @Test
   fun testAnnotationOnFakePsi() {
     // b/427764853
     // https://youtrack.jetbrains.com/issue/KTIJ-34874
@@ -5041,6 +5113,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testAnnotationOnDeclarationWithValueClass() {
     // b/402629264
     // https://youtrack.jetbrains.com/issue/KTIJ-33916
@@ -5099,6 +5172,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testMethodsBelongToValueClass_source() {
     val testFiles =
       arrayOf(
@@ -5144,6 +5218,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testMethodsBelongToValueClass_binary() {
     val testFiles =
       arrayOf(
@@ -5235,6 +5310,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testMethodsBelongToResultValueClass() {
     // b/343519623
     val source =
@@ -5267,6 +5343,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testResolutionToConstructorWithGenericInBinary() {
     // b/343257595
     val testFiles =
@@ -5359,6 +5436,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testComposeMutableStateValue() {
     // b/446888066 or b/353980920#comment21
     // Similar case for DLC (decompiled LC): https://youtrack.jetbrains.com/issue/KT-78076
@@ -5597,6 +5675,7 @@ interface Callback {
     assertEquals(2, setCount)
   }
 
+  @Test
   fun testResolutionToInternal_binary() {
     // b/347623812
     // b/390221826
@@ -5708,6 +5787,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testAmbiguousNavOptionBuilderPopUpTo() {
     // Regression test from b/370694831
     val testFiles =
@@ -5931,6 +6011,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testAmbiguousExtensionWithSuspend() {
     val testFiles =
       arrayOf(
@@ -6072,6 +6153,7 @@ interface Callback {
     assertTrue(encountered)
   }
 
+  @Test
   fun testAmbiguousCompose() {
     // Regression test from b/371686443
     val testFiles =
@@ -6501,6 +6583,7 @@ interface Callback {
     assertTrue(encountered)
   }
 
+  @Test
   fun testResolutionToExtensionInCompanion() {
     // Regression test from b/360354551
     val testFiles =
@@ -6603,6 +6686,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testGetJavaClass() {
     val source =
       kotlin(
@@ -6636,6 +6720,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testTypeParameterFromClassObjectAccessExpression() {
     // b/400467070
     val testFiles =
@@ -6739,6 +6824,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testResolveJvmNameOnFunctionFromLibrary() {
     val testFiles =
       arrayOf(
@@ -6800,6 +6886,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testResolveJvmNameOnGetterFromLibrary() {
     val testFiles =
       arrayOf(
@@ -6874,6 +6961,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testStringConcatInAnnotationValue() {
     // https://youtrack.jetbrains.com/issue/KT-69452
     // Regression test from b/347629388
@@ -6929,6 +7017,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testLocalPropertyEvaluation() {
     // https://youtrack.jetbrains.com/issue/KTIJ-30649
     val source =
@@ -6974,6 +7063,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testResolveWithTimeout() {
     val testFiles =
       arrayOf(
@@ -7122,6 +7212,7 @@ interface Callback {
     }
   }
 
+  @Test
   fun testResolveProtoDSL() {
     // https://youtrack.jetbrains.com/issue/KTIJ-31140/
     // From `CallGraphTest.protoDataUserKtCallGraphWorks` in boq callgraph contamination check tests
@@ -7449,6 +7540,7 @@ public object ProtoObjectKt {
     }
   }
 
+  @Test
   fun testTypeAliasAnnotation() {
     // b/414789928
     // https://youtrack.jetbrains.com/issue/KTIJ-34026

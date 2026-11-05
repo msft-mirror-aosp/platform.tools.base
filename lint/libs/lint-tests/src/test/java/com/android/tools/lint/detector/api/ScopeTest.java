@@ -16,11 +16,15 @@
 
 package com.android.tools.lint.detector.api;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.EnumSet;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 @SuppressWarnings("javadoc")
-public class ScopeTest extends TestCase {
+public final class ScopeTest {
+    @Test
     public void testIntersect() {
         assertEquals(
                 Scope.RESOURCE_FILE_SCOPE,

@@ -18,6 +18,9 @@ package com.android.tools.lint.detector.api;
 
 import static com.android.tools.lint.checks.infrastructure.TestFiles.java;
 import static com.android.tools.lint.checks.infrastructure.TestFiles.kotlin;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.utils.Pair;
@@ -31,7 +34,7 @@ import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypes;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
-import junit.framework.TestCase;
+import org.junit.Test;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.uast.UExpression;
 import org.jetbrains.uast.UFile;
@@ -39,7 +42,7 @@ import org.jetbrains.uast.UVariable;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
 
 @SuppressWarnings("ClassNameDiffersFromFileName")
-public class TypeEvaluatorTest extends TestCase {
+public final class TypeEvaluatorTest {
     private static void checkUast(
             Object expected, @Language("JAVA") String source, final String targetVariable) {
         checkUast(expected, java("src/test/pkg/Test.java", source), targetVariable);
@@ -179,15 +182,18 @@ public class TypeEvaluatorTest extends TestCase {
         check(expected, source, "expression");
     }
 
+    @Test
     public void testNull() {
         checkExpression(PsiTypes.nullType(), "null");
     }
 
+    @Test
     public void testStrings() {
         checkExpression(String.class, "\"hello\"");
         checkExpression(String.class, "\"ab\" + \"cd\"");
     }
 
+    @Test
     public void testBooleans() {
         checkExpression(Boolean.TYPE, "true");
         checkExpression(Boolean.TYPE, "false");
@@ -196,6 +202,7 @@ public class TypeEvaluatorTest extends TestCase {
         checkExpression(Boolean.TYPE, "!false");
     }
 
+    @Test
     public void testCasts() {
         checkExpression(Integer.TYPE, "(int)1");
         checkExpression(Long.TYPE, "(long)1");
@@ -206,6 +213,7 @@ public class TypeEvaluatorTest extends TestCase {
         checkExpression(Double.TYPE, "(double)-5");
     }
 
+    @Test
     public void testArithmetic() {
         checkExpression(Integer.TYPE, "1");
         checkExpression(Long.TYPE, "1L");
@@ -242,6 +250,7 @@ public class TypeEvaluatorTest extends TestCase {
         checkExpression(Float.TYPE, "1.0f + 2.5f");
     }
 
+    @Test
     public void testFieldReferences() {
         checkExpression(Integer.TYPE, "MY_INT_FIELD");
         checkExpression(String.class, "MY_STRING_FIELD");
@@ -249,6 +258,7 @@ public class TypeEvaluatorTest extends TestCase {
         checkExpression(Integer.TYPE, "3 - (MY_INT_FIELD + 2)");
     }
 
+    @Test
     public void testStatements() {
         checkStatements(
                 Integer.TYPE,
@@ -269,6 +279,7 @@ public class TypeEvaluatorTest extends TestCase {
                 "finalString");
     }
 
+    @Test
     public void testConditionals() {
         checkStatements(
                 Integer.TYPE,
@@ -283,10 +294,12 @@ public class TypeEvaluatorTest extends TestCase {
                 "z");
     }
 
+    @Test
     public void testConstructorInvocation() {
         checkStatements(String.class, "Object o = new String(\"test\");\nObject bar = o;\n", "bar");
     }
 
+    @Test
     public void testConstructorFqnInvocation() {
         checkStatements(
                 String.class,
@@ -305,6 +318,7 @@ public class TypeEvaluatorTest extends TestCase {
                 "bar");
     }
 
+    @Test
     public void testFieldInitializerType() {
         checkStatements(String.class, "Object o = MY_OBJECT_FIELD;\nObject bar = o;\n", "bar");
     }

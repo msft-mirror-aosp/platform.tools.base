@@ -66,16 +66,24 @@ import java.io.File.separator
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.util.Locale
-import junit.framework.TestCase
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.config.LanguageVersionSettings
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
+import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 
-class LintUtilsTest : TestCase() {
+class LintUtilsTest {
+  @Test
   fun testPrintList() {
     assertEquals("bar, baz, foo", formatList(listOf("foo", "bar", "baz"), 3))
     assertEquals("foo, bar, baz", formatList(listOf("foo", "bar", "baz"), 3, false))
@@ -88,6 +96,7 @@ class LintUtilsTest : TestCase() {
     assertEquals("foo, bar and baz", formatList(listOf("foo", "bar", "baz"), 0, false, true))
   }
 
+  @Test
   fun testIsDataBindingExpression() {
     assertTrue(isDataBindingExpression("@{foo}"))
     assertTrue(isDataBindingExpression("@={foo}"))
@@ -97,6 +106,7 @@ class LintUtilsTest : TestCase() {
     assertFalse(isDataBindingExpression("foo"))
   }
 
+  @Test
   fun testDescribeCounts() {
     assertThat(describeCounts(0, 0, 0, true, true)).isEqualTo("No errors or warnings")
     assertThat(describeCounts(0, 0, 0, true, false)).isEqualTo("no errors or warnings")
@@ -127,6 +137,7 @@ class LintUtilsTest : TestCase() {
     assertThat(describeCounts(0, 0, 2, true, true, true)).isEqualTo("0 errors, 0 warnings, 2 hints")
   }
 
+  @Test
   fun testEndsWith() {
     assertTrue(endsWith("Foo", ""))
     assertTrue(endsWith("Foo", "o"))
@@ -138,6 +149,7 @@ class LintUtilsTest : TestCase() {
     assertFalse(endsWith("Foo", "f"))
   }
 
+  @Test
   fun testStartsWith() {
     assertTrue(startsWith("FooBar", "Bar", 3))
     assertTrue(startsWith("FooBar", "BAR", 3))
@@ -145,6 +157,7 @@ class LintUtilsTest : TestCase() {
     assertFalse(startsWith("FooBar", "Foo", 2))
   }
 
+  @Test
   fun testIsXmlFile() {
     assertTrue(isXmlFile(File("foo.xml")))
     assertTrue(isXmlFile(File("foo.Xml")))
@@ -155,6 +168,7 @@ class LintUtilsTest : TestCase() {
     assertFalse(isXmlFile(File("xml.png")))
   }
 
+  @Test
   fun testEditDistance() {
     assertEquals(0, editDistance("kitten", "kitten"))
 
@@ -177,6 +191,7 @@ class LintUtilsTest : TestCase() {
     assertFalse(isEditableTo("radiobutton", "bitton", 3))
   }
 
+  @Test
   fun testSplitPath() {
     assertTrue(arrayOf("/foo", "/bar", "/baz").contentEquals(Iterables.toArray(splitPath("/foo:/bar:/baz"), String::class.java)))
 
@@ -199,6 +214,7 @@ class LintUtilsTest : TestCase() {
     assertTrue(arrayOf("C:\\foo", "/bar").contentEquals(Iterables.toArray(splitPath("C:\\foo:/bar"), String::class.java)))
   }
 
+  @Test
   fun testCommonParen1() {
     assertEquals(File("/a"), getCommonParent(File("/a/b/c/d/e"), File("/a/c")))
     assertEquals(File("/a"), getCommonParent(File("/a/c"), File("/a/b/c/d/e")))
@@ -216,6 +232,7 @@ class LintUtilsTest : TestCase() {
     assertEquals(File("/foo/bar"), getCommonParent(File("/foo/bar"), File("/foo/bar/baz")))
   }
 
+  @Test
   fun testCommonParent2() {
     assertEquals(File("/"), getCommonParent(listOf(File("/foo/bar"), File("/bar/baz"))))
     assertEquals(File("/"), getCommonParent(listOf(File("/foo/bar"), File("/"))))
@@ -227,12 +244,14 @@ class LintUtilsTest : TestCase() {
     assertEquals(File("/foo/bar"), getCommonParent(listOf(File("/foo/bar"), File("/foo/bar/baz"), File("/foo/bar/foo2/foo3"))))
   }
 
+  @Test
   fun testStripIdPrefix() {
     assertEquals("foo", stripIdPrefix("@+id/foo"))
     assertEquals("foo", stripIdPrefix("@id/foo"))
     assertEquals("foo", stripIdPrefix("foo"))
   }
 
+  @Test
   fun testIdReferencesMatch() {
     assertTrue(idReferencesMatch("@+id/foo", "@+id/foo"))
     assertTrue(idReferencesMatch("@id/foo", "@id/foo"))
@@ -255,6 +274,7 @@ class LintUtilsTest : TestCase() {
     assertFalse(idReferencesMatch("@+id/foo1", "@id/foo"))
   }
 
+  @Test
   fun testGetEncodedString() {
     checkEncoding("utf-8", false /*bom*/, "\n")
     checkEncoding("UTF-8", false /*bom*/, "\n")
@@ -286,6 +306,7 @@ class LintUtilsTest : TestCase() {
     checkEncoding("UTF_32LE", true /*bom*/, "\r\n")
   }
 
+  @Test
   fun testGetLocale() {
     assertNull(getLocale(""))
     assertNull(getLocale("values"))
@@ -297,6 +318,7 @@ class LintUtilsTest : TestCase() {
   }
 
   @Suppress("JoinDeclarationAndAssignment")
+  @Test
   fun testGetLocale2() {
     var xml: TestFile
     var context: XmlContext
@@ -337,6 +359,7 @@ class LintUtilsTest : TestCase() {
     (context.project.client as? LintCliClient)?.disposeProjects(listOf(context.project))
   }
 
+  @Test
   fun testGetLocaleAndRegion() {
     assertNull(getLocaleAndRegion(""))
     assertNull(getLocaleAndRegion("values"))
@@ -348,6 +371,7 @@ class LintUtilsTest : TestCase() {
     assertEquals("ms", getLocaleAndRegion("values-ms-keyshidden"))
   }
 
+  @Test
   fun testComputeResourceName() {
     assertEquals("", computeResourceName("", "", null))
     assertEquals("foo", computeResourceName("", "foo", null))
@@ -362,6 +386,7 @@ class LintUtilsTest : TestCase() {
     assertEquals("MyPrefixMyStyle", computeResourceName("myPrefix_", "MyStyle", ResourceFolderType.VALUES))
   }
 
+  @Test
   fun testIsModelOlderThan() {
     val project: Project = mock()
 
@@ -392,6 +417,7 @@ class LintUtilsTest : TestCase() {
     assertFalse(isModelOlderThan(project, 0, 11, 0))
   }
 
+  @Test
   fun testFindSubstring() {
     assertEquals("foo", findSubstring("foo", null, null))
     assertEquals("foo", findSubstring("foo  ", null, "  "))
@@ -399,10 +425,12 @@ class LintUtilsTest : TestCase() {
     assertEquals("foo", findSubstring("[foo]", "[", "]"))
   }
 
+  @Test
   fun testGetFormattedParameters() {
     assertEquals(listOf("foo", "bar"), getFormattedParameters("Prefix %1\$s Divider %2\$s Suffix", "Prefix foo Divider bar Suffix"))
   }
 
+  @Test
   fun testEscapePropertyValue() {
     assertEquals("foo", escapePropertyValue("foo"))
     assertEquals("\\  foo  ", escapePropertyValue("  foo  "))
@@ -416,6 +444,7 @@ class LintUtilsTest : TestCase() {
     )
   }
 
+  @Test
   fun testGetAutoBoxedType() {
     assertEquals(TYPE_INTEGER_WRAPPER, getAutoBoxedType(TYPE_INT))
     assertEquals(TYPE_INT, getPrimitiveType(TYPE_INTEGER_WRAPPER))
@@ -450,6 +479,7 @@ class LintUtilsTest : TestCase() {
     }
   }
 
+  @Test
   fun testResolveManifestName() {
     assertEquals(
       "test.pkg.TestActivity",
@@ -524,12 +554,14 @@ class LintUtilsTest : TestCase() {
     )
   }
 
+  @Test
   fun testGetFileNameWithParent() {
     assertThat(getFileNameWithParent(TestLintClient(), File("tmp" + separator + "foo" + separator + "bar.baz"))).isEqualTo("foo/bar.baz")
     assertThat(getFileNameWithParent(LintCliClient(CLIENT_UNIT_TESTS), File("tmp" + separator + "foo" + separator + "bar.baz")))
       .isEqualTo("foo/bar.baz")
   }
 
+  @Test
   fun testResolvePlaceholders() {
     assertEquals("test", resolvePlaceHolders(null, "test"))
     assertEquals("test", resolvePlaceHolders(null, "test"))
@@ -540,6 +572,7 @@ class LintUtilsTest : TestCase() {
     assertEquals(" First Second ", resolvePlaceHolders(null, " \${abc} \${def} ", mapOf("abc" to "First", "def" to "Second"), ""))
   }
 
+  @Test
   fun testResolvePlaceholdersInfiniteLoop() {
     // Regression test for infinite loop issue identified in b/416480093
     assertEquals(
@@ -567,6 +600,7 @@ class LintUtilsTest : TestCase() {
     )
   }
 
+  @Test
   fun testJavaKeyword() {
     assertThat(isJavaKeyword("")).isFalse()
     assertThat(isJavaKeyword("iff")).isFalse()
@@ -575,6 +609,7 @@ class LintUtilsTest : TestCase() {
     assertThat(isJavaKeyword("false")).isTrue()
   }
 
+  @Test
   fun testIsParent() {
     fun file(path: String): File {
       return File(path.platformPath())
@@ -589,6 +624,7 @@ class LintUtilsTest : TestCase() {
     assertFalse(isParent(file("/tmp/foo"), file("/tmp/fooo")))
   }
 
+  @Test
   fun testGetFileUri() {
     val pwd = System.getProperty("user.dir")
     val uri = getFileUri(File("$pwd${separator}foo"))
@@ -596,6 +632,7 @@ class LintUtilsTest : TestCase() {
     assertTrue(uri.endsWith("/foo"))
   }
 
+  @Test
   fun testMatchElements() {
     /** Find an element under [element] whose id or name or position descriptor matches [id] */
     fun findElement(element: Element, id: String, parents: String = ""): Element? {

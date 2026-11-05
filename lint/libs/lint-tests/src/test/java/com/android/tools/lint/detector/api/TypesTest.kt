@@ -18,7 +18,6 @@ package com.android.tools.lint.detector.api
 
 import com.intellij.openapi.util.Disposer
 import java.io.File
-import junit.framework.TestCase
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UFile
@@ -26,9 +25,12 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.asRecursiveLogString
 import org.jetbrains.uast.visitor.AbstractUastVisitor
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 // Misc tests to verify type handling in the Kotlin UAST initialization.
-class TypesTest : TestCase() {
+class TypesTest {
+  @Test
   fun testPrimitiveKotlinTypes() {
     val pair =
       LintUtilsTest.parseKotlin(
@@ -199,6 +201,7 @@ class TypesTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testPrimitiveKotlinTypes2() {
     val pair =
       LintUtilsTest.parseKotlin(
@@ -229,6 +232,7 @@ class TypesTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testSecondaryConstructorBodies() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-21575
     val pair =
@@ -278,6 +282,7 @@ class TypesTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testPrimitiveKotlinTypes3() {
     val pair =
       LintUtilsTest.parseKotlin(
@@ -313,6 +318,7 @@ class TypesTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testJavaEnums() {
     // Regression test for https://youtrack.jetbrains.com/oauth?state=%2Fissue%2FKT-23456
     val pair =
@@ -354,6 +360,7 @@ class TypesTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testKotlinEnums() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-23456
     val pair =
@@ -395,6 +402,7 @@ class TypesTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testVoidVersusUnit() {
     val pair =
       LintUtilsTest.parseKotlin(

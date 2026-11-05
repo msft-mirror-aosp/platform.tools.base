@@ -21,17 +21,19 @@ import static com.android.tools.lint.detector.api.TextFormat.HTML;
 import static com.android.tools.lint.detector.api.TextFormat.HTML_WITH_UNICODE;
 import static com.android.tools.lint.detector.api.TextFormat.RAW;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+import static org.junit.Assert.assertEquals;
 
 import com.android.tools.lint.checks.PrivateApiDetector;
 import com.android.tools.lint.checks.infrastructure.TestIssueRegistry;
 import com.android.tools.lint.client.api.LintClient;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class TextFormatTest extends TestCase {
+public final class TextFormatTest {
     private static String convertMarkup(String raw, TextFormat to) {
         return RAW.convertTo(raw, to);
     }
 
+    @Test
     public void testConvertMarkup() {
         assertEquals("", convertMarkup("", HTML));
 
@@ -145,6 +147,7 @@ public class TextFormatTest extends TestCase {
                 convertMarkup("<ignore path=\\\"\\*/test/\\*\\\" />\\n\"", HTML));
     }
 
+    @Test
     public void testUrlTerminators() {
         assertEquals(
                 "<a href=\"https://issuetracker.google.com/issues/new?component=192731\">https://issuetracker.google.com/issues/new?component=192731</a>",
@@ -166,6 +169,7 @@ public class TextFormatTest extends TestCase {
                 convertMarkup("The URL is http://developer.android.com/. That's it.", HTML));
     }
 
+    @Test
     public void testEndUrl() {
         // Regression test for 65713835: Invalid link when click tooltip
         assertEquals(
@@ -185,6 +189,7 @@ public class TextFormatTest extends TestCase {
                         HTML));
     }
 
+    @Test
     public void testConvertMarkup2() {
         // http at the end:
         // Explanation from ManifestDetector#TARGET_NEWER
@@ -218,6 +223,7 @@ public class TextFormatTest extends TestCase {
                 convertMarkup(explanation, HTML));
     }
 
+    @Test
     public void testConvertMarkup3() {
         // embedded http markup test
         // Explanation from NamespaceDetector#CUSTOMVIEW
@@ -240,6 +246,7 @@ public class TextFormatTest extends TestCase {
                 convertMarkup(explanation, HTML));
     }
 
+    @Test
     public void testConvertMarkup4() {
         // monospace test
         String explanation =
@@ -256,6 +263,7 @@ public class TextFormatTest extends TestCase {
                 convertMarkup(explanation, HTML));
     }
 
+    @Test
     public void testConvertMarkup5() {
         // monospace and bold test
         // From ManifestDetector#MULTIPLE_USES_SDK
@@ -274,6 +282,7 @@ public class TextFormatTest extends TestCase {
                 convertMarkup(explanation, HTML));
     }
 
+    @Test
     public void testConvertMarkup6() {
         // Embedded code next to attributes
         // From AlwaysShowActionDetector#ISSUE
@@ -310,6 +319,7 @@ public class TextFormatTest extends TestCase {
                 convertMarkup(explanation, HTML));
     }
 
+    @Test
     public void testFencedBlockHtml() {
         String html =
                 RAW.convertTo(
@@ -336,6 +346,7 @@ public class TextFormatTest extends TestCase {
                 html);
      }
 
+    @Test
     public void testConvertFencedBlockFromHtml() {
         String html =
                 ""
@@ -361,6 +372,7 @@ public class TextFormatTest extends TestCase {
                 text.trim());
     }
 
+    @Test
     public void testFencedBlockText() {
         String html =
                 RAW.convertTo(
@@ -385,6 +397,7 @@ public class TextFormatTest extends TestCase {
                 html);
     }
 
+    @Test
     public void testFencedBlockBeginning() {
         String html =
                 RAW.convertTo(
@@ -394,6 +407,7 @@ public class TextFormatTest extends TestCase {
                 html);
     }
 
+    @Test
     public void testFencedCodeBlock() {
         String html =
                 RAW.convertTo(
@@ -416,6 +430,7 @@ public class TextFormatTest extends TestCase {
                 html);
     }
 
+    @Test
     public void testConvertSelf() {
         // No changes
         assertEquals("`foo`<b>", RAW.convertTo("`foo`<b>", RAW));
@@ -423,12 +438,14 @@ public class TextFormatTest extends TestCase {
         assertEquals("`foo`<b>", HTML.convertTo("`foo`<b>", HTML));
     }
 
+    @Test
     public void testConvertFromHtml() {
         assertEquals(
                 "Line 1\nLine 2 <div>\n",
                 HTML.convertTo("<html>Line 1<br>Line 2\n<!-- comment -->&lt;div&gt;</html>", TEXT));
     }
 
+    @Test
     public void testEscapedNewlines() {
         assertEquals(
                 "Using reflection to access hidden/private Android APIs is not safe; it will often not work on devices from other vendors, and it may suddenly stop working (if the API is removed) or crash spectacularly (if the API behavior changes, since there are no guarantees for compatibility).",
@@ -437,6 +454,7 @@ public class TextFormatTest extends TestCase {
         assertEquals("abcd<br/>\nef", RAW.convertTo("ab\\\ncd\nef", HTML));
     }
 
+    @Test
     public void testConvert() {
         assertEquals(
                 ""
@@ -469,6 +487,7 @@ public class TextFormatTest extends TestCase {
                         TEXT));
     }
 
+    @Test
     public void testConvertFromHtml2() {
         assertEquals(
                 ""
@@ -506,6 +525,7 @@ public class TextFormatTest extends TestCase {
                         TEXT));
     }
 
+    @Test
     public void testConvertFromHtml3() {
         assertEquals(
                 ""
@@ -531,6 +551,7 @@ public class TextFormatTest extends TestCase {
                         TEXT));
     }
 
+    @Test
     public void testConvertFromHtml4() {
         assertEquals(
                 ""
@@ -575,22 +596,26 @@ public class TextFormatTest extends TestCase {
                         RAW));
     }
 
+    @Test
     public void testNbsp() {
         assertEquals("&nbsp;&nbsp;text", RAW.convertTo("\u00a0\u00A0text", HTML));
     }
 
+    @Test
     public void test181820() {
         // Regression test for https://code.google.com/p/android/issues/detail?id=181820
         // Make sure we handle formatting characters at the end
         assertEquals("foo bar *", convertMarkup("foo bar *", HTML));
     }
 
+    @Test
     public void testHttps() {
         assertEquals(
                 "Visit <a href=\"https://google.com\">https://google.com</a>.",
                 convertMarkup("Visit https://google.com.", HTML));
     }
 
+    @Test
     public void testConvertAll() {
         LintClient.setClientName(LintClient.CLIENT_UNIT_TESTS);
         for (Issue issue : new TestIssueRegistry().getIssues()) {
@@ -604,6 +629,7 @@ public class TextFormatTest extends TestCase {
         }
     }
 
+    @Test
     public void testTextToRaw() {
         assertEquals(
                 "foo\\\\bar\\*baz\\*", TextFormat.TEXT.convertTo("foo\\bar*baz*", TextFormat.RAW));

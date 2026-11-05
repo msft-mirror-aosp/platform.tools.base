@@ -20,18 +20,20 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.base64gzip
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.intellij.openapi.util.Disposer
-import junit.framework.TestCase
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UResolvable
 import org.jetbrains.uast.visitor.AbstractUastVisitor
+import org.junit.Assert.assertEquals
 import org.junit.Rule
+import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 // Misc tests to verify resolve-handling in the Kotlin UAST initialization.
-class ResolveTest : TestCase() {
+class ResolveTest {
   @get:Rule val folder = TemporaryFolder()
 
+  @Test
   fun testKotlinReferencesIntoJavaSource() {
     val tests =
       arrayOf(
@@ -82,6 +84,7 @@ class ResolveTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testKotlinPropertyAccess() {
     val tests =
       arrayOf(
@@ -126,6 +129,7 @@ class ResolveTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testKotlinReferencesIntoBytecode() {
     val tests =
       arrayOf(
@@ -178,6 +182,7 @@ class ResolveTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testJavaReferencesIntoBytecode() {
     val tests =
       arrayOf(
@@ -226,6 +231,7 @@ class ResolveTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testKt40578() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-40578:
     // write accesses to Kotlin properties should resolve to setter.
@@ -271,6 +277,7 @@ class ResolveTest : TestCase() {
     Disposer.dispose(pair.second)
   }
 
+  @Test
   fun testKt47846() {
     // Regression test for https://youtrack.jetbrains.com/issue/KT-47846:
     // Stack overflow when handling enhanced recursive type parameter.
