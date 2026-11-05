@@ -16,29 +16,31 @@
 
 package com.android.tools.perflib.heap.analysis;
 
+import static org.junit.Assert.assertEquals;
+
 import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.*;
 import com.android.tools.perflib.captures.DataBuffer;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
 import com.google.common.collect.Maps;
 
-import junit.framework.TestCase;
-
 import java.util.List;
 import java.util.Map;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * There are two testing scenarios we want to cover here: basic connectivity between different
  * Instance types, and the visitor's ability to deal with cycles, diamonds, etc. in the graph. For
  * the latter we create heaps that are only concerned with connectivity between nodes.
  */
-public class VisitorsTest extends TestCase {
+public final class VisitorsTest {
 
     private final ClassObj mDummyClass = new ClassObj(42, null, "dummy", 0);
 
     private Snapshot mSnapshot;
 
-    @Override
+    @Before
     public void setUp() throws Exception {
         mSnapshot = new Snapshot(new InMemoryBuffer(10));
         mSnapshot.setHeapTo(13, "testHeap");
@@ -46,6 +48,7 @@ public class VisitorsTest extends TestCase {
         mSnapshot.addClass(42, mDummyClass);
     }
 
+    @Test
     public void testSimpleStaticFieldsGraph() {
         mSnapshot.setIdSize(4);
         final ClassInstance object1 = new ClassInstance(1, null, 0);
@@ -80,6 +83,7 @@ public class VisitorsTest extends TestCase {
         assertEquals(50, root.getCompositeSize());
     }
 
+    @Test
     public void testSimpleArray() {
         mSnapshot.setIdSize(4);
         final ClassInstance object = new ClassInstance(1, null, 0);
@@ -105,6 +109,7 @@ public class VisitorsTest extends TestCase {
         assertEquals(32, root.getCompositeSize());
     }
 
+    @Test
     public void testBasicDiamond() {
         Snapshot snapshot = new SnapshotBuilder(4)
                 .addReferences(1, 2, 3)
@@ -120,6 +125,7 @@ public class VisitorsTest extends TestCase {
         assertEquals(4, snapshot.findInstance(4).getCompositeSize());
     }
 
+    @Test
     public void testBasicCycle() {
         Snapshot snapshot = new SnapshotBuilder(3)
                 .addReferences(1, 2)

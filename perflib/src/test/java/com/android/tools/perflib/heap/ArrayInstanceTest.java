@@ -16,19 +16,21 @@
 
 package com.android.tools.perflib.heap;
 
+import static org.junit.Assert.assertEquals;
+
 import com.android.tools.perflib.heap.hprof.*;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
-
-import junit.framework.TestCase;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.junit.Test;
 
-public class ArrayInstanceTest extends TestCase {
+public final class ArrayInstanceTest {
 
+    @Test
     public void testCharArrayInstance() throws IOException {
         // Set up a heap dump with an array of characters:
         //  {'a', 'b', 'c', 'd'}.

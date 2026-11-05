@@ -17,6 +17,8 @@
 package com.android.tools.perflib.heap.io;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import com.android.annotations.NonNull;
 import com.android.testutils.TestResources;
@@ -24,22 +26,24 @@ import com.android.tools.perflib.heap.Snapshot;
 import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
 
 import java.nio.file.Files;
-import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
+import org.junit.Test;
 
-public class MemoryMappedFileBufferTest extends TestCase {
+public final class MemoryMappedFileBufferTest {
 
     File file = TestResources.getFile(getClass(), "/dialer.android-hprof");
 
+    @Test
     public void testSimpleMapping() throws Exception {
         Snapshot snapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
         assertSnapshotCorrect(snapshot);
         snapshot.dispose();
     }
 
+    @Test
     public void testMultiMapping() throws Exception {
         // Split the file into chunks of 4096 bytes each, leave 128 bytes for padding.
         MemoryMappedFileBuffer shardedBuffer = new MemoryMappedFileBuffer(file, 4096, 128);
@@ -48,6 +52,7 @@ public class MemoryMappedFileBufferTest extends TestCase {
         snapshot.dispose();
     }
 
+    @Test
     public void testMultiMappingWrappedRead() throws Exception {
         // Leave just 8 bytes for padding to force wrapped reads.
         MemoryMappedFileBuffer shardedBuffer = new MemoryMappedFileBuffer(file, 9973, 8);
@@ -56,6 +61,7 @@ public class MemoryMappedFileBufferTest extends TestCase {
         snapshot.dispose();
     }
 
+    @Test
     public void testMemoryMappingRemoval() throws Exception {
         File tmpFile = File.createTempFile("test_vm", ".tmp");
         System.err.println("vm temp file: " + tmpFile.getAbsolutePath());
@@ -86,6 +92,7 @@ public class MemoryMappedFileBufferTest extends TestCase {
         assertFalse(g.exists());
     }
 
+    @Test
     public void testSubsequenceReads() throws Exception {
         byte[] fileContents = Files.readAllBytes(file.toPath());
         MemoryMappedFileBuffer mappedBuffer = new MemoryMappedFileBuffer(file, 8259, 8);

@@ -16,16 +16,22 @@
 
 package com.android.tools.perflib.heap;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.testutils.TestResources;
 import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
 
-import junit.framework.TestCase;
-
 import java.io.File;
 import java.util.Collection;
+import org.junit.Test;
 
-public class QueriesTest extends TestCase {
+public final class QueriesTest {
 
+    @Test
     public void testCommonClassesQuery() throws Exception {
         File basic = TestResources.getFile(getClass(), "/basic.android-hprof");
         Snapshot basicSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(basic));

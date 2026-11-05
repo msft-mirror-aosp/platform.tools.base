@@ -16,6 +16,11 @@
 
 package com.android.tools.perflib.vmtrace;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.testutils.TestResources;
 import com.google.common.primitives.Ints;
 import java.io.File;
@@ -23,9 +28,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class VmTraceParserTest extends TestCase {
+public final class VmTraceParserTest {
+    @Test
     public void testParseHeader() throws IOException {
         File f = getFile("/header.trace");
         VmTraceData.Builder dataBuilder = new VmTraceData.Builder();
@@ -60,6 +66,7 @@ public class VmTraceParserTest extends TestCase {
         assertEquals(-1, info.srcLineNumber);
     }
 
+    @Test
     public void testVerifyFileHasArtHeaderMismatchedSimpleperfTrace() {
         File f = getFile("/simpleperf.trace");
         VmTraceData.Builder dataBuilder = new VmTraceData.Builder();
@@ -67,6 +74,7 @@ public class VmTraceParserTest extends TestCase {
         assertFalse(result);
     }
 
+    @Test
     public void testVerifyFileHasArtHeaderMismatchedAtrace() {
         File f = getFile("/atrace.ctrace");
         VmTraceData.Builder dataBuilder = new VmTraceData.Builder();
@@ -74,6 +82,7 @@ public class VmTraceParserTest extends TestCase {
         assertFalse(result);
     }
 
+    @Test
     public void testVerifyFileHasArtHeaderMismatchedPerfettoTrace() {
         File f = getFile("/perfetto.trace");
         VmTraceData.Builder dataBuilder = new VmTraceData.Builder();
@@ -81,6 +90,7 @@ public class VmTraceParserTest extends TestCase {
         assertFalse(result);
     }
 
+    @Test
     public void testVerifyFileHasArtHeaderStreamingTrace() {
         File f = getFile("/streaming.trace");
         VmTraceData.Builder dataBuilder = new VmTraceData.Builder();
@@ -88,6 +98,7 @@ public class VmTraceParserTest extends TestCase {
         assertTrue(result);
     }
 
+    @Test
     public void testVerifyFileHasArtHeaderNonStreamingTrace() {
         File f = getFile("/non_streaming.trace");
         VmTraceData.Builder dataBuilder = new VmTraceData.Builder();
@@ -122,6 +133,7 @@ public class VmTraceParserTest extends TestCase {
         assertEquals(expectedCallSequence, actual);
     }
 
+    @Test
     public void testBasicTrace() throws IOException {
         String expected =
                           " -> AsyncTask #1.:  -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
@@ -133,6 +145,7 @@ public class VmTraceParserTest extends TestCase {
         testTrace("/basic-api10.trace", "AsyncTask #1", expected);
     }
 
+    @Test
     public void testSpecialChar() throws IOException {
         File f = getFile("/basic-special_char.trace");
         VmTraceData.Builder dataBuilder = new VmTraceData.Builder();
@@ -149,6 +162,7 @@ public class VmTraceParserTest extends TestCase {
         assertEquals("startMethodTracingö", info.methodName);
     }
 
+    @Test
     public void testCharWith2Bytes() throws IOException {
         VmTraceData traceData = getVmTraceData("/char_2_bytes.trace");
 
@@ -158,6 +172,7 @@ public class VmTraceParserTest extends TestCase {
         assertEquals(2, info.methodName.getBytes().length);
     }
 
+    @Test
     public void testMisMatchedTrace() throws IOException {
         String expected =
                   " -> AsyncTask #1.:  -> com/test/android/traceview/MisMatched.foo: ()V -> com/test/android/traceview/MisMatched.bar: ()V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
@@ -166,6 +181,7 @@ public class VmTraceParserTest extends TestCase {
         testTrace("/mismatched.trace", "AsyncTask #1", expected);
     }
 
+    @Test
     public void testExceptionTrace() throws IOException {
         String expected =
                   " -> AsyncTask #1.:  -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
@@ -175,6 +191,7 @@ public class VmTraceParserTest extends TestCase {
         testTrace("/exception.trace", "AsyncTask #1", expected);
     }
 
+    @Test
     public void testCallDurations() throws IOException {
         validateCallDurations("/non_streaming.trace", "AsyncTask #1");
         validateCallDurations("/mismatched.trace", "AsyncTask #1");
@@ -200,6 +217,7 @@ public class VmTraceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testMethodStats() throws IOException {
         VmTraceData traceData = getVmTraceData("/non_streaming.trace");
         final ThreadInfo thread = traceData.getThread("AsyncTask #1");
@@ -227,6 +245,7 @@ public class VmTraceParserTest extends TestCase {
 
     // Validate that the inclusive time of the top level call = sum of all inclusive times of
     // all methods called from that top level
+    @Test
     public void testMethodStats2() throws IOException {
         VmTraceData traceData = getVmTraceData("/non_streaming.trace");
         ThreadInfo thread = traceData.getThread("AsyncTask #1");
@@ -249,6 +268,7 @@ public class VmTraceParserTest extends TestCase {
         assertEquals(topThreadTime, sum);
     }
 
+    @Test
     public void testMethodProfileData() throws IOException {
         VmTraceData traceData = getVmTraceData("/non_streaming.trace");
         ThreadInfo thread = traceData.getThread("AsyncTask #1");
@@ -360,6 +380,7 @@ public class VmTraceParserTest extends TestCase {
     }
 
 
+    @Test
     public void testSearch() throws IOException {
         VmTraceData traceData = getVmTraceData("/non_streaming.trace");
         ThreadInfo thread = traceData.getThread("AsyncTask #1");
@@ -372,6 +393,7 @@ public class VmTraceParserTest extends TestCase {
     }
 
     // Validates that search is not impacted by current locale
+    @Test
     public void testSearchLocale() throws IOException {
         VmTraceData traceData = getVmTraceData("/non_streaming.trace");
         ThreadInfo thread = traceData.getThread("AsyncTask #1");
@@ -393,6 +415,7 @@ public class VmTraceParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testStreamingTrace() throws IOException {
         VmTraceData traceData = getVmTraceData("/streaming.trace");
         // Check version

@@ -16,11 +16,13 @@
 package com.android.tools.perflib.heap.analysis
 
 import java.util.stream.Stream
-import junit.framework.Assert.assertEquals
-import junit.framework.TestCase
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
 
-class LinkEvalDominatorsTest : TestCase() {
+class LinkEvalDominatorsTest {
 
+  @Test
   fun testSimpleGraph() =
     with(compute(Graph.Builder<Int>().addEdges(1, 2, 3).addEdges(2, 4, 6).addEdges(3, 4, 5).addEdges(4, 6).addRoots(1))) {
       assertEquals(6, countReachable())
@@ -31,6 +33,7 @@ class LinkEvalDominatorsTest : TestCase() {
       assertImmDominates(3, 5)
     }
 
+  @Test
   fun testCyclicGraph() =
     with(compute(Graph.Builder<Int>().addEdges(1, 2, 3, 4).addEdges(2, 3).addEdges(3, 4).addEdges(4, 2).addRoots(1))) {
       assertEquals(4, countReachable())
@@ -39,6 +42,7 @@ class LinkEvalDominatorsTest : TestCase() {
       assertImmDominates(1, 4)
     }
 
+  @Test
   fun testMultipleRoots() =
     with(compute(Graph.Builder<Int>().addEdges(1, 3).addEdges(2, 4).addEdges(3, 5).addEdges(4, 5).addEdges(5, 6).addRoots(1, 2))) {
       assertEquals(6, countReachable())
@@ -49,6 +53,7 @@ class LinkEvalDominatorsTest : TestCase() {
       assertImmDominates(5, 6)
     }
 
+  @Test
   fun testMultiplePaths() =
     with(
       compute(

@@ -16,19 +16,21 @@
 
 package com.android.tools.perflib.heap;
 
+import static org.junit.Assert.assertEquals;
+
 import com.android.tools.perflib.heap.hprof.*;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
-
-import junit.framework.TestCase;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.junit.Test;
 
-public class StacksTest extends TestCase {
+public final class StacksTest {
 
+    @Test
     public void testStackTraces() throws IOException {
         // Set up a heap dump with 3 stack frames, 2 stack traces, one class
         // with two instances, where each instance is allocated from a different

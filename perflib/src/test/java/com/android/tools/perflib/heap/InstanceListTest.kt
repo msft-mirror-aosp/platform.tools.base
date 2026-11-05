@@ -16,9 +16,10 @@
 package com.android.tools.perflib.heap
 
 import com.google.common.truth.Truth.assertThat
-import junit.framework.TestCase
+import org.junit.Test
 
-class InstanceListTest : TestCase() {
+class InstanceListTest {
+  @Test
   fun testAddition() {
     val l1 = InstanceList.Empty + RootObj(RootType.INVALID_TYPE, 0, 0, null) + RootObj(RootType.INVALID_TYPE, 1, 0, null)
     assertThat(l1.asList()).hasSize(2)
@@ -26,6 +27,7 @@ class InstanceListTest : TestCase() {
     assertThat(l2.asList()).hasSize(3)
   }
 
+  @Test
   fun testEliminator() {
     fun size(l: InstanceList) = l.onCases({ 1 }, { it.size })
     assertThat(size(InstanceList.Empty)).isEqualTo(0)

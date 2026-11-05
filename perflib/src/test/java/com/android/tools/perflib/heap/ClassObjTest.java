@@ -19,30 +19,29 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.android.testutils.TestResources;
 import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
-import junit.framework.TestCase;
 
 import java.io.File;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-public class ClassObjTest extends TestCase {
+public final class ClassObjTest {
 
   Snapshot mSnapshot;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
+  @Before
+  public void setUp() throws Exception {
     File file = TestResources.getFile(getClass(), "/dialer.android-hprof");
     mSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-
+  @After
+  public void tearDown() throws Exception {
     mSnapshot.dispose();
     mSnapshot = null;
   }
 
+  @Test
   public void testGetAllFieldsCount() {
     ClassObj application = mSnapshot.findClass("android.app.Application");
     assertThat(application).isNotNull();
@@ -55,6 +54,7 @@ public class ClassObjTest extends TestCase {
     assertThat(dialer.getAllFieldsCount()).isEqualTo(5);
   }
 
+  @Test
   public void testComparison() {
     ClassObj a = new ClassObj(1, null, "TestClassA", 0);
     ClassObj b = new ClassObj(1, null, "TestClassB", 0);
@@ -67,6 +67,7 @@ public class ClassObjTest extends TestCase {
     assertThat(aAlt).isGreaterThan(a);
   }
 
+  @Test
   public void testSubClassNameClash() {
     ClassObj superClass = new ClassObj(1, null, "TestClassA", 0);
     ClassObj subClass1 = new ClassObj(2, null, "SubClass", 0);

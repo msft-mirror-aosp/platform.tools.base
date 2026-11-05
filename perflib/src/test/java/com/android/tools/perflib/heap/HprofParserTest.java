@@ -17,6 +17,11 @@
 package com.android.tools.perflib.heap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import com.android.testutils.TestResources;
 import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
@@ -48,10 +53,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import junit.framework.TestCase;
 import kotlin.sequences.SequencesKt;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-public class HprofParserTest extends TestCase {
+public final class HprofParserTest {
     private static final String TEST_MAP =
             "class.that.is.Empty -> a:\n"
                     + "class.that.is.Empty$subclass -> b:\n"
@@ -77,23 +84,20 @@ public class HprofParserTest extends TestCase {
 
     Snapshot mSnapshot;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-
+    @Before
+    public void setUp() throws Exception {
         File file = TestResources.getFile(getClass(), "/dialer.android-hprof");
         mSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
         mSnapshot.resolveReferences();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
-
+    @After
+    public void tearDown() throws Exception {
         mSnapshot.dispose();
         mSnapshot = null;
     }
 
+    @Test
     public void testHierarchy() {
         ClassObj application = mSnapshot.findClass("android.app.Application");
         assertNotNull(application);
@@ -117,6 +121,7 @@ public class HprofParserTest extends TestCase {
         assertNull(none);
     }
 
+    @Test
     public void testClassLoaders() {
         ClassObj application = mSnapshot.findClass("android.app.Application");
         assertNull(application.getClassLoader());
@@ -127,6 +132,7 @@ public class HprofParserTest extends TestCase {
         assertEquals("dalvik.system.PathClassLoader", classLoader.getClassObj().getClassName());
     }
 
+    @Test
     public void testPrimitiveArrays() {
         ClassObj byteArray = mSnapshot.findClass("byte[]");
         assertEquals(1406, byteArray.getInstancesList().size());
@@ -154,6 +160,7 @@ public class HprofParserTest extends TestCase {
      * Tests the creation of an Enum class which covers static values, fields of type references,
      * strings and primitive values.
      */
+    @Test
     public void testObjectConstruction() {
         ClassObj clazz = mSnapshot.findClass("java.lang.Thread$State");
         assertNotNull(clazz);
@@ -203,6 +210,7 @@ public class HprofParserTest extends TestCase {
     /**
      * Tests getValues to make sure it's not adding duplicate entries to the back references.
      */
+    @Test
     public void testDuplicateEntries() {
         mSnapshot = new SnapshotBuilder(2).addReferences(1, 2).addRoot(1).build();
         mSnapshot.computeRetainedSizes();
@@ -217,6 +225,7 @@ public class HprofParserTest extends TestCase {
         assertEquals(1, SequencesKt.count(child.getHardReverseReferences()));
     }
 
+    @Test
     public void testResolveReferences() {
         mSnapshot = new SnapshotBuilder(1).addRoot(1).build();
         ClassObj subSoftReferenceClass = new ClassObj(98, null, "SubSoftReference", 0);
@@ -236,6 +245,7 @@ public class HprofParserTest extends TestCase {
         assertTrue(subSubSoftReferenceClass.isSoftReference());
     }
 
+    @Test
     public void testHprofParser() throws IOException, ParseException {
         // Set up a heap dump with a single stack frame, stack trace, class,
         // and instance to test deobfuscation.

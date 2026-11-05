@@ -16,14 +16,19 @@
 
 package com.android.tools.perflib.vmtrace;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.junit.Test;
 
-public class CallStackReconstructorTest extends TestCase {
+public final class CallStackReconstructorTest {
+    @Test
     public void testBasicCallStack() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
         reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 10, 10);
@@ -53,6 +58,7 @@ public class CallStackReconstructorTest extends TestCase {
         return reconstructor.getTopLevel();
     }
 
+    @Test
     public void testCallStack() {
         Call topLevel = reconstructSampleCallStack();
         String callStack = topLevel.toString();
@@ -64,6 +70,7 @@ public class CallStackReconstructorTest extends TestCase {
         assertEquals(expectedCallStack, callStack);
     }
 
+    @Test
     public void testCallHierarchyIterator() {
         Call topLevel = reconstructSampleCallStack();
         List<Integer> expectedSequence = Arrays.asList(255, 1, 2, 3, 3, 5, 6);
@@ -77,6 +84,7 @@ public class CallStackReconstructorTest extends TestCase {
         }
     }
 
+    @Test
     public void testInvalidTrace() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
@@ -89,6 +97,7 @@ public class CallStackReconstructorTest extends TestCase {
         }
     }
 
+    @Test
     public void testMisMatchedCallStack() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
@@ -100,6 +109,7 @@ public class CallStackReconstructorTest extends TestCase {
         assertEquals(" -> 255 -> 1 -> 2 -> 3", callStack);
     }
 
+    @Test
     public void testCallStackDepths() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
@@ -132,6 +142,7 @@ public class CallStackReconstructorTest extends TestCase {
         assertEquals(expected, actualDepths);
     }
 
+    @Test
     public void testCallDurations() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
@@ -148,6 +159,7 @@ public class CallStackReconstructorTest extends TestCase {
                 TimeUnit.MICROSECONDS));
     }
 
+    @Test
     public void testMissingCallDurations() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
@@ -169,6 +181,7 @@ public class CallStackReconstructorTest extends TestCase {
      * Verify that the model handles cases where the timings exceed {@link Integer#MAX_VALUE},
      * but are still within the scope of an unsigned integer.
      */
+    @Test
     public void testCallDurationOverflow() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
@@ -184,6 +197,7 @@ public class CallStackReconstructorTest extends TestCase {
         assertEquals(6, call.getExclusiveTime(ClockType.THREAD, TimeUnit.MICROSECONDS));
     }
 
+    @Test
     public void testRecursiveCalls() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 

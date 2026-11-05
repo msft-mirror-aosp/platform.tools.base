@@ -16,6 +16,11 @@
 
 package com.android.tools.perflib.heap.analysis;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.testutils.TestResources;
 import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
 import com.android.tools.perflib.heap.ClassObj;
@@ -26,19 +31,19 @@ import com.android.tools.perflib.heap.SnapshotBuilder;
 
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import java.io.File;
 import java.util.stream.Stream;
 
 import kotlin.sequences.SequencesKt;
+import org.junit.Test;
 
 // These are now tests on computing retained sizes and path-to-gc, rather than the lower-level
 // dominator algorithm
-public class DominatorsTest extends TestCase {
+public final class DominatorsTest {
 
     private Snapshot mSnapshot;
 
+    @Test
     public void testSimpleGraph() {
         mSnapshot = new SnapshotBuilder(6)
                 .addReferences(1, 2, 3)
@@ -59,6 +64,7 @@ public class DominatorsTest extends TestCase {
         assertParentPathToGc(6, 2);
     }
 
+    @Test
     public void testCyclicGraph() {
         mSnapshot = new SnapshotBuilder(4)
                 .addReferences(1, 2, 3, 4)
@@ -77,6 +83,7 @@ public class DominatorsTest extends TestCase {
         assertParentPathToGc(4, 1);
     }
 
+    @Test
     public void testMultipleRoots() {
         mSnapshot = new SnapshotBuilder(6)
                 .addReferences(1, 3)
@@ -98,6 +105,7 @@ public class DominatorsTest extends TestCase {
         assertParentPathToGc(6, 5);
     }
 
+    @Test
     public void testDoublyLinkedList() {
         // Node 1 points to a doubly-linked list 2-3-4-5-6-7-8-9.
         mSnapshot = new SnapshotBuilder(9)
@@ -131,6 +139,7 @@ public class DominatorsTest extends TestCase {
         assertParentPathToGc(6, 5, 7);
     }
 
+    @Test
     public void testSameClassDifferentLoader() {
         mSnapshot = new SnapshotBuilder(4)
                 .addReferences(1, 3, 2)
@@ -147,6 +156,7 @@ public class DominatorsTest extends TestCase {
         assertEquals(0, mSnapshot.getHeap(13).getClass(103).getRetainedSize(1));
     }
 
+    @Test
     public void testTopSort() {
         mSnapshot = new SnapshotBuilder(4)
                 .addReferences(1, 3, 2)
@@ -161,6 +171,7 @@ public class DominatorsTest extends TestCase {
         assertEquals(3, mSnapshot.findInstance(3).getRetainedSize(1));
     }
 
+    @Test
     public void testMultiplePaths() {
         mSnapshot = new SnapshotBuilder(8)
                 .addReferences(1, 7, 8)
@@ -180,6 +191,7 @@ public class DominatorsTest extends TestCase {
         assertEquals(8, mSnapshot.findInstance(3).getRetainedSize(1));
     }
 
+    @Test
     public void testReachableInstances() {
         mSnapshot = new SnapshotBuilder(11, 2, 1)
                 .addReferences(1, 2, 3)
@@ -231,6 +243,7 @@ public class DominatorsTest extends TestCase {
         assertEquals(13, mSnapshot.getReachableInstances().size());
     }
 
+    @Test
     public void testSampleHprof() throws Exception {
         File file = TestResources.getFile(getClass(), "/dialer.android-hprof");
         mSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
