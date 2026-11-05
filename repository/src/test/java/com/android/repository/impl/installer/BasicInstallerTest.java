@@ -16,6 +16,11 @@
 
 package com.android.repository.impl.installer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -51,7 +56,7 @@ import com.google.common.io.ByteStreams;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -70,8 +75,9 @@ import java.util.zip.ZipOutputStream;
  *
  * TODO: more tests.
  */
-public class BasicInstallerTest extends TestCase {
+public final class BasicInstallerTest {
 
+    @Test
     public void testDelete() throws Exception {
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
         // Record package.xmls for two packages.
@@ -114,6 +120,7 @@ public class BasicInstallerTest extends TestCase {
         assertTrue(Files.exists(repoRoot.resolve("mypackage/bar/package.xml")));
     }
 
+    @Test
     public void testDeleteNonstandardLocation() throws IOException {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         Path toDeleteDir = sdkRoot.resolve("foo with space");
@@ -150,6 +157,7 @@ public class BasicInstallerTest extends TestCase {
     }
 
     // Test installing a new package
+    @Test
     public void testInstallFresh() throws Exception {
         Path root = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
         // We have a different package installed already.
@@ -245,6 +253,7 @@ public class BasicInstallerTest extends TestCase {
     }
 
     // Test cancellation along the way - the partial installation should be cleaned up.
+    @Test
     public void testCleanupWhenCancelled() throws Exception {
         Path root = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
         // We have a different package installed already.
@@ -358,6 +367,7 @@ public class BasicInstallerTest extends TestCase {
 
 
     // Test installing an upgrade to an existing package.
+    @Test
     public void testInstallUpgrade() throws Exception {
         Path root = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
         // Record a couple existing packages.
@@ -451,6 +461,7 @@ public class BasicInstallerTest extends TestCase {
         // TODO: verify the actual contents of the update?
     }
 
+    @Test
     public void testExistingDownload() throws Exception {
         Path root = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
         FakeDownloader downloader =
@@ -607,6 +618,7 @@ public class BasicInstallerTest extends TestCase {
         assertEquals(new Revision(4, 5, 6), newPkg.getVersion());
     }
 
+    @Test
     public void testInstallForgedInstallerDirRemoved() throws Exception {
         Path root = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
         FakeDownloader downloader = new FakeDownloader(root.getRoot().resolve("tmp"));
@@ -654,6 +666,7 @@ public class BasicInstallerTest extends TestCase {
         assertFalse(Files.exists(forgedPath));
     }
 
+    @Test
     public void testWindowsPathTraversalInArchiveUrl() throws Exception {
         FileSystem fs = Jimfs.newFileSystem(Configuration.windows());
         Path root = Files.createDirectories(fs.getPath("C:\\repo"));

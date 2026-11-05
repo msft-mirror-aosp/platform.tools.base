@@ -17,6 +17,9 @@
 package com.android.repository.impl.local;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.android.repository.Revision;
 import com.android.repository.api.Dependency;
@@ -40,14 +43,15 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests for {@link LocalRepoLoaderImpl}.
  */
-public class LocalRepoTest extends TestCase {
+public final class LocalRepoTest {
 
     // Test that we can parse a basic package.
+    @Test
     public void testParseGeneric() throws Exception {
         Path sdkRoot =
                 InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo/random").getParent();
@@ -94,6 +98,7 @@ public class LocalRepoTest extends TestCase {
     }
 
     // Test writing a package out to xml
+    @Test
     public void testMarshalGeneric() {
         RepoManager manager = new RepoManagerImpl(null);
 
@@ -180,6 +185,7 @@ public class LocalRepoTest extends TestCase {
     }
 
     // Test that a package in an inconsistent location gives a warning.
+    @Test
     public void testWrongPath() throws Exception {
         Path sdkRoot =
                 InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo/bogus").getParent();
@@ -208,6 +214,7 @@ public class LocalRepoTest extends TestCase {
     }
 
     // Test that a package in an inconsistent location is overridden by one in the right place
+    @Test
     public void testDuplicate() throws Exception {
         Path sdkRoot =
                 InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo/bogus").getParent();

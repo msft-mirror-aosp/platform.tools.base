@@ -17,6 +17,11 @@ package com.android.repository.util;
 
 import static com.android.repository.testframework.FakePackage.FakeLocalPackage;
 import static com.android.repository.testframework.FakePackage.FakeRemotePackage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.repository.Revision;
 import com.android.repository.api.RemotePackage;
@@ -31,11 +36,10 @@ import com.android.utils.PathUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.compress.archivers.zip.UnixStat;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,9 +51,10 @@ import java.util.stream.Stream;
 /**
  * Tests for {@link InstallerUtil}.
  */
-public class InstallerUtilTest extends TestCase {
+public final class InstallerUtilTest {
 
     /** Simple case: a package requires itself, even if has no dependencies set. */
+    @Test
     public void testNoDeps() {
         RemotePackage r1 = new FakeRemotePackage("r1");
 
@@ -67,6 +72,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** Simple chain of dependencies, r1->r2->r3. Should be returned in reverse order. */
+    @Test
     public void testSimple() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2")));
@@ -89,6 +95,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** Simple dependencies, with isSoft = null (the default). */
+    @Test
     public void testSoftIsNull() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2", 1, 0, 0, null)));
@@ -109,6 +116,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** Request r1 and r1. The latest version of r1 is installed so only r2 is returned. */
+    @Test
     public void testLocalInstalled() {
         RemotePackage r1 = new FakeRemotePackage("r1");
         RemotePackage r2 = new FakeRemotePackage("r2");
@@ -131,6 +139,7 @@ public class InstallerUtilTest extends TestCase {
      * Request r1 and r2. r1 is installed but there is an update for it available, and so both r1
      * and r2 are returned.
      */
+    @Test
     public void testLocalInstalledWithUpdate() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setRevision(new Revision(2));
@@ -154,6 +163,7 @@ public class InstallerUtilTest extends TestCase {
      * Dependency chain r1->r2->r3, but r3 is already installed with sufficient version, and so is
      * not returned.
      */
+    @Test
     public void testLocalSatisfies() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2")));
@@ -180,6 +190,7 @@ public class InstallerUtilTest extends TestCase {
      * Dependency chain r1->r2->r3, but r3 is already installed with no required version specified,
      * and so is not returned.
      */
+    @Test
     public void testLocalSatisfiesNoVersion() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2")));
@@ -204,6 +215,7 @@ public class InstallerUtilTest extends TestCase {
     /**
      * Dependency chain r1->r2->r3, and r3 is installed but doesn't meet the version requirement.
      */
+    @Test
     public void testUpdateNeeded() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2")));
@@ -227,6 +239,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** r1->{r2, r3}. All should be returned, with r1 last. */
+    @Test
     public void testMulti() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2"), new FakeDependency("r3")));
@@ -247,6 +260,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** r1->{r2, r3}->r4. All should be returned, with r4 first and r1 last. */
+    @Test
     public void testDagDeps() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2"), new FakeDependency("r3")));
@@ -272,6 +286,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** r1->r2->r3->r1. All should be returned, in undefined order. */
+    @Test
     public void testCycle() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2")));
@@ -296,6 +311,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** r1->r2->r3->r4->r3. All should be returned, with [r2, r1] last. */
+    @Test
     public void testCycle2() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2")));
@@ -323,6 +339,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** {r1, r2}->r3. Request both r1 and r2. All should be returned, with r3 first. */
+    @Test
     public void testMultiRequest() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r3")));
@@ -345,6 +362,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** r2->r1. Request both r1 and r2. [r1, r2] should be returned. */
+    @Test
     public void testRequestDependency() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         FakeRemotePackage r2 = new FakeRemotePackage("r2");
@@ -363,6 +381,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** {r1, r2}->r3. Request both r1 and r2. R3 is installed, so only r1 and r2 are returned. */
+    @Test
     public void testMultiRequestSatisfied() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r3")));
@@ -388,6 +407,7 @@ public class InstallerUtilTest extends TestCase {
      * {r1, r2}->r3. Request both r1 and r2. R3 is installed, but r2 requires an update. All should
      * be returned, with r3 before r2.
      */
+    @Test
     public void testMultiRequestHalfSatisfied() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r3")));
@@ -413,6 +433,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** r1->r2 with a soft dependency, with r2 not installed. Only r1 should be returned. */
+    @Test
     public void testSoftNotInstalled() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         RemotePackage r2 = new FakeRemotePackage("r2");
@@ -434,6 +455,7 @@ public class InstallerUtilTest extends TestCase {
      * r1->r2 with a soft dependency, with r2 installed but already at the requested version. Only
      * r1 should be returned.
      */
+    @Test
     public void testSoftInstalledSameVersion() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2", 2, 0, 0, true)));
@@ -459,6 +481,7 @@ public class InstallerUtilTest extends TestCase {
      * r1->r2 with a soft dependency, with r2 installed and not at the requested version. r1 and r2
      * should be returned.
      */
+    @Test
     public void testSoftInstalledLowerVersion() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2", 3, 0, 0, true)));
@@ -481,6 +504,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** r1->bogus. Null should be returned, and there should be an error. */
+    @Test
     public void testBogus() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("bogus")));
@@ -495,6 +519,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /** r1->emulator, where emulator is not available. */
+    @Test
     public void testMissingEmulatorDependency() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("emulator")));
@@ -513,6 +538,7 @@ public class InstallerUtilTest extends TestCase {
      * r1->r2->r3. r3 is installed, but a higher version is required and not available. Null should
      * be returned, and there should be an error.
      */
+    @Test
     public void testUpdateNotAvailable() {
         FakeRemotePackage r1 = new FakeRemotePackage("r1");
         r1.setDependencies(ImmutableList.of(new FakeDependency("r2")));
@@ -533,6 +559,7 @@ public class InstallerUtilTest extends TestCase {
         assertFalse(progress.getWarnings().isEmpty());
     }
 
+    @Test
     public void testInstallInChild() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         InMemoryFileSystems.recordExistingFile(
@@ -556,6 +583,7 @@ public class InstallerUtilTest extends TestCase {
         assertFalse(progress.getWarnings().isEmpty());
     }
 
+    @Test
     public void testInstallInParent() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         InMemoryFileSystems.recordExistingFile(
@@ -579,6 +607,7 @@ public class InstallerUtilTest extends TestCase {
         assertFalse(progress.getWarnings().isEmpty());
     }
 
+    @Test
     public void testInstallSeparately() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         InMemoryFileSystems.recordExistingFile(
@@ -602,6 +631,7 @@ public class InstallerUtilTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
     }
 
+    @Test
     public void testInstallSeparately2() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         InMemoryFileSystems.recordExistingFile(
@@ -625,6 +655,7 @@ public class InstallerUtilTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
     }
 
+    @Test
     public void testInstallOutsideSdkRoot() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         RepoManager mgr = new RepoManagerImpl(sdkRoot);
@@ -671,6 +702,7 @@ public class InstallerUtilTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnzip() throws Exception {
         Path root = Files.createTempDirectory("InstallerUtilTest");
         Path outRoot = Files.createTempDirectory("InstallerUtilTest");
@@ -714,6 +746,7 @@ public class InstallerUtilTest extends TestCase {
             PathUtils.deleteRecursivelyIfExists(outRoot);
         }
     }
+    @Test
     public void testUnzipSymlink() throws Exception {
         Path tmp = Files.createTempDirectory("InstallerUtilTest_testUnzipSymlink");
         Path outDir = tmp.resolve("out");
@@ -757,6 +790,7 @@ public class InstallerUtilTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnzipZipSlip() throws Exception {
         Path tmp = Files.createTempDirectory("InstallerUtilTest_zipSlip");
         try {
@@ -776,6 +810,7 @@ public class InstallerUtilTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnzipZipSlipAbsolute() throws Exception {
         Path tmp = Files.createTempDirectory("InstallerUtilTest_zipSlipAbs");
         try {
@@ -794,6 +829,7 @@ public class InstallerUtilTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnzipSymlinkEscapes() throws Exception {
         Path tmp = Files.createTempDirectory("InstallerUtilTest_symlinkEscapes");
         try {
@@ -811,6 +847,7 @@ public class InstallerUtilTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnzipSymlinkChainingZipSlip() throws Exception {
         Path tmp = Files.createTempDirectory("InstallerUtilTest_symlinkChaining");
         try {

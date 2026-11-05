@@ -17,16 +17,19 @@ package com.android.repository.util;
 
 import static com.android.repository.util.RepoPackageUtilKt.getAllRepoPackagePrefixes;
 import static com.android.repository.util.RepoPackageUtilKt.getRepoPackagePrefix;
+import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class RepoPackageUtilTest extends TestCase {
+public final class RepoPackageUtilTest {
+    @Test
     public void testGetPackagePrefix() {
         assertEquals("foo;bar;baz", getRepoPackagePrefix("foo;bar;baz;22.0"));
         assertEquals("emulator", getRepoPackagePrefix("emulator"));
     }
 
+    @Test
     public void testGetAllPackagePrefixes() {
         assertEquals(
                 ImmutableList.of("foo;bar;baz;22.0", "foo;bar;baz", "foo;bar", "foo"),

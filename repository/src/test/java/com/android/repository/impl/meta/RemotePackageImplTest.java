@@ -16,6 +16,9 @@
 
 package com.android.repository.impl.meta;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
@@ -24,12 +27,13 @@ import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.testutils.file.InMemoryFileSystems;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.nio.file.Path;
 
-public class RemotePackageImplTest extends TestCase {
+public final class RemotePackageImplTest {
 
+    @Test
     public void testGetInstallDirValid() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         RepoManager mgr = new RepoManagerImpl(sdkRoot);
@@ -40,6 +44,7 @@ public class RemotePackageImplTest extends TestCase {
         assertEquals(sdkRoot.resolve("foo/bar"), installDir);
     }
 
+    @Test
     public void testGetInstallDirEscaping() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
         RepoManager mgr = new RepoManagerImpl(sdkRoot);

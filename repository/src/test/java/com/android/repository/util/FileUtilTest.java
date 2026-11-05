@@ -15,16 +15,19 @@
  */
 package com.android.repository.util;
 
+import static org.junit.Assert.assertEquals;
+
 import com.android.repository.io.FileUtilKt;
 import com.android.testutils.file.InMemoryFileSystems;
 import java.nio.file.Path;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests for {@link FileUtilKt}.
  */
-public class FileUtilTest extends TestCase {
+public final class FileUtilTest {
 
+    @Test
     public void testRecursiveSize() throws Exception {
         final String[][] theFiles = {
             {"file1.txt", "The contents of file1"},

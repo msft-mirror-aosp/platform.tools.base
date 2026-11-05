@@ -17,6 +17,8 @@
 package com.android.repository.impl.sources;
 
 import static com.android.testutils.file.InMemoryFileSystems.createInMemoryFileSystemAndFolder;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -37,13 +39,14 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests for {@link RemoteListSourceProvider}
  */
-public class RemoteListSourceProviderTest extends TestCase {
+public final class RemoteListSourceProviderTest {
 
+    @Test
     public void testSimple() throws Exception {
         Map<Class<? extends RepositorySource>, Collection<SchemaModule<?>>> permittedModules =
                 Maps.newHashMap();
@@ -70,6 +73,7 @@ public class RemoteListSourceProviderTest extends TestCase {
                 source2.getPermittedModules());
     }
 
+    @Test
     public void testCache() throws Exception {
         Map<Class<? extends RepositorySource>, Collection<SchemaModule<?>>> permittedModules =
                 Maps.newHashMap();
@@ -127,6 +131,7 @@ public class RemoteListSourceProviderTest extends TestCase {
                 source2.getPermittedModules());
     }
 
+    @Test
     public void testForceRefresh() throws Exception {
         Map<Class<? extends RepositorySource>, Collection<SchemaModule<?>>> permittedModules =
                 Maps.newHashMap();

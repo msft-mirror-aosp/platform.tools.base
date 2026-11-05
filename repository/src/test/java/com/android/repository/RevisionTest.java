@@ -17,11 +17,15 @@
 package com.android.repository;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class RevisionTest extends TestCase {
+public final class RevisionTest {
 
+    @Test
     public final void testRevision() {
 
         assertThat(Revision.parseRevision("5").toString()).isEqualTo("5");
@@ -136,6 +140,7 @@ public class RevisionTest extends TestCase {
                 .containsExactly(10, 11, 12, 13).inOrder();
     }
 
+    @Test
     public final void testParse() {
         Revision revision = Revision.parseRevision("1");
         assertThat(revision).isNotNull();
@@ -191,6 +196,7 @@ public class RevisionTest extends TestCase {
         assertThat(Revision.NOT_SPECIFIED).isEqualTo(revision);
     }
 
+    @Test
     public final void testParseError() {
         String errorMsg = null;
         try {
@@ -229,6 +235,7 @@ public class RevisionTest extends TestCase {
         assertThat(errorMsg).isEqualTo("Invalid revision:   5.1.2 rc 42  ");
     }
 
+    @Test
     public final void testCompareTo() {
         // TODO: What's the deal with these variable names?
         Revision s4 = new Revision(4);

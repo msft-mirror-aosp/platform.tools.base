@@ -18,6 +18,9 @@ package com.android.repository.impl.meta;
 
 import static com.android.repository.testframework.FakePackage.FakeLocalPackage;
 import static com.android.repository.testframework.FakePackage.FakeRemotePackage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.android.repository.Revision;
 import com.android.repository.api.LocalPackage;
@@ -30,18 +33,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests for {@link RepositoryPackages}
  */
-public class RepositoryPackagesTest extends TestCase {
+public final class RepositoryPackagesTest {
 
     private RepositoryPackages mPackages;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
 
         // p1 has no corresponding remote
         LocalPackage l1 = new FakeLocalPackage("p1");
@@ -62,6 +65,7 @@ public class RepositoryPackagesTest extends TestCase {
                 ImmutableList.of(r2, r3, r4));
     }
 
+    @Test
     public void testConsolidated() {
         Map<String, UpdatablePackage> consolidated = mPackages.getConsolidatedPkgs();
         assertEquals(4, consolidated.size());
@@ -96,6 +100,7 @@ public class RepositoryPackagesTest extends TestCase {
         assertEquals("p4", updatable.getRepresentative().getPath());
     }
 
+    @Test
     public void testNewPackages() {
         Set<RemotePackage> news = mPackages.getNewPkgs();
 
@@ -103,6 +108,7 @@ public class RepositoryPackagesTest extends TestCase {
         assertEquals("p4", news.iterator().next().getPath());
     }
 
+    @Test
     public void testUpdates() {
         Set<UpdatablePackage> updates = mPackages.getUpdatedPkgs();
 
@@ -110,6 +116,7 @@ public class RepositoryPackagesTest extends TestCase {
         assertEquals("p2", updates.iterator().next().getRepresentative().getPath());
     }
 
+    @Test
     public void testPrefixes() {
         List<LocalPackage> locals = new ArrayList<>();
         List<RemotePackage> remotes = new ArrayList<>();

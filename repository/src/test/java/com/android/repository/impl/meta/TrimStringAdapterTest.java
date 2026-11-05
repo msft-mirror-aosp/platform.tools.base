@@ -16,37 +16,47 @@
 
 package com.android.repository.impl.meta;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
 
 /**
  * Tests for {@link TrimStringAdapter}.
  */
-public class TrimStringAdapterTest extends TestCase {
+public final class TrimStringAdapterTest {
 
+    @Test
     public void testSimple() {
         assertEquals("foo", evaluate("foo"));
     }
 
+    @Test
     public void testRepeatedSpace() {
         assertEquals("foo bar", evaluate("foo    \t \t\tbar"));
     }
 
+    @Test
     public void testLeadingAndTrailing() {
         assertEquals("foo", evaluate(" \tfoo  "));
     }
 
+    @Test
     public void testLeadingNewline() {
         assertEquals("foo", evaluate("\n    foo"));
     }
 
+    @Test
     public void testSingleNewlines() {
         assertEquals("foo bar baz", evaluate("foo \n bar\nbaz\n"));
     }
 
+    @Test
     public void testRepeatedNewlines() {
         assertEquals("foo\n\nbar baz", evaluate("foo\n   \n  bar\n baz"));
     }
 
+    @Test
     public void testInterning() {
         assertTrue(evaluate("foo") == evaluate("  foo\n  "));
     }

@@ -18,6 +18,11 @@ package com.android.repository.impl.remote;
 
 import static com.android.repository.testframework.FakePackage.FakeRemotePackage;
 import static com.android.testutils.file.InMemoryFileSystems.createInMemoryFileSystemAndFolder;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -46,7 +51,7 @@ import com.google.common.collect.ImmutableSet;
 
 import java.util.Locale;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import org.mockito.Mockito;
 
@@ -64,8 +69,9 @@ import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 
 /** Tests for {@link RemoteRepoLoaderImpl} */
-public class RemoteRepoLoaderImplTest extends TestCase {
+public final class RemoteRepoLoaderImplTest {
 
+    @Test
     public void testEmptyRemoteRepo() throws Exception {
         RepositorySource source =
                 new SimpleRepositorySource(
@@ -91,6 +97,7 @@ public class RemoteRepoLoaderImplTest extends TestCase {
         assertNull(source.getFetchError());
     }
 
+    @Test
     public void testRemoteRepo() throws Exception {
         RepositorySource source = new SimpleRepositorySource("http://www.example.com",
                 "Source UI Name", true,
@@ -125,6 +132,7 @@ public class RemoteRepoLoaderImplTest extends TestCase {
         assertEquals("aarch64", a2.getHostArch());
     }
 
+    @Test
     public void testChannels() throws Exception {
         RepositorySource source = new SimpleRepositorySource("http://www.example.com",
                                                              "Source UI Name", true,
@@ -168,6 +176,7 @@ public class RemoteRepoLoaderImplTest extends TestCase {
         assertEquals(new Revision(4, 5, 7), pkgs.get("mypackage;bar").getVersion());
     }
 
+    @Test
     public void testFallback() throws Exception {
         RepositorySource source =
                 new SimpleRepositorySource(
@@ -211,6 +220,7 @@ public class RemoteRepoLoaderImplTest extends TestCase {
         assertEquals(new Revision(1, 2, 9), pkgs.get("legacy").getVersion());
     }
 
+    @Test
     public void testNonFallbackPreferred() throws Exception {
         RepositorySource source =
                 new SimpleRepositorySource(
@@ -277,6 +287,7 @@ public class RemoteRepoLoaderImplTest extends TestCase {
                     + "</repo:repository>\n"
                     + "\n";
 
+    @Test
     public void testLocalPreferred() throws Exception {
         RepositorySource httpSource =
                 new SimpleRepositorySource(
@@ -336,6 +347,7 @@ public class RemoteRepoLoaderImplTest extends TestCase {
         assertEquals("http", pkgs.get("mypackage;foo").getDisplayName());
     }
 
+    @Test
     public void testNewerFallbackPreferred() throws Exception {
         RepositorySource source =
                 new SimpleRepositorySource(
@@ -381,6 +393,7 @@ public class RemoteRepoLoaderImplTest extends TestCase {
     }
 
     /** Create five sources and verify that they're processed in the right order */
+    @Test
     public void testRepoOrdering() throws Exception {
         List<RepositorySourceProvider> providers = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
@@ -432,6 +445,7 @@ public class RemoteRepoLoaderImplTest extends TestCase {
         }
     }
 
+    @Test
     public void testDownloadsAreParallel() throws Exception {
         RepositorySource httpSource =
                 new SimpleRepositorySource(
