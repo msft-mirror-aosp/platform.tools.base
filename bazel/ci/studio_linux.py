@@ -72,6 +72,8 @@ _EXTRA_TARGETS = [
     '//tools/vendor/google/lume-release/dist:lightbuild',
     '//tools/vendor/google/lume/dist:lightbuild',
     '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
+    '//tools/vendor/google/lightbuild-plugin:lightbuild-plugin.zip',
+    '//tools/vendor/google/lightbuild-plugin/aiplugin:lightbuild-aiplugin.zip',
 ]
 
 
@@ -149,6 +151,8 @@ _ARTIFACTS = [
     ('tools/vendor/google/lume-release/dist/lightbuild.zip', 'artifacts'),
     ('tools/vendor/google/lume/dist/lightbuild.zip', 'artifacts/lightbuild-dev.zip'),
     ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', 'artifacts'),
+    ('tools/vendor/google/lightbuild-plugin/lightbuild-plugin.zip', 'artifacts'),
+    ('tools/vendor/google/lightbuild-plugin/aiplugin/lightbuild-aiplugin.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),
 ]
