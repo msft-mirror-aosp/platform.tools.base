@@ -383,10 +383,7 @@ archive_override(
 )
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")
-
-# TODO(b/575483670): Re-enable together with //tools/adt/idea/ij-debugger-tests. While included, every
-# IntelliJ merge pulls tools/idea/MODULE.bazel into the module graph and lock file.
-# include("//tools/base/bazel/bzlmod:idea.MODULE.bazel")
+include("//tools/base/bazel/bzlmod:idea.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:toolchains.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:prebuilts.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:coverage.MODULE.bazel")
