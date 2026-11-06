@@ -6733,6 +6733,87 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
           .trimIndent()
       )
   }
+
+  fun testSetterAsKotlinProperty() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.WorkerThread;
+
+            public class Store {
+              public String getLabel() { return ""; }
+              @WorkerThread public void setLabel(String s) {}
+            }
+            """
+          )
+          .indented(),
+        bytecode(
+          "libs/box.jar",
+          kotlin(
+              """
+              package test.lib
+              import androidx.annotation.WorkerThread
+
+              class Box {
+                var value: Int = 0
+                  @WorkerThread set
+              }
+              """
+            )
+            .indented(),
+          0x1d233519,
+          """
+          META-INF/setter_box.kotlin_module:
+          H4sIAAAAAAAC/2NgYGBmYGBgAmIWBihQYtBiAAAPGQqpGAAAAA==
+          """,
+          """
+          test/lib/Box.class:
+          H4sIAAAAAAAC/21RTW/TQBB9u3Zs101Tp4XSpnw1fKWVwG3FCSo+ioRkKbRS
+          QQEpB7RprHab1Ja8myjHiAM/hBMHLkggJA4oypEfhZh1ogoKl5m3b9/b2Zn5
+          +ev7DwD3scFQ1LHSYVe2wt104IIxBCeiL8KuSI7C/dZJfKhdWAzOjkykfsRg
+          1dYbRRTg+LDhMtj6WCqGUv3Phx4yeEexbohuL84tEUOhPzmxqIg5lGbAMU8y
+          dSaza9F6g6FaF0k7S2V7EIokSbXQMk3C12nWibNXx1ks2vS6u0O+u4/pP+V6
+          J9VdmYQvYi3aQgu65ad9ixrkJtgmgMp2DKD++EAatEmovcXQHA0rPl/mPg9G
+          Q597FgGPsp2To+HyaLjNN9muO/7g2B4PrIO1wK7wzcIT9834fWn8jnHPp7sS
+          aSu25wRu1fa8YGb80Zk1JbaZqe7Td3WcvW2lA5olTeheR1PHz9I2NT5fl0m8
+          1zttUYOi1SVmoZ4eim5DZNKcp+TqQS/R8jSOkr5UkqinZ+OhBfgv0152GD+X
+          RroylTb+EWKL5m7nE+FmDYQswrRPijfpFJpZUS5sfIP32UwRtyg6OWnjNsXi
+          RIAZ+JTLmM2Zv81fEHw6Zy7811zGAqmM+QFlbtQbq18RnC/t5O6liWLqNugC
+          9cBwZ6pbzF21PN7AOuV9Yi9SvaUmrAiXIixHWEElwiouR7iCq00whWu43kRR
+          0Z6wplBQcBTmcjyrDF9WWFBYVKj+BrN10Fk9AwAA
+          """,
+        ),
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import test.lib.Box
+
+            @UiThread fun update(store: Store, box: Box) {
+              store.label = ""
+              box.value = 1
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:6: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          store.label = ""
+          ~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          box.value = 1
+          ~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
 }
 
 class AndroidThreadConstraintLatticeTest : ThreadConstraintLatticeTest<Thread>(threadLattice) {

@@ -897,7 +897,7 @@ internal open class Analysis<FX : Any>(
               val (lhs, rhs) = e.operands
               val target = lhs.tryResolve()
               when {
-                target is KtLightMethod && target.name.startsWith("set") -> {
+                target is PsiMethod && target.name.startsWith("set") -> {
                   val (receiver, indices) = lhs.lhsReceiverAndIndices() ?: return defaultUnit()
                   callMethod(receiver, target, indices + rhs)
                 }
