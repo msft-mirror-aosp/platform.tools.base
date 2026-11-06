@@ -84,18 +84,16 @@ class TestResultsCollectionTaskTest {
   }
 
   @Test
-  fun testDoTaskAction_preservesSuiteEnvironmentsAndSuiteDetailsAcrossSuitesAndDependentModules() {
+  fun testDoTaskAction_preservesAttachmentsAcrossSuitesAndDependentModules() {
     fun populateSuiteResultsDir(dir: File, hash: String, moduleName: String) {
       File(dir, "TEST-BackupTest_$hash.xml").writeText("<testsuite name=\"$moduleName\"/>")
-      File(dir, "suite-environment_$hash.json").writeText("""{"schemaVersion":1,"modulePath":"$moduleName"}""")
       File(dir, "not-xml.txt").writeText("ignore-me")
       File(dir, "binary").apply {
         mkdirs()
         File(this, "results.bin").writeText("binary-data")
       }
-      val detailSubDir = File(dir, "suite-details/$hash/d1").apply { mkdirs() }
-      File(dir, "suite-details/$hash/d1.json").writeText("""{"schemaVersion":1,"module":"$moduleName"}""")
-      File(detailSubDir, "host-log.txt").writeText("host-log-$hash")
+      val attachmentSlotDir = File(dir, "attachments/$hash/1").apply { mkdirs() }
+      File(attachmentSlotDir, "host-log.txt").writeText("host-log-$hash")
     }
 
     val suiteDir1 = temporaryFolder.newFolder("suiteResults1").also { populateSuiteResultsDir(it, "hash1", ":app-t1") }
@@ -110,10 +108,7 @@ class TestResultsCollectionTaskTest {
 
     for ((hash, moduleName) in listOf("hash1" to ":app-t1", "hash2" to ":app-t2", "hash3" to ":lib")) {
       assertThat(outputDir.resolve("TEST-BackupTest_$hash.xml").readText()).isEqualTo("<testsuite name=\"$moduleName\"/>")
-      assertThat(outputDir.resolve("suite-environment_$hash.json").readText())
-        .isEqualTo("""{"schemaVersion":1,"modulePath":"$moduleName"}""")
-      assertThat(outputDir.resolve("suite-details/$hash/d1.json").readText()).isEqualTo("""{"schemaVersion":1,"module":"$moduleName"}""")
-      assertThat(outputDir.resolve("suite-details/$hash/d1/host-log.txt").readText()).isEqualTo("host-log-$hash")
+      assertThat(outputDir.resolve("attachments/$hash/1/host-log.txt").readText()).isEqualTo("host-log-$hash")
     }
 
     assertThat(outputDir.resolve("not-xml.txt")).doesNotExist()

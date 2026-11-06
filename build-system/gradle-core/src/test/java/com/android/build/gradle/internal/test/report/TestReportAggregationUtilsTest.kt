@@ -20,6 +20,7 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.XmlUtils
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import java.nio.file.Files
 import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logging
@@ -64,103 +65,147 @@ class TestReportAggregationUtilsTest {
   }
 
   @Test
-  fun processTestReportAggregation_renamesSuiteEnvironmentJsonAndPreservesOtherFiles() {
-    val sourceDir = temporaryFolder.newFolder("rawResults")
-    val xmlResultsDir = temporaryFolder.newFolder("xmlResults")
-    val xmlResultsDirectory = directoryProperty(xmlResultsDir)
+  fun processTestReportAggregation_rewritesValidAttachmentsAndPreservesRoutingHashWithAdditionalProperties() {
+    val buildDir = temporaryFolder.newFolder("build")
+    val sourceDir = buildDir.resolve("test-results/testDebugBackupTest").apply { mkdirs() }
+    val attachmentsRoot = buildDir.resolve("intermediates/debug/testDebugBackupTest/attachments").apply { mkdirs() }
+    val outsideSecret = temporaryFolder.newFile("secret.txt").apply { writeText("TOP_SECRET") }
+
+    val testAttachmentDir = attachmentsRoot.resolve("testFlow").apply { mkdirs() }
+    val hostLog = testAttachmentDir.resolve("host-log.txt").apply { writeText("Backup started\nBackup finished\n") }
+    val suiteLog =
+      attachmentsRoot.resolve("suite/logcat-emulator-5554.txt").apply {
+        parentFile.mkdirs()
+        writeText("I/BackupManagerService: init\n")
+      }
+    val symlinkAttachment = testAttachmentDir.resolve("symlink-secret.txt")
+    runCatching { Files.createSymbolicLink(symlinkAttachment.toPath(), outsideSecret.toPath()) }
+
+    val relativeHostLog = sourceDir.toPath().relativize(hostLog.toPath()).toString().replace('\\', '/')
+    val relativeSymlink = sourceDir.toPath().relativize(symlinkAttachment.toPath()).toString().replace('\\', '/')
+    val escapingRelative = sourceDir.toPath().relativize(outsideSecret.toPath()).toString().replace('\\', '/')
 
     sourceDir
       .resolve("TEST-com.example.BackupTest.xml")
       .writeText(
-        """<testsuite name="com.example.BackupTest" tests="1"><testcase name="testFlow" classname="com.example.BackupTest"/></testsuite>"""
+        """
+        <testsuite name="com.example.BackupTest" tests="1">
+          <testcase name="testFlow" classname="com.example.BackupTest">
+            <system-out><![CDATA[Test stdout line
+[[ATTACHMENT|$relativeHostLog]]
+[[ATTACHMENT|$escapingRelative]]
+[[ATTACHMENT|$relativeSymlink]]
+After markers
+]]></system-out>
+          </testcase>
+          <system-out>[[ATTACHMENT|${suiteLog.absolutePath}]]</system-out>
+        </testsuite>
+        """
+          .trimIndent()
       )
-    val envJson = """{"schemaVersion":1,"modulePath":":app","variantName":"debug","suiteName":"backupTest","targetName":"default"}"""
-    sourceDir.resolve("suite-environment.json").writeText(envJson)
-    sourceDir.resolve("nested").apply {
-      mkdirs()
-      resolve("suite-environment.json").writeText(envJson)
-    }
-
     val nonJunitXml = """<full-backup-content><exclude domain="sharedpref" path="secret.xml"/></full-backup-content>"""
     sourceDir.resolve("backup_rules.xml").writeText(nonJunitXml)
 
-    val detailJson = """{"schemaVersion":1,"suiteType":"androidx.test.backup"}"""
-    val detailDir = sourceDir.resolve("suite-details").also { it.mkdirs() }
-    detailDir.resolve("BackupTest.testFlow_01.json").writeText(detailJson)
-    val detailArtifactDir = detailDir.resolve("BackupTest.testFlow_01").also { it.mkdirs() }
-    detailArtifactDir.resolve("host-log.txt").writeText("Backup started\nBackup finished\n")
-    detailArtifactDir.resolve("data_extraction_rules.xml").writeText("<data-extraction-rules/>")
-    detailArtifactDir.resolve("TEST-captured_artifact.xml").writeText("<captured/>")
-    detailArtifactDir.resolve("suite-environment.json").writeText("""{"captured":true}""")
-
+    val baselineResultsDir = temporaryFolder.newFolder("baselineResults")
+    val baselineSourceDir =
+      temporaryFolder.newFolder("baselineSource").apply {
+        resolve("TEST-com.example.BackupTest.xml").writeText("<testsuite name=\"com.example.BackupTest\" tests=\"0\"/>")
+      }
     processTestReportAggregation(
-      sourceDir,
-      xmlResultsDirectory,
+      baselineSourceDir,
+      directoryProperty(baselineResultsDir),
       ":app",
       "debug",
       "backupTest",
       "default",
       Logging.getLogger(TestReportAggregationUtilsTest::class.java),
     )
+    val baselineHash = baselineResultsDir.listFiles()!!.single().name.removePrefix("TEST-com.example.BackupTest_").removeSuffix(".xml")
+
+    val xmlResultsDir = temporaryFolder.newFolder("xmlResults")
+    processTestReportAggregation(
+      sourceDir = sourceDir,
+      xmlResultsDirectory = directoryProperty(xmlResultsDir),
+      modulePath = ":app",
+      variantName = "debug",
+      suiteName = "backupTest",
+      target = "default",
+      logger = Logging.getLogger(TestReportAggregationUtilsTest::class.java),
+      additionalProperties = mapOf("applicationId" to "com.example.app", "suiteType" to "androidx.test.backup"),
+      allowedAttachmentRoot = attachmentsRoot,
+    )
 
     val topLevelFiles = xmlResultsDir.listFiles()!!.filter { it.isFile }.associateBy { it.name }
     val enrichedTestXml = topLevelFiles.entries.single { it.key.startsWith("TEST-com.example.BackupTest_") && it.key.endsWith(".xml") }
     val hash = enrichedTestXml.key.removePrefix("TEST-com.example.BackupTest_").removeSuffix(".xml")
-    assertThat(hash).hasLength(32)
-    assertThat(enrichedTestXml.value.readText()).contains("""name="testSuiteName" value="backupTest"""")
+    assertThat(hash).isEqualTo(baselineHash)
 
-    // suite-environment.json is renamed with the matching metadata hash (both root and nested outside suite-details).
-    assertThat(topLevelFiles).doesNotContainKey("suite-environment.json")
-    assertThat(topLevelFiles).containsKey("suite-environment_${hash}.json")
-    assertThat(topLevelFiles.getValue("suite-environment_${hash}.json").readText()).isEqualTo(envJson)
-    assertThat(xmlResultsDir.resolve("nested/suite-environment_${hash}.json").readText()).isEqualTo(envJson)
-    assertThat(xmlResultsDir.resolve("nested/suite-environment.json").exists()).isFalse()
+    val root = parseXmlElement(enrichedTestXml.value)
+    val suiteProps = XmlUtils.getSubTagsAsList(root).single { it.tagName == "properties" }.readPropertiesMap()
+    assertThat(suiteProps)
+      .containsAtLeast(
+        "modulePath",
+        ":app",
+        "testedVariantName",
+        "debug",
+        "testSuiteName",
+        "backupTest",
+        "testTarget",
+        "default",
+        "applicationId",
+        "com.example.app",
+        "suiteType",
+        "androidx.test.backup",
+      )
 
-    // Non-TEST-*.xml files are copied verbatim, and suite-details/** is namespaced under suite-details/<hash>/... without mutation.
-    assertThat(topLevelFiles).containsKey("backup_rules.xml")
+    // Non-TEST-*.xml files are copied verbatim.
     assertThat(topLevelFiles.getValue("backup_rules.xml").readText()).isEqualTo(nonJunitXml)
-    assertThat(xmlResultsDir.resolve("suite-details/BackupTest.testFlow_01.json").exists()).isFalse()
-    assertThat(xmlResultsDir.resolve("suite-details/$hash/BackupTest.testFlow_01.json").readText()).isEqualTo(detailJson)
-    assertThat(xmlResultsDir.resolve("suite-details/$hash/BackupTest.testFlow_01/host-log.txt").readText())
-      .isEqualTo("Backup started\nBackup finished\n")
-    assertThat(xmlResultsDir.resolve("suite-details/$hash/BackupTest.testFlow_01/data_extraction_rules.xml").readText())
-      .isEqualTo("<data-extraction-rules/>")
-    assertThat(xmlResultsDir.resolve("suite-details/$hash/BackupTest.testFlow_01/TEST-captured_artifact.xml").readText())
-      .isEqualTo("<captured/>")
-    assertThat(xmlResultsDir.resolve("suite-details/$hash/BackupTest.testFlow_01/suite-environment.json").readText())
-      .isEqualTo("""{"captured":true}""")
+
+    // Valid relative and absolute attachments inside allowedAttachmentRoot are copied and rewritten; escaping/symlinked ones are stripped.
+    assertThat(xmlResultsDir.resolve("attachments/$hash/1/host-log.txt").readText()).isEqualTo("Backup started\nBackup finished\n")
+    assertThat(xmlResultsDir.resolve("attachments/$hash/2/logcat-emulator-5554.txt").readText()).isEqualTo("I/BackupManagerService: init\n")
+    val testcaseOut =
+      XmlUtils.getSubTagsAsList(XmlUtils.getSubTagsAsList(root).single { it.tagName == "testcase" })
+        .single { it.tagName == "system-out" }
+        .textContent
+    assertThat(testcaseOut).isEqualTo("Test stdout line\n[[ATTACHMENT|attachments/$hash/1/host-log.txt]]\nAfter markers\n")
+    val suiteOut = XmlUtils.getSubTagsAsList(root).single { it.tagName == "system-out" }.textContent
+    assertThat(suiteOut).isEqualTo("[[ATTACHMENT|attachments/$hash/2/logcat-emulator-5554.txt]]")
   }
 
   @Test
-  fun processTestReportAggregation_namespacesSuiteDetailsAcrossTargetsWithoutCollision() {
+  fun processTestReportAggregation_namespacesAttachmentsAcrossTargetsWithoutCollision() {
     val xmlResultsDir = temporaryFolder.newFolder("xmlResults")
     val xmlResultsDirectory = directoryProperty(xmlResultsDir)
 
     for (device in listOf("Pixel3", "Pixel4")) {
       val sourceDir = temporaryFolder.newFolder("raw_$device")
+      val attachmentsDir = temporaryFolder.newFolder("attachments_$device")
+      val logFile = attachmentsDir.resolve("host-log.txt").apply { writeText("log-from-$device") }
+      val relPath = sourceDir.toPath().relativize(logFile.toPath()).toString().replace('\\', '/')
       sourceDir
         .resolve("TEST-com.example.BackupTest.xml")
         .writeText(
-          """<testsuite name="com.example.BackupTest" tests="1"><testcase name="testFlow" classname="com.example.BackupTest"/></testsuite>"""
+          """
+          <testsuite name="com.example.BackupTest" tests="1">
+            <testcase name="testFlow" classname="com.example.BackupTest">
+              <system-out>[[ATTACHMENT|$relPath]]</system-out>
+            </testcase>
+          </testsuite>
+          """
+            .trimIndent()
         )
-      sourceDir
-        .resolve("suite-environment.json")
-        .writeText("""{"schemaVersion":1,"modulePath":":app","variantName":"debug","suiteName":"backupTest","targetName":"$device"}""")
-      val detailDir = sourceDir.resolve("suite-details").also { it.mkdirs() }
-      detailDir.resolve("d1.json").writeText("""{"schemaVersion":1,"suiteType":"androidx.test.backup","device":"$device"}""")
-      detailDir.resolve("d1").apply {
-        mkdirs()
-        resolve("host-log.txt").writeText("log-from-$device")
-      }
 
       processTestReportAggregation(
-        sourceDir,
-        xmlResultsDirectory,
-        ":app",
-        "debug",
-        "backupTest",
-        device,
-        Logging.getLogger(TestReportAggregationUtilsTest::class.java),
+        sourceDir = sourceDir,
+        xmlResultsDirectory = xmlResultsDirectory,
+        modulePath = ":app",
+        variantName = "debug",
+        suiteName = "backupTest",
+        target = device,
+        logger = Logging.getLogger(TestReportAggregationUtilsTest::class.java),
+        additionalProperties = mapOf("suiteType" to "androidx.test.backup"),
+        allowedAttachmentRoot = attachmentsDir,
       )
     }
 
@@ -177,12 +222,54 @@ class TestReportAggregationUtilsTest {
     val pixel4Hash = hashByDevice.getValue("Pixel4")
     assertThat(pixel3Hash).isNotEqualTo(pixel4Hash)
 
-    assertThat(xmlResultsDir.resolve("suite-environment_$pixel3Hash.json").readText()).contains("\"targetName\":\"Pixel3\"")
-    assertThat(xmlResultsDir.resolve("suite-environment_$pixel4Hash.json").readText()).contains("\"targetName\":\"Pixel4\"")
-    assertThat(xmlResultsDir.resolve("suite-details/$pixel3Hash/d1.json").readText()).contains("\"device\":\"Pixel3\"")
-    assertThat(xmlResultsDir.resolve("suite-details/$pixel4Hash/d1.json").readText()).contains("\"device\":\"Pixel4\"")
-    assertThat(xmlResultsDir.resolve("suite-details/$pixel3Hash/d1/host-log.txt").readText()).isEqualTo("log-from-Pixel3")
-    assertThat(xmlResultsDir.resolve("suite-details/$pixel4Hash/d1/host-log.txt").readText()).isEqualTo("log-from-Pixel4")
+    assertThat(xmlResultsDir.resolve("attachments/$pixel3Hash/1/host-log.txt").readText()).isEqualTo("log-from-Pixel3")
+    assertThat(xmlResultsDir.resolve("attachments/$pixel4Hash/1/host-log.txt").readText()).isEqualTo("log-from-Pixel4")
+  }
+
+  @Test
+  fun processTestReportAggregation_keepsTestResultsWhenAnAttachmentCannotBeCopied() {
+    val sourceDir = temporaryFolder.newFolder("results")
+    val attachmentsRoot = temporaryFolder.newFolder("attachments")
+    val hostLog = attachmentsRoot.resolve("host-log.txt").apply { writeText("host log") }
+    val xmlResultsDir = temporaryFolder.newFolder("xmlResults")
+    val resultFile = sourceDir.resolve("TEST-com.example.BackupTest.xml")
+    fun aggregate() =
+      processTestReportAggregation(
+        sourceDir = sourceDir,
+        xmlResultsDirectory = directoryProperty(xmlResultsDir),
+        modulePath = ":app",
+        variantName = "debug",
+        suiteName = "backupTest",
+        target = "default",
+        logger = Logging.getLogger(TestReportAggregationUtilsTest::class.java),
+        allowedAttachmentRoot = attachmentsRoot,
+      )
+
+    resultFile.writeText("""<testsuite name="com.example.BackupTest" tests="0"/>""")
+    aggregate()
+    val hash = xmlResultsDir.listFiles()!!.single().name.removePrefix("TEST-com.example.BackupTest_").removeSuffix(".xml")
+    // A file in place of the attachments folder makes the copy fail.
+    xmlResultsDir.resolve("attachments/$hash").apply {
+      parentFile.mkdirs()
+      writeText("")
+    }
+
+    resultFile.writeText(
+      "<testsuite name=\"com.example.BackupTest\" tests=\"1\">" +
+        "<testcase name=\"testFlow\" classname=\"com.example.BackupTest\">" +
+        "<system-out><![CDATA[before\n[[ATTACHMENT|${hostLog.absolutePath}]]\nafter\n]]></system-out>" +
+        "</testcase></testsuite>"
+    )
+    aggregate()
+
+    val root = parseXmlElement(xmlResultsDir.resolve("TEST-com.example.BackupTest_$hash.xml"))
+    val suiteProps = XmlUtils.getSubTagsAsList(root).single { it.tagName == "properties" }.readPropertiesMap()
+    assertThat(suiteProps).containsAtLeast("modulePath", ":app", "testedVariantName", "debug", "testSuiteName", "backupTest")
+    val testcaseOut =
+      XmlUtils.getSubTagsAsList(XmlUtils.getSubTagsAsList(root).single { it.tagName == "testcase" })
+        .single { it.tagName == "system-out" }
+        .textContent
+    assertThat(testcaseOut).isEqualTo("before\nafter\n")
   }
 
   @Test
@@ -198,7 +285,7 @@ class TestReportAggregationUtilsTest {
         <testsuite name="com.example.BackupTest" tests="1">
           <testcase name="testFlow" classname="com.example.BackupTest" time="0.25">
             <properties>
-              <property name="androidx.report.detailPath" value="suite-details/t1.json"/>
+              <property name="androidx.report.schemaVersion" value="1"/>
             </properties>
           </testcase>
         </testsuite>
@@ -235,7 +322,7 @@ class TestReportAggregationUtilsTest {
       )
 
     val testCaseProps = XmlUtils.getSubTagsAsList(directChildren[1]).single { it.tagName == "properties" }.readPropertiesMap()
-    assertThat(testCaseProps).containsExactly("androidx.report.detailPath", "suite-details/t1.json")
+    assertThat(testCaseProps).containsExactly("androidx.report.schemaVersion", "1")
 
     assertThat(XMLReportAggregator(listOf(xmlResultsDir), ":app", temporaryFolder.root).getTestCount()).isEqualTo(1)
   }
@@ -273,7 +360,7 @@ class TestReportAggregationUtilsTest {
           <testsuite name="com.example.ThirdTest" tests="1">
             <testcase name="thirdCase" classname="com.example.ThirdTest" time="0.1">
               <properties>
-                <property name="androidx.report.detailPath" value="suite-details/t3.json"/>
+                <property name="androidx.report.schemaVersion" value="1"/>
               </properties>
             </testcase>
           </testsuite>
@@ -325,7 +412,7 @@ class TestReportAggregationUtilsTest {
     }
     val thirdTestCase = XmlUtils.getSubTagsAsList(withoutPropsSuites[0]).single { it.tagName == "testcase" }
     val thirdTestCaseProps = XmlUtils.getSubTagsAsList(thirdTestCase).single { it.tagName == "properties" }.readPropertiesMap()
-    assertThat(thirdTestCaseProps).containsExactly("androidx.report.detailPath", "suite-details/t3.json")
+    assertThat(thirdTestCaseProps).containsExactly("androidx.report.schemaVersion", "1")
 
     assertThat(XMLReportAggregator(listOf(xmlResultsDir), ":app", temporaryFolder.root).getTestCount()).isEqualTo(4)
   }
@@ -378,6 +465,66 @@ class TestReportAggregationUtilsTest {
 
     assertThat(xmlResultsDir).isDirectory()
     assertThat(xmlResultsDir.listFiles()!!.toList()).isEmpty()
+  }
+
+  @Test
+  fun processTestReportAggregation_rewritesAttachmentsInsideNestedTestsuites() {
+    val buildDir = temporaryFolder.newFolder("nestedBuild")
+    val sourceDir = buildDir.resolve("test-results/testDebugBackupTest").apply { mkdirs() }
+    val attachmentsRoot = buildDir.resolve("intermediates/debug/testDebugBackupTest/attachments").apply { mkdirs() }
+
+    val nestedTestLog =
+      attachmentsRoot.resolve("nestedCase/host-log.txt").apply {
+        parentFile.mkdirs()
+        writeText("Nested testcase host log\n")
+      }
+    val nestedSuiteLog =
+      attachmentsRoot.resolve("nestedSuite/logcat-emulator-5554.txt").apply {
+        parentFile.mkdirs()
+        writeText("Nested suite logcat\n")
+      }
+
+    sourceDir
+      .resolve("TEST-com.example.OuterBackupTest.xml")
+      .writeText(
+        """
+        <testsuite name="com.example.OuterBackupTest" tests="1">
+          <testsuite name="com.example.OuterBackupTest${'$'}InnerGroup" tests="1">
+            <testcase name="nestedRestoreFlow" classname="com.example.OuterBackupTest${'$'}InnerGroup" time="0.4">
+              <properties>
+                <property name="androidx.report.schemaVersion" value="1"/>
+                <property name="androidx.report.suiteType" value="androidx.test.backup"/>
+              </properties>
+              <system-out><![CDATA[[[ATTACHMENT|${nestedTestLog.absolutePath}]]]]></system-out>
+            </testcase>
+            <system-out><![CDATA[[[ATTACHMENT|${nestedSuiteLog.absolutePath}]]]]></system-out>
+          </testsuite>
+        </testsuite>
+        """
+          .trimIndent()
+      )
+
+    val xmlResultsDir = temporaryFolder.newFolder("nestedXmlResults")
+    processTestReportAggregation(
+      sourceDir = sourceDir,
+      xmlResultsDirectory = directoryProperty(xmlResultsDir),
+      modulePath = ":app",
+      variantName = "debug",
+      suiteName = "backupTest",
+      target = "default",
+      logger = Logging.getLogger(TestReportAggregationUtilsTest::class.java),
+      allowedAttachmentRoot = attachmentsRoot,
+    )
+
+    val enrichedXml = xmlResultsDir.listFiles()!!.single { it.isFile && it.name.startsWith("TEST-com.example.OuterBackupTest_") }
+    val hash = enrichedXml.name.removePrefix("TEST-com.example.OuterBackupTest_").removeSuffix(".xml")
+    val enrichedText = enrichedXml.readText()
+    assertThat(enrichedText).doesNotContain(nestedTestLog.absolutePath)
+    assertThat(enrichedText).doesNotContain(nestedSuiteLog.absolutePath)
+    assertThat(enrichedText).contains("[[ATTACHMENT|attachments/$hash/1/host-log.txt]]")
+    assertThat(enrichedText).contains("[[ATTACHMENT|attachments/$hash/2/logcat-emulator-5554.txt]]")
+    assertThat(xmlResultsDir.resolve("attachments/$hash/1/host-log.txt").readText()).isEqualTo("Nested testcase host log\n")
+    assertThat(xmlResultsDir.resolve("attachments/$hash/2/logcat-emulator-5554.txt").readText()).isEqualTo("Nested suite logcat\n")
   }
 
   private fun parseXmlElement(file: File): Element = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file).documentElement

@@ -18,6 +18,7 @@
 
 package com.android.build.gradle.internal.test.report
 
+import com.android.SdkConstants
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_TARGET_KEY
@@ -36,20 +37,44 @@ import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logger
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Internal
+import org.gradle.process.CommandLineArgumentProvider
+import org.w3c.dom.Element
+
+internal const val JUNIT_PLATFORM_REPORTING_OUTPUT_DIR_PROPERTY = "junit.platform.reporting.output.dir"
+
+internal class JunitAttachmentsArgumentProvider(
+  @get:Internal val attachmentsDir: Provider<Directory>,
+  @get:Internal val suppressArgument: Provider<Boolean>? = null,
+) : CommandLineArgumentProvider {
+  override fun asArguments(): Iterable<String> =
+    if (suppressArgument?.getOrElse(false) == true) {
+      emptyList()
+    } else {
+      listOf("-D$JUNIT_PLATFORM_REPORTING_OUTPUT_DIR_PROPERTY=${attachmentsDir.get().asFile.absolutePath}")
+    }
+}
 
 /**
- * Enriches raw JUnit XML test results in [sourceDir] with suite metadata into [xmlResultsDirectory].
+ * Enriches raw JUnit XML test results in [sourceDir] with suite metadata and collects published file attachments into
+ * [xmlResultsDirectory].
  *
- * @param sourceDir Directory containing raw XML test results and sidecars from the test engine.
- * @param xmlResultsDirectory Destination directory property for enriched XML results and sidecars.
+ * Attachments are copied for every test, but the HTML report shows them only for tests that also publish `androidx.report.*` entries.
+ *
+ * @param sourceDir Directory containing raw XML test results from the test engine.
+ * @param xmlResultsDirectory Destination directory property for enriched XML results and copied attachments.
  * @param modulePath Gradle project path (for example, `":app"`).
  * @param variantName Name of the tested variant.
  * @param suiteName Name of the test suite (for example, `"unitTest"`).
  * @param target Target platform or device identifier.
  * @param logger Logger used to report processing warnings.
  * @param excludeFileFilter Returns true for result files that must not be aggregated.
+ * @param additionalProperties Optional suite-level metadata injected into `<testsuite><properties>` without altering the result file hash.
+ * @param allowedAttachmentRoot Optional directory from which JUnit `[[ATTACHMENT|...]]` files may be copied into `attachments/<hash>/`.
  */
 @JvmOverloads
 fun processTestReportAggregation(
@@ -61,10 +86,12 @@ fun processTestReportAggregation(
   target: String,
   logger: Logger,
   excludeFileFilter: (File) -> Boolean = { false },
+  additionalProperties: Map<String, String> = emptyMap(),
+  allowedAttachmentRoot: File? = null,
 ) {
   if (!xmlResultsDirectory.isPresent) return
 
-  val properties =
+  val routingProperties =
     mapOf(
       TEST_SUITE_METADATA_MODULE_KEY to modulePath,
       TEST_SUITE_METADATA_VARIANT_KEY to variantName,
@@ -72,7 +99,15 @@ fun processTestReportAggregation(
       TEST_SUITE_METADATA_TARGET_KEY to target,
     )
 
-  injectPropertiesToXmlResults(sourceDir, properties, xmlResultsDirectory.get().asFile, logger, excludeFileFilter)
+  injectPropertiesToXmlResults(
+    directory = sourceDir,
+    routingProperties = routingProperties,
+    additionalProperties = additionalProperties,
+    outputDir = xmlResultsDirectory.get().asFile,
+    logger = logger,
+    excludeFileFilter = excludeFileFilter,
+    allowedAttachmentRoot = allowedAttachmentRoot,
+  )
 }
 
 /**
@@ -88,23 +123,25 @@ fun clearTestReportAggregationResults(xmlResultsDirectory: DirectoryProperty) {
 }
 
 /**
- * Enriches JUnit XML files and namespaces suite sidecars from [directory] into [outputDir].
- *
- * Injects [properties] into `TEST-*.xml` files, hashes [SUITE_ENVIRONMENT_FILE_NAME] to `suite-environment_<hash>.json`, namespaces
- * [SUITE_DETAILS_DIR_NAME] files under `suite-details/<hash>/`, and copies remaining files verbatim.
- *
- * @param excludeFileFilter Returns true for result files that must not be aggregated.
+ * Enriches `TEST-*.xml` files from [directory] into [outputDir], copying validated JUnit attachments under `attachments/<hash>/` and
+ * copying remaining files verbatim.
  */
 private fun injectPropertiesToXmlResults(
   directory: File,
-  properties: Map<String, String>,
+  routingProperties: Map<String, String>,
+  additionalProperties: Map<String, String>,
   outputDir: File,
   logger: Logger,
   excludeFileFilter: (File) -> Boolean,
+  allowedAttachmentRoot: File?,
 ) {
   if (!directory.exists()) return
 
-  val hashString = calculateHash(properties)
+  val hashString = calculateHash(routingProperties)
+  val allProperties = if (additionalProperties.isEmpty()) routingProperties else additionalProperties + routingProperties
+  val existingMaxSlot =
+    outputDir.resolve(ATTACHMENTS_DIR_NAME).resolve(hashString).listFiles()?.mapNotNull { it.name.toIntOrNull() }?.maxOrNull() ?: 0
+  val attachmentSlotCounter = intArrayOf(existingMaxSlot)
 
   try {
     val docFactory = XmlUtils.createDocumentBuilderFactory()
@@ -116,36 +153,27 @@ private fun injectPropertiesToXmlResults(
         val sourceFile = sourcePath.toFile()
         if (sourceFile.isFile && excludeFileFilter(sourceFile)) return@forEach
         val relativePath = directory.toPath().relativize(sourcePath)
-        val isUnderSuiteDetails = relativePath.nameCount > 0 && relativePath.getName(0).toString() == SUITE_DETAILS_DIR_NAME
+        val targetPath = outputDir.toPath().resolve(relativePath)
 
-        if (isUnderSuiteDetails) {
-          val namespacedBase = outputDir.toPath().resolve(SUITE_DETAILS_DIR_NAME).resolve(hashString)
-          val suiteDetailsTargetPath =
-            if (relativePath.nameCount == 1) {
-              namespacedBase
-            } else {
-              namespacedBase.resolve(relativePath.subpath(1, relativePath.nameCount))
-            }
-          if (sourceFile.isDirectory) {
-            Files.createDirectories(suiteDetailsTargetPath)
-          } else {
-            FileUtils.copyFile(sourceFile, suiteDetailsTargetPath.toFile())
-          }
+        if (sourceFile.isDirectory) {
+          Files.createDirectories(targetPath)
+        } else if (sourceFile.name.startsWith(JUNIT_XML_FILE_PREFIX) && sourceFile.name.endsWith(".xml", ignoreCase = true)) {
+          val newFileName = "${sourceFile.nameWithoutExtension}_${hashString}.xml"
+          val xmlTargetFile = targetPath.parent.resolve(newFileName).toFile()
+          injectProperties(
+            xmlFile = sourceFile,
+            properties = allProperties,
+            outputDir = outputDir,
+            hashString = hashString,
+            attachmentSlotCounter = attachmentSlotCounter,
+            allowedAttachmentRoot = allowedAttachmentRoot,
+            targetFile = xmlTargetFile,
+            docFactory = docFactory,
+            transformerFactory = transformerFactory,
+            logger = logger,
+          )
         } else {
-          val targetPath = outputDir.toPath().resolve(relativePath)
-
-          if (sourceFile.isDirectory) {
-            Files.createDirectories(targetPath)
-          } else if (sourceFile.name.startsWith(JUNIT_XML_FILE_PREFIX) && sourceFile.name.endsWith(".xml", ignoreCase = true)) {
-            val newFileName = "${sourceFile.nameWithoutExtension}_${hashString}.xml"
-            val xmlTargetFile = targetPath.parent.resolve(newFileName).toFile()
-            injectProperties(sourceFile, properties, xmlTargetFile, docFactory, transformerFactory, logger)
-          } else if (sourceFile.name == SUITE_ENVIRONMENT_FILE_NAME) {
-            val envTargetFile = targetPath.parent.resolve("${SUITE_ENVIRONMENT_FILE_PREFIX}${hashString}.json").toFile()
-            FileUtils.copyFile(sourceFile, envTargetFile)
-          } else {
-            FileUtils.copyFile(sourceFile, targetPath.toFile())
-          }
+          FileUtils.copyFile(sourceFile, targetPath.toFile())
         }
       }
     }
@@ -161,10 +189,14 @@ private fun calculateHash(properties: Map<String, String>): String {
   return BigInteger(1, digest.digest(content.toByteArray(StandardCharsets.UTF_8))).toString(16).padStart(32, '0')
 }
 
-/** Injects [properties] into [xmlFile] and writes the updated XML document to [targetFile]. */
+/** Injects [properties] and rewrites validated `<system-out>` attachment markers in [xmlFile], writing the result to [targetFile]. */
 private fun injectProperties(
   xmlFile: File,
   properties: Map<String, String>,
+  outputDir: File,
+  hashString: String,
+  attachmentSlotCounter: IntArray,
+  allowedAttachmentRoot: File?,
   targetFile: File,
   docFactory: DocumentBuilderFactory,
   transformerFactory: TransformerFactory,
@@ -193,12 +225,29 @@ private fun injectProperties(
               suiteElement.appendChild(created)
             }
           }
+      val existingByName =
+        XmlUtils.getSubTagsAsList(propertiesNode).filter { it.tagName == TAG_PROPERTY }.associateBy { it.getAttribute(ATTR_NAME) }
       properties.forEach { (key, value) ->
-        val propertyElement = document.createElement(TAG_PROPERTY)
-        propertyElement.setAttribute(ATTR_NAME, key)
-        propertyElement.setAttribute(ATTR_VALUE, value)
-        propertiesNode.appendChild(propertyElement)
+        val existingElement = existingByName[key]
+        if (existingElement != null) {
+          existingElement.setAttribute(ATTR_VALUE, value)
+        } else {
+          val propertyElement = document.createElement(TAG_PROPERTY)
+          propertyElement.setAttribute(ATTR_NAME, key)
+          propertyElement.setAttribute(ATTR_VALUE, value)
+          propertiesNode.appendChild(propertyElement)
+        }
       }
+
+      rewriteSuiteElementAttachments(
+        suiteElement = suiteElement,
+        xmlFile = xmlFile,
+        outputDir = outputDir,
+        hashString = hashString,
+        attachmentSlotCounter = attachmentSlotCounter,
+        allowedAttachmentRoot = allowedAttachmentRoot,
+        logger = logger,
+      )
     }
 
     val transformer = transformerFactory.newTransformer()
@@ -215,9 +264,100 @@ private fun injectProperties(
   }
 }
 
+private fun rewriteSuiteElementAttachments(
+  suiteElement: Element,
+  xmlFile: File,
+  outputDir: File,
+  hashString: String,
+  attachmentSlotCounter: IntArray,
+  allowedAttachmentRoot: File?,
+  logger: Logger,
+) {
+  for (child in XmlUtils.getSubTagsAsList(suiteElement)) {
+    when (child.tagName) {
+      TAG_SYSTEM_OUT ->
+        rewriteSystemOutAttachments(child, xmlFile, outputDir, hashString, attachmentSlotCounter, allowedAttachmentRoot, logger)
+      TAG_TESTCASE ->
+        for (tcChild in XmlUtils.getSubTagsAsList(child)) {
+          if (tcChild.tagName == TAG_SYSTEM_OUT) {
+            rewriteSystemOutAttachments(tcChild, xmlFile, outputDir, hashString, attachmentSlotCounter, allowedAttachmentRoot, logger)
+          }
+        }
+      TAG_TESTSUITE ->
+        rewriteSuiteElementAttachments(child, xmlFile, outputDir, hashString, attachmentSlotCounter, allowedAttachmentRoot, logger)
+    }
+  }
+}
+
+private fun rewriteSystemOutAttachments(
+  systemOutElement: Element,
+  xmlFile: File,
+  outputDir: File,
+  hashString: String,
+  attachmentSlotCounter: IntArray,
+  allowedAttachmentRoot: File?,
+  logger: Logger,
+) {
+  val rawText = systemOutElement.textContent ?: return
+  if (!rawText.contains(ATTACHMENT_MARKER_PREFIX)) return
+
+  val rewritten = StringBuilder(rawText.length)
+  var mutated = false
+  var index = 0
+  while (index < rawText.length) {
+    val newlineIndex = rawText.indexOf('\n', index)
+    val lineEnd = if (newlineIndex == -1) rawText.length else newlineIndex
+    val hasCr = lineEnd > index && rawText[lineEnd - 1] == '\r'
+    val contentEnd = if (hasCr) lineEnd - 1 else lineEnd
+    val line = rawText.substring(index, contentEnd)
+    val lineEnding =
+      when {
+        newlineIndex == -1 -> ""
+        hasCr -> "\r\n"
+        else -> "\n"
+      }
+
+    val trimmed = line.trim()
+    if (trimmed.startsWith(ATTACHMENT_MARKER_PREFIX) && trimmed.endsWith(ATTACHMENT_MARKER_SUFFIX)) {
+      mutated = true
+      val rawMarkerPath = trimmed.substring(ATTACHMENT_MARKER_PREFIX.length, trimmed.length - ATTACHMENT_MARKER_SUFFIX.length).trim()
+      val validatedFile =
+        PathSafetyUtils.resolveAllowedAttachmentFile(rawMarkerPath, xmlFile.parentFile, allowedAttachmentRoot, logger::warn)
+      if (validatedFile != null) {
+        val slot = ++attachmentSlotCounter[0]
+        val safeName = PathSafetyUtils.sanitizeFileName(validatedFile.name, "attachment.bin")
+        val relativeDestPath = "$ATTACHMENTS_DIR_NAME/$hashString/$slot/$safeName"
+        val destFile = outputDir.resolve(relativeDestPath)
+        try {
+          Files.createDirectories(destFile.parentFile.toPath())
+          FileUtils.copyFile(validatedFile, destFile)
+          rewritten.append(ATTACHMENT_MARKER_PREFIX).append(relativeDestPath).append(ATTACHMENT_MARKER_SUFFIX).append(lineEnding)
+        } catch (e: IOException) {
+          // Only this attachment is dropped; the test results in the file are still reported.
+          logger.warn("Failed to copy test attachment '$rawMarkerPath': ${e.message}")
+        }
+      }
+    } else {
+      rewritten.append(line).append(lineEnding)
+    }
+
+    index = if (newlineIndex == -1) rawText.length else newlineIndex + 1
+  }
+
+  if (mutated) {
+    systemOutElement.textContent = rewritten.toString()
+  }
+}
+
 private fun createSafeTransformerFactory(): TransformerFactory =
   TransformerFactory.newInstance().apply {
     runCatching { setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true) }
     runCatching { setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "") }
     runCatching { setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "") }
   }
+
+internal fun Element.androidAttr(localName: String): String? {
+  val nsValue = getAttributeNS(SdkConstants.ANDROID_URI, localName)
+  if (nsValue.isNotBlank()) return nsValue
+  return getAttribute("android:$localName").takeIf { it.isNotBlank() }
+}

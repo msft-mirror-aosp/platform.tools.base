@@ -21,17 +21,47 @@ internal const val ATTR_NAME = "name"
 internal const val ATTR_VALUE = "value"
 internal const val ATTR_CLASSNAME = "classname"
 internal const val ATTR_TIME = "time"
-internal const val ATTR_MESSAGE = "message"
 
-/** Keys for `<property>` tags within the report. */
+/** Keys for generic `<property>` tags within the report. */
 internal const val KEY_MODULE_PATH = "modulePath"
 internal const val KEY_TEST_SUITE_NAME = "testSuiteName"
 internal const val KEY_TESTED_VARIANT_NAME = "testedVariantName"
 internal const val KEY_TEST_TARGET = "testTarget"
-internal const val KEY_DETAIL_PATH = "androidx.report.detailPath"
+internal const val KEY_SUITE_TYPE = "suiteType"
+internal const val KEY_APPLICATION_ID = "applicationId"
+internal const val KEY_APPLICATION_NAME = "applicationName"
+internal const val KEY_VERSION_NAME = "versionName"
+internal const val KEY_VERSION_CODE = "versionCode"
+internal const val KEY_TARGET_SDK_VERSION = "targetSdkVersion"
+internal const val KEY_AGP_VERSION = "agpVersion"
+internal const val KEY_GRADLE_VERSION = "gradleVersion"
+internal const val KEY_TEST_LIBRARY_VERSION = "testLibraryVersion"
+internal const val KEY_RUNNER = "runner"
+
 internal const val INTERNAL_REPORT_KEY_PREFIX = "androidx.report."
-internal const val SCREENSHOT_PROPERTY_PREFIX = "PreviewScreenshot."
-internal const val BACKUP_RESTORE_PROPERTY_PREFIX = "BackupRestore."
+internal const val KEY_REPORT_SCHEMA_VERSION = "${INTERNAL_REPORT_KEY_PREFIX}schemaVersion"
+internal const val KEY_REPORT_SUITE_TYPE = "${INTERNAL_REPORT_KEY_PREFIX}suiteType"
+internal const val KEY_REPORT_SOURCE = "${INTERNAL_REPORT_KEY_PREFIX}source"
+internal const val REPORT_ATTR_PREFIX = "${INTERNAL_REPORT_KEY_PREFIX}attr."
+internal const val REPORT_ACTOR_PREFIX = "${INTERNAL_REPORT_KEY_PREFIX}actor."
+internal const val REPORT_STEP_PREFIX = "${INTERNAL_REPORT_KEY_PREFIX}step."
+internal const val REPORT_CALLOUT_PREFIX = "${INTERNAL_REPORT_KEY_PREFIX}callout."
+internal const val REPORT_ARTIFACT_PREFIX = "${INTERNAL_REPORT_KEY_PREFIX}artifact."
+internal const val REPORT_FILE_PREFIX = "${INTERNAL_REPORT_KEY_PREFIX}file."
+
+internal val BASE_SUITE_ENVIRONMENT_KEYS =
+  setOf(
+    KEY_SUITE_TYPE,
+    KEY_APPLICATION_ID,
+    KEY_APPLICATION_NAME,
+    KEY_VERSION_NAME,
+    KEY_VERSION_CODE,
+    KEY_TARGET_SDK_VERSION,
+    KEY_AGP_VERSION,
+    KEY_GRADLE_VERSION,
+    KEY_TEST_LIBRARY_VERSION,
+    KEY_RUNNER,
+  )
 
 /** XML element tags found in test reports. */
 internal const val TAG_TESTSUITE = "testsuite"
@@ -50,20 +80,18 @@ internal const val STATUS_PASS = "pass"
 internal const val STATUS_SKIPPED = "skipped"
 internal const val STATUS_FAIL = "fail"
 
-/** File and directory names for test report sidecars and XML results. */
-internal const val EXT_XML = "xml"
-internal const val EXT_JSON = "json"
-internal const val JUNIT_XML_FILE_PREFIX = "TEST-"
-internal const val SUITE_DETAILS_DIR_NAME = "suite-details"
-internal const val SUITE_ENVIRONMENT_FILE_NAME = "suite-environment.json"
-internal const val SUITE_ENVIRONMENT_FILE_PREFIX = "suite-environment_"
+/** Test case names that JUnit runners use for class-level failures rather than real test methods. */
+internal val SYNTHETIC_TEST_NAMES = setOf("initializationError", "executionError", "classMethod")
 
-/** Suite report adapter identifiers and metadata. */
-internal const val ADAPTER_ID_SCREENSHOT = "screenshot"
-internal const val ADAPTER_ID_BACKUP_RESTORE = "backupRestore"
+/** File and directory names for test report attachments and XML results. */
+internal const val EXT_XML = "xml"
+internal const val JUNIT_XML_FILE_PREFIX = "TEST-"
+internal const val ATTACHMENTS_DIR_NAME = "attachments"
+internal const val ATTACHMENT_MARKER_PREFIX = "[[ATTACHMENT|"
+internal const val ATTACHMENT_MARKER_SUFFIX = "]]"
+
+/** Fallback suite report adapter identifier. */
 internal const val ADAPTER_ID_DEFAULT = "default"
-internal const val SUITE_TYPE_BACKUP_RESTORE = "androidx.test.backup"
-internal const val BACKUP_RESTORE_DOCS_URL = "https://developer.android.com/identity/data/testing"
 
 /** Size caps for captured streams and inline log content. */
 internal const val MAX_STREAM_CHARS = 262_144
@@ -72,3 +100,15 @@ internal const val MAX_INLINE_LOG_BYTES = 524_288
 internal const val AGGREGATED_TEST_SUITE_NAME = "Aggregated"
 
 const val UNKNOWN_TARGET = "unknown_target"
+
+/** Temporary constants retained until SuiteReportAdapter and TestDetailRecord migrate in the next CL. */
+internal const val KEY_DETAIL_PATH = "androidx.report.detailPath"
+internal const val SCREENSHOT_PROPERTY_PREFIX = "PreviewScreenshot."
+internal const val BACKUP_RESTORE_PROPERTY_PREFIX = "BackupRestore."
+internal const val SUITE_DETAILS_DIR_NAME = "suite-details"
+internal const val SUITE_ENVIRONMENT_FILE_NAME = "suite-environment.json"
+internal const val SUITE_ENVIRONMENT_FILE_PREFIX = "suite-environment_"
+internal const val ADAPTER_ID_SCREENSHOT = "screenshot"
+internal const val ADAPTER_ID_BACKUP_RESTORE = "backupRestore"
+internal const val SUITE_TYPE_BACKUP_RESTORE = "androidx.test.backup"
+internal const val BACKUP_RESTORE_DOCS_URL = "https://developer.android.com/identity/data/testing"

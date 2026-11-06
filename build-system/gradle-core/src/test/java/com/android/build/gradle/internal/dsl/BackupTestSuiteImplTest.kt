@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.services.createProjectServices
 import com.android.build.gradle.internal.test.recordBackupTestRun
+import com.android.build.gradle.internal.testsuites.backup.BackupTestAnalyticsListener
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.tasks.TestSuiteTestTask
@@ -37,6 +38,7 @@ import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.TestRun
 import com.google.wireless.android.sdk.stats.TestRun.BackupTestRun.BackupFailureReason
 import com.google.wireless.android.sdk.stats.TestRun.BackupTestRun.BackupTransportMode
+import java.io.File
 import java.time.Instant
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.dsl.DependencyCollector
@@ -47,7 +49,9 @@ import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.process.CommandLineArgumentProvider
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.mockito.Answers.RETURNS_MOCKS
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -60,6 +64,8 @@ import org.mockito.kotlin.whenever
 private const val CUSTOM_BACKUP_VERSION = "${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}-custom"
 
 class BackupTestSuiteImplTest {
+
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
   private val dslServices = createDslServices()
   private val project = ProjectFactory.project
@@ -100,6 +106,9 @@ class BackupTestSuiteImplTest {
         AgpTestSuiteInputParameters.TESTED_APKS,
       )
     assertThat(suite.useJunitEngine.inputs).containsExactlyElementsIn(expectedInputs)
+    val junitEngineSpec = suite.useJunitEngine as JUnitEngineSpecImpl
+    assertThat(junitEngineSpec.inputProperties[BackupAgpTestSuiteImpl.TEST_LIBRARY_VERSION_PROPERTY]?.get())
+      .isEqualTo(BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION)
 
     // 5. Assert source containers are properly initialized for hostJar and testApk
     val hostJarSources = suite.getSourceContainers().filterIsInstance<TestSuiteHostJarSpecImpl>()
@@ -130,6 +139,9 @@ class BackupTestSuiteImplTest {
     val testApk = testApkSources.single()
     assertThat(testApk.dependencies.implementation.notations())
       .containsExactly("androidx.test.backup:backup:$CUSTOM_BACKUP_VERSION", "androidx.room:room-testing:2.6.1")
+    val junitEngineSpec = suite.useJunitEngine as JUnitEngineSpecImpl
+    assertThat(junitEngineSpec.inputProperties[BackupAgpTestSuiteImpl.TEST_LIBRARY_VERSION_PROPERTY]?.get())
+      .isEqualTo(CUSTOM_BACKUP_VERSION)
   }
 
   @Test
@@ -161,6 +173,9 @@ class BackupTestSuiteImplTest {
     val testApk = suite.getSourceContainers().filterIsInstance<TestSuiteTestApkSpecImpl>().single()
     assertThat(testApk.dependencies.implementation.notations())
       .containsExactly("androidx.test.backup:backup:${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}")
+    val junitEngineSpec = suite.useJunitEngine as JUnitEngineSpecImpl
+    assertThat(junitEngineSpec.inputProperties[BackupAgpTestSuiteImpl.TEST_LIBRARY_VERSION_PROPERTY]?.get())
+      .isEqualTo(BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION)
   }
 
   @Test
@@ -187,9 +202,16 @@ class BackupTestSuiteImplTest {
       // Set after the task is configured, because the properties are read when the test task runs.
       systemPropertyOverrides.setProperty("androidx.test.backup.device.serial", "emulator-5554")
       systemPropertyOverrides.setProperty("androidx.test.backup.device.api", "34")
+      systemPropertyOverrides.setProperty("androidx.test.backup.report.captureLogcatOnPass", "true")
+      systemPropertyOverrides.setProperty("androidx.test.backup.report.includeRawArchives", "true")
       systemPropertyOverrides.setProperty("androidx.test.backup.other", "value")
       assertThat(argumentProviders.flatMap { it.asArguments() })
-        .containsExactly("-Dandroidx.test.backup.device.serial=emulator-5554", "-Dandroidx.test.backup.device.api=34")
+        .containsExactly(
+          "-Dandroidx.test.backup.device.serial=emulator-5554",
+          "-Dandroidx.test.backup.device.api=34",
+          "-Dandroidx.test.backup.report.captureLogcatOnPass=true",
+          "-Dandroidx.test.backup.report.includeRawArchives=true",
+        )
     }
   }
 
@@ -334,10 +356,61 @@ class BackupTestSuiteImplTest {
     val listenerCaptor = argumentCaptor<TestListener>()
     verify(mockTestTask).addTestListener(listenerCaptor.capture())
     val listener = listenerCaptor.firstValue
-    assertThat(listener).isInstanceOf(BackupAgpTestSuiteImpl.BackupTestListener::class.java)
+    assertThat(listener).isInstanceOf(BackupTestAnalyticsListener::class.java)
     // The same listener receives the JUnit report entries of the backup library, and runs without a device.
-    verify(mockTestTask).addTestMetadataListener(listener as BackupAgpTestSuiteImpl.BackupTestListener)
+    verify(mockTestTask).addTestMetadataListener(listener as BackupTestAnalyticsListener)
     verify(mockTestTask).addNoDeviceListener(listener)
+
+    val realTask = project.tasks.register("backupSuiteReportProperties", TestSuiteTestTask::class.java).get()
+    suite.testTaskConfigActions.forEach { it(realTask, mockContext) }
+    assertThat(realTask.suiteType.get()).isEqualTo("androidx.test.backup")
+    assertThat(realTask.additionalEngineInputProperties.get()).isEmpty()
+    assertThat(realTask.suiteReportProperties.get()).isEmpty()
+
+    val manifestFile =
+      temporaryFolder.newFile("AndroidManifest.xml").apply {
+        writeText(
+          """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app">
+            <application
+              android:allowBackup="false"
+              android:dataExtractionRules="@xml/data_extraction_rules"/>
+          </manifest>
+          """
+            .trimIndent(),
+          Charsets.UTF_8,
+        )
+      }
+    val resDir = temporaryFolder.newFolder("res")
+    File(resDir, "xml/data_extraction_rules.xml").apply {
+      parentFile.mkdirs()
+      writeText("<data-extraction-rules/>", Charsets.UTF_8)
+    }
+
+    val realTaskWithManifest =
+      project.tasks.register("backupSuiteReportPropertiesWithManifest", TestSuiteTestTask::class.java).get().apply {
+        testedVariantMergedManifest.set(manifestFile)
+        testedVariantResDirectories.from(resDir)
+      }
+    suite.testTaskConfigActions.forEach { it(realTaskWithManifest, mockContext) }
+    assertThat(realTaskWithManifest.additionalEngineInputProperties.get())
+      .containsAtLeast(
+        "com.android.agp.test.ALLOW_BACKUP",
+        "false",
+        "com.android.agp.test.DATA_EXTRACTION_RULES_XML",
+        "<data-extraction-rules/>",
+      )
+    assertThat(realTaskWithManifest.suiteReportProperties.get())
+      .containsAtLeast(
+        "allowBackup",
+        "false",
+        "dataExtractionRules",
+        "@xml/data_extraction_rules",
+        "dataExtractionRulesFile",
+        "data_extraction_rules.xml",
+        "dataExtractionRulesXml",
+        "<data-extraction-rules/>",
+      )
   }
 
   @Test
@@ -376,7 +449,7 @@ class BackupTestSuiteImplTest {
     val mockAnalyticsService = mock<AnalyticsService>()
     val provider = project.provider { mockAnalyticsService }
     val listener =
-      BackupAgpTestSuiteImpl.BackupTestListener(
+      BackupTestAnalyticsListener(
         analyticsServiceProvider = provider,
         backupTestLibraryVersion = CUSTOM_BACKUP_VERSION,
         invocationType = TestRun.TestInvocationType.GRADLE_TEST,
@@ -466,7 +539,7 @@ class BackupTestSuiteImplTest {
     // A controller that a test class constructor receives reports its errors for the class, while each test of the class runs.
     val testClass = mock<TestDescriptor>()
     whenever(testClass.parent).thenReturn(rootSuite)
-    fun BackupAgpTestSuiteImpl.BackupTestListener.testOfClass(result: TestResult, vararg classEntries: Pair<String, String>) {
+    fun BackupTestAnalyticsListener.testOfClass(result: TestResult, vararg classEntries: Pair<String, String>) {
       classEntries.forEach { onMetadata(testClass, reportEntries(it)) }
       afterTest(mock<TestDescriptor>().also { whenever(it.parent).thenReturn(testClass) }, result)
     }
@@ -583,9 +656,9 @@ class BackupTestSuiteImplTest {
   }
 
   /** Returns the run that a backup test listener records for the test [events]. */
-  private fun recordedRun(events: BackupAgpTestSuiteImpl.BackupTestListener.() -> Unit): TestRun {
+  private fun recordedRun(events: BackupTestAnalyticsListener.() -> Unit): TestRun {
     val analyticsService = mock<AnalyticsService>()
-    BackupAgpTestSuiteImpl.BackupTestListener(
+    BackupTestAnalyticsListener(
         project.provider { analyticsService },
         CUSTOM_BACKUP_VERSION,
         TestRun.TestInvocationType.GRADLE_TEST,
@@ -604,7 +677,7 @@ class BackupTestSuiteImplTest {
     }
 
   /** Reports a test that publishes the JUnit report [entries], one at a time like the backup library, and ends with [result]. */
-  private fun BackupAgpTestSuiteImpl.BackupTestListener.test(result: TestResult, vararg entries: Pair<String, String>) {
+  private fun BackupTestAnalyticsListener.test(result: TestResult, vararg entries: Pair<String, String>) {
     val test = mock<TestDescriptor>()
     entries.forEach { onMetadata(test, reportEntries(it)) }
     afterTest(test, result)

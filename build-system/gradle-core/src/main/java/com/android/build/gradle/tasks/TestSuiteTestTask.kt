@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
+import com.android.Version
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
@@ -53,7 +54,20 @@ import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.getApkFiles
+import com.android.build.gradle.internal.test.report.JUNIT_PLATFORM_REPORTING_OUTPUT_DIR_PROPERTY
+import com.android.build.gradle.internal.test.report.JunitAttachmentsArgumentProvider
+import com.android.build.gradle.internal.test.report.KEY_AGP_VERSION
+import com.android.build.gradle.internal.test.report.KEY_APPLICATION_ID
+import com.android.build.gradle.internal.test.report.KEY_APPLICATION_NAME
+import com.android.build.gradle.internal.test.report.KEY_GRADLE_VERSION
+import com.android.build.gradle.internal.test.report.KEY_RUNNER
+import com.android.build.gradle.internal.test.report.KEY_SUITE_TYPE
+import com.android.build.gradle.internal.test.report.KEY_TARGET_SDK_VERSION
+import com.android.build.gradle.internal.test.report.KEY_TEST_LIBRARY_VERSION
+import com.android.build.gradle.internal.test.report.KEY_VERSION_CODE
+import com.android.build.gradle.internal.test.report.KEY_VERSION_NAME
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
+import com.android.build.gradle.internal.test.report.androidAttr
 import com.android.build.gradle.internal.test.report.clearTestReportAggregationResults
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.COVERAGE_DIR_ON_DEVICE_KEY
@@ -82,7 +96,9 @@ import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
+import com.android.ide.common.resources.ValueXmlHelper
 import com.android.utils.FileUtils
+import com.android.utils.XmlUtils
 import com.google.common.collect.ImmutableList
 import java.io.File
 import java.util.Locale
@@ -90,6 +106,7 @@ import java.util.Properties
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import javax.inject.Inject
+import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.collections.asIterable
 import kotlin.collections.joinToString
 import kotlin.collections.plus
@@ -110,6 +127,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
@@ -125,6 +143,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
 import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+import org.gradle.util.GradleVersion
 import org.gradle.workers.WorkerExecutor
 import shadow.bundletool.com.android.utils.PathUtils
 
@@ -261,6 +280,36 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Input @get:Optional abstract val hasDeviceTests: Property<Boolean>
 
+  /** Android resource source directories of the tested variant, ordered from highest-priority overlay to main. */
+  @get:Internal abstract val testedVariantResDirectories: ConfigurableFileCollection
+
+  /** Resource XML files (`values/` and `xml*` folders) from [testedVariantResDirectories] read for report metadata and backup rules. */
+  @get:InputFiles
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val testedVariantMetadataResFiles: ConfigurableFileCollection
+
+  /** Merged manifest of the tested variant used to populate suite environment metadata. */
+  @get:InputFile @get:Optional @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val testedVariantMergedManifest: RegularFileProperty
+
+  /** Application or package identifier of the tested variant. */
+  @get:Input @get:Optional abstract val testedApplicationId: Property<String>
+
+  /** Additional engine input properties contributed by suite configurators and merged as defaults into `junit_inputs.txt`. */
+  @get:Input @get:Optional abstract val additionalEngineInputProperties: MapProperty<String, String>
+
+  /** Additional suite-level properties contributed by suite configurators and injected into aggregated JUnit XML `<properties>`. */
+  @get:Input @get:Optional abstract val suiteReportProperties: MapProperty<String, String>
+
+  /** Optional suite type identifier written to suite environment metadata. */
+  @get:Input @get:Optional abstract val suiteType: Property<String>
+
+  /** Scratch directory where JUnit Platform writes `TestReporter.publishFile` attachments during execution. */
+  @get:Internal abstract val junitAttachmentsDirectory: DirectoryProperty
+
+  /** Suppresses AGP's default `-Djunit.platform.reporting.output.dir` argument when the user configured that property explicitly. */
+  @get:Internal abstract val suppressDefaultJunitAttachmentsDir: Property<Boolean>
+
   private val noDeviceListeners = mutableListOf<NoDeviceListener>()
 
   /** Adds a [listener] to notify when the tests can't start because no device is available. */
@@ -281,6 +330,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     val testResultsDir = resultsDir.get().asFile
     PathUtils.deleteRecursivelyIfExists(testResultsDir.toPath())
     PathUtils.deleteRecursivelyIfExists(coverageDir.get().asFile.toPath())
+    junitAttachmentsDirectory.orNull?.asFile?.let { PathUtils.deleteRecursivelyIfExists(it.toPath()) }
     if (additionalTestOutputDir.isPresent) {
       PathUtils.deleteRecursivelyIfExists(additionalTestOutputDir.get().asFile.toPath())
     }
@@ -517,6 +567,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     }
 
     val effectiveEngineInputProperties = engineInputProperties.get().toMutableMap()
+    additionalEngineInputProperties.getOrElse(emptyMap()).forEach { (key, value) ->
+      effectiveEngineInputProperties.putIfAbsent(key, value)
+    }
     if (hasDeviceTests.getOrElse(false)) {
       val testsRegex =
         buildTestsRegexFromFilter(
@@ -545,6 +598,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       into = engineInputPropertiesFiles.asFile.get(),
     )
 
+    val customReportingOutputDir =
+      resolveConfiguredJunitReportingOutputDir(
+        systemProperties = systemProperties,
+        jvmArgs = jvmArgs.orEmpty(),
+        workingDir = workingDir,
+        jvmArgumentProviders = jvmArgumentProviders,
+      )
+    suppressDefaultJunitAttachmentsDir.set(customReportingOutputDir != null)
+
     try {
       super.executeTests()
     } finally {
@@ -561,32 +623,55 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .trimIndent()
 
       if (xmlResultsDirectory.isPresent) {
+        val existingResDirs = testedVariantResDirectories.files.filter { it.exists() }
+        val manifestMetadata =
+          parseMergedManifest(
+            manifestFile = testedVariantMergedManifest.orNull?.asFile,
+            resDirs = existingResDirs,
+          )
+        val suiteEnvironmentProps =
+          buildSuiteEnvironmentProperties(
+            suiteType = suiteType.orNull,
+            testedApplicationId = testedApplicationId.orNull,
+            agpVersion = Version.ANDROID_GRADLE_PLUGIN_VERSION,
+            gradleVersion = GradleVersion.current().version,
+            testLibraryVersion = effectiveEngineInputProperties[KEY_INPUT_TEST_LIBRARY_VERSION],
+            runner = (options as? JUnitPlatformOptions)?.includeEngines?.firstOrNull(),
+            manifestMetadata = manifestMetadata,
+            extraProperties = suiteReportProperties.getOrElse(emptyMap()),
+          )
+        val attachmentsRoot = customReportingOutputDir ?: junitAttachmentsDirectory.orNull?.asFile
         val hasEngineXmlResults =
           testResultsDir.exists() && testResultsDir.walk().any { it.isFile && it.name.endsWith(".xml", ignoreCase = true) }
         processTestReportAggregation(
-          testResultsDir,
-          xmlResultsDirectory,
-          this.modulePath.get(),
-          this.testedVariantName.get(),
-          this.testSuiteName.get(),
-          this.testSuiteTarget.get(),
-          logger,
+          sourceDir = testResultsDir,
+          xmlResultsDirectory = xmlResultsDirectory,
+          modulePath = this.modulePath.get(),
+          variantName = this.testedVariantName.get(),
+          suiteName = this.testSuiteName.get(),
+          target = this.testSuiteTarget.get(),
+          logger = logger,
+          additionalProperties = suiteEnvironmentProps,
+          allowedAttachmentRoot = attachmentsRoot,
         )
         val junitXmlDir = this.reports.junitXml.outputLocation.orNull?.asFile
         if (junitXmlDir != null && !FileUtils.isSameFile(junitXmlDir, testResultsDir)) {
           processTestReportAggregation(
-            junitXmlDir,
-            xmlResultsDirectory,
-            this.modulePath.get(),
-            this.testedVariantName.get(),
-            this.testSuiteName.get(),
-            this.testSuiteTarget.get(),
-            logger,
-          ) { file ->
-            // Gradle reports each device of android-test-engine as a class named `device_<serial>`, which duplicates the
-            // engine's own per-device XML.
-            hasEngineXmlResults && file.name.startsWith("TEST-device_")
-          }
+            sourceDir = junitXmlDir,
+            xmlResultsDirectory = xmlResultsDirectory,
+            modulePath = this.modulePath.get(),
+            variantName = this.testedVariantName.get(),
+            suiteName = this.testSuiteName.get(),
+            target = this.testSuiteTarget.get(),
+            logger = logger,
+            excludeFileFilter = { file ->
+              // Gradle reports each device of android-test-engine as a class named `device_<serial>`, which duplicates the
+              // engine's own per-device XML.
+              hasEngineXmlResults && file.name.startsWith("TEST-device_")
+            },
+            additionalProperties = suiteEnvironmentProps,
+            allowedAttachmentRoot = attachmentsRoot,
+          )
         }
 
         val rootDir = this.rootProjectDir.get().asFile
@@ -1161,6 +1246,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       testTaskReports.junitXml.required.setDisallowChanges(true)
       val xmlReport = testTaskReports.junitXml
       xmlReport.outputLocation.convention(creationConfig.services.projectInfo.getTestResultsFolder().map { it.dir(task.name) })
+      // Keeps each test's output and attachment markers inside its <testcase>, so the report can show them per test.
+      xmlReport.isOutputPerTestCase = true
 
       val htmlReport = testTaskReports.html
       htmlReport.outputLocation.fileProvider(creationConfig.services.projectInfo.getTestReportFolder().map { it.dir(task.name).asFile })
@@ -1293,6 +1380,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       )
 
       configureAndroidTestEngine(task, creationConfig, testData, "connected")
+      if (testedConfig == null) {
+        task.testedApplicationId.setDisallowChanges(testData.instrumentationTargetPackageId)
+      }
 
       var buildTarget: String
       var flavorFolder = if (creationConfig.componentType.isAar) "" else creationConfig.flavorName ?: ""
@@ -1494,6 +1584,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val subFolder = creationConfig.computeTaskNameInternal(device.name, nameSuffix)
 
       configureAndroidTestEngine(task, creationConfig, testData, subFolder)
+      if (testedConfig == null) {
+        task.testedApplicationId.setDisallowChanges(testData.instrumentationTargetPackageId)
+      }
 
       task.resultsDir.set(testResultOutputDir)
 
@@ -1573,6 +1666,143 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
     const val CONNECTED_TEST_TEST_SUITE_TARGET_NAME = "connected"
 
+    /** Engine input property holding the test library version shown in the report's suite environment. */
+    internal const val KEY_INPUT_TEST_LIBRARY_VERSION = "com.android.agp.test.TEST_LIBRARY_VERSION"
+
+    /**
+     * Resolves an explicit `junit.platform.reporting.output.dir` directory configured in [jvmArgumentProviders], [jvmArgs], or
+     * [systemProperties], matching Gradle's command-line argument order (`systemProperties`, then `jvmArgs`, then [jvmArgumentProviders]).
+     * Ignores AGP's own [JunitAttachmentsArgumentProvider]. Relative paths are resolved against [workingDir].
+     */
+    internal fun resolveConfiguredJunitReportingOutputDir(
+      systemProperties: Map<String, Any?>,
+      jvmArgs: Iterable<String>,
+      workingDir: File,
+      jvmArgumentProviders: Iterable<CommandLineArgumentProvider> = emptyList(),
+    ): File? {
+      val fromProviders =
+        jvmArgumentProviders
+          .asSequence()
+          .filter { it !is JunitAttachmentsArgumentProvider }
+          .flatMap { it.asArguments().asSequence() }
+          .mapNotNull(::extractReportingOutputDirArg)
+          .lastOrNull()
+      val fromJvmArgs = jvmArgs.asSequence().mapNotNull(::extractReportingOutputDirArg).lastOrNull()
+      val rawPath =
+        (fromProviders ?: fromJvmArgs ?: systemProperties[JUNIT_PLATFORM_REPORTING_OUTPUT_DIR_PROPERTY]?.toString())?.takeIf {
+          it.isNotBlank()
+        } ?: return null
+      val file = File(rawPath)
+      return if (file.isAbsolute) file else File(workingDir, rawPath)
+    }
+
+    private fun extractReportingOutputDirArg(arg: String): String? {
+      val propFlag = "-D$JUNIT_PLATFORM_REPORTING_OUTPUT_DIR_PROPERTY"
+      return when {
+        arg == propFlag -> ""
+        arg.startsWith("$propFlag=") -> arg.substring(propFlag.length + 1)
+        else -> null
+      }
+    }
+
+    internal data class ParsedManifestMetadata(
+      val packageName: String?,
+      val applicationName: String?,
+      val versionName: String?,
+      val versionCode: Int?,
+      val targetSdkVersion: Int?,
+    )
+
+    internal fun buildSuiteEnvironmentProperties(
+      suiteType: String? = null,
+      testedApplicationId: String?,
+      agpVersion: String,
+      gradleVersion: String?,
+      testLibraryVersion: String?,
+      runner: String?,
+      manifestMetadata: ParsedManifestMetadata?,
+      extraProperties: Map<String, String> = emptyMap(),
+    ): Map<String, String> = buildMap {
+      fun putNonBlank(key: String, value: String?) {
+        if (!value.isNullOrBlank()) put(key, value)
+      }
+      putNonBlank(KEY_SUITE_TYPE, suiteType)
+      putNonBlank(KEY_APPLICATION_ID, testedApplicationId ?: manifestMetadata?.packageName)
+      putNonBlank(KEY_APPLICATION_NAME, manifestMetadata?.applicationName)
+      putNonBlank(KEY_VERSION_NAME, manifestMetadata?.versionName)
+      putNonBlank(KEY_VERSION_CODE, manifestMetadata?.versionCode?.toString())
+      putNonBlank(KEY_TARGET_SDK_VERSION, manifestMetadata?.targetSdkVersion?.toString())
+      putNonBlank(KEY_AGP_VERSION, agpVersion)
+      putNonBlank(KEY_GRADLE_VERSION, gradleVersion)
+      putNonBlank(KEY_TEST_LIBRARY_VERSION, testLibraryVersion)
+      putNonBlank(KEY_RUNNER, runner)
+      extraProperties.forEach { (key, value) -> putNonBlank(key, value) }
+    }
+
+    internal fun parseMergedManifest(
+      manifestFile: File?,
+      resDirs: List<File>,
+    ): ParsedManifestMetadata? {
+      if (manifestFile == null || !manifestFile.isFile) return null
+      val docFactory = XmlUtils.createDocumentBuilderFactory().apply { isNamespaceAware = true }
+      val document = runCatching { docFactory.newDocumentBuilder().parse(manifestFile) }.getOrNull() ?: return null
+      val manifestEl = document.documentElement ?: return null
+      val manifestChildren = XmlUtils.getSubTagsAsList(manifestEl)
+
+      val packageName = manifestEl.getAttribute("package").takeIf { it.isNotBlank() }
+      val versionName = manifestEl.androidAttr("versionName")
+      val versionCode = manifestEl.androidAttr("versionCode")?.toIntOrNull()
+      val targetSdkVersion =
+        manifestChildren.firstOrNull { (it.localName ?: it.tagName) == "uses-sdk" }?.androidAttr("targetSdkVersion")?.toIntOrNull()
+
+      val appEl = manifestChildren.firstOrNull { (it.localName ?: it.tagName) == "application" }
+      val rawLabel = appEl?.androidAttr("label")
+      val applicationName =
+        when {
+          rawLabel.isNullOrBlank() -> null
+          rawLabel.startsWith("@string/") -> resolveStringResource(rawLabel.removePrefix("@string/"), resDirs, docFactory)
+          else -> rawLabel
+        }
+
+      return ParsedManifestMetadata(
+        packageName = packageName,
+        applicationName = applicationName,
+        versionName = versionName,
+        versionCode = versionCode,
+        targetSdkVersion = targetSdkVersion,
+      )
+    }
+
+    internal fun resolveStringResource(
+      stringName: String,
+      resDirs: List<File>,
+      docFactory: DocumentBuilderFactory = XmlUtils.createDocumentBuilderFactory().apply { isNamespaceAware = true },
+    ): String? {
+      if (stringName.isBlank()) return null
+      for (resDir in resDirs) {
+        val valuesDir = File(resDir, "values")
+        if (!valuesDir.isDirectory) continue
+        val xmlFiles =
+          valuesDir
+            .listFiles()
+            ?.filter { it.isFile && it.extension.equals("xml", ignoreCase = true) }
+            ?.sortedWith(compareBy<File> { it.name != "strings.xml" }.thenBy { it.name })
+            .orEmpty()
+        for (xmlFile in xmlFiles) {
+          val doc = runCatching { docFactory.newDocumentBuilder().parse(xmlFile) }.getOrNull() ?: continue
+          val root = doc.documentElement ?: continue
+          for (child in XmlUtils.getSubTagsAsList(root)) {
+            if ((child.localName ?: child.tagName) == "string" && child.getAttribute("name") == stringName) {
+              val rawText = child.textContent ?: continue
+              val unescaped = ValueXmlHelper.unescapeResourceString(rawText, false, true)
+              if (unescaped.isNotEmpty()) return unescaped
+            }
+          }
+        }
+      }
+      return null
+    }
+
     /** Returns the test targets for the [devices] connected through adb. */
     internal fun connectedDeviceTargets(devices: List<DeviceConnector>): List<DeviceTestTarget> = devices.map { device ->
       DeviceTestTarget(device.serialNumber, { DeviceConfigProviderImpl(device) })
@@ -1638,6 +1868,28 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       } else {
         task.coverageEnabled.setDisallowChanges(false)
       }
+
+      val attachmentsDirProvider = task.project.layout.buildDirectory.dir("intermediates/$variantName/${task.name}/attachments")
+      task.junitAttachmentsDirectory.setDisallowChanges(attachmentsDirProvider)
+      task.jvmArgumentProviders.add(JunitAttachmentsArgumentProvider(attachmentsDirProvider, task.suppressDefaultJunitAttachmentsDir))
+      if (testedVariant != null) {
+        testedVariant.artifacts.setTaskInputToFinalProduct(SingleArtifact.MERGED_MANIFEST, task.testedVariantMergedManifest)
+        task.testedApplicationId.setDisallowChanges(testedVariant.applicationId)
+        val variantResDirs = services.fileCollection()
+        testedVariant.sources.res { resSources ->
+          variantResDirs.from(resSources.all.map { layers -> layers.flatMap { it.reversed() } })
+        }
+        task.testedVariantResDirectories.from(variantResDirs)
+        task.testedVariantMetadataResFiles.from(
+          variantResDirs.asFileTree.matching { pattern ->
+            pattern.include("values/*.xml", "xml/*.xml", "xml-*/*.xml")
+          }
+        )
+      } else {
+        task.testedVariantMergedManifest.disallowChanges()
+      }
+      task.testedVariantResDirectories.disallowChanges()
+      task.testedVariantMetadataResFiles.disallowChanges()
 
       task.testSuiteName.setDisallowChanges(testSuiteName)
       task.testSuiteTarget.setDisallowChanges(testSuiteTarget)

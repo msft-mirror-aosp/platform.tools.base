@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testsuites
+package com.android.build.gradle.internal.testsuites.screenshot
 
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.fixtures.FakeProviderFactory

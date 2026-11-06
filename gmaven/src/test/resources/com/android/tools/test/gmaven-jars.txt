@@ -755,7 +755,9 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/testing/utp/emulatorcontrol/
   com/android/build/gradle/internal/testing/utp/worker/
   com/android/build/gradle/internal/testsuites/
+  com/android/build/gradle/internal/testsuites/backup/
   com/android/build/gradle/internal/testsuites/impl/
+  com/android/build/gradle/internal/testsuites/screenshot/
   com/android/build/gradle/internal/transforms/
   com/android/build/gradle/internal/utils/
   com/android/build/gradle/internal/variant/

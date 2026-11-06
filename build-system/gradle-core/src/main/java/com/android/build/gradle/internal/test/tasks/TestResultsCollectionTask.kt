@@ -34,9 +34,7 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
-import com.android.build.gradle.internal.test.report.SUITE_DETAILS_DIR_NAME
-import com.android.build.gradle.internal.test.report.SUITE_ENVIRONMENT_FILE_NAME
-import com.android.build.gradle.internal.test.report.SUITE_ENVIRONMENT_FILE_PREFIX
+import com.android.build.gradle.internal.test.report.ATTACHMENTS_DIR_NAME
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.TestSuiteTestTask
@@ -189,16 +187,16 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
     if (!sourceRoot.isDirectory) return
 
     sourceRoot.listFiles()?.forEach { file ->
-      if (file.isFile && isTopLevelReportResultFile(file)) {
+      if (file.isFile && file.extension.equals("xml", ignoreCase = true)) {
         file.copyTo(outputDir.resolve(file.name), overwrite = true)
       }
     }
 
-    val suiteDetailsDir = sourceRoot.resolve(SUITE_DETAILS_DIR_NAME)
-    if (suiteDetailsDir.isDirectory && !Files.isSymbolicLink(suiteDetailsDir.toPath())) {
+    val attachmentsDir = sourceRoot.resolve(ATTACHMENTS_DIR_NAME)
+    if (attachmentsDir.isDirectory && !Files.isSymbolicLink(attachmentsDir.toPath())) {
       val sourceRootPath = sourceRoot.toPath()
       val outputRootPath = outputDir.toPath()
-      Files.walk(suiteDetailsDir.toPath()).use { paths ->
+      Files.walk(attachmentsDir.toPath()).use { paths ->
         paths.forEach { path ->
           if (!Files.isSymbolicLink(path) && Files.isRegularFile(path)) {
             val targetFile = outputRootPath.resolve(sourceRootPath.relativize(path)).toFile()
@@ -209,13 +207,6 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
       }
     }
   }
-
-  private fun isTopLevelReportResultFile(file: File): Boolean =
-    file.extension.equals("xml", ignoreCase = true) || isSuiteEnvironmentFile(file)
-
-  private fun isSuiteEnvironmentFile(file: File): Boolean =
-    file.name == SUITE_ENVIRONMENT_FILE_NAME ||
-      (file.name.startsWith(SUITE_ENVIRONMENT_FILE_PREFIX) && file.extension.equals("json", ignoreCase = true))
 
   class AggregatedTestResultsCollectionCreationAction(creationConfig: TestReportCreationConfig) :
     BaseTestResultsCollectionCreationAction(creationConfig) {

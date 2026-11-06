@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.resolveTargetDevices
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
+import com.android.build.gradle.internal.test.report.JunitAttachmentsArgumentProvider
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
 import com.android.builder.testing.api.DeviceProvider
@@ -33,6 +34,7 @@ import java.util.regex.Pattern
 import kotlin.test.assertFailsWith
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.VerificationException
+import org.gradle.process.CommandLineArgumentProvider
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -215,6 +217,86 @@ class TestSuiteTestTaskTest {
   }
 
   @Test
+  fun testJunitAttachmentsArgumentProvider() {
+    val project = ProjectFactory.project
+    val dir = folder.newFolder("attachments")
+    val dirProvider = project.objects.directoryProperty().fileValue(dir)
+    val suppressProp = project.objects.property(Boolean::class.java)
+
+    val provider = JunitAttachmentsArgumentProvider(dirProvider, suppressProp)
+    assertThat(provider.asArguments()).containsExactly("-Djunit.platform.reporting.output.dir=${dir.absolutePath}")
+
+    suppressProp.set(false)
+    assertThat(provider.asArguments()).containsExactly("-Djunit.platform.reporting.output.dir=${dir.absolutePath}")
+
+    suppressProp.set(true)
+    assertThat(provider.asArguments()).isEmpty()
+  }
+
+  @Test
+  fun resolveConfiguredJunitReportingOutputDir_respectsUserOverridesAndJvmArgPrecedence() {
+    val workDir = folder.newFolder("work")
+    val absDir = folder.newFolder("custom-otr")
+
+    assertThat(TestSuiteTestTask.resolveConfiguredJunitReportingOutputDir(emptyMap(), emptyList(), workDir)).isNull()
+    assertThat(
+        TestSuiteTestTask.resolveConfiguredJunitReportingOutputDir(
+          mapOf("junit.platform.reporting.output.dir" to "   "),
+          emptyList(),
+          workDir,
+        )
+      )
+      .isNull()
+
+    assertThat(
+        TestSuiteTestTask.resolveConfiguredJunitReportingOutputDir(
+          mapOf("junit.platform.reporting.output.dir" to "build/otr"),
+          emptyList(),
+          workDir,
+        )
+      )
+      .isEqualTo(workDir.resolve("build/otr"))
+
+    assertThat(
+        TestSuiteTestTask.resolveConfiguredJunitReportingOutputDir(
+          mapOf("junit.platform.reporting.output.dir" to "build/ignored"),
+          listOf("-Djunit.platform.reporting.output.dir=build/earlier", "-Djunit.platform.reporting.output.dir=${absDir.absolutePath}"),
+          workDir,
+        )
+      )
+      .isEqualTo(absDir)
+
+    val project = ProjectFactory.project
+    val agpDefaultDir = folder.newFolder("agp-default-attachments")
+    val agpProvider =
+      JunitAttachmentsArgumentProvider(
+        project.objects.directoryProperty().fileValue(agpDefaultDir),
+        project.objects.property(Boolean::class.java),
+      )
+    val userProvider = CommandLineArgumentProvider { listOf("-Djunit.platform.reporting.output.dir=build/user-provider-otr") }
+
+    assertThat(
+        TestSuiteTestTask.resolveConfiguredJunitReportingOutputDir(
+          systemProperties = emptyMap(),
+          jvmArgs = emptyList(),
+          workingDir = workDir,
+          jvmArgumentProviders = listOf(agpProvider),
+        )
+      )
+      .isNull()
+
+    assertThat(
+        TestSuiteTestTask.resolveConfiguredJunitReportingOutputDir(
+          systemProperties = mapOf("junit.platform.reporting.output.dir" to "build/from-sysprop"),
+          jvmArgs = listOf("-Djunit.platform.reporting.output.dir=${absDir.absolutePath}"),
+          workingDir = workDir,
+          jvmArgumentProviders = listOf(agpProvider, userProvider),
+        )
+      )
+      .isEqualTo(workDir.resolve("build/user-provider-otr"))
+  }
+
+  @Test
   fun buildTestsRegexFromFilter_translatesGradlePatterns() {
     fun matches(regex: String, testId: String): Boolean = Pattern.compile(regex).matcher(testId).find()
 
@@ -305,6 +387,75 @@ class TestSuiteTestTaskTest {
     override fun getTimeoutInMs() = 0
 
     override fun isConfigured() = true
+  }
+
+  @Test
+  fun buildSuiteEnvironmentProperties_resolvesManifestMetadataUnescapesLabelAndMergesExtraProperties() {
+    val manifestFile = folder.newFile("AndroidManifest.xml")
+    manifestFile.writeText(
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.example.journalingapp"
+          android:versionCode="12"
+          android:versionName="1.2.0">
+          <uses-sdk android:targetSdkVersion="33" />
+          <application android:label="@string/app_name" />
+      </manifest>
+      """
+        .trimIndent()
+    )
+
+    val debugRes = folder.newFolder("debugRes")
+    val mainRes = folder.newFolder("mainRes")
+    // Localized values-af in higher-priority overlay must NOT beat unqualified values/ in mainRes.
+    debugRes.resolve("values-af").apply {
+      mkdirs()
+      resolve("strings.xml").writeText("<resources><string name=\"app_name\">VerkeerdeNaam</string></resources>")
+    }
+    mainRes.resolve("values").apply {
+      mkdirs()
+      resolve("strings.xml").writeText("<resources><string name=\"app_name\">\"User\\'s \\\"Journaling\\\" \\\\ App\"</string></resources>")
+    }
+
+    val genericProps =
+      TestSuiteTestTask.buildSuiteEnvironmentProperties(
+        suiteType = null,
+        testedApplicationId = "com.example.journalingapp.debug",
+        agpVersion = "9.6.0-dev",
+        gradleVersion = "9.8.0",
+        testLibraryVersion = null,
+        runner = "junit-jupiter",
+        manifestMetadata = TestSuiteTestTask.parseMergedManifest(manifestFile, emptyList()),
+      )
+    assertThat(genericProps).doesNotContainKey("suiteType")
+    assertThat(genericProps).doesNotContainKey("allowBackup")
+    assertThat(genericProps).doesNotContainKey("applicationName")
+    assertThat(genericProps["targetSdkVersion"]).isEqualTo("33")
+
+    val enrichedProps =
+      TestSuiteTestTask.buildSuiteEnvironmentProperties(
+        suiteType = "androidx.test.backup",
+        testedApplicationId = "com.example.journalingapp.debug",
+        agpVersion = "9.6.0-dev",
+        gradleVersion = "9.8.0",
+        testLibraryVersion = "1.0.0-alpha04",
+        runner = "junit-jupiter",
+        manifestMetadata = TestSuiteTestTask.parseMergedManifest(manifestFile, listOf(debugRes, mainRes)),
+        extraProperties = mapOf("allowBackup" to "true", "blankIgnored" to "   "),
+      )
+    assertThat(enrichedProps["suiteType"]).isEqualTo("androidx.test.backup")
+    assertThat(enrichedProps["applicationId"]).isEqualTo("com.example.journalingapp.debug")
+    assertThat(enrichedProps["applicationName"]).isEqualTo("User's \"Journaling\" \\ App")
+    assertThat(enrichedProps["versionName"]).isEqualTo("1.2.0")
+    assertThat(enrichedProps["versionCode"]).isEqualTo("12")
+    assertThat(enrichedProps["targetSdkVersion"]).isEqualTo("33")
+    assertThat(enrichedProps["agpVersion"]).isEqualTo("9.6.0-dev")
+    assertThat(enrichedProps["gradleVersion"]).isEqualTo("9.8.0")
+    assertThat(enrichedProps["testLibraryVersion"]).isEqualTo("1.0.0-alpha04")
+    assertThat(enrichedProps["runner"]).isEqualTo("junit-jupiter")
+    assertThat(enrichedProps["allowBackup"]).isEqualTo("true")
+    assertThat(enrichedProps).doesNotContainKey("blankIgnored")
   }
 
   /** Finds no device, as when none is connected. */

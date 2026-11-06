@@ -20,7 +20,7 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.gradle.internal.services.DslServices
-import com.android.build.gradle.internal.testsuites.ScreenshotTestSuiteTaskConfigurator
+import com.android.build.gradle.internal.testsuites.screenshot.ScreenshotTestSuiteTaskConfigurator
 import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.artifacts.dsl.DependencyHandler
