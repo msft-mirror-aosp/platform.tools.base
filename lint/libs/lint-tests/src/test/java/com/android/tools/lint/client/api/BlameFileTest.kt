@@ -150,7 +150,7 @@ class BlameFileTest {
         "\tandroid:name\n" +
         "\t\tADDED from \${ROOT}/app/src/main/AndroidManifest.xml:16:27-74\n" +
         "uses-sdk\n" +
-        "INJECTED from \${ROOT}/app/src/main/AndroidManifest.xml reason: use-sdk injection requested\n" +
+        "INJECTED from \${ROOT}/app/src/main/AndroidManifest.xml reason: uses-sdk injection requested\n" +
         "MERGED from [com.android.support:appcompat-v7:25.1.0] /Users/android-studio/.android/build-cache/464951d17cb0cdd62cb8c51961d7fe17aa117c02/output/AndroidManifest.xml:21:5-23:78\n" +
         "MERGED from [com.android.support:support-v4:25.1.0] /Users/android-studio/.android/build-cache/001548c9243f58e5971d6824e456eca9f166350f/output/AndroidManifest.xml:21:5-23:54\n" +
         "MERGED from [com.android.support:support-fragment:25.1.0] /Users/android-studio/.android/build-cache/f3ab5c6dee0d58f519be2484a899f5a59a33ed80/output/AndroidManifest.xml:21:5-23:60\n" +

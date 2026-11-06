@@ -24,8 +24,8 @@ import java.util.Optional
  * attribute.
  *
  * This function facilitates the merging of manifest XMLs by aligning elements from two sources for potential subsequent merging operations.
- * Normally, the manifest XML have elements with unique keys but there are two scenarios where there could elements with identical keys in a
- * manifest: When node type allows multiple declaration or when feature flag is used.
+ * Normally, the manifest XML have elements with unique keys but there are two scenarios where there could be elements with identical keys
+ * in a manifest: When node type allows multiple declaration or when feature flag is used.
  *
  * @param lowerPriorityMergingElement The root element of the lower-priority XML source.
  * @param higherPriorityMergingElement The root element of the higher-priority XML source.
@@ -91,7 +91,7 @@ fun mapSingleDeclarationNodeTypes(
   val nodesWithFeatureFlag = higherPriorityChildren.filter { it.hasFeatureFlag() }
   val nodesWithoutFeatureFlag = higherPriorityChildren - nodesWithFeatureFlag.toSet()
   if (lowerPriorityChild.hasFeatureFlag()) {
-    // If the child has a feature flag, we simply find amd match with the existing
+    // If the child has a feature flag, we simply find and match with the existing
     // element with the same feature flag
     val matchedExistingChild = higherPriorityChildren.firstOrNull { it.featureFlag() == lowerPriorityChild.featureFlag() }
     if (matchedExistingChild != null || nodesWithoutFeatureFlag.isEmpty()) {

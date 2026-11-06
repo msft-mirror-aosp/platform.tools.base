@@ -91,7 +91,7 @@ private constructor(
         throw NavigationXmlDocumentException(
           "Navigation XML document <include> element must contain a $graphName " +
             "attribute, whose value begins " +
-            "with ${SdkConstants.NAVIGATION_PREFIX} ."
+            "with ${SdkConstants.NAVIGATION_PREFIX}."
         )
       }
     }

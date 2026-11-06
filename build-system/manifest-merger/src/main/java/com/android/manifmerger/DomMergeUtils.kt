@@ -26,7 +26,7 @@ object DomMergeUtils {
   /**
    * Clones and transforms an XML document.
    *
-   * @return a pair of document and flag on whether new document is differ from original one.
+   * @return a pair of document and flag on whether new document differs from original one.
    */
   @JvmStatic
   @Throws(MergeFailureException::class)

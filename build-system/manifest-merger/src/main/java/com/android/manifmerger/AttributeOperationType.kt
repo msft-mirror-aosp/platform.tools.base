@@ -17,7 +17,7 @@
 package com.android.manifmerger
 
 /**
- * Defines attributes operations as it can be provided by users through attributes on the target xml element.
+ * Defines attribute operations as they can be provided by users through attributes on the target xml element.
  *
  * For instance:
  * ```xml
@@ -34,7 +34,7 @@ package com.android.manifmerger
  * ```xml
  *     <permission
  *         android:name="android.permission.CAMERA"
- *         android:icon="@Res/foo"
+ *         android:icon="@res/foo"
  *         android:protectionLevel="dangerous"
  *         tools:replace="android:maxSdkVersion, protectionLevel"/>
  * ```

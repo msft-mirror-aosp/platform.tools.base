@@ -149,8 +149,8 @@ public class Merger {
             if ("--overlays".equals(selector)) {
                 StringTokenizer stringTokenizer = new StringTokenizer(value, File.pathSeparator);
                 while (stringTokenizer.hasMoreElements()) {
-                    File library = checkPath(stringTokenizer.nextToken());
-                    invoker.addFlavorAndBuildTypeManifest(library);
+                    File overlay = checkPath(stringTokenizer.nextToken());
+                    invoker.addFlavorAndBuildTypeManifest(overlay);
                 }
 
             }

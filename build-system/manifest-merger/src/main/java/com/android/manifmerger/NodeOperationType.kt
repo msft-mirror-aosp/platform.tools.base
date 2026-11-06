@@ -18,7 +18,7 @@ package com.android.manifmerger
 import com.android.utils.SdkUtils
 
 /**
- * Defines node operation types as it can be provided by user's through attributes on the target xml element.
+ * Defines node operation types as it can be provided by users through attributes on the target xml element.
  *
  * Example:
  * <pre>`<activity android:name="com.foo.bar.ActivityUI"          tools:node="remove_children">     </activity> `</pre>
@@ -44,7 +44,7 @@ enum class NodeOperationType(
 
   /**
    * Remove the next definition of the same element from the resulting merged manifest. There can be only one similar element removed. If
-   * further definition are encountered, a merging failure will be initiated.
+   * further definitions are encountered, a merging failure will be initiated.
    */
   REMOVE(true),
 
@@ -80,8 +80,8 @@ enum class NodeOperationType(
     const val OVERRIDE_USES_SDK: String = "overrideLibrary"
 
     /**
-     * Flag that indicate to Play Store that the annotated element is required when running in the compatibility mode of the Privacy Sandbox
-     * runtime.
+     * Flag that indicates to Play Store that the annotated element is required when running in the compatibility mode of the Privacy
+     * Sandbox runtime.
      */
     const val REQUIRED_BY_PRIVACY_SANDBOX_SDK_ATTRIBUTE_NAME: String = "requiredByPrivacySandboxSdk"
   }

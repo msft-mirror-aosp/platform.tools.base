@@ -351,16 +351,17 @@ public class XmlAttribute extends XmlNode {
     }
 
     /**
-     * Merge this attribute value (on a lower priority element) with a implicit default value
+     * Merge this attribute value (on a lower priority element) with an implicit default value
      * (implicitly declared on the implicitNode).
+     *
      * @param mergingReport report to log errors and actions.
      * @param implicitNode the lower priority node where the implicit attribute value resides.
-     * @return the merged value that should be stored in the attribute or null if nothing should
-     * be stored.
+     * @return the merged value that should be stored in the attribute or null if nothing should be
+     *     stored.
      */
     @Nullable
-    private String mergeThisAndDefaultValue(@NotNull MergingReport.Builder mergingReport,
-            @NotNull XmlElement implicitNode) {
+    private String mergeThisAndDefaultValue(
+            @NotNull MergingReport.Builder mergingReport, @NotNull XmlElement implicitNode) {
 
         // check that this XmlAttribute's XmlDocument.Type is mergeable.
         if (isNonMergeableFromLowerPriorityNode()) {
@@ -400,7 +401,7 @@ public class XmlAttribute extends XmlNode {
 
     /**
      * Merge this attribute value with a lower priority node attribute default value. The attribute
-     * is not explicitly set on the implicitNode, yet it exist on this attribute {@link XmlElement}
+     * is not explicitly set on the implicitNode, yet it exists on this attribute {@link XmlElement}
      * higher priority owner.
      *
      * @param mergingReport report to log errors and actions.

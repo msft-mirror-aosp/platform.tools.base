@@ -174,7 +174,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
 
     /**
      * A {@link NodeKeyResolver} capable of extracting the element key first in an "android:name"
-     * attribute and if not value found there, in the "android:glEsVersion" attribute.
+     * attribute and if no value found there, in the "android:glEsVersion" attribute.
      */
     @Nullable
     private static final NodeKeyResolver NAME_AND_GLESVERSION_KEY_RESOLVER =
@@ -198,6 +198,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                             SdkConstants.ATTR_NAME, AndroidManifest.ATTRIBUTE_GLESVERSION);
                 }
             };
+
 ;
 
     /**
@@ -244,7 +245,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
     private static final boolean MULTIPLE_DECLARATION_FOR_SAME_KEY_ALLOWED = true;
 
     /**
-     * Definitions of the support node types in the Android Manifest file. {@link <a
+     * Definitions of the supported node types in the Android Manifest file. {@link <a
      * href=http://developer.android.com/guide/topics/manifest/manifest-intro.html>} for more
      * details about the xml format.
      *
@@ -263,14 +264,14 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
      *       <ul>
      *         <li>Smart substitution of class names to fully qualified class names using the
      *             document's package declaration. The list's size can be 0..n
-     *         <li>Implicit default value when no defined on the xml element.
+     *         <li>Implicit default value when not defined on the xml element.
      *         <li>{@link AttributeModel.Validator} to validate attribute value against.
      *       </ul>
      * </ul>
      *
-     * It is of the outermost importance to keep this model correct as it is used by the merging
-     * engine to make all its decisions. There should not be special casing in the engine, all
-     * decisions must be represented here.
+     * It is of the utmost importance to keep this model correct as it is used by the merging engine
+     * to make all its decisions. There should not be special casing in the engine, all decisions
+     * must be represented here.
      *
      * <p>If you find yourself needing to extend the model to support future requirements, do it
      * here and modify the engine to make proper decision based on the added metadata.
@@ -931,7 +932,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         NodeTypes(
                 @NotNull MergeType mergeType,
                 @NotNull NodeKeyResolver nodeKeyResolver,
-                boolean mutipleDeclarationAllowed,
+                boolean multipleDeclarationAllowed,
                 @NotNull EnumSet<XmlDocument.Type> mergeableLowerPriorityTypes,
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this.mMergeType = Preconditions.checkNotNull(mergeType);
@@ -944,7 +945,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                 }
             }
             this.mAttributeModels = attributeModels.build();
-            this.mMultipleDeclarationAllowed = mutipleDeclarationAllowed;
+            this.mMultipleDeclarationAllowed = multipleDeclarationAllowed;
             this.mMergeableLowerPriorityTypes = mergeableLowerPriorityTypes;
         }
 

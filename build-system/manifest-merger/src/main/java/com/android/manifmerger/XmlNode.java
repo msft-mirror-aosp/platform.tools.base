@@ -21,15 +21,18 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
+
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
-import java.util.function.Supplier;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import java.util.function.Supplier;
 
 /**
  * Common behavior of any xml declaration.
@@ -41,9 +44,9 @@ public abstract class XmlNode {
     @NotNull private final Supplier<NodeKey> mOriginalId = Suppliers.memoize(this::getId);
 
     /**
-     * Returns a constant Nodekey that can be used throughout the lifecycle of the xml element.
-     * The {@link #getId} can return different values over time as the key of the element can be
-     * for instance, changed through placeholder replacement.
+     * Returns a constant NodeKey that can be used throughout the lifecycle of the xml element. The
+     * {@link #getId} can return different values over time as the key of the element can be for
+     * instance, changed through placeholder replacement.
      */
     @NotNull
     public synchronized NodeKey getOriginalId() {
@@ -92,8 +95,8 @@ public abstract class XmlNode {
     public interface NodeName {
 
         /**
-         * Returns true if this attribute name has a namespace declaration and that namespapce is
-         * the same as provided, false otherwise.
+         * Returns true if this attribute name has a namespace declaration and that namespace is the
+         * same as provided, false otherwise.
          */
         boolean isInNamespace(@NotNull String namespaceURI);
 

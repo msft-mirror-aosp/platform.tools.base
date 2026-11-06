@@ -47,9 +47,9 @@ import java.util.List;
 @Immutable
 public class ToolsInstructionsCleaner {
 
-    private static final String REMOVE_OPERATION_XML_MAME =
+    private static final String REMOVE_OPERATION_XML_NAME =
             NodeOperationType.REMOVE.toCamelCaseName();
-    private static final String REMOVE_ALL_OPERATION_XML_MAME =
+    private static final String REMOVE_ALL_OPERATION_XML_NAME =
             NodeOperationType.REMOVE_ALL.toCamelCaseName();
 
     /**
@@ -104,8 +104,8 @@ public class ToolsInstructionsCleaner {
                 String operationValue = nodeOperation.getNodeValue();
                 boolean hasSelector =
                         namedNodeMap.getNamedItemNS(SdkConstants.TOOLS_URI, "selector") != null;
-                if (operationValue.equals(REMOVE_ALL_OPERATION_XML_MAME)
-                        || (operationValue.equals(REMOVE_OPERATION_XML_MAME) && !hasSelector)) {
+                if (operationValue.equals(REMOVE_ALL_OPERATION_XML_NAME)
+                        || (operationValue.equals(REMOVE_OPERATION_XML_NAME) && !hasSelector)) {
 
                     if (parent == null) {
                         logger.error(

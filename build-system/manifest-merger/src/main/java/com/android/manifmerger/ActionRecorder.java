@@ -134,10 +134,12 @@ public class ActionRecorder {
     /**
      * Record a node that was added due to an implicit presence in earlier SDK release but requires
      * an explicit declaration in the application targeted SDK.
+     *
      * @param xmlElement the implied element that was added to the resulting xml.
-     * @param reason optional contextual information whey the implied element was added.
+     * @param reason optional contextual information why the implied element was added.
      */
-    synchronized void recordImpliedNodeAction(@NotNull XmlElement xmlElement, @Nullable String reason) {
+    synchronized void recordImpliedNodeAction(
+            @NotNull XmlElement xmlElement, @Nullable String reason) {
         Actions.DecisionTreeRecord nodeDecisionTree = getDecisionTreeRecord(xmlElement);
         Actions.NodeRecord record = new Actions.NodeRecord(Actions.ActionType.IMPLIED,
                 new SourceFilePosition(

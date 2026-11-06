@@ -22,8 +22,8 @@ import org.w3c.dom.Node
 /** encode all non resolved placeholders key names. */
 object PlaceholderEncoder {
   /**
-   * Iterate through each attribute for a placeholder existence. If one is found, encode its name so tools like aapt will not object invalid
-   * characters and such.
+   * Iterate through each attribute for a placeholder existence. If one is found, encode its name so tools like aapt will not object to
+   * invalid characters and such.
    *
    * @param node node to visit attributes on
    * @return true if node was changed. False otherwise.

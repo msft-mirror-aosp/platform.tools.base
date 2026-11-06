@@ -21,7 +21,7 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 
 /**
- * Utility class that provide functions that manipulate DOM. Note: DOM modification should never be done directly during manifest merger.
+ * Utility class that provides functions that manipulate DOM. Note: DOM modification should never be done directly during manifest merger.
  * Use the wrapper objects(with prefix Xml example: XmlDocument, XmlElement, XmlAttribute) mutation methods to modify DOM during manifest
  * merger. Only use this utility class when the wrapper objects are not available.
  */

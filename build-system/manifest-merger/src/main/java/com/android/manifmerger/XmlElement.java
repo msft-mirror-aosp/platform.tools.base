@@ -663,7 +663,7 @@ public class XmlElement extends OrphanXmlElement {
      *
      * @param type the requested child type.
      * @param keyValue the requested child key.
-     * @return the child of {@link Optional#empty()} ()} if no child of this type and key exist.
+     * @return the child or {@link Optional#empty()} if no child of this type and key exist.
      */
     @NotNull
     public Optional<XmlElement> getNodeByTypeAndKey(
@@ -682,7 +682,7 @@ public class XmlElement extends OrphanXmlElement {
      * Returns the first child of a particular type.
      *
      * @param type the requested child type.
-     * @return the child of {@link Optional#empty()} ()} if no child of this type exist.
+     * @return the child or {@link Optional#empty()} if no child of this type exist.
      */
     public Optional<XmlElement> getFirstNodeByType(ManifestModel.NodeTypes type) {
         for (XmlElement xmlElement : mMergeableChildren.values()) {
@@ -895,10 +895,10 @@ public class XmlElement extends OrphanXmlElement {
      * <p>
      *
      * <ul>
-     *   <li>The associate {@link ManifestModel.NodeTypes} is annotated with {@link
+     *   <li>The associated {@link ManifestModel.NodeTypes} is annotated with {@link
      *       MergeType#IGNORE}
      *   <li>This element has a child of the same type with no key that has a '
-     *       tools:node="removeAll' attribute.
+     *       tools:node="removeAll"' attribute.
      * </ul>
      *
      * @param lowerPriorityChild the lower priority child we should determine eligibility for
@@ -1128,7 +1128,7 @@ public class XmlElement extends OrphanXmlElement {
      *
      * @param other the other element to compare against.
      * @return a {@link String} describing the differences between the two XML elements or {@link
-     *     Optional#empty()} ()} if they are equals.
+     *     Optional#empty()} if they are equals.
      */
     @NotNull
     public Optional<String> compareTo(Object other) {
@@ -1152,7 +1152,8 @@ public class XmlElement extends OrphanXmlElement {
             if ((thisNS == null && otherNS != null)
                     || (thisNS != null && !thisNS.equals(otherNS))) {
                 return Optional.of(
-                        String.format("Element namespaces names do not match: %1$s versus %2$s",
+                        String.format(
+                                "Element namespace names do not match: %1$s versus %2$s",
                                 thisNS, otherNS));
             }
         } else {
@@ -1299,7 +1300,8 @@ public class XmlElement extends OrphanXmlElement {
             if (actualAttr.isPresent()) {
                 if (!expectedAttr.getValue().equals(actualAttr.get().getValue())) {
                     return Optional.of(
-                            String.format("Attribute %1$s do not match: %2$s versus %3$s at %4$s",
+                            String.format(
+                                    "Attribute %1$s does not match: %2$s versus %3$s at %4$s",
                                     expectedAttr.getId(),
                                     expectedAttr.getValue(),
                                     actualAttr.get().getValue(),

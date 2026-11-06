@@ -21,14 +21,14 @@ import com.android.SdkConstants;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Describes an attribute characteristics like if it supports smart package name replacement, has
@@ -50,7 +50,7 @@ class AttributeModel {
      *
      * @param xmlNodeName namespaced name of the attribute, as created by e.g.
      *     XmlNode.fromNSName(SdkConstants.ANDROID_URI, "android", attributeName));
-     * @param isPackageDependent true if the attribute support smart substitution of package name.
+     * @param isPackageDependent true if the attribute supports smart substitution of package name.
      * @param defaultValue an optional default value.
      * @param onReadValidator an optional validator to validate values against.
      */
@@ -75,9 +75,9 @@ class AttributeModel {
     }
 
     /**
-     * Return true if the attribute support smart substitution of partially fully qualified
-     * class names with package settings as provided by the manifest node's package attribute
-     * {@link <a href=http://developer.android.com/guide/topics/manifest/manifest-element.html>}
+     * Return true if the attribute supports smart substitution of partially fully qualified class
+     * names with package settings as provided by the manifest node's package attribute {@link <a
+     * href=http://developer.android.com/guide/topics/manifest/manifest-element.html>}
      *
      * @return true if this attribute supports smart substitution or false if not.
      */
@@ -415,10 +415,10 @@ class AttributeModel {
     /**
      * Validates an attribute value.
      *
-     * The validator can be called when xml documents are read to ensure the xml file contains
+     * <p>The validator can be called when xml documents are read to ensure the xml file contains
      * valid statements.
      *
-     * This is a poor-mans replacement for not having a proper XML Schema do perform such
+     * <p>This is a poor man's replacement for not having a proper XML Schema to perform such
      * validations.
      */
     interface Validator {
@@ -574,8 +574,8 @@ class AttributeModel {
     }
 
     /**
-     * A {@link com.android.manifmerger.AttributeModel.Validator} to validate that a string is
-     * a valid 32 positive hexadecimal representation with a minimum value requirement.
+     * A {@link com.android.manifmerger.AttributeModel.Validator} to validate that a string is a
+     * valid 32-bit positive hexadecimal representation with a minimum value requirement.
      */
     static class Hexadecimal32BitsWithMinimumValue extends Hexadecimal32Bits {
 

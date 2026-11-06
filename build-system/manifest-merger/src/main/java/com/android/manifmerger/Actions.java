@@ -179,8 +179,8 @@ public class Actions {
          */
         REJECTED,
         /**
-         * The implied element was added was added when importing a library that expected the
-         * element to be present by default while targeted SDK requires its declaration.
+         * The implied element was added when importing a library that expected the element to be
+         * present by default while targeted SDK requires its declaration.
          */
         IMPLIED,
         /**
@@ -191,7 +191,7 @@ public class Actions {
     }
 
     /**
-     * Defines an abstract record contain common metadata for elements and attributes actions.
+     * Defines an abstract record containing common metadata for elements and attributes actions.
      */
     public abstract static class Record {
 

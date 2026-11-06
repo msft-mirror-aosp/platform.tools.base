@@ -38,16 +38,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Validator that runs post merging activities and verifies that all "tools:" instructions
- * triggered an action by the merging tool.
- * <p>
+ * Validator that runs post merging activities and verifies that all "tools:" instructions triggered
+ * an action by the merging tool.
  *
- * This is primarily to catch situations like a user entered a tools:remove="foo" directory on one
- * of its elements and that particular attribute was never removed during the merges possibly
+ * <p>This is primarily to catch situations like a user entered a tools:remove="foo" directive on
+ * one of its elements and that particular attribute was never removed during the merges possibly
  * indicating an unforeseen change of configuration.
- * <p>
  *
- * Most of the output from this validation should be warnings.
+ * <p>Most of the output from this validation should be warnings.
  */
 public class PostValidator {
 

@@ -931,7 +931,7 @@ public class ManifestMerger2 {
     }
 
     /**
-     * Adds <application> tag if missing as it required by package manager in R and above..
+     * Adds <application> tag if missing as it is required by package manager in R and above.
      *
      * @param document the loaded manifest file
      */
@@ -1031,11 +1031,12 @@ public class ManifestMerger2 {
             if (!mReportFile.isPresent()
                     || !mReportFile.get().getParentFile().exists()
                             && !mReportFile.get().getParentFile().mkdirs()) {
-                mLogger.warning(String.format(
-                        "Cannot create %1$s manifest merger report file,"
-                                + "build will continue but merging activities "
-                                + "will not be documented",
-                        mReportFile.get().getAbsolutePath()));
+                mLogger.warning(
+                        String.format(
+                                "Cannot create %1$s manifest merger report file, "
+                                        + "build will continue but merging activities "
+                                        + "will not be documented",
+                                mReportFile.get().getAbsolutePath()));
             } else {
                 fileWriter = new FileWriter(mReportFile.get());
                 mergingReport.getActions().log(fileWriter);
@@ -1366,12 +1367,12 @@ public class ManifestMerger2 {
                                             + "' is used in multiple modules and/or libraries: "
                                             + Joiner.on(", ").join(offendingTargets)
                                             + ". Please ensure that all modules and libraries have"
-                                            + " a unique namespace. For more information, See"
+                                            + " a unique namespace. For more information, see"
                                             + " https://developer.android.com/studio/build/configure-app-module#set-namespace";
                             // We know that there is at least one because of the
                             // filter check.
                             LoadedManifestInfo info = e.getValue().stream().findFirst().get();
-                            // Report only once per error, since the error message contain the path
+                            // Report only once per error, since the error message contains the path
                             // to all manifests with the repeated namespace.
 
                             mergingReportBuilder.addMessage(
@@ -1682,7 +1683,7 @@ public class ManifestMerger2 {
                 new ImmutableList.Builder<>();
 
         @NotNull
-        private final ImmutableList.Builder<String> mDependencyFetureNamesBuilder =
+        private final ImmutableList.Builder<String> mDependencyFeatureNamesBuilder =
                 new ImmutableList.Builder<>();
 
         @NotNull
@@ -1753,9 +1754,7 @@ public class ManifestMerger2 {
              */
             REMOVE_TOOLS_DECLARATIONS,
 
-            /**
-             * Do no perform placeholders replacement.
-             */
+            /** Do not perform placeholders replacement. */
             NO_PLACEHOLDER_REPLACEMENT,
 
             /**
@@ -1970,7 +1969,8 @@ public class ManifestMerger2 {
         /**
          * Add several flavor or build type manifest files last in the list. Relative priorities
          * between the passed files as parameters will be respected.
-         * @param files build type of flavor manifest files to add.
+         *
+         * @param files build type or flavor manifest files to add.
          * @return itself.
          */
         @NotNull
@@ -2105,7 +2105,7 @@ public class ManifestMerger2 {
          * @return itself.
          */
         public Invoker addDependencyFeatureNames(@NotNull Iterable<String> names) {
-            this.mDependencyFetureNamesBuilder.addAll(names);
+            this.mDependencyFeatureNamesBuilder.addAll(names);
             return this;
         }
 
@@ -2137,7 +2137,7 @@ public class ManifestMerger2 {
          *
          * @return an instance of {@link MergingReport} that will give access to all the logging and
          *     merging records.
-         *     <p>This method can be invoked several time and will re-do the file merges.
+         *     <p>This method can be invoked several times and will re-do the file merges.
          * @throws MergeFailureException if the merging cannot be completed successfully.
          */
         @NotNull
@@ -2185,7 +2185,7 @@ public class ManifestMerger2 {
                             processCancellationChecker,
                             mNavigationFilesBuilder.build(),
                             mNavigationJsonsBuilder.build(),
-                            mDependencyFetureNamesBuilder.build(),
+                            mDependencyFeatureNamesBuilder.build(),
                             mAllowedNonUniqueNamespaces.build(),
                             mGeneratedLocaleConfigAttribute);
 
@@ -2260,8 +2260,8 @@ public class ManifestMerger2 {
     }
 
     /**
-     * Implementation a {@link KeyResolver} capable of resolving all selectors value in the context
-     * of the passed libraries to this merging activities.
+     * Implementation of a {@link KeyResolver} capable of resolving all selectors value in the
+     * context of the passed libraries to this merging activities.
      */
     public static class SelectorResolver implements KeyResolver<String> {
 

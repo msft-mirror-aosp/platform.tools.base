@@ -18,10 +18,12 @@ package com.android.manifmerger;
 
 import com.android.SdkConstants;
 import com.android.ide.common.blame.SourcePosition;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Replaces all placeholders of the form ${name} with a tool invocation provided value
@@ -39,7 +41,8 @@ public class PlaceholderHandler {
     // regular expression to recognize placeholders like ${name}, potentially surrounded by a
     // prefix and suffix string. this will split in 3 groups, the prefix, the placeholder name, and
     // the suffix.
-    // If this pattern is modified, studio ManifestPlaceholderResolver.PLACEHOLDER_PATTERN must be also change
+    // If this pattern is modified, studio ManifestPlaceholderResolver.PLACEHOLDER_PATTERN must also
+    // be changed
     static final Pattern PATTERN = Pattern.compile("([^\\$]*)\\$\\{([^\\}]*)\\}(.*)");
 
     /**

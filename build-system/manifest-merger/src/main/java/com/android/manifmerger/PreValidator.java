@@ -56,7 +56,7 @@ public class PreValidator {
     /**
      * Validates a loaded {@link XmlDocument} and return a status of the merging model.
      *
-     * <p>Will return one the following status :
+     * <p>Will return one of the following status :
      *
      * <ul>
      *   <li>{@link MergingReport.Result#SUCCESS} : the merging model is correct, merging should be
@@ -77,7 +77,7 @@ public class PreValidator {
      * @param validateExtractNativeLibsFromDependencies whether to warn if the {@link
      *     SdkConstants#ATTR_EXTRACT_NATIVE_LIBS} attribute is set to true in a dependency (LIBRARY)
      *     manifest.
-     * @return one the {@link MergingReport.Result} value.
+     * @return one of the {@link MergingReport.Result} value.
      */
     @NotNull
     public static MergingReport.Result validate(
@@ -298,13 +298,14 @@ public class PreValidator {
 
     /**
      * Checks that an element which is supposed to have a key does have one.
+     *
      * @param mergingReport report to log warnings and errors.
      * @param xmlElement xml element to check for key presence.
-     * @return true if the element has a valid key or false it does not need one or it is invalid.
+     * @return true if the element has a valid key or false if it does not need one or it is
+     *     invalid.
      */
     private static boolean checkKeyPresence(
-            @NotNull MergingReport.Builder mergingReport,
-            @NotNull XmlElement xmlElement) {
+            @NotNull MergingReport.Builder mergingReport, @NotNull XmlElement xmlElement) {
         NodeKeyResolver nodeKeyResolver = xmlElement.getType().getNodeKeyResolver();
         ImmutableList<String> keyAttributesNames = nodeKeyResolver.getKeyAttributesNames();
         if (keyAttributesNames.isEmpty()) {

@@ -139,7 +139,7 @@ interface ManifestSystemProperty : AutoAddingProperty {
         this,
         actionRecorder,
         value,
-        createOrGetElementInManifest(actionRecorder, document, NodeTypes.USES_SDK, "use-sdk injection requested"),
+        createOrGetElementInManifest(actionRecorder, document, NodeTypes.USES_SDK, "uses-sdk injection requested"),
       )
     }
   }
