@@ -177,7 +177,7 @@ Guide.
 
 **7.3**
 
-* The new AnnotationUsageType.DEFINTION now lets detectors easily check
+* The new AnnotationUsageType.DEFINITION now lets detectors easily check
   occurrences of an annotation in the source code. Previously,
   `visitAnnotationUsage` would only check annotated elements, not the
   annotations themselves, and to check an annotation you'd need to
@@ -226,7 +226,7 @@ Guide.
   if you want your Lint checks to run there.
 
 * The computation of checksums for binary test files (e.g. `compiled`
-  and `bytecode`) unfortunately had to change; the old mechamism was
+  and `bytecode`) unfortunately had to change; the old mechanism was
   not stable. This means that after updating some of the test files
   will show as having wrong checksums (e.g. “The checksum does not
   match for test.kt; expected 0x26e3997d but was 0xb76b5946”). In these

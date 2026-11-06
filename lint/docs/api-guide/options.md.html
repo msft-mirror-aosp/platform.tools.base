@@ -206,7 +206,7 @@ val option: String? = configuration.getOption(ISSUE, "maxCount")
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The `getOption` method returns a `String`. For numbers and booleans,
-the coniguration also provides lookups which will convert the value to
+the configuration also provides lookups which will convert the value to
 a number or boolean respectively: `getOptionAsInt`,
 `getOptionAsBoolean`, and most importantly, `getOptionAsFile`. If you
 are looking up paths, be sure to use `getOptionAsFile` since it has the
