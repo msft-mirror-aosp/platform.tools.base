@@ -825,8 +825,8 @@ internal open class Analysis<FX : Any>(
                 is ULocalVariable -> {
                   val decPsi = dec.javaPsi as PsiLocalVariable
                   val rhs = dec.uastInitializer?.let(::loop)
-                  val delegeteExpr = (dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression
-                  val delegate = if (delegeteExpr != null) loop(delegeteExpr) else null
+                  val delegateExpr = (dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression
+                  val delegate = if (delegateExpr != null) loop(delegateExpr) else null
                   val rhsLam =
                     when (val v = rhs?.value) {
                       is Type.Lambda -> v
