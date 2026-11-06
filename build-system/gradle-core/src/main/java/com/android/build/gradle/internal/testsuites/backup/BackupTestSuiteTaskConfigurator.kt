@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.testsuites.backup
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.DslServices
-import com.android.build.gradle.internal.test.report.SUITE_TYPE_BACKUP_RESTORE
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption

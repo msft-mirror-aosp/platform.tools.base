@@ -73,12 +73,14 @@ data class SuiteDescriptor(
  * @property label Human-readable column header label.
  * @property filterable Whether the report UI exposes a filter menu for this column.
  * @property sortable Whether this column supports sorting in the report UI.
+ * @property tooltip Optional header tooltip text explaining the column.
  */
 data class SummaryColumnDef(
   val key: String,
   val label: String,
   val filterable: Boolean = false,
   val sortable: Boolean = true,
+  val tooltip: String? = null,
 )
 
 /**
@@ -87,7 +89,7 @@ data class SummaryColumnDef(
  * @property envId Unique environment identifier within the report (referenced by [VariantTestResult.envId]).
  * @property modulePath Gradle module path (for example, `":app"`).
  * @property variantName Tested variant name (for example, `"debug"`).
- * @property suiteName Test suite name (for example, `"backupTest"`).
+ * @property suiteName Test suite name (for example, `"customSuite"`).
  * @property targetName Target name (for example, `"default"`).
  * @property suiteType Optional suite type identifier configured on the test suite task.
  * @property applicationId Tested application package ID.
@@ -99,7 +101,8 @@ data class SummaryColumnDef(
  * @property gradleVersion Gradle version.
  * @property testLibraryVersion Configured test library version when applicable.
  * @property runner Test runner identifier (for example, `"junit-jupiter"`).
- * @property backupRules Extracted [BackupRulesInfo] summary when present for backup test suites.
+ * @property attributes Optional suite-specific environment attributes contributed by a [SuiteReportAdapter].
+ * @property configFiles Optional suite-specific [EnvironmentConfigFile] descriptors contributed by a [SuiteReportAdapter].
  */
 data class SuiteEnvironmentInfo(
   val envId: String,
@@ -117,28 +120,23 @@ data class SuiteEnvironmentInfo(
   val gradleVersion: String? = null,
   val testLibraryVersion: String? = null,
   val runner: String? = null,
-  val backupRules: BackupRulesInfo? = null,
+  val attributes: Map<String, String>? = null,
+  val configFiles: List<EnvironmentConfigFile>? = null,
 )
 
 /**
- * Summary of an application's manifest backup configuration and rule files.
+ * Suite-level configuration or rule file referenced in [SuiteEnvironmentInfo].
  *
- * @property allowBackup Value of `android:allowBackup` in the merged manifest.
- * @property fullBackupContent Resource reference from `android:fullBackupContent`.
- * @property fullBackupContentFile File name of the `fullBackupContent` XML resource.
- * @property fullBackupContentArtifactPath Report-relative path to the copied `fullBackupContent` XML file.
- * @property dataExtractionRules Resource reference from `android:dataExtractionRules`.
- * @property dataExtractionRulesFile File name of the `dataExtractionRules` XML resource.
- * @property dataExtractionRulesArtifactPath Report-relative path to the copied `dataExtractionRules` XML file.
+ * @property key Machine-readable file role key (for example, `"suiteConfig"`).
+ * @property label Human-readable file name or label (for example, `"suite_config.xml"`).
+ * @property reference Optional manifest attribute or resource reference (for example, `"@xml/suite_config"`).
+ * @property artifactPath Report-relative path to the copied file under `artifacts/` when present.
  */
-data class BackupRulesInfo(
-  val allowBackup: Boolean? = null,
-  val fullBackupContent: String? = null,
-  val fullBackupContentFile: String? = null,
-  val fullBackupContentArtifactPath: String? = null,
-  val dataExtractionRules: String? = null,
-  val dataExtractionRulesFile: String? = null,
-  val dataExtractionRulesArtifactPath: String? = null,
+data class EnvironmentConfigFile(
+  val key: String,
+  val label: String,
+  val reference: String? = null,
+  val artifactPath: String? = null,
 )
 
 /**
@@ -286,7 +284,8 @@ data class ActorInfo(
 /**
  * Recorded step in a test case's execution timeline.
  *
- * @property n Optional 1-based step sequence number.
+ * @property n Optional 1-based step sequence number. Steps published with a non-numeric key, such as `prepare_1`, have none and are shown
+ *   as preparation steps.
  * @property name Human-readable step name.
  * @property on Optional actor identifier matching [ActorInfo.id].
  * @property shared Whether this step ran in shared class setup rather than the test body.
@@ -350,9 +349,9 @@ data class LazyTestDetail(
 /**
  * Lazy per-environment payload written once to `details/<envId>.js`.
  *
- * @property backupRules Extracted [LazyBackupRuleEntry] XML files for this suite environment.
+ * @property files Extracted [LazyEnvironmentFile] contents for this suite environment.
  */
-data class LazyEnvironmentDetail(val backupRules: List<LazyBackupRuleEntry> = emptyList())
+data class LazyEnvironmentDetail(val files: List<LazyEnvironmentFile> = emptyList())
 
 /**
  * Log entry stored in `details/<detailId>.js`.
@@ -374,16 +373,18 @@ data class LazyLogEntry(
 )
 
 /**
- * Backup rule XML entry stored in [LazyEnvironmentDetail] (`details/<envId>.js`).
+ * Suite configuration file content stored in [LazyEnvironmentDetail] (`details/<envId>.js`).
  *
- * @property label File name of the XML resource (for example, `"backup_rules.xml"`).
- * @property attribute Manifest attribute or resource reference (for example, `"@xml/backup_rules"`).
- * @property artifactPath Report-relative path to the copied XML file under `artifacts/`.
- * @property content Raw XML text content of the backup rules file.
+ * @property key Machine-readable file role key (for example, `"suiteConfig"`).
+ * @property label File name or display label (for example, `"suite_config.xml"`).
+ * @property reference Optional manifest attribute or resource reference (for example, `"@xml/suite_config"`).
+ * @property artifactPath Report-relative path to the copied file under `artifacts/`.
+ * @property content Raw text content of the configuration file.
  */
-data class LazyBackupRuleEntry(
+data class LazyEnvironmentFile(
+  val key: String,
   val label: String,
-  val attribute: String? = null,
+  val reference: String? = null,
   val artifactPath: String? = null,
   val content: String,
 )
@@ -454,5 +455,5 @@ data class VariantSummary(
   val skipped: Int,
   val total: Int,
   val rate: Double,
-  val durationMs: Long = 0L,
+  val durationMs: Long? = null,
 )

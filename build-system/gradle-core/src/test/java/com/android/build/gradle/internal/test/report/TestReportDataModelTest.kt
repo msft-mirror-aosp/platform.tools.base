@@ -133,8 +133,20 @@ class TestReportDataModelTest {
         likelyCauseHeading = "Backup rule that left the data out · Likely cause",
         summaryColumns =
           listOf(
-            SummaryColumnDef(key = "transport", label = "Transport", filterable = true, sortable = true),
-            SummaryColumnDef(key = "devices", label = "Devices", filterable = true, sortable = true),
+            SummaryColumnDef(
+              key = "transport",
+              label = "Transport",
+              filterable = true,
+              sortable = true,
+              tooltip = "Android backup transport mode used by the test",
+            ),
+            SummaryColumnDef(
+              key = "devices",
+              label = "Devices",
+              filterable = true,
+              sortable = true,
+              tooltip = "Source and target Android devices used by the test",
+            ),
           ),
         docsUrl = "https://developer.android.com/identity/data/testing",
       )
@@ -144,7 +156,7 @@ class TestReportDataModelTest {
     assertThat(descriptorJson.get("title").asString).isEqualTo("Backup & Restore")
     assertThat(descriptorJson.get("likelyCauseHeading").asString).isEqualTo("Backup rule that left the data out · Likely cause")
     assertThat(descriptorJson.getAsJsonArray("summaryColumns")[0].asJsonObject.keySet())
-      .containsExactly("key", "label", "filterable", "sortable")
+      .containsExactly("key", "label", "filterable", "sortable", "tooltip")
 
     val envInfo =
       SuiteEnvironmentInfo(
@@ -163,30 +175,23 @@ class TestReportDataModelTest {
         gradleVersion = "9.7.1",
         testLibraryVersion = "1.0.0-alpha04",
         runner = "junit-jupiter",
-        backupRules =
-          BackupRulesInfo(
-            allowBackup = true,
-            fullBackupContent = "@xml/backup_rules",
-            fullBackupContentFile = "backup_rules.xml",
-            fullBackupContentArtifactPath = "artifacts/env_01/backup_rules.xml",
-            dataExtractionRules = "@xml/data_extraction_rules",
-            dataExtractionRulesFile = "data_extraction_rules.xml",
-            dataExtractionRulesArtifactPath = "artifacts/env_01/data_extraction_rules.xml",
+        attributes = mapOf("allowBackup" to "true"),
+        configFiles =
+          listOf(
+            EnvironmentConfigFile(
+              key = "fullBackupContent",
+              label = "backup_rules.xml",
+              reference = "@xml/backup_rules",
+              artifactPath = "artifacts/env_01/backup_rules.xml",
+            )
           ),
       )
     val envJson = JsonParser.parseString(gson.toJson(envInfo)).asJsonObject
     assertThat(envJson.get("suiteType").asString).isEqualTo("androidx.test.backup")
     assertThat(envJson.get("targetSdkVersion").asInt).isEqualTo(34)
-    assertThat(envJson.getAsJsonObject("backupRules").keySet())
-      .containsExactly(
-        "allowBackup",
-        "fullBackupContent",
-        "fullBackupContentFile",
-        "fullBackupContentArtifactPath",
-        "dataExtractionRules",
-        "dataExtractionRulesFile",
-        "dataExtractionRulesArtifactPath",
-      )
+    assertThat(envJson.has("backupRules")).isFalse()
+    assertThat(envJson.getAsJsonObject("attributes").get("allowBackup").asString).isEqualTo("true")
+    assertThat(envJson.getAsJsonArray("configFiles")[0].asJsonObject.keySet()).containsExactly("key", "label", "reference", "artifactPath")
 
     val variantResult =
       VariantTestResult(
@@ -242,19 +247,69 @@ class TestReportDataModelTest {
 
     val lazyEnvDetail =
       LazyEnvironmentDetail(
-        backupRules =
+        files =
           listOf(
-            LazyBackupRuleEntry(
+            LazyEnvironmentFile(
+              key = "fullBackupContent",
               label = "backup_rules.xml",
-              attribute = "@xml/backup_rules",
+              reference = "@xml/backup_rules",
               artifactPath = "artifacts/env_01/backup_rules.xml",
               content = "<full-backup-content/>",
             )
           )
       )
     val lazyEnvJson = JsonParser.parseString(gson.toJson(lazyEnvDetail)).asJsonObject
-    assertThat(lazyEnvJson.keySet()).containsExactly("backupRules")
-    assertThat(lazyEnvJson.getAsJsonArray("backupRules")[0].asJsonObject.keySet())
-      .containsExactly("label", "attribute", "artifactPath", "content")
+    assertThat(lazyEnvJson.keySet()).containsExactly("files")
+    assertThat(lazyEnvJson.has("backupRules")).isFalse()
+    assertThat(lazyEnvJson.getAsJsonArray("files")[0].asJsonObject.keySet())
+      .containsExactly("key", "label", "reference", "artifactPath", "content")
+  }
+
+  @Test
+  fun testSummarizeClassExecutionsPreservesUnderscoreVariantTargetPairs() {
+    fun exec(variant: String, target: String, status: String, durationMs: Long? = 50L) =
+      TestCaseExecution(
+        testSuiteName = "gmdSuite",
+        variantName = variant,
+        targetName = target,
+        status = status,
+        durationMs = durationMs,
+        stackTrace = null,
+        systemOut = null,
+        systemOutTruncated = false,
+        systemErr = null,
+        systemErrTruncated = false,
+        xmlDir = null,
+        environmentKey = null,
+        adaptedResult = VariantTestResult(status = status, durationMs = durationMs),
+        rawLogs = null,
+        rawArtifacts = null,
+      )
+
+    val summaries =
+      summarizeClassExecutions(
+        listOf(
+          listOf(
+            exec(variant = "free_debug", target = "pixel", status = STATUS_PASS),
+            exec(variant = "free", target = "debug_pixel", status = STATUS_FAIL),
+            exec(variant = "timeless", target = "pixel", status = STATUS_PASS, durationMs = null),
+          )
+        )
+      )
+
+    assertThat(summaries).hasSize(1)
+    assertThat(summaries[0].name).isEqualTo("gmdSuite")
+    assertThat(summaries[0].variantSummaries)
+      .containsExactly(
+        VariantSummary(name = "free", total = 1, passed = 0, failed = 1, skipped = 0, rate = 0.0, durationMs = 50L),
+        VariantSummary(name = "free_debug", total = 1, passed = 1, failed = 0, skipped = 0, rate = 100.0, durationMs = 50L),
+        VariantSummary(name = "timeless", total = 1, passed = 1, failed = 0, skipped = 0, rate = 100.0, durationMs = null),
+      )
+      .inOrder()
+
+    val rolledUp = rollupChildSuiteSummaries(listOf(summaries))
+    val aggregatedSummaries = rolledUp.single { it.name == AGGREGATED_TEST_SUITE_NAME }.variantSummaries.associateBy { it.name }
+    assertThat(aggregatedSummaries["timeless"]?.durationMs).isNull()
+    assertThat(aggregatedSummaries["free"]?.durationMs).isEqualTo(50L)
   }
 }

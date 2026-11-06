@@ -17,8 +17,10 @@
 package com.android.build.gradle.internal.test.report
 
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.utils.ILogger
 import com.android.utils.XmlUtils
 import com.google.common.annotations.VisibleForTesting
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import java.io.File
 import java.io.IOException
@@ -28,33 +30,51 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
+import java.util.TreeMap
 import java.util.UUID
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamConstants
 import javax.xml.stream.XMLStreamException
+import kotlin.math.roundToLong
 import org.gradle.internal.logging.ConsoleRenderer
 
-/**
- * Aggregates test results from multiple XML report streams.
- *
- * The `getReport()` method converts this internal map structure into the final list-based [RootReport] data model for serialization.
- */
-class XMLReportAggregator(
+/** Aggregates JUnit XML reports and test attachments into a self-contained HTML test report. */
+class XMLReportAggregator
+internal constructor(
   private val files: List<File>,
   projectName: String,
   private val rootDir: File,
+  private val adapterRegistry: SuiteReportAdapterRegistry,
+  private val logger: ILogger,
 ) {
 
-  private val logger = LoggerWrapper.getLogger(XMLReportAggregator::class.java)
+  constructor(
+    files: List<File>,
+    projectName: String,
+    rootDir: File,
+  ) : this(
+    files = files,
+    projectName = projectName,
+    rootDir = rootDir,
+    adapterRegistry = SuiteReportAdapterRegistry(),
+    logger = LoggerWrapper.getLogger(XMLReportAggregator::class.java),
+  )
 
-  // Global set of all unique variant names encountered.
-  private val rootReportBuilder = RootReportBuilder(projectName)
+  private val gson: Gson = GsonBuilder().create()
 
-  /** The lazily evaluated and cached [RootReport] data model. */
-  private val rootReport: RootReport by lazy {
+  private val warnedDetailSchemaVersions = HashSet<Int>()
+
+  private val rootReportBuilder = RootReportBuilder(projectName, adapterRegistry, logger)
+
+  /** Caches the lazily aggregated [AggregatedReportBundle] across report queries and writes. */
+  private val aggregatedBundle: AggregatedReportBundle by lazy {
     getInputFiles().forEach { file -> processXmlForAggregation(file) }
-    getReport()
+    rootReportBuilder.build()
   }
+
+  private val rootReport: RootReport
+    get() = aggregatedBundle.report
 
   private val lazyTestCount: Int by lazy {
     rootReport.modules.sumOf { module ->
@@ -62,28 +82,36 @@ class XMLReportAggregator(
     }
   }
 
-  /** Generates the RootReport and writes it to the specified output directory along with the necessary JSON, JS, and HTML resources. */
+  /** Writes `data.js` and renderer assets to [outputDir]. */
   fun writeReport(outputDir: File) {
     if (!outputDir.exists()) {
       outputDir.mkdirs()
     }
-    val finalReport = generateReport(outputDir)
-    val gson = GsonBuilder().create()
 
-    File(outputDir, "data.js").bufferedWriter().use { writer ->
+    val bundle = aggregatedBundle
+    val finalReport = bundle.report.copy(relativeRootDir = calculateRelativeRootDir(outputDir, rootDir))
+
+    File(outputDir, "data.js").bufferedWriter(Charsets.UTF_8).use { writer ->
       writer.write("const TEST_DATA_SOURCE = ")
       gson.toJson(finalReport, writer)
     }
 
-    val resources = listOf("index.html", "script.js", "styles.css")
-    resources.forEach { fileName ->
-      XMLReportAggregator::class.java.getResourceAsStream("/com/android/build/gradle/internal/test/report/renderer/$fileName")?.use {
-        inputStream ->
-        File(outputDir, fileName).outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
+    RENDERER_RESOURCES.forEach { relativePath ->
+      val resourcePath = "/com/android/build/gradle/internal/test/report/renderer/$relativePath"
+      val stream = XMLReportAggregator::class.java.getResourceAsStream(resourcePath)
+      if (stream == null) {
+        logger.warning("Missing HTML test report renderer resource: $resourcePath")
+      } else {
+        stream.use { inputStream ->
+          val destFile = File(outputDir, relativePath)
+          destFile.parentFile?.mkdirs()
+          destFile.outputStream().use { outputStream ->
+            inputStream.copyTo(outputStream)
+          }
+        }
       }
     }
 
-    // Log the final location of the report
     val reportLocation = ConsoleRenderer().asClickableFileUrl(File(outputDir, "index.html"))
     logger.quiet("Test report generated at: $reportLocation")
   }
@@ -97,7 +125,7 @@ class XMLReportAggregator(
       module.testSuiteSummaries.filter { it.name == AGGREGATED_TEST_SUITE_NAME }.flatMap { it.variantSummaries }.sumOf { it.failed }
     }
 
-  /** Generates the final [RootReport] by returning the cached report property. */
+  /** Generates the final [RootReport] resolved relative to [outputDir]. */
   @VisibleForTesting
   fun generateReport(outputDir: File = rootDir): RootReport {
     val relativeRoot = calculateRelativeRootDir(outputDir, rootDir)
@@ -107,9 +135,9 @@ class XMLReportAggregator(
   private fun getInputFiles(): List<File> = files
 
   /**
-   * Processes all XML files in the given directory for aggregation.
+   * Processes JUnit XML files in [outputDir] for aggregation.
    *
-   * @param outputDir the directory containing XML report files
+   * @param outputDir the directory containing XML report files and optional attachments
    */
   private fun processXmlForAggregation(outputDir: File) {
     if (!outputDir.exists()) {
@@ -117,184 +145,504 @@ class XMLReportAggregator(
       return
     }
 
-    outputDir
-      .listFiles()
-      ?.filter {
-        it.isFile &&
-          // We only want files with the "xml" extension
-          it.extension == EXT_XML
-      }
-      ?.sortedBy { it.name }
-      ?.forEach { xmlFile ->
-        logger.verbose("Found XML file: ${xmlFile.name}")
-        try {
-          xmlFile.inputStream().use { inputStream -> processXmlStream(inputStream, xmlFile.name) }
-        } catch (e: IOException) {
-          logger.error(e, "Error reading file ${xmlFile.name}")
-        } catch (e: Exception) {
-          logger.error(e, "Error processing file ${xmlFile.name}")
+    val xmlFiles = outputDir.listFiles()?.filter { it.isFile && it.extension == EXT_XML }?.sortedBy { it.name } ?: return
+
+    xmlFiles.forEach { xmlFile ->
+      logger.verbose("Found XML file: ${xmlFile.name}")
+      try {
+        xmlFile.inputStream().use { inputStream ->
+          processXmlStream(
+            inputStream = inputStream,
+            streamName = xmlFile.name,
+            xmlFile = xmlFile,
+          )
         }
+      } catch (e: IOException) {
+        logger.error(e, "Error reading file ${xmlFile.name}")
+      } catch (e: Exception) {
+        logger.error(e, "Error processing file ${xmlFile.name}")
       }
+    }
+  }
+
+  private data class ParsedXmlTestCase(
+    val classname: String,
+    val testcaseName: String,
+    val durationMs: Long?,
+    val status: String,
+    val stackTrace: String?,
+    val systemOut: String?,
+    val systemOutTruncated: Boolean,
+    val systemErr: String?,
+    val systemErrTruncated: Boolean,
+    val properties: Map<String, String>,
+    val attachments: List<String>,
+  )
+
+  private class SuiteFrame(
+    val suiteName: String? = null,
+    var modulePath: String? = null,
+    var testSuiteName: String? = null,
+    var testTarget: String? = null,
+    var variantName: String? = null,
+    val suiteProperties: LinkedHashMap<String, String> = LinkedHashMap(),
+  ) {
+    var suiteSystemOutCollector: SystemOutStreamCollector? = null
+    val pendingTestCases = ArrayList<ParsedXmlTestCase>()
+
+    fun createChild(childSuiteName: String?): SuiteFrame =
+      SuiteFrame(
+        suiteName = childSuiteName,
+        modulePath = modulePath,
+        testSuiteName = testSuiteName,
+        testTarget = testTarget,
+        variantName = variantName,
+        suiteProperties = LinkedHashMap(suiteProperties),
+      )
   }
 
   /**
-   * Parses a single XML stream and adds the results to the aggregated structure.
+   * Parses an XML stream and adds JUnit `<testsuite>` test cases to the report builder.
    *
-   * @param inputStream the XML stream to parse
-   * @param streamName optional name for the stream (used for logging)
+   * Non-JUnit XML files (whose root element is neither `<testsuite>` nor `<testsuites>`) are skipped cleanly.
    */
-  private fun processXmlStream(inputStream: InputStream, streamName: String? = null) {
-    var variantName: String? = null
+  private fun processXmlStream(
+    inputStream: InputStream,
+    streamName: String? = null,
+    xmlFile: File? = null,
+  ) {
+    var latestVariantName: String? = null
     val factory = XmlUtils.createXmlInputFactory()
     factory.setProperty(XMLInputFactory.IS_COALESCING, true)
 
     try {
       inputStream.use { stream ->
         val reader = factory.createXMLStreamReader(stream)
-        var modulePath: String? = null
-        var testSuiteName: String? = null
-        var testTarget: String? = null
+        var seenRootElement = false
 
-        // Variables for the current test case being processed
+        val suiteStack = ArrayDeque<SuiteFrame>().apply { addLast(SuiteFrame()) }
+
+        var inTestCase = false
+        var inFailureOrError = false
+        var inTestCaseSystemOut = false
+        var inSuiteSystemOut = false
+        var inSystemErr = false
+        var inProperty = false
+        var pendingPropertyName: String? = null
+        var pendingPropertyText: StringBuilder? = null
+
         var currentClassname: String? = null
         var currentTestcaseName: String? = null
-        var currentStatus = STATUS_PASS // Default status
-
-        var currentDiffPercent: String? = null
-        var currentPreviewName: String? = null
-        var currentMethodName: String? = null
-        var currentRefImagePath: String? = null
-        var currentNewImagePath: String? = null
-        var currentDiffImagePath: String? = null
-
-        // Buffer to accumulate text content (stack trace)
+        var currentDurationMs: Long? = null
+        var currentStatus = STATUS_PASS
         var failureBuffer: StringBuilder? = null
+        var testcaseSystemOutCollector: SystemOutStreamCollector? = null
+        var systemErrBuffer: StringBuilder? = null
+        var systemErrCapped = false
+        val testcaseProperties = LinkedHashMap<String, String>()
 
-        while (reader.hasNext()) {
-          when (reader.next()) {
-            XMLStreamConstants.START_ELEMENT -> {
-              when (reader.localName) {
-                TAG_PROPERTY -> {
-                  val name = reader.getAttributeValue(null, ATTR_NAME)
-                  val value = reader.getAttributeValue(null, ATTR_VALUE)
-                  if (name != null && value != null) {
-                    if (currentTestcaseName != null) {
-                      when (name) {
-                        "PreviewScreenshot.diffPercent" -> currentDiffPercent = value
-                        "PreviewScreenshot.previewName" -> currentPreviewName = value
-                        "PreviewScreenshot.methodName" -> currentMethodName = value
-                        "PreviewScreenshot.refImagePath" -> currentRefImagePath = value
-                        "PreviewScreenshot.newImagePath" -> currentNewImagePath = value
-                        "PreviewScreenshot.diffImagePath" -> currentDiffImagePath = value
+        fun recordProperty(name: String, value: String) {
+          if (inTestCase) {
+            testcaseProperties[name] = value
+          } else {
+            val activeFrame = suiteStack.last()
+            when (name) {
+              KEY_MODULE_PATH -> activeFrame.modulePath = value
+              KEY_TEST_SUITE_NAME -> activeFrame.testSuiteName = value
+              KEY_TEST_TARGET -> activeFrame.testTarget = value
+              KEY_TESTED_VARIANT_NAME -> {
+                rootReportBuilder.addVariant(value)
+                activeFrame.variantName = value
+                latestVariantName = value
+              }
+              else -> activeFrame.suiteProperties[name] = value
+            }
+          }
+        }
+
+        fun flushSuiteFrame(frame: SuiteFrame) {
+          frame.suiteSystemOutCollector?.finish()
+          val suiteAttachments = frame.suiteSystemOutCollector?.attachments?.toList().orEmpty()
+          val suiteEnvRecord =
+            TestDetailRecordReader.parseSuiteEnvironmentFromProperties(
+              suiteProperties = frame.suiteProperties,
+              modulePath = frame.modulePath,
+              variantName = frame.variantName,
+              suiteName = frame.testSuiteName,
+              targetName = frame.testTarget,
+              extraEnvironmentKeys = adapterRegistry.allSuiteEnvironmentPropertyKeys,
+            )
+          val suiteEnvPair = suiteEnvRecord?.let { rec ->
+            val key =
+              SuiteEnvironmentKey(
+                modulePath = rec.modulePath!!,
+                variantName = rec.variantName!!,
+                suiteName = rec.suiteName!!,
+                targetName = rec.targetName?.takeIf { it.isNotBlank() } ?: UNKNOWN_TARGET,
+              )
+            rootReportBuilder.addEnvironment(key, rec)
+            key to rec
+          }
+
+          val mod = frame.modulePath
+          val suite = frame.testSuiteName
+          val variant = frame.variantName
+          if (mod != null && suite != null && variant != null) {
+            val target = frame.testTarget ?: UNKNOWN_TARGET
+            val suiteOwnedPrefixes = adapterRegistry.allSuiteOwnedPropertyPrefixes
+            val suiteHasReportOrAdapterProps =
+              frame.suiteProperties.keys.any { key ->
+                key.startsWith(INTERNAL_REPORT_KEY_PREFIX) || suiteOwnedPrefixes.any { key.startsWith(it) }
+              }
+            for (tc in frame.pendingTestCases) {
+              val isSyntheticClassFailure =
+                tc.testcaseName in SYNTHETIC_TEST_NAMES || tc.testcaseName == tc.classname || tc.testcaseName == frame.suiteName
+              val hasOwnReportEntries = tc.properties.keys.any { it.startsWith(INTERNAL_REPORT_KEY_PREFIX) }
+              val effectiveProperties =
+                if (tc.status == STATUS_FAIL && isSyntheticClassFailure && !hasOwnReportEntries && suiteHasReportOrAdapterProps) {
+                  LinkedHashMap<String, String>().apply {
+                    for ((k, v) in frame.suiteProperties) {
+                      if (k.startsWith(INTERNAL_REPORT_KEY_PREFIX) || suiteOwnedPrefixes.any { k.startsWith(it) }) {
+                        put(k, v)
+                      }
+                    }
+                    putAll(tc.properties)
+                  }
+                } else {
+                  LinkedHashMap(tc.properties)
+                }
+              val effectiveAttachments =
+                if (tc.status == STATUS_FAIL && isSyntheticClassFailure && tc.attachments.isEmpty()) {
+                  suiteAttachments
+                } else {
+                  tc.attachments
+                }
+
+              rootReportBuilder.addTarget(target)
+              addTestResult(
+                modulePath = mod,
+                testSuiteName = suite,
+                classname = tc.classname,
+                testcaseName = tc.testcaseName,
+                variantName = variant,
+                targetName = target,
+                status = tc.status,
+                durationMs = tc.durationMs,
+                stackTrace = tc.stackTrace,
+                rawSystemOut = tc.systemOut,
+                rawSystemOutTruncated = tc.systemOutTruncated,
+                rawSystemErr = tc.systemErr,
+                rawSystemErrTruncated = tc.systemErrTruncated,
+                rawProperties = effectiveProperties,
+                attachments = effectiveAttachments,
+                xmlFile = xmlFile,
+                suiteEnvironment = suiteEnvPair,
+              )
+            }
+          }
+          frame.pendingTestCases.clear()
+          frame.suiteSystemOutCollector = null
+        }
+
+        try {
+          while (reader.hasNext()) {
+            when (reader.next()) {
+              XMLStreamConstants.START_ELEMENT -> {
+                val tagName = reader.localName
+                if (!seenRootElement) {
+                  seenRootElement = true
+                  if (tagName != TAG_TESTSUITE && tagName != TAG_TESTSUITES) {
+                    val location = streamName ?: "stream"
+                    logger.verbose("Ignoring non-JUnit XML file: $location")
+                    break
+                  }
+                }
+
+                when (tagName) {
+                  TAG_TESTSUITE -> {
+                    suiteStack.addLast(suiteStack.last().createChild(reader.getAttributeValue(null, ATTR_NAME)))
+                    inSuiteSystemOut = false
+                  }
+                  TAG_PROPERTY -> {
+                    val name = reader.getAttributeValue(null, ATTR_NAME)
+                    val value = reader.getAttributeValue(null, ATTR_VALUE)
+                    if (name != null) {
+                      if (value != null) {
+                        recordProperty(name, value)
+                        inProperty = false
+                      } else {
+                        inProperty = true
+                        pendingPropertyName = name
+                        pendingPropertyText = StringBuilder()
+                      }
+                    }
+                  }
+                  TAG_TESTCASE -> {
+                    inTestCase = true
+                    inFailureOrError = false
+                    inTestCaseSystemOut = false
+                    inSystemErr = false
+                    inProperty = false
+                    currentClassname = reader.getAttributeValue(null, ATTR_CLASSNAME)
+                    currentTestcaseName = reader.getAttributeValue(null, ATTR_NAME)
+                    currentDurationMs = parseDurationMs(reader.getAttributeValue(null, ATTR_TIME))
+                    currentStatus = STATUS_PASS
+                    failureBuffer = null
+                    testcaseSystemOutCollector = null
+                    systemErrBuffer = null
+                    systemErrCapped = false
+                    testcaseProperties.clear()
+                  }
+                  TAG_SKIPPED -> {
+                    if (inTestCase) {
+                      currentStatus = STATUS_SKIPPED
+                    }
+                  }
+                  TAG_FAILURE,
+                  TAG_ERROR -> {
+                    if (inTestCase) {
+                      currentStatus = STATUS_FAIL
+                      inFailureOrError = true
+                      failureBuffer = StringBuilder()
+                    }
+                  }
+                  TAG_SYSTEM_OUT -> {
+                    if (inTestCase) {
+                      inTestCaseSystemOut = true
+                      if (testcaseSystemOutCollector == null) {
+                        testcaseSystemOutCollector = SystemOutStreamCollector(MAX_STREAM_CHARS)
                       }
                     } else {
-                      when (name) {
-                        KEY_MODULE_PATH -> modulePath = value
-                        KEY_TEST_SUITE_NAME -> testSuiteName = value
-                        KEY_TEST_TARGET -> testTarget = value
-                        KEY_TESTED_VARIANT_NAME -> {
-                          rootReportBuilder.addVariant(value)
-                          variantName = value
-                        }
+                      inSuiteSystemOut = true
+                      val activeFrame = suiteStack.last()
+                      if (activeFrame.suiteSystemOutCollector == null) {
+                        activeFrame.suiteSystemOutCollector = SystemOutStreamCollector(maxChars = 0)
+                      }
+                    }
+                  }
+                  TAG_SYSTEM_ERR -> {
+                    if (inTestCase) {
+                      inSystemErr = true
+                      if (systemErrBuffer == null) {
+                        systemErrBuffer = StringBuilder()
                       }
                     }
                   }
                 }
-                TAG_TESTCASE -> {
-                  currentClassname = reader.getAttributeValue(null, ATTR_CLASSNAME)
-                  currentTestcaseName = reader.getAttributeValue(null, ATTR_NAME)
-                  currentStatus = STATUS_PASS // Reset status for this new test
-                  failureBuffer = null // Reset failure buffer
-                  currentDiffPercent = null
-                  currentPreviewName = null
-                  currentMethodName = null
-                  currentRefImagePath = null
-                  currentNewImagePath = null
-                  currentDiffImagePath = null
-                }
-                TAG_SKIPPED -> {
-                  currentStatus = STATUS_SKIPPED
-                }
-                TAG_FAILURE,
-                TAG_ERROR -> {
-                  currentStatus = STATUS_FAIL
-                  // Initialize buffer to capture stack trace text
-                  failureBuffer = StringBuilder()
+              }
+              XMLStreamConstants.CHARACTERS,
+              XMLStreamConstants.CDATA -> {
+                when {
+                  inProperty && pendingPropertyText != null -> pendingPropertyText.append(reader.text)
+                  inFailureOrError && failureBuffer != null -> failureBuffer.append(reader.text)
+                  inTestCaseSystemOut && testcaseSystemOutCollector != null -> {
+                    testcaseSystemOutCollector.append(reader.text)
+                  }
+                  inSuiteSystemOut -> {
+                    suiteStack.last().suiteSystemOutCollector?.append(reader.text)
+                  }
+                  inSystemErr && !systemErrCapped && systemErrBuffer != null -> {
+                    systemErrCapped = appendCapped(systemErrBuffer, reader.text, MAX_STREAM_CHARS)
+                  }
                 }
               }
-            }
-            XMLStreamConstants.CHARACTERS -> {
-              // If we are inside a failure/error tag, append text to buffer
-              if (failureBuffer != null) {
-                failureBuffer.append(reader.text)
-              }
-            }
-            XMLStreamConstants.END_ELEMENT -> {
-              if (reader.localName == TAG_TESTCASE) {
-                if (
-                  modulePath != null &&
-                    testSuiteName != null &&
-                    currentClassname != null &&
-                    currentTestcaseName != null &&
-                    variantName != null
-                ) {
-
-                  // Extract and clean stack trace
-                  val stackTrace = failureBuffer?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-                  val target = testTarget ?: UNKNOWN_TARGET
-                  rootReportBuilder.addTarget(target)
-
-                  addTestResult(
-                    modulePath,
-                    testSuiteName,
-                    currentClassname,
-                    currentTestcaseName,
-                    variantName,
-                    target,
-                    currentStatus,
-                    stackTrace,
-                    currentDiffPercent,
-                    currentPreviewName,
-                    currentMethodName,
-                    currentRefImagePath,
-                    currentNewImagePath,
-                    currentDiffImagePath,
-                  )
+              XMLStreamConstants.END_ELEMENT -> {
+                when (reader.localName) {
+                  TAG_PROPERTY -> {
+                    val propName = pendingPropertyName
+                    if (inProperty && propName != null) {
+                      recordProperty(propName, pendingPropertyText?.toString() ?: "")
+                    }
+                    inProperty = false
+                    pendingPropertyName = null
+                    pendingPropertyText = null
+                  }
+                  TAG_FAILURE,
+                  TAG_ERROR -> {
+                    inFailureOrError = false
+                  }
+                  TAG_SYSTEM_OUT -> {
+                    if (inTestCase) {
+                      inTestCaseSystemOut = false
+                    } else {
+                      inSuiteSystemOut = false
+                    }
+                  }
+                  TAG_SYSTEM_ERR -> {
+                    inSystemErr = false
+                  }
+                  TAG_TESTCASE -> {
+                    val cls = currentClassname
+                    val tcName = currentTestcaseName
+                    if (cls != null && tcName != null) {
+                      val parsedSystemOut = testcaseSystemOutCollector?.finish()
+                      val parsedSystemOutTruncated = parsedSystemOut != null && testcaseSystemOutCollector?.truncated == true
+                      val parsedSystemErr = finalizeStreamBuffer(systemErrBuffer)
+                      val parsedSystemErrTruncated = parsedSystemErr != null && systemErrCapped
+                      // The output of a passing test without report entries is never shown, so it isn't held until the suite ends.
+                      val keepOutput =
+                        currentStatus != STATUS_PASS || testcaseProperties.keys.any { it.startsWith(INTERNAL_REPORT_KEY_PREFIX) }
+                      suiteStack
+                        .last()
+                        .pendingTestCases
+                        .add(
+                          ParsedXmlTestCase(
+                            classname = cls,
+                            testcaseName = tcName,
+                            durationMs = currentDurationMs,
+                            status = currentStatus,
+                            stackTrace = failureBuffer?.toString()?.trim()?.takeIf { it.isNotEmpty() },
+                            systemOut = parsedSystemOut.takeIf { keepOutput },
+                            systemOutTruncated = keepOutput && parsedSystemOutTruncated,
+                            systemErr = parsedSystemErr.takeIf { keepOutput },
+                            systemErrTruncated = keepOutput && parsedSystemErrTruncated,
+                            properties = LinkedHashMap(testcaseProperties),
+                            attachments = testcaseSystemOutCollector?.attachments?.toList().orEmpty(),
+                          )
+                        )
+                    }
+                    inTestCase = false
+                    inFailureOrError = false
+                    inTestCaseSystemOut = false
+                    inSystemErr = false
+                    currentClassname = null
+                    currentTestcaseName = null
+                    currentDurationMs = null
+                    failureBuffer = null
+                    testcaseSystemOutCollector = null
+                    systemErrBuffer = null
+                    systemErrCapped = false
+                    testcaseProperties.clear()
+                  }
+                  TAG_TESTSUITE -> {
+                    val completedFrame = if (suiteStack.size > 1) suiteStack.removeLast() else suiteStack.last()
+                    flushSuiteFrame(completedFrame)
+                  }
                 }
-                // Clear testcase-specific data
-                currentClassname = null
-                currentTestcaseName = null
-                failureBuffer = null
-                currentDiffPercent = null
-                currentPreviewName = null
-                currentMethodName = null
-                currentRefImagePath = null
-                currentNewImagePath = null
-                currentDiffImagePath = null
               }
             }
           }
+        } finally {
+          // Test cases parsed before a malformed or truncated element are still reported.
+          suiteStack.asReversed().forEach { frame -> if (frame.pendingTestCases.isNotEmpty()) flushSuiteFrame(frame) }
         }
         reader.close()
       }
     } catch (e: XMLStreamException) {
       val location = streamName ?: "stream"
-      logger.error(e, "Error parsing XML for variant '$variantName' in $location")
+      logger.error(e, "Error parsing XML for variant '$latestVariantName' in $location")
     } catch (e: Exception) {
       val location = streamName ?: "stream"
-      logger.error(e, "An unexpected error occurred for variant '$variantName' in $location")
+      logger.error(e, "An unexpected error occurred for variant '$latestVariantName' in $location")
     }
   }
 
-  /** Converts the internal aggregated structure into the final [RootReport] data model, ready for JSON serialization. */
-  private fun getReport(): RootReport {
-    return rootReportBuilder.build()
+  /** Safely adapts and adds a test result to the nested builder hierarchy. */
+  private fun addTestResult(
+    modulePath: String,
+    testSuiteName: String,
+    classname: String,
+    testcaseName: String,
+    variantName: String,
+    targetName: String,
+    status: String,
+    durationMs: Long?,
+    stackTrace: String?,
+    rawSystemOut: String?,
+    rawSystemOutTruncated: Boolean,
+    rawSystemErr: String?,
+    rawSystemErrTruncated: Boolean,
+    rawProperties: Map<String, String>,
+    attachments: List<String>,
+    xmlFile: File?,
+    suiteEnvironment: Pair<SuiteEnvironmentKey, SuiteEnvironmentRecord>?,
+  ) {
+    try {
+      val xmlDir = xmlFile?.parentFile
+      val resolvedEnv = suiteEnvironment ?: rootReportBuilder.findEnvironment(modulePath, variantName, testSuiteName, targetName)
+
+      val detailRecord =
+        TestDetailRecordReader.parseDetailRecordFromEntries(
+          rawProperties = rawProperties,
+          attachments = attachments,
+          classname = classname,
+          testcaseName = testcaseName,
+          logger = logger,
+          warnedSchemaVersions = warnedDetailSchemaVersions,
+        )
+
+      val adapterContext =
+        SuiteAdapterContext(
+          rawProperties = rawProperties,
+          detailRecord = detailRecord,
+          environment = resolvedEnv?.second,
+        )
+      val adapter = adapterRegistry.resolve(adapterContext)
+      val adapted = adapter.adapt(adapterContext)
+      rootReportBuilder.mergeSuiteDescriptor(testSuiteName, adapted.suiteDescriptor)
+      val enrichedLogs = detailRecord?.logs?.let { adapter.enrichLogs(it, adapted.result.actors) }
+
+      // Test output is only shown in the rich detail view, so classic results drop it.
+      val keepStreams = detailRecord != null || (status != STATUS_PASS && adapter.keepsFailureStreams)
+      val systemOut = if (keepStreams) rawSystemOut else null
+      val systemErr = if (keepStreams) rawSystemErr else null
+
+      val packageName = classname.substringBeforeLast('.', "")
+      val simpleClassName = classname.substringAfterLast('.')
+
+      rootReportBuilder
+        .getOrAddModule(modulePath)
+        .getOrAddPackage(packageName)
+        .getOrAddClass(simpleClassName)
+        .getOrAddTestCase(testcaseName)
+        .addResult(
+          TestCaseExecution(
+            testSuiteName = testSuiteName,
+            variantName = variantName,
+            targetName = targetName,
+            status = status,
+            durationMs = durationMs,
+            stackTrace = stackTrace,
+            systemOut = systemOut,
+            systemOutTruncated = systemOut != null && rawSystemOutTruncated,
+            systemErr = systemErr,
+            systemErrTruncated = systemErr != null && rawSystemErrTruncated,
+            xmlDir = xmlDir,
+            environmentKey = resolvedEnv?.first,
+            adaptedResult = adapted.result,
+            rawLogs = enrichedLogs,
+            rawArtifacts = detailRecord?.artifacts,
+          )
+        )
+    } catch (e: Exception) {
+      logger.error(e, "Error processing test case: $classname.$testcaseName")
+    }
   }
 
-  private class RootReportBuilder(private val projectName: String) {
+  private data class AggregatedReportBundle(val report: RootReport)
+
+  private class ArtifactCollector(private val environments: Map<SuiteEnvironmentKey, SuiteEnvironmentInfo>) {
+    fun buildVariantTestResult(exec: TestCaseExecution, stackTraceId: String?): VariantTestResult {
+      val envId = exec.environmentKey?.let { environments[it]?.envId }
+      return exec.adaptedResult.copy(
+        status = exec.status,
+        stackTraceId = stackTraceId,
+        durationMs = exec.durationMs,
+        envId = envId,
+      )
+    }
+  }
+
+  private class RootReportBuilder(
+    private val projectName: String,
+    private val adapterRegistry: SuiteReportAdapterRegistry,
+    private val logger: ILogger,
+  ) {
     private val variants = HashSet<String>()
     private val targets = HashSet<String>()
     private val moduleBuilders = mutableMapOf<String, ModuleBuilder>()
+    private val suiteDescriptors = TreeMap<String, SuiteDescriptor>()
+    private val environments = TreeMap<SuiteEnvironmentKey, SuiteEnvironmentRecord>()
 
     fun addVariant(variant: String) {
       variants.add(variant)
@@ -304,13 +652,111 @@ class XMLReportAggregator(
       targets.add(target)
     }
 
+    fun addEnvironment(key: SuiteEnvironmentKey, record: SuiteEnvironmentRecord) {
+      environments.putIfAbsent(key, record)
+    }
+
+    fun findEnvironment(
+      modulePath: String,
+      variantName: String,
+      suiteName: String,
+      targetName: String,
+    ): Pair<SuiteEnvironmentKey, SuiteEnvironmentRecord>? {
+      val exactKey = SuiteEnvironmentKey(modulePath, variantName, suiteName, targetName)
+      environments[exactKey]?.let {
+        return exactKey to it
+      }
+      if (targetName == UNKNOWN_TARGET) {
+        val matches =
+          environments.entries.filter { (key, _) ->
+            key.modulePath == modulePath && key.variantName == variantName && key.suiteName == suiteName
+          }
+        if (matches.size == 1) {
+          return matches.single().let { it.key to it.value }
+        }
+      }
+      return null
+    }
+
+    fun mergeSuiteDescriptor(testSuiteName: String, incoming: SuiteDescriptor) {
+      if (testSuiteName == AGGREGATED_TEST_SUITE_NAME) return
+      val existing = suiteDescriptors[testSuiteName]
+      if (existing == null) {
+        suiteDescriptors[testSuiteName] = incoming
+        return
+      }
+      val incomingOverridesGeneric =
+        existing.adapterId == ADAPTER_ID_DEFAULT &&
+          existing.suiteType.isNullOrBlank() &&
+          (incoming.adapterId != ADAPTER_ID_DEFAULT || !incoming.suiteType.isNullOrBlank())
+      val primary = if (incomingOverridesGeneric) incoming else existing
+      val secondary = if (primary === existing) incoming else existing
+
+      val mergedColumns = LinkedHashMap<String, SummaryColumnDef>()
+      primary.summaryColumns.forEach { mergedColumns.putIfAbsent(it.key, it) }
+      secondary.summaryColumns.forEach { mergedColumns.putIfAbsent(it.key, it) }
+      val orderedColumns = adapterRegistry.findById(primary.adapterId).orderSummaryColumns(mergedColumns.values)
+
+      suiteDescriptors[testSuiteName] =
+        SuiteDescriptor(
+          adapterId = primary.adapterId,
+          suiteType = primary.suiteType ?: secondary.suiteType,
+          title = primary.title ?: secondary.title,
+          likelyCauseHeading = primary.likelyCauseHeading ?: secondary.likelyCauseHeading,
+          summaryColumns = orderedColumns,
+          docsUrl = primary.docsUrl ?: secondary.docsUrl,
+        )
+    }
+
     fun getOrAddModule(name: String) = moduleBuilders.getOrPut(name) { ModuleBuilder(name) }
 
-    fun build(): RootReport {
+    fun build(): AggregatedReportBundle {
+      val preparedEnvironments = LinkedHashMap<SuiteEnvironmentKey, SuiteEnvironmentInfo>()
+
+      environments.entries.forEachIndexed { index, (key, rawEnv) ->
+        val envId = String.format(Locale.US, "env_%02d", index + 1)
+        val resolvedSuiteDescriptor = suiteDescriptors[key.suiteName]
+        val envAdapter =
+          if (resolvedSuiteDescriptor != null) {
+            adapterRegistry.findById(resolvedSuiteDescriptor.adapterId)
+          } else {
+            adapterRegistry.resolve(
+              SuiteAdapterContext(
+                rawProperties = rawEnv.extraProperties,
+                environment = rawEnv,
+              )
+            )
+          }
+        val adaptedEnv = envAdapter.adaptEnvironment(envId, rawEnv)
+
+        preparedEnvironments[key] =
+          SuiteEnvironmentInfo(
+            envId = envId,
+            modulePath = key.modulePath,
+            variantName = key.variantName,
+            suiteName = key.suiteName,
+            targetName = rawEnv.targetName?.takeIf { it.isNotBlank() } ?: key.targetName,
+            suiteType = rawEnv.suiteType,
+            applicationId = rawEnv.applicationId,
+            applicationName = rawEnv.applicationName,
+            versionName = rawEnv.versionName,
+            versionCode = rawEnv.versionCode,
+            targetSdkVersion = rawEnv.targetSdkVersion,
+            agpVersion = rawEnv.agpVersion,
+            gradleVersion = rawEnv.gradleVersion,
+            testLibraryVersion = rawEnv.testLibraryVersion,
+            runner = rawEnv.runner,
+            attributes = adaptedEnv.attributes,
+            configFiles = adaptedEnv.configFiles,
+          )
+      }
+
+      val collector = ArtifactCollector(preparedEnvironments)
+
       val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
       val zonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())
       val formattedTimestamp = zonedDateTime.format(formatter)
-      val modules = moduleBuilders.values.map { it.build() }.sortedBy { it.name }
+      val modules = moduleBuilders.values.sortedBy { it.name }.map { it.build(collector) }
 
       val numberOfModules = modules.size
       val numberOfPackages = modules.sumOf { it.packages.size }
@@ -319,18 +765,23 @@ class XMLReportAggregator(
       val testSuites = modules.flatMap { it.testSuiteSummaries.map { ts -> ts.name } }.distinct().sorted()
       val targetsSorted = if (targets.isEmpty()) listOf(UNKNOWN_TARGET) else targets.sorted()
 
-      return RootReport(
-        projectName = projectName,
-        timestamp = formattedTimestamp,
-        numberOfModules = numberOfModules,
-        numberOfPackages = numberOfPackages,
-        numberOfClasses = numberOfClasses,
-        variants = variants.sorted(),
-        testSuites = testSuites,
-        targets = targetsSorted,
-        modules = modules,
-        relativeRootDir = "",
-      )
+      val report =
+        RootReport(
+          projectName = projectName,
+          timestamp = formattedTimestamp,
+          numberOfModules = numberOfModules,
+          numberOfPackages = numberOfPackages,
+          numberOfClasses = numberOfClasses,
+          variants = variants.sorted(),
+          testSuites = testSuites,
+          targets = targetsSorted,
+          modules = modules,
+          relativeRootDir = "",
+          suiteDescriptors = LinkedHashMap(suiteDescriptors),
+          suiteEnvironments = preparedEnvironments.values.toList(),
+        )
+
+      return AggregatedReportBundle(report = report)
     }
   }
 
@@ -339,21 +790,9 @@ class XMLReportAggregator(
 
     fun getOrAddPackage(name: String) = packages.getOrPut(name) { PackageBuilder(name) }
 
-    fun build(): Module {
-      val pkgs = packages.values.map { it.build() }.sortedBy { it.name }
-      val allVariants =
-        pkgs
-          .flatMap { p ->
-            p.testSuiteSummaries.filter { it.name != AGGREGATED_TEST_SUITE_NAME }.flatMap { ts -> ts.variantSummaries.map { v -> v.name } }
-          }
-          .distinct()
-          .sorted()
-      val testSuiteSummaries =
-        mergeTestSuiteSummaries(pkgs.flatMap { it.testSuiteSummaries.filter { it.name != AGGREGATED_TEST_SUITE_NAME } }, allVariants)
-          .toMutableList()
-      val aggregatedVariantSummaries = testSuiteSummaries.flatMap { it.variantSummaries }.let { flattenVariantSummaries(it, allVariants) }
-      testSuiteSummaries.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregatedVariantSummaries))
-      return Module(name = name, testSuiteSummaries = testSuiteSummaries, packages = pkgs)
+    fun build(collector: ArtifactCollector): Module {
+      val pkgs = packages.values.sortedBy { it.name }.map { it.build(collector) }
+      return Module(name = name, testSuiteSummaries = rollupChildSuiteSummaries(pkgs.map { it.testSuiteSummaries }), packages = pkgs)
     }
   }
 
@@ -362,21 +801,9 @@ class XMLReportAggregator(
 
     fun getOrAddClass(name: String) = classes.getOrPut(name) { ClassBuilder(name) }
 
-    fun build(): Package {
-      val clzs = classes.values.map { it.build() }.sortedBy { it.name }
-      val allVariants =
-        clzs
-          .flatMap { c ->
-            c.testSuiteSummaries.filter { it.name != AGGREGATED_TEST_SUITE_NAME }.flatMap { ts -> ts.variantSummaries.map { v -> v.name } }
-          }
-          .distinct()
-          .sorted()
-      val testSuiteSummaries =
-        mergeTestSuiteSummaries(clzs.flatMap { it.testSuiteSummaries.filter { it.name != AGGREGATED_TEST_SUITE_NAME } }, allVariants)
-          .toMutableList()
-      val aggregatedVariantSummaries = testSuiteSummaries.flatMap { it.variantSummaries }.let { flattenVariantSummaries(it, allVariants) }
-      testSuiteSummaries.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregatedVariantSummaries))
-      return Package(name = name, testSuiteSummaries = testSuiteSummaries, classes = clzs)
+    fun build(collector: ArtifactCollector): Package {
+      val clzs = classes.values.sortedBy { it.name }.map { it.build(collector) }
+      return Package(name = name, testSuiteSummaries = rollupChildSuiteSummaries(clzs.map { it.testSuiteSummaries }), classes = clzs)
     }
   }
 
@@ -385,9 +812,9 @@ class XMLReportAggregator(
 
     fun getOrAddTestCase(name: String) = testCases.getOrPut(name) { TestCaseBuilder(name) }
 
-    fun build(): ClassType {
-      val testCasesList = testCases.values.map { it.build() }.sortedBy { it.name }
-      val testSuiteSummaries = calculateTestSuiteSummaries(testCases.values).toMutableList()
+    fun build(collector: ArtifactCollector): ClassType {
+      val testCasesList = testCases.values.sortedBy { it.name }.map { it.build(collector) }
+      val testSuiteSummaries = summarizeClassExecutions(testCases.values.map { it.executions }).toMutableList()
       val allVariants =
         testCasesList
           .flatMap { tc ->
@@ -399,63 +826,25 @@ class XMLReportAggregator(
           }
           .distinct()
           .sorted()
-      val aggregatedVariantSummaries = testSuiteSummaries.flatMap { it.variantSummaries }.let { flattenVariantSummaries(it, allVariants) }
+      val aggregatedVariantSummaries = flattenVariantSummaries(testSuiteSummaries.flatMap { it.variantSummaries }, allVariants)
       testSuiteSummaries.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregatedVariantSummaries))
       return ClassType(name = name, testSuiteSummaries = testSuiteSummaries, testCases = testCasesList)
     }
   }
 
-  private data class TestCaseExecution(
-    val testSuiteName: String,
-    val variantName: String,
-    val targetName: String,
-    val status: String,
-    val stackTrace: String?,
-    val diffPercent: String?,
-    val previewName: String?,
-    val methodName: String?,
-    val refImagePath: String?,
-    val newImagePath: String?,
-    val diffImagePath: String?,
-  )
-
   private class TestCaseBuilder(val name: String) {
     val executions = mutableListOf<TestCaseExecution>()
 
-    fun addResult(
-      testSuiteName: String,
-      variantName: String,
-      targetName: String,
-      status: String,
-      stackTrace: String?,
-      diffPercent: String?,
-      previewName: String?,
-      methodName: String?,
-      refImagePath: String?,
-      newImagePath: String?,
-      diffImagePath: String?,
-    ) {
-      executions.add(
-        TestCaseExecution(
-          testSuiteName,
-          variantName,
-          targetName,
-          status,
-          stackTrace,
-          diffPercent,
-          previewName,
-          methodName,
-          refImagePath,
-          newImagePath,
-          diffImagePath,
-        )
-      )
+    fun addResult(execution: TestCaseExecution) {
+      executions.add(execution)
     }
 
-    fun build(): TestCase {
+    fun build(collector: ArtifactCollector): TestCase {
       val targetsList =
         executions
           .groupBy { it.targetName }
+          .entries
+          .sortedBy { it.key }
           .map { (targetName, targetExecutions) ->
             val stackTraceGroups = mutableListOf<StackTraceGroup>()
             val stackTraceToId = mutableMapOf<String, String>()
@@ -474,191 +863,46 @@ class XMLReportAggregator(
               targetExecutions
                 .groupBy { it.testSuiteName }
                 .map { (suiteName, suiteExecs) ->
-                  val variantResults = mutableMapOf<String, VariantTestResult>()
+                  val winningExecByVariant = LinkedHashMap<String, TestCaseExecution>()
                   suiteExecs.forEach { exec ->
-                    val existing = variantResults[exec.variantName]
-                    // Prioritize statuses: Fail > Pass > Skipped. This ensures flaky tests are surfaced
-                    // to the user and that successful retries are favored over skips.
-                    if (
-                      existing == null ||
-                        (existing.status != STATUS_FAIL && exec.status == STATUS_FAIL) ||
-                        (existing.status == STATUS_SKIPPED && exec.status == STATUS_PASS)
-                    ) {
-                      variantResults[exec.variantName] =
-                        VariantTestResult(
-                          status = exec.status,
-                          stackTraceId = exec.stackTrace?.let { stackTraceToId[it] },
-                          diffPercent = exec.diffPercent,
-                          previewName = exec.previewName,
-                          methodName = exec.methodName,
-                          refImagePath = exec.refImagePath,
-                          newImagePath = exec.newImagePath,
-                          diffImagePath = exec.diffImagePath,
-                        )
+                    val existing = winningExecByVariant[exec.variantName]
+                    if (shouldReplaceExecution(existing, exec)) {
+                      winningExecByVariant[exec.variantName] = exec
                     }
+                  }
+
+                  val variantResults = LinkedHashMap<String, VariantTestResult>()
+                  winningExecByVariant.forEach { (variantName, exec) ->
+                    variantResults[variantName] =
+                      collector.buildVariantTestResult(
+                        exec = exec,
+                        stackTraceId = exec.stackTrace?.let { stackTraceToId[it] },
+                      )
                   }
                   TestSuiteTestResult(suiteName, variantResults)
                 }
 
-            val testSuiteSummaries = calculateTestCaseTestSuiteSummaries(targetExecutions).toMutableList()
-            val allVariants = targetExecutions.map { it.variantName }.distinct().sorted()
-            val aggregatedVariantSummaries =
-              testSuiteSummaries.flatMap { it.variantSummaries }.let { flattenVariantSummaries(it, allVariants) }
-            testSuiteSummaries.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregatedVariantSummaries))
-
             Target(
               name = targetName,
-              testSuiteSummaries = testSuiteSummaries,
+              testSuiteSummaries = summarizeTargetExecutions(targetExecutions),
               testSuiteResults = testSuiteResults,
               commonStackTraces = stackTraceGroups,
             )
           }
-          .sortedBy { it.name }
 
       return TestCase(name = name, targets = targetsList)
-    }
-
-    private fun calculateTestCaseTestSuiteSummaries(targetExecutions: List<TestCaseExecution>): List<TestSuiteSummary> {
-      return targetExecutions
-        .groupBy { it.testSuiteName }
-        .map { (suiteName, suiteExecs) ->
-          val variants = suiteExecs.map { it.variantName }.distinct().sorted()
-          val variantSummaries = variants.map { variant ->
-            val variantExecs = suiteExecs.filter { it.variantName == variant }
-
-            // Deduplicate within the suite for the summary, prioritizing failures
-            var finalStatus = STATUS_SKIPPED
-            variantExecs.forEach { exec ->
-              if (exec.status == STATUS_FAIL) finalStatus = STATUS_FAIL
-              else if (exec.status == STATUS_PASS && finalStatus != STATUS_FAIL) finalStatus = STATUS_PASS
-            }
-
-            var vPassed = 0
-            var vFailed = 0
-            var vSkipped = 0
-            when (finalStatus) {
-              STATUS_PASS -> vPassed++
-              STATUS_FAIL -> vFailed++
-              STATUS_SKIPPED -> vSkipped++
-            }
-
-            val vRelevant = vPassed + vFailed
-            val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else 0.0
-            VariantSummary(variant, vPassed, vFailed, vSkipped, 1, vRate)
-          }
-          TestSuiteSummary(suiteName, variantSummaries)
-        }
-        .sortedBy { it.name }
     }
   }
 
   companion object {
+    private val RENDERER_RESOURCES = listOf("index.html", "styles.css", "script.js")
 
-    private fun flattenVariantSummaries(summaries: List<VariantSummary>, variants: List<String>): List<VariantSummary> {
-      return variants.map { variant ->
-        var vPassed = 0
-        var vFailed = 0
-        var vSkipped = 0
-        var vTotal = 0
-        summaries
-          .filter { it.name == variant }
-          .forEach {
-            vPassed += it.passed
-            vFailed += it.failed
-            vSkipped += it.skipped
-            vTotal += it.total
-          }
-        val vRelevant = vPassed + vFailed
-        val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else if (vTotal > 0) 0.0 else 100.0
-        VariantSummary(variant, vPassed, vFailed, vSkipped, vTotal, vRate)
-      }
-    }
-
-    private fun mergeTestSuiteSummaries(childrenSuiteSummaries: List<TestSuiteSummary>, variants: List<String>): List<TestSuiteSummary> {
-      return childrenSuiteSummaries
-        .groupBy { it.name }
-        .map { (suiteName, summaries) ->
-          val variantSummaries =
-            variants
-              .map { variant ->
-                var vPassed = 0
-                var vFailed = 0
-                var vSkipped = 0
-                var vTotal = 0
-
-                summaries.forEach { summary ->
-                  summary.variantSummaries
-                    .find { it.name == variant }
-                    ?.let {
-                      vPassed += it.passed
-                      vFailed += it.failed
-                      vSkipped += it.skipped
-                      vTotal += it.total
-                    }
-                }
-
-                val vRelevant = vPassed + vFailed
-                val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else if (vTotal > 0) 0.0 else 100.0
-                VariantSummary(variant, vPassed, vFailed, vSkipped, vTotal, vRate)
-              }
-              .filter { it.total > 0 }
-          TestSuiteSummary(suiteName, variantSummaries)
-        }
-        .sortedBy { it.name }
-    }
-
-    private fun calculateTestSuiteSummaries(testCaseBuilders: Collection<TestCaseBuilder>): List<TestSuiteSummary> {
-      val executionsBySuite = mutableMapOf<String, MutableList<TestCaseExecution>>()
-      testCaseBuilders.forEach { tc ->
-        val suiteToVariantExec = mutableMapOf<String, MutableMap<String, TestCaseExecution>>()
-        tc.executions.forEach { exec ->
-          val existingMap = suiteToVariantExec.getOrPut(exec.testSuiteName) { mutableMapOf() }
-          val key = "${exec.variantName}_${exec.targetName}"
-          val existing = existingMap[key]
-          // Prioritize statuses: Fail > Pass > Skipped. This ensures flaky tests are surfaced
-          // to the user and that successful retries are favored over skips.
-          if (
-            existing == null ||
-              (existing.status != STATUS_FAIL && exec.status == STATUS_FAIL) ||
-              (existing.status == STATUS_SKIPPED && exec.status == STATUS_PASS)
-          ) {
-            existingMap[key] = exec
-          }
-        }
-
-        suiteToVariantExec.values.forEach { variantMap ->
-          variantMap.values.forEach { exec -> executionsBySuite.getOrPut(exec.testSuiteName) { mutableListOf() }.add(exec) }
-        }
-      }
-
-      return executionsBySuite
-        .map { (suiteName, executions) ->
-          val variants = executions.map { it.variantName }.distinct().sorted()
-          val variantSummaries = variants.map { variant ->
-            var vPassed = 0
-            var vFailed = 0
-            var vSkipped = 0
-            var vTotal = 0
-
-            executions
-              .filter { it.variantName == variant }
-              .forEach { exec ->
-                when (exec.status) {
-                  STATUS_PASS -> vPassed++
-                  STATUS_FAIL -> vFailed++
-                  STATUS_SKIPPED -> vSkipped++
-                }
-                vTotal++
-              }
-
-            val vRelevant = vPassed + vFailed
-            val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else if (vTotal > 0) 0.0 else 100.0
-            VariantSummary(variant, vPassed, vFailed, vSkipped, vTotal, vRate)
-          }
-
-          TestSuiteSummary(suiteName, variantSummaries)
-        }
-        .sortedBy { it.name }
+    /** Parses a JUnit `time` attribute, in seconds written as a plain decimal number, into milliseconds. */
+    internal fun parseDurationMs(timeAttribute: String?): Long? {
+      if (timeAttribute.isNullOrBlank()) return null
+      val seconds = timeAttribute.trim().toDoubleOrNull() ?: return null
+      if (!seconds.isFinite() || seconds < 0.0) return null
+      return (seconds * 1000.0).roundToLong()
     }
 
     private fun formatRelativePath(path: Path): String {
@@ -687,50 +931,6 @@ class XMLReportAggregator(
           ""
         }
       }
-    }
-  }
-
-  /** Safely adds a test result to the nested structure. */
-  private fun addTestResult(
-    modulePath: String,
-    testSuiteName: String,
-    classname: String,
-    testcaseName: String,
-    variantName: String,
-    targetName: String,
-    status: String,
-    stackTrace: String?,
-    diffPercent: String?,
-    previewName: String?,
-    methodName: String?,
-    refImagePath: String?,
-    newImagePath: String?,
-    diffImagePath: String?,
-  ) {
-    try {
-      val packageName = classname.substringBeforeLast('.', "")
-      val className = classname.substringAfterLast('.')
-
-      rootReportBuilder
-        .getOrAddModule(modulePath)
-        .getOrAddPackage(packageName)
-        .getOrAddClass(className)
-        .getOrAddTestCase(testcaseName)
-        .addResult(
-          testSuiteName,
-          variantName,
-          targetName,
-          status,
-          stackTrace,
-          diffPercent,
-          previewName,
-          methodName,
-          refImagePath,
-          newImagePath,
-          diffImagePath,
-        )
-    } catch (e: Exception) {
-      logger.error(e, "Error processing test case: $classname.$testcaseName")
     }
   }
 }

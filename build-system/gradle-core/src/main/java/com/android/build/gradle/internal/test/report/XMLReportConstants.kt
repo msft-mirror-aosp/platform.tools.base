@@ -100,15 +100,3 @@ internal const val MAX_INLINE_LOG_BYTES = 524_288
 internal const val AGGREGATED_TEST_SUITE_NAME = "Aggregated"
 
 const val UNKNOWN_TARGET = "unknown_target"
-
-/** Temporary constants retained until SuiteReportAdapter and TestDetailRecord migrate in the next CL. */
-internal const val KEY_DETAIL_PATH = "androidx.report.detailPath"
-internal const val SCREENSHOT_PROPERTY_PREFIX = "PreviewScreenshot."
-internal const val BACKUP_RESTORE_PROPERTY_PREFIX = "BackupRestore."
-internal const val SUITE_DETAILS_DIR_NAME = "suite-details"
-internal const val SUITE_ENVIRONMENT_FILE_NAME = "suite-environment.json"
-internal const val SUITE_ENVIRONMENT_FILE_PREFIX = "suite-environment_"
-internal const val ADAPTER_ID_SCREENSHOT = "screenshot"
-internal const val ADAPTER_ID_BACKUP_RESTORE = "backupRestore"
-internal const val SUITE_TYPE_BACKUP_RESTORE = "androidx.test.backup"
-internal const val BACKUP_RESTORE_DOCS_URL = "https://developer.android.com/identity/data/testing"

@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.test.report
 
 import com.google.common.truth.Truth.assertThat
+import com.google.gson.Gson
 import java.io.File
 import org.junit.Before
 import org.junit.Rule
@@ -219,8 +220,8 @@ class XMLReportAggregatorTest {
     assertThat(aggregator.getTestCount()).isEqualTo(1)
     assertThat(File(outputDir, "data.js").exists()).isTrue()
     assertThat(File(outputDir, "index.html").exists()).isTrue()
-    assertThat(File(outputDir, "script.js").exists()).isTrue()
     assertThat(File(outputDir, "styles.css").exists()).isTrue()
+    assertThat(File(outputDir, "script.js").exists()).isTrue()
 
     val dataJsContent = File(outputDir, "data.js").readText()
     assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = {")
@@ -945,4 +946,192 @@ class XMLReportAggregatorTest {
     assertThat(File(outputDir, "index.html").exists()).isTrue()
     assertThat(dataJs.readText()).contains("\"testAdd\"")
   }
+
+
+  @Test
+  fun testProcessXmlStream_failureElementsKeepExistingStatusAndStackTraceRules() {
+    createXmlReport(
+      inputDir1,
+      "TEST-FailureRulesTest.xml",
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.FailureRulesTest" tests="3" failures="3" errors="0" skipped="0" time="0.3">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testSkippedAfterFailure" classname="com.example.app.FailureRulesTest" time="0.1">
+              <failure message="first">java.lang.AssertionError: before skip</failure>
+              <skipped/>
+          </testcase>
+          <testcase name="testTwoFailures" classname="com.example.app.FailureRulesTest" time="0.1">
+              <failure message="a">java.lang.AssertionError: first failure</failure>
+              <failure message="b">java.lang.AssertionError: second failure</failure>
+          </testcase>
+          <testcase name="testMessageOnlyFailure" classname="com.example.app.FailureRulesTest" time="0.1">
+              <failure message="no body"/>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent(),
+    )
+
+    val testCases =
+      createAggregator(files = listOf(inputDir1), projectName = "FailureRulesProject")
+        .generateReport()
+        .modules
+        .single()
+        .packages
+        .single()
+        .classes
+        .single()
+        .testCases
+    fun target(name: String) = testCases.first { it.name == name }.targets.single()
+
+    val skipped = target("testSkippedAfterFailure")
+    assertThat(skipped.testSuiteResults.single().variantResults["debug"]?.status).isEqualTo("skipped")
+    assertThat(skipped.commonStackTraces.single().stackTrace).isEqualTo("java.lang.AssertionError: before skip")
+
+    assertThat(target("testTwoFailures").commonStackTraces.single().stackTrace).isEqualTo("java.lang.AssertionError: second failure")
+
+    val messageOnly = target("testMessageOnlyFailure")
+    assertThat(messageOnly.testSuiteResults.single().variantResults["debug"]?.status).isEqualTo("fail")
+    assertThat(messageOnly.commonStackTraces).isEmpty()
+  }
+
+  @Test
+  fun testGenerateReport_keepsSuiteAndVariantResultsInInputOrder() {
+    fun xml(suite: String, variant: String) =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.OrderTest" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="$variant"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="$suite"/>
+          </properties>
+          <testcase name="testOrder" classname="com.example.app.OrderTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "TEST-1.xml", xml(suite = "zSuite", variant = "release"))
+    createXmlReport(inputDir1, "TEST-2.xml", xml(suite = "zSuite", variant = "debug"))
+    createXmlReport(inputDir1, "TEST-3.xml", xml(suite = "aSuite", variant = "debug"))
+
+    val target =
+      createAggregator(files = listOf(inputDir1), projectName = "OrderProject")
+        .generateReport()
+        .modules
+        .single()
+        .packages
+        .single()
+        .classes
+        .single()
+        .testCases
+        .single()
+        .targets
+        .single()
+
+    assertThat(target.testSuiteResults.map { it.testSuiteName }).containsExactly("zSuite", "aSuite").inOrder()
+    assertThat(target.testSuiteResults.first().variantResults.keys).containsExactly("release", "debug").inOrder()
+  }
+
+  @Test
+  fun testParseDurationMs_acceptsOnlyPlainDecimalSeconds() {
+    assertThat(XMLReportAggregator.parseDurationMs("0.271")).isEqualTo(271L)
+    assertThat(XMLReportAggregator.parseDurationMs(" 12 ")).isEqualTo(12_000L)
+    // A comma can be a decimal or a thousands separator, so the duration is left unknown.
+    assertThat(XMLReportAggregator.parseDurationMs("0,123")).isNull()
+    assertThat(XMLReportAggregator.parseDurationMs("1,234.5")).isNull()
+    assertThat(XMLReportAggregator.parseDurationMs("-1")).isNull()
+    assertThat(XMLReportAggregator.parseDurationMs("NaN")).isNull()
+    assertThat(XMLReportAggregator.parseDurationMs("")).isNull()
+    assertThat(XMLReportAggregator.parseDurationMs(null)).isNull()
+  }
+
+  @Test
+  fun testProcessXmlStream_truncatedFileKeepsTestCasesParsedBeforeTheError() {
+    createXmlReport(
+      inputDir1,
+      "TEST-TruncatedTest.xml",
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.TruncatedTest" tests="3" failures="1" errors="0" skipped="0" time="0.3">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testPassesBeforeTruncation" classname="com.example.app.TruncatedTest" time="0.1"/>
+          <testcase name="testFailsBeforeTruncation" classname="com.example.app.TruncatedTest" time="0.1">
+              <failure message="boom">java.lang.AssertionError: boom</failure>
+          </testcase>
+          <testcase name="testCutOff" classname="com.example.app.TruncatedTest" time="0.1">
+              <system-out><![CDATA[partial output
+      """
+        .trimIndent(),
+    )
+
+    val report = createAggregator(files = listOf(inputDir1), projectName = "TruncatedProject").generateReport()
+
+    val testCases = report.modules.single().packages.single().classes.single().testCases
+    assertThat(testCases.map { it.name }).containsExactly("testFailsBeforeTruncation", "testPassesBeforeTruncation")
+    val failing = testCases.first { it.name == "testFailsBeforeTruncation" }.targets.single()
+    assertThat(failing.testSuiteResults.single().variantResults["debug"]?.status).isEqualTo("fail")
+    assertThat(failing.commonStackTraces.single().stackTrace).isEqualTo("java.lang.AssertionError: boom")
+  }
+
+  @Test
+  fun testProcessXmlForAggregation_ignoresNonJunitXmlFilesGracefully() {
+    createXmlReport(
+      inputDir1,
+      "backup_rules.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <full-backup-content>
+          <exclude domain="sharedpref" path="secret.xml"/>
+      </full-backup-content>
+      """
+        .trimIndent(),
+    )
+    createXmlReport(
+      inputDir1,
+      "data_extraction_rules.xml",
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <data-extraction-rules>
+          <device-transfer>
+              <exclude domain="sharedpref" path="user_session.xml"/>
+          </device-transfer>
+      </data-extraction-rules>
+      """
+        .trimIndent(),
+    )
+    createXmlReport(
+      inputDir1,
+      "TEST-UnitTest.xml",
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.UnitTest" tests="1" failures="0" errors="0" skipped="0" time="0.05">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testOnlyRealJunitXmlAggregated" classname="com.example.app.UnitTest" time="0.05"/>
+      </testsuite>
+      """
+        .trimIndent(),
+    )
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "MixedXmlProject")
+    val report = aggregator.generateReport()
+
+    assertThat(aggregator.getTestCount()).isEqualTo(1)
+    assertThat(report.modules).hasSize(1)
+    val tc = report.modules.single().packages.single().classes.single().testCases.single()
+    assertThat(tc.name).isEqualTo("testOnlyRealJunitXmlAggregated")
+  }
+
 }
