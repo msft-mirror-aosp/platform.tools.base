@@ -7698,4 +7698,42 @@ public object ProtoObjectKt {
     }
     assertEquals(2, count)
   }
+
+  fun testUnaryIntLiteralWithUnresolvedExtension() {
+    // b/581949596
+    val source =
+      kotlin(
+          """
+          package com.example.consumer
+
+          import com.example.lib.dp
+
+          fun topMargin(): Int = (-1).dp
+          fun bottomMargin(): Int = (+1).dp
+        """
+        )
+        .indented()
+
+    var prefixCount = 0
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitPrefixExpression(node: UPrefixExpression): Boolean {
+            assertEquals("int", node.getExpressionType()?.canonicalText)
+            assertNotNull(node.resolveOperator())
+            prefixCount++
+            return super.visitPrefixExpression(node)
+          }
+
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
+            if (node.identifier == "dp") {
+              assertNull(node.resolve())
+            }
+            return super.visitSimpleNameReferenceExpression(node)
+          }
+        }
+      )
+    }
+    assertEquals(2, prefixCount)
+  }
 }
