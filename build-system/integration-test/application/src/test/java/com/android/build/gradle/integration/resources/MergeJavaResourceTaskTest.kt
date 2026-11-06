@@ -44,6 +44,10 @@ class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
         jar("com.example:lib1:0.1").addTextFile("conflict_res", "a")
         jar("com.example:lib2:0.1").addTextFile("conflict_res", "b")
         jar("com.example:libWithAdditionalArtifact:0.1").addTextFile("content1", "a").addTextFile("content2", "b")
+        aar("com.example", "aarWithMultipleJars", "0.1")
+          .addSecondaryJar("common-jvm") { addTextFile("META-INF/MANIFEST.MF", "a") }
+          .addSecondaryJar("common") { addTextFile("META-INF/MANIFEST.MF", "b") }
+          .addSecondaryJar("core") { addTextFile("META-INF/MANIFEST.MF", "c") }
       }
       .from {
         androidApplication {
@@ -269,6 +273,27 @@ class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
 
       val compressedEntry = zip.getEntry("compress.txt")
       assertThat(compressedEntry.method).isEqualTo(java.util.zip.ZipEntry.DEFLATED)
+    }
+  }
+
+  @Test
+  fun aarWithMultipleJarsUsesDefaultPackagingOptions() {
+    val build = rule.build {
+      androidApplication {
+        dependencies {
+          implementation("com.example:aarWithMultipleJars:0.1")
+        }
+      }
+    }
+
+    build.executor.run(":app:mergeReleaseJavaResource")
+
+    val mergedJar =
+      build.androidApplication().resolve(InternalArtifactType.MERGED_JAVA_RES).resolve("release/mergeReleaseJavaResource/base.jar")
+    assertThat(mergedJar.toFile().exists()).isTrue()
+
+    ZipFile(mergedJar.toFile()).use { zip ->
+      assertThat(zip.getEntry("META-INF/MANIFEST.MF")).isNull()
     }
   }
 }

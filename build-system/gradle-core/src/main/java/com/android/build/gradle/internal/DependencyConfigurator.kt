@@ -63,6 +63,8 @@ import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
+import com.android.build.gradle.internal.packaging.defaultExcludes
+import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
@@ -496,9 +498,17 @@ class DependencyConfigurator(private val project: Project, private val projectSe
         val pickFirst = if (component is ConsumableCreationConfig) component.packaging.resources.pickFirsts else null
         val merges = if (component is ConsumableCreationConfig) component.packaging.resources.merges else null
         val params: (JavaResCompressionTransform.Parameters) -> Unit = { params: JavaResCompressionTransform.Parameters ->
-          excludes?.let { params.excludes.setDisallowChanges(it) }
+          if (excludes != null) {
+            params.excludes.setDisallowChanges(excludes)
+          } else {
+            params.excludes.setDisallowChanges(defaultExcludes)
+          }
+          if (merges != null) {
+            params.merges.setDisallowChanges(merges)
+          } else {
+            params.merges.setDisallowChanges(defaultMerges)
+          }
           pickFirst?.let { params.pickFirsts.setDisallowChanges(it) }
-          merges?.let { params.merges.setDisallowChanges(it) }
         }
         registerTransform(
           JavaResCompressionTransform::class.java,
