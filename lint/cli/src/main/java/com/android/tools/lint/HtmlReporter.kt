@@ -976,7 +976,7 @@ ${action.title}</button>"""
       }
     }
 
-    /** Maximum number of warnings allowed for a single issue type before we split up and hide all but the first [.SHOWN_COUNT] items. */
+    /** Maximum number of warnings allowed for a single issue type before we split up and hide all but the first [SHOWN_COUNT] items. */
     private var SPLIT_LIMIT = 0
 
     /** Maximum number of incidents shown per issue type */

@@ -135,9 +135,7 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /** Checks annotations to make sure they are valid */
 class AnnotationDetector : Detector(), SourceCodeScanner {
-  /**
-   * Set of fields we've already warned about [.FLAG_STYLE] for; these can be referenced multiple times, so we should only flag them once
-   */
+  /** Set of fields we've already warned about [FLAG_STYLE] for; these can be referenced multiple times, so we should only flag them once */
   private var warnedFlags: MutableSet<PsiElement>? = null
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UAnnotation::class.java, USwitchExpression::class.java)

@@ -396,7 +396,7 @@ class TypoLookup private constructor(private var data: ByteArray, private var in
       return false
     }
 
-    /** See the [.readData] for documentation on the data format. */
+    /** See the [readData] for documentation on the data format. */
     @Throws(IOException::class)
     private fun writeDatabase(file: File, lines: Array<String>) {
       /*

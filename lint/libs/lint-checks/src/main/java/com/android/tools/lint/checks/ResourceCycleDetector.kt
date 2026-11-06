@@ -81,13 +81,13 @@ class ResourceCycleDetector : ResourceXmlDetector() {
 
   /**
    * If in batch analysis and cycles were found, in phase 2 this map should be initialized with locations for declaration definitions of the
-   * keys and values in [.mReferences]
+   * keys and values in [mReferences]
    */
   private var mLocations: MutableMap<ResourceType, Multimap<String, Location>>? = null
 
   /**
    * If in batch analysis and cycles were found, for each resource type this is a list of chains (where each chain is a list of keys as
-   * described in [.mReferences])
+   * described in [mReferences])
    */
   private var mChains: MutableMap<ResourceType, MutableList<MutableList<String>>>? = null
 
