@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
+import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.coverage.JacocoReportTask
 import com.android.build.gradle.internal.coverage.getUnitTestJacocoVersion
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
@@ -43,6 +44,7 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 
 open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : TaskManager(project, globalConfig) {
 
@@ -69,7 +71,11 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     internalArtifactType: InternalArtifactType<RegularFile>,
   ) {
     if (hostTestCreationConfig.codeCoverageEnabled) {
-      project.pluginManager.apply(JacocoPlugin::class.java)
+      if (!project.plugins.hasPlugin(JacocoPlugin::class.java)) {
+        project.pluginManager.apply(JacocoPlugin::class.java)
+        project.extensions.findByType(JacocoPluginExtension::class.java)?.toolVersion =
+          JacocoOptions.DEFAULT_VERSION
+      }
     }
     val runTestsTask =
       taskFactory.register(

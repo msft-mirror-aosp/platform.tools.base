@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask
@@ -48,6 +49,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 
 class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : TaskManager(project, globalConfig) {
 
@@ -211,7 +213,11 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
   fun createTasks(creationConfig: TestSuiteCreationConfig) {
     val isHostSuite = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }
     if (isHostSuite && creationConfig.codeCoverageEnabled) {
-      project.pluginManager.apply(JacocoPlugin::class.java)
+      if (!project.plugins.hasPlugin(JacocoPlugin::class.java)) {
+        project.pluginManager.apply(JacocoPlugin::class.java)
+        project.extensions.findByType(JacocoPluginExtension::class.java)?.toolVersion =
+          JacocoOptions.DEFAULT_VERSION
+      }
     }
 
     // first create all tasks related to processing the source folders.

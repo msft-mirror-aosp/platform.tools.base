@@ -93,7 +93,6 @@ maven_repository(
         "@maven//:org.mockito.mockito-core",
         "@maven//:org.ow2.asm.asm-analysis_9.11.1",
         "@maven//:org.ow2.asm.asm-bom_9.11.1",
-        "@maven//:org.ow2.asm.asm-bom_9.9",
         "@maven//:org.ow2.asm.asm-commons_9.11.1",
         "@maven//:org.ow2.asm.asm-tree_9.11.1",
         "@maven//:org.ow2.asm.asm-util_9.11.1",
