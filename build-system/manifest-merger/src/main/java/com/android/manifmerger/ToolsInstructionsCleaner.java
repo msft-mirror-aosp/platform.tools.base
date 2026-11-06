@@ -103,7 +103,9 @@ public class ToolsInstructionsCleaner {
             if (nodeOperation != null) {
                 String operationValue = nodeOperation.getNodeValue();
                 boolean hasSelector =
-                        namedNodeMap.getNamedItemNS(SdkConstants.TOOLS_URI, "selector") != null;
+                        namedNodeMap.getNamedItemNS(
+                                        SdkConstants.TOOLS_URI, Selector.SELECTOR_LOCAL_NAME)
+                                != null;
                 if (operationValue.equals(REMOVE_ALL_OPERATION_XML_NAME)
                         || (operationValue.equals(REMOVE_OPERATION_XML_NAME) && !hasSelector)) {
 

@@ -34,16 +34,16 @@ data class FeatureFlag(val name: String, val value: Boolean) {
   companion object {
     const val NAMESPACE_URI: String = SdkConstants.ANDROID_URI
     const val ATTRIBUTE_NAME: String = "featureFlag"
-    const val QUALIFIED_ATTRIBUTE_NAME: String = "${SdkConstants.ANDROID_NS_NAME}:featureFlag"
+    const val QUALIFIED_ATTRIBUTE_NAME: String = "${SdkConstants.ANDROID_NS_NAME}:$ATTRIBUTE_NAME"
     private const val NEGATION_PREFIX: String = "!"
 
     fun from(value: String): FeatureFlag =
       if (value.startsWith(NEGATION_PREFIX)) {
-        FeatureFlag(value.substring(1), false)
+        FeatureFlag(value.substring(NEGATION_PREFIX.length), false)
       } else {
         FeatureFlag(value, true)
       }
   }
 
-  val attributeValue = if (value) name else "!$name"
+  val attributeValue = if (value) name else "$NEGATION_PREFIX$name"
 }
