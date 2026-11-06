@@ -1095,7 +1095,7 @@ class LintDetectorDetector : Detector(), UastScanner {
           TEXT_FORMAT,
           argument,
           location,
-          "\"$s\" looks like $typeString; surround with backtics in string to display as symbol, e.g. \\`$s\\`",
+          "\"$s\" looks like $typeString; surround with backticks in string to display as symbol, e.g. \\`$s\\`",
           fix,
         )
         true
@@ -1105,7 +1105,7 @@ class LintDetectorDetector : Detector(), UastScanner {
     }
 
     private fun createSurroundFix(s: String, location: Location): LintFix {
-      return LintFix.create().name("Surround with backtics").replace().text(s).with("`$s`").range(location).autoFix().build()
+      return LintFix.create().name("Surround with backticks").replace().text(s).with("`$s`").range(location).autoFix().build()
     }
 
     /** Report the typo found at the given offset and suggest the given replacements. */

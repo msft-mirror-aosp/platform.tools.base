@@ -3070,7 +3070,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         explanation =
           """
                 In the past, our documentation recommended creating a `dev` product flavor \
-                with has a minSdkVersion of 21, in order to enable multidexing to speed up \
+                which has a minSdkVersion of 21, in order to enable multidexing to speed up \
                 builds significantly during development.
 
                 That workaround is no longer necessary, and it has some serious downsides, \
@@ -3195,7 +3195,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
                 your app to make sure everything works correctly. You may want to consult the \
                 compatibility notes to see what changes apply to each version you are adding support \
                 for: https://developer.android.com/reference/android/os/Build.VERSION_CODES.html as well \
-                as follow this guide:
+                as following this guide:
                 https://developer.android.com/distribute/best-practices/develop/target-sdk.html
                 """,
           category = Category.CORRECTNESS,

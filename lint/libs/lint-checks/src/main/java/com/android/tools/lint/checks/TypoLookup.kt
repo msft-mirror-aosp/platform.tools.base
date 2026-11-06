@@ -340,7 +340,7 @@ class TypoLookup private constructor(private var data: ByteArray, private var in
         buffer.rewind()
         for (anExpectedHeader in expectedHeader) {
           if (anExpectedHeader != buffer.get()) {
-            client.log(null, "Incorrect file header: not an typo database cache file, or a corrupt cache file")
+            client.log(null, "Incorrect file header: not a typo database cache file, or a corrupt cache file")
             return null
           }
         }

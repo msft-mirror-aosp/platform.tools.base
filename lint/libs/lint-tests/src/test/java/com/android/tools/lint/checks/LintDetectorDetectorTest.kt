@@ -375,7 +375,7 @@ class LintDetectorDetectorTest {
                 src/test/pkg/MyKotlinLintDetector.kt:60: Error: Lint issue IDs should use capitalized camel case, such as MyIssueId [LintImplIdFormat]
                                 id = "badlyCapitalized id",
                                      ~~~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/MyJavaLintDetector.java:70: Warning: "LinearLayout" looks like a code reference; surround with backtics in string to display as symbol, e.g. `LinearLayout` [LintImplTextFormat]
+                src/test/pkg/MyJavaLintDetector.java:70: Warning: "LinearLayout" looks like a code reference; surround with backticks in string to display as symbol, e.g. `LinearLayout` [LintImplTextFormat]
                             "Wrong use of LinearLayout.");
                                           ~~~~~~~~~~~~
                 src/test/pkg/MyJavaLintDetector.java:70: Warning: Single sentence error messages should not end with a period [LintImplTextFormat]
@@ -390,7 +390,7 @@ class LintDetectorDetectorTest {
                 src/test/pkg/MyJavaLintDetector.java:78: Warning: Question marks should not be separated by a space [LintImplTextFormat]
                             "Should you use `x ?: y` instead of ```foo ? 1 : 0``` ?");
                                                                                   ~
-                src/test/pkg/MyKotlinLintDetector.kt:47: Warning: "foo().bar().baz()" looks like a call; surround with backtics in string to display as symbol, e.g. `foo().bar().baz()` [LintImplTextFormat]
+                src/test/pkg/MyKotlinLintDetector.kt:47: Warning: "foo().bar().baz()" looks like a call; surround with backticks in string to display as symbol, e.g. `foo().bar().baz()` [LintImplTextFormat]
                                     |Instead you should call foo().bar().baz() here.
                                                              ~~~~~~~~~~~~~~~~~
                 src/test/pkg/MyKotlinLintDetector.kt:61: Warning: The issue summary should not end with a period (think of it as a headline) [LintImplTextFormat]
@@ -402,7 +402,7 @@ class LintDetectorDetectorTest {
                 src/test/pkg/MyKotlinLintDetector.kt:63: Warning: Multi-line issue explanation strings will interpret line separators as hard breaks, and this looks like a continuation of the same paragraph. Consider using  at the end of the previous line to indicate that the lines should be joined, or add a blank line between unrelated sentences, or suppress this issue type here. [LintImplTextFormat]
                                     Some description here.
                                     ~~~~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/MyKotlinLintDetector.kt:64: Warning: "foo.bar.baz(args)" looks like a call; surround with backtics in string to display as symbol, e.g. `foo.bar.baz(args)` [LintImplTextFormat]
+                src/test/pkg/MyKotlinLintDetector.kt:64: Warning: "foo.bar.baz(args)" looks like a call; surround with backticks in string to display as symbol, e.g. `foo.bar.baz(args)` [LintImplTextFormat]
                                     Here's a call: foo.bar.baz(args).
                                                    ~~~~~~~~~~~~~~~~~
                 src/test/pkg/MyKotlinLintDetector.kt:66: Warning: This line continuation (\) should probably be preceded by a space character, otherwise this will render as a single word "spaceOkay", not "space Okay" [LintImplTextFormat]
@@ -497,7 +497,7 @@ class LintDetectorDetectorTest {
       )
       .expectFixDiffs(
         """
-                Autofix for src/test/pkg/MyJavaLintDetector.java line 70: Surround with backtics:
+                Autofix for src/test/pkg/MyJavaLintDetector.java line 70: Surround with backticks:
                 @@ -70 +70
                 -             "Wrong use of LinearLayout.");
                 +             "Wrong use of `LinearLayout`.");
@@ -509,11 +509,11 @@ class LintDetectorDetectorTest {
                 @@ -74 +74
                 -             "This is teh typo");
                 +             "This is the typo");
-                Autofix for src/test/pkg/MyKotlinLintDetector.kt line 47: Surround with backtics:
+                Autofix for src/test/pkg/MyKotlinLintDetector.kt line 47: Surround with backticks:
                 @@ -47 +47
                 -                     |Instead you should call foo().bar().baz() here.
                 +                     |Instead you should call `foo().bar().baz()` here.
-                Autofix for src/test/pkg/MyKotlinLintDetector.kt line 64: Surround with backtics:
+                Autofix for src/test/pkg/MyKotlinLintDetector.kt line 64: Surround with backticks:
                 @@ -64 +64
                 -                     Here's a call: foo.bar.baz(args).
                 +                     Here's a call: `foo.bar.baz(args)`.
