@@ -332,14 +332,14 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       android.buildTypes.apply { named("debug") { it.enableAndroidTestCoverage = true } }
     }
 
-    val adb = SdkHelper.getAdb().absolutePath
     val coverageDir = "/sdcard/googletest/internal_use/data/data/com.example.android.kotlin/coverage_data"
     val corruptedFile = "$coverageDir/corrupted.ec"
 
-    // Manually create a corrupted leftover file on device.
-    // We create it after the emulator rule has started the emulator.
-    ProcessBuilder(adb, "shell", "mkdir", "-p", coverageDir).start().waitFor(1, TimeUnit.MINUTES)
-    ProcessBuilder(adb, "shell", "echo", "not-a-jacoco-file", ">", corruptedFile).start().waitFor(1, TimeUnit.MINUTES)
+    // Manually create a corrupted leftover file on device after the emulator rule starts.
+    // On API 33 snapshot boot, /sdcard (/storage/emulated/0 FUSE mount) can finish mounting
+    // shortly after sys.boot_completed=1, so retry until external storage is writable and verify
+    // the file exists on the device before running the test task.
+    createCorruptedLeftoverFileOnDevice(coverageDir, corruptedFile)
 
     // Run the test. The plugin should clean up the directory before pulling files.
     // If it doesn't, JacocoReportTask will fail with "Unknown block type".
@@ -348,10 +348,49 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
     util.verifyReport()
     assertThat(util.project.resolve(util.testCoverageXmlPath)).exists()
 
-    // Verify the corrupted file is gone from the device.
-    val checkProcess = ProcessBuilder(adb, "shell", "ls", corruptedFile).start()
-    checkProcess.waitFor(1, TimeUnit.MINUTES)
-    assertThat(checkProcess.exitValue()).isNotEqualTo(0)
+    // Verify the coverage directory exists on device and the corrupted leftover file was removed.
+    val (verifyExitCode, verifyOutput) = runAdbShellWithExitCode("test -d '$coverageDir' && test ! -e '$corruptedFile'")
+    assertWithMessage("Expected $coverageDir to exist and $corruptedFile to be removed. Output: $verifyOutput")
+      .that(verifyExitCode)
+      .isEqualTo(0)
+  }
+
+  private fun createCorruptedLeftoverFileOnDevice(coverageDir: String, corruptedFile: String) {
+    val deadlineNanos = System.nanoTime() + TimeUnit.MINUTES.toNanos(1)
+    var lastExitCode = -1
+    var lastOutput = ""
+    while (System.nanoTime() < deadlineNanos) {
+      val (exitCode, output) =
+        runAdbShellWithExitCode("mkdir -p '$coverageDir' && echo not-a-jacoco-file > '$corruptedFile' && test -s '$corruptedFile'")
+      if (exitCode == 0) {
+        return
+      }
+      lastExitCode = exitCode
+      lastOutput = output
+      TimeUnit.MILLISECONDS.sleep(250)
+    }
+    throw AssertionError(
+      "Timed out waiting to create leftover coverage file $corruptedFile on emulator-5554 " +
+        "(last exitCode=$lastExitCode, output=$lastOutput)"
+    )
+  }
+
+  private fun runAdbShellWithExitCode(shellCommand: String): Pair<Int, String> {
+    val outputFile = File.createTempFile("adb_shell_", ".txt")
+    try {
+      val process =
+        ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", shellCommand)
+          .redirectErrorStream(true)
+          .redirectOutput(outputFile)
+          .start()
+      if (!process.waitFor(1, TimeUnit.MINUTES)) {
+        process.destroyForcibly()
+        return -1 to "${outputFile.readText()}\n(adb shell $shellCommand timed out)"
+      }
+      return process.exitValue() to outputFile.readText()
+    } finally {
+      outputFile.delete()
+    }
   }
 
   @Test

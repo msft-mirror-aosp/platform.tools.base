@@ -334,25 +334,34 @@ class AndroidTestCoverageCollectorTest {
   }
 
   @Test
-  fun prepare_warnsIfTestServiceMissing() {
+  fun prepare_warnsIfTestServiceMissing_andUsesRunAsForPackageScopedPath() {
+    val coverageFileOnDevice = "/data/data/pkg/coverage.ec"
     val collector =
       AndroidTestCoverageCollector(
         adbController,
         deviceSerial,
         coverageDirOnHost,
-        coverageFileOnDevice = "coverage.ec",
+        coverageFileOnDevice = coverageFileOnDevice,
         coverageDirOnDevice = null,
         useTestStorageService = true,
         additionalOutputCollector,
+        runAsPackageName = "pkg",
       )
 
     mockAdbResponse(listOf("pm", "list", "packages", "androidx.test.services"), "package:other")
 
     collector.prepare()
 
+    verify(adbController)
+      .runAdbShellCommand(
+        eq(deviceSerial),
+        eq(listOf("run-as", "pkg", "rm", "-f", coverageFileOnDevice)),
+        anyOrNull(),
+      )
+
     // effectiveUseTestStorageService should be false, so collect should use original path
     collector.collect()
-    verify(additionalOutputCollector).pullFile(eq("coverage.ec"), anyOrNull())
+    verify(additionalOutputCollector).pullFile(eq(coverageFileOnDevice), anyOrNull())
   }
 
   @Test

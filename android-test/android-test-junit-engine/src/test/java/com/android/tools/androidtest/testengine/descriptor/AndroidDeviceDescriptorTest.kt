@@ -487,4 +487,93 @@ class AndroidDeviceDescriptorTest {
     // ...so the JUnit result must agree. Previously this threw RuntimeException("Instrumentation ended unexpectedly").
     captor.firstValue.execute(context, dynamicTestExecutor)
   }
+
+  @Test
+  fun startRunner_withCodeCoverageAndTestStorage_injectsPackageScopedCoverageFile() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.IS_TEST_COVERAGE_ENABLED)).thenReturn(java.util.Optional.of("true"))
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)).thenReturn(java.util.Optional.of("true"))
+
+    var capturedArgs: Map<String, String>? = null
+    val descriptor =
+      AndroidDeviceDescriptor(
+        uniqueId,
+        deviceSerial,
+        adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
+        instrumentationRunnerFactory = { _, _, _, _, _, _, args, _, _, _ ->
+          capturedArgs = args
+          mockAmInstrumentationRunner
+        },
+      )
+
+    val context = AndroidTestExecutionContext(executionRequest)
+    descriptor.startRunner(context)
+
+    assertThat(capturedArgs).isNotNull()
+    assertThat(capturedArgs!!["coverage"]).isEqualTo("true")
+    assertThat(capturedArgs!!["coverageFile"]).isEqualTo("/data/data/com.example.app/coverage.ec")
+    assertThat(capturedArgs!!.containsKey("coverageFilePath")).isFalse()
+  }
+
+  @Test
+  fun startRunner_withOrchestratorCodeCoverageAndTestStorage_injectsPackageScopedCoverageDir() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.IS_TEST_COVERAGE_ENABLED)).thenReturn(java.util.Optional.of("true"))
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)).thenReturn(java.util.Optional.of("true"))
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE))
+      .thenReturn(java.util.Optional.of("ANDROIDX_TEST_ORCHESTRATOR"))
+
+    var capturedArgs: Map<String, String>? = null
+    val descriptor =
+      AndroidDeviceDescriptor(
+        uniqueId,
+        deviceSerial,
+        adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
+        instrumentationRunnerFactory = { _, _, _, _, _, _, args, _, _, _ ->
+          capturedArgs = args
+          mockAmInstrumentationRunner
+        },
+      )
+
+    val context = AndroidTestExecutionContext(executionRequest)
+    descriptor.startRunner(context)
+
+    assertThat(capturedArgs).isNotNull()
+    assertThat(capturedArgs!!["coverage"]).isEqualTo("true")
+    assertThat(capturedArgs!!["coverageFilePath"]).isEqualTo("/data/data/com.example.app/coverage_data/")
+    assertThat(capturedArgs!!.containsKey("coverageFile")).isFalse()
+  }
+
+  @Test
+  fun startRunner_withExplicitCoverageDirOverride_honorsConfiguredPath() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.IS_TEST_COVERAGE_ENABLED)).thenReturn(java.util.Optional.of("true"))
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)).thenReturn(java.util.Optional.of("true"))
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE))
+      .thenReturn(java.util.Optional.of("ANDROIDX_TEST_ORCHESTRATOR"))
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.COVERAGE_DIR_ON_DEVICE))
+      .thenReturn(java.util.Optional.of("/custom/coverage_dir/"))
+
+    var capturedArgs: Map<String, String>? = null
+    val descriptor =
+      AndroidDeviceDescriptor(
+        uniqueId,
+        deviceSerial,
+        adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
+        instrumentationRunnerFactory = { _, _, _, _, _, _, args, _, _, _ ->
+          capturedArgs = args
+          mockAmInstrumentationRunner
+        },
+      )
+
+    val context = AndroidTestExecutionContext(executionRequest)
+    descriptor.startRunner(context)
+
+    assertThat(capturedArgs).isNotNull()
+    assertThat(capturedArgs!!["coverage"]).isEqualTo("true")
+    assertThat(capturedArgs!!["coverageFilePath"]).isEqualTo("/custom/coverage_dir/")
+  }
 }

@@ -202,14 +202,17 @@ class AndroidDeviceDescriptor(
 
     val isCoverageActive = config.isTestCoverageEnabled || config.coverageType == AndroidTestConfiguration.CoverageType.ON_THE_FLY
 
+    // Always default to /data/data/<pkg>/... regardless of useTestStorageService:
+    // - When TestStorage is active, TestStorage.openInternalOutputFile writes under
+    //   /sdcard/googletest/internal_use/<path> (isolating per-package coverage files), matching
+    //   AndroidTestCoverageCollector's "$storageDir/${path.removePrefix("/")}" prefixing.
+    // - When TestStorage is requested in config but androidx.test.services is not installed on
+    //   the device, AndroidJUnitRunner falls back to File(coverageFilePath), which requires an
+    //   app-writable /data/data/<pkg>/... path rather than read-only root "/coverage.ec".
     val effectiveCoverageFileOnDevice =
       config.coverageFileOnDevice.takeIf { !it.isNullOrBlank() }
         ?: if (config.isTestCoverageEnabled && !isOrchestratorEnabled) {
-          if (config.useTestStorageService) {
-            "coverage.ec"
-          } else {
-            "/data/data/${config.instrumentationTargetPackageId}/coverage.ec"
-          }
+          "/data/data/${config.instrumentationTargetPackageId}/coverage.ec"
         } else {
           null
         }
@@ -217,11 +220,7 @@ class AndroidDeviceDescriptor(
     val effectiveCoverageDirOnDevice =
       config.coverageDirOnDevice.takeIf { !it.isNullOrBlank() }
         ?: if (config.isTestCoverageEnabled && isOrchestratorEnabled) {
-          if (config.useTestStorageService) {
-            "coverage_data/"
-          } else {
-            "/data/data/${config.instrumentationTargetPackageId}/coverage_data/"
-          }
+          "/data/data/${config.instrumentationTargetPackageId}/coverage_data/"
         } else {
           null
         }
