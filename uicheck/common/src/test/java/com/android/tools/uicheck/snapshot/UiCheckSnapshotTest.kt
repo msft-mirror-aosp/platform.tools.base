@@ -67,7 +67,7 @@ class UiCheckSnapshotTest {
     val unknownLineLocation = UiCheckSourceLocation(filePath = "MainActivity.kt")
 
     assertEquals(UiCheckSnapshot.DEFAULT_DENSITY_DPI, snapshot.densityDpi)
-    assertEquals(1.0f, snapshot.fontScale)
+    assertEquals(UiCheckSnapshot.DEFAULT_FONT_SCALE, snapshot.fontScale)
     assertTrue(snapshot.issues.isEmpty())
     assertEquals(-1, unknownLineLocation.lineNumber)
   }

@@ -91,7 +91,7 @@ data class UiCheckSnapshot(
   val screenWidthPx: Int,
   val screenHeightPx: Int,
   val densityDpi: Int = DEFAULT_DENSITY_DPI,
-  val fontScale: Float = 1.0f,
+  val fontScale: Float = DEFAULT_FONT_SCALE,
   val issues: List<UiCheckIssue> = emptyList(),
   val previewId: String? = null,
   val imagePath: String? = null,
@@ -99,5 +99,8 @@ data class UiCheckSnapshot(
   companion object {
     /** Density of the default Phone reference device (Pixel, 420dpi), used when a snapshot does not specify one. */
     const val DEFAULT_DENSITY_DPI = 420
+
+    /** Font scale used when a snapshot does not specify one. */
+    const val DEFAULT_FONT_SCALE = 1.0f
   }
 }

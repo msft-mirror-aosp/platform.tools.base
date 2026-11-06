@@ -17,6 +17,7 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ComponentTreeNode
+import com.android.tools.uicheck.snapshot.UiCheckSnapshot.Companion.DEFAULT_FONT_SCALE
 import com.android.tools.uicheck.snapshot.UiCheckSourceLocation
 import java.awt.image.BufferedImage
 
@@ -26,7 +27,7 @@ data class CheckContext(
   val screenWidthPx: Int,
   val screenHeightPx: Int,
   val densityDpi: Int,
-  val fontScale: Float = 1.0f,
+  val fontScale: Float = DEFAULT_FONT_SCALE,
   val isRoundDevice: Boolean = false,
   val showSystemUi: Boolean = false,
   /** The rendered PNG, for checks that look at pixels such as color contrast. */
