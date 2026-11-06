@@ -682,9 +682,12 @@ abstract class LinkApplicationAndroidResourcesTask : ProcessAndroidResources() {
       creationConfig.artifacts.setTaskInputToFinalProduct(sourceArtifactType.outputType, task.inputResourcesDir)
       creationConfig.artifacts.setTaskInputToFinalProduct(COMPILED_NAVIGATION_RES, task.navigationUpdatedFolder)
 
-      if (creationConfig.services.projectOptions[BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES]) {
+      val sharedLibSupport =
+        creationConfig.services.projectOptions[BooleanOption.ENABLE_SHARED_LIBRARIES] ||
+          creationConfig.services.projectOptions[BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES]
+      if (sharedLibSupport) {
         task.sharedLibraryDependencies.fromDisallowChanges(
-          creationConfig.variantDependencies.getArtifactFileCollection(RUNTIME_CLASSPATH, ALL, ArtifactType.RES_SHARED_OEM_TOKEN_LIBRARY)
+          creationConfig.variantDependencies.getArtifactFileCollection(RUNTIME_CLASSPATH, ALL, ArtifactType.RES_SHARED_LIBRARY)
         )
       }
 

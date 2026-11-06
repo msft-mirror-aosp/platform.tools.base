@@ -69,7 +69,7 @@ class BooleanOptionTest {
         BooleanOption.OVERRIDE_PATH_CHECK_PROPERTY,
         BooleanOption.DISABLE_RESOURCE_VALIDATION,
         BooleanOption.CONSUME_DEPENDENCIES_AS_SHARED_LIBRARIES,
-        BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES,
+        BooleanOption.ENABLE_SHARED_LIBRARIES,
         BooleanOption.DISABLE_EARLY_MANIFEST_PARSING,
         BooleanOption.CONDITIONAL_KEEP_RULES,
         BooleanOption.KEEP_SERVICES_BETWEEN_BUILDS,

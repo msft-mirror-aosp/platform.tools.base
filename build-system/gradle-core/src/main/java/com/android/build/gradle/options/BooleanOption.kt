@@ -196,7 +196,7 @@ enum class BooleanOption(
   OVERRIDE_PATH_CHECK_PROPERTY("android.overridePathCheck", false, FeatureStage.Experimental),
   DISABLE_RESOURCE_VALIDATION("android.disableResourceValidation", false, FeatureStage.Experimental),
   CONSUME_DEPENDENCIES_AS_SHARED_LIBRARIES("android.consumeDependenciesAsSharedLibraries", false, FeatureStage.Experimental),
-  SUPPORT_OEM_TOKEN_LIBRARIES("android.enableOemTokenLibraries", false, FeatureStage.Experimental),
+  ENABLE_SHARED_LIBRARIES("android.enableSharedLibraries", false, FeatureStage.Experimental),
   DISABLE_EARLY_MANIFEST_PARSING("android.disableEarlyManifestParsing", false, FeatureStage.Experimental),
   CONDITIONAL_KEEP_RULES("android.useConditionalKeepRules", false, FeatureStage.Experimental),
   KEEP_SERVICES_BETWEEN_BUILDS("android.keepWorkerActionServicesBetweenBuilds", false, FeatureStage.Experimental),
@@ -596,6 +596,13 @@ enum class BooleanOption(
 
   /** This is subsumed by `android.newDsl` ([USE_NEW_DSL]) which also affects groovy scripts and plugins. */
   USE_NEW_DSL_INTERFACES("android.experimental.newDslInterfaces", false, FeatureStage.Deprecated(VERSION_10_0)),
+
+  /** This flag is subsumed by `android.enableSharedLibraries` ([ENABLE_SHARED_LIBRARIES]). */
+  SUPPORT_OEM_TOKEN_LIBRARIES(
+    "android.enableOemTokenLibraries",
+    false,
+    FeatureStage.Deprecated(VERSION_10_0),
+  ),
 
   /* -----------------
    * ENFORCED FEATURES

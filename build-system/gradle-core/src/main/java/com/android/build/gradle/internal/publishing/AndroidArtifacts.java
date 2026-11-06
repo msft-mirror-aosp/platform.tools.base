@@ -82,8 +82,7 @@ public class AndroidArtifacts {
     private static final String TYPE_ANDROID_RES_STATIC_LIBRARY = "android-res-static-library";
     private static final String TYPE_ANDROID_RES_SHARED_STATIC_LIBRARY =
             "android-res-shared-static-library";
-    private static final String TYPE_ANDROID_RES_SHARED_OEM_LIBRARY =
-            "android-res-shared-oem-library";
+    private static final String TYPE_ANDROID_RES_SHARED_LIBRARY = "android-res-shared-library";
     private static final String TYPE_ANDROID_RES_BUNDLE = "android-res-for-bundle";
     private static final String TYPE_ASSETS = "android-assets";
     private static final String TYPE_SHARED_ASSETS = "android-shared-assets";
@@ -214,8 +213,11 @@ public class AndroidArtifacts {
     private static final String TYPE_R_CLASS_JAR = "r-class-jar";
     private static final String TYPE_MERGED_TEST_ONLY_NATIVE_LIBS = "merged-test-only-native-libs";
 
+    @Deprecated
     public static final String PATH_SHARED_LIBRARY_RESOURCES_APK =
             "shared/" + FN_RESOURCE_STATIC_LIBRARY;
+
+    public static final String PATH_SHARED_LIBRARY_RESOURCES_APK_PATH = "shared";
     public static final String TYPE_TEST_RESULTS = "android-test-results";
 
     public enum ConsumedConfigType {
@@ -398,7 +400,7 @@ public class AndroidArtifacts {
         RES_STATIC_LIBRARY(TYPE_ANDROID_RES_STATIC_LIBRARY),
         RES_SHARED_STATIC_LIBRARY(TYPE_ANDROID_RES_SHARED_STATIC_LIBRARY),
         RES_BUNDLE(TYPE_ANDROID_RES_BUNDLE),
-        RES_SHARED_OEM_TOKEN_LIBRARY(TYPE_ANDROID_RES_SHARED_OEM_LIBRARY),
+        RES_SHARED_LIBRARY(TYPE_ANDROID_RES_SHARED_LIBRARY),
 
         // API only elements.
         AIDL(TYPE_AIDL),

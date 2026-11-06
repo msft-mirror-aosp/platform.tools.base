@@ -21,7 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.PATH_SHARED_LIBRARY_RESOURCES_APK
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.PATH_SHARED_LIBRARY_RESOURCES_APK_PATH
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.internal.aapt.v2.Aapt2Exception
 import com.android.testutils.MavenRepoGenerator
@@ -36,13 +36,19 @@ import org.junit.Test
 
 class SharedLibraryTest {
 
-  @get:Rule
-  val sharedTokenRule =
-    GradleRule.from(folderName = "shared_token_project") {
+  @get:Rule val sharedTokenProject1 = createDemoProject(1)
+
+  @get:Rule val sharedTokenProject2 = createDemoProject(2)
+
+  private fun createDemoProject(id: Int): GradleRule =
+    GradleRule.from(folderName = "shared_token_project_$id") {
       androidApplication {
         android {
           compileSdk = 34
-          defaultConfig.applicationId = "com.android_token_test_lib"
+          defaultConfig.applicationId = "com.android_token_test_lib_$id"
+          androidResources {
+            additionalParameters += listOf("--shared-lib")
+          }
         }
         files {
           add(
@@ -50,7 +56,7 @@ class SharedLibraryTest {
             // language=xml
             """
             <resources>
-                <string name="oem_token_demo">TOKEN_DEMO</string>
+                <string name="oem_token_demo_$id">TOKEN_DEMO_$id</string>
             </resources>
             """
               .trimIndent(),
@@ -73,8 +79,10 @@ class SharedLibraryTest {
           packageName = "com.android.tokens_test_lib",
           extraFiles =
             mapOf(
-              PATH_SHARED_LIBRARY_RESOURCES_APK to
-                sharedTokenRule.build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG).readBytes()
+              "$PATH_SHARED_LIBRARY_RESOURCES_APK_PATH/first.apk" to
+                sharedTokenProject1.build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG).readBytes(),
+              "$PATH_SHARED_LIBRARY_RESOURCES_APK_PATH/second.apk" to
+                sharedTokenProject2.build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG).readBytes(),
             ),
         ),
     )
@@ -90,7 +98,8 @@ class SharedLibraryTest {
           """
           <resources>
               <string name="app_name">Name</string>
-              <string name="oem_token_demo_test">@*com.android_token_test_lib:string/oem_token_demo</string>
+              <string name="oem_token_demo_test_a">@*com.android_token_test_lib_1:string/oem_token_demo_1</string>
+              <string name="oem_token_demo_test_b">@*com.android_token_test_lib_2:string/oem_token_demo_2</string>
           </resources>
           """
             .trimIndent(),
@@ -100,11 +109,23 @@ class SharedLibraryTest {
 
   @Before
   fun setup() {
-    sharedTokenRule.build.executor.run("assembleDebug")
+    sharedTokenProject1.build.executor.run("assembleDebug")
+    sharedTokenProject2.build.executor.run("assembleDebug")
   }
 
   @Test
   fun `token string resource reference is resolved`() {
+    val build = consumerRule.build {
+      androidApplication { addSharedDependency() }
+      gradleProperties { add(BooleanOption.ENABLE_SHARED_LIBRARIES, true) }
+    }
+
+    val result = build.executor.run("assembleDebug")
+    assertNull(result.exception)
+  }
+
+  @Test
+  fun `token string resource reference is resolved with legacy flag`() {
     val build = consumerRule.build {
       androidApplication { addSharedDependency() }
       gradleProperties { add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true) }
@@ -127,7 +148,8 @@ class SharedLibraryTest {
       Aapt2Exception::class,
       """
       Android resource linking failed
-      pkg.name.app-mergeDebugResources-2:/values/values.xml:4: error: resource com.android_token_test_lib:string/oem_token_demo not found.
+      pkg.name.app-mergeDebugResources-2:/values/values.xml:4: error: resource com.android_token_test_lib_1:string/oem_token_demo_1 not found.
+      pkg.name.app-mergeDebugResources-2:/values/values.xml:5: error: resource com.android_token_test_lib_2:string/oem_token_demo_2 not found.
       error: failed linking references.
       """
         .trimIndent(),
@@ -138,14 +160,15 @@ class SharedLibraryTest {
   fun `token resolution fails when dependency not included`() {
     val build = consumerRule.build {
       androidApplication { android { buildFeatures { resValues = true } } }
-      gradleProperties { add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true) }
+      gradleProperties { add(BooleanOption.ENABLE_SHARED_LIBRARIES, true) }
     }
     val result = build.executor.expectFailure().run("assembleDebug")
     result.assertExceptionCause(
       Aapt2Exception::class,
       """
       Android resource linking failed
-      pkg.name.app-mergeDebugResources-2:/values/values.xml:4: error: resource com.android_token_test_lib:string/oem_token_demo not found.
+      pkg.name.app-mergeDebugResources-2:/values/values.xml:4: error: resource com.android_token_test_lib_1:string/oem_token_demo_1 not found.
+      pkg.name.app-mergeDebugResources-2:/values/values.xml:5: error: resource com.android_token_test_lib_2:string/oem_token_demo_2 not found.
       error: failed linking references.
       """
         .trimIndent(),

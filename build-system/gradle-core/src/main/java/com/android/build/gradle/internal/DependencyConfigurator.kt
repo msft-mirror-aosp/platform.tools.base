@@ -194,7 +194,8 @@ class DependencyConfigurator(private val project: Project, private val projectSe
     )
 
     val namespacedSharedLibSupport = projectOptions[BooleanOption.CONSUME_DEPENDENCIES_AS_SHARED_LIBRARIES]
-    val sharedLibSupport = projectOptions[BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES]
+    val sharedLibSupport =
+      projectOptions[BooleanOption.ENABLE_SHARED_LIBRARIES] || projectOptions[BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES]
     val javaResOptimizations = projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]
 
     val libraryCategory = project.objects.named(Category::class.java, Category.LIBRARY)

@@ -63,7 +63,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PROCESSED_JAR
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PUBLIC_RES
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.RENDERSCRIPT
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.RES_SHARED_OEM_TOKEN_LIBRARY
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.RES_SHARED_LIBRARY
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.RES_SHARED_STATIC_LIBRARY
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.RES_STATIC_LIBRARY
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.SHARED_ASSETS
@@ -71,7 +71,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.SHARED_JAVA_RES
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.SHARED_JNI
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.PATH_SHARED_LIBRARY_RESOURCES_APK
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.PATH_SHARED_LIBRARY_RESOURCES_APK_PATH
 import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter
 import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
@@ -191,7 +191,16 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
         }
       }
 
-      RES_SHARED_OEM_TOKEN_LIBRARY -> outputIfExists(PATH_SHARED_LIBRARY_RESOURCES_APK)
+      RES_SHARED_LIBRARY ->
+        extractedAarDir
+          .resolve(PATH_SHARED_LIBRARY_RESOURCES_APK_PATH)
+          .listFiles()
+          .orEmpty()
+          .filter { it.isFile && it.extension.lowercase() == ALLOWED_SHARED_LIB_APK_EXTENSION }
+          .sortedBy { it.invariantSeparatorsPath }
+          .forEach {
+            transformOutputs.file(it.path)
+          }
       DATA_BINDING_ARTIFACT -> outputIfExists(DATA_BINDING_ROOT_FOLDER_IN_AAR)
       DATA_BINDING_BASE_CLASS_LOG_ARTIFACT -> outputIfExists(DATA_BINDING_CLASS_LOG_ROOT_FOLDER_IN_AAR)
       PREFAB_PACKAGE_FROM_AAR -> outputIfExists(FD_PREFAB_PACKAGE)
@@ -240,9 +249,11 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
         AAR_METADATA,
         ART_PROFILE,
         NAVIGATION_JSON,
-        RES_SHARED_OEM_TOKEN_LIBRARY.takeIf { sharedLibSupportEnabled },
+        RES_SHARED_LIBRARY.takeIf { sharedLibSupportEnabled },
       )
     }
+
+    private const val ALLOWED_SHARED_LIB_APK_EXTENSION = "apk"
   }
 }
 
