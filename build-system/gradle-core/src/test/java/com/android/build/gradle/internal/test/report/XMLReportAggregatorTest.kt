@@ -947,6 +947,113 @@ class XMLReportAggregatorTest {
     assertThat(dataJs.readText()).contains("\"testAdd\"")
   }
 
+  @Test
+  fun testGenerateReport_parsesDurationPropertiesAndPerTestcaseStreamsWith256KbCap() {
+    val attachDir = File(inputDir1, "attachments/1").apply { mkdirs() }
+    File(attachDir, "host-log.txt").writeText("trailing attachment past 256 KB stdout cap", Charsets.UTF_8)
+    val oversizedOut = "O".repeat(MAX_STREAM_CHARS + 5000) + "\n[[ATTACHMENT|attachments/1/host-log.txt]]\n"
+    val normalErr = "Warning line 1\nERROR: failed check\n"
+
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.StreamSuite" tests="4" failures="2" errors="0" skipped="0" time="2.15">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testWithStreamsAndProperties" classname="com.example.app.StreamTest" time="1.456">
+              <properties>
+                  <property name="androidx.report.schemaVersion" value="1"/>
+                  <property name="featureFlag" value="enabled"/>
+                  <property name="retryCount" value="2"/>
+              </properties>
+              <failure message="boom">java.lang.AssertionError: boom
+                  at com.example.app.StreamTest.testWithStreamsAndProperties(StreamTest.kt:21)</failure>
+              <system-out><![CDATA[__OVERSIZED_OUT__]]></system-out>
+              <system-err><![CDATA[__NORMAL_ERR__]]></system-err>
+          </testcase>
+          <testcase name="testPlainFailureDiscardsStreams" classname="com.example.app.StreamTest" time="0.000">
+              <failure message="plain">java.lang.AssertionError: plain</failure>
+              <system-out><![CDATA[__PLAIN_FAILURE_OUT__]]></system-out>
+          </testcase>
+          <testcase name="testPlainPassDiscardsStreams" classname="com.example.app.StreamTest" time="0.494">
+              <system-out><![CDATA[noisy stdout from passing unit test]]></system-out>
+              <system-err><![CDATA[noisy stderr from passing unit test]]></system-err>
+          </testcase>
+          <testcase name="testPassWithDetailRetainsStreams" classname="com.example.app.StreamTest" time="0.200">
+              <properties>
+                  <property name="androidx.report.schemaVersion" value="1"/>
+                  <property name="androidx.report.suiteType" value="com.example.journey"/>
+              </properties>
+              <system-out><![CDATA[retained passing suite stdout]]></system-out>
+          </testcase>
+          <system-out><![CDATA[suite-level output should not attach to testcases]]></system-out>
+      </testsuite>
+      """
+        .trimIndent()
+        .replace("__OVERSIZED_OUT__", oversizedOut)
+        .replace("__NORMAL_ERR__", normalErr)
+        .replace("__PLAIN_FAILURE_OUT__", "stdout of a failing test without report entries\n[[ATTACHMENT|attachments/1/host-log.txt]]\n")
+    createXmlReport(inputDir1, "TEST-StreamTest.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "StreamProject")
+    aggregator.writeReport(outputDir)
+    val report = aggregator.generateReport(outputDir)
+
+    val module = report.modules.single()
+    val moduleDebugSummary = module.testSuiteSummaries.find { it.name == "unitTest" }!!.variantSummaries.find { it.name == "debug" }!!
+    assertThat(moduleDebugSummary.durationMs).isEqualTo(2150L)
+
+    val testCases = module.packages.single().classes.single().testCases
+    val failingCase = testCases.findOrThrow({ it.name == "testWithStreamsAndProperties" }) { "failing test not found" }
+    val failingTarget = failingCase.targets.single()
+    val failingResult = failingTarget.testSuiteResults.single().variantResults["debug"]!!
+
+    assertThat(failingResult.durationMs).isEqualTo(1456L)
+    assertThat(failingResult.adapterId).isEqualTo("default")
+    assertThat(failingResult.properties).containsExactly("featureFlag", "enabled", "retryCount", "2")
+    val failingDetailId = checkNotNull(failingResult.detailId)
+
+    // Ensure <system-out> following </failure> did not leak into the stack trace
+    val stackTrace = failingTarget.commonStackTraces.single().stackTrace
+    assertThat(stackTrace).contains("java.lang.AssertionError: boom")
+    assertThat(stackTrace).doesNotContain("OOOOO")
+
+    // Verify lazy details/<detailId>.js was written with 256 KB truncated stdout, intact stderr, and extracted trailing attachment
+    val lazyDetail = readLazyTestDetailJs(outputDir, failingDetailId)
+    assertThat(lazyDetail.systemOut).hasLength(MAX_STREAM_CHARS)
+    assertThat(lazyDetail.systemOutTruncated).isTrue()
+    assertThat(lazyDetail.systemErr).isEqualTo(normalErr)
+    assertThat(lazyDetail.systemErrTruncated).isFalse()
+    assertThat(lazyDetail.logs.single().content).isEqualTo("trailing attachment past 256 KB stdout cap")
+    assertThat(File(outputDir, "artifacts/$failingDetailId/host-log.txt").readText(Charsets.UTF_8))
+      .isEqualTo("trailing attachment past 256 KB stdout cap")
+
+    // Passing unit test without androidx.report.* entries discards <system-out>/<system-err> to save daemon heap.
+    val plainPassCase = testCases.findOrThrow({ it.name == "testPlainPassDiscardsStreams" }) { "plain pass test not found" }
+    val plainPassResult = plainPassCase.targets.single().testSuiteResults.single().variantResults["debug"]!!
+    assertThat(plainPassResult.durationMs).isEqualTo(494L)
+    assertThat(plainPassResult.detailId).isNull()
+    assertThat(plainPassResult.properties).isNull()
+
+    // Failing test without androidx.report.* entries keeps the classic view: no streams, attachments or detail script.
+    val plainFailCase = testCases.findOrThrow({ it.name == "testPlainFailureDiscardsStreams" }) { "plain failure test not found" }
+    val plainFailTarget = plainFailCase.targets.single()
+    val plainFailResult = plainFailTarget.testSuiteResults.single().variantResults["debug"]!!
+    assertThat(plainFailResult.detailId).isNull()
+    assertThat(plainFailResult.logMeta).isNull()
+    assertThat(plainFailTarget.commonStackTraces.single().stackTrace).isEqualTo("java.lang.AssertionError: plain")
+
+    // Passing suite test with androidx.report.* entries retains <system-out>.
+    val detailPassCase = testCases.findOrThrow({ it.name == "testPassWithDetailRetainsStreams" }) { "detail pass test not found" }
+    val detailPassResult = detailPassCase.targets.single().testSuiteResults.single().variantResults["debug"]!!
+    assertThat(detailPassResult.suiteType).isEqualTo("com.example.journey")
+    val detailPassLazy = readLazyTestDetailJs(outputDir, checkNotNull(detailPassResult.detailId))
+    assertThat(detailPassLazy.systemOut).isEqualTo("retained passing suite stdout")
+    assertThat(detailPassLazy.systemOutTruncated).isFalse()
+  }
 
   @Test
   fun testProcessXmlStream_failureElementsKeepExistingStatusAndStackTraceRules() {
@@ -1134,4 +1241,396 @@ class XMLReportAggregatorTest {
     assertThat(tc.name).isEqualTo("testOnlyRealJunitXmlAggregated")
   }
 
+  @Test
+  fun testGenerateReport_streamTruncationPreservesSurrogatePairsAndPreventsChunkSplicing() {
+    // Supplementary Plane-1 letter U+10400 (encoded as 2 UTF-16 surrogate code units).
+    val supplementary = String(Character.toChars(0x10400))
+    assertThat(supplementary).hasLength(2)
+
+    val boundaryPayload = "A".repeat(MAX_STREAM_CHARS - 1) + supplementary
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.SurrogateStreamSuite" tests="1" failures="1" errors="0" skipped="0" time="0.2">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testSurrogateBoundary" classname="com.example.app.SurrogateStreamTest" time="0.2">
+              <properties>
+                  <property name="androidx.report.schemaVersion" value="1"/>
+              </properties>
+              <failure message="boom">boom</failure>
+              <system-out><![CDATA[__BOUNDARY_OUT__]]><![CDATA[TRAILING_OUT_ASCII]]></system-out>
+              <system-err><![CDATA[__BOUNDARY_ERR__]]><![CDATA[TRAILING_ERR_ASCII]]></system-err>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+        .replace("__BOUNDARY_OUT__", boundaryPayload)
+        .replace("__BOUNDARY_ERR__", boundaryPayload)
+    createXmlReport(inputDir1, "TEST-SurrogateStreamTest.xml", xmlContent)
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "SurrogateStreamProject")
+    aggregator.writeReport(outputDir)
+    val report = aggregator.generateReport(outputDir)
+
+    val result =
+      checkNotNull(
+        report.modules
+          .single()
+          .packages
+          .single()
+          .classes
+          .single()
+          .testCases
+          .single()
+          .targets
+          .single()
+          .testSuiteResults
+          .single()
+          .variantResults["debug"]
+      )
+    val detailId = checkNotNull(result.detailId)
+    val lazyDetail = readLazyTestDetailJs(outputDir, detailId)
+
+    val capturedOut = checkNotNull(lazyDetail.systemOut)
+    val capturedErr = checkNotNull(lazyDetail.systemErr)
+    assertThat(lazyDetail.systemOutTruncated).isTrue()
+    assertThat(lazyDetail.systemErrTruncated).isTrue()
+    assertThat(capturedOut).hasLength(MAX_STREAM_CHARS - 1)
+    assertThat(capturedErr).hasLength(MAX_STREAM_CHARS - 1)
+    assertThat(capturedOut).doesNotContain("TRAILING_OUT_ASCII")
+    assertThat(capturedErr).doesNotContain("TRAILING_ERR_ASCII")
+    assertNoUnpairedSurrogates(capturedOut)
+    assertNoUnpairedSurrogates(capturedErr)
+
+    // Verify direct multi-chunk appendCapped and SystemOutStreamCollector edge cases across surrogate boundaries.
+    val singleChunkBuffer = StringBuilder("B".repeat(9))
+    assertThat(appendCapped(singleChunkBuffer, supplementary, maxChars = 10)).isTrue()
+    assertThat(singleChunkBuffer.toString()).isEqualTo("B".repeat(9))
+
+    val splitStraddleBuffer = StringBuilder()
+    assertThat(appendCapped(splitStraddleBuffer, "C".repeat(9), maxChars = 10)).isFalse()
+    assertThat(appendCapped(splitStraddleBuffer, supplementary.substring(0, 1), maxChars = 10)).isTrue()
+    assertThat(splitStraddleBuffer.toString()).isEqualTo("C".repeat(9))
+    assertNoUnpairedSurrogates(splitStraddleBuffer.toString())
+
+    val splitFittingBuffer = StringBuilder()
+    assertThat(
+        appendCapped(
+          splitFittingBuffer,
+          "D".repeat(8) + supplementary.substring(0, 1),
+          maxChars = 10,
+        )
+      )
+      .isFalse()
+    assertThat(
+        appendCapped(
+          splitFittingBuffer,
+          supplementary.substring(1, 2) + "TRAILING",
+          maxChars = 10,
+        )
+      )
+      .isTrue()
+    assertThat(splitFittingBuffer.toString()).isEqualTo("D".repeat(8) + supplementary)
+    assertNoUnpairedSurrogates(splitFittingBuffer.toString())
+
+    val overflowCollector = SystemOutStreamCollector(maxChars = 8193)
+    overflowCollector.append("E".repeat(8192) + supplementary.substring(0, 1))
+    overflowCollector.append(supplementary.substring(1, 2) + "\n[[ATTACHMENT|attachments/1/host-log.txt]]\n")
+    val overflowOut = checkNotNull(overflowCollector.finish())
+    assertThat(overflowCollector.truncated).isTrue()
+    assertThat(overflowOut).isEqualTo("E".repeat(8192))
+    assertNoUnpairedSurrogates(overflowOut)
+    assertThat(overflowCollector.attachments).containsExactly("attachments/1/host-log.txt")
+  }
+
+  private fun assertNoUnpairedSurrogates(value: String) {
+    var i = 0
+    while (i < value.length) {
+      val ch = value[i]
+      if (ch.isHighSurrogate()) {
+        assertThat(i + 1 < value.length && value[i + 1].isLowSurrogate()).isTrue()
+        i += 2
+      } else {
+        assertThat(ch.isLowSurrogate()).isFalse()
+        i++
+      }
+    }
+  }
+
+  @Test
+  fun testWriteReport_mergedDirectoryResolvesHashedAttachmentsWithoutCollision() {
+    val hash1 = "1111aaaa"
+    val hash2 = "2222bbbb"
+
+    val hashedAttachDir1a = File(inputDir1, "attachments/$hash1/1").apply { mkdirs() }
+    File(hashedAttachDir1a, "host-log.txt").writeText("host log from debug targetA", Charsets.UTF_8)
+    val hashedAttachDir1b = File(inputDir1, "attachments/$hash1/2").apply { mkdirs() }
+    File(hashedAttachDir1b, "snapshot.backup").writeBytes(byteArrayOf(0x11, 0x22))
+
+    val hashedAttachDir2a = File(inputDir1, "attachments/$hash2/1").apply { mkdirs() }
+    File(hashedAttachDir2a, "host-log.txt").writeText("host log from release targetB", Charsets.UTF_8)
+    val hashedAttachDir2b = File(inputDir1, "attachments/$hash2/2").apply { mkdirs() }
+    File(hashedAttachDir2b, "snapshot.backup").writeBytes(byteArrayOf(0x33, 0x44))
+
+    createXmlReport(
+      inputDir1,
+      "TEST-BackupTest_$hash1.xml",
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<testsuite name="com.example.app.BackupTest" tests="1" failures="0" errors="0" skipped="0" time="1.1">
+      |    <properties>
+      |        <property name="modulePath" value=":app"/>
+      |        <property name="testedVariantName" value="debug"/>
+      |        <property name="testSuiteName" value="backupTest"/>
+      |        <property name="testTarget" value="targetA"/>
+      |        <property name="applicationId" value="com.example.app"/>
+      |    </properties>
+      |    <testcase name="testSessionRestored" classname="com.example.app.BackupTest" time="1.1">
+      |        <properties>
+      |            <property name="androidx.report.schemaVersion" value="1"/>
+      |            <property name="androidx.report.suiteType" value="androidx.test.backup"/>
+      |            <property name="androidx.report.attr.transport" value="LOCAL"/>
+      |            <property name="androidx.report.attr.transport.filterable" value="true"/>
+      |        </properties>
+      |        <system-out><![CDATA[
+      |[[ATTACHMENT|attachments/$hash1/1/host-log.txt]]
+      |[[ATTACHMENT|attachments/$hash1/2/snapshot.backup]]
+      |]]></system-out>
+      |    </testcase>
+      |</testsuite>
+      """
+        .trimMargin(),
+    )
+    createXmlReport(
+      inputDir1,
+      "TEST-BackupTest_$hash2.xml",
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<testsuite name="com.example.app.BackupTest" tests="1" failures="0" errors="0" skipped="0" time="1.2">
+      |    <properties>
+      |        <property name="modulePath" value=":app"/>
+      |        <property name="testedVariantName" value="release"/>
+      |        <property name="testSuiteName" value="backupTest"/>
+      |        <property name="testTarget" value="targetB"/>
+      |        <property name="applicationId" value="com.example.app"/>
+      |    </properties>
+      |    <testcase name="testSessionRestored" classname="com.example.app.BackupTest" time="1.2">
+      |        <properties>
+      |            <property name="androidx.report.schemaVersion" value="1"/>
+      |            <property name="androidx.report.suiteType" value="androidx.test.backup"/>
+      |            <property name="androidx.report.attr.transport" value="CLOUD_ENCRYPTED"/>
+      |            <property name="androidx.report.attr.transport.filterable" value="true"/>
+      |        </properties>
+      |        <system-out><![CDATA[
+      |[[ATTACHMENT|attachments/$hash2/1/host-log.txt]]
+      |[[ATTACHMENT|attachments/$hash2/2/snapshot.backup]]
+      |]]></system-out>
+      |    </testcase>
+      |</testsuite>
+      """
+        .trimMargin(),
+    )
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "MergedAttachmentProject")
+    aggregator.writeReport(outputDir)
+    val report = aggregator.generateReport(outputDir)
+
+    assertThat(report.suiteEnvironments).hasSize(2)
+    val envByTarget = report.suiteEnvironments.associateBy { it.targetName }
+    val envDebug = checkNotNull(envByTarget["targetA"])
+    val envRelease = checkNotNull(envByTarget["targetB"])
+
+    val classes = report.modules.single().packages.single().classes
+    val backupClass = classes.findOrThrow({ it.name == "BackupTest" }) { "BackupTest not found" }
+    val targets = backupClass.testCases.single().targets.associateBy { it.name }
+
+    val debugResult = checkNotNull(targets["targetA"]?.testSuiteResults?.single()?.variantResults?.get("debug"))
+    val releaseResult = checkNotNull(targets["targetB"]?.testSuiteResults?.single()?.variantResults?.get("release"))
+
+    assertThat(debugResult.envId).isEqualTo(envDebug.envId)
+    assertThat(releaseResult.envId).isEqualTo(envRelease.envId)
+    assertThat(debugResult.summaryAttributes).containsEntry("transport", SummaryAttributeValue("LOCAL", "Local", "Transport"))
+    assertThat(releaseResult.summaryAttributes)
+      .containsEntry("transport", SummaryAttributeValue("CLOUD_ENCRYPTED", "Cloud (encrypted)", "Transport"))
+
+    val debugDetailId = checkNotNull(debugResult.detailId)
+    val releaseDetailId = checkNotNull(releaseResult.detailId)
+    assertThat(debugDetailId).isEqualTo("t_0001")
+    assertThat(releaseDetailId).isEqualTo("t_0002")
+
+    val gson = Gson()
+    val debugLazy = readLazyTestDetailJs(outputDir, debugDetailId, gson)
+    val releaseLazy = readLazyTestDetailJs(outputDir, releaseDetailId, gson)
+    assertThat(debugLazy.logs.single().content).isEqualTo("host log from debug targetA")
+    assertThat(releaseLazy.logs.single().content).isEqualTo("host log from release targetB")
+    assertThat(File(outputDir, "artifacts/$debugDetailId/host-log.txt").readText(Charsets.UTF_8)).isEqualTo("host log from debug targetA")
+    assertThat(File(outputDir, "artifacts/$releaseDetailId/host-log.txt").readText(Charsets.UTF_8))
+      .isEqualTo("host log from release targetB")
+    assertThat(File(outputDir, "artifacts/$debugDetailId/snapshot.backup").readBytes()).isEqualTo(byteArrayOf(0x11, 0x22))
+    assertThat(File(outputDir, "artifacts/$releaseDetailId/snapshot.backup").readBytes()).isEqualTo(byteArrayOf(0x33, 0x44))
+  }
+
+  @Test
+  fun testBeforeAllClassFailureInheritsSuiteLevelReportEntriesOnlyOntoSyntheticClassTestcase() {
+    val attachDir = File(inputDir1, "attachments/a1b2c3d4/1").apply { mkdirs() }
+    File(attachDir, "host-log.txt").writeText("BeforeAll setup failed on device", Charsets.UTF_8)
+
+    createXmlReport(
+      inputDir1,
+      "TEST-SharedSessionTest_a1b2c3d4.xml",
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<testsuite name="com.example.app.SharedSessionTest" tests="2" failures="1" errors="1" skipped="0" time="0.6">
+      |    <properties>
+      |        <property name="modulePath" value=":app"/>
+      |        <property name="testedVariantName" value="debug"/>
+      |        <property name="testSuiteName" value="backupTest"/>
+      |        <property name="testTarget" value="default"/>
+      |        <property name="androidx.report.schemaVersion" value="1"/>
+      |        <property name="androidx.report.suiteType" value="androidx.test.backup"/>
+      |        <property name="androidx.report.attr.transport" value="CLOUD_ENCRYPTED"/>
+      |        <property name="androidx.report.attr.transport.displayValue" value="Cloud (encrypted)"/>
+      |        <property name="androidx.report.attr.transport.filterable" value="true"/>
+      |        <property name="androidx.report.callout.kind" value="BACKUP_ERROR"/>
+      |        <property name="androidx.report.callout.failedStep" value="2"/>
+      |        <property name="androidx.report.callout.title" value="Backup failed at step 2"/>
+      |        <property name="androidx.report.callout.message" value="Transport rejected backup"/>
+      |        <property name="androidx.report.step.1.name" value="Setup"/>
+      |        <property name="androidx.report.step.1.on" value="device"/>
+      |        <property name="androidx.report.step.1.shared" value="true"/>
+      |        <property name="androidx.report.step.1.durationMs" value="200"/>
+      |        <property name="androidx.report.step.1.status" value="PASSED"/>
+      |        <property name="androidx.report.step.2.name" value="Backup"/>
+      |        <property name="androidx.report.step.2.on" value="device"/>
+      |        <property name="androidx.report.step.2.shared" value="true"/>
+      |        <property name="androidx.report.step.2.durationMs" value="300"/>
+      |        <property name="androidx.report.step.2.status" value="FAILED"/>
+      |    </properties>
+      |    <testcase name="testFailedBeforeAcquiringController" classname="com.example.app.SharedSessionTest" time="0.1">
+      |        <failure message="precondition failed">java.lang.AssertionError: precondition failed</failure>
+      |    </testcase>
+      |    <testcase name="initializationError" classname="com.example.app.SharedSessionTest" time="0.5">
+      |        <error message="Transport rejected backup">androidx.test.backup.host.BackupRestoreException: Transport rejected backup</error>
+      |    </testcase>
+      |    <system-out><![CDATA[
+      |[[ATTACHMENT|attachments/a1b2c3d4/1/host-log.txt]]
+      |]]></system-out>
+      |</testsuite>
+      """
+        .trimMargin(),
+    )
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "BeforeAllFailProject")
+    aggregator.writeReport(outputDir)
+    val report = aggregator.generateReport(outputDir)
+
+    val clazz = report.modules.single().packages.single().classes.single()
+    val initErrorCase = clazz.testCases.first { it.name == "initializationError" }
+    val initVariantResult = checkNotNull(initErrorCase.targets.single().testSuiteResults.single().variantResults["debug"])
+    assertThat(initVariantResult.adapterId).isEqualTo("backupRestore")
+    assertThat(initVariantResult.callout?.failedStep).isEqualTo(2)
+    assertThat(initVariantResult.steps).hasSize(2)
+    val detailId = checkNotNull(initVariantResult.detailId)
+    assertThat(File(outputDir, "artifacts/$detailId/host-log.txt").readText(Charsets.UTF_8)).isEqualTo("BeforeAll setup failed on device")
+
+    // Unrelated normal failing method in the same <testsuite> must NOT inherit suite-level androidx.report.* entries.
+    val unrelatedCase = clazz.testCases.first { it.name == "testFailedBeforeAcquiringController" }
+    val unrelatedResult = checkNotNull(unrelatedCase.targets.single().testSuiteResults.single().variantResults["debug"])
+    assertThat(unrelatedResult.callout).isNull()
+    assertThat(unrelatedResult.steps).isNull()
+    assertThat(unrelatedResult.detailId).isNull()
+  }
+
+  @Test
+  fun testCappedLogHelpers_utf8BoundaryAndStrayContinuationBytes() {
+    val logger = com.android.utils.NullLogger.getLogger()
+
+    val newlinePlusCont = temporaryFolder.newFile("nl_cont.log")
+    newlinePlusCont.writeBytes(byteArrayOf('\n'.code.toByte(), 0x80.toByte()))
+    assertThat(XMLReportAggregator.readLogFileCapped(newlinePlusCont, 1, logger)).isEqualTo("\n" to true)
+    assertThat(XMLReportAggregator.countLogLinesCapped(newlinePlusCont, 1, logger)).isEqualTo(1)
+    assertThat(XMLReportAggregator.readLogFileCapped(newlinePlusCont, 0, logger)).isEqualTo("" to true)
+    assertThat(XMLReportAggregator.readLogFileCapped(newlinePlusCont, -1, logger)).isEqualTo("" to true)
+    assertThat(XMLReportAggregator.countLogLinesCapped(newlinePlusCont, -1, logger)).isEqualTo(0)
+
+    // Complete 2-byte UTF-8 "é" (0xC3 0xA9) followed by a stray 0x80 continuation byte.
+    val completeUtf8PlusCont = temporaryFolder.newFile("utf8_cont.log")
+    completeUtf8PlusCont.writeBytes(byteArrayOf(0xC3.toByte(), 0xA9.toByte(), 0x80.toByte()))
+    assertThat(XMLReportAggregator.readLogFileCapped(completeUtf8PlusCont, 2, logger)).isEqualTo("é" to true)
+    assertThat(XMLReportAggregator.countLogLinesCapped(completeUtf8PlusCont, 2, logger)).isEqualTo(1)
+
+    // 3-byte UTF-8 "€" (0xE2 0x82 0xAC) split mid-sequence at maxBytes = 3 after "a\n".
+    val splitMultibyte = temporaryFolder.newFile("split_utf8.log")
+    splitMultibyte.writeBytes("a\n€".toByteArray(Charsets.UTF_8))
+    assertThat(XMLReportAggregator.readLogFileCapped(splitMultibyte, 3, logger)).isEqualTo("a\n" to true)
+    assertThat(XMLReportAggregator.countLogLinesCapped(splitMultibyte, 3, logger)).isEqualTo(1)
+  }
+
+  @Test
+  fun testProcessXmlStream_supportsTestSuitesRootPropertiesAndNestedTestSuites() {
+    createXmlReport(
+      inputDir1,
+      "TEST-RootPropsSuite.xml",
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<testsuites>
+      |    <properties>
+      |        <property name="modulePath" value=":app"/>
+      |        <property name="testedVariantName" value="debug"/>
+      |        <property name="testSuiteName" value="unitTest"/>
+      |        <property name="testTarget" value="host"/>
+      |        <property name="applicationId" value="com.example.rootprops"/>
+      |    </properties>
+      |    <testsuite name="com.example.app.FirstSuiteTest" tests="1" failures="0" errors="0" skipped="0" time="0.2">
+      |        <testcase name="firstPass" classname="com.example.app.FirstSuiteTest" time="0.2"/>
+      |    </testsuite>
+      |    <testsuite name="com.example.app.SecondSuiteTest" tests="1" failures="1" errors="0" skipped="0" time="0.3">
+      |        <testcase name="secondFail" classname="com.example.app.SecondSuiteTest" time="0.3">
+      |            <failure message="boom">AssertionError: boom</failure>
+      |        </testcase>
+      |    </testsuite>
+      |</testsuites>
+      """
+        .trimMargin(),
+    )
+
+    createXmlReport(
+      inputDir1,
+      "TEST-NestedSuite.xml",
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<testsuite name="com.example.app.HierarchicalTest" tests="3" failures="0" errors="0" skipped="0" time="0.6">
+      |    <properties>
+      |        <property name="modulePath" value=":app"/>
+      |        <property name="testedVariantName" value="release"/>
+      |        <property name="testSuiteName" value="unitTest"/>
+      |        <property name="testTarget" value="host"/>
+      |    </properties>
+      |    <testcase name="outerBeforeNested" classname="com.example.app.HierarchicalTest" time="0.1"/>
+      |    <testsuite name="com.example.app.HierarchicalTest${'$'}NestedGroup" tests="1" failures="0" errors="0" skipped="0" time="0.2">
+      |        <testcase name="innerNestedCase" classname="com.example.app.HierarchicalTest" time="0.2"/>
+      |    </testsuite>
+      |    <testcase name="outerAfterNested" classname="com.example.app.HierarchicalTest" time="0.3"/>
+      |</testsuite>
+      """
+        .trimMargin(),
+    )
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "HierarchicalXmlProject")
+    aggregator.writeReport(outputDir)
+    val report = aggregator.generateReport(outputDir)
+
+    assertThat(report.variants).containsExactly("debug", "release")
+    assertThat(aggregator.getTestCount()).isEqualTo(5)
+    assertThat(aggregator.getFailedTestCount()).isEqualTo(1)
+
+    val classesByName = report.modules.single().packages.single().classes.associateBy { it.name }
+    assertThat(classesByName.keys).containsExactly("FirstSuiteTest", "SecondSuiteTest", "HierarchicalTest")
+    val hierarchicalCases = checkNotNull(classesByName["HierarchicalTest"]).testCases.map { it.name }
+    assertThat(hierarchicalCases).containsExactly("outerBeforeNested", "innerNestedCase", "outerAfterNested")
+  }
 }

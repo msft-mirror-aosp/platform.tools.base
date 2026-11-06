@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.test.report
 
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.utils.FileUtils
 import com.android.utils.ILogger
 import com.android.utils.XmlUtils
 import com.google.common.annotations.VisibleForTesting
@@ -30,6 +31,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.IdentityHashMap
 import java.util.Locale
 import java.util.TreeMap
 import java.util.UUID
@@ -82,11 +84,13 @@ internal constructor(
     }
   }
 
-  /** Writes `data.js` and renderer assets to [outputDir]. */
+  /** Writes `data.js`, lazy `details/<id>.js` scripts, copied `artifacts/`, and renderer assets to [outputDir]. */
   fun writeReport(outputDir: File) {
     if (!outputDir.exists()) {
       outputDir.mkdirs()
     }
+    FileUtils.deleteRecursivelyIfExists(File(outputDir, "details"))
+    FileUtils.deleteRecursivelyIfExists(File(outputDir, "artifacts"))
 
     val bundle = aggregatedBundle
     val finalReport = bundle.report.copy(relativeRootDir = calculateRelativeRootDir(outputDir, rootDir))
@@ -112,8 +116,63 @@ internal constructor(
       }
     }
 
+    bundle.generatedFiles.forEach { spec ->
+      val destFile = File(outputDir, spec.relativePath)
+      destFile.parentFile?.mkdirs()
+      destFile.writeText(spec.content, Charsets.UTF_8)
+    }
+
+    bundle.copiedFiles.forEach { spec ->
+      try {
+        val destFile = File(outputDir, spec.relativeDestPath)
+        destFile.parentFile?.mkdirs()
+        spec.sourceFile.copyTo(destFile, overwrite = true)
+      } catch (e: IOException) {
+        logger.warning("Failed to copy report artifact '${spec.sourceFile.name}': ${e.message}")
+      }
+    }
+
+    if (bundle.lazyEnvDetails.isNotEmpty() || bundle.lazyTestDetails.isNotEmpty()) {
+      val detailsDir = File(outputDir, "details").apply { mkdirs() }
+      bundle.lazyEnvDetails.forEach { (envId, envDetail) ->
+        writeLazyDetailScript(detailsDir, envId, envDetail)
+      }
+      bundle.lazyTestDetails.forEach { (detailId, pendingDetail) ->
+        val lazyLogs =
+          pendingDetail.logs.map { spec ->
+            val (content, previewTruncated) = readLogFileCapped(spec.sourceFile, MAX_INLINE_LOG_BYTES, logger)
+            LazyLogEntry(
+              title = spec.title,
+              content = content,
+              lineCount = spec.lineCount,
+              capturedTruncated = spec.capturedTruncated,
+              previewTruncated = previewTruncated,
+              artifactPath = spec.artifactPath,
+            )
+          }
+        val detailPayload =
+          LazyTestDetail(
+            logs = lazyLogs,
+            systemOut = pendingDetail.systemOut,
+            systemOutTruncated = pendingDetail.systemOutTruncated,
+            systemErr = pendingDetail.systemErr,
+            systemErrTruncated = pendingDetail.systemErrTruncated,
+          )
+        writeLazyDetailScript(detailsDir, detailId, detailPayload)
+      }
+    }
+
     val reportLocation = ConsoleRenderer().asClickableFileUrl(File(outputDir, "index.html"))
     logger.quiet("Test report generated at: $reportLocation")
+  }
+
+  private fun writeLazyDetailScript(detailsDir: File, id: String, payload: Any) {
+    File(detailsDir, "$id.js").bufferedWriter(Charsets.UTF_8).use { writer ->
+      writer.write("window.__AGP_TEST_DETAILS = window.__AGP_TEST_DETAILS || {};\n")
+      writer.write("window.__AGP_TEST_DETAILS[${gson.toJson(id)}] = ")
+      gson.toJson(payload, writer)
+      writer.write(";\n")
+    }
   }
 
   /** Returns the total test count from the aggregated report. */
@@ -619,16 +678,145 @@ internal constructor(
     }
   }
 
-  private data class AggregatedReportBundle(val report: RootReport)
+  private data class FileCopySpec(val sourceFile: File, val relativeDestPath: String)
 
-  private class ArtifactCollector(private val environments: Map<SuiteEnvironmentKey, SuiteEnvironmentInfo>) {
+  private data class PendingLazyLogSpec(
+    val title: String,
+    val sourceFile: File,
+    val lineCount: Int,
+    val capturedTruncated: Boolean,
+    val artifactPath: String,
+  )
+
+  private data class PendingLazyTestDetail(
+    val logs: List<PendingLazyLogSpec>,
+    val systemOut: String?,
+    val systemOutTruncated: Boolean,
+    val systemErr: String?,
+    val systemErrTruncated: Boolean,
+  )
+
+  private data class AggregatedReportBundle(
+    val report: RootReport,
+    val lazyEnvDetails: Map<String, LazyEnvironmentDetail>,
+    val lazyTestDetails: Map<String, PendingLazyTestDetail>,
+    val generatedFiles: List<GeneratedTextFileSpec>,
+    val copiedFiles: List<FileCopySpec>,
+  )
+
+  private class ArtifactCollector(
+    private val environments: Map<SuiteEnvironmentKey, SuiteEnvironmentInfo>,
+    private val logger: ILogger,
+  ) {
+    private var nextDetailSequence = 1
+    val lazyTestDetails = LinkedHashMap<String, PendingLazyTestDetail>()
+    val copiedFiles = mutableListOf<FileCopySpec>()
+
     fun buildVariantTestResult(exec: TestCaseExecution, stackTraceId: String?): VariantTestResult {
       val envId = exec.environmentKey?.let { environments[it]?.envId }
+
+      val resolvedLogs = mutableListOf<Pair<LogRecord, File>>()
+      if (exec.xmlDir != null && !exec.rawLogs.isNullOrEmpty()) {
+        for (logRecord in exec.rawLogs) {
+          val logPath = logRecord.path?.takeIf { it.isNotBlank() } ?: continue
+          val safeFile = PathSafetyUtils.resolveAttachmentFile(exec.xmlDir, logPath, logger) ?: continue
+          if (!safeFile.isFile) {
+            logger.warning("Referenced test log file '$logPath' does not exist in '${exec.xmlDir.path}'.")
+            continue
+          }
+          resolvedLogs.add(logRecord to safeFile)
+        }
+      }
+
+      val resolvedArtifactFiles = IdentityHashMap<ArtifactRecord, File>()
+      if (exec.xmlDir != null && !exec.rawArtifacts.isNullOrEmpty()) {
+        for (artifactRecord in exec.rawArtifacts) {
+          val rawPath = artifactRecord.path?.takeIf { it.isNotBlank() } ?: continue
+          val safeFile = PathSafetyUtils.resolveAttachmentFile(exec.xmlDir, rawPath, logger) ?: continue
+          if (!safeFile.isFile) {
+            logger.warning("Referenced test artifact '$rawPath' does not exist in '${exec.xmlDir.path}'.")
+            continue
+          }
+          resolvedArtifactFiles[artifactRecord] = safeFile
+        }
+      }
+
+      val needsLazyDetail = resolvedLogs.isNotEmpty() || exec.systemOut != null || exec.systemErr != null
+      val needsArtifactSlot = needsLazyDetail || resolvedArtifactFiles.isNotEmpty()
+
+      var detailId: String? = null
+      val logMetaList = mutableListOf<LogMetaInfo>()
+      val artifactInfoList = mutableListOf<ArtifactInfo>()
+
+      if (needsArtifactSlot) {
+        val allocatedId = String.format(Locale.US, "t_%04d", nextDetailSequence++)
+        val usedFileNames = HashSet<String>()
+        val pendingLogs = mutableListOf<PendingLazyLogSpec>()
+
+        for ((logRecord, sourceFile) in resolvedLogs) {
+          val destFileName = PathSafetyUtils.allocateUniqueFileName(sourceFile.name, "log.txt", usedFileNames)
+          val relPath = "artifacts/$allocatedId/$destFileName"
+          val lineCount = countLogLinesCapped(sourceFile, MAX_INLINE_LOG_BYTES, logger)
+          val title = logRecord.title?.takeIf { it.isNotBlank() } ?: sourceFile.name
+
+          logMetaList.add(LogMetaInfo(title = title, lineCount = lineCount, artifactPath = relPath))
+          pendingLogs.add(
+            PendingLazyLogSpec(
+              title = title,
+              sourceFile = sourceFile,
+              lineCount = lineCount,
+              capturedTruncated = logRecord.truncated == true,
+              artifactPath = relPath,
+            )
+          )
+          copiedFiles.add(FileCopySpec(sourceFile = sourceFile, relativeDestPath = relPath))
+        }
+
+        exec.rawArtifacts?.forEach { artifactRecord ->
+          val name = artifactRecord.name?.takeIf { it.isNotBlank() } ?: return@forEach
+          val sourceFile = resolvedArtifactFiles[artifactRecord]
+          if (artifactRecord.path.isNullOrBlank()) {
+            artifactInfoList.add(ArtifactInfo(name = name, values = artifactRecord.values, path = null))
+          } else if (sourceFile != null) {
+            val destFileName = PathSafetyUtils.allocateUniqueFileName(sourceFile.name, "artifact.bin", usedFileNames)
+            val relPath = "artifacts/$allocatedId/$destFileName"
+            val effectiveValues =
+              artifactRecord.values?.takeIf { it.isNotEmpty() } ?: mapOf("size" to formatArtifactByteSize(sourceFile.length()))
+            artifactInfoList.add(ArtifactInfo(name = name, values = effectiveValues, path = relPath))
+            copiedFiles.add(FileCopySpec(sourceFile = sourceFile, relativeDestPath = relPath))
+          } else if (!artifactRecord.values.isNullOrEmpty()) {
+            artifactInfoList.add(ArtifactInfo(name = name, values = artifactRecord.values, path = null))
+          }
+        }
+
+        if (needsLazyDetail) {
+          detailId = allocatedId
+          lazyTestDetails[allocatedId] =
+            PendingLazyTestDetail(
+              logs = pendingLogs,
+              systemOut = exec.systemOut,
+              systemOutTruncated = exec.systemOutTruncated,
+              systemErr = exec.systemErr,
+              systemErrTruncated = exec.systemErrTruncated,
+            )
+        }
+      } else {
+        exec.rawArtifacts?.forEach { artifactRecord ->
+          val name = artifactRecord.name?.takeIf { it.isNotBlank() } ?: return@forEach
+          if (artifactRecord.path.isNullOrBlank() || !artifactRecord.values.isNullOrEmpty()) {
+            artifactInfoList.add(ArtifactInfo(name = name, values = artifactRecord.values, path = null))
+          }
+        }
+      }
+
       return exec.adaptedResult.copy(
         status = exec.status,
         stackTraceId = stackTraceId,
         durationMs = exec.durationMs,
+        detailId = detailId,
         envId = envId,
+        artifacts = artifactInfoList.takeIf { it.isNotEmpty() },
+        logMeta = logMetaList.takeIf { it.isNotEmpty() },
       )
     }
   }
@@ -711,6 +899,8 @@ internal constructor(
     fun getOrAddModule(name: String) = moduleBuilders.getOrPut(name) { ModuleBuilder(name) }
 
     fun build(): AggregatedReportBundle {
+      val generatedFiles = mutableListOf<GeneratedTextFileSpec>()
+      val lazyEnvDetails = LinkedHashMap<String, LazyEnvironmentDetail>()
       val preparedEnvironments = LinkedHashMap<SuiteEnvironmentKey, SuiteEnvironmentInfo>()
 
       environments.entries.forEachIndexed { index, (key, rawEnv) ->
@@ -728,6 +918,10 @@ internal constructor(
             )
           }
         val adaptedEnv = envAdapter.adaptEnvironment(envId, rawEnv)
+        generatedFiles.addAll(adaptedEnv.generatedFiles)
+        if (adaptedEnv.lazyFiles.isNotEmpty()) {
+          lazyEnvDetails[envId] = LazyEnvironmentDetail(files = adaptedEnv.lazyFiles)
+        }
 
         preparedEnvironments[key] =
           SuiteEnvironmentInfo(
@@ -751,7 +945,7 @@ internal constructor(
           )
       }
 
-      val collector = ArtifactCollector(preparedEnvironments)
+      val collector = ArtifactCollector(preparedEnvironments, logger)
 
       val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
       val zonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())
@@ -781,7 +975,13 @@ internal constructor(
           suiteEnvironments = preparedEnvironments.values.toList(),
         )
 
-      return AggregatedReportBundle(report = report)
+      return AggregatedReportBundle(
+        report = report,
+        lazyEnvDetails = lazyEnvDetails,
+        lazyTestDetails = collector.lazyTestDetails,
+        generatedFiles = generatedFiles,
+        copiedFiles = collector.copiedFiles,
+      )
     }
   }
 
@@ -905,6 +1105,73 @@ internal constructor(
       return (seconds * 1000.0).roundToLong()
     }
 
+    private class CappedLogBytes(
+      val bytes: ByteArray,
+      val validLen: Int,
+      val truncated: Boolean,
+    )
+
+    private fun utf8LeadSequenceLength(byte: Byte): Int =
+      when (byte.toInt() and 0xFF) {
+        in 0xC2..0xDF -> 2
+        in 0xE0..0xEF -> 3
+        in 0xF0..0xF4 -> 4
+        else -> 1
+      }
+
+    private fun readLogBytesCapped(file: File, maxBytes: Int, logger: ILogger): CappedLogBytes? {
+      if (maxBytes <= 0) {
+        return try {
+          val truncated = file.inputStream().use { it.read() >= 0 }
+          CappedLogBytes(ByteArray(0), 0, truncated)
+        } catch (e: IOException) {
+          logger.warning("Failed to read log file '${file.name}': ${e.message}")
+          null
+        }
+      }
+      return try {
+        file.inputStream().use { input ->
+          val bufferSize = minOf(file.length(), maxBytes + 1L).coerceAtLeast(0L).toInt()
+          val buffer = ByteArray(bufferSize)
+          var totalRead = 0
+          while (totalRead < buffer.size) {
+            val read = input.read(buffer, totalRead, buffer.size - totalRead)
+            if (read <= 0) break
+            totalRead += read
+          }
+          val truncated = totalRead > maxBytes
+          var validLen = minOf(totalRead, maxBytes)
+          if (truncated && (buffer[maxBytes].toInt() and 0xC0) == 0x80) {
+            var leadIdx = validLen - 1
+            while (leadIdx >= 0 && (buffer[leadIdx].toInt() and 0xC0) == 0x80) {
+              leadIdx--
+            }
+            if (leadIdx >= 0 && validLen - leadIdx < utf8LeadSequenceLength(buffer[leadIdx])) {
+              validLen = leadIdx
+            }
+          }
+          CappedLogBytes(buffer, validLen, truncated)
+        }
+      } catch (e: IOException) {
+        logger.warning("Failed to read log file '${file.name}': ${e.message}")
+        null
+      }
+    }
+
+    internal fun readLogFileCapped(file: File, maxBytes: Int, logger: ILogger): Pair<String, Boolean> {
+      val capped = readLogBytesCapped(file, maxBytes, logger) ?: return "" to false
+      return String(capped.bytes, 0, capped.validLen, Charsets.UTF_8) to capped.truncated
+    }
+
+    /** Counts the lines of the preview that [readLogFileCapped] returns for the same [file] and [maxBytes]. */
+    internal fun countLogLinesCapped(file: File, maxBytes: Int, logger: ILogger): Int {
+      val capped = readLogBytesCapped(file, maxBytes, logger) ?: return 0
+      if (capped.validLen == 0) return 0
+      val newline = '\n'.code.toByte()
+      val newlines = (0 until capped.validLen).count { capped.bytes[it] == newline }
+      return if (capped.bytes[capped.validLen - 1] == newline) newlines else newlines + 1
+    }
+
     private fun formatRelativePath(path: Path): String {
       val normalized = path.toString().replace(File.separatorChar, '/')
       return if (normalized.isEmpty()) {
@@ -930,6 +1197,16 @@ internal constructor(
         } catch (_: Exception) {
           ""
         }
+      }
+    }
+
+    internal fun formatArtifactByteSize(bytes: Long): String {
+      val nonNegative = bytes.coerceAtLeast(0L)
+      return when {
+        nonNegative < 1024L -> "$nonNegative B"
+        nonNegative < 1024L * 1024L -> String.format(Locale.US, "%.1f KB", nonNegative / 1024.0)
+        nonNegative < 1024L * 1024L * 1024L -> String.format(Locale.US, "%.1f MB", nonNegative / (1024.0 * 1024.0))
+        else -> String.format(Locale.US, "%.1f GB", nonNegative / (1024.0 * 1024.0 * 1024.0))
       }
     }
   }
