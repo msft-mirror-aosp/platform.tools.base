@@ -102,7 +102,6 @@ ARTIFACTS = [
     "com.google.truth.extensions:truth-java8-extension:0.42",
     "com.google.truth.extensions:truth-proto-extension:0.42",  # Sherlock dependency
     "com.google.truth:truth:0.42",
-    "com.googlecode.jarjar:jarjar:1.3",
     "com.googlecode.juniversalchardet:juniversalchardet:1.0.3",
     "com.networknt:json-schema-validator:1.4.3",
     "com.squareup:javapoet:1.10.0",

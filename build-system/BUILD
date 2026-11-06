@@ -681,7 +681,6 @@ maven_repository(
         "@maven//:com.google.protobuf.protobuf-gradle-plugin",
         "@maven//:com.google.protobuf.protoc_3.25.5",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
-        "@maven//:com.googlecode.jarjar.jarjar",
         "@maven//:com.googlecode.juniversalchardet.juniversalchardet",
         "@maven//:com.squareup.javapoet",
         "@maven//:com.squareup.javawriter",
