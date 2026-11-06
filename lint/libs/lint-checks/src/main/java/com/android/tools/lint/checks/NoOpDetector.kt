@@ -45,6 +45,8 @@ import com.intellij.psi.CommonClassNames.JAVA_LANG_LONG
 import com.intellij.psi.CommonClassNames.JAVA_LANG_NUMBER
 import com.intellij.psi.CommonClassNames.JAVA_LANG_SHORT
 import com.intellij.psi.CommonClassNames.JAVA_LANG_STRING
+import com.intellij.psi.CommonClassNames.JAVA_NET_URI
+import com.intellij.psi.CommonClassNames.JAVA_NET_URL
 import com.intellij.psi.PsiArrayType
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassInitializer
@@ -538,9 +540,8 @@ class NoOpDetector : Detector(), SourceCodeScanner {
         // All methods are immutable except for one which copies into an array
         return (methodName != "toChars" || method != null && method.parameterList.parameters.none { it.type is PsiArrayType })
       }
-      // Use CommonClassNames.JAVA_NET_URI and JAVA_NET_URL once we update to latest prebuilts
-      "java.net.URI" -> return true
-      "java.net.URL" -> {
+      JAVA_NET_URI -> return true
+      JAVA_NET_URL -> {
         // getContent despite name is shorthand for openConnection().getContent()
         return methodName != "getContent" && !methodName.startsWith("set") && !methodName.startsWith("open")
       }
