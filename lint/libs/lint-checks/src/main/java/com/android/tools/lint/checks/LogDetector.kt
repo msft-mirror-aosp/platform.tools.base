@@ -344,14 +344,6 @@ class LogDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun getLastInQualifiedChain(node: UQualifiedReferenceExpression): UExpression {
-    var last = node.selector
-    while (last is UQualifiedReferenceExpression) {
-      last = last.selector
-    }
-    return last
-  }
-
   private fun areLiteralsEqual(first: UExpression, second: UExpression): Boolean {
     if (first !is ULiteralExpression) {
       return false
