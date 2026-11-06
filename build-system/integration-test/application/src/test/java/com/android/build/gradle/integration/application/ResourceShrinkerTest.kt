@@ -147,13 +147,12 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
         "res/raw/keep.xml",
       ) +
         if (r8OptimizedShrinking) {
-          // With optimized shrinking, more resources are removed.
+          // With optimized shrinking, more resources are removed. Only resources looked up with
+          // constant names through Resources.getIdentifier (used3 and used4) are kept.
           listOf(
             "res/layout/prefix_3_suffix.xml",
             "res/layout/prefix_used_1.xml",
             "res/layout/prefix_used_2.xml",
-            "res/layout/used3.xml",
-            "res/layout/used4.xml",
             "res/layout/used5.xml",
             "res/layout/used6.xml",
           )
