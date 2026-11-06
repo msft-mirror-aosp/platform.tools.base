@@ -454,7 +454,7 @@ open class LintResourceRepository(
       return MergedResourceRepository(project, repositories, ResourceNamespace.RES_AUTO)
     }
 
-    /** Whether we've already flagged a persisence problem */
+    /** Whether we've already flagged a persistence problem */
     private var warned = false
 
     /**

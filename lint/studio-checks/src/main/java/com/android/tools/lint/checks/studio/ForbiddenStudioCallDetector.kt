@@ -297,7 +297,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
         "Do not use `PluginsModel.applyPlugin`, prefer `DependenciesHelper`",
       )
     }
-    // Disposible#dispose
+    // Disposable#dispose
     if (
       method.name == "dispose" &&
         method.parameterList.parametersCount == 0 &&

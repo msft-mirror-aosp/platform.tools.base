@@ -485,7 +485,7 @@ internal open class Analysis<FX : Any>(
 
         return when {
           // virtual extension
-          // TODO this isn't general. Will run into problems with multiple implcit `this`s.
+          // TODO this isn't general. Will run into problems with multiple implicit `this`s.
           virRecvAns != null && extRecvAns != null -> {
             val (virRecvType, virRecvFx) = virRecvAns
             val (extRecvType, extRecvFx) = extRecvAns

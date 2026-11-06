@@ -955,7 +955,7 @@ public class LintCliFlags {
 
     /**
      * Returns the set of id's that have been allowed to be suppressed. This only applies to issues
-     * normally marked as not supressible using {@link Issue#getSuppressNames()}. Returns null if
+     * normally marked as not suppressible using {@link Issue#getSuppressNames()}. Returns null if
      * there are no such issue ids.
      */
     @Nullable

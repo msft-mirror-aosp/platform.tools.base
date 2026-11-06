@@ -31,7 +31,7 @@ class AndroidPlatformAnnotations(qualifiedName: String, private val delegate: UA
     const val ANDROIDX_ANNOTATIONS_PREFIX = "androidx.annotation."
     const val PLATFORM_ANNOTATIONS_PREFIX = "android.annotation."
 
-    /** Returns true if the given [qualifiedName] represents one of the hidden annotations in the Android platform soure code. */
+    /** Returns true if the given [qualifiedName] represents one of the hidden annotations in the Android platform source code. */
     @JvmStatic
     fun isPlatformAnnotation(qualifiedName: String): Boolean {
       return qualifiedName.startsWith(PLATFORM_ANNOTATIONS_PREFIX)

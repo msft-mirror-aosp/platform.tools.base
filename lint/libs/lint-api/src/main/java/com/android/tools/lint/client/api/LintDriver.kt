@@ -4133,8 +4133,8 @@ class LintDriver(
     }
 
     /**
-     * Returns true if the annotation member value, assumed to be specified on a a SuppressWarnings or SuppressLint annotation, specifies
-     * the given id (or "all").
+     * Returns true if the annotation member value, assumed to be specified on a SuppressWarnings or SuppressLint annotation, specifies the
+     * given id (or "all").
      *
      * @param issue the issue to be checked
      * @param value the member value to check
@@ -4181,8 +4181,8 @@ class LintDriver(
     }
 
     /**
-     * Returns true if the annotation member value, assumed to be specified on a a S uppressWarnings or SuppressLint annotation, specifies
-     * the given id (or "all").
+     * Returns true if the annotation member value, assumed to be specified on a SuppressWarnings or SuppressLint annotation, specifies the
+     * given id (or "all").
      *
      * @param issue the issue to be checked
      * @param value the member value to check

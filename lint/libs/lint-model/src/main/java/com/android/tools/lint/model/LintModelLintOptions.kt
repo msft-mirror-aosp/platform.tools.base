@@ -186,7 +186,7 @@ interface LintModelLintOptions {
   /** Returns an optional path to a lint.xml configuration file. */
   val lintConfig: File?
 
-  /** Whether we should write an text report. Default false. The location can be controlled by [.getTextOutput]. */
+  /** Whether we should write a text report. Default false. The location can be controlled by [.getTextOutput]. */
   val textReport: Boolean
 
   /** The optional path to where a text report should be written. The special value "stdout" can be used to point to standard output. */

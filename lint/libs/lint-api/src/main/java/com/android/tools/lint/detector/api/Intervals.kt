@@ -434,7 +434,7 @@ sealed class Intervals {
     // number of bits to reserve for the minor part
     private const val MAJOR_SHIFT = 6
 
-    // Not using Integer.MAX_VALUE since we're shifing this thing around
+    // Not using Integer.MAX_VALUE since we're shifting this thing around
     private val INFINITY = MajorMinor(Integer.MAX_VALUE)
 
     /** Zero (smallest value) */

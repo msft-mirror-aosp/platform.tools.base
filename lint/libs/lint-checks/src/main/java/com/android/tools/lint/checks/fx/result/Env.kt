@@ -25,7 +25,7 @@ import kotlinx.collections.immutable.persistentMapOf
 
 /**
  * An environment tracks information on lexically scoped identifiers (e.g. type and term variables, local functions, and receivers). Because
- * the analysis is more precise than the host's type system, it needs to track its own environment instead of just querrying UAST. For
+ * the analysis is more precise than the host's type system, it needs to track its own environment instead of just querying UAST. For
  * example, within the following function's body, variable `r` has a parameterized type, not just `Runnable`:
  * ```
  * // implicitly: fun<R : Runnable> callIt(r: R) = ...

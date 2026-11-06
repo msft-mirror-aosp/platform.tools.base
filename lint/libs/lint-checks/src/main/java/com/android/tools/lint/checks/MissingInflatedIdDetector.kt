@@ -129,8 +129,8 @@ class MissingInflatedIdDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * From a `findByViewId` call, try to locate the layout resource it is inflating from. E.g. in an activity, if we simply call
-   * `findViewById(id)`, it's probably a preeeding `setContentView` call; if it's something like `root.findViewById`, see if we can find
+   * From a `findViewById` call, try to locate the layout resource it is inflating from. E.g. in an activity, if we simply call
+   * `findViewById(id)`, it's probably a preceding `setContentView` call; if it's something like `root.findViewById`, see if we can find
    * inflation of the root view.
    */
   private fun findLayout(context: JavaContext, call: UCallExpression): ResourceUrl? {

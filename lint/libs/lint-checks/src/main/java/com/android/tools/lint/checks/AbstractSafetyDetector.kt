@@ -59,7 +59,7 @@ import org.jetbrains.uast.util.isConstructorCall
  *   [strictTypeParamAnnos], but will only report when these ones are violated to prevent duplicate reports.
  * @property variableSuppressionAnnoNames Annotations on variables that suppress safety checking.
  * @property knownSafeTypeMap A map of known safe types to the type parameters that must be filled with safe types.
- * @property unsafeAdj An adjective describing a violater of this check. Used for making reports.
+ * @property unsafeAdj An adjective describing a violator of this check. Used for making reports.
  * @property safeAdj An adjective describing a type that satisfies this check. Used for making reports.
  * @property reasonToExpectSafety A verb phrase to explain why safety is expected. Used for making reports.
  */

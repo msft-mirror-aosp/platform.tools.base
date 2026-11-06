@@ -1873,7 +1873,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       //
       // For example, SQLiteDatabase had a close() method from API 1. Therefore, calling
       // SQLiteDatabase is supported in all versions. However, it extends SQLiteClosable,
-      // which in API 16 added "implements Closable". In this detector, if we have the
+      // which in API 16 added "implements Closeable". In this detector, if we have the
       // following code:
       //     void test(SQLiteDatabase db) { db.close }
       // here the call expression will be the close method on type SQLiteClosable. And

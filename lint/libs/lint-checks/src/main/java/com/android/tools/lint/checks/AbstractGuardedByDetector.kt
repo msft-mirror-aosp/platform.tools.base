@@ -92,7 +92,7 @@ internal constructor(
   }
 
   /**
-   * This method visits every decedent of the provided UMethod. To keep it performant, it should only be called after a guarded member has
+   * This method visits every descendant of the provided UMethod. To keep it performant, it should only be called after a guarded member has
    * already been found in the method.
    */
   protected abstract fun analyzeMethod(node: UMethod, context: JavaContext)

@@ -208,7 +208,7 @@ public class ChromeOsDetector extends Detector implements XmlScanner {
     /** Set containing unsupported Chrome OS uses-features elements without required="false" */
     private Set<String> unsupportedChromeOsUsesFeatures;
 
-    /** Set containing all non resizrable activities */
+    /** Set containing all non-resizable activities */
     private Set<String> nonResizeableActivities;
 
     /** Set containing all orientationLocked activities */

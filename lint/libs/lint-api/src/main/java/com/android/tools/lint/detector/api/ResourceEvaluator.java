@@ -100,7 +100,7 @@ public class ResourceEvaluator {
     /** Marker for @Dimension(unit = DP); see {@link #DIMENSION_MARKER_TYPE} */
     public static final ResourceType DIMENSION_DP_MARKER_TYPE = ResourceType.AAPT;
 
-    /** The marker types respresenting dimensions */
+    /** The marker types representing dimensions */
     public static final ResourceType[] DIMENSION_MARKERS =
             new ResourceType[] {
                 DIMENSION_MARKER_TYPE, DIMENSION_SP_MARKER_TYPE, DIMENSION_DP_MARKER_TYPE

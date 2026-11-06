@@ -109,7 +109,7 @@ abstract class Detector {
    * Analysis is about to begin for the given root project; perform any setup steps.
    *
    * A root project that is not being depended on by any other project. For example, in a Gradle tree that has two app modules, and five
-   * libraries, where each of the apps depend on one ore more libraries, all seven Gradle modules are lint projects, and the two app modules
+   * libraries, where each of the apps depend on one or more libraries, all seven Gradle modules are lint projects, and the two app modules
    * are lint root projects.
    *
    * You typically place your analysis where you want to consult not just data from a given module, but data gathered during analysis of all
@@ -140,7 +140,7 @@ abstract class Detector {
    * (including its dependencies).
    *
    * A root project that is not being depended on by any other project. For example, in a Gradle tree that has two app modules, and five
-   * libraries, where each of the apps depend on one ore more libraries, all seven Gradle modules are lint projects, and the two app modules
+   * libraries, where each of the apps depend on one or more libraries, all seven Gradle modules are lint projects, and the two app modules
    * are lint root projects.
    *
    * You typically place your analysis where you want to consult not just data from a given module, but data gathered during analysis of all

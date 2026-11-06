@@ -89,7 +89,7 @@ public class AutofillDetector extends LayoutDetector {
                 return;
             }
             if (attrValue.equals(VALUE_YES) || attrValue.equals(VALUE_YES_EXCLUDE_DESCENDANTS)) {
-                // The view is explicitly marked important for autofill. This meanas that anything
+                // The view is explicitly marked important for autofill. This means that anything
                 // a parent node declares about descendant autofill behavior is overridden.
                 checkForAutofillHints(element, xmlContext);
                 return;

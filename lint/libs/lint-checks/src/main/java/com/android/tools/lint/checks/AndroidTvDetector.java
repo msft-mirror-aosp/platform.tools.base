@@ -158,7 +158,7 @@ public class AndroidTvDetector extends Detector implements XmlScanner {
                     .addMoreInfo(
                             "https://developer.android.com/guide/topics/manifest/uses-feature-element.html#permissions");
 
-    /** Missing banner attibute */
+    /** Missing banner attribute */
     public static final Issue MISSING_BANNER =
             Issue.create(
                             "MissingTvBanner",

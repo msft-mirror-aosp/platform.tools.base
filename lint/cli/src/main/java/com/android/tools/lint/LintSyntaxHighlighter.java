@@ -548,7 +548,7 @@ public class LintSyntaxHighlighter {
                                 state = STATE_TEXT;
                                 continue;
                             } else if (source.startsWith("![CDATA[", offset)) {
-                                // TODO: Syntax higlight this better
+                                // TODO: Syntax highlight this better
                                 // styles.put(offset - 1, STYLE_COMMENT);
 
                                 // Skip CDATA text content; HTML text is irrelevant to this

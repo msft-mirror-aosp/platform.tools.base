@@ -115,7 +115,7 @@ import org.jetbrains.uast.withContainingElements
  * @property variableSuppressionAnnos The annotations that mark a variable as able to be ignored during safety analysis (e.g. `@GuardedBy`
  *   means we allow an unsafe variable to be used across boundaries).
  * @property knownSafeTypeMap A map of known safe types to the type parameters that must be filled with safe types.
- * @property unsafeAdj An adjective describing a violater of this check. Used for making reports.
+ * @property unsafeAdj An adjective describing a violator of this check. Used for making reports.
  * @property safeAdj An adjective describing a type that satisfies this check. Used for making reports.
  * @property treatLambdasAsSafe Whether to allow lambdas to cross safety boundaries.
  * @property issue The issue under which to report a violation.
@@ -293,12 +293,12 @@ internal class SafetyAnalyzer(
     val containedTypeQueue = ArrayDeque<PsiType>()
     containedTypeQueue.add(nodeExprType)
     generateSequence {
-        val currType = containedTypeQueue.removeFirstOrNull()
-        if (currType is PsiClassType) containedTypeQueue.addAll(currType.parameters)
-        if (currType is PsiTypeParameter) containedTypeQueue.addAll(currType.extendsListTypes)
-        if (currType is PsiWildcardType) containedTypeQueue.add(currType.extendsBound)
-        currType
-      }
+      val currType = containedTypeQueue.removeFirstOrNull()
+      if (currType is PsiClassType) containedTypeQueue.addAll(currType.parameters)
+      if (currType is PsiTypeParameter) containedTypeQueue.addAll(currType.extendsListTypes)
+      if (currType is PsiWildcardType) containedTypeQueue.add(currType.extendsBound)
+      currType
+    }
       .takeWhile { typeParams.isNotEmpty() }
       .forEach { paramType ->
         val methodType = typeParams.firstOrNull { methodType -> methodType.canonicalText == paramType.canonicalText }

@@ -53,7 +53,7 @@ import kotlin.math.min
 import kotlin.text.Charsets.UTF_8
 
 /**
- * A reporter which emits lint results into an SARIF (Static Analysis Results Interchange Format) file; see
+ * A reporter which emits lint results into a SARIF (Static Analysis Results Interchange Format) file; see
  * https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html
  *
  * Initial focus is on the subset used and supported by GitHub:

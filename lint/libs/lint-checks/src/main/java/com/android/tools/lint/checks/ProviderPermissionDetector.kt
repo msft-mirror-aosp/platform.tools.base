@@ -139,7 +139,7 @@ class ProviderPermissionDetector : Detector(), SourceCodeScanner {
    *     - a throw expression
    *     - a return of a literal (String, Number or null)
    *     - a constructor call to error
-   *     - a constructor call to to do
+   *     - a constructor call to TODO
    */
   private fun UMethod.isImplemented(): Boolean {
     val body = this.uastBody ?: return false
