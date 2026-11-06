@@ -109,6 +109,48 @@ class FilterShrinkerRulesTransformTest {
       )
   }
 
+  @Test
+  fun testMultipleRuleFilesInSameDirectoryPreservesSortedOrder() {
+    val files =
+      createFiles(
+        "lib${slash}META-INF${slash}com.android.tools${slash}r8${slash}r8.txt" to "r8",
+        "lib${slash}META-INF${slash}com.android.tools${slash}r8${slash}common.txt" to "common",
+        "lib${slash}META-INF${slash}com.android.tools${slash}r8${slash}aaa.txt" to "aaa",
+      )
+
+    val filterTransform = createTransform(files)
+    filterTransform.transform(outputs)
+
+    assertThat(outputs.outputFiles)
+      .containsExactly(
+        File(files, "lib${slash}META-INF${slash}com.android.tools${slash}r8${slash}aaa.txt"),
+        File(files, "lib${slash}META-INF${slash}com.android.tools${slash}r8${slash}common.txt"),
+        File(files, "lib${slash}META-INF${slash}com.android.tools${slash}r8${slash}r8.txt"),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun testMultipleLegacyProguardFilesInSameDirectoryPreservesSortedOrder() {
+    val files =
+      createFiles(
+        "lib${slash}META-INF${slash}proguard${slash}zzz.pro" to "zzz",
+        "lib${slash}META-INF${slash}proguard${slash}aaa.pro" to "aaa",
+        "lib${slash}META-INF${slash}proguard${slash}mmm.pro" to "mmm",
+      )
+
+    val filterTransform = createTransform(files)
+    filterTransform.transform(outputs)
+
+    assertThat(outputs.outputFiles)
+      .containsExactly(
+        File(files, "lib${slash}META-INF${slash}proguard${slash}aaa.pro"),
+        File(files, "lib${slash}META-INF${slash}proguard${slash}mmm.pro"),
+        File(files, "lib${slash}META-INF${slash}proguard${slash}zzz.pro"),
+      )
+      .inOrder()
+  }
+
   private fun createFiles(vararg entries: Pair<String, String?>): File {
     val filesFolder = tmp.newFolder()
     entries.forEach { entry ->
@@ -177,7 +219,7 @@ private fun createTransform(inputFile: File): FilterShrinkerRulesTransform {
 }
 
 class FakeTransformOutputs(private val outputDir: File) : TransformOutputs {
-  val outputFiles = mutableSetOf<File>()
+  val outputFiles = mutableListOf<File>()
 
   override fun file(p0: Any): File {
     val file = File(p0.toString()).takeIf { it.isAbsolute } ?: File(outputDir, p0.toString())

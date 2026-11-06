@@ -64,18 +64,19 @@ abstract class FilterShrinkerRulesTransform : TransformAction<FilterShrinkerRule
       // ...
 
       // loop through top-level directories and join the results into a list
-      input
-        .listFiles { it.isDirectory }
+      (input.listFiles { it.isDirectory }?.sortedBy { it.name } ?: emptyList())
         .flatMap { libDir ->
           // if there is a com.android.tools directory, it takes precedence over legacy rules
           val toolsDir = FileUtils.join(libDir, "META-INF", COM_ANDROID_TOOLS_FOLDER)
           if (toolsDir.isDirectory) {
             // gather all directories under com.android.tools that match shrinker version...
-            return@flatMap toolsDir
-              .listFiles { file -> file.isDirectory && configDirMatchesVersion(file.name, parameters.shrinkerVersion.get()) }
+            return@flatMap (toolsDir.listFiles { file ->
+                file.isDirectory && configDirMatchesVersion(file.name, parameters.shrinkerVersion.get())
+              } ?: emptyArray())
+              .sortedBy { it.name }
               .flatMap { shrinkerConfigDir ->
                 // ...then gather all regular files under the matching directories
-                shrinkerConfigDir.listFiles { file -> file.isFile }.asIterable()
+                (shrinkerConfigDir.listFiles { file -> file.isFile } ?: emptyArray()).sortedBy { it.name }
               }
           } else {
             // there will be either a libDir/proguard.txt file or libDir/META-INF/proguard/*
@@ -87,7 +88,7 @@ abstract class FilterShrinkerRulesTransform : TransformAction<FilterShrinkerRule
               val proguardConfigDir = FileUtils.join(libDir, "META-INF", "proguard")
               if (proguardConfigDir.isDirectory) {
                 // gets all files from the META-INF/proguard/ directory
-                return@flatMap proguardConfigDir.listFiles { file -> file.isFile }.asIterable()
+                return@flatMap (proguardConfigDir.listFiles { file -> file.isFile } ?: emptyArray()).sortedBy { it.name }
               }
             }
           }
