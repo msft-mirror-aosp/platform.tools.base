@@ -15,7 +15,7 @@ androidx.databinding:databinding-compiler:$BUILD_VERSION
     com.googlecode.juniversalchardet:juniversalchardet:1.0.3 (runtime)
     com.squareup:javapoet:1.13.0 (runtime)
     commons-io:commons-io:2.22.0 (runtime)
-    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
 androidx.databinding:databinding-compiler-common:$BUILD_VERSION
@@ -31,7 +31,7 @@ androidx.databinding:databinding-compiler-common:$BUILD_VERSION
     com.googlecode.juniversalchardet:juniversalchardet:1.0.3 (runtime)
     com.squareup:javapoet:1.13.0 (runtime)
     commons-io:commons-io:2.22.0 (runtime)
-    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
 com.android:signflinger:$BUILD_VERSION
@@ -190,7 +190,7 @@ com.android.tools:repository:$BASE_VERSION
     com.android.tools.analytics-library:shared:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
     org.apache.commons:commons-compress:1.27.1 (runtime)
-    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
 
@@ -210,7 +210,7 @@ com.android.tools:sdk-common:$BASE_VERSION
     org.apache.commons:commons-compress:1.27.1 (runtime)
     org.bouncycastle:bcpkix-jdk18on:1.86 (runtime)
     org.bouncycastle:bcprov-jdk18on:1.86 (runtime)
-    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.9 (runtime)
     org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
@@ -224,7 +224,7 @@ com.android.tools:sdklib:$BASE_VERSION
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.15.0 (runtime)
     org.apache.httpcomponents:httpcore:4.4.16 (runtime)
-    org.glassfish.jaxb:jaxb-runtime:2.3.2 (runtime)
+    org.glassfish.jaxb:jaxb-runtime:2.3.9 (runtime)
 
 com.android.tools:testutils:$BASE_VERSION
   pomName=com.android.tools.testutils

@@ -7310,101 +7310,105 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.sun.istack.istack-commons-runtime_3.0.8",
-    pom = "com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.pom",
+    name = "com.sun.activation.jakarta.activation_1.2.2",
+    pom = "com/sun/activation/jakarta.activation/1.2.2/jakarta.activation-1.2.2.pom",
     repo_root_path = "",
-    repo_path = "com/sun/istack/istack-commons-runtime/3.0.8",
-    parent = "com.sun.istack.istack-commons_3.0.8",
-    deps = [
-        "jakarta.activation.jakarta.activation-api_1.2.1",
+    repo_path = "com/sun/activation/jakarta.activation/1.2.2",
+    parent = "com.sun.activation.all_1.2.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.sun.activation.jakarta.activation",
+    classifiers = [],
+    parent = "com.sun.activation.all_1.2.2",
+    jars = [
+        "com/sun/activation/jakarta.activation/1.2.2/jakarta.activation-1.2.2.jar"
     ],
+    original_deps = [],
+    pom = "com/sun/activation/jakarta.activation/1.2.2/jakarta.activation-1.2.2.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/activation/jakarta.activation/1.2.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.sun.istack.istack-commons-runtime_3.0.12",
+    pom = "com/sun/istack/istack-commons-runtime/3.0.12/istack-commons-runtime-3.0.12.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/istack/istack-commons-runtime/3.0.12",
+    parent = "com.sun.istack.istack-commons_3.0.12",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "com.sun.istack.istack-commons-runtime",
     classifiers = [],
-    parent = "com.sun.istack.istack-commons_3.0.8",
+    parent = "com.sun.istack.istack-commons_3.0.12",
     jars = [
-        "com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.jar"
+        "com/sun/istack/istack-commons-runtime/3.0.12/istack-commons-runtime-3.0.12.jar"
     ],
-    exports = [
-        "jakarta.activation.jakarta.activation-api",
-    ],
-    original_deps = [
-        "jakarta.activation.jakarta.activation-api_1.2.1",
-    ],
-    pom = "com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.pom",
+    original_deps = [],
+    pom = "com/sun/istack/istack-commons-runtime/3.0.12/istack-commons-runtime-3.0.12.pom",
     repo_root_path = "",
-    repo_path = "com/sun/istack/istack-commons-runtime/3.0.8",
-    srcjar = "com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8-sources.jar",
+    repo_path = "com/sun/istack/istack-commons-runtime/3.0.12",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.sun.istack.istack-commons-tools_3.0.8",
-    pom = "com/sun/istack/istack-commons-tools/3.0.8/istack-commons-tools-3.0.8.pom",
+    name = "com.sun.istack.istack-commons-tools_3.0.12",
+    pom = "com/sun/istack/istack-commons-tools/3.0.12/istack-commons-tools-3.0.12.pom",
     repo_root_path = "",
-    repo_path = "com/sun/istack/istack-commons-tools/3.0.8",
-    parent = "com.sun.istack.istack-commons_3.0.8",
-    deps = [
-        "org.apache.ant.ant_1.10.5",
-    ],
+    repo_path = "com/sun/istack/istack-commons-tools/3.0.12",
+    parent = "com.sun.istack.istack-commons_3.0.12",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "com.sun.istack.istack-commons-tools",
     classifiers = [],
-    parent = "com.sun.istack.istack-commons_3.0.8",
+    parent = "com.sun.istack.istack-commons_3.0.12",
     jars = [
-        "com/sun/istack/istack-commons-tools/3.0.8/istack-commons-tools-3.0.8.jar"
+        "com/sun/istack/istack-commons-tools/3.0.12/istack-commons-tools-3.0.12.jar"
     ],
-    exports = [
-        "org.apache.ant.ant",
-    ],
-    original_deps = [
-        "org.apache.ant.ant_1.10.5",
-    ],
-    pom = "com/sun/istack/istack-commons-tools/3.0.8/istack-commons-tools-3.0.8.pom",
+    original_deps = [],
+    pom = "com/sun/istack/istack-commons-tools/3.0.12/istack-commons-tools-3.0.12.pom",
     repo_root_path = "",
-    repo_path = "com/sun/istack/istack-commons-tools/3.0.8",
-    srcjar = "com/sun/istack/istack-commons-tools/3.0.8/istack-commons-tools-3.0.8-sources.jar",
+    repo_path = "com/sun/istack/istack-commons-tools/3.0.12",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.sun.xml.bind.external.relaxng-datatype_2.3.2",
-    pom = "com/sun/xml/bind/external/relaxng-datatype/2.3.2/relaxng-datatype-2.3.2.pom",
+    name = "com.sun.xml.bind.external.relaxng-datatype_2.3.9",
+    pom = "com/sun/xml/bind/external/relaxng-datatype/2.3.9/relaxng-datatype-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "com/sun/xml/bind/external/relaxng-datatype/2.3.2",
-    parent = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.2",
+    repo_path = "com/sun/xml/bind/external/relaxng-datatype/2.3.9",
+    parent = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.9",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "com.sun.xml.bind.external.relaxng-datatype",
     classifiers = [],
-    parent = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.2",
+    parent = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.9",
     jars = [
-        "com/sun/xml/bind/external/relaxng-datatype/2.3.2/relaxng-datatype-2.3.2.jar"
+        "com/sun/xml/bind/external/relaxng-datatype/2.3.9/relaxng-datatype-2.3.9.jar"
     ],
     original_deps = [],
-    pom = "com/sun/xml/bind/external/relaxng-datatype/2.3.2/relaxng-datatype-2.3.2.pom",
+    pom = "com/sun/xml/bind/external/relaxng-datatype/2.3.9/relaxng-datatype-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "com/sun/xml/bind/external/relaxng-datatype/2.3.2",
-    srcjar = "com/sun/xml/bind/external/relaxng-datatype/2.3.2/relaxng-datatype-2.3.2-sources.jar",
+    repo_path = "com/sun/xml/bind/external/relaxng-datatype/2.3.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.sun.xml.bind.external.rngom_2.3.2",
-    pom = "com/sun/xml/bind/external/rngom/2.3.2/rngom-2.3.2.pom",
+    name = "com.sun.xml.bind.external.rngom_2.3.9",
+    pom = "com/sun/xml/bind/external/rngom/2.3.9/rngom-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "com/sun/xml/bind/external/rngom/2.3.2",
-    parent = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.2",
+    repo_path = "com/sun/xml/bind/external/rngom/2.3.9",
+    parent = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.9",
     deps = [
-        "com.sun.xml.bind.external.relaxng-datatype_2.3.2",
+        "com.sun.xml.bind.external.relaxng-datatype_2.3.9",
     ],
     visibility = ["//visibility:public"],
 )
@@ -7412,68 +7416,42 @@ maven_artifact(
 maven_import(
     name = "com.sun.xml.bind.external.rngom",
     classifiers = [],
-    parent = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.2",
+    parent = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.9",
     jars = [
-        "com/sun/xml/bind/external/rngom/2.3.2/rngom-2.3.2.jar"
+        "com/sun/xml/bind/external/rngom/2.3.9/rngom-2.3.9.jar"
     ],
     exports = [
         "com.sun.xml.bind.external.relaxng-datatype",
     ],
     original_deps = [
-        "com.sun.xml.bind.external.relaxng-datatype_2.3.2",
+        "com.sun.xml.bind.external.relaxng-datatype_2.3.9",
     ],
-    pom = "com/sun/xml/bind/external/rngom/2.3.2/rngom-2.3.2.pom",
+    pom = "com/sun/xml/bind/external/rngom/2.3.9/rngom-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "com/sun/xml/bind/external/rngom/2.3.2",
-    srcjar = "com/sun/xml/bind/external/rngom/2.3.2/rngom-2.3.2-sources.jar",
+    repo_path = "com/sun/xml/bind/external/rngom/2.3.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.sun.xml.dtd-parser.dtd-parser_1.4.1",
-    pom = "com/sun/xml/dtd-parser/dtd-parser/1.4.1/dtd-parser-1.4.1.pom",
+    name = "com.sun.xml.dtd-parser.dtd-parser_1.4.5",
+    pom = "com/sun/xml/dtd-parser/dtd-parser/1.4.5/dtd-parser-1.4.5.pom",
     repo_root_path = "",
-    repo_path = "com/sun/xml/dtd-parser/dtd-parser/1.4.1",
-    parent = "org.eclipse.ee4j.project_1.0.5",
+    repo_path = "com/sun/xml/dtd-parser/dtd-parser/1.4.5",
+    parent = "org.eclipse.ee4j.project_1.0.6",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "com.sun.xml.dtd-parser.dtd-parser",
     classifiers = [],
-    parent = "org.eclipse.ee4j.project_1.0.5",
+    parent = "org.eclipse.ee4j.project_1.0.6",
     jars = [
-        "com/sun/xml/dtd-parser/dtd-parser/1.4.1/dtd-parser-1.4.1.jar"
+        "com/sun/xml/dtd-parser/dtd-parser/1.4.5/dtd-parser-1.4.5.jar"
     ],
     original_deps = [],
-    pom = "com/sun/xml/dtd-parser/dtd-parser/1.4.1/dtd-parser-1.4.1.pom",
+    pom = "com/sun/xml/dtd-parser/dtd-parser/1.4.5/dtd-parser-1.4.5.pom",
     repo_root_path = "",
-    repo_path = "com/sun/xml/dtd-parser/dtd-parser/1.4.1",
-    srcjar = "com/sun/xml/dtd-parser/dtd-parser/1.4.1/dtd-parser-1.4.1-sources.jar",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.sun.xml.fastinfoset.FastInfoset_1.2.16",
-    pom = "com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.pom",
-    repo_root_path = "",
-    repo_path = "com/sun/xml/fastinfoset/FastInfoset/1.2.16",
-    parent = "com.sun.xml.fastinfoset.fastinfoset-project_1.2.16",
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "com.sun.xml.fastinfoset.FastInfoset",
-    classifiers = [],
-    parent = "com.sun.xml.fastinfoset.fastinfoset-project_1.2.16",
-    jars = [
-        "com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.jar"
-    ],
-    original_deps = [],
-    pom = "com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.pom",
-    repo_root_path = "",
-    repo_path = "com/sun/xml/fastinfoset/FastInfoset/1.2.16",
-    srcjar = "com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16-sources.jar",
+    repo_path = "com/sun/xml/dtd-parser/dtd-parser/1.4.5",
     visibility = ["//visibility:public"],
 )
 
@@ -12229,37 +12207,36 @@ maven_import(
 )
 
 maven_artifact(
-    name = "jakarta.activation.jakarta.activation-api_1.2.1",
-    pom = "jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.pom",
+    name = "jakarta.activation.jakarta.activation-api_1.2.2",
+    pom = "jakarta/activation/jakarta.activation-api/1.2.2/jakarta.activation-api-1.2.2.pom",
     repo_root_path = "",
-    repo_path = "jakarta/activation/jakarta.activation-api/1.2.1",
-    parent = "com.sun.activation.all_1.2.1",
+    repo_path = "jakarta/activation/jakarta.activation-api/1.2.2",
+    parent = "com.sun.activation.all_1.2.2",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "jakarta.activation.jakarta.activation-api",
     classifiers = [],
-    parent = "com.sun.activation.all_1.2.1",
+    parent = "com.sun.activation.all_1.2.2",
     jars = [
-        "jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.jar"
+        "jakarta/activation/jakarta.activation-api/1.2.2/jakarta.activation-api-1.2.2.jar"
     ],
     original_deps = [],
-    pom = "jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.pom",
+    pom = "jakarta/activation/jakarta.activation-api/1.2.2/jakarta.activation-api-1.2.2.pom",
     repo_root_path = "",
-    repo_path = "jakarta/activation/jakarta.activation-api/1.2.1",
-    srcjar = "jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1-sources.jar",
+    repo_path = "jakarta/activation/jakarta.activation-api/1.2.2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "jakarta.xml.bind.jakarta.xml.bind-api_2.3.2",
-    pom = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.pom",
+    name = "jakarta.xml.bind.jakarta.xml.bind-api_2.3.3",
+    pom = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.3/jakarta.xml.bind-api-2.3.3.pom",
     repo_root_path = "",
-    repo_path = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.2",
-    parent = "jakarta.xml.bind.jakarta.xml.bind-api-parent_2.3.2",
+    repo_path = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.3",
+    parent = "jakarta.xml.bind.jakarta.xml.bind-api-parent_2.3.3",
     deps = [
-        "jakarta.activation.jakarta.activation-api_1.2.1",
+        "jakarta.activation.jakarta.activation-api_1.2.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12267,20 +12244,24 @@ maven_artifact(
 maven_import(
     name = "jakarta.xml.bind.jakarta.xml.bind-api",
     classifiers = [],
-    parent = "jakarta.xml.bind.jakarta.xml.bind-api-parent_2.3.2",
+    parent = "jakarta.xml.bind.jakarta.xml.bind-api-parent_2.3.3",
     jars = [
-        "jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.jar"
+        "jakarta/xml/bind/jakarta.xml.bind-api/2.3.3/jakarta.xml.bind-api-2.3.3.jar"
     ],
     exports = [
         "jakarta.activation.jakarta.activation-api",
     ],
     original_deps = [
-        "jakarta.activation.jakarta.activation-api_1.2.1",
+        "jakarta.activation.jakarta.activation-api_1.2.2",
     ],
-    pom = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.pom",
+    pom = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.3/jakarta.xml.bind-api-2.3.3.pom",
     repo_root_path = "",
-    repo_path = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.2",
-    srcjar = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2-sources.jar",
+    repo_path = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.3",
+    exclusions_for_parents = {
+        "org.glassfish.jaxb.jaxb-runtime": [
+            "jakarta.activation.jakarta.activation-api",
+        ],
+    },
     visibility = ["//visibility:public"],
 )
 
@@ -16181,42 +16162,39 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.glassfish.jaxb.codemodel_2.3.2",
-    pom = "org/glassfish/jaxb/codemodel/2.3.2/codemodel-2.3.2.pom",
+    name = "org.glassfish.jaxb.codemodel_2.3.9",
+    pom = "org/glassfish/jaxb/codemodel/2.3.9/codemodel-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/codemodel/2.3.2",
-    parent = "com.sun.xml.bind.mvn.jaxb-codemodel-parent_2.3.2",
+    repo_path = "org/glassfish/jaxb/codemodel/2.3.9",
+    parent = "com.sun.xml.bind.mvn.jaxb-codemodel-parent_2.3.9",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "org.glassfish.jaxb.codemodel",
     classifiers = [],
-    parent = "com.sun.xml.bind.mvn.jaxb-codemodel-parent_2.3.2",
+    parent = "com.sun.xml.bind.mvn.jaxb-codemodel-parent_2.3.9",
     jars = [
-        "org/glassfish/jaxb/codemodel/2.3.2/codemodel-2.3.2.jar"
+        "org/glassfish/jaxb/codemodel/2.3.9/codemodel-2.3.9.jar"
     ],
     original_deps = [],
-    pom = "org/glassfish/jaxb/codemodel/2.3.2/codemodel-2.3.2.pom",
+    pom = "org/glassfish/jaxb/codemodel/2.3.9/codemodel-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/codemodel/2.3.2",
-    srcjar = "org/glassfish/jaxb/codemodel/2.3.2/codemodel-2.3.2-sources.jar",
+    repo_path = "org/glassfish/jaxb/codemodel/2.3.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.glassfish.jaxb.jaxb-runtime_2.3.2",
-    pom = "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.pom",
+    name = "org.glassfish.jaxb.jaxb-runtime_2.3.9",
+    pom = "org/glassfish/jaxb/jaxb-runtime/2.3.9/jaxb-runtime-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/jaxb-runtime/2.3.2",
-    parent = "com.sun.xml.bind.mvn.jaxb-runtime-parent_2.3.2",
+    repo_path = "org/glassfish/jaxb/jaxb-runtime/2.3.9",
+    parent = "com.sun.xml.bind.mvn.jaxb-runtime-parent_2.3.9",
     deps = [
-        "jakarta.xml.bind.jakarta.xml.bind-api_2.3.2",
-        "org.glassfish.jaxb.txw2_2.3.2",
-        "com.sun.istack.istack-commons-runtime_3.0.8",
-        "org.jvnet.staxex.stax-ex_1.8.1",
-        "com.sun.xml.fastinfoset.FastInfoset_1.2.16",
-        "jakarta.activation.jakarta.activation-api_1.2.1",
+        "jakarta.xml.bind.jakarta.xml.bind-api_2.3.3",
+        "org.glassfish.jaxb.txw2_2.3.9",
+        "com.sun.istack.istack-commons-runtime_3.0.12",
+        "com.sun.activation.jakarta.activation_1.2.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -16224,48 +16202,46 @@ maven_artifact(
 maven_import(
     name = "org.glassfish.jaxb.jaxb-runtime",
     classifiers = [],
-    parent = "com.sun.xml.bind.mvn.jaxb-runtime-parent_2.3.2",
+    parent = "com.sun.xml.bind.mvn.jaxb-runtime-parent_2.3.9",
     jars = [
-        "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar"
+        "org/glassfish/jaxb/jaxb-runtime/2.3.9/jaxb-runtime-2.3.9.jar"
     ],
     exports = [
         "jakarta.xml.bind.jakarta.xml.bind-api",
         "org.glassfish.jaxb.txw2",
         "com.sun.istack.istack-commons-runtime",
-        "org.jvnet.staxex.stax-ex",
-        "com.sun.xml.fastinfoset.FastInfoset",
-        "jakarta.activation.jakarta.activation-api",
+    ],
+    deps = [
+        "com.sun.activation.jakarta.activation",
     ],
     original_deps = [
-        "jakarta.xml.bind.jakarta.xml.bind-api_2.3.2",
-        "org.glassfish.jaxb.txw2_2.3.2",
-        "com.sun.istack.istack-commons-runtime_3.0.8",
-        "org.jvnet.staxex.stax-ex_1.8.1",
-        "com.sun.xml.fastinfoset.FastInfoset_1.2.16",
-        "jakarta.activation.jakarta.activation-api_1.2.1",
+        "jakarta.xml.bind.jakarta.xml.bind-api_2.3.3",
+        "org.glassfish.jaxb.txw2_2.3.9",
+        "com.sun.istack.istack-commons-runtime_3.0.12",
+        "com.sun.activation.jakarta.activation_1.2.2",
     ],
-    pom = "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.pom",
+    pom = "org/glassfish/jaxb/jaxb-runtime/2.3.9/jaxb-runtime-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/jaxb-runtime/2.3.2",
-    srcjar = "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2-sources.jar",
+    repo_path = "org/glassfish/jaxb/jaxb-runtime/2.3.9",
+    deps_with_exclusions = [
+        "jakarta.xml.bind.jakarta.xml.bind-api",
+     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.glassfish.jaxb.jaxb-xjc_2.3.2",
-    pom = "org/glassfish/jaxb/jaxb-xjc/2.3.2/jaxb-xjc-2.3.2.pom",
+    name = "org.glassfish.jaxb.jaxb-xjc_2.3.9",
+    pom = "org/glassfish/jaxb/jaxb-xjc/2.3.9/jaxb-xjc-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/jaxb-xjc/2.3.2",
-    parent = "com.sun.xml.bind.mvn.jaxb-parent_2.3.2",
+    repo_path = "org/glassfish/jaxb/jaxb-xjc/2.3.9",
+    parent = "com.sun.xml.bind.mvn.jaxb-parent_2.3.9",
     deps = [
-        "org.glassfish.jaxb.jaxb-runtime_2.3.2",
-        "org.glassfish.jaxb.xsom_2.3.2",
-        "org.glassfish.jaxb.codemodel_2.3.2",
-        "com.sun.xml.bind.external.rngom_2.3.2",
-        "com.sun.xml.dtd-parser.dtd-parser_1.4.1",
-        "com.sun.istack.istack-commons-tools_3.0.8",
-        "com.sun.istack.istack-commons-runtime_3.0.8",
-        "com.sun.xml.bind.external.relaxng-datatype_2.3.2",
+        "org.glassfish.jaxb.jaxb-runtime_2.3.9",
+        "org.glassfish.jaxb.xsom_2.3.9",
+        "org.glassfish.jaxb.codemodel_2.3.9",
+        "com.sun.xml.bind.external.rngom_2.3.9",
+        "com.sun.xml.dtd-parser.dtd-parser_1.4.5",
+        "com.sun.istack.istack-commons-tools_3.0.12",
     ],
     visibility = ["//visibility:public"],
 )
@@ -16273,9 +16249,9 @@ maven_artifact(
 maven_import(
     name = "org.glassfish.jaxb.jaxb-xjc",
     classifiers = [],
-    parent = "com.sun.xml.bind.mvn.jaxb-parent_2.3.2",
+    parent = "com.sun.xml.bind.mvn.jaxb-parent_2.3.9",
     jars = [
-        "org/glassfish/jaxb/jaxb-xjc/2.3.2/jaxb-xjc-2.3.2.jar"
+        "org/glassfish/jaxb/jaxb-xjc/2.3.9/jaxb-xjc-2.3.9.jar"
     ],
     exports = [
         "org.glassfish.jaxb.jaxb-runtime",
@@ -16284,58 +16260,52 @@ maven_import(
         "com.sun.xml.bind.external.rngom",
         "com.sun.xml.dtd-parser.dtd-parser",
         "com.sun.istack.istack-commons-tools",
-        "com.sun.istack.istack-commons-runtime",
-        "com.sun.xml.bind.external.relaxng-datatype",
     ],
     original_deps = [
-        "org.glassfish.jaxb.jaxb-runtime_2.3.2",
-        "org.glassfish.jaxb.xsom_2.3.2",
-        "org.glassfish.jaxb.codemodel_2.3.2",
-        "com.sun.xml.bind.external.rngom_2.3.2",
-        "com.sun.xml.dtd-parser.dtd-parser_1.4.1",
-        "com.sun.istack.istack-commons-tools_3.0.8",
-        "com.sun.istack.istack-commons-runtime_3.0.8",
-        "com.sun.xml.bind.external.relaxng-datatype_2.3.2",
+        "org.glassfish.jaxb.jaxb-runtime_2.3.9",
+        "org.glassfish.jaxb.xsom_2.3.9",
+        "org.glassfish.jaxb.codemodel_2.3.9",
+        "com.sun.xml.bind.external.rngom_2.3.9",
+        "com.sun.xml.dtd-parser.dtd-parser_1.4.5",
+        "com.sun.istack.istack-commons-tools_3.0.12",
     ],
-    pom = "org/glassfish/jaxb/jaxb-xjc/2.3.2/jaxb-xjc-2.3.2.pom",
+    pom = "org/glassfish/jaxb/jaxb-xjc/2.3.9/jaxb-xjc-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/jaxb-xjc/2.3.2",
-    srcjar = "org/glassfish/jaxb/jaxb-xjc/2.3.2/jaxb-xjc-2.3.2-sources.jar",
+    repo_path = "org/glassfish/jaxb/jaxb-xjc/2.3.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.glassfish.jaxb.txw2_2.3.2",
-    pom = "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.pom",
+    name = "org.glassfish.jaxb.txw2_2.3.9",
+    pom = "org/glassfish/jaxb/txw2/2.3.9/txw2-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/txw2/2.3.2",
-    parent = "com.sun.xml.bind.mvn.jaxb-txw-parent_2.3.2",
+    repo_path = "org/glassfish/jaxb/txw2/2.3.9",
+    parent = "com.sun.xml.bind.mvn.jaxb-txw-parent_2.3.9",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "org.glassfish.jaxb.txw2",
     classifiers = [],
-    parent = "com.sun.xml.bind.mvn.jaxb-txw-parent_2.3.2",
+    parent = "com.sun.xml.bind.mvn.jaxb-txw-parent_2.3.9",
     jars = [
-        "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar"
+        "org/glassfish/jaxb/txw2/2.3.9/txw2-2.3.9.jar"
     ],
     original_deps = [],
-    pom = "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.pom",
+    pom = "org/glassfish/jaxb/txw2/2.3.9/txw2-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/txw2/2.3.2",
-    srcjar = "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2-sources.jar",
+    repo_path = "org/glassfish/jaxb/txw2/2.3.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.glassfish.jaxb.xsom_2.3.2",
-    pom = "org/glassfish/jaxb/xsom/2.3.2/xsom-2.3.2.pom",
+    name = "org.glassfish.jaxb.xsom_2.3.9",
+    pom = "org/glassfish/jaxb/xsom/2.3.9/xsom-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/xsom/2.3.2",
-    parent = "org.eclipse.ee4j.project_1.0.5",
+    repo_path = "org/glassfish/jaxb/xsom/2.3.9",
+    parent = "org.eclipse.ee4j.project_1.0.8",
     deps = [
-        "com.sun.xml.bind.external.relaxng-datatype_2.3.2",
+        "com.sun.xml.bind.external.relaxng-datatype_2.3.9",
     ],
     visibility = ["//visibility:public"],
 )
@@ -16343,20 +16313,19 @@ maven_artifact(
 maven_import(
     name = "org.glassfish.jaxb.xsom",
     classifiers = [],
-    parent = "org.eclipse.ee4j.project_1.0.5",
+    parent = "org.eclipse.ee4j.project_1.0.8",
     jars = [
-        "org/glassfish/jaxb/xsom/2.3.2/xsom-2.3.2.jar"
+        "org/glassfish/jaxb/xsom/2.3.9/xsom-2.3.9.jar"
     ],
     exports = [
         "com.sun.xml.bind.external.relaxng-datatype",
     ],
     original_deps = [
-        "com.sun.xml.bind.external.relaxng-datatype_2.3.2",
+        "com.sun.xml.bind.external.relaxng-datatype_2.3.9",
     ],
-    pom = "org/glassfish/jaxb/xsom/2.3.2/xsom-2.3.2.pom",
+    pom = "org/glassfish/jaxb/xsom/2.3.9/xsom-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "org/glassfish/jaxb/xsom/2.3.2",
-    srcjar = "org/glassfish/jaxb/xsom/2.3.2/xsom-2.3.2-sources.jar",
+    repo_path = "org/glassfish/jaxb/xsom/2.3.9",
     visibility = ["//visibility:public"],
 )
 
@@ -21311,41 +21280,6 @@ maven_import(
     pom = "org/junit/junit-bom/5.13.3/junit-bom-5.13.3.pom",
     repo_root_path = "",
     repo_path = "org/junit/junit-bom/5.13.3",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jvnet.staxex.stax-ex_1.8.1",
-    pom = "org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.pom",
-    repo_root_path = "",
-    repo_path = "org/jvnet/staxex/stax-ex/1.8.1",
-    parent = "org.eclipse.ee4j.project_1.0.5",
-    deps = [
-        "jakarta.activation.jakarta.activation-api_1.2.1",
-        "jakarta.xml.bind.jakarta.xml.bind-api_2.3.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "org.jvnet.staxex.stax-ex",
-    classifiers = [],
-    parent = "org.eclipse.ee4j.project_1.0.5",
-    jars = [
-        "org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.jar"
-    ],
-    exports = [
-        "jakarta.activation.jakarta.activation-api",
-        "jakarta.xml.bind.jakarta.xml.bind-api",
-    ],
-    original_deps = [
-        "jakarta.activation.jakarta.activation-api_1.2.1",
-        "jakarta.xml.bind.jakarta.xml.bind-api_2.3.2",
-    ],
-    pom = "org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.pom",
-    repo_root_path = "",
-    repo_path = "org/jvnet/staxex/stax-ex/1.8.1",
-    srcjar = "org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1-sources.jar",
     visibility = ["//visibility:public"],
 )
 
@@ -89629,6 +89563,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.sun.istack.istack-commons-runtime_3.0.8",
+    pom = "com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/istack/istack-commons-runtime/3.0.8",
+    parent = "com.sun.istack.istack-commons_3.0.8",
+    deps = [
+        "jakarta.activation.jakarta.activation-api_1.2.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.sun.xml.fastinfoset.FastInfoset_1.2.13",
     pom = "com/sun/xml/fastinfoset/FastInfoset/1.2.13/FastInfoset-1.2.13.pom",
     repo_root_path = "",
@@ -89643,6 +89589,15 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "com/sun/xml/fastinfoset/FastInfoset/1.2.15",
     parent = "com.sun.xml.fastinfoset.fastinfoset-project_1.2.15",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.sun.xml.fastinfoset.FastInfoset_1.2.16",
+    pom = "com/sun/xml/fastinfoset/FastInfoset/1.2.16/FastInfoset-1.2.16.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/xml/fastinfoset/FastInfoset/1.2.16",
+    parent = "com.sun.xml.fastinfoset.fastinfoset-project_1.2.16",
     visibility = ["//visibility:public"],
 )
 
@@ -92584,11 +92539,32 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "jakarta.activation.jakarta.activation-api_1.2.1",
+    pom = "jakarta/activation/jakarta.activation-api/1.2.1/jakarta.activation-api-1.2.1.pom",
+    repo_root_path = "",
+    repo_path = "jakarta/activation/jakarta.activation-api/1.2.1",
+    parent = "com.sun.activation.all_1.2.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "jakarta.inject.jakarta.inject-api_2.0.1",
     pom = "jakarta/inject/jakarta.inject-api/2.0.1/jakarta.inject-api-2.0.1.pom",
     repo_root_path = "",
     repo_path = "jakarta/inject/jakarta.inject-api/2.0.1",
     parent = "org.eclipse.ee4j.project_1.0.6",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "jakarta.xml.bind.jakarta.xml.bind-api_2.3.2",
+    pom = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.2/jakarta.xml.bind-api-2.3.2.pom",
+    repo_root_path = "",
+    repo_path = "jakarta/xml/bind/jakarta.xml.bind-api/2.3.2",
+    parent = "jakarta.xml.bind.jakarta.xml.bind-api-parent_2.3.2",
+    deps = [
+        "jakarta.activation.jakarta.activation-api_1.2.1",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -92863,32 +92839,11 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.apache.ant.ant-launcher_1.10.5",
-    pom = "org/apache/ant/ant-launcher/1.10.5/ant-launcher-1.10.5.pom",
-    repo_root_path = "",
-    repo_path = "org/apache/ant/ant-launcher/1.10.5",
-    parent = "org.apache.ant.ant-parent_1.10.5",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.apache.ant.ant-launcher_1.10.9",
     pom = "org/apache/ant/ant-launcher/1.10.9/ant-launcher-1.10.9.pom",
     repo_root_path = "",
     repo_path = "org/apache/ant/ant-launcher/1.10.9",
     parent = "org.apache.ant.ant-parent_1.10.9",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.apache.ant.ant_1.10.5",
-    pom = "org/apache/ant/ant/1.10.5/ant-1.10.5.pom",
-    repo_root_path = "",
-    repo_path = "org/apache/ant/ant/1.10.5",
-    parent = "org.apache.ant.ant-parent_1.10.5",
-    deps = [
-        "org.apache.ant.ant-launcher_1.10.5",
-    ],
     visibility = ["//visibility:public"],
 )
 
@@ -94907,6 +94862,23 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.glassfish.jaxb.jaxb-runtime_2.3.2",
+    pom = "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.pom",
+    repo_root_path = "",
+    repo_path = "org/glassfish/jaxb/jaxb-runtime/2.3.2",
+    parent = "com.sun.xml.bind.mvn.jaxb-runtime-parent_2.3.2",
+    deps = [
+        "jakarta.xml.bind.jakarta.xml.bind-api_2.3.2",
+        "org.glassfish.jaxb.txw2_2.3.2",
+        "com.sun.istack.istack-commons-runtime_3.0.8",
+        "org.jvnet.staxex.stax-ex_1.8.1",
+        "com.sun.xml.fastinfoset.FastInfoset_1.2.16",
+        "jakarta.activation.jakarta.activation-api_1.2.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.glassfish.jaxb.txw2_2.2.11",
     pom = "org/glassfish/jaxb/txw2/2.2.11/txw2-2.2.11.pom",
     repo_root_path = "",
@@ -94921,6 +94893,15 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "org/glassfish/jaxb/txw2/2.3.1",
     parent = "com.sun.xml.bind.mvn.jaxb-txw-parent_2.3.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.glassfish.jaxb.txw2_2.3.2",
+    pom = "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.pom",
+    repo_root_path = "",
+    repo_path = "org/glassfish/jaxb/txw2/2.3.2",
+    parent = "com.sun.xml.bind.mvn.jaxb-txw-parent_2.3.2",
     visibility = ["//visibility:public"],
 )
 
@@ -111120,6 +111101,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jvnet.staxex.stax-ex_1.8.1",
+    pom = "org/jvnet/staxex/stax-ex/1.8.1/stax-ex-1.8.1.pom",
+    repo_root_path = "",
+    repo_path = "org/jvnet/staxex/stax-ex/1.8.1",
+    parent = "org.eclipse.ee4j.project_1.0.5",
+    deps = [
+        "jakarta.activation.jakarta.activation-api_1.2.1",
+        "jakarta.xml.bind.jakarta.xml.bind-api_2.3.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.khronos.opengl-api_gl1.1-android-2.1_r1",
     pom = "org/khronos/opengl-api/gl1.1-android-2.1_r1/opengl-api-gl1.1-android-2.1_r1.pom",
     repo_root_path = "",
@@ -114236,11 +114230,27 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.sun.activation.all_1.2.2",
+    pom = "com/sun/activation/all/1.2.2/all-1.2.2.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/activation/all/1.2.2",
+    parent = "org.eclipse.ee4j.project_1.0.6",
+)
+
+maven_artifact(
     name = "com.sun.istack.istack-commons_2.21",
     pom = "com/sun/istack/istack-commons/2.21/istack-commons-2.21.pom",
     repo_root_path = "",
     repo_path = "com/sun/istack/istack-commons/2.21",
     parent = "net.java.jvnet-parent_4",
+)
+
+maven_artifact(
+    name = "com.sun.istack.istack-commons_3.0.12",
+    pom = "com/sun/istack/istack-commons/3.0.12/istack-commons-3.0.12.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/istack/istack-commons/3.0.12",
+    parent = "org.eclipse.ee4j.project_1.0.6",
 )
 
 maven_artifact(
@@ -114260,19 +114270,19 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.sun.xml.bind.mvn.jaxb-codemodel-parent_2.3.2",
-    pom = "com/sun/xml/bind/mvn/jaxb-codemodel-parent/2.3.2/jaxb-codemodel-parent-2.3.2.pom",
+    name = "com.sun.xml.bind.mvn.jaxb-codemodel-parent_2.3.9",
+    pom = "com/sun/xml/bind/mvn/jaxb-codemodel-parent/2.3.9/jaxb-codemodel-parent-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "com/sun/xml/bind/mvn/jaxb-codemodel-parent/2.3.2",
-    parent = "org.eclipse.ee4j.project_1.0.5",
+    repo_path = "com/sun/xml/bind/mvn/jaxb-codemodel-parent/2.3.9",
+    parent = "org.eclipse.ee4j.project_1.0.8",
 )
 
 maven_artifact(
-    name = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.2",
-    pom = "com/sun/xml/bind/mvn/jaxb-external-parent/2.3.2/jaxb-external-parent-2.3.2.pom",
+    name = "com.sun.xml.bind.mvn.jaxb-external-parent_2.3.9",
+    pom = "com/sun/xml/bind/mvn/jaxb-external-parent/2.3.9/jaxb-external-parent-2.3.9.pom",
     repo_root_path = "",
-    repo_path = "com/sun/xml/bind/mvn/jaxb-external-parent/2.3.2",
-    parent = "org.eclipse.ee4j.project_1.0.5",
+    repo_path = "com/sun/xml/bind/mvn/jaxb-external-parent/2.3.9",
+    parent = "org.eclipse.ee4j.project_1.0.8",
 )
 
 maven_artifact(
@@ -114300,6 +114310,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.sun.xml.bind.mvn.jaxb-parent_2.3.9",
+    pom = "com/sun/xml/bind/mvn/jaxb-parent/2.3.9/jaxb-parent-2.3.9.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/xml/bind/mvn/jaxb-parent/2.3.9",
+    parent = "com.sun.xml.bind.jaxb-bom-ext_2.3.9",
+)
+
+maven_artifact(
     name = "com.sun.xml.bind.mvn.jaxb-runtime-parent_2.2.11",
     pom = "com/sun/xml/bind/mvn/jaxb-runtime-parent/2.2.11/jaxb-runtime-parent-2.2.11.pom",
     repo_root_path = "",
@@ -114321,6 +114339,14 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "com/sun/xml/bind/mvn/jaxb-runtime-parent/2.3.2",
     parent = "com.sun.xml.bind.mvn.jaxb-parent_2.3.2",
+)
+
+maven_artifact(
+    name = "com.sun.xml.bind.mvn.jaxb-runtime-parent_2.3.9",
+    pom = "com/sun/xml/bind/mvn/jaxb-runtime-parent/2.3.9/jaxb-runtime-parent-2.3.9.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/xml/bind/mvn/jaxb-runtime-parent/2.3.9",
+    parent = "com.sun.xml.bind.mvn.jaxb-parent_2.3.9",
 )
 
 maven_artifact(
@@ -114348,6 +114374,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.sun.xml.bind.mvn.jaxb-txw-parent_2.3.9",
+    pom = "com/sun/xml/bind/mvn/jaxb-txw-parent/2.3.9/jaxb-txw-parent-2.3.9.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/xml/bind/mvn/jaxb-txw-parent/2.3.9",
+    parent = "com.sun.xml.bind.mvn.jaxb-parent_2.3.9",
+)
+
+maven_artifact(
     name = "com.sun.xml.bind.jaxb-bom-ext_2.2.11",
     pom = "com/sun/xml/bind/jaxb-bom-ext/2.2.11/jaxb-bom-ext-2.2.11.pom",
     repo_root_path = "",
@@ -114369,6 +114403,14 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "com/sun/xml/bind/jaxb-bom-ext/2.3.2",
     parent = "org.glassfish.jaxb.jaxb-bom_2.3.2",
+)
+
+maven_artifact(
+    name = "com.sun.xml.bind.jaxb-bom-ext_2.3.9",
+    pom = "com/sun/xml/bind/jaxb-bom-ext/2.3.9/jaxb-bom-ext-2.3.9.pom",
+    repo_root_path = "",
+    repo_path = "com/sun/xml/bind/jaxb-bom-ext/2.3.9",
+    parent = "org.glassfish.jaxb.jaxb-bom_2.3.9",
 )
 
 maven_artifact(
@@ -114485,6 +114527,14 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "jakarta/xml/bind/jakarta.xml.bind-api-parent/2.3.2",
     parent = "org.eclipse.ee4j.project_1.0.5",
+)
+
+maven_artifact(
+    name = "jakarta.xml.bind.jakarta.xml.bind-api-parent_2.3.3",
+    pom = "jakarta/xml/bind/jakarta.xml.bind-api-parent/2.3.3/jakarta.xml.bind-api-parent-2.3.3.pom",
+    repo_root_path = "",
+    repo_path = "jakarta/xml/bind/jakarta.xml.bind-api-parent/2.3.3",
+    parent = "org.eclipse.ee4j.project_1.0.6",
 )
 
 maven_artifact(
@@ -114617,13 +114667,6 @@ maven_artifact(
     pom = "org/apache/ant/ant-parent/1.10.15/ant-parent-1.10.15.pom",
     repo_root_path = "",
     repo_path = "org/apache/ant/ant-parent/1.10.15",
-)
-
-maven_artifact(
-    name = "org.apache.ant.ant-parent_1.10.5",
-    pom = "org/apache/ant/ant-parent/1.10.5/ant-parent-1.10.5.pom",
-    repo_root_path = "",
-    repo_path = "org/apache/ant/ant-parent/1.10.5",
 )
 
 maven_artifact(
@@ -115428,6 +115471,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.eclipse.ee4j.project_1.0.8",
+    pom = "org/eclipse/ee4j/project/1.0.8/project-1.0.8.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/ee4j/project/1.0.8",
+)
+
+maven_artifact(
     name = "org.eclipse.elk.parent_0.3.0",
     pom = "org/eclipse/elk/parent/0.3.0/parent-0.3.0.pom",
     repo_root_path = "",
@@ -115500,6 +115550,14 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "org/glassfish/jaxb/jaxb-bom/2.3.2",
     parent = "org.eclipse.ee4j.project_1.0.5",
+)
+
+maven_artifact(
+    name = "org.glassfish.jaxb.jaxb-bom_2.3.9",
+    pom = "org/glassfish/jaxb/jaxb-bom/2.3.9/jaxb-bom-2.3.9.pom",
+    repo_root_path = "",
+    repo_path = "org/glassfish/jaxb/jaxb-bom/2.3.9",
+    parent = "org.eclipse.ee4j.project_1.0.8",
 )
 
 maven_artifact(
