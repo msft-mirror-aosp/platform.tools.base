@@ -30,6 +30,7 @@ import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import com.google.gson.annotations.SerializedName
 import java.io.File
 import java.nio.file.Path
@@ -107,16 +108,19 @@ class TestSuitesTestReportTest {
   fun testSingleModuleReporting() {
     val build = rule.build
     build.executor.run(":app:testAllSuites")
-    val xmlFiles =
-      build
-        .androidApplication()
-        .intermediatesDir
-        .resolve("project_level_test_results/global/testResultsCollectionDebug")
-        .toFile()
-        .listFiles()
-        .filter { it.isFile && it.extension == "xml" }
-        .toList()
+    val collectedDir =
+      build.androidApplication().intermediatesDir.resolve("project_level_test_results/global/testResultsCollectionDebug").toFile()
+    assertThat(collectedDir.isDirectory).isTrue()
+    val collectedFiles = collectedDir.listFiles().orEmpty().filter { it.isFile }
+    val xmlFiles = collectedFiles.filter { it.extension == "xml" }
     assertThat(xmlFiles.size).isEqualTo(2)
+    assertThat(collectedFiles.filter { it.extension == "json" }).isEmpty()
+
+    val dataJsFile = build.androidApplication().buildDir.resolve("reports/testAllSuites/test-report/data.js").toFile()
+    assertThat(dataJsFile.isFile).isTrue()
+    val reportJson =
+      JsonParser.parseString(dataJsFile.readText().removePrefix("const TEST_DATA_SOURCE = ").trim().removeSuffix(";")).asJsonObject
+    assertThat(reportJson.getAsJsonArray("suiteEnvironments").size()).isEqualTo(2)
 
     // The suite has coverage off, so there is no coverage report at all.
     val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage")
@@ -207,16 +211,19 @@ class TestSuitesTestReportTest {
 
     build.executor.run(":app:testAllSuitesWithDependencies")
 
-    val xmlFiles =
-      build
-        .androidApplication()
-        .intermediatesDir
-        .resolve("all_project_test_results/global/aggregatedTestResultsCollectionDebug")
-        .toFile()
-        .listFiles()
-        .filter { it.isFile && it.extension == "xml" }
-        .toList()
+    val collectedDir =
+      build.androidApplication().intermediatesDir.resolve("all_project_test_results/global/aggregatedTestResultsCollectionDebug").toFile()
+    assertThat(collectedDir.isDirectory).isTrue()
+    val collectedFiles = collectedDir.listFiles().orEmpty().filter { it.isFile }
+    val xmlFiles = collectedFiles.filter { it.extension == "xml" }
     assertThat(xmlFiles.size).isEqualTo(4)
+    assertThat(collectedFiles.filter { it.extension == "json" }).isEmpty()
+
+    val dataJsFile = build.androidApplication().buildDir.resolve("reports/testAllSuitesWithDependencies/test-report/data.js").toFile()
+    assertThat(dataJsFile.isFile).isTrue()
+    val reportJson =
+      JsonParser.parseString(dataJsFile.readText().removePrefix("const TEST_DATA_SOURCE = ").trim().removeSuffix(";")).asJsonObject
+    assertThat(reportJson.getAsJsonArray("suiteEnvironments").size()).isEqualTo(4)
 
     // The suites have coverage off, so there is no coverage report at all.
     val appCoverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage")

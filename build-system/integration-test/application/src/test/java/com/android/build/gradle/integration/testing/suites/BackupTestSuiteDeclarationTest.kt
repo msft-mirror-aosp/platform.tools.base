@@ -30,14 +30,23 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.options.BooleanOption
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
+import com.google.gson.JsonParser
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.TestRun
 import com.google.wireless.android.sdk.stats.TestRun.BackupTestRun.BackupFailureReason
 import com.google.wireless.android.sdk.stats.TestRun.BackupTestRun.BackupTransportMode
+import java.io.File
+import java.util.Properties
+import javax.xml.parsers.DocumentBuilderFactory
+import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
+import org.w3c.dom.Element
 
 /** Differs from [BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION], so the tests can tell a configured version from the default. */
 private const val CUSTOM_BACKUP_VERSION = "${BackupAgpTestSuiteImpl.DEFAULT_BACKUP_VERSION}-custom"
@@ -102,15 +111,327 @@ class BackupTestSuiteDeclarationTest {
         .run(":app:testDebugMyBackupDefaultTestSuite")
 
     runWithSerial("emulator-5554")
-    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = emulator-5554")
+    assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = emulator-5554")
 
     // Selecting another device reuses the configuration cache, and the new value still reaches the test JVM.
     runWithSerial("emulator-5556").assertOutputContains("Reusing configuration cache.")
-    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = emulator-5556")
+    assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = emulator-5556")
 
-    // Values reach the test JVM unchanged, including '=' and spaces.
-    runWithSerial("a=b c")
-    Truth.assertThat(loggingFile.readText()).contains("System property : androidx.test.backup.device.serial = a=b c")
+    // Values reach the test JVM unchanged, including '=' and spaces, and report properties are forwarded lazily.
+    build.executor
+      .withConfigurationCaching(ConfigurationCaching.ON)
+      .withArguments(
+        listOf(
+          "-Dandroidx.test.backup.device.serial=a=b c",
+          "-Dandroidx.test.backup.report.captureLogcatOnPass=true",
+          "-Dandroidx.test.backup.report.includeRawArchives=true",
+        )
+      )
+      .run(":app:testDebugMyBackupDefaultTestSuite")
+      .assertOutputContains("Reusing configuration cache.")
+    val reportPropsLog = loggingFile.readText()
+    assertThat(reportPropsLog).contains("System property : androidx.test.backup.device.serial = a=b c")
+    assertThat(reportPropsLog).contains("System property : androidx.test.backup.report.captureLogcatOnPass = true")
+    assertThat(reportPropsLog).contains("System property : androidx.test.backup.report.includeRawArchives = true")
+  }
+
+  @Test
+  fun testSuiteEnvironmentInputsAndReportAggregation() {
+    val build = rule.build {
+      androidApplication {
+        android {
+          defaultConfig {
+            applicationId = "com.example.journalingapp"
+            versionCode = 12
+            versionName = "1.2.0"
+          }
+        }
+        files {
+          update("src/main/AndroidManifest.xml")
+            .replaceWith(
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                  <application
+                      android:allowBackup="true"
+                      android:label="@string/app_name"
+                      android:fullBackupContent="@xml/backup_rules"
+                      android:dataExtractionRules="@xml/data_extraction_rules" />
+              </manifest>
+              """
+                .trimIndent()
+            )
+          add(
+            "src/main/res/values/strings.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="app_name">MainLabel</string>
+            </resources>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/debug/res/values/strings.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="app_name">DebugLabel</string>
+            </resources>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/extraRes/values/strings.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="app_name">JournalingApp</string>
+            </resources>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/res/xml/backup_rules.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <full-backup-content>
+                <exclude domain="sharedpref" path="secret.xml" />
+            </full-backup-content>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/res/xml/data_extraction_rules.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <data-extraction-rules>
+                <device-transfer>
+                    <exclude domain="sharedpref" path="user_session.xml" />
+                </device-transfer>
+            </data-extraction-rules>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/myBackup/test/java/com/example/SuiteReportWiringTest.java",
+            """
+            package com.example;
+
+            import java.io.File;
+            import java.io.FileInputStream;
+            import java.nio.charset.StandardCharsets;
+            import java.nio.file.Files;
+            import java.util.Properties;
+            import org.junit.jupiter.api.Test;
+            import org.junit.jupiter.api.TestReporter;
+            import org.junit.jupiter.api.extension.MediaType;
+
+            public class SuiteReportWiringTest {
+              @Test
+              public void firstCase(TestReporter reporter) throws Exception {
+                System.out.println("first-case-stdout");
+                String inputsFile = System.getenv("com.android.junit.engine.input.parameters");
+                Properties props = new Properties();
+                try (FileInputStream in = new FileInputStream(inputsFile)) {
+                  props.load(in);
+                }
+                File resultsDir = new File(props.getProperty("com.android.junit.engine.results.dir"));
+                if (resultsDir.exists()) {
+                  throw new AssertionError("Expected RESULTS_DIR not to exist before engine execution");
+                }
+                if (!"true".equals(props.getProperty("com.android.agp.test.ALLOW_BACKUP"))) {
+                  throw new AssertionError("Missing ALLOW_BACKUP in junit_inputs.txt");
+                }
+                String fullXml = props.getProperty("com.android.agp.test.FULL_BACKUP_CONTENT_XML");
+                if (fullXml == null || !fullXml.contains("secret.xml")) {
+                  throw new AssertionError("Missing FULL_BACKUP_CONTENT_XML in junit_inputs.txt");
+                }
+                String extractionXml = props.getProperty("com.android.agp.test.DATA_EXTRACTION_RULES_XML");
+                if (extractionXml == null || !extractionXml.contains("user_session.xml")) {
+                  throw new AssertionError("Missing DATA_EXTRACTION_RULES_XML in junit_inputs.txt");
+                }
+                String reportingDir = System.getProperty("junit.platform.reporting.output.dir");
+                if (reportingDir == null || reportingDir.isEmpty()) {
+                  throw new AssertionError("Expected junit.platform.reporting.output.dir system property");
+                }
+
+                reporter.publishEntry("androidx.report.schemaVersion", "1");
+                reporter.publishEntry("androidx.report.suiteType", "androidx.test.backup");
+                reporter.publishEntry("androidx.report.attr.transport", "LOCAL");
+                reporter.publishEntry("androidx.report.attr.transport.filterable", "true");
+                reporter.publishEntry("androidx.report.actor.source.role", "SOURCE");
+                reporter.publishEntry("androidx.report.actor.source.name", "Cuttlefish");
+                reporter.publishEntry("androidx.report.actor.source.serial", "127.0.0.1:6520");
+                reporter.publishEntry("androidx.report.step.1.name", "Backup");
+                reporter.publishEntry("androidx.report.step.1.status", "PASSED");
+                reporter.publishEntry("androidx.report.step.1.durationMs", "120");
+                reporter.publishFile(
+                    "logcat-127.0.0.1_6520.txt",
+                    MediaType.TEXT_PLAIN_UTF_8,
+                    path ->
+                        Files.write(
+                            path,
+                            "01-01 00:00:00.000 I/BackupManager: OK\n"
+                                .getBytes(StandardCharsets.UTF_8)));
+                reporter.publishFile(
+                    "host-log.txt",
+                    MediaType.TEXT_PLAIN_UTF_8,
+                    path ->
+                        Files.write(
+                            path,
+                            "Backup started\nRestore completed\n"
+                                .getBytes(StandardCharsets.UTF_8)));
+              }
+
+              @Test
+              public void secondCase() {
+                System.out.println("second-case-stdout");
+              }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":app:testDebugMyBackupDefaultTestSuite")
+
+    val taskIntermediatesDir = build.subProject(":app").resolve("build/intermediates/debug/testDebugMyBackupDefaultTestSuite").toFile()
+    val junitInputs = Properties().also { props -> File(taskIntermediatesDir, "junit_inputs.txt").reader().use { props.load(it) } }
+    assertThat(junitInputs.getProperty("com.android.agp.test.MERGED_MANIFEST")).isNull()
+    assertThat(junitInputs.getProperty("com.android.agp.test.TESTED_RES_DIRS")).isNull()
+    assertThat(junitInputs.getProperty("com.android.agp.test.TEST_LIBRARY_VERSION")).isEqualTo(CUSTOM_BACKUP_VERSION)
+    assertThat(junitInputs.getProperty("com.android.agp.test.ALLOW_BACKUP")).isEqualTo("true")
+    assertThat(junitInputs.getProperty("com.android.agp.test.FULL_BACKUP_CONTENT")).isEqualTo("@xml/backup_rules")
+    assertThat(junitInputs.getProperty("com.android.agp.test.FULL_BACKUP_CONTENT_FILE")).isEqualTo("backup_rules.xml")
+    assertThat(junitInputs.getProperty("com.android.agp.test.FULL_BACKUP_CONTENT_XML")).contains("secret.xml")
+    assertThat(junitInputs.getProperty("com.android.agp.test.DATA_EXTRACTION_RULES")).isEqualTo("@xml/data_extraction_rules")
+    assertThat(junitInputs.getProperty("com.android.agp.test.DATA_EXTRACTION_RULES_FILE")).isEqualTo("data_extraction_rules.xml")
+    assertThat(junitInputs.getProperty("com.android.agp.test.DATA_EXTRACTION_RULES_XML")).contains("user_session.xml")
+
+    // Verify per-testcase stdout and FileEntry attachment marker in Gradle's JUnit XML (build/test-results/<task>).
+    val rawXmlFile =
+      build
+        .subProject(":app")
+        .resolve("build/test-results/testDebugMyBackupDefaultTestSuite/TEST-com.example.SuiteReportWiringTest.xml")
+        .toFile()
+    val xmlDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(rawXmlFile)
+    val testCaseNodes = xmlDoc.getElementsByTagName("testcase")
+    val systemOutByTest = mutableMapOf<String, String>()
+    for (i in 0 until testCaseNodes.length) {
+      val testCase = testCaseNodes.item(i) as Element
+      val systemOutNodes = testCase.getElementsByTagName("system-out")
+      val outText = if (systemOutNodes.length > 0) systemOutNodes.item(0).textContent else ""
+      systemOutByTest[testCase.getAttribute("name")] = outText
+    }
+    val firstOut = systemOutByTest.entries.single { it.key.startsWith("firstCase") }.value
+    val secondOut = systemOutByTest.entries.single { it.key.startsWith("secondCase") }.value
+    assertThat(firstOut).contains("first-case-stdout")
+    assertThat(firstOut).contains("[[ATTACHMENT|")
+    assertThat(firstOut).doesNotContain("second-case-stdout")
+    assertThat(secondOut).contains("second-case-stdout")
+    assertThat(secondOut).doesNotContain("first-case-stdout")
+
+    // Verify enriched <testsuite><properties> and namespaced attachments/<hash>/... in TEST_SUITE_RESULTS, with zero JSON sidecar files.
+    val suiteResultsRoot = build.subProject(":app").resolve("build/intermediates/test_suite_results").toFile()
+    assertThat(suiteResultsRoot.walk().filter { it.isFile && it.extension == "json" }.toList()).isEmpty()
+    val aggregatedSuiteXml =
+      checkNotNull(
+        suiteResultsRoot.walk().firstOrNull {
+          it.isFile && it.name.startsWith("TEST-com.example.SuiteReportWiringTest_") && it.name.endsWith(".xml")
+        }
+      )
+    val xmlHash = aggregatedSuiteXml.name.removePrefix("TEST-com.example.SuiteReportWiringTest_").removeSuffix(".xml")
+    val aggregatedDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(aggregatedSuiteXml)
+    val suitePropsElement =
+      (aggregatedDoc.documentElement.childNodes.let { nodes ->
+        (0 until nodes.length).map { nodes.item(it) }.filterIsInstance<Element>().first { it.tagName == "properties" }
+      })
+    val suiteProps = mutableMapOf<String, String>()
+    val propNodes = suitePropsElement.getElementsByTagName("property")
+    for (i in 0 until propNodes.length) {
+      val prop = propNodes.item(i) as Element
+      suiteProps[prop.getAttribute("name")] = prop.getAttribute("value")
+    }
+    assertThat(suiteProps["modulePath"]).isEqualTo(":app")
+    assertThat(suiteProps["testedVariantName"]).isEqualTo("debug")
+    assertThat(suiteProps["testSuiteName"]).isEqualTo("myBackup")
+    assertThat(suiteProps["testTarget"]).isEqualTo("default")
+    assertThat(suiteProps["suiteType"]).isEqualTo("androidx.test.backup")
+    assertThat(suiteProps["applicationId"]).isEqualTo("com.example.journalingapp")
+    assertThat(suiteProps["applicationName"]).isEqualTo("JournalingApp")
+    assertThat(suiteProps["versionName"]).isEqualTo("1.2.0")
+    assertThat(suiteProps["versionCode"]).isEqualTo("12")
+    assertThat(suiteProps["agpVersion"]).isEqualTo(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+    assertThat(suiteProps["gradleVersion"]).isNotEmpty()
+    assertThat(suiteProps["testLibraryVersion"]).isEqualTo(CUSTOM_BACKUP_VERSION)
+    assertThat(suiteProps["runner"]).isEqualTo("junit-jupiter")
+    assertThat(suiteProps["allowBackup"]).isEqualTo("true")
+    assertThat(suiteProps["fullBackupContent"]).isEqualTo("@xml/backup_rules")
+    assertThat(suiteProps["fullBackupContentFile"]).isEqualTo("backup_rules.xml")
+    assertThat(suiteProps["fullBackupContentXml"]).contains("secret.xml")
+    assertThat(suiteProps["dataExtractionRules"]).isEqualTo("@xml/data_extraction_rules")
+    assertThat(suiteProps["dataExtractionRulesFile"]).isEqualTo("data_extraction_rules.xml")
+    assertThat(suiteProps["dataExtractionRulesXml"]).contains("user_session.xml")
+
+    val namespacedLogcat = File(aggregatedSuiteXml.parentFile, "attachments/$xmlHash/1/logcat-127.0.0.1_6520.txt")
+    val namespacedAttachment = File(aggregatedSuiteXml.parentFile, "attachments/$xmlHash/2/host-log.txt")
+    assertThat(namespacedLogcat.isFile).isTrue()
+    assertThat(namespacedAttachment.isFile).isTrue()
+    assertThat(namespacedAttachment.readText()).isEqualTo("Backup started\nRestore completed\n")
+
+    // Verify end-to-end HTML report generation resolves report entries and FileEntry attachments into data.js, details/, and artifacts/.
+    val htmlReportDir = build.subProject(":app").resolve("build/reports/tests/testDebugMyBackupDefaultTestSuite").toFile()
+    val dataJsJson =
+      JsonParser.parseString(File(htmlReportDir, "data.js").readText().removePrefix("const TEST_DATA_SOURCE = ").trim().removeSuffix(";"))
+        .asJsonObject
+    val envJson = dataJsJson.getAsJsonArray("suiteEnvironments").single().asJsonObject
+    assertThat(envJson.get("applicationId").asString).isEqualTo("com.example.journalingapp")
+    assertThat(envJson.get("applicationName").asString).isEqualTo("JournalingApp")
+    assertThat(envJson.get("versionName").asString).isEqualTo("1.2.0")
+    assertThat(envJson.get("versionCode").asInt).isEqualTo(12)
+
+    val firstCaseResultJson =
+      dataJsJson
+        .getAsJsonArray("modules")
+        .single()
+        .asJsonObject
+        .getAsJsonArray("packages")
+        .first { it.asJsonObject.get("name").asString == "com.example" }
+        .asJsonObject
+        .getAsJsonArray("classes")
+        .first { it.asJsonObject.get("name").asString == "SuiteReportWiringTest" }
+        .asJsonObject
+        .getAsJsonArray("testCases")
+        .first { it.asJsonObject.get("name").asString.startsWith("firstCase") }
+        .asJsonObject
+        .getAsJsonArray("targets")
+        .single()
+        .asJsonObject
+        .getAsJsonArray("testSuiteResults")
+        .single()
+        .asJsonObject
+        .getAsJsonObject("variantResults")
+        .getAsJsonObject("debug")
+    val logMetaTitles = firstCaseResultJson.getAsJsonArray("logMeta").map { it.asJsonObject.get("title").asString }
+    assertThat(logMetaTitles).containsExactly("Host log", "Logcat (source)").inOrder()
+
+    val testDetailJs = File(htmlReportDir, "details/t_0001.js")
+    val envDetailJs = File(htmlReportDir, "details/env_01.js")
+    assertThat(testDetailJs.isFile).isTrue()
+    assertThat(File(htmlReportDir, "details/t_0002.js").exists()).isFalse()
+    val testDetailText = testDetailJs.readText()
+    assertThat(testDetailText).contains("Backup started\\nRestore completed\\n")
+    assertThat(testDetailText).contains("first-case-stdout")
+    assertThat(testDetailText).doesNotContain("[[ATTACHMENT|")
+    assertThat(File(htmlReportDir, "artifacts/t_0001/host-log.txt").readText()).isEqualTo("Backup started\nRestore completed\n")
+    assertThat(File(htmlReportDir, "artifacts/t_0001/logcat-127.0.0.1_6520.txt").readText())
+      .isEqualTo("01-01 00:00:00.000 I/BackupManager: OK\n")
+    assertThat(envDetailJs.isFile).isTrue()
+    assertThat(envDetailJs.readText()).contains("user_session.xml")
+    assertThat(File(htmlReportDir, "artifacts/env_01/backup_rules.xml").readText()).contains("secret.xml")
+    assertThat(File(htmlReportDir, "artifacts/env_01/data_extraction_rules.xml").readText()).contains("user_session.xml")
   }
 
   @Test
@@ -151,16 +472,16 @@ class BackupTestSuiteDeclarationTest {
     }
 
     val testRun = backupTestRun(events)
-    Truth.assertThat(testRun.testInvocationType).isEqualTo(TestRun.TestInvocationType.GRADLE_TEST)
+    assertThat(testRun.testInvocationType).isEqualTo(TestRun.TestInvocationType.GRADLE_TEST)
     // The test of the toy engine and the two tests above
-    Truth.assertThat(testRun.numberOfTestsExecuted).isEqualTo(3)
-    Truth.assertThat(testRun.backupTestRun.passedTestCount).isEqualTo(3)
-    Truth.assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(0)
-    Truth.assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
-    Truth.assertThat(testRun.backupTestRun.transportMode).isEqualTo(BackupTransportMode.LOCAL_TRANSPORT)
-    Truth.assertThat(testRun.backupTestRun.storageDomainCount).isEqualTo(2)
+    assertThat(testRun.numberOfTestsExecuted).isEqualTo(3)
+    assertThat(testRun.backupTestRun.passedTestCount).isEqualTo(3)
+    assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(0)
+    assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
+    assertThat(testRun.backupTestRun.transportMode).isEqualTo(BackupTransportMode.LOCAL_TRANSPORT)
+    assertThat(testRun.backupTestRun.storageDomainCount).isEqualTo(2)
     // The error of a test that passes isn't a failure.
-    Truth.assertThat(testRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.NO_FAILURE)
+    assertThat(testRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.NO_FAILURE)
   }
 
   @Test
@@ -195,8 +516,8 @@ class BackupTestSuiteDeclarationTest {
     }
 
     val testRun = backupTestRun(events)
-    Truth.assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(1)
-    Truth.assertThat(testRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.TIMEOUT)
+    assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(1)
+    assertThat(testRun.backupTestRun.failureReason).isEqualTo(BackupFailureReason.TIMEOUT)
   }
 
   @Test
@@ -250,11 +571,11 @@ class BackupTestSuiteDeclarationTest {
     val warning = "Backup test suite 'myBackup' has no tests. Add JUnit 5 tests to src/myBackup/test/kotlin/ or src/myBackup/test/java/."
     val testFile = build.subProject(":app").resolve("src/myBackup/test/java/com/example/MyBackupTest.java").toFile()
     val test = testFile.readText()
-    Truth.assertThat(testFile.delete()).isTrue()
+    assertThat(testFile.delete()).isTrue()
 
     val result = build.executor.run(task)
     result.assertOutputContains(warning)
-    Truth.assertThat(result.skippedTasks).contains(task)
+    assertThat(result.skippedTasks).contains(task)
 
     testFile.writeText(test)
     build.executor.run(task).assertOutputDoesNotContain(warning)
@@ -285,7 +606,7 @@ class BackupTestSuiteDeclarationTest {
         it.kind == AndroidStudioEvent.EventKind.TEST_RUN &&
         it.testRun.testKind == TestRun.TestKind.BACKUP_TEST
     }
-    Truth.assertThat(backupEvents).hasSize(1)
+    assertThat(backupEvents).hasSize(1)
     return backupEvents.single().testRun
   }
 }
@@ -294,8 +615,8 @@ class BackupSuiteCallback : ApplicationComponentCallback {
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
     androidComponents.finalizeDsl { applicationExtension ->
       val backupSuite = applicationExtension.testOptions.backupTests.getByName("myBackup")
-      Truth.assertThat(backupSuite.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
-      Truth.assertThat(backupSuite.targetVariants).containsExactly("debug")
+      assertThat(backupSuite.backupTestLibraryVersion).isEqualTo(CUSTOM_BACKUP_VERSION)
+      assertThat(backupSuite.targetVariants).containsExactly("debug")
     }
 
     androidComponents.beforeVariants(androidComponents.selector().withBuildType("debug")) { variantBuilder ->
@@ -307,9 +628,9 @@ class BackupSuiteCallback : ApplicationComponentCallback {
         variantBuilder.suites["myBackup"]
           ?: throw RuntimeException("Cannot find myBackup test suite in test suites : " + variantBuilder.suites.keys.joinToString(", "))
 
-      Truth.assertThat(testSuiteBuilder.junitEngineSpec.includeEngines).contains("junit-jupiter")
+      assertThat(testSuiteBuilder.junitEngineSpec.includeEngines).contains("junit-jupiter")
       val inputs = testSuiteBuilder.junitEngineSpec.inputs
-      Truth.assertThat(inputs)
+      assertThat(inputs)
         .containsExactly(
           AgpTestSuiteInputParameters.TEST_CLASSES,
           AgpTestSuiteInputParameters.TEST_CLASSPATH,
@@ -338,17 +659,34 @@ class BackupSuiteCallback : ApplicationComponentCallback {
       val myBackupTestSuite =
         testSuites.suites["myBackup"]
           ?: throw RuntimeException("Cannot find myBackup test suite in test suites : " + testSuites.suites.keys.joinToString(", "))
-      Truth.assertThat(myBackupTestSuite).isInstanceOf(TestSuite::class.java)
+      assertThat(myBackupTestSuite).isInstanceOf(TestSuite::class.java)
 
-      // Makes the toy engine fail its test with the message of the toyEngineFailure Gradle property, when it is set.
+      // Exercises generated and variant-added static Android res directories alongside main/debug layers.
+      val genResTask = project.tasks.register("generateDebugExtraRes", GenerateExtraResTask::class.java)
+      variant.sources.res?.addGeneratedSourceDirectory(genResTask, GenerateExtraResTask::outputDir)
+      variant.sources.res?.addStaticSourceDirectory("src/extraRes")
+
+      // Makes the toy engine fail when the `toyEngineFailure` Gradle property is set.
       val failure = project.providers.gradleProperty("toyEngineFailure")
-      myBackupTestSuite.configureTestTasks { failure.orNull?.let { systemProperty("toyEngine.failure", it) } }
+      myBackupTestSuite.configureTestTasks {
+        failure.orNull?.let { systemProperty("toyEngine.failure", it) }
+      }
     }
 
     // Verify targetVariants.add("debug") excluded the release build type
     androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
       val testSuites = variant as HasTestSuites
-      Truth.assertThat(testSuites.suites).isEmpty()
+      assertThat(testSuites.suites).isEmpty()
     }
+  }
+}
+
+abstract class GenerateExtraResTask : DefaultTask() {
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+  @TaskAction
+  fun generate() {
+    val valuesDir = File(outputDir.get().asFile, "values").apply { mkdirs() }
+    File(valuesDir, "generated.xml").writeText("<resources><string name=\"generated_token\">ok</string></resources>")
   }
 }
