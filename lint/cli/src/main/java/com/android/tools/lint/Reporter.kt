@@ -256,7 +256,6 @@ protected constructor(
      *
      * @param client the associated client
      * @param output the output file
-     * @param flags the command line flags
      * @throws IOException if an error occurs
      */
     @JvmStatic
