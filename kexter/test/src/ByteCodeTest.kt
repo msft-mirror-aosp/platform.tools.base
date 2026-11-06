@@ -51,4 +51,15 @@ class ByteCodeTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive
     Assert.assertEquals("", 1, instr.size)
     Assert.assertEquals("", instr[0].opcode, Opcode.RETURN)
   }
+
+  @Test
+  fun testLineTableWithBackwardLineAdvance() {
+    // See test/resources/main/src/LineTable.kt: the line goes from the inlined code (after the end of the file) back to line 27 with a
+    // negative DBG_ADVANCE_LINE, whose operand is a signed LEB128.
+    val bytecode = archive.getByteCode("LlineTable/LineTableKt;", "callsInline(I)")
+    val lines = bytecode.debugInfo.lineTable.map { it.lineNumber }
+    Assert.assertEquals("Line table: $lines", 26, lines.first())
+    Assert.assertEquals("Line table: $lines", 27, lines.last())
+    Assert.assertTrue("Line table: $lines", lines.all { it > 0 })
+  }
 }

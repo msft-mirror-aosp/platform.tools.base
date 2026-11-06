@@ -49,30 +49,23 @@ private fun ByteArray.getUShortAt(index: UInt): UShort {
 class DexReader(private val bytes: ByteArray, var position: UInt = 0u) {
   fun copy(): DexReader = DexReader(bytes, position)
 
-  fun uLeb128(): UInt {
-    val mask = 0x7Fu
-    var result = ubyte().toUInt()
-    if (result > mask) {
-      var cur = ubyte().toUInt()
-      result = (result and mask) or ((cur and mask) shl 7)
-      if (cur > mask) {
-        cur = ubyte().toUInt()
-        result = result or ((cur and mask) shl 14)
-        if (cur > mask) {
-          cur = ubyte().toUInt()
-          result = result or ((cur and mask) shl 21)
-          if (cur > mask) {
-            cur = ubyte().toUInt()
-            result = result or ((cur and mask) shl 28)
-          }
-        }
-      }
+  fun uLeb128(): UInt = leb128(signed = false).toUInt()
+
+  fun sLeb128(): Int = leb128(signed = true)
+
+  private fun leb128(signed: Boolean): Int {
+    var result = 0
+    var shift = 0
+    var byte: Int
+    do {
+      byte = ubyte().toInt()
+      result = result or ((byte and 0x7F) shl shift)
+      shift += 7
+    } while ((byte and 0x80) != 0 && shift < 35)
+    if (signed && shift < Int.SIZE_BITS && (byte and 0x40) != 0) {
+      result = result or (-1 shl shift)
     }
     return result
-  }
-
-  fun sLeb128(): Int {
-    return uLeb128p1().toInt()
   }
 
   fun uLeb128p1(): Long {
