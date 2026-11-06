@@ -30,11 +30,14 @@ interface DexBytecode {
 
   fun instructionsForLineNumber(lineNumber: Int): List<Instruction>
 
+  /** The `try_item`s of this method's `code_item`, in the order they appear in the dex file. Empty if the method has no try blocks. */
+  val tryBlocks: List<TryBlock>
+
   val debugInfo: DexMethodDebugInfo
 
   companion object {
     fun fromBytes(bytes: ByteArray, debugInfo: DexMethodDebugInfo = DexMethodDebugInfo(), logger: Logger = Logger()): DexBytecode {
-      return kexter.core.DexBytecodeImpl(bytes, debugInfo, logger)
+      return kexter.core.DexBytecodeImpl(bytes, tryBlocks = null, debugInfo, logger)
     }
   }
 }

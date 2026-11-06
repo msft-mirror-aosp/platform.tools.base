@@ -20,6 +20,7 @@ import kexter.DexMethodDebugInfo
 import kexter.Instruction
 import kexter.Logger
 import kexter.Opcode
+import kexter.TryBlock
 
 private const val NOOP_IDENTITY = 0x00u
 private const val PACKED_SWITCH_IDENTITY = 0x01u
@@ -28,10 +29,15 @@ private const val FILL_ARRAY_DATA_IDENTITY = 0x03u
 
 internal open class DexBytecodeImpl(
   override val bytes: ByteArray,
+  tryBlocks: List<TryBlock>? = null,
   override val debugInfo: DexMethodDebugInfo,
   @Suppress("unused") private val logger: Logger,
 ) : BaseDexBytecode(bytes, debugInfo) {
   override val instructions by lazy((LazyThreadSafetyMode.NONE)) { retrieveInstructions() }
+
+  private val _tryBlocks = tryBlocks
+  override val tryBlocks: List<TryBlock>
+    get() = _tryBlocks ?: throw IllegalStateException("Use DexEncodedMethod.byteCode in order to inspect try-blocks")
 
   private fun retrieveInstructions(): List<Instruction> {
     val instrs = mutableListOf<Instruction>()

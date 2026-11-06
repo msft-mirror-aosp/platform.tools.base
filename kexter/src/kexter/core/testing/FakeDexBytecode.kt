@@ -17,6 +17,7 @@ package kexter.core.testing
 
 import kexter.DexMethodDebugInfo
 import kexter.Instruction
+import kexter.TryBlock
 import kexter.core.BaseDexBytecode
 import org.jetbrains.annotations.TestOnly
 
@@ -29,4 +30,8 @@ import org.jetbrains.annotations.TestOnly
 internal class FakeDexBytecode(
   override val instructions: List<Instruction>,
   debugInfo: DexMethodDebugInfo,
-) : BaseDexBytecode(ByteArray(0), debugInfo)
+) : BaseDexBytecode(ByteArray(0), debugInfo) {
+
+  override val tryBlocks: List<TryBlock>
+    get() = throw IllegalStateException("tryBlocks is not supported by this fake")
+}

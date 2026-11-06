@@ -16,8 +16,11 @@
 
 package kexter.core
 
+import kexter.CatchHandler
 import kexter.DexEncodedMethod
 import kexter.DexMethodDebugInfo
+import kexter.TryBlock
+import kotlin.math.absoluteValue
 
 internal class CodeItem(
   val registerSize: UShort,
@@ -38,14 +41,47 @@ internal class CodeItem(
       val debugInfoOffset = reader.uint()
       val sizeInstructions = reader.uint() * UShort.SIZE_BYTES.toUInt()
       val instructions = reader.bytes(sizeInstructions)
-      // TODO
-      // padding
-      // tries
-      // handlers
+      // Tries and handlers are parsed lazily by [readTryBlocks].
       return CodeItem(registerSize, insSize, outsSize, triesSize, debugInfoOffset, sizeInstructions, instructions)
+    }
+
+    /**
+     * Reads the `tries` and `handlers` sections of a `code_item`.
+     *
+     * [reader] must be positioned right after the instructions of [codeItem], i.e. where [from] left it.
+     */
+    fun readTryBlocks(reader: DexReader, codeItem: CodeItem): List<TryBlock> {
+      val triesSize = codeItem.triesSize.toInt()
+      if (triesSize == 0) {
+        return emptyList()
+      }
+      // Two bytes of padding are present when tries_size is non-zero and insns_size (in 16-bit code units) is odd.
+      if ((codeItem.sizeInstructions / UShort.SIZE_BYTES.toUInt()) % 2u == 1u) {
+        reader.skip(2u)
+      }
+      val tries =
+        List(triesSize) {
+          RawTryItem(startIndex = reader.uint(), instructionCount = reader.ushort().toUInt(), handlerOffset = reader.ushort().toUInt())
+        }
+      // `handler_off` is relative to the start of the `encoded_catch_handler_list`.
+      val handlersStart = reader.position
+      return tries.map {
+        val handlerReader = reader.copy()
+        handlerReader.position = handlersStart + it.handlerOffset
+        TryBlock(it.startIndex, it.instructionCount, readCatchHandlers(handlerReader))
+      }
+    }
+
+    private fun readCatchHandlers(reader: DexReader): List<CatchHandler> {
+      // A non-positive size means that a catch-all handler follows the typed handlers.
+      val size = reader.sLeb128()
+      val typed = List(size.absoluteValue) { CatchHandler(typeIndex = reader.uLeb128(), handlerIndex = reader.uLeb128()) }
+      return if (size <= 0) typed + CatchHandler(typeIndex = null, handlerIndex = reader.uLeb128()) else typed
     }
   }
 }
+
+private class RawTryItem(val startIndex: UInt, val instructionCount: UInt, val handlerOffset: UInt)
 
 internal class DexEncodedMethodImpl(private val method: EncodedMethod, override val isDirect: Boolean, private val dex: DexImpl) :
   DexEncodedMethod {
@@ -77,11 +113,11 @@ internal class DexEncodedMethodImpl(private val method: EncodedMethod, override 
   private fun retrieveByteCode(): DexBytecodeImpl {
     if (method.codeOffset == 0u) {
       // Native method don't have bytecode
-      return DexBytecodeImpl(ByteArray(0), DexMethodDebugInfo(), dex.logger)
+      return DexBytecodeImpl(ByteArray(0), emptyList(), DexMethodDebugInfo(), dex.logger)
     }
     val reader = dex.reader(method.codeOffset)
     val codeItem = CodeItem.from(reader)
-    reader.position = codeItem.debugInfoOffset
+    val tryBlocks = CodeItem.readTryBlocks(reader, codeItem)
     val bytecode = codeItem.instructions
     val debugInfo =
       if (codeItem.debugInfoOffset == 0u) {
@@ -90,6 +126,6 @@ internal class DexEncodedMethodImpl(private val method: EncodedMethod, override 
         reader.position = codeItem.debugInfoOffset
         kexter.core.DexMethodDebugInfo.fromReader(reader, dex.logger)
       }
-    return DexBytecodeImpl(bytecode, debugInfo, dex.logger)
+    return DexBytecodeImpl(bytecode, tryBlocks, debugInfo, dex.logger)
   }
 }
