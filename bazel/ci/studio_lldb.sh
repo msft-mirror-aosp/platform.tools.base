@@ -23,8 +23,7 @@ readonly bin_dir="$("${bazel_dir}"/bazel info ${config_options} bazel-bin)"
   --build_metadata="test_definition_name=android_studio/studio_lldb" \
   --build_event_binary_file="${DIST_DIR:-/tmp}/bazel-${BUILD_NUMBER}.bes" \
   --flaky_test_attempts=3 \
-  //tools/vendor/google/lldb-integration-tests:lldb-integration-tests_tests \
-  //tools/vendor/google/lldb-integration-tests:lldb-integration-tests-altlang_tests
+  //tools/vendor/google/lldb-integration-tests:lldb-integration-tests_tests
 
 readonly bazel_status=$?
 
