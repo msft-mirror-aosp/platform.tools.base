@@ -21,7 +21,7 @@ import java.io.Serializable
 /**
  * Field definition for the generated BuildConfig class.
  *
- * The field is generated as: <type> <name> = <value>;
+ * The field is generated as: `<type> <name> = <value>;`
  */
 class BuildConfigField<T : Serializable>(
   /** Value to be written as BuildConfig field type. */
