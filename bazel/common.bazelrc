@@ -5,9 +5,6 @@ startup --windows_enable_symlinks
 # Platform specific config automatically applies --config=(linux|macos|windows)
 common --enable_platform_specific_config
 
-# Remote Build Execution requires a strong hash function, such as SHA256.
-startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
-
 # Building runfile trees is unnecessary, unless executing binaries in bazel-bin/ manually (use 'bazel run' instead)
 # See: https://github.com/bazelbuild/bazel/commit/03246077f948f2790a83520e7dccc2625650e6df
 common --nobuild_runfile_links
@@ -23,6 +20,10 @@ common --jvmopt='-Xmx4G'
 common --jvmopt='-XX:+UseG1GC'
 common --jvmopt='-XX:+ErrorFileToStderr'
 common --verbose_failures
+
+# Note that file:/// needs 3 / to work with %workspace% on Windows.
+common --registry=file:///%workspace%/build/bazel/registry
+common --registry=https://bcr.bazel.build
 
 common --noincompatible_disallow_empty_glob
 # TODO(b/416777191) PerfgateDataCollector relies on zipped test outputs.
