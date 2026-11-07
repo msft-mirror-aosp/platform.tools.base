@@ -103,6 +103,18 @@ genrule(
     cmd = "touch $@",
 )
 
+cc_library(
+    name = "filter_test_base",
+    testonly = True,
+    srcs = ["filter_test_base.cc"],
+    hdrs = ["filter_test_base.h"],
+    deps = [
+        ":agent_lib",
+        "@googletest//:gtest",
+        "@slicer",
+    ],
+)
+
 cc_test(
     name = "agent_unit_tests",
     size = "small",
@@ -110,11 +122,13 @@ cc_test(
         "bytecode_helpers_test.cc",
         "filter_result_test.cc",
         "hits_extractor_test.cc",
+        "kotlin_lateinit_filter_test.cc",
         "metadata_collector_test.cc",
     ],
     linkstatic = 1,
     deps = [
         ":agent_lib",
+        ":filter_test_base",
         "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@googletest//:gtest_main",
     ],
