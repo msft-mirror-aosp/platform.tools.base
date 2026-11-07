@@ -410,6 +410,7 @@ public class PostValidator {
             }
         }
     }
+
     /**
      * check if the tools:ignore_warning is set
      *
@@ -423,11 +424,9 @@ public class PostValidator {
                 xmlElement.getAttributeOperations();
         for (Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation :
                 attributeOperations) {
-            if (attributeOperation.getValue() == AttributeOperationType.IGNORE_WARNING) {
-                if (attributeOperation.getKey().toString().equals("tools:true")) {
-                    return true;
-                }
-                return false;
+            if (attributeOperation.getValue() == AttributeOperationType.IGNORE_WARNING
+                    && attributeOperation.getKey().getLocalName().equals("true")) {
+                return true;
             }
         }
         return false;

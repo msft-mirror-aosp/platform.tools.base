@@ -16,6 +16,8 @@
 
 package com.android.manifmerger;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -31,7 +33,6 @@ import com.google.common.collect.ImmutableList;
 
 import org.junit.Before;
 import org.junit.Test;
-
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Comment;
@@ -158,6 +159,27 @@ public final class PostValidatorTest {
         }
         fail("No reference to faulty PostValidatorTest#testIncorrectRemoveMain:8 found in: \n" +
                 Joiner.on("\n    ").join(mergingReportBuilder.build().getLoggingRecords()));
+    }
+
+    @Test
+    public void testIgnoreWarningWithNonDefaultToolsPrefix() throws Exception {
+        String input =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:t=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "    <application android:label=\"@string/lib_name\"\n"
+                        + "        t:ignore_warning=\"true\" t:replace=\"android:label\"/>\n"
+                        + "</manifest>";
+
+        XmlDocument xmlDocument =
+                loadXmlDoc(
+                        TestUtils.sourceFile(
+                                getClass(), "testIgnoreWarningWithNonDefaultToolsPrefix"),
+                        input);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
+        assertThat(mergingReportBuilder.build().getLoggingRecords()).isEmpty();
     }
 
     @Test
