@@ -54,6 +54,11 @@ class TestMethod {
   // Appends `label`.
   void Place(lir::Label* label);
 
+  // Appends the payload of a packed-switch: the cases from `first_key` on jump
+  // to `targets`. Place a label right before it for the switch to refer to.
+  void AddPackedSwitchPayload(dex::s4 first_key,
+                              std::vector<lir::Label*> targets);
+
   // Returns the last instruction appended.
   lir::Instruction* Last() const { return last_; }
 
@@ -67,6 +72,7 @@ class TestMethod {
   lir::Const32* Literal(dex::u4 value);
   lir::CodeLocation* Target(lir::Label* label);
   lir::String* StringRef(const char* value);
+  lir::Type* TypeRef(const char* descriptor);
   lir::Field* FieldRef(const char* owner, const char* name, const char* type);
   lir::Method* MethodRef(const char* owner, const char* name,
                          const char* signature);

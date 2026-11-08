@@ -122,6 +122,7 @@ cc_test(
         "bytecode_helpers_test.cc",
         "filter_result_test.cc",
         "hits_extractor_test.cc",
+        "kotlin_coroutine_filter_test.cc",
         "kotlin_lateinit_filter_test.cc",
         "metadata_collector_test.cc",
     ],

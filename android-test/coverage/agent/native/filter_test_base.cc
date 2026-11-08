@@ -61,6 +61,15 @@ void TestMethod::Place(lir::Label* label) {
   last_ = label;
 }
 
+void TestMethod::AddPackedSwitchPayload(dex::s4 first_key,
+                                        std::vector<lir::Label*> targets) {
+  auto* payload = code_ir_->Alloc<lir::PackedSwitchPayload>();
+  payload->first_key = first_key;
+  payload->targets = std::move(targets);
+  code_ir_->instructions.push_back(payload);
+  last_ = payload;
+}
+
 int TestMethod::IndexOf(const lir::Instruction* instr) const {
   int index = 0;
   for (const auto* node : code_ir_->instructions) {
@@ -99,6 +108,11 @@ lir::CodeLocation* TestMethod::Target(lir::Label* label) {
 lir::String* TestMethod::StringRef(const char* value) {
   ir::String* string = builder_.GetAsciiString(value);
   return code_ir_->Alloc<lir::String>(string, string->orig_index);
+}
+
+lir::Type* TestMethod::TypeRef(const char* descriptor) {
+  ir::Type* type = builder_.GetType(descriptor);
+  return code_ir_->Alloc<lir::Type>(type, type->orig_index);
 }
 
 lir::Field* TestMethod::FieldRef(const char* owner, const char* name,
