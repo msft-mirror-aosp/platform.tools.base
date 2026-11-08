@@ -17,21 +17,20 @@
 #ifndef COVERAGE_AGENT_KOTLIN_COMPOSE_FILTER_H_
 #define COVERAGE_AGENT_KOTLIN_COMPOSE_FILTER_H_
 
-#include "filter_interface.h"
+#include "tools/base/android-test/coverage/agent/native/filter_interface.h"
 
 namespace coverage {
 
 /**
- * Filter for Jetpack Compose compiler-generated branch structures.
- *
- * Demotes synthetic branches using boundary range-wiping,
- * endRestartGroup branch suppressions, and isTraceInProgress conditional
- * branch suppressions.
+ * Filters the code that the Compose compiler plugin generates in composable
+ * functions and lambdas: the code that decides whether the body runs, the
+ * code that runs when the body is skipped, the update of the recompose scope
+ * and the trace markers.
  */
 class KotlinComposeFilter : public IFilter {
  public:
-  bool FilterBranch(ir::EncodedMethod* ir_method,
-                    lir::Instruction* branch_instr) override;
+  void Filter(const FilterContext& context, ir::EncodedMethod* ir_method,
+              lir::CodeIr& code_ir, FilterOutput& output) override;
 };
 
 }  // namespace coverage

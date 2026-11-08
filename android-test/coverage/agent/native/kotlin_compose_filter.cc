@@ -14,337 +14,182 @@
  * limitations under the License.
  */
 
-#include "kotlin_compose_filter.h"
+#include "tools/base/android-test/coverage/agent/native/kotlin_compose_filter.h"
+
 #include <cstring>
+#include <unordered_set>
 #include <vector>
-#include "filter_interface.h"
+
+#include "slicer/code_ir.h"
 #include "slicer/dex_bytecode.h"
+#include "slicer/dex_ir.h"
+#include "tools/base/android-test/coverage/agent/native/filter_interface.h"
 
 namespace coverage {
 
 namespace {
 
-// Helper to find the first preceding bytecode instruction, skipping
-// non-bytecode metadata/debug elements
-lir::Bytecode* GetPrevBytecode(lir::Instruction* instr) {
-  if (instr == nullptr) return nullptr;
-  for (auto* p = instr->prev; p != nullptr; p = p->prev) {
-    if (auto* bytecode = dynamic_cast<lir::Bytecode*>(p)) {
+constexpr char kComposer[] = "Landroidx/compose/runtime/Composer;";
+constexpr char kComposerKt[] = "Landroidx/compose/runtime/ComposerKt;";
+
+// Returns the first bytecode at or after `instr`, skipping labels, debug
+// annotations and other non-bytecode nodes.
+lir::Bytecode* SkipNonBytecodes(lir::Instruction* instr) {
+  for (auto* node = instr; node != nullptr; node = node->next) {
+    if (auto* bytecode = dynamic_cast<lir::Bytecode*>(node)) {
       return bytecode;
     }
   }
   return nullptr;
 }
 
-// Finds the virtual register index of the Composer parameter (using descriptor
-// substring matching). This serves as our gatekeeper to verify if the method is
-// Composable.
-bool FindComposerRegister(ir::EncodedMethod* ir_method, dex::u4& reg_composer) {
-  if (ir_method == nullptr || ir_method->code == nullptr ||
-      ir_method->decl == nullptr || ir_method->decl->prototype == nullptr) {
+// Returns the first bytecode after `instr`, or nullptr.
+lir::Bytecode* NextBytecode(lir::Instruction* instr) {
+  return instr == nullptr ? nullptr : SkipNonBytecodes(instr->next);
+}
+
+// Returns the target of a branch instruction, or the payload label of a
+// switch instruction, or nullptr.
+lir::Label* BranchTarget(const lir::Bytecode* branch) {
+  for (auto* operand : branch->operands) {
+    if (auto* code_location = dynamic_cast<lir::CodeLocation*>(operand)) {
+      return code_location->label;
+    }
+  }
+  return nullptr;
+}
+
+// Returns the register of operand `index` of `bytecode`, or -1.
+int Register(const lir::Bytecode* bytecode, size_t index) {
+  if (index >= bytecode->operands.size()) {
+    return -1;
+  }
+  auto* reg = dynamic_cast<lir::VReg*>(bytecode->operands[index]);
+  return reg == nullptr ? -1 : static_cast<int>(reg->reg);
+}
+
+// Returns true if `bytecode` invokes the method `name` of `owner` with
+// `signature`.
+bool Invokes(const lir::Bytecode* bytecode, const char* owner, const char* name,
+             const char* signature) {
+  if ((dex::GetFlagsFromOpcode(bytecode->opcode) & dex::kInvoke) == 0) {
     return false;
   }
-
-  const dex::u4 ins_count = ir_method->code->ins_count;
-  if (ins_count == 0) {
-    return false;
-  }
-
-  std::vector<ir::Type*> param_types;
-
-  // Non-static: p0 is 'this'
-  if ((ir_method->access_flags & dex::kAccStatic) == 0) {
-    param_types.push_back(ir_method->decl->parent);
-  }
-  if (ir_method->decl->prototype->param_types != nullptr) {
-    for (const auto& type : ir_method->decl->prototype->param_types->types) {
-      param_types.push_back(type);
+  for (auto* operand : bytecode->operands) {
+    if (auto* method = dynamic_cast<lir::Method*>(operand)) {
+      const ir::MethodDecl* decl = method->ir_method;
+      return decl != nullptr && decl->parent != nullptr &&
+             decl->parent->descriptor != nullptr && decl->name != nullptr &&
+             decl->prototype != nullptr &&
+             strcmp(decl->parent->descriptor->c_str(), owner) == 0 &&
+             strcmp(decl->name->c_str(), name) == 0 &&
+             decl->prototype->Signature() == signature;
     }
   }
-
-  dex::u4 reg = ir_method->code->registers - ins_count;
-  for (const auto& type : param_types) {
-    dex::u4 current_reg = reg;
-    if (type->GetCategory() == ir::Type::Category::WideScalar) {
-      reg += 2;
-    } else {
-      reg += 1;
-    }
-
-    if (type->descriptor != nullptr) {
-      const char* descriptor = type->descriptor->c_str();
-      // Perform a substring search to be fully immune to obfuscation or custom
-      // package annotations
-      if (descriptor != nullptr && strstr(descriptor, "Composer;") != nullptr) {
-        reg_composer = current_reg;
-        return true;
-      }
-    }
-  }
-
   return false;
 }
 
-// Helper to determine if a branch instruction is topologically located before
-// or at the shouldExecute or getSkipping branch in a Composable method.
-bool IsBeforeComposeBoundary(ir::EncodedMethod* ir_method,
-                             lir::Instruction* branch_instr) {
-  if (ir_method == nullptr || branch_instr == nullptr) {
-    return false;
+// Returns the jump with opcode `jump_opcode` that tests the result of
+// `invoke`, moved to a register with `move_opcode`, or nullptr:
+//
+//   invoke ...
+//   move-result vX
+//   if-eqz vX, :target
+lir::Bytecode* NextIsJumpOnResult(lir::Bytecode* invoke,
+                                  dex::Opcode move_opcode,
+                                  dex::Opcode jump_opcode) {
+  lir::Bytecode* move = NextBytecode(invoke);
+  if (move == nullptr || move->opcode != move_opcode) {
+    return nullptr;
   }
-
-  lir::Instruction* boundary_instr = nullptr;
-
-  // Find the first instruction of the method to start scanning forward
-  lir::Instruction* first_instr = branch_instr;
-  while (first_instr->prev != nullptr) {
-    first_instr = first_instr->prev;
+  lir::Bytecode* jump = NextBytecode(move);
+  if (jump == nullptr || jump->opcode != jump_opcode ||
+      Register(jump, 0) != Register(move, 0)) {
+    return nullptr;
   }
+  return jump;
+}
 
-  for (auto* instr = first_instr; instr != nullptr; instr = instr->next) {
-    if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
-      dex::Opcode op = bytecode->opcode;
-      if (op >= dex::OP_INVOKE_VIRTUAL &&
-          op <= dex::OP_INVOKE_INTERFACE_RANGE) {
-        for (auto* operand : bytecode->operands) {
-          if (auto* method_operand = dynamic_cast<lir::Method*>(operand)) {
-            if (method_operand->ir_method != nullptr &&
-                method_operand->ir_method->name != nullptr &&
-                method_operand->ir_method->parent != nullptr &&
-                method_operand->ir_method->parent->descriptor != nullptr) {
-              const char* parent_class =
-                  method_operand->ir_method->parent->descriptor->c_str();
-              const char* m_name = method_operand->ir_method->name->c_str();
-              if (strstr(parent_class, "runtime/Composer") != nullptr &&
-                  (strcmp(m_name, "shouldExecute") == 0 ||
-                   strcmp(m_name, "getSkipping") == 0)) {
-                // The boundary is the conditional branch immediately following
-                // this invoke
-                for (auto* next_instr = instr->next; next_instr != nullptr;
-                     next_instr = next_instr->next) {
-                  if (auto* next_bytecode =
-                          dynamic_cast<lir::Bytecode*>(next_instr)) {
-                    auto next_flags =
-                        dex::GetFlagsFromOpcode(next_bytecode->opcode);
-                    if (next_flags & dex::kBranch) {
-                      boundary_instr = next_instr;
-                      break;
-                    }
-                  }
-                }
-                break;
-              }
-            }
+// Ignores the instructions from `jump` to its target, if the target follows
+// it.
+void IgnoreToTarget(lir::Bytecode* jump, FilterOutput& output) {
+  lir::Label* target = jump == nullptr ? nullptr : BranchTarget(jump);
+  if (target == nullptr) {
+    return;
+  }
+  for (auto* node = jump->next; node != nullptr; node = node->next) {
+    if (node == target) {
+      output.Ignore(jump, target);
+      return;
+    }
+  }
+}
+
+// Ignores the code that can run from `start`, following jumps and switches.
+void IgnoreReachable(lir::CodeIr& code_ir, lir::Label* start,
+                     FilterOutput& output) {
+  std::unordered_set<lir::Instruction*> reached;
+  std::vector<lir::Instruction*> pending = {start};
+  while (!pending.empty()) {
+    lir::Instruction* node = pending.back();
+    pending.pop_back();
+    for (; node != nullptr && reached.insert(node).second; node = node->next) {
+      auto* bytecode = dynamic_cast<lir::Bytecode*>(node);
+      if (bytecode == nullptr) {
+        continue;
+      }
+      const dex::u4 flags = dex::GetFlagsFromOpcode(bytecode->opcode);
+      if (flags & dex::kBranch) {
+        pending.push_back(BranchTarget(bytecode));
+      } else if (flags & dex::kSwitch) {
+        lir::Label* payload = BranchTarget(bytecode);
+        lir::Instruction* cases = payload == nullptr ? nullptr : payload->next;
+        if (auto* packed = dynamic_cast<lir::PackedSwitchPayload*>(cases)) {
+          pending.insert(pending.end(), packed->targets.begin(),
+                         packed->targets.end());
+        } else if (auto* sparse =
+                       dynamic_cast<lir::SparseSwitchPayload*>(cases)) {
+          for (const auto& switch_case : sparse->switch_cases) {
+            pending.push_back(switch_case.target);
           }
         }
       }
-      if (boundary_instr != nullptr) {
+      if ((flags & dex::kContinue) == 0) {
         break;
       }
     }
   }
 
-  if (boundary_instr == nullptr) {
+  // Reports the code that was reached as ranges, in code order.
+  lir::Instruction* from = nullptr;
+  lir::Instruction* to = nullptr;
+  for (auto* instr : code_ir.instructions) {
+    if (reached.count(instr) > 0) {
+      if (from == nullptr) {
+        from = instr;
+      }
+      to = instr;
+    } else if (from != nullptr) {
+      output.Ignore(from, to);
+      from = nullptr;
+    }
+  }
+  if (from != nullptr) {
+    output.Ignore(from, to);
+  }
+}
+
+// Returns true if the method has a Composer parameter, which the Compose
+// compiler adds to composable functions and lambdas.
+bool IsComposable(const ir::EncodedMethod* ir_method) {
+  const ir::Proto* proto = ir_method->decl->prototype;
+  if (proto == nullptr || proto->param_types == nullptr) {
     return false;
   }
-
-  // Check if our branch_instr appears before or is equal to boundary_instr
-  for (auto* instr = first_instr; instr != nullptr; instr = instr->next) {
-    if (instr == branch_instr) {
+  for (const auto* type : proto->param_types->types) {
+    if (type->descriptor != nullptr &&
+        strcmp(type->descriptor->c_str(), kComposer) == 0) {
       return true;
-    }
-    if (instr == boundary_instr) {
-      break;
-    }
-  }
-
-  return false;
-}
-
-// Helper to determine if a branch instruction is topologically located in the
-// Compose skipping epilogue
-bool IsInComposeEpilogue(ir::EncodedMethod* ir_method,
-                         lir::Instruction* branch_instr) {
-  if (ir_method == nullptr || branch_instr == nullptr) {
-    return false;
-  }
-
-  lir::Instruction* epilogue_start_label = nullptr;
-
-  lir::Instruction* first_instr = branch_instr;
-  while (first_instr->prev != nullptr) {
-    first_instr = first_instr->prev;
-  }
-
-  for (auto* instr = first_instr; instr != nullptr; instr = instr->next) {
-    if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
-      dex::Opcode op = bytecode->opcode;
-      if (op >= dex::OP_INVOKE_VIRTUAL &&
-          op <= dex::OP_INVOKE_INTERFACE_RANGE) {
-        for (auto* operand : bytecode->operands) {
-          if (auto* method_operand = dynamic_cast<lir::Method*>(operand)) {
-            if (method_operand->ir_method != nullptr &&
-                method_operand->ir_method->name != nullptr &&
-                method_operand->ir_method->parent != nullptr &&
-                method_operand->ir_method->parent->descriptor != nullptr) {
-              const char* parent_class =
-                  method_operand->ir_method->parent->descriptor->c_str();
-              const char* m_name = method_operand->ir_method->name->c_str();
-              if (strstr(parent_class, "runtime/Composer") != nullptr &&
-                  strcmp(m_name, "getSkipping") == 0) {
-                // Find the branch instruction following getSkipping
-                for (auto* next_instr = instr->next; next_instr != nullptr;
-                     next_instr = next_instr->next) {
-                  if (auto* next_bytecode =
-                          dynamic_cast<lir::Bytecode*>(next_instr)) {
-                    auto next_flags =
-                        dex::GetFlagsFromOpcode(next_bytecode->opcode);
-                    if (next_flags & dex::kBranch) {
-                      // Extract the target label of the skipping branch
-                      // (epilogue start)
-                      for (auto* op_or : next_bytecode->operands) {
-                        if (auto* code_loc =
-                                dynamic_cast<lir::CodeLocation*>(op_or)) {
-                          epilogue_start_label = code_loc->label;
-                        }
-                      }
-                      break;
-                    }
-                  }
-                }
-                break;
-              }
-            }
-          }
-        }
-      }
-      if (epilogue_start_label != nullptr) {
-        break;
-      }
-    }
-  }
-
-  if (epilogue_start_label == nullptr) {
-    return false;
-  }
-
-  // Check if our branch_instr appears at or after epilogue_start_label
-  bool in_epilogue = false;
-  for (auto* instr = first_instr; instr != nullptr; instr = instr->next) {
-    if (instr == epilogue_start_label) {
-      in_epilogue = true;
-    }
-    if (instr == branch_instr) {
-      return in_epilogue;
-    }
-  }
-  return false;
-}
-
-// Detects the endRestartGroup() POP-gated branch suppression
-bool IsEndRestartGroupBranch(ir::EncodedMethod* ir_method,
-                             lir::Instruction* branch_instr) {
-  auto* bytecode = dynamic_cast<lir::Bytecode*>(branch_instr);
-  if (bytecode == nullptr || bytecode->opcode != dex::OP_IF_EQZ) {
-    return false;
-  }
-
-  lir::Instruction* prev_instr = GetPrevBytecode(branch_instr);
-  if (prev_instr == nullptr) {
-    return false;
-  }
-
-  auto* prev_bytecode = dynamic_cast<lir::Bytecode*>(prev_instr);
-  if (prev_bytecode != nullptr &&
-      prev_bytecode->opcode == dex::OP_MOVE_RESULT_OBJECT) {
-    prev_instr = GetPrevBytecode(prev_instr);
-  }
-
-  auto* invoke_bytecode = dynamic_cast<lir::Bytecode*>(prev_instr);
-  if (invoke_bytecode == nullptr) {
-    return false;
-  }
-
-  dex::Opcode invoke_op = invoke_bytecode->opcode;
-  if (invoke_op >= dex::OP_INVOKE_VIRTUAL &&
-      invoke_op <= dex::OP_INVOKE_INTERFACE_RANGE) {
-    for (auto* operand : invoke_bytecode->operands) {
-      if (auto* method_operand = dynamic_cast<lir::Method*>(operand)) {
-        if (method_operand->ir_method != nullptr &&
-            method_operand->ir_method->name != nullptr &&
-            method_operand->ir_method->parent != nullptr &&
-            method_operand->ir_method->parent->descriptor != nullptr) {
-          const char* parent_class =
-              method_operand->ir_method->parent->descriptor->c_str();
-          const char* m_name = method_operand->ir_method->name->c_str();
-          if (strstr(parent_class, "runtime/Composer") != nullptr &&
-              strstr(m_name, "endRestartGroup") != nullptr) {
-            bool has_target = false;
-            for (auto* op_or : bytecode->operands) {
-              if (auto* code_loc = dynamic_cast<lir::CodeLocation*>(op_or)) {
-                has_target = true;
-                if (code_loc->label != nullptr &&
-                    code_loc->label->next != nullptr) {
-                  if (auto* target_bytecode =
-                          dynamic_cast<lir::Bytecode*>(code_loc->label->next)) {
-                    // Check if the jump target represents a clean POP or
-                    // equivalent in DEX
-                    return true;
-                  }
-                }
-              }
-            }
-            return !has_target;
-          }
-        }
-      }
-    }
-  }
-  return false;
-}
-
-// Detects the isTraceInProgress() conditional branch suppression
-bool IsTraceInProgressBranch(ir::EncodedMethod* ir_method,
-                             lir::Instruction* branch_instr) {
-  auto* bytecode = dynamic_cast<lir::Bytecode*>(branch_instr);
-  if (bytecode == nullptr || bytecode->opcode != dex::OP_IF_EQZ) {
-    return false;
-  }
-
-  lir::Instruction* prev_instr = GetPrevBytecode(branch_instr);
-  if (prev_instr == nullptr) {
-    return false;
-  }
-
-  auto* prev_bytecode = dynamic_cast<lir::Bytecode*>(prev_instr);
-  if (prev_bytecode != nullptr &&
-      prev_bytecode->opcode == dex::OP_MOVE_RESULT) {
-    prev_instr = GetPrevBytecode(prev_instr);
-  }
-
-  auto* invoke_bytecode = dynamic_cast<lir::Bytecode*>(prev_instr);
-  if (invoke_bytecode == nullptr) {
-    return false;
-  }
-
-  dex::Opcode invoke_op = invoke_bytecode->opcode;
-  if (invoke_op == dex::OP_INVOKE_STATIC ||
-      invoke_op == dex::OP_INVOKE_STATIC_RANGE) {
-    for (auto* operand : invoke_bytecode->operands) {
-      if (auto* method_operand = dynamic_cast<lir::Method*>(operand)) {
-        if (method_operand->ir_method != nullptr &&
-            method_operand->ir_method->name != nullptr &&
-            method_operand->ir_method->parent != nullptr &&
-            method_operand->ir_method->parent->descriptor != nullptr) {
-          const char* parent_class =
-              method_operand->ir_method->parent->descriptor->c_str();
-          const char* m_name = method_operand->ir_method->name->c_str();
-          if (strstr(parent_class, "runtime/ComposerKt") != nullptr &&
-              strstr(m_name, "isTraceInProgress") != nullptr) {
-            return true;
-          }
-        }
-      }
     }
   }
   return false;
@@ -352,36 +197,55 @@ bool IsTraceInProgressBranch(ir::EncodedMethod* ir_method,
 
 }  // namespace
 
-bool KotlinComposeFilter::FilterBranch(ir::EncodedMethod* ir_method,
-                                       lir::Instruction* branch_instr) {
-  dex::u4 reg_composer = 0;
-  if (!FindComposerRegister(ir_method, reg_composer)) {
-    return false;
+void KotlinComposeFilter::Filter(const FilterContext& context,
+                                 ir::EncodedMethod* ir_method,
+                                 lir::CodeIr& code_ir, FilterOutput& output) {
+  if (!IsComposable(ir_method)) {
+    return;
   }
-
-  // 1. shouldExecute and getSkipping prologue range-wipe
-  if (IsBeforeComposeBoundary(ir_method, branch_instr)) {
-    return true;
+  lir::Instruction* first = *code_ir.instructions.begin();
+  for (auto* instr : code_ir.instructions) {
+    auto* invoke = dynamic_cast<lir::Bytecode*>(instr);
+    if (invoke == nullptr) {
+      continue;
+    }
+    if (Invokes(invoke, kComposer, "shouldExecute", "(ZI)Z")) {
+      // if ($composer.shouldExecute(...)) { body } else { skipToGroupEnd() }
+      // Ignores the code up to the check.
+      lir::Bytecode* jump =
+          NextIsJumpOnResult(invoke, dex::OP_MOVE_RESULT, dex::OP_IF_EQZ);
+      if (jump != nullptr) {
+        output.Ignore(first, jump);
+      }
+    } else if (Invokes(invoke, kComposer, "getSkipping", "()Z")) {
+      // if (... || !$composer.skipping) { body } else { skipToGroupEnd() }
+      // Ignores the code up to the check, and the code that can run from the
+      // else branch: the call to skipToGroupEnd() and the code after the body.
+      // D8 can place the else branch before the body.
+      lir::Bytecode* jump =
+          NextIsJumpOnResult(invoke, dex::OP_MOVE_RESULT, dex::OP_IF_NEZ);
+      lir::Label* skip = jump == nullptr ? nullptr : BranchTarget(jump);
+      if (skip != nullptr) {
+        output.Ignore(first, jump);
+        IgnoreReachable(code_ir, skip, output);
+      }
+    } else if (Invokes(invoke, kComposer, "endRestartGroup",
+                       "()Landroidx/compose/runtime/ScopeUpdateScope;")) {
+      // $composer.endRestartGroup()?.updateScope { ... }
+      // Ignores the null check and the call to updateScope().
+      IgnoreToTarget(NextIsJumpOnResult(invoke, dex::OP_MOVE_RESULT_OBJECT,
+                                        dex::OP_IF_EQZ),
+                     output);
+    } else if (Invokes(invoke, kComposerKt, "isTraceInProgress", "()Z")) {
+      // if (isTraceInProgress()) { traceEventStart(...) }, and the same with
+      // traceEventEnd(). Ignores the check and the code that it guards.
+      IgnoreToTarget(
+          NextIsJumpOnResult(invoke, dex::OP_MOVE_RESULT, dex::OP_IF_EQZ),
+          output);
+    }
   }
-
-  // 2. getSkipping epilogue range-wipe
-  if (IsInComposeEpilogue(ir_method, branch_instr)) {
-    return true;
-  }
-
-  // 3. endRestartGroup POP-gated branch suppression
-  if (IsEndRestartGroupBranch(ir_method, branch_instr)) {
-    return true;
-  }
-
-  // 4. isTraceInProgress conditional branch suppression
-  if (IsTraceInProgressBranch(ir_method, branch_instr)) {
-    return true;
-  }
-
-  return false;
 }
 
-REGISTER_FILTER(KotlinComposeFilter)
+REGISTER_KOTLIN_FILTER(KotlinComposeFilter)
 
 }  // namespace coverage
