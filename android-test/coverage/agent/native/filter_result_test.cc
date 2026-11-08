@@ -22,6 +22,7 @@
 #include "slicer/control_flow_graph.h"
 #include "slicer/dex_ir.h"
 #include "tools/base/android-test/coverage/agent/native/filter_interface.h"
+#include "tools/base/android-test/coverage/agent/native/filter_test_base.h"
 #include "tools/base/android-test/coverage/agent/native/synthetic_filter.h"
 
 namespace coverage {
@@ -223,66 +224,39 @@ TEST(SyntheticFilterTest, ApplyWithNullMethodReturnsEmptyResult) {
   EXPECT_FALSE(result.IsBranchSuppressed(&branch));
 }
 
-// Builds `invoke-static getCOROUTINE_SUSPENDED; move-result-object v0;
-// if-nez v0` and runs the registered filters through the context-driven
-// entry point, exercising the registry path end to end.
+// Runs the registered filters through the context-driven entry point on the
+// check that follows a suspending call in tail position, exercising the
+// registry path end to end.
 TEST(SyntheticFilterTest, ApplyWithContextRunsRegisteredFilters) {
-  ir::EncodedMethod method;
-  ir::Code code;
-  method.code = &code;
-  method.decl = nullptr;
-  // Disassemble() must not run on the fake ir::Code, so construct CodeIr with
-  // a null code pointer and restore it afterwards.
-  method.code = nullptr;
-  lir::CodeIr code_ir(&method, nullptr);
-  method.code = &code;
-
-  ir::String parent_descriptor;
-  parent_descriptor.data = slicer::MemView(
-      "\x2bLkotlin/coroutines/intrinsics/IntrinsicsKt;",
-      sizeof("\x2bLkotlin/coroutines/intrinsics/IntrinsicsKt;"));
-  ir::Type parent_type;
-  parent_type.descriptor = &parent_descriptor;
-
-  ir::String method_name;
-  method_name.data = slicer::MemView("\x16getCOROUTINE_SUSPENDED",
-                                     sizeof("\x16getCOROUTINE_SUSPENDED"));
-  ir::MethodDecl callee;
-  callee.parent = &parent_type;
-  callee.name = &method_name;
-  callee.prototype = nullptr;
-  lir::Method method_operand(&callee, 0);
-
-  lir::Bytecode invoke;
-  invoke.opcode = dex::OP_INVOKE_STATIC;
-  invoke.operands.push_back(&method_operand);
-
-  lir::VReg dest_vreg(0);
-  lir::Bytecode move_result;
-  move_result.opcode = dex::OP_MOVE_RESULT_OBJECT;
-  move_result.operands.push_back(&dest_vreg);
-
-  lir::VReg cmp_vreg(0);
-  lir::Bytecode branch;
-  branch.opcode = dex::OP_IF_NEZ;
-  branch.operands.push_back(&cmp_vreg);
-
-  Link({&invoke, &move_result, &branch});
-
-  std::vector<lir::BasicBlock> blocks(1);
-  blocks[0].id = 1;
-  blocks[0].region.first = &invoke;
-  blocks[0].region.last = &branch;
+  constexpr char kSuspendingSignature[] =
+      "(Lkotlin/coroutines/Continuation;)Ljava/lang/Object;";
+  TestMethod m("tailCall", kSuspendingSignature);
+  lir::Label* not_suspended = m.NewLabel();
+  lir::Bytecode* call = m.Add(dex::OP_INVOKE_STATIC,
+                              {m.Regs({2}), m.MethodRef(kTestClassName, "other",
+                                                        kSuspendingSignature)});
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({}),
+         m.MethodRef("Lkotlin/coroutines/intrinsics/IntrinsicsKt;",
+                     "getCOROUTINE_SUSPENDED", "()Ljava/lang/Object;")});
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(1)});
+  lir::Bytecode* check =
+      m.Add(dex::OP_IF_NE, {m.Reg(0), m.Reg(1), m.Target(not_suspended)});
+  m.Add(dex::OP_RETURN_OBJECT, {m.Reg(0)});
+  m.Place(not_suspended);
+  lir::Bytecode* user_return = m.Add(dex::OP_RETURN_OBJECT, {m.Reg(0)});
 
   FilterContext context;
-  context.class_name = "Lcom/example/Foo$1;";
+  context.class_name = kTestClassName;
   context.class_annotations.insert(kKotlinMetadataDescriptor);
 
   FilterResult result =
-      SyntheticFilter::Apply(context, &method, code_ir, blocks);
+      SyntheticFilter::Apply(context, m.ir_method(), m.code_ir(), {});
 
-  EXPECT_TRUE(result.IsBranchSuppressed(&branch));
-  EXPECT_FALSE(result.IsIgnored(&invoke));
+  EXPECT_FALSE(result.IsIgnored(call));
+  EXPECT_TRUE(result.IsIgnored(check));
+  EXPECT_FALSE(result.IsIgnored(user_return));
 }
 
 }  // namespace

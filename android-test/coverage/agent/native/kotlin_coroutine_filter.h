@@ -17,14 +17,20 @@
 #ifndef COVERAGE_AGENT_KOTLIN_COROUTINE_FILTER_H_
 #define COVERAGE_AGENT_KOTLIN_COROUTINE_FILTER_H_
 
-#include "filter_interface.h"
+#include "tools/base/android-test/coverage/agent/native/filter_interface.h"
 
 namespace coverage {
 
+/**
+ * Filters the code that the Kotlin compiler generates for coroutines: the
+ * state machine of suspending functions and lambdas, the check that follows a
+ * suspending call in tail position, and the check that inlined
+ * suspendCoroutineUninterceptedOrReturn() makes before reporting a suspension.
+ */
 class KotlinCoroutineFilter : public IFilter {
  public:
-  bool FilterBranch(ir::EncodedMethod* ir_method,
-                    lir::Instruction* branch_instr) override;
+  void Filter(const FilterContext& context, ir::EncodedMethod* ir_method,
+              lir::CodeIr& code_ir, FilterOutput& output) override;
 };
 
 }  // namespace coverage
