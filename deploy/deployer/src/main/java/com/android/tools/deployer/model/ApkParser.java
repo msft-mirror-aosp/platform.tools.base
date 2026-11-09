@@ -180,6 +180,7 @@ public class ApkParser {
                             .setActivities(manifest.activities())
                             .setServices(manifest.services())
                             .setReceivers(manifest.receivers())
+                            .setProviderNames(manifest.providerNames())
                             .setSdkLibraries(manifest.getSdkLibraries());
 
             for (ZipUtils.ZipEntry entry : zipEntries) {

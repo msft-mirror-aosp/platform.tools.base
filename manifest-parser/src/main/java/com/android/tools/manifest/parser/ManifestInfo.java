@@ -18,6 +18,7 @@ package com.android.tools.manifest.parser;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
+import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.tools.manifest.parser.components.ManifestReceiverInfo;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.xml.AndroidManifest;
@@ -32,6 +33,8 @@ public class ManifestInfo {
     private final List<ManifestActivityInfo> activities;
 
     private final List<ManifestReceiverInfo> receivers;
+
+    private final List<String> providerNames;
 
     private final List<ManifestServiceInfo> services;
 
@@ -54,6 +57,7 @@ public class ManifestInfo {
         activities = new ArrayList<>();
         services = new ArrayList<>();
         receivers = new ArrayList<>();
+        providerNames = new ArrayList<>();
         sdkLibraries = new ArrayList<>();
         applicationId = "";
         instrumentationTargetPackages = new ArrayList<>();
@@ -75,6 +79,12 @@ public class ManifestInfo {
     @NonNull
     public List<ManifestReceiverInfo> receivers() {
         return receivers;
+    }
+
+    /** Returns the fully qualified class names of the content providers of the application. */
+    @NonNull
+    public List<String> providerNames() {
+        return providerNames;
     }
 
     @NonNull
@@ -156,6 +166,12 @@ public class ManifestInfo {
                 activities.add(new ManifestActivityInfo(child, applicationId));
             } else if (AndroidManifest.NODE_RECEIVER.equals(child.name())) {
                 receivers.add(new ManifestReceiverInfo(child, applicationId));
+            } else if (AndroidManifest.NODE_PROVIDER.equals(child.name())) {
+                String name = child.attributes().get(AndroidManifest.ATTRIBUTE_NAME);
+                if (name != null && !name.isEmpty()) {
+                    providerNames.add(
+                            ManifestAppComponentInfo.qualifiedClassName(applicationId, name));
+                }
             } else if (AndroidManifest.NODE_SERVICE.equals(child.name())) {
                 services.add(new ManifestServiceInfo(child, applicationId));
             } else if (AndroidManifest.NODE_SDK_LIBRARY.equals(child.name())) {

@@ -47,6 +47,8 @@ public class Apk implements Serializable {
 
     public final transient @NonNull List<ManifestReceiverInfo> receivers;
 
+    public final @NonNull List<String> providerNames;
+
     public final transient @NonNull List<ManifestServiceInfo> services;
 
     public final Map<String, ApkEntry> apkEntries;
@@ -64,6 +66,7 @@ public class Apk implements Serializable {
             @NonNull List<ManifestServiceInfo> services,
             @NonNull List<ManifestActivityInfo> activities,
             @NonNull List<ManifestReceiverInfo> receivers,
+            @NonNull List<String> providerNames,
             @NonNull List<String> sdkLibraries,
             Map<String, ApkEntry> apkEntries) {
         this.name = name;
@@ -77,6 +80,7 @@ public class Apk implements Serializable {
         this.services = services;
         this.activities = activities;
         this.receivers = receivers;
+        this.providerNames = providerNames;
         this.apkEntries = apkEntries;
     }
 
@@ -96,6 +100,7 @@ public class Apk implements Serializable {
         private List<String> targetPackages;
         private List<ManifestServiceInfo> services;
         private List<ManifestReceiverInfo> receivers;
+        private List<String> providerNames;
         private List<ManifestActivityInfo> activities;
         private List<String> sdkLibraries;
 
@@ -152,6 +157,11 @@ public class Apk implements Serializable {
             return this;
         }
 
+        public Builder setProviderNames(List<String> providerNames) {
+            this.providerNames = providerNames;
+            return this;
+        }
+
         public Builder setSdkLibraries(List<String> sdkLibraries) {
             this.sdkLibraries = sdkLibraries;
             return this;
@@ -182,6 +192,7 @@ public class Apk implements Serializable {
             targetPackages = targetPackages == null ? ImmutableList.of() : targetPackages;
             services = services == null ? ImmutableList.of() : services;
             activities = activities == null ? ImmutableList.of() : activities;
+            providerNames = providerNames == null ? ImmutableList.of() : providerNames;
             sdkLibraries = sdkLibraries == null ? ImmutableList.of() : sdkLibraries;
             Apk apk =
                     new Apk(
@@ -195,6 +206,7 @@ public class Apk implements Serializable {
                             services,
                             activities,
                             receivers,
+                            providerNames,
                             sdkLibraries,
                             apkEntries.build());
             apk.apkEntries.values().forEach(entry -> entry.setApk(apk));

@@ -133,6 +133,19 @@ public class ManifestInfoParserTest {
     }
 
     @Test
+    public void testProviderParsing() throws IOException {
+        // The manifest merger added this provider for androidx.startup, so the AndroidManifest.xml
+        // next to this binary manifest does not show it.
+        URL url = TestResources.getFile("/receiverParsing/AndroidManifest.bxml").toURI().toURL();
+        Assert.assertNotNull(url);
+        try (InputStream input = url.openStream()) {
+            ManifestInfo manifest = ManifestInfo.parseBinaryFromStream(input);
+            Assert.assertEquals(
+                    List.of("androidx.startup.InitializationProvider"), manifest.providerNames());
+        }
+    }
+
+    @Test
     public void testManifestInfo() throws IOException {
         URL url = TestResources.getFile("/manifestInfo/AndroidManifest.bxml")
                 .toURI()

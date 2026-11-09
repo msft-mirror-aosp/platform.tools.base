@@ -40,6 +40,7 @@ fun manifest(packageName: String, block: ManifestBuilder.() -> Unit): App {
 /** DSL builder for defining application packages and manifest components for testing. */
 class ManifestBuilder(val packageName: String) {
   private val activityBuilders = mutableListOf<ActivityBuilder>()
+  private val providerNames = mutableListOf<String>()
   private val boolResources = mutableMapOf<Int, Boolean>()
 
   /** Defines a boolean resource that manifest attributes can refer to, as if it were in `resources.arsc`. */
@@ -63,12 +64,29 @@ class ManifestBuilder(val packageName: String) {
     activityBuilders.add(builder)
   }
 
+  /**
+   * Adds a content provider to the manifest.
+   *
+   * @param name The relative or fully qualified provider name, written to the manifest as given.
+   */
+  fun provider(name: String) {
+    providerNames.add(name)
+  }
+
   fun toXmlElement(): XmlElement {
     val manifest = XmlElement("manifest")
     manifest.addAttribute(null, "package", packageName)
     val app = XmlElement("application")
     manifest.addChild(app)
     activityBuilders.forEach { app.addChild(it.toXmlElement()) }
+    providerNames.forEach { name ->
+      app.addChild(
+        XmlElement("provider").apply {
+          addAttribute(ResourceTypes.ANDROID_URI, "name", name)
+          addAttribute(ResourceTypes.ANDROID_URI, "exported", false)
+        }
+      )
+    }
     return manifest
   }
 
@@ -80,7 +98,12 @@ class ManifestBuilder(val packageName: String) {
     val manifestBytes = buildBinaryXml()
     val manifestInfo = ManifestInfo.parseBinaryFromStream(ByteArrayInputStream(manifestBytes))
     manifestInfo.activities().forEach { it.resolveReferences(boolResources::get) }
-    val apk = Apk.builder().setPackageName(packageName).setActivities(manifestInfo.activities()).build()
+    val apk =
+      Apk.builder()
+        .setPackageName(packageName)
+        .setActivities(manifestInfo.activities())
+        .setProviderNames(manifestInfo.providerNames())
+        .build()
     return App.fromApk(packageName, apk)
   }
 }

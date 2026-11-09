@@ -40,6 +40,10 @@ class App(
   val isDebuggable: Boolean
     get() = apks.stream().anyMatch { it.artifact.debuggable }
 
+  /** The fully qualified class names of the content providers that the manifests of all APKs of the app declare. */
+  val providerNames: List<String>
+    get() = apks.flatMap { it.artifact.providerNames }
+
   fun getBaselineProfile(api: Int): List<Path> {
     for (bp in baselineProfiles) {
       if (bp.minApi <= api && api <= bp.maxApi) {

@@ -55,19 +55,9 @@ public abstract class ManifestAppComponentInfo {
             String value = node.attributes().get(attribute);
 
             if (AndroidManifest.ATTRIBUTE_NAME.equals(attribute)) {
-                // TODO: extract this logic to separate class
-                if (value.startsWith(".")) {
-                    qualifiedName = applicationId + value;
-                }
-                else {
-                    qualifiedName = value;
-                }
+                qualifiedName = qualifiedClassName(applicationId, value);
             } else if (AndroidManifest.ATTRIBUTE_TARGET_ACTIVITY.equals(attribute)) {
-                if (value.startsWith(".")) {
-                    targetActivity = applicationId + value;
-                } else {
-                    targetActivity = value;
-                }
+                targetActivity = qualifiedClassName(applicationId, value);
             } else if (AndroidManifest.ATTRIBUTE_ENABLED.equals(attribute)) {
                 Integer resourceId = node.references().get(attribute);
                 if (resourceId != null) {
@@ -197,5 +187,14 @@ public abstract class ManifestAppComponentInfo {
             }
         }
         throw new IllegalStateException("No name attribute in node " + node.name());
+    }
+
+    /**
+     * Returns the fully qualified form of a class name that a manifest element declares. A name
+     * that starts with a dot is relative to {@code applicationId}.
+     */
+    @NonNull
+    public static String qualifiedClassName(@NonNull String applicationId, @NonNull String name) {
+        return name.startsWith(".") ? applicationId + name : name;
     }
 }

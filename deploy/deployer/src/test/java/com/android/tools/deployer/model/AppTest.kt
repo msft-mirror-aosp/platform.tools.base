@@ -115,6 +115,28 @@ class AppTest {
     return file.toPath()
   }
 
+  @Test
+  fun testProvidersAreParsedFromTheManifestsOfAllApks() {
+    val base = tmp.newFile()
+    testApk {
+        Manifest("com.example.app") {
+          activity(".MainActivity") { launcher() }
+          provider(".AppProvider")
+          provider("com.example.library.LibraryInitializer")
+        }
+      }
+      .writeTo(base)
+    val split = tmp.newFile()
+    testApk { Manifest("com.example.app") { provider(".FeatureProvider") } }.writeTo(split)
+
+    val app = App.fromPaths(listOf(base.toPath(), split.toPath()))
+
+    assertEquals(
+      listOf("com.example.app.AppProvider", "com.example.library.LibraryInitializer", "com.example.app.FeatureProvider"),
+      app.providerNames,
+    )
+  }
+
   private fun leakLauncherAlias(app: App) =
     app.getMatchingComponents(ComponentType.ACTIVITY).single { it.qualifiedName == "leakcanary.internal.activity.LeakLauncherActivity" }
 
