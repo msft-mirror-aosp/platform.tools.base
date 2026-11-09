@@ -18,6 +18,7 @@ package com.android.tools.render.common
 
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.drawable.DrawableScreenshot
+import com.android.tools.render.layout.LayoutScreenshot
 import com.android.tools.render.wear.WearTileScreenshot
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
@@ -61,6 +62,7 @@ private enum class PreviewType {
   COMPOSE,
   WEAR_TILE,
   DRAWABLE,
+  LAYOUT,
 }
 
 /** Reads JSON text from [jsonReader] containing serialized [PreviewRendering]. */
@@ -227,6 +229,12 @@ private fun readPreviewScreenshot(reader: JsonReader): PreviewScreenshot {
         previewParams = previewParams,
         previewId = previewId ?: throw IllegalArgumentException("Preview Id is missing"),
       )
+    PreviewType.LAYOUT ->
+      LayoutScreenshot(
+        methodFQN = methodFQN ?: throw IllegalArgumentException("FQN of a layout resource is missing"),
+        previewParams = previewParams,
+        previewId = previewId ?: throw IllegalArgumentException("Preview Id is missing"),
+      )
   }
 }
 
@@ -336,6 +344,18 @@ private fun writeDrawableScreenshot(writer: JsonWriter, screenshot: DrawableScre
   writer.endObject()
 }
 
+private fun writeLayoutScreenshot(writer: JsonWriter, screenshot: LayoutScreenshot) {
+  writer.beginObject()
+  writer.name(METHOD_FQN).value(screenshot.methodFQN)
+  writer.name(PREVIEW_PARAMS)
+  writer.beginObject()
+  screenshot.previewParams.forEach { writer.name(it.key).value(it.value) }
+  writer.endObject()
+  writer.name(PREVIEW_ID).value(screenshot.previewId)
+  writer.name(PREVIEW_TYPE).value(PreviewType.LAYOUT.name)
+  writer.endObject()
+}
+
 private fun writePreviewScreenshots(writer: JsonWriter, screenshots: List<PreviewScreenshot>) {
   writer.beginArray()
   screenshots.forEach {
@@ -343,6 +363,7 @@ private fun writePreviewScreenshots(writer: JsonWriter, screenshots: List<Previe
       is ComposeScreenshot -> writeComposeScreenshot(writer, it)
       is WearTileScreenshot -> writeWearTileScreenshot(writer, it)
       is DrawableScreenshot -> writeDrawableScreenshot(writer, it)
+      is LayoutScreenshot -> writeLayoutScreenshot(writer, it)
       else -> throw IllegalArgumentException("Serialization of $it is not yet supported.")
     }
   }

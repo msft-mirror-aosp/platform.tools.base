@@ -30,6 +30,7 @@ import com.android.tools.preview.UNDEFINED_API_LEVEL
 import com.android.tools.preview.UNDEFINED_DIMENSION
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.drawable.DrawableScreenshot
+import com.android.tools.render.layout.LayoutScreenshot
 import java.util.HexFormat
 
 /** Validation rules and limits for individual preview annotation parameters. */
@@ -390,12 +391,12 @@ class PreviewValidator(devices: Collection<Device>? = null) : Validator<PreviewS
   private val deviceCatalog: DeviceCatalog? = devices?.let(::DeviceCatalog)
 
   /**
-   * Validates a [PreviewScreenshot]. [DrawableScreenshot]s use string-based `backgroundColor` values (`#RRGGBB`, `@color/name`,
-   * `?attr/name`) and trim their parameter values, whereas annotation-based previews take `backgroundColor` as the decimal ARGB `Long`
-   * value of `@Preview`.
+   * Validates a [PreviewScreenshot]. Resource-based previews ([DrawableScreenshot] and [LayoutScreenshot]) use string-based
+   * `backgroundColor` values (`#RRGGBB`, `@color/name`, `?attr/name`) and trim their parameter values, whereas annotation-based previews
+   * take `backgroundColor` as the decimal ARGB `Long` value of `@Preview`.
    */
   override fun validate(target: PreviewScreenshot): ValidationResult {
-    if (target is DrawableScreenshot) {
+    if (target is DrawableScreenshot || target is LayoutScreenshot) {
       return validateParams(
         target.previewParams.mapValues { it.value.trim() },
         usesStringBasedBackgroundColor = true,

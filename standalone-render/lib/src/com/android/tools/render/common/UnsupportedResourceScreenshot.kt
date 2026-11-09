@@ -34,6 +34,6 @@ data class UnsupportedResourceScreenshot(
   override fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement =
     throw IllegalArgumentException(
       "Previews of ${resourceType.getName()} resources are not supported: '$methodFQN'. " +
-        "Supported resource previews: drawables (R.drawable.<name>, R.mipmap.<name>)."
+        "Supported resource previews: drawables (R.drawable.<name>, R.mipmap.<name>) and layouts (R.layout.<name>)."
     )
 }

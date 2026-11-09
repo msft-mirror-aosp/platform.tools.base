@@ -18,6 +18,7 @@ package com.android.tools.render.validation
 
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.drawable.DrawableScreenshot
+import com.android.tools.render.layout.LayoutScreenshot
 import com.android.tools.render.wear.WearTileScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -61,7 +62,7 @@ class PreviewValidatorTest {
   }
 
   @Test
-  fun testDrawableScreenshotUsesStringBasedBackgroundColorAndTrimsParameters() {
+  fun testResourceScreenshotUsesStringBasedBackgroundColorAndTrimsParameters() {
     val drawable =
       DrawableScreenshot(
         methodFQN = "R.drawable.ic_logo",
@@ -72,6 +73,14 @@ class PreviewValidatorTest {
     val drawableResult = validator.validate(drawable)
     assertTrue(drawableResult.isValid)
     assertTrue(drawableResult.issues.isEmpty())
+
+    val layout =
+      LayoutScreenshot(
+        methodFQN = "R.layout.activity_main",
+        previewParams = mapOf("widthDp" to " 300 ", "locale" to " fr-rCA ", "backgroundColor" to " ?attr/colorBackground "),
+        previewId = "activity_main",
+      )
+    assertTrue(validator.validate(layout).issues.isEmpty())
 
     val invalidDrawable =
       DrawableScreenshot(

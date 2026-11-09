@@ -18,6 +18,7 @@ package com.android.tools.render.common
 
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.drawable.DrawableScreenshot
+import com.android.tools.render.layout.LayoutScreenshot
 import com.android.tools.render.wear.WearTileScreenshot
 import java.io.StringWriter
 import org.junit.Assert.assertEquals
@@ -250,6 +251,7 @@ class JsonSerializationTest {
         ),
         WearTileScreenshot("com.my.package.Cl3Kt.TilePreviewMethod", mapOf("name" to "tile preview"), "/path/to/image/pattern/name"),
         DrawableScreenshot("R.drawable.ic_logo", mapOf("backgroundColor" to "#000000"), "ic_logo"),
+        LayoutScreenshot("R.layout.activity_main", mapOf("theme" to "Theme.MyApp"), "activity_main"),
       )
 
     val stringWriter = StringWriter()

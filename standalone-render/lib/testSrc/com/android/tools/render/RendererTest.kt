@@ -36,6 +36,7 @@ import com.android.tools.render.common.toScreenshotError
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.discovery.SamplePreviewTarget
 import com.android.tools.render.drawable.DrawableScreenshot
+import com.android.tools.render.layout.LayoutScreenshot
 import com.android.tools.rendering.RenderService
 import com.android.tools.rendering.compose.ComposeViewInfo
 import com.android.tools.rendering.compose.PxBounds
@@ -3391,6 +3392,226 @@ class RendererTest {
       assertEquals(photoImage.height, ninePatchImage.height)
       assertEquals(0xFF00FF00.toInt(), ninePatchImage.getRGB(ninePatchImage.width / 2, ninePatchImage.height / 2))
     }
+  }
+
+  @Test
+  fun testRenderLayoutScreenshot_rendersLayoutWithBackgroundThemeAndSize() {
+    val resFolder = tmpFolder.newFolder("res_layout")
+    File(resFolder, "layout")
+      .apply { mkdirs() }
+      .apply {
+        // A 20x20dp square in the top-left corner, filled with the theme's accent color.
+        resolve("main.xml")
+          .writeText(
+            """
+            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:background="?android:attr/colorAccent" />
+            </FrameLayout>
+            """
+              .trimIndent()
+          )
+        // A <merge> layout with a square of the @color/square color, which has a night variant.
+        resolve("merged.xml")
+          .writeText(
+            """
+            <merge xmlns:android="http://schemas.android.com/apk/res/android">
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:background="@color/square" />
+            </merge>
+            """
+              .trimIndent()
+          )
+      }
+    File(resFolder, "values")
+      .apply { mkdirs() }
+      .resolve("values.xml")
+      .writeText(
+        """
+        <resources>
+            <color name="square">#FFFF0000</color>
+            <style name="GreenAccent" parent="android:Theme.Material.Light">
+                <item name="android:colorAccent">#FF00FF00</item>
+                <item name="android:windowBackground">@android:color/white</item>
+            </style>
+        </resources>
+        """
+          .trimIndent()
+      )
+    File(resFolder, "values-night")
+      .apply { mkdirs() }
+      .resolve("values.xml")
+      .writeText("""<resources><color name="square">#FF0000FF</color></resources>""")
+
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        resourceDirs = listOf(resFolder.absolutePath),
+        namespace = "com.example.app",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_layout")
+    // 200x300px at 320 dpi: 20dp is 40px.
+    val device = "spec:width=200px,height=300px,dpi=320"
+
+    bootstrapper.bootstrap().use { renderer ->
+      fun renderLayout(name: String, params: Map<String, String> = emptyMap(), previewId: String = name): BufferedImage {
+        val result =
+          renderer
+            .render(
+              LayoutScreenshot(methodFQN = "R.layout.$name", previewParams = mapOf("device" to device) + params, previewId = previewId),
+              outputDir.absolutePath,
+            )
+            .single()
+        assertNull(result.error)
+        return ImageIO.read(outputDir.resolve(result.imagePath!!))
+      }
+
+      // By default, the layout fills the device and has the theme's window background.
+      val default = renderLayout("main", mapOf("theme" to "GreenAccent"))
+      assertEquals(200, default.width)
+      assertEquals(300, default.height)
+      assertEquals(0xFF00FF00.toInt(), default.getRGB(20, 20))
+      assertEquals(0xFFFFFFFF.toInt(), default.getRGB(100, 200))
+
+      // showBackground=false makes the background transparent.
+      val transparent = renderLayout("main", mapOf("theme" to "GreenAccent", "showBackground" to "false"), "main_transparent")
+      assertEquals(0xFF00FF00.toInt(), transparent.getRGB(20, 20))
+      assertEquals(0, transparent.getRGB(100, 200) ushr 24)
+
+      // backgroundColor replaces the window background, and widthDp and heightDp size the layout's parent. Values are trimmed.
+      val sized =
+        renderLayout(
+          "main",
+          mapOf("theme" to "GreenAccent", "backgroundColor" to " #FF0000FF ", "widthDp" to " 50 ", "heightDp" to "40 "),
+          "main_sized",
+        )
+      assertEquals(100, sized.width)
+      assertEquals(80, sized.height)
+      assertEquals(0xFF0000FF.toInt(), sized.getRGB(80, 60))
+
+      // widthDp and heightDp can be larger than the device screen (100x150dp), and the other dimension still fills the screen.
+      val wide = renderLayout("main", mapOf("theme" to "GreenAccent", "widthDp" to "150"), "main_wide")
+      assertEquals(300, wide.width)
+      assertEquals(300, wide.height)
+      assertEquals(0xFF00FF00.toInt(), wide.getRGB(20, 20))
+      assertEquals(0xFFFFFFFF.toInt(), wide.getRGB(250, 250))
+      val tall = renderLayout("main", mapOf("theme" to "GreenAccent", "heightDp" to "200"), "main_tall")
+      assertEquals(200, tall.width)
+      assertEquals(400, tall.height)
+      assertEquals(0xFFFFFFFF.toInt(), tall.getRGB(150, 350))
+
+      // -1 is an undefined size, as in Compose's @Preview: the layout's parent fills the screen.
+      val undefined = renderLayout("main", mapOf("theme" to "GreenAccent", "widthDp" to "-1", "heightDp" to " -1 "), "main_undefined")
+      assertEquals(200, undefined.width)
+      assertEquals(300, undefined.height)
+      assertEquals(0xFFFFFFFF.toInt(), undefined.getRGB(100, 200))
+
+      // <merge> layouts render, and uiMode selects night resources.
+      assertEquals(0xFFFF0000.toInt(), renderLayout("merged").getRGB(20, 20))
+      assertEquals(0xFF0000FF.toInt(), renderLayout("merged", mapOf("uiMode" to "33"), "merged_night").getRGB(20, 20))
+    }
+  }
+
+  @Test
+  fun testRenderLayoutScreenshot_invalidParametersReturnErrors() {
+    val resFolder = tmpFolder.newFolder("res_layout_invalid")
+    File(resFolder, "layout")
+      .apply { mkdirs() }
+      .resolve("empty.xml")
+      .writeText(
+        """
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent" android:layout_height="match_parent" />
+        """
+          .trimIndent()
+      )
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        resourceDirs = listOf(resFolder.absolutePath),
+        namespace = "com.example.app",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_layout_invalid")
+
+    bootstrapper.bootstrap().use { renderer ->
+      fun error(params: Map<String, String>): String? =
+        renderer
+          .render(LayoutScreenshot(methodFQN = "R.layout.empty", previewParams = params, previewId = "empty"), outputDir.absolutePath)
+          .single()
+          .error
+          ?.message
+
+      assertThat(error(mapOf("apiLevel" to "abc"))).contains("Parameter 'apiLevel' must be an integer, got: 'abc'")
+      assertThat(error(mapOf("apiLevel" to "0"))).contains("Parameter 'apiLevel' must be -1 (undefined) or an API level between")
+      assertThat(error(mapOf("fontScale" to "abc"))).contains("Parameter 'fontScale' must be a valid float number, got: 'abc'")
+      assertThat(error(mapOf("fontScale" to "NaN"))).contains("Parameter 'fontScale' must be a valid float number, got: 'NaN'")
+      assertThat(error(mapOf("fontScale" to "0"))).contains("Parameter 'fontScale' must be strictly positive")
+      assertThat(error(mapOf("widthDp" to "abc"))).contains("Parameter 'widthDp' must be an integer, got: 'abc'")
+      assertThat(error(mapOf("widthDp" to "0"))).contains("Dimension 'widthDp' must be positive")
+      assertThat(error(mapOf("heightDp" to "abc"))).contains("Parameter 'heightDp' must be an integer, got: 'abc'")
+      assertThat(error(mapOf("uiMode" to "night"))).contains("Parameter 'uiMode' must be an integer, got: 'night'")
+      assertThat(error(mapOf("uiMode" to "48"))).contains("Parameter 'uiMode' must be a valid Configuration.UI_MODE_* bitmask, got: 48")
+      assertThat(error(mapOf("wallpaper" to "red"))).contains("Parameter 'wallpaper' must be an integer, got: 'red'")
+      assertThat(error(mapOf("wallpaper" to "4"))).contains("Parameter 'wallpaper' must be -1 (none) or between 0 and 3, got: 4")
+      assertThat(error(mapOf("showBackground" to "yes"))).contains("Invalid showBackground 'yes': expected true or false")
+      assertThat(error(mapOf("backgroundColor" to "red"))).contains("Parameter 'backgroundColor' must be #RGB, #ARGB, #RRGGBB, #AARRGGBB")
+      assertThat(error(mapOf("backgroundColor" to "0xFF0000FF")))
+        .contains("Parameter 'backgroundColor' must be #RGB, #ARGB, #RRGGBB, #AARRGGBB")
+      assertNull(error(mapOf("fontScale" to "1.5", "uiMode" to "33", "showBackground" to "False", "widthDp" to "200")))
+      assertNull(
+        error(
+          mapOf(
+            "widthDp" to " 100 ",
+            "heightDp" to " -1 ",
+            "apiLevel" to " 34 ",
+            "fontScale" to " 1.5 ",
+            "locale" to " fr ",
+            "wallpaper" to " -1 ",
+            "showBackground" to " true ",
+            "backgroundColor" to " ?android:attr/colorBackground ",
+          )
+        )
+      )
+    }
+  }
+
+  @Test
+  fun testRenderLayoutScreenshot_missingLayoutReturnsError() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example.app",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_layout_missing").absolutePath
+
+    val result =
+      bootstrapper.bootstrap().use { renderer ->
+        renderer.render(LayoutScreenshot(methodFQN = "R.layout.missing", previewId = "missing"), outputDir).single()
+      }
+
+    assertNotNull(result.error)
+    assertTrue(result.error?.message?.contains("Layout resource '@layout/missing' not found") == true)
   }
 
   @Test
