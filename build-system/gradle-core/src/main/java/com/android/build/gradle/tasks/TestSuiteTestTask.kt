@@ -1826,6 +1826,18 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       )
     }
 
+    /**
+     * Returns the coverage report directory of a test task, relative to the build directory.
+     *
+     * A test suite runs on several variants and targets, so each of its tasks writes to
+     * `reports/coverage/testSuites/<suite>/<variant>/<target>`. The `testSuites` directory keeps these reports apart from the JaCoCo
+     * reports in `reports/coverage/test` and `reports/coverage/androidTest`. Without it, the built-in androidTest tasks (suite
+     * `androidTest`, target `connected`) would write to `reports/coverage/androidTest/<buildType>/connected`, the JaCoCo report directory
+     * of projects without flavors.
+     */
+    internal fun coverageReportPath(testSuiteName: String, variantName: String, testSuiteTarget: String): String =
+      "reports/coverage/testSuites/$testSuiteName/$variantName/$testSuiteTarget"
+
     fun configureCoverageAndMetadata(
       task: TestSuiteTestTask,
       services: TaskCreationServices,
@@ -1858,7 +1870,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             task.coverageSourceDirectories.addAll(kotlinSources.getAsFileTrees())
           }
           task.coverageSourceDirectories.disallowChanges()
-          task.coverageReportDir.set(task.project.layout.buildDirectory.dir(task.testSuiteName.map { "reports/coverage/$it" }))
+          task.coverageReportDir.set(
+            task.project.layout.buildDirectory.dir(coverageReportPath(testSuiteName, variantName, testSuiteTarget))
+          )
 
           if (hasHostJar) {
             val jacocoExtension = task.extensions.findByType(JacocoTaskExtension::class.java)

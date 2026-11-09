@@ -28,9 +28,11 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.truth.PathSubject
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import java.io.File
+import java.nio.file.Path
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import org.gradle.api.Project
@@ -116,7 +118,8 @@ class TestSuitesTestReportTest {
         .toList()
     assertThat(xmlFiles.size).isEqualTo(2)
 
-    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/first")
+    // The suite has coverage off, so there is no coverage report at all.
+    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage")
     assertThat(coverageReportDir.toFile().exists()).isFalse()
 
     val standardJunitXmlFiles =
@@ -176,10 +179,11 @@ class TestSuitesTestReportTest {
         .toList()
     assertThat(xmlFiles.size).isEqualTo(4)
 
-    val appCoverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/first")
+    // The suites have coverage off, so there is no coverage report at all.
+    val appCoverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage")
     assertThat(appCoverageReportDir.toFile().exists()).isFalse()
 
-    val libCoverageReportDir = build.androidLibrary().buildDir.resolve("reports/coverage/second")
+    val libCoverageReportDir = build.androidLibrary().buildDir.resolve("reports/coverage")
     assertThat(libCoverageReportDir.toFile().exists()).isFalse()
   }
 
@@ -232,11 +236,9 @@ class TestSuitesTestReportTest {
     val updateXmlFiles = updateResultsDir.listFiles()?.filter { it.isFile && it.extension == "xml" } ?: emptyList()
     assertThat(updateXmlFiles.size).isEqualTo(1)
 
-    val firstCoverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/first")
-    assertThat(firstCoverageReportDir.toFile().exists()).isFalse()
-
-    val withUpdateCoverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/withUpdate")
-    assertThat(withUpdateCoverageReportDir.toFile().exists()).isFalse()
+    // The suites have coverage off, so there is no coverage report at all.
+    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage")
+    assertThat(coverageReportDir.toFile().exists()).isFalse()
   }
 
   @Test
@@ -346,7 +348,7 @@ class TestSuitesTestReportTest {
 
     build.executor.run(":app:testDebugCoverageSuiteT1TestSuite")
 
-    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/coverageSuite")
+    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/testSuites/coverageSuite/debug/t1")
     val htmlReportIndex = coverageReportDir.resolve("index.html").toFile()
     val xmlReport = coverageReportDir.resolve("report.xml").toFile()
 
@@ -400,7 +402,8 @@ class TestSuitesTestReportTest {
 
     build.executor.run(":app:testDebugNoCoverageSuiteT1TestSuite")
 
-    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/noCoverageSuite")
+    // The suites have coverage off, so there is no coverage report at all.
+    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage")
     assertThat(coverageReportDir.toFile().exists()).isFalse()
   }
 
@@ -434,19 +437,195 @@ class TestSuitesTestReportTest {
 
     build.executor.run(":app:testDebugUpdateCoverageSuiteT1TestSuite")
 
-    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/updateCoverageSuite")
+    val coverageReportsDir = build.androidApplication().buildDir.resolve("reports/coverage")
+    val coverageReportDir = coverageReportsDir.resolve("testSuites/updateCoverageSuite/debug/t1")
     val htmlReportIndex = coverageReportDir.resolve("index.html").toFile()
     val xmlReport = coverageReportDir.resolve("report.xml").toFile()
 
     assertThat(htmlReportIndex.exists()).isTrue()
     assertThat(xmlReport.exists()).isTrue()
 
-    coverageReportDir.toFile().deleteRecursively()
-    assertThat(coverageReportDir.toFile().exists()).isFalse()
+    coverageReportsDir.toFile().deleteRecursively()
+    assertThat(coverageReportsDir.toFile().exists()).isFalse()
 
     build.executor.run(":app:updateDebugUpdateCoverageSuiteT1TestSuite")
 
-    assertThat(coverageReportDir.toFile().exists()).isFalse()
+    // The update task writes no coverage report at all.
+    PathSubject.assertThat(coverageReportsDir).doesNotExist()
+  }
+
+  @Test
+  fun testTestSuiteCodeCoverageReportPerVariant() {
+    val build = rule.build {
+      androidApplication {
+        android {
+          testOptions.customSuites.create("variantCoverageSuite") {
+            it.codeCoverage = true
+            it.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+              includeEngines.add("[engine:custom-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:custom-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targetVariants.add("release")
+            it.targets.create("t1") {}
+          }
+        }
+        files {
+          add("src/main/java/com/example/dummy/Dummy.java", "package com.example.dummy; public class Dummy {}")
+          add("src/debug/java/com/example/dummy/DebugOnly.java", "package com.example.dummy; public class DebugOnly {}")
+          add("src/release/java/com/example/dummy/ReleaseOnly.java", "package com.example.dummy; public class ReleaseOnly {}")
+          add("src/variantCoverageSuite/java/DummyTest.java", "package com.example.dummy; public class DummyTest {}")
+        }
+      }
+    }
+
+    // Both variants run in the same build, as with testAllSuites.
+    build.executor.run(":app:testDebugVariantCoverageSuiteT1TestSuite", ":app:testReleaseVariantCoverageSuiteT1TestSuite")
+
+    // Each variant has its own report under testSuites, and there is no report for the whole suite.
+    val coverageReportsDir = build.androidApplication().buildDir.resolve("reports/coverage")
+    assertThat(coverageReportsDir.listDirectoryEntries().map { it.name }).containsExactly("testSuites")
+    val suiteCoverageDir = coverageReportsDir.resolve("testSuites/variantCoverageSuite")
+    assertThat(suiteCoverageDir.listDirectoryEntries().map { it.name }).containsExactly("debug", "release")
+    assertVariantCoverageReport(
+      suiteCoverageDir.resolve("debug/t1"),
+      "debug",
+      variantClass = "DebugOnly",
+      otherVariantClass = "ReleaseOnly",
+    )
+    assertVariantCoverageReport(
+      suiteCoverageDir.resolve("release/t1"),
+      "release",
+      variantClass = "ReleaseOnly",
+      otherVariantClass = "DebugOnly",
+    )
+  }
+
+  /**
+   * Asserts that [reportDir] has the variantCoverageSuite report of [variant] only: with [variantClass], and without [otherVariantClass].
+   */
+  private fun assertVariantCoverageReport(reportDir: Path, variant: String, variantClass: String, otherVariantClass: String) {
+    PathSubject.assertThat(reportDir.resolve("index.html")).exists()
+
+    val xmlReport = reportDir.resolve("report.xml").toFile().readText()
+    assertThat(xmlReport).contains("<report name=\"$variant\">")
+    assertThat(xmlReport).contains("com/example/dummy/$variantClass")
+    assertThat(xmlReport).doesNotContain("com/example/dummy/$otherVariantClass")
+
+    val appModule = parseReportJs<TestCoverageReport>(reportDir.resolve("data/report-data.js").toFile()).modules.single()
+    assertThat(appModule.testSuiteCoverages.map { it.name }).containsExactly("variantCoverageSuite")
+    assertThat(appModule.testSuiteCoverages.single().variantCoverages.map { it.name }).containsExactly(variant)
+    val classNames = appModule.packages.single { it.name == "com.example.dummy" }.classes.map { it.name }
+    assertThat(classNames).containsAtLeast("Dummy", variantClass)
+    assertThat(classNames).doesNotContain(otherVariantClass)
+  }
+
+  @Test
+  fun testTestSuiteCodeCoverageReportPerTarget() {
+    val build = rule.build {
+      androidApplication {
+        android {
+          testOptions.customSuites.create("targetCoverageSuite") {
+            it.codeCoverage = true
+            it.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+              includeEngines.add("[engine:custom-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:custom-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targets.create("t1") {}
+            it.targets.create("t2") {}
+          }
+        }
+        files {
+          add("src/main/java/com/example/dummy/Dummy.java", "package com.example.dummy; public class Dummy {}")
+          add("src/targetCoverageSuite/java/DummyTest.java", "package com.example.dummy; public class DummyTest {}")
+        }
+      }
+    }
+    val variantCoverageDir = build.androidApplication().buildDir.resolve("reports/coverage/testSuites/targetCoverageSuite/debug")
+    val t1XmlReport = variantCoverageDir.resolve("t1/report.xml")
+    val t2XmlReport = variantCoverageDir.resolve("t2/report.xml")
+
+    build.executor.run(":app:testDebugTargetCoverageSuiteT1TestSuite")
+
+    PathSubject.assertThat(t1XmlReport).exists()
+    // t2 didn't run, so it has no report.
+    PathSubject.assertThat(variantCoverageDir.resolve("t2")).doesNotExist()
+    val t1XmlReportContent = t1XmlReport.toFile().readText()
+
+    build.executor.run(":app:testDebugTargetCoverageSuiteT2TestSuite")
+
+    PathSubject.assertThat(t2XmlReport).exists()
+    PathSubject.assertThat(variantCoverageDir.resolve("t2/index.html")).exists()
+    // Each run writes its own JaCoCo session into its report, so a report written again would change: t1's report is left as it was.
+    assertThat(t2XmlReport.toFile().readText()).isNotEqualTo(t1XmlReportContent)
+    assertThat(t1XmlReport.toFile().readText()).isEqualTo(t1XmlReportContent)
+  }
+
+  @Test
+  fun testTestSuiteCodeCoverageReportPerSuite() {
+    val build = rule.build {
+      androidApplication {
+        android {
+          testOptions.customSuites.create("firstCoverageSuite") {
+            it.codeCoverage = true
+            it.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+              includeEngines.add("[engine:custom-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:custom-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targets.create("t1") {}
+          }
+          testOptions.customSuites.create("secondCoverageSuite") {
+            it.codeCoverage = true
+            it.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+              includeEngines.add("[engine:custom-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:custom-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targets.create("t1") {}
+          }
+        }
+        files {
+          add("src/main/java/com/example/dummy/Dummy.java", "package com.example.dummy; public class Dummy {}")
+          add("src/firstCoverageSuite/java/DummyTest.java", "package com.example.dummy; public class DummyTest {}")
+          add("src/secondCoverageSuite/java/DummyTest.java", "package com.example.dummy; public class DummyTest {}")
+        }
+      }
+    }
+
+    // Both suites run on the same variant and target, in the same build.
+    build.executor.run(":app:testDebugFirstCoverageSuiteT1TestSuite", ":app:testDebugSecondCoverageSuiteT1TestSuite")
+
+    // Each suite has its own report, which only has the coverage of that suite.
+    val testSuitesCoverageDir = build.androidApplication().buildDir.resolve("reports/coverage/testSuites")
+    assertThat(testSuitesCoverageDir.listDirectoryEntries().map { it.name }).containsExactly("firstCoverageSuite", "secondCoverageSuite")
+    val firstReport =
+      parseReportJs<TestCoverageReport>(testSuitesCoverageDir.resolve("firstCoverageSuite/debug/t1/data/report-data.js").toFile())
+    assertThat(firstReport.modules.single().testSuiteCoverages.map { it.name }).containsExactly("firstCoverageSuite")
+    val secondReport =
+      parseReportJs<TestCoverageReport>(testSuitesCoverageDir.resolve("secondCoverageSuite/debug/t1/data/report-data.js").toFile())
+    assertThat(secondReport.modules.single().testSuiteCoverages.map { it.name }).containsExactly("secondCoverageSuite")
   }
 
   @Test

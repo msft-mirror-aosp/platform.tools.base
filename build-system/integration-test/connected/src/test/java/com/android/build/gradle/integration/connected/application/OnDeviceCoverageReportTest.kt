@@ -269,9 +269,9 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
     // The suite's own report, and androidTest's on the built-in test platform, are built from the on-device data too.
     val appBuildDir = rule.build.subProject(":app").buildDir.toFile()
-    assertThat(FileUtils.join(appBuildDir, "reports", "coverage", DEVICE_SUITE, "index.html")).exists()
+    assertThat(appBuildDir.resolve("reports/coverage/testSuites/$DEVICE_SUITE/debug/t1/index.html")).exists()
     if (runWithBuiltInPlatform) {
-      assertThat(FileUtils.join(appBuildDir, "reports", "coverage", CONNECTED_TEST_TEST_SUITE_NAME, "index.html")).exists()
+      assertThat(appBuildDir.resolve("reports/coverage/testSuites/$CONNECTED_TEST_TEST_SUITE_NAME/debug/connected/index.html")).exists()
     }
   }
 

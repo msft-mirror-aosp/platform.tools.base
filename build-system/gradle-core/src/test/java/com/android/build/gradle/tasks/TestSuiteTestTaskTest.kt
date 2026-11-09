@@ -24,6 +24,9 @@ import com.android.build.gradle.internal.resolveTargetDevices
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.test.report.JunitAttachmentsArgumentProvider
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_NAME
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_TARGET_NAME
+import com.android.builder.core.ComponentType
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
 import com.android.builder.testing.api.DeviceProvider
@@ -369,6 +372,72 @@ class TestSuiteTestTaskTest {
     val missing = assertFailsWith<InvalidUserDataException> { managedDevices.resolveTargetDevices(listOf("unknownGroup")) }
     assertThat(missing.message).contains("Target device or device group 'unknownGroup' was not found")
   }
+
+  @Test
+  fun coverageReportPath_testSuite_isPerVariantAndTarget() {
+    assertThat(TestSuiteTestTask.coverageReportPath("coverageRepro", "demoDebug", "host"))
+      .isEqualTo("reports/coverage/testSuites/coverageRepro/demoDebug/host")
+    assertThat(TestSuiteTestTask.coverageReportPath("coverageRepro", "prodDebug", "host"))
+      .isEqualTo("reports/coverage/testSuites/coverageRepro/prodDebug/host")
+    assertThat(TestSuiteTestTask.coverageReportPath("coverageRepro", "demoDebug", "device"))
+      .isEqualTo("reports/coverage/testSuites/coverageRepro/demoDebug/device")
+  }
+
+  @Test
+  fun coverageReportPath_builtInAndroidTest_isPerVariantAndTarget() {
+    assertThat(TestSuiteTestTask.coverageReportPath(CONNECTED_TEST_TEST_SUITE_NAME, "debug", CONNECTED_TEST_TEST_SUITE_TARGET_NAME))
+      .isEqualTo("reports/coverage/testSuites/androidTest/debug/connected")
+    // The managed device tasks use the device name as target.
+    assertThat(TestSuiteTestTask.coverageReportPath(CONNECTED_TEST_TEST_SUITE_NAME, "demoDebug", "pixel6"))
+      .isEqualTo("reports/coverage/testSuites/androidTest/demoDebug/pixel6")
+  }
+
+  @Test
+  fun coverageReportPath_differentTasks_neverShareDirectories() {
+    val reportPaths =
+      listOf(
+        // A test suite on two variants and two targets.
+        TestSuiteTestTask.coverageReportPath("coverageRepro", "demoDebug", "host"),
+        TestSuiteTestTask.coverageReportPath("coverageRepro", "prodDebug", "host"),
+        TestSuiteTestTask.coverageReportPath("coverageRepro", "demoDebug", "device"),
+        TestSuiteTestTask.coverageReportPath("coverageRepro", "prodDebug", "device"),
+        // Another test suite.
+        TestSuiteTestTask.coverageReportPath("other", "demoDebug", "host"),
+        // The built-in androidTest tasks, on connected devices and on a managed device.
+        TestSuiteTestTask.coverageReportPath(CONNECTED_TEST_TEST_SUITE_NAME, "demoDebug", CONNECTED_TEST_TEST_SUITE_TARGET_NAME),
+        TestSuiteTestTask.coverageReportPath(CONNECTED_TEST_TEST_SUITE_NAME, "prodDebug", CONNECTED_TEST_TEST_SUITE_TARGET_NAME),
+        TestSuiteTestTask.coverageReportPath(CONNECTED_TEST_TEST_SUITE_NAME, "demoDebug", "pixel6"),
+      )
+
+    assertThat(reportPaths).containsNoDuplicates()
+  }
+
+  @Test
+  fun coverageReportPath_neverOverlapsJacocoReportDirectories() {
+    // The JaCoCo report tasks write to reports/coverage/<test component prefix>/..., for example
+    // reports/coverage/androidTest/debug/connected, or reports/coverage/androidTest/connected in Kotlin Multiplatform modules.
+    val jacocoReportRoots =
+      listOf(ComponentType.UNIT_TEST_PREFIX, ComponentType.ANDROID_TEST_PREFIX, ComponentType.SCREENSHOT_TEST_PREFIX).map {
+        "reports/coverage/$it"
+      }
+    val reportPaths =
+      listOf(
+        TestSuiteTestTask.coverageReportPath(CONNECTED_TEST_TEST_SUITE_NAME, "debug", CONNECTED_TEST_TEST_SUITE_TARGET_NAME),
+        TestSuiteTestTask.coverageReportPath(CONNECTED_TEST_TEST_SUITE_NAME, "demoDebug", CONNECTED_TEST_TEST_SUITE_TARGET_NAME),
+        TestSuiteTestTask.coverageReportPath(CONNECTED_TEST_TEST_SUITE_NAME, "debug", "pixel6"),
+        TestSuiteTestTask.coverageReportPath("coverageRepro", "demoDebug", "host"),
+        // Screenshot test suites are usually named like the screenshot test component.
+        TestSuiteTestTask.coverageReportPath(ComponentType.SCREENSHOT_TEST_PREFIX, "debug", "host"),
+      )
+
+    val overlappingPaths = reportPaths.flatMap { path ->
+      jacocoReportRoots.filter { root -> path.isSameOrInside(root) || root.isSameOrInside(path) }.map { "$path overlaps $it" }
+    }
+    assertThat(overlappingPaths).isEmpty()
+  }
+
+  /** Whether this directory path is [other] or a directory inside it. */
+  private fun String.isSameOrInside(other: String) = this == other || startsWith("$other/")
 
   /** Records whether the connected devices were queried. */
   private class RecordingDeviceProvider : DeviceProvider() {
