@@ -226,10 +226,10 @@ ARTIFACTS = [
     "org.jetbrains.kotlin:kotlin-test:2.2.10",  # AGP dependencies
     "org.jetbrains.kotlin:kotlin-test-junit:2.2.10",  # AGP dependencies
     "org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.1",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.10.2",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.10.2",
     "org.jetbrains.kotlinx:kotlinx-io-bytestring-jvm:0.6.0",
     "org.jetbrains.kotlinx:kotlinx-io-core-jvm:0.6.0",

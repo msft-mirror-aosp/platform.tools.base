@@ -1616,7 +1616,6 @@ _CLASS_JARS = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.7.3",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0-RC2",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3",
@@ -1711,9 +1710,8 @@ _SOURCE_JARS = [
     "org.eclipse.lsp4j:org.eclipse.lsp4j:jar:sources:1.0.0",
     "org.jetbrains.kotlin:kotlin-stdlib:jar:sources:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib:jar:sources:1.9.23",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:jar:sources:1.6.4",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:jar:sources:1.6.4",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:jar:sources:1.8.0-RC2",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:jar:sources:1.10.2",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:jar:sources:1.10.2",
     "org.robolectric:plugins-maven-dependency-resolver:jar:sources:4.8.2",
     "org.robolectric:robolectric:jar:sources:4.8.2",
 ]

@@ -192,7 +192,7 @@ com.android.tools:repository:$BASE_VERSION
     org.apache.commons:commons-compress:1.27.1 (runtime)
     org.glassfish.jaxb:jaxb-runtime:2.3.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
 com.android.tools:sdk-common:$BASE_VERSION
   pomName=com.android.tools.sdk-common
@@ -247,7 +247,7 @@ com.android.tools.adblib:adblib:$BUILD_VERSION
   description=Library used to communicate with Android devices
   dependencies:
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     at.yawk.lz4:lz4-java:1.11.4 (runtime)
 
@@ -261,8 +261,8 @@ com.android.tools.adblib:adblib-ddmlibcompatibility:$BUILD_VERSION
     com.android.tools:common:$BASE_VERSION (runtime)
     com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.10.2 (runtime)
 
 com.android.tools.adblib:adblib-tools:$BUILD_VERSION
   pomName=com.android.tools.adblib.adblib-tools
@@ -271,7 +271,7 @@ com.android.tools.adblib:adblib-tools:$BUILD_VERSION
     com.android.tools.adblib:adblib:$BUILD_VERSION (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
 com.android.tools.analytics-library:crash:$BASE_VERSION
   pomName=Android Tools Analytics Crash Library
@@ -311,7 +311,7 @@ com.android.tools.analytics-library:publisher:$BASE_VERSION
     com.android.tools:common:$BASE_VERSION (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
 com.android.tools.analytics-library:shared:$BASE_VERSION
   pomName=Android Tools Analytics Shared Library
@@ -324,7 +324,7 @@ com.android.tools.analytics-library:shared:$BASE_VERSION
     com.google.guava:guava:33.7.2-jre (runtime)
     net.java.dev.jna:jna-platform:5.6.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
 com.android.tools.analytics-library:testing:$BASE_VERSION
   pomName=Android Tools Analytics Testing Library
@@ -351,7 +351,7 @@ com.android.tools.analytics-library:tracker:$BASE_VERSION
     com.google.guava:guava:33.7.2-jre (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
 com.android.tools.androidtest:android-test-engine:$BUILD_VERSION
   pomName=com.android.tools.androidtest.android-test-engine
@@ -360,7 +360,7 @@ com.android.tools.androidtest:android-test-engine:$BUILD_VERSION
     com.android.tools.androidtest:test-result-proto:$BUILD_VERSION (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
     org.junit.platform:junit-platform-engine:1.13.3 (runtime)
 
 com.android.tools.androidtest:android-test-engine-result-listener:$BUILD_VERSION
@@ -403,7 +403,7 @@ com.android.tools.apkdeployer:apkdeployer:$BUILD_VERSION
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     org.jetbrains:annotations:23.0.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
     org.xerial:sqlite-jdbc:3.43.0.0 (runtime)
 
 com.android.tools.apkparser:apkanalyzer:$BASE_VERSION
@@ -432,7 +432,7 @@ com.android.tools.backup:backup-restore:$BASE_VERSION
     com.android.tools:common:$BASE_VERSION (runtime)
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
 com.android.tools.build:aapt2:$AAPT2_VERSION
   pomName=com.android.tools.build.aapt2
@@ -665,7 +665,7 @@ com.android.tools.fakeadbserver:fakeadbserver:$BASE_VERSION
     net.sf.kxml:kxml2:2.3.0 (runtime)
     org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
 com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION
   pomName=Android Tools layoutlib-api

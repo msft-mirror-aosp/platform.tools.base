@@ -2,6 +2,6 @@ apply plugin: 'com.android.tools.java'
 apply plugin: 'com.android.tools.kotlin'
 
 dependencies {
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1"
+    implementation libs.kotlin.coroutines.core
     implementation libs.kotlin.stdlib
 }
