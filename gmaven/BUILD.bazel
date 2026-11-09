@@ -133,12 +133,14 @@ java_library(
     resources = [
         "src/test/resources/com/android/tools/test/gmaven-aars.txt",
         "src/test/resources/com/android/tools/test/gmaven-jars.txt",
+        "src/test/resources/com/android/tools/test/gmaven-modules.txt",
         "src/test/resources/com/android/tools/test/gmaven-poms.txt",
     ],
     deps = [
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",

@@ -19,8 +19,20 @@ dependencies {
     implementation libs.guava
     implementation libs.kotlin.stdlib
     api libs.asm
-    api libs.kotlin.gradle.plugin.api
+    api("org.jetbrains.kotlin:kotlin-gradle-plugin-api") {
+        version {
+            prefer(libs.versions.defaultKgp.get())
+            reject("(,${libs.versions.kotlin.get()})")
+        }
+        because("AGP requires Kotlin Gradle plugin ${libs.versions.kotlin.get()} or newer. "
+                + "Run './gradlew buildEnvironment' to find the plugin that requests an older version, "
+                + "then upgrade that plugin or declare a newer Kotlin Gradle plugin version.")
+    }
 
+    // AGP must compile and unit test against the minimum supported KGP, not the default
+    // published above. `strictly` fails the build if anything moves these classpaths to a newer
+    // KGP. Strict versions on compileOnly/testImplementation are not published.
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin-api") { version { strictly(libs.versions.kotlin.get()) } }
     compileOnly libs.com.android.tools.annotations
     compileOnly gradleApi()
     compileOnly project(':base:builder-model') // Only present for legacy reasons.
@@ -38,7 +50,8 @@ dependencies {
 
     testImplementation libs.junit
     testImplementation libs.kotlin.test
-    testImplementation libs.kotlin.gradle.plugin
+    testImplementation("org.jetbrains.kotlin:kotlin-gradle-plugin") { version { strictly(libs.versions.kotlin.get()) } }
+    testImplementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api") { version { strictly(libs.versions.kotlin.get()) } }
     testImplementation libs.com.android.tools.testutils
     testImplementation gradleApi()
     testImplementation project(':base:builder-model')

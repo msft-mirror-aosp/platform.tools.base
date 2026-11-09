@@ -63,6 +63,7 @@ gradlePlugin {
 
 dependencies {
     compileOnly project(':base:gradle-api')
+    compileOnly libs.kotlin.gradle.plugin.api
     compileOnly libs.com.android.tools.analyticsLibrary.protos
     compileOnly libs.com.android.tools.analyticsLibrary.shared
     compileOnly libs.com.android.tools.common
@@ -73,6 +74,10 @@ dependencies {
     testImplementation libs.mockito.kotlin
     testImplementation libs.com.android.tools.testutils
     testImplementation project(':base:gradle-api')
+    testImplementation libs.kotlin.gradle.plugin.api
+    constraints {
+        testImplementation(libs.kotlin.gradle.plugin)
+    }
     testImplementation project(':base:builder-test-api')
     testImplementation libs.com.android.tools.analyticsLibrary.protos
     testImplementation libs.com.android.tools.analyticsLibrary.shared

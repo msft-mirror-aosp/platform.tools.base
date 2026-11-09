@@ -546,7 +546,7 @@ com.android.tools.build:gradle:$BUILD_VERSION
     com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10 (runtime)
     com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10 (runtime)
     com.squareup:javapoet:1.13.0 (runtime)
-    org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10 (runtime)
+    org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.20 (runtime)
     com.google.protobuf:protobuf-java:3.25.5 (runtime)
     com.google.protobuf:protobuf-java-util:3.25.5 (runtime)
     com.google.code.gson:gson:2.15.0 (runtime)
@@ -559,7 +559,7 @@ com.android.tools.build:gradle-api:$BUILD_VERSION
   dependencies:
     com.android.tools.build:gradle-common-api:$BUILD_VERSION (compile)
     org.ow2.asm:asm:9.11.1 (compile)
-    org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.2.10 (compile)
+    org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.4.20 (compile)
     com.android.tools.build:builder-test-api:$BUILD_VERSION (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
@@ -576,7 +576,7 @@ com.android.tools.build:gradle-kotlin:$BUILD_VERSION
   description=Gradle plugin to register and configure Kotlin tasks for Android projects.
   dependencies:
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
-    org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10 (runtime)
+    org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.20 (runtime)
 
 com.android.tools.build:gradle-settings:$BUILD_VERSION
   pomName=com.android.tools.build.gradle-settings

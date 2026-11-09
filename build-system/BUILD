@@ -716,6 +716,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.4.20",
         "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin",
         "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.4.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.4.20",
         "@maven//:org.jetbrains.kotlin.kotlin-assignment-compiler-plugin-embeddable_2.4.20",
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.4.20",
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl",

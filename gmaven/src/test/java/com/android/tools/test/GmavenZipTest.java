@@ -25,6 +25,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import com.google.common.truth.Expect;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,6 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -68,7 +72,10 @@ import javax.xml.xpath.XPathFactory;
 /**
  * Verifies what we distribute to the Google maven repository
  *
- * <p>To update the snapshot file run: <code>
+ * <p>The aars, jars, POMs and the rich version constraints and reasons in the Gradle module
+ * metadata are compared to the gmaven-*.txt snapshot files.
+ *
+ * <p>To update the snapshot files run: <code>
  * bazel test //tools/base/gmaven:tests --nocache_test_results --strategy=TestRunner=standalone --jvmopt="-DUPDATE_TEST_SNAPSHOTS=$(bazel info workspace)" --test_output=streamed
  * </code>
  */
@@ -366,12 +373,15 @@ public class GmavenZipTest {
 
         List<Path> sourcesJars = new ArrayList<>();
         List<Path> poms = new ArrayList<>();
+        List<Path> modules = new ArrayList<>();
         List<Path> aars = new ArrayList<>();
         List<Path> jars = new ArrayList<>();
         for (Path file : files) {
             String a = file.toString();
             if (a.endsWith(".pom")) {
                 poms.add(file);
+            } else if (a.endsWith(".module")) {
+                modules.add(file);
             } else if (a.endsWith("-sources.jar")) {
                 sourcesJars.add(file);
             } else //noinspection StatementWithEmptyBody
@@ -386,8 +396,7 @@ public class GmavenZipTest {
                     || a.endsWith(".md5")
                     || a.endsWith(".sha1")
                     || a.endsWith(".sha256")
-                    || a.endsWith(".sha512")
-                    || a.endsWith(".module")) {
+                    || a.endsWith(".sha512")) {
                 // Ignore
             } else {
                 expect.fail("Unexpected file " + file);
@@ -448,6 +457,7 @@ public class GmavenZipTest {
                         .map(pomInfo -> pomInfo.describe(namedCoordinates))
                         .collect(Collectors.joining("\n"));
         check("gmaven-poms.txt", pomContent);
+        check("gmaven-modules.txt", describeModules(modules, namedCoordinates));
 
         for (Path jar : jars) {
             checkClassFileVersion(jar);
@@ -512,7 +522,127 @@ public class GmavenZipTest {
         }
     }
 
+    /**
+     * Describes, as gmaven-modules.txt lists them, the dependencies and dependency constraints in
+     * the Gradle module metadata that carry more than a plain version: {@code strictly}, {@code
+     * prefers} or {@code rejects} versions, or a reason. Modules and variants without any are
+     * omitted.
+     */
+    private static String describeModules(
+            List<Path> modules, Map<String, String> namedCoordinates) throws IOException {
+        Map<String, String> descriptions = new TreeMap<>();
+        for (Path moduleFile : modules) {
+            JsonObject root =
+                    JsonParser.parseString(Files.readString(moduleFile, StandardCharsets.UTF_8))
+                            .getAsJsonObject();
+            JsonObject component = root.getAsJsonObject("component");
+            StringBuilder variantsDescription = new StringBuilder();
+            Map<String, JsonObject> variants = new TreeMap<>();
+            if (root.has("variants")) {
+                for (JsonElement variant : root.getAsJsonArray("variants")) {
+                    variants.put(
+                            variant.getAsJsonObject().get("name").getAsString(),
+                            variant.getAsJsonObject());
+                }
+            }
+            for (Map.Entry<String, JsonObject> variant : variants.entrySet()) {
+                String entries =
+                        describeModuleEntries(
+                                        variant.getValue(), "dependencies", "", namedCoordinates)
+                                + describeModuleEntries(
+                                        variant.getValue(),
+                                        "dependencyConstraints",
+                                        "constraint ",
+                                        namedCoordinates);
+                if (!entries.isEmpty()) {
+                    variantsDescription
+                            .append("  ")
+                            .append(variant.getKey())
+                            .append(":\n")
+                            .append(entries);
+                }
+            }
+            if (variantsDescription.length() > 0) {
+                String coordinates =
+                        component.get("group").getAsString()
+                                + ':'
+                                + component.get("module").getAsString();
+                descriptions.put(coordinates, coordinates + '\n' + variantsDescription);
+            }
+        }
+        return String.join("\n", descriptions.values());
+    }
 
+    private static String describeModuleEntries(
+            JsonObject variant,
+            String key,
+            String label,
+            Map<String, String> namedCoordinates) {
+        if (!variant.has(key)) {
+            return "";
+        }
+        Map<String, String> descriptions = new TreeMap<>();
+        for (JsonElement element : variant.getAsJsonArray(key)) {
+            JsonObject entry = element.getAsJsonObject();
+            String group = entry.get("group").getAsString();
+            String module = entry.get("module").getAsString();
+            JsonObject version =
+                    entry.has("version") ? entry.getAsJsonObject("version") : new JsonObject();
+            if (!version.has("strictly")
+                    && !version.has("prefers")
+                    && !version.has("rejects")
+                    && !entry.has("reason")) {
+                continue;
+            }
+            List<String> constraints = new ArrayList<>();
+            for (String versionKey : new String[] {"requires", "strictly", "prefers"}) {
+                if (version.has(versionKey)) {
+                    constraints.add(
+                            versionKey
+                                    + ' '
+                                    + versionName(
+                                            group,
+                                            module,
+                                            version.get(versionKey).getAsString(),
+                                            namedCoordinates));
+                }
+            }
+            if (version.has("rejects")) {
+                List<String> rejects = new ArrayList<>();
+                for (JsonElement reject : version.getAsJsonArray("rejects")) {
+                    rejects.add(reject.getAsString());
+                }
+                constraints.add("rejects " + String.join(" | ", rejects));
+            }
+            StringBuilder description =
+                    new StringBuilder("    ")
+                            .append(label)
+                            .append(group)
+                            .append(':')
+                            .append(module);
+            if (!constraints.isEmpty()) {
+                description.append(" {").append(String.join("; ", constraints)).append('}');
+            }
+            description.append('\n');
+            if (entry.has("reason")) {
+                description
+                        .append("      because \"")
+                        .append(entry.get("reason").getAsString())
+                        .append("\"\n");
+            }
+            // Keyed by the description too, so that repeated coordinates are all listed.
+            descriptions.put(group + ':' + module + '\n' + description, description.toString());
+        }
+        return String.join("", descriptions.values());
+    }
+
+    /** The version, or its name for the artifacts in gmaven.zip, as in gmaven-poms.txt. */
+    private static String versionName(
+            String group, String module, String version, Map<String, String> namedCoordinates) {
+        String coordinates = group + ':' + module + ':';
+        String named = namedCoordinates.get(coordinates + version);
+        return named == null ? version : named.substring(coordinates.length());
+    }
 
     private void checkSourcesJar(Path jarPath, Path repo) throws IOException {
         checkLicense(jarPath, repo);

@@ -1,0 +1,17 @@
+com.android.tools.build:gradle
+  runtimeElements:
+    org.jetbrains.kotlin:kotlin-gradle-plugin {prefers 2.4.20; rejects (,2.2.10)}
+      because "AGP requires Kotlin Gradle plugin 2.2.10 or newer. Run './gradlew buildEnvironment' to find the plugin that requests an older version, then upgrade that plugin or declare a newer Kotlin Gradle plugin version."
+
+com.android.tools.build:gradle-api
+  apiElements:
+    org.jetbrains.kotlin:kotlin-gradle-plugin-api {prefers 2.4.20; rejects (,2.2.10)}
+      because "AGP requires Kotlin Gradle plugin 2.2.10 or newer. Run './gradlew buildEnvironment' to find the plugin that requests an older version, then upgrade that plugin or declare a newer Kotlin Gradle plugin version."
+  runtimeElements:
+    org.jetbrains.kotlin:kotlin-gradle-plugin-api {prefers 2.4.20; rejects (,2.2.10)}
+      because "AGP requires Kotlin Gradle plugin 2.2.10 or newer. Run './gradlew buildEnvironment' to find the plugin that requests an older version, then upgrade that plugin or declare a newer Kotlin Gradle plugin version."
+
+com.android.tools.build:gradle-kotlin
+  runtimeElements:
+    org.jetbrains.kotlin:kotlin-gradle-plugin {prefers 2.4.20; rejects (,2.2.10)}
+      because "AGP requires Kotlin Gradle plugin 2.2.10 or newer. Run './gradlew buildEnvironment' to find the plugin that requests an older version, then upgrade that plugin or declare a newer Kotlin Gradle plugin version."

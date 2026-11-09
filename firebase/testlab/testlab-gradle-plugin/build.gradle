@@ -42,6 +42,7 @@ gradlePlugin {
 
 dependencies {
     compileOnly project(':base:gradle-api')
+    compileOnly libs.kotlin.gradle.plugin.api
     compileOnly project(':base:build-system:gradle-common-api')
     compileOnly project(':base:builder-test-api')
     implementation libs.gson
@@ -51,6 +52,10 @@ dependencies {
     implementation libs.android.test.result.proto
     implementation libs.protobuf.util
     testImplementation project(':base:gradle-api')
+    testImplementation libs.kotlin.gradle.plugin.api
+    constraints {
+        testImplementation(libs.kotlin.gradle.plugin)
+    }
     testImplementation project(':base:builder-test-api')
     testImplementation libs.equalsverifier
     testImplementation libs.junit

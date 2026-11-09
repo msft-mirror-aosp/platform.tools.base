@@ -8,4 +8,5 @@ dependencies {
     provided gradleApi()
     provided project(':base:builder-model')
     provided libs.guava
+    provided libs.kotlin.gradle.plugin.api
 }

@@ -10,8 +10,8 @@ KGP_VERSION_FOR_TESTS = "2.5.0-Beta2"
 # Minimum Kotlin Gradle plugin version that AGP supports and compiles against
 MINIMUM_BUILT_IN_KOTLIN_VERSION = "2.2.10"
 
-# Default Kotlin Gradle plugin version that AGP depends on
-BUILT_IN_KOTLIN_VERSION = "2.2.10"
+# Default Kotlin Gradle plugin version that AGP recommends using
+BUILT_IN_KOTLIN_VERSION = "2.4.20"
 
 # KSP version used in AGP tests
 KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2"

@@ -56,7 +56,7 @@ public class TestUtils {
     public static final String MINIMUM_BUILT_IN_KOTLIN_VERSION = "2.2.10";
 
     /** Default Kotlin Gradle plugin version that AGP recommends using. */
-    public static final String BUILT_IN_KOTLIN_VERSION = "2.2.10";
+    public static final String BUILT_IN_KOTLIN_VERSION = "2.4.20";
 
     /**
      * Kotlin version that is used in AGP integration tests. Please note that this version does not
