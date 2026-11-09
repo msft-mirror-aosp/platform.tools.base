@@ -154,6 +154,21 @@ abstract class AndroidLintTask : NonIncrementalTask() {
   @get:Optional
   abstract val nestedComponentPartialResults: ConfigurableFileCollection
 
+  /**
+   * The merged manifest of the main variant.
+   *
+   * Lint reads the merged manifest during the reporting phase (e.g., in `Detector.checkMergedProject`), but the lint model only references
+   * it by path, so it must be declared as an input of this task; otherwise this task can be incorrectly UP-TO-DATE after a manifest-only
+   * change.
+   */
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val mergedManifest: RegularFileProperty
+
+  /**
+   * The manifest merge report of the main variant, which lint uses during the reporting phase to map merged manifest elements back to
+   * source locations. Like [mergedManifest], the lint model only references it by path.
+   */
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val manifestMergeReport: RegularFileProperty
+
   @get:Input abstract val printStackTrace: Property<Boolean>
 
   @get:Nested abstract val systemPropertyInputs: SystemPropertyInputs
@@ -699,6 +714,11 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         }
       )
       task.partialResults.disallowChanges()
+      // Lint reads these files in the reporting phase, but the lint model only contains their
+      // paths, so they must be declared as inputs explicitly to keep this task from being
+      // incorrectly UP-TO-DATE after a manifest-only change.
+      task.mergedManifest.setDisallowChanges(creationConfig.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+      task.manifestMergeReport.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.MANIFEST_MERGE_REPORT))
       task.lintModels.fromDisallowChanges(
         if (fatalOnly) {
           creationConfig.artifacts.getAll(LINT_VITAL_REPORT_LINT_MODEL)
@@ -1041,6 +1061,9 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.lintRuleJars.fromDisallowChanges(customLintChecksConfig)
     this.partialResults.fromDisallowChanges(partialResults)
     this.lintModels.fromDisallowChanges(lintModels)
+    // Standalone (non-Android) projects have no merged manifest.
+    this.mergedManifest.disallowChanges()
+    this.manifestMergeReport.disallowChanges()
     unitTestPartialResults?.let { this.nestedComponentPartialResults.from(it) }
     this.nestedComponentPartialResults.disallowChanges()
     unitTestLintModel?.let { this.nestedComponentLintModels.from(it) }
