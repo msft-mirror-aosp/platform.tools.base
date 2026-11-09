@@ -8,7 +8,6 @@ package game_tools;
 service GameTools {
   rpc CreateProject(CreateProjectRequest) returns (Project) {}
   rpc CreateWindow(CreateWindowRequest) returns (Window) {}
-  rpc StartProfiling(StartProfilingRequest) returns (StartProfilingResponse) {}
 }
 
 message CreateProjectRequest {
@@ -39,25 +38,13 @@ message Window {
   WindowType type = 2;
 
   enum WindowType {
+    reserved 1;
+    reserved "PROFILER";
+
     UNSPECIFIED_GAME_TOOLS_WINDOW_TYPE = 0;
-    PROFILER = 1;
     SDK_MANAGER = 2;
     AVD_MANAGER = 3;
     DEVICE_FILE_EXPLORER = 4;
     LOGCAT = 5;
   }
 }
-
-message StartProfilingRequest {
-  // Which profiler window to use to start this profiling session.
-  // though.
-  string window_id = 1;
-  // The unique ID identifying this connected device. For example "emulator-5554".
-  string serial_number = 2;
-  // The application ID of the Android app to profile.
-  string application_id = 3;
-  // The timestamp in millisecond to filter processes based on start timestamp
-  int64 start_later_than_ms = 4;
-}
-
-message StartProfilingResponse {}
