@@ -75,30 +75,21 @@ internal class DexEncodedMethodImpl(private val method: EncodedMethod, override 
   }
 
   private fun retrieveByteCode(): DexBytecodeImpl {
-    val bytecode =
-      if (method.codeOffset == 0u) {
-        // Native method don't have bytecode
-        ByteArray(0)
-      } else {
-        val reader = dex.reader(method.codeOffset)
-        val codeItem = CodeItem.from(reader)
-        codeItem.instructions
-      }
-
-    // Debug info
-    val debugInfo =
-      if (bytecode.isEmpty()) {
-        DexMethodDebugInfo()
-      } else {
-        retrieveDebugInfo()
-      }
-    return DexBytecodeImpl(bytecode, debugInfo, dex.logger)
-  }
-
-  private fun retrieveDebugInfo(): DexMethodDebugInfo {
+    if (method.codeOffset == 0u) {
+      // Native method don't have bytecode
+      return DexBytecodeImpl(ByteArray(0), DexMethodDebugInfo(), dex.logger)
+    }
     val reader = dex.reader(method.codeOffset)
     val codeItem = CodeItem.from(reader)
     reader.position = codeItem.debugInfoOffset
-    return kexter.core.DexMethodDebugInfo.fromReader(reader, dex.logger)
+    val bytecode = codeItem.instructions
+    val debugInfo =
+      if (codeItem.debugInfoOffset == 0u) {
+        DexMethodDebugInfo()
+      } else {
+        reader.position = codeItem.debugInfoOffset
+        kexter.core.DexMethodDebugInfo.fromReader(reader, dex.logger)
+      }
+    return DexBytecodeImpl(bytecode, debugInfo, dex.logger)
   }
 }
