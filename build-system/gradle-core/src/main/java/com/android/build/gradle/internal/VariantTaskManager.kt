@@ -70,6 +70,7 @@ import java.util.stream.Collectors
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.tasks.TaskProvider
 
@@ -617,7 +618,9 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
       .mapNotNull { variant ->
         val dependency =
           variant.variantDependencies.runtimeClasspath.incoming.dependencies.find {
-            (it.group == "com.android.support" || it.group == "androidx.multidex") && it.name == "multidex"
+            it is ExternalModuleDependency &&
+              (it.group == "com.android.support" || it.group == "androidx.multidex") &&
+              it.name == "multidex"
           }
 
         dependency?.let { it to variant.services.issueReporter }
