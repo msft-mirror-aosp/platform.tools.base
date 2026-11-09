@@ -3270,6 +3270,7 @@ class RendererTest {
               <style name="GreenAccent" parent="android:Theme.Material.Light">
                   <item name="android:colorAccent">#FF00FF00</item>
               </style>
+              <style name="Theme.GreenAccent" parent="GreenAccent" />
           </resources>
           """
             .trimIndent()
@@ -3354,6 +3355,11 @@ class RendererTest {
         renderDrawable("R.drawable.ic_left_half", mapOf("backgroundColor" to "#FF0000FF"), "ic_left_half_bg").getRGB(36, 24),
       )
       assertEquals(0xFF00FF00.toInt(), renderDrawable("R.drawable.ic_accent", mapOf("theme" to "GreenAccent")).getRGB(24, 24))
+      // A plain theme name with dots is also the project's style.
+      assertEquals(
+        0xFF00FF00.toInt(),
+        renderDrawable("R.drawable.ic_accent", mapOf("theme" to "Theme.GreenAccent"), "ic_accent_dotted").getRGB(24, 24),
+      )
     }
   }
 
@@ -3440,6 +3446,7 @@ class RendererTest {
                 <item name="android:colorAccent">#FF00FF00</item>
                 <item name="android:windowBackground">@android:color/white</item>
             </style>
+            <style name="Theme.GreenAccent" parent="GreenAccent" />
         </resources>
         """
           .trimIndent()
@@ -3483,6 +3490,19 @@ class RendererTest {
       assertEquals(300, default.height)
       assertEquals(0xFF00FF00.toInt(), default.getRGB(20, 20))
       assertEquals(0xFFFFFFFF.toInt(), default.getRGB(100, 200))
+
+      // A plain theme name with dots is also the project's style.
+      val dotted = renderLayout("main", mapOf("theme" to "Theme.GreenAccent"), "main_dotted_theme")
+      assertEquals(0xFF00FF00.toInt(), dotted.getRGB(20, 20))
+      assertEquals(0xFFFFFFFF.toInt(), dotted.getRGB(100, 200))
+
+      // A plain theme name that isn't a project style is the framework style: Theme.Material has a teal accent and a dark window
+      // background.
+      val framework = renderLayout("main", mapOf("theme" to "Theme.Material"), "main_framework_theme")
+      assertEquals(0xFF80CBC4.toInt(), framework.getRGB(20, 20))
+      val background = framework.getRGB(100, 200)
+      assertEquals(0xFF, background ushr 24)
+      assertTrue("Expected a dark background, got ${Integer.toHexString(background)}", (background and 0xFF) < 0x80)
 
       // showBackground=false makes the background transparent.
       val transparent = renderLayout("main", mapOf("theme" to "GreenAccent", "showBackground" to "false"), "main_transparent")

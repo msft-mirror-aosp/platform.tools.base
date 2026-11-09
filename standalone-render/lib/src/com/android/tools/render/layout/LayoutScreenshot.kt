@@ -63,7 +63,8 @@ private const val WINDOW_BACKGROUND = "?android:attr/windowBackground"
  * - `device`, `locale`, `fontScale`, `uiMode`, `apiLevel` and `wallpaper`: the configuration to render with, as in Compose's `@Preview`.
  *   They select resource variants such as `layout-land` or `values-night`. `wallpaper` is -1 (none) or the index of a
  *   [com.android.tools.configurations.Wallpaper].
- * - `theme`: the theme to inflate the layout with, for example `@style/Theme.MyApp`.
+ * - `theme`: the theme to inflate the layout with, for example `@style/Theme.MyApp`. A plain name such as `Theme.Material` is the project's
+ *   style of that name, or the framework style if the project doesn't have one.
  * - `widthDp` and `heightDp`: the size of the layout's parent, in dp, instead of the device screen. It can be larger than the screen. -1,
  *   like a missing value, fills the device screen.
  * - `showBackground` and `backgroundColor`: by default, the preview has the theme's window background. `showBackground=false` makes it
@@ -131,7 +132,9 @@ data class LayoutScreenshot(
     val attributes = buildList {
       add(ATTR_LAYOUT_WIDTH to (widthDp?.let { "${it}dp" } ?: VALUE_MATCH_PARENT))
       add(ATTR_LAYOUT_HEIGHT to (heightDp?.let { "${it}dp" } ?: VALUE_MATCH_PARENT))
-      param(ATTR_THEME)?.let { add(ATTR_THEME to toThemeReference(it)) }
+      param(ATTR_THEME)?.let {
+        add(ATTR_THEME to toThemeReference(it, module.resourceRepositoryManager.appResources))
+      }
       background(showBackground, backgroundColor)?.let { add(ATTR_BACKGROUND to it) }
     }
     return LayoutScreenshotPreviewElement(

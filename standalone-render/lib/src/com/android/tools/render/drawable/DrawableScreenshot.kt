@@ -59,7 +59,8 @@ private val SCALE_TYPES = setOf("matrix", "fitXY", "fitStart", "fitCenter", "fit
  * image has the drawable's intrinsic size on the preview device, and the background is transparent. Supported [previewParams]:
  * - `device`, `locale`, `uiMode` and `apiLevel`: the configuration to render with, as in Compose's `@Preview`. They select resource
  *   variants such as `drawable-night` or `drawable-xxhdpi`.
- * - `theme`: the theme that resolves `?attr/` references in the drawable, for example `@style/Theme.MyApp`.
+ * - `theme`: the theme that resolves `?attr/` references in the drawable, for example `@style/Theme.MyApp`. A plain name such as
+ *   `Theme.Material` is the project's style of that name, or the framework style if the project doesn't have one.
  * - `widthDp` and `heightDp`: the size of the view, in dp, for example for shapes and nine-patches.
  * - `backgroundColor` and `scaleType`: the view's background and scale type, like `tools:background` and `tools:scaleType` in drawable
  *   files.
@@ -126,7 +127,9 @@ data class DrawableScreenshot(
     // XmlBuilder doesn't escape attribute values.
     param(PARAMETER_BACKGROUND_COLOR)?.let { xmlBuilder.androidAttribute(ATTR_BACKGROUND, toXmlAttributeValue(it)) }
     scaleType?.let { xmlBuilder.androidAttribute(ATTR_SCALE_TYPE, it) }
-    param(ATTR_THEME)?.let { xmlBuilder.androidAttribute(ATTR_THEME, toXmlAttributeValue(toThemeReference(it))) }
+    param(ATTR_THEME)?.let {
+      xmlBuilder.androidAttribute(ATTR_THEME, toXmlAttributeValue(toThemeReference(it, module.resourceRepositoryManager.appResources)))
+    }
 
     return DrawableScreenshotPreviewElement(
       displaySettings = displaySettings,
