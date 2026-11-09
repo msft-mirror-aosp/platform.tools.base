@@ -157,7 +157,7 @@ class BuildConfigTest {
   fun buildFlavor1Debug() {
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.app;
@@ -197,7 +197,7 @@ class BuildConfigTest {
   fun buildFlavor1Release() {
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.app;
@@ -237,7 +237,7 @@ class BuildConfigTest {
   fun buildFlavor2Debug() {
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.app;
@@ -277,7 +277,7 @@ class BuildConfigTest {
   fun buildFlavor2Release() {
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.app;

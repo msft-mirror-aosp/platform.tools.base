@@ -21,6 +21,11 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import javax.tools.DiagnosticCollector
+import javax.tools.JavaFileObject
+import javax.tools.StandardLocation
+import javax.tools.ToolProvider
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -41,7 +46,7 @@ class BuildConfigGeneratorTest {
     val actual = Files.toString(file, Charsets.UTF_8)
     Assert.assertEquals(
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package my.app.pkg;
@@ -67,7 +72,7 @@ class BuildConfigGeneratorTest {
     val actual = Files.toString(file, Charsets.UTF_8)
     Assert.assertEquals(
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package my.app.pkg;
@@ -98,7 +103,7 @@ class BuildConfigGeneratorTest {
     assertThat(actual)
       .isEqualTo(
         """
-        /**
+        /*
          * Automatically generated file. DO NOT MODIFY
          */
         package my.app.pkg;
@@ -123,7 +128,7 @@ class BuildConfigGeneratorTest {
     val actual = Files.toString(file, Charsets.UTF_8)
     Assert.assertEquals(
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package my.app.pkg;
@@ -149,7 +154,7 @@ class BuildConfigGeneratorTest {
     val actual = Files.toString(file, Charsets.UTF_8)
     Assert.assertEquals(
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package my.app.pkg;
@@ -206,7 +211,7 @@ class BuildConfigGeneratorTest {
     assertThat(actual)
       .isEqualTo(
         """
-        /**
+        /*
          * Automatically generated file. DO NOT MODIFY
          */
         package my.app.pkg;
@@ -242,5 +247,52 @@ class BuildConfigGeneratorTest {
         """
           .trimIndent()
       )
+  }
+
+  /**
+   * Regression test for b/567587949: javac 23+ (JDK-8303689) reports a Javadoc comment before the package declaration under
+   * -Xlint:dangling-doc-comments, so a Javadoc-style file header breaks `-Xlint:all -Werror` builds.
+   */
+  @Test
+  fun testGeneratedSourceCompilesWithAllLintWarningsAsErrors() {
+    val tempDir = mTemporaryFolder.newFolder()
+    val buildConfigData =
+      BuildConfigData.Builder()
+        .setOutputPath(tempDir.toPath())
+        .setNamespace("my.app.pkg")
+        .addBooleanField("DEBUG", true)
+        .addItem("COMMENT", BuildConfigField("String", "\"String with comment\"", "A string!"))
+        .build()
+    val generator = BuildConfigGenerator(buildConfigData)
+    generator.generate()
+    val file = generator.generatedFilePath
+
+    // JDK-independent guard: the file header (before `package`) must not be a doc comment.
+    assertThat(Files.asCharSource(file, Charsets.UTF_8).read().substringBefore("package ")).doesNotContain("/**")
+
+    // Compile with the JDK running the test; on JDK 23+ this exercises the dangling-doc-comments lint.
+    val compiler = checkNotNull(ToolProvider.getSystemJavaCompiler()) { "Test must run on a JDK, not a JRE" }
+    val diagnostics = DiagnosticCollector<JavaFileObject>()
+    val classesDir = mTemporaryFolder.newFolder()
+    val success =
+      compiler.getStandardFileManager(diagnostics, null, Charsets.UTF_8).use { fileManager ->
+        // Hermetic: don't inherit the test runner's classpath (or annotation processors on it).
+        fileManager.setLocation(StandardLocation.CLASS_PATH, emptyList())
+        compiler
+          .getTask(
+            null,
+            fileManager,
+            diagnostics,
+            listOf("-proc:none", "-Xlint:all", "-Werror", "-d", classesDir.path),
+            null,
+            fileManager.getJavaFileObjects(file),
+          )
+          .call()
+      }
+    // Intentional canary: users compile this generated file with -Xlint:all -Werror, so a new javac
+    // lint that fires here would break them too. Fix the generator; don't suppress the lint here.
+    assertWithMessage("Generated BuildConfig.java must compile warning-free (b/567587949):\n" + diagnostics.diagnostics.joinToString("\n"))
+      .that(success)
+      .isTrue()
   }
 }

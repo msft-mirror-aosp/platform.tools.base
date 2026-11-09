@@ -106,7 +106,7 @@ class DslTest {
     assertAbout(PathSubject.paths()).that(path).exists()
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.app;

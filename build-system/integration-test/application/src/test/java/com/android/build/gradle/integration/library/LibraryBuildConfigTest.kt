@@ -141,7 +141,7 @@ class LibraryBuildConfigTest(private val useNewDsl: Boolean) {
   fun testFlavor1Debug() {
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.lib;
@@ -182,7 +182,7 @@ class LibraryBuildConfigTest(private val useNewDsl: Boolean) {
   fun buildFlavor2Debug() {
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.lib;
@@ -216,7 +216,7 @@ class LibraryBuildConfigTest(private val useNewDsl: Boolean) {
   fun buildFlavor1Release() {
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.lib;
@@ -250,7 +250,7 @@ class LibraryBuildConfigTest(private val useNewDsl: Boolean) {
   fun buildFlavor2Release() {
     val expected =
       """
-      /**
+      /*
        * Automatically generated file. DO NOT MODIFY
        */
       package pkg.name.lib;

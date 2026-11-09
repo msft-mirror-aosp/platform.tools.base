@@ -51,10 +51,10 @@ class BuildConfigGenerator(buildConfigData: BuildConfigData) : GeneratedCodeFile
       val fos = closer.register(FileOutputStream(generatedFilePath))
       val out = closer.register(OutputStreamWriter(fos, Charsets.UTF_8))
       val writer = closer.register(JavaWriter(out))
-      writer
-        .emitJavadoc("Automatically generated file. DO NOT MODIFY")
-        .emitPackage(namespace)
-        .beginType("BuildConfig", "class", PUBLIC_FINAL)
+      // Not Javadoc: javac 23+ reports a /** before `package` as dangling (b/567587949).
+      // JavaWriter has no block-comment API and does not buffer, so write it to `out` first.
+      out.write(FILE_HEADER)
+      writer.emitPackage(namespace).beginType("BuildConfig", "class", PUBLIC_FINAL)
       for ((key, value) in fields) {
         value.emit(key, writer)
       }
@@ -64,6 +64,7 @@ class BuildConfigGenerator(buildConfigData: BuildConfigData) : GeneratedCodeFile
 
   companion object {
     const val BUILD_CONFIG_NAME = "BuildConfig.java"
+    private const val FILE_HEADER = "/*\n * Automatically generated file. DO NOT MODIFY\n */\n"
     private val PUBLIC_FINAL: Set<Modifier> = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL)
   }
 }
