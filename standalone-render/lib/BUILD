@@ -25,6 +25,8 @@ kotlin_library(
         "//tools/base/common:tools.common",
         "//tools/base/environment-services:tools.environment-services",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
+        # Layoutlib draws nine-patch drawables with com.android.ninepatch.NinePatch from the host classpath.
+        "//tools/base/ninepatch:tools.ninepatch",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "@maven//:com.google.code.gson.gson",

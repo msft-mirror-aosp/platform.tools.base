@@ -1,4 +1,4 @@
-load("@rules_java//java:defs.bzl", "java_binary", "java_import")
+load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library", "maven_repository")
 load("//tools/base/preview/screenshot:version.bzl", "SCREENSHOT_TEST_PLUGIN_VERSION")
@@ -45,6 +45,8 @@ merge_deps(
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/layoutlib-extensions:tools.layoutlib-extensions",
         "//tools/base/multipreview-asm:tools.compose-preview-detector",
+        # Layoutlib draws nine-patch drawables with com.android.ninepatch.NinePatch from the host classpath.
+        "//tools/base/ninepatch:tools.ninepatch",
         "//tools/base/repository:tools.repository",
         "//tools/base/resource-repository:tools.resource-repository",
         "//tools/base/sdk-common:tools.sdk-common",

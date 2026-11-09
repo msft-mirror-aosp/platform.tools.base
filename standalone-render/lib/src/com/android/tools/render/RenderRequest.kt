@@ -28,12 +28,14 @@ import com.android.tools.render.common.ResolvedScreenshotLayout
  * @param resolvedLayoutsProvider An optional provider for [ResolvedScreenshotLayout]s. When provided, this preserves layout metadata such
  *   as custom parameter display names (from `PreviewParameterProvider.getDisplayName`) alongside the XML layout strings.
  * @param showDecorations Whether to render device system decorations (status/navigation bars, device frame).
+ * @param transparentBackground Whether to render without the window background.
  */
 class RenderRequest(
   val configurationModifier: Configuration.() -> Unit,
   val xmlLayoutsProvider: () -> Sequence<String>,
   val resolvedLayoutsProvider: (() -> Sequence<ResolvedScreenshotLayout>)? = null,
   val showDecorations: Boolean = false,
+  val transparentBackground: Boolean = false,
 ) {
   companion object {
     /**
@@ -44,12 +46,14 @@ class RenderRequest(
       configurationModifier: Configuration.() -> Unit,
       resolvedLayoutsProvider: () -> Sequence<ResolvedScreenshotLayout>,
       showDecorations: Boolean = false,
+      transparentBackground: Boolean = false,
     ): RenderRequest =
       RenderRequest(
         configurationModifier,
         { resolvedLayoutsProvider().map { it.xmlLayout } },
         resolvedLayoutsProvider,
         showDecorations,
+        transparentBackground,
       )
   }
 }

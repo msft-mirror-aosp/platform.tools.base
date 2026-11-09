@@ -33,6 +33,7 @@ import com.android.tools.render.common.readComponentTreeFromJson
 import com.android.tools.render.common.toScreenshotError
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.discovery.SamplePreviewTarget
+import com.android.tools.render.drawable.DrawableScreenshot
 import com.android.tools.rendering.RenderService
 import com.android.tools.rendering.compose.ComposeViewInfo
 import com.android.tools.rendering.compose.PxBounds
@@ -3154,6 +3155,115 @@ class RendererTest {
   private fun captureSharedClassLoaderRef(renderer: Renderer): WeakReference<ClassLoader> =
     WeakReference(renderer.module.environment.moduleClassLoaderManager.getShared(null).classLoader)
 
+  private fun <T> withDrawableRenderer(setupResources: (File) -> Unit, block: (Renderer, File) -> T): T {
+    val resFolder = tmpFolder.newFolder()
+    setupResources(resFolder)
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        resourceDirs = listOf(resFolder.absolutePath),
+        namespace = "com.example.app",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib").absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder()
+    return bootstrapper.bootstrap().use { renderer -> block(renderer, outputDir) }
+  }
+
+  private fun writeVectorDrawable(drawableFolder: File, name: String, fillColor: String, pathData: String = "M0,0h24v24h-24z") {
+    drawableFolder
+      .resolve("$name.xml")
+      .writeText(
+        """
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp" android:height="24dp"
+            android:viewportWidth="24" android:viewportHeight="24">
+            <path android:fillColor="$fillColor" android:pathData="$pathData" />
+        </vector>
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testRenderDrawableScreenshot_rendersDrawable() {
+    withDrawableRenderer({ resFolder ->
+      val drawableFolder = File(resFolder, "drawable").apply { mkdirs() }
+      // Left half filled, right half transparent.
+      writeVectorDrawable(drawableFolder, "ic_left_half", "#FFFF0000", pathData = "M0,0h12v24h-12z")
+      writeVectorDrawable(File(resFolder, "mipmap").apply { mkdirs() }, "ic_launcher", "#FF00FF00")
+    }) { renderer, outputDir ->
+      val defaultRender =
+        renderer.render(DrawableScreenshot(methodFQN = "R.drawable.ic_left_half", previewId = "ic_left_half"), outputDir.absolutePath)
+      assertEquals(1, defaultRender.size)
+      assertNull(defaultRender[0].error)
+      assertEquals("drawable${File.separator}ic_left_half_0.png", defaultRender[0].imagePath)
+      val image = ImageIO.read(outputDir.resolve(defaultRender[0].imagePath!!))
+      assertTrue(image.width > 0 && image.width == image.height)
+      assertEquals(0xFFFF0000.toInt(), image.getRGB(image.width / 4, image.height / 2))
+      assertEquals(0, image.getRGB(image.width * 3 / 4, image.height / 2) ushr 24)
+
+      val mipmap =
+        renderer.render(DrawableScreenshot(methodFQN = "R.mipmap.ic_launcher", previewId = "ic_launcher"), outputDir.absolutePath)
+      assertNull(mipmap[0].error)
+      assertEquals("mipmap${File.separator}ic_launcher_0.png", mipmap[0].imagePath)
+      val mipmapImage = ImageIO.read(outputDir.resolve(mipmap[0].imagePath!!))
+      assertEquals(image.width, mipmapImage.width)
+      assertEquals(0xFF00FF00.toInt(), mipmapImage.getRGB(mipmapImage.width / 2, mipmapImage.height / 2))
+
+      val framework =
+        renderer.render(
+          DrawableScreenshot(methodFQN = "@android:drawable/sym_def_app_icon", previewId = "sym_def_app_icon"),
+          outputDir.absolutePath,
+        )
+      assertNull(framework[0].error)
+      val frameworkImage = ImageIO.read(outputDir.resolve(framework[0].imagePath!!))
+      assertTrue(frameworkImage.width > 0 && frameworkImage.height > 0)
+
+      val missing = renderer.render(DrawableScreenshot(methodFQN = "R.drawable.missing", previewId = "missing"), outputDir.absolutePath)
+      assertTrue(missing[0].error?.message?.contains("Drawable resource '@drawable/missing' not found") == true)
+    }
+  }
+
+  @Test
+  fun testRenderDrawableScreenshot_rendersBitmapsAndNinePatches() {
+    withDrawableRenderer({ resFolder ->
+      val drawableFolder = File(resFolder, "drawable").apply { mkdirs() }
+      val photo = BufferedImage(24, 24, BufferedImage.TYPE_INT_ARGB)
+      for (x in 0 until 24) for (y in 0 until 24) photo.setRGB(x, y, 0xFFFF0000.toInt())
+      ImageIO.write(photo, "png", drawableFolder.resolve("photo.png"))
+      // A nine-patch with 24x24px of content and a 1px stretchable-area border.
+      val ninePatch = BufferedImage(26, 26, BufferedImage.TYPE_INT_ARGB)
+      for (x in 1 until 25) for (y in 1 until 25) ninePatch.setRGB(x, y, 0xFF00FF00.toInt())
+      for (i in 10 until 16) {
+        ninePatch.setRGB(i, 0, 0xFF000000.toInt())
+        ninePatch.setRGB(0, i, 0xFF000000.toInt())
+      }
+      ImageIO.write(ninePatch, "png", drawableFolder.resolve("panel.9.png"))
+    }) { renderer, outputDir ->
+      fun render(target: String): BufferedImage {
+        val result =
+          renderer
+            .render(DrawableScreenshot(methodFQN = target, previewId = target.substringAfterLast('.')), outputDir.absolutePath)
+            .single()
+        assertNull(result.error)
+        return ImageIO.read(outputDir.resolve(result.imagePath!!))
+      }
+
+      val photoImage = render("R.drawable.photo")
+      assertTrue(photoImage.width >= 24 && photoImage.width == photoImage.height)
+      assertEquals(0xFFFF0000.toInt(), photoImage.getRGB(photoImage.width / 2, photoImage.height / 2))
+
+      // Layoutlib needs com.android.ninepatch.NinePatch from the host classpath to draw nine-patches; the 1px border is excluded.
+      val ninePatchImage = render("R.drawable.panel")
+      assertEquals(photoImage.width, ninePatchImage.width)
+      assertEquals(photoImage.height, ninePatchImage.height)
+      assertEquals(0xFF00FF00.toInt(), ninePatchImage.getRGB(ninePatchImage.width / 2, ninePatchImage.height / 2))
+    }
+  }
+
   @Test
   fun testRenderUnsupportedResourceScreenshot_returnsError() {
     val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
@@ -3167,17 +3277,16 @@ class RendererTest {
         layoutlibPath = layoutlibPath.absolutePathString(),
       )
     val outputDir = tmpFolder.newFolder("output_unsupported_resource").absolutePath
-    val screenshot =
-      UnsupportedResourceScreenshot(methodFQN = "R.drawable.ic_logo", previewId = "ic_logo", resourceType = ResourceType.DRAWABLE)
+    val screenshot = UnsupportedResourceScreenshot(methodFQN = "R.menu.main", previewId = "main", resourceType = ResourceType.MENU)
 
     val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
 
     assertEquals(1, results.size)
     val result = results[0]
-    assertEquals("ic_logo", result.previewId)
-    assertEquals("drawable${File.separator}ic_logo_0.png", result.imagePath)
+    assertEquals("main", result.previewId)
+    assertEquals("menu${File.separator}main_0.png", result.imagePath)
     assertNotNull(result.error)
-    assertTrue(result.error?.message?.contains("Previews of drawable resources are not supported") == true)
+    assertTrue(result.error?.message?.contains("Previews of menu resources are not supported") == true)
   }
 }
 

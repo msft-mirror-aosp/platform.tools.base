@@ -17,6 +17,7 @@
 package com.android.tools.render.common
 
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.drawable.DrawableScreenshot
 import com.android.tools.render.wear.WearTileScreenshot
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
@@ -59,6 +60,7 @@ private const val MISSING_CLASSES = "missingClasses"
 private enum class PreviewType {
   COMPOSE,
   WEAR_TILE,
+  DRAWABLE,
 }
 
 /** Reads JSON text from [jsonReader] containing serialized [PreviewRendering]. */
@@ -219,6 +221,12 @@ private fun readPreviewScreenshot(reader: JsonReader): PreviewScreenshot {
         previewParams = previewParams,
         previewId = previewId ?: throw IllegalArgumentException("Preview Id is missing"),
       )
+    PreviewType.DRAWABLE ->
+      DrawableScreenshot(
+        methodFQN = methodFQN ?: throw IllegalArgumentException("FQN of a drawable resource is missing"),
+        previewParams = previewParams,
+        previewId = previewId ?: throw IllegalArgumentException("Preview Id is missing"),
+      )
   }
 }
 
@@ -316,12 +324,25 @@ private fun writeWearTileScreenshot(writer: JsonWriter, screenshot: WearTileScre
   writer.endObject()
 }
 
+private fun writeDrawableScreenshot(writer: JsonWriter, screenshot: DrawableScreenshot) {
+  writer.beginObject()
+  writer.name(METHOD_FQN).value(screenshot.methodFQN)
+  writer.name(PREVIEW_PARAMS)
+  writer.beginObject()
+  screenshot.previewParams.forEach { writer.name(it.key).value(it.value) }
+  writer.endObject()
+  writer.name(PREVIEW_ID).value(screenshot.previewId)
+  writer.name(PREVIEW_TYPE).value(PreviewType.DRAWABLE.name)
+  writer.endObject()
+}
+
 private fun writePreviewScreenshots(writer: JsonWriter, screenshots: List<PreviewScreenshot>) {
   writer.beginArray()
   screenshots.forEach {
     when (it) {
       is ComposeScreenshot -> writeComposeScreenshot(writer, it)
       is WearTileScreenshot -> writeWearTileScreenshot(writer, it)
+      is DrawableScreenshot -> writeDrawableScreenshot(writer, it)
       else -> throw IllegalArgumentException("Serialization of $it is not yet supported.")
     }
   }

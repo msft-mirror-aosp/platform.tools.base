@@ -26,6 +26,10 @@ data class ResolvedScreenshotLayout(val xmlLayout: String, val displayName: Stri
 
 /** Interface required to be implemented for a [PreviewScreenshot] to be rendered. */
 interface ScreenshotPreviewElement : ConfigurablePreviewElement<Unit> {
+  /** Whether to render without the window background, so that areas the preview does not draw stay transparent. */
+  val transparentBackground: Boolean
+    get() = false
+
   /**
    * This method returns a sequence of XML layouts for each preview.
    *

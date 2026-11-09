@@ -19,7 +19,7 @@ import com.android.resources.ResourceType
 import com.android.tools.render.StandaloneRenderModelModule
 
 /**
- * A preview target that refers to a resource whose type cannot be previewed yet (for example `R.drawable.ic_logo`).
+ * A preview target that refers to a resource whose type cannot be previewed yet (for example `R.menu.main`).
  *
  * Rendering it fails with a [ScreenshotError] for this screenshot only, so that the other screenshots of the same request still render.
  */
@@ -32,5 +32,8 @@ data class UnsupportedResourceScreenshot(
 ) : PreviewScreenshot {
 
   override fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement =
-    throw IllegalArgumentException("Previews of ${resourceType.getName()} resources are not supported: '$methodFQN'.")
+    throw IllegalArgumentException(
+      "Previews of ${resourceType.getName()} resources are not supported: '$methodFQN'. " +
+        "Supported resource previews: drawables (R.drawable.<name>, R.mipmap.<name>)."
+    )
 }

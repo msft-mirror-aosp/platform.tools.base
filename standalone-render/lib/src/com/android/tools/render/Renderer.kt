@@ -424,6 +424,7 @@ class Renderer(
         configurationModifier = previewElement::applyTo,
         resolvedLayoutsProvider = { resolvedLayouts.asSequence() },
         showDecorations = configuration.allowShowDecorations && previewElement.displaySettings.showDecoration,
+        transparentBackground = previewElement.transparentBackground,
       )
 
     return renderResolvedLayouts(renderRequest, configuration.renderImage, idAllocator.basePreviewName)
@@ -610,6 +611,7 @@ class Renderer(
           it,
           renderImage,
           allowShowDecorations = request.showDecorations,
+          transparentBackground = request.transparentBackground,
         )
     }
   }
@@ -656,6 +658,7 @@ class Renderer(
           executeCallbacks = true,
           previewName = layoutPreviewName,
           allowShowDecorations = request.showDecorations,
+          transparentBackground = request.transparentBackground,
         ),
         it,
       )
@@ -673,6 +676,7 @@ class Renderer(
     executeCallbacks: Boolean = false,
     previewName: String? = null,
     allowShowDecorations: Boolean = false,
+    transparentBackground: Boolean = false,
   ): RenderResult {
     awaitOutstandingDisposals()
     val disposable = Disposer.newCheckedDisposable()
@@ -719,6 +723,9 @@ class Renderer(
       val xmlFile = RenderXmlFileSnapshot(project, "layout.xml", ResourceFolderType.LAYOUT, xmlLayout)
 
       renderTask.setXmlFile(xmlFile)
+      if (transparentBackground) {
+        renderTask.setTransparentBackground()
+      }
 
       val result =
         if (renderImage) {
