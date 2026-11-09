@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
+import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.dsl.ManagedDevices
 import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.resolveTargetDevices
@@ -27,10 +28,12 @@ import com.android.build.gradle.internal.test.report.JunitAttachmentsArgumentPro
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_NAME
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_TARGET_NAME
 import com.android.builder.core.ComponentType
+import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
 import com.android.builder.testing.api.DeviceProvider
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import java.util.Properties
 import java.util.concurrent.ExecutionException
 import java.util.regex.Pattern
@@ -145,11 +148,100 @@ class TestSuiteTestTaskTest {
     whenever(offlineDevice.serialNumber).thenReturn("emulator-5560")
     whenever(offlineDevice.deviceConfig).thenThrow(DeviceException("device offline"))
 
-    // Only app bundle tests read the configuration, so a device that went offline doesn't fail other test suites.
+    // Only app bundle and multi-APK tests read the configuration, so a device that went offline doesn't fail other test suites.
     val targets = TestSuiteTestTask.connectedDeviceTargets(listOf(onlineDevice, offlineDevice))
 
     assertThat(targets.map { it.serialNumber }).containsExactly("emulator-5554", "emulator-5560").inOrder()
     assertFailsWith<DeviceException> { targets.last().deviceConfigProvider }
+  }
+
+  @Test
+  fun selectTestedApks_abiSplits_selectsApkMatchingDeviceAbi() {
+    val testedApksDir = writeTestedApks(listOf("x86", "x86_64"))
+    val engineInputParameters = listOf(testedApksInput(testedApksDir))
+
+    assertThat(TestSuiteTestTask.selectTestedApks(engineInputParameters, emptySet()) { deviceConfig(listOf("x86")) })
+      .containsExactly(testedApksDir.resolve("app-x86-debug.apk"))
+    assertThat(TestSuiteTestTask.selectTestedApks(engineInputParameters, emptySet()) { deviceConfig(listOf("x86_64", "x86")) })
+      .containsExactly(testedApksDir.resolve("app-x86_64-debug.apk"))
+  }
+
+  @Test
+  fun selectTestedApks_abiSplits_noMatchingApk_returnsEmptyList() {
+    val testedApksDir = writeTestedApks(listOf("x86", "x86_64"))
+
+    assertThat(TestSuiteTestTask.selectTestedApks(listOf(testedApksInput(testedApksDir)), emptySet()) { deviceConfig(listOf("arm64-v8a")) })
+      .isEmpty()
+  }
+
+  @Test
+  fun selectTestedApks_singleApk_returnsNullWithoutReadingDeviceConfig() {
+    val testedApksDir = writeTestedApks(listOf(null))
+
+    assertThat(
+        TestSuiteTestTask.selectTestedApks(listOf(testedApksInput(testedApksDir)), emptySet()) {
+          throw AssertionError("The device config should not be read")
+        }
+      )
+      .isNull()
+  }
+
+  @Test
+  fun selectTestedApks_noBuildMetadata_returnsNull() {
+    val testedApksDir = folder.newFolder().also { it.resolve("app-debug.apk").writeText("apk") }
+
+    assertThat(
+        TestSuiteTestTask.selectTestedApks(listOf(testedApksInput(testedApksDir)), emptySet()) {
+          throw AssertionError("The device config should not be read")
+        }
+      )
+      .isNull()
+    assertThat(TestSuiteTestTask.selectTestedApks(emptyList(), emptySet()) { throw AssertionError("The device config should not be read") })
+      .isNull()
+  }
+
+  private fun testedApksInput(testedApksDir: File) =
+    TestEngineInputProperty(AgpTestSuiteInputParameters.TESTED_APKS.propertyName, testedApksDir.absolutePath)
+
+  private fun deviceConfig(abis: List<String>): DeviceConfigProvider =
+    mock<DeviceConfigProvider>().also { whenever(it.abis).thenReturn(abis.toMutableList()) }
+
+  /** Writes an APK output directory with one APK per entry of [abis] (a `null` ABI is an APK without ABI filter) and its metadata. */
+  private fun writeTestedApks(abis: List<String?>): File {
+    val dir = folder.newFolder()
+    val elements =
+      abis.joinToString(",\n") { abi ->
+        val apkName = if (abi == null) "app-debug.apk" else "app-$abi-debug.apk"
+        dir.resolve(apkName).writeText("apk")
+        val filters = if (abi == null) "" else """{ "filterType": "ABI", "value": "$abi" }"""
+        """
+        {
+          "type": "${if (abi == null) "SINGLE" else "ONE_OF_MANY"}",
+          "filters": [$filters],
+          "versionCode": 1,
+          "versionName": "1.0",
+          "outputFile": "$apkName"
+        }
+        """
+          .trimIndent()
+      }
+    dir
+      .resolve(BuiltArtifactsImpl.METADATA_FILE_NAME)
+      .writeText(
+        """
+        {
+          "version": 3,
+          "artifactType": { "type": "APK", "kind": "Directory" },
+          "applicationId": "com.example.app",
+          "variantName": "debug",
+          "elements": [
+        $elements
+          ]
+        }
+        """
+          .trimIndent()
+      )
+    return dir
   }
 
   @Test

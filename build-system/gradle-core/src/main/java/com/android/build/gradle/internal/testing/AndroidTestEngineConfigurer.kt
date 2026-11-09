@@ -24,6 +24,7 @@ import com.android.build.api.testsuites.TestSuiteExecutionClient.Companion.DEFAU
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
+import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
@@ -135,6 +136,9 @@ fun configureAndroidTestEngine(
   if (testData is BundleTestDataImpl) {
     task.apkBundle.from(testData.apkBundle)
     task.bundleModuleName.setDisallowChanges(testData.moduleName)
+  }
+  if (testData is AbstractTestDataImpl) {
+    task.testedApksSupportedAbis.setDisallowChanges(testData.supportedAbis)
   }
 
   task.legacyTestReportingRedirectionEnabled.setDisallowChanges(

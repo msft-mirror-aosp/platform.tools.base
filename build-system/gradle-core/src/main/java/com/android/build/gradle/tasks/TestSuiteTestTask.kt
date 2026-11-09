@@ -25,6 +25,7 @@ import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient.Companion.DEFAULT_ENV_VARIABLE
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.TestSuiteSourceSet
+import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.AvdComponentsBuildService
@@ -54,6 +55,7 @@ import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.getApkFiles
+import com.android.build.gradle.internal.test.BuiltArtifactsSplitOutputMatcher.computeBestOutput
 import com.android.build.gradle.internal.test.report.JUNIT_PLATFORM_REPORTING_OUTPUT_DIR_PROPERTY
 import com.android.build.gradle.internal.test.report.JunitAttachmentsArgumentProvider
 import com.android.build.gradle.internal.test.report.KEY_AGP_VERSION
@@ -124,6 +126,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
@@ -180,6 +183,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   /** The module name within the bundle that contains the tests. */
   @get:Input @get:Optional abstract val bundleModuleName: Property<String>
+
+  /**
+   * The ABIs supported by the tested variant (e.g. from `ndk.abiFilters`).
+   *
+   * When the tested APKs directory contains multiple APKs (e.g. ABI splits), this is used together with each device's ABIs to select the
+   * tested APK to install on that device. See [selectTestedApksForDevice].
+   */
+  @get:Input @get:Optional abstract val testedApksSupportedAbis: SetProperty<String>
 
   /** The execution mode for the test suite. */
   @get:Input @get:Optional abstract val executionMode: Property<String>
@@ -451,6 +462,26 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     }
   }
 
+  /**
+   * Selects the tested APKs to install on [target] when the tested APKs directory contains multiple APKs (e.g. ABI splits).
+   *
+   * Without this, the test engine would install every APK of the tested APKs directory together as splits of a single app, which fails for
+   * multi-APK outputs. This mirrors the APK selection of the non-JUnit-engine test runners, using the device's ABIs (for a Gradle Managed
+   * Device, these are derived from its `testedAbi` when set).
+   *
+   * @return the APKs to install on [target], or `null` if no per-device selection is needed (a single tested APK, or no build metadata).
+   */
+  private fun selectTestedApksForDevice(engineInputParameters: List<TestEngineInputProperty>, target: DeviceTestTarget): List<File>? {
+    val selectedApks =
+      selectTestedApks(engineInputParameters, testedApksSupportedAbis.getOrElse(emptySet())) { target.deviceConfigProvider } ?: return null
+    if (selectedApks.isEmpty()) {
+      logger.warn(
+        "No tested APK matches the ABIs ${target.deviceConfigProvider.abis} of device ${target.deviceName ?: target.serialNumber}."
+      )
+    }
+    return selectedApks
+  }
+
   private fun executeTests(engineInputParameters: List<TestEngineInputProperty>, onlineDevices: List<DeviceTestTarget> = listOf()) {
     val standardInputs =
       mutableListOf(
@@ -539,6 +570,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           standardInputs.add(
             TestEngineInputProperty("${AgpTestSuiteInputParameters.TESTED_APKS.propertyName}[${target.serialNumber}]", apksString)
           )
+        } else {
+          selectTestedApksForDevice(engineInputParameters, target)?.let { selectedApks ->
+            standardInputs.add(
+              TestEngineInputProperty(
+                "${AgpTestSuiteInputParameters.TESTED_APKS.propertyName}[${target.serialNumber}]",
+                selectedApks.joinToString(",") { it.absolutePath },
+              )
+            )
+          }
         }
       }
     }
@@ -1615,7 +1655,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     val numShards: Int? = null,
     val shardIndex: Int? = null,
   ) {
-    /** Read on first use: only app bundle tests need it, and reading it fails if a connected device went offline. */
+    /**
+     * Read on first use: only app bundle tests and multi-APK (e.g. ABI split) outputs need it, and reading it fails if a connected device
+     * went offline.
+     */
     val deviceConfigProvider: DeviceConfigProvider by lazy(deviceConfigProvider)
   }
 
@@ -1806,6 +1849,37 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     /** Returns the test targets for the [devices] connected through adb. */
     internal fun connectedDeviceTargets(devices: List<DeviceConnector>): List<DeviceTestTarget> = devices.map { device ->
       DeviceTestTarget(device.serialNumber, { DeviceConfigProviderImpl(device) })
+    }
+
+    /**
+     * Selects the tested APKs matching a device when the tested APKs directory (the [AgpTestSuiteInputParameters.TESTED_APKS] engine input)
+     * contains multiple APKs, such as ABI splits.
+     *
+     * @param engineInputParameters the resolved engine input parameters.
+     * @param supportedAbis the ABIs supported by the tested variant.
+     * @param deviceConfigProvider provides the device characteristics. Only called when a selection is needed, as reading it may query the
+     *   device.
+     * @return the matching APKs (possibly empty if none matches), or `null` if no per-device selection is needed: the tested APKs directory
+     *   is absent, has no build metadata, or contains a single APK.
+     */
+    internal fun selectTestedApks(
+      engineInputParameters: List<TestEngineInputProperty>,
+      supportedAbis: Set<String>,
+      deviceConfigProvider: () -> DeviceConfigProvider,
+    ): List<File>? {
+      val testedApksDir =
+        engineInputParameters
+          .singleOrNull { it.name == AgpTestSuiteInputParameters.TESTED_APKS.propertyName }
+          ?.value
+          ?.split(File.pathSeparator)
+          ?.singleOrNull()
+          ?.let(::File)
+          ?.takeIf { it.isDirectory } ?: return null
+      val builtArtifacts = BuiltArtifactsLoaderImpl.loadFromDirectory(testedApksDir) ?: return null
+      if (builtArtifacts.elements.size <= 1) {
+        return null
+      }
+      return computeBestOutput(deviceConfigProvider().abis, builtArtifacts, supportedAbis)
     }
 
     fun parseMetadata(metadataFile: File): Map<String, String> {

@@ -50,6 +50,7 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -424,6 +425,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         val compileSdkVersion = mockEmptyProperty<String>()
         val buildToolsRevision = mockEmptyProperty<Revision>()
         val abiProperty = mockEmptyProperty<String>()
+        val testedAbiProperty = mockEmptyProperty<String>()
         val sdkVersion = mockEmptyProperty<Int>()
         val sdkMinorVersion = mockEmptyProperty<Int>()
         val systemImageVendor = mockEmptyProperty<String>()
@@ -436,6 +438,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         whenever(task.compileSdkVersion).thenReturn(compileSdkVersion)
         whenever(task.buildToolsRevision).thenReturn(buildToolsRevision)
         whenever(task.abi).thenReturn(abiProperty)
+        whenever(task.testedAbi).thenReturn(testedAbiProperty)
         whenever(task.sdkVersion).thenReturn(sdkVersion)
         whenever(task.sdkMinorVersion).thenReturn(sdkMinorVersion)
         whenever(task.systemImageVendor).thenReturn(systemImageVendor)
@@ -464,6 +467,11 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         verify(abiProperty).set("x86")
         verify(abiProperty).disallowChanges()
         verifyNoMoreInteractions(abiProperty)
+
+        // testedAbi is not set in the DSL, so it should remain unset.
+        verify(testedAbiProperty).set(null as String?)
+        verify(testedAbiProperty).disallowChanges()
+        verifyNoMoreInteractions(testedAbiProperty)
 
         verify(sdkVersion).set(27)
         verify(sdkVersion).disallowChanges()
@@ -535,6 +543,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         val compileSdkVersion = mockEmptyProperty<String>()
         val buildToolsRevision = mockEmptyProperty<Revision>()
         val abiProperty = mockEmptyProperty<String>()
+        val testedAbiProperty = mockEmptyProperty<String>()
         val sdkVersion = mockEmptyProperty<Int>()
         val sdkMinorVersion = mockEmptyProperty<Int>()
         val systemImageVendor = mockEmptyProperty<String>()
@@ -547,6 +556,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         whenever(task.compileSdkVersion).thenReturn(compileSdkVersion)
         whenever(task.buildToolsRevision).thenReturn(buildToolsRevision)
         whenever(task.abi).thenReturn(abiProperty)
+        whenever(task.testedAbi).thenReturn(testedAbiProperty)
         whenever(task.sdkVersion).thenReturn(sdkVersion)
         whenever(task.sdkMinorVersion).thenReturn(sdkMinorVersion)
         whenever(task.systemImageVendor).thenReturn(systemImageVendor)
@@ -576,6 +586,11 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         verify(abiProperty).disallowChanges()
         verifyNoMoreInteractions(abiProperty)
 
+        // testedAbi is not set in the DSL, so it should remain unset.
+        verify(testedAbiProperty).set(null as String?)
+        verify(testedAbiProperty).disallowChanges()
+        verifyNoMoreInteractions(testedAbiProperty)
+
         verify(sdkVersion).set(28)
         verify(sdkVersion).disallowChanges()
         verifyNoMoreInteractions(sdkVersion)
@@ -599,6 +614,60 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         verify(require64Bit).set(false)
         verify(require64Bit).disallowChanges()
         verifyNoMoreInteractions(require64Bit)
+      }
+    } finally {
+      Environment.instance = Environment.SYSTEM
+    }
+  }
+
+  @Test
+  fun creationAction_testedAbiFromDslReachesValidation() {
+    try {
+      // Need to use a custom set up environment to ensure deterministic behavior.
+      SystemPropertyOverrides().use { systemPropertyOverrides ->
+        systemPropertyOverrides.setProperty("os.name", "Linux")
+        Environment.instance =
+          object : Environment() {
+            override fun getVariable(name: EnvironmentVariable): String? = if (name.key == "HOSTTYPE") "x86_64" else null
+          }
+        systemPropertyOverrides.setProperty("os.arch", "x86_64")
+
+        val config =
+          ManagedDeviceInstrumentationTestSetupTask.CreationAction(
+            "setupTaskName",
+            ManagedVirtualDevice("testName").also {
+              it.device = "Pixel 2"
+              it.sdkVersion = 29
+              it.systemImageSource = "aosp"
+              it.testedAbi = "x86_64"
+            },
+            globalConfig,
+          )
+
+        whenever(globalConfig.services.projectOptions[StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE]).thenReturn(null)
+        whenever(globalConfig.compileSdkHashString).thenReturn("some_version")
+        whenever(globalConfig.buildToolsRevision).thenReturn(Revision.parseRevision("5.1"))
+
+        val configuredTask = mock<ManagedDeviceInstrumentationTestSetupTask>(defaultAnswer = RETURNS_DEEP_STUBS)
+        val testedAbiProperty = realEmptyPropertyFor<String>()
+        whenever(configuredTask.testedAbi).thenReturn(testedAbiProperty)
+
+        config.configure(configuredTask)
+
+        assertThat(testedAbiProperty.orNull).isEqualTo("x86_64")
+
+        // The configured testedAbi must be honored by the validation in the task action. Since
+        // testedAbi is explicitly specified, no "does not specify a testedAbi" warning should be
+        // emitted.
+        val task = basicTaskSetup()
+        doReturn(testedAbiProperty).whenever(task).testedAbi
+
+        whenever(mockVersionedSdkLoader.sdkImageDirectoryProvider(any())).thenReturn(FakeGradleProperty(mock<Directory>()))
+        whenever(avdService.avdProvider(any(), any(), any(), any())).thenReturn(FakeGradleProperty(mock<Directory>()))
+
+        task.taskAction()
+
+        verify(task.logger, never()).warn(any<String>())
       }
     } finally {
       Environment.instance = Environment.SYSTEM

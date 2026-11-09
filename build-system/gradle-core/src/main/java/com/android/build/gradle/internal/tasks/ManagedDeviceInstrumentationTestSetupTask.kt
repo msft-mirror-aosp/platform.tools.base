@@ -313,6 +313,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask : NonIncrementalGlobalT
     private val sdkMinorVersion: Int,
     private val sdkExtensionVersion: Int?,
     private val abi: String,
+    private val testedAbi: String?,
     private val hardwareProfile: String,
     private val managedDeviceName: String,
     private val require64Bit: Boolean,
@@ -331,6 +332,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask : NonIncrementalGlobalT
       managedDevice.sdkMinorVersion,
       managedDevice.sdkExtensionVersion,
       computeAbiFromArchitecture(managedDevice),
+      managedDevice.testedAbi,
       managedDevice.device,
       managedDevice.name,
       managedDevice.require64Bit,
@@ -353,6 +355,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask : NonIncrementalGlobalT
       task.sdkMinorVersion.setDisallowChanges(sdkMinorVersion)
       task.sdkExtensionVersion.setDisallowChanges(sdkExtensionVersion)
       task.abi.setDisallowChanges(abi)
+      task.testedAbi.setDisallowChanges(testedAbi)
       task.hardwareProfile.setDisallowChanges(hardwareProfile)
       task.managedDeviceName.setDisallowChanges(managedDeviceName)
       task.require64Bit.setDisallowChanges(require64Bit)
