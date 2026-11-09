@@ -328,7 +328,7 @@ class AvdManagerTest {
     val userSettings = ImmutableMap.of("abi.type.preferred", "x86")
     val bootProps = ImmutableMap.of("ro.emulator.circular", "true")
     val backgroundFile = mockFs.someRoot.resolve("tmp").resolve("img1.png")
-    val environment = ImmutableMap.of(EnvironmentKey.IMAGE, backgroundFile.toString())
+    val environment = ImmutableMap.of(EnvironmentKey.SCENE_MODE, "imagefile:$backgroundFile")
     backgroundFile.recordExistingFile("abcd")
     val avdInfo =
       avdManager.createAvd(
@@ -339,12 +339,14 @@ class AvdManagerTest {
         hardwareConfig = hardwareConfig,
         userSettings = userSettings,
         bootProps = bootProps,
+        environment = environment,
         deviceHasPlayStore = true,
       )
     val metadataIniFile = avdFolder.parent.resolve(name.methodName + ".ini")
     assertTrue(Files.exists(metadataIniFile))
     assertTrue(Files.exists(avdFolder.resolve("boot.prop")))
     assertTrue(Files.exists(avdFolder.resolve("user-settings.ini")))
+    assertTrue(Files.exists(avdFolder.resolve(AvdManager.ENVIRONMENT_INI)))
 
     // Move the AVD, updating its name and data folder path
     val newAvdName = avdInfo.name + "_2"
@@ -357,6 +359,7 @@ class AvdManagerTest {
     val newMetadataIniPath = metadataIniFile.resolveSibling("$newAvdName.ini")
     assertTrue(Files.exists(newMetadataIniPath))
     assertTrue(Files.isDirectory(newAvdFolder))
+    assertTrue(Files.exists(newAvdFolder.resolve(AvdManager.ENVIRONMENT_INI)))
 
     // The contents of the metadata .ini reflect the new paths
     val metadata = AvdManager.parseIniFile(PathFileWrapper(newMetadataIniPath), null)!!
@@ -368,6 +371,8 @@ class AvdManagerTest {
     val movedUserSettings = AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve("user-settings.ini")), null)!!
     movedUserSettings.remove(ENCODING)
     assertThat(movedUserSettings).isEqualTo(userSettings)
+    val movedEnvironment = AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve(AvdManager.ENVIRONMENT_INI)), null)!!
+    assertThat(movedEnvironment).isEqualTo(environment)
     val movedConfig = AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve("config.ini")), null)!!
     movedConfig.remove(ENCODING)
     assertThat(movedConfig).containsEntry("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys")
@@ -446,7 +451,7 @@ class AvdManagerTest {
     val builder = avdManager.createAvdBuilder(device)
     builder.systemImage = systemImages.api33ext4.image
     val backgroundPath = mockFs.someRoot.resolve("temp").resolve("background1.png").createParentDirectories().createFile()
-    builder.environment = backgroundPath
+    builder.environment = Environment(backgroundPath, SceneMode.IMAGE_FILE)
     val initialAvdInfo = avdManager.createAvd(builder)
     assertThat(initialAvdInfo).isNotNull()
 

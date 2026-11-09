@@ -16,6 +16,5 @@
 package com.android.sdklib.internal.avd
 
 object EnvironmentKey {
-  const val IMAGE = "background.image.filename"
-  const val VIDEO = "background.video.filename"
+  const val SCENE_MODE = "scene.mode"
 }

@@ -23,7 +23,6 @@ import com.android.sdklib.devices.Storage
 import com.android.sdklib.internal.avd.AvdManager.Companion.USER_SETTINGS_INI
 import com.android.utils.ILogger
 import java.nio.file.Path
-import kotlin.io.path.extension
 import kotlin.io.path.name
 
 /**
@@ -71,7 +70,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
    * An image or video to be used as the background environment of an XR device. This may be an absolute or relative path; relative paths
    * are resolved relative to the AVD directory or the emulator/resources directory.
    */
-  var environment: Path? = null
+  var environment: Environment? = null
 
   var showDeviceFrame = true
   var screenOrientation: ScreenOrientation = ScreenOrientation.PORTRAIT
@@ -124,12 +123,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     return properties
   }
 
-  fun environmentProperties(): Map<String, String>? =
-    when (environment?.extension?.lowercase()) {
-      in setOf("png", "jpg", "webp") -> mapOf(EnvironmentKey.IMAGE to environment.toString())
-      in setOf("mov", "mp4", "webm") -> mapOf(EnvironmentKey.VIDEO to environment.toString())
-      else -> null
-    }
+  fun environmentProperties(): Map<String, String>? = environment?.properties()
 
   /**
    * When the AVD folder changes, updates absolute paths that point to a location within the old AVD folder to a corresponding location

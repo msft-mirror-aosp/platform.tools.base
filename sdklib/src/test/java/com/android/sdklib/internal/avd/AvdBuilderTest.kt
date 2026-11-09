@@ -17,6 +17,7 @@ package com.android.sdklib.internal.avd
 
 import com.android.prefs.AbstractAndroidLocations
 import com.android.resources.ScreenOrientation
+import com.android.sdklib.PathFileWrapper
 import com.android.sdklib.devices.Abi
 import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.devices.Storage
@@ -26,6 +27,7 @@ import com.android.testutils.file.createInMemoryFileSystem
 import com.android.testutils.file.recordExistingFile
 import com.android.testutils.file.someRoot
 import com.android.utils.NullLogger
+import com.android.utils.PathUtils
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.io.path.exists
@@ -220,11 +222,34 @@ class AvdBuilderTest {
     avdBuilder.systemImage = android33ext4
     val backgroundFile = root.resolve("tmp").resolve("img1.png")
     backgroundFile.recordExistingFile(contents = "abcd")
-    avdBuilder.environment = backgroundFile
+    avdBuilder.environment = Environment(backgroundFile, SceneMode.IMAGE_FILE)
 
     val avdInfo = avdManager.createAvd(avdBuilder)
 
-    assertThat(avdInfo.dataFolderPath.resolve(AvdManager.ENVIRONMENT_INI).exists()).isTrue()
+    val environmentIni = avdInfo.dataFolderPath.resolve(AvdManager.ENVIRONMENT_INI)
+    assertThat(environmentIni.exists()).isTrue()
+    val envProps = AvdManager.parseIniFile(PathFileWrapper(environmentIni), null)
+    assertThat(envProps).containsExactly(EnvironmentKey.SCENE_MODE, "imagefile:${PathUtils.toSystemIndependentPath(backgroundFile)}")
     assertThat(avdInfo.properties[ConfigKey.LCD_TRANSPARENT]).isEqualTo("yes")
+  }
+
+  @Test
+  fun createAvdWith360Background() {
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val android33ext4 = testSystemImages.api33ext4.image
+
+    val device = deviceManager.getDevice("ai_glasses_device", "Google")!!
+    val avdBuilder = avdManager.createAvdBuilder(device)
+    avdBuilder.systemImage = android33ext4
+    val backgroundFile = root.resolve("tmp").resolve("study-360.jpg")
+    backgroundFile.recordExistingFile(contents = "abcd")
+    avdBuilder.environment = Environment(backgroundFile, SceneMode.IMAGE_360)
+
+    val avdInfo = avdManager.createAvd(avdBuilder)
+
+    val environmentIni = avdInfo.dataFolderPath.resolve(AvdManager.ENVIRONMENT_INI)
+    assertThat(environmentIni.exists()).isTrue()
+    val envProps = AvdManager.parseIniFile(PathFileWrapper(environmentIni), null)
+    assertThat(envProps).containsExactly(EnvironmentKey.SCENE_MODE, "image360:${PathUtils.toSystemIndependentPath(backgroundFile)}")
   }
 }

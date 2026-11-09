@@ -367,8 +367,6 @@ private constructor(
     removePrevious: Boolean = false,
     editExisting: Boolean = false,
   ): AvdInfo {
-    validateEnvironment(environment)
-
     val hardwareConfig = hardwareConfig?.toMutableMap() ?: mutableMapOf()
     var avdFolder = avdFolder
     var editExisting = editExisting
@@ -532,12 +530,6 @@ private constructor(
         }
       }
     }
-  }
-
-  private fun validateEnvironment(environment: Map<String, String>?) {
-    environment ?: return
-    val keys = listOf(EnvironmentKey.IMAGE, EnvironmentKey.VIDEO)
-    require(keys.count(environment::containsKey) <= 1) { "Expected at most one of ${keys.joinToString()}" }
   }
 
   /** Checks if the given file is one of the files created at the AVD creation time. */
