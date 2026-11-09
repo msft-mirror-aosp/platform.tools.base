@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "select_android")
 
 cc_library(
