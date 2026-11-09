@@ -398,21 +398,6 @@ class AttributeModel {
             };
 
     /**
-     * Decode a decimal or hexadecimal {@link String} into an {@link Integer}.
-     * String starting with 0 will be considered decimal, not octal.
-     */
-    private static int decodeDecOrHexString(@NotNull String s) {
-        long decodedValue = s.startsWith("0x") || s.startsWith("0X")
-                ? Long.decode(s)
-                : Long.parseLong(s);
-        if (decodedValue < 0xFFFFFFFFL) {
-            return (int) decodedValue;
-        } else {
-            throw new IllegalArgumentException("Value " + s + " too big for 32 bits.");
-        }
-    }
-
-    /**
      * Validates an attribute value.
      *
      * <p>The validator can be called when xml documents are read to ensure the xml file contains
