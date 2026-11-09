@@ -10,7 +10,6 @@ android_java_proto_library(
     name = "backgroundtask_inspector_java_proto",
     srcs = ["resources/proto/backgroundtask_inspection.proto"],
     grpc_support = True,
-    java_deps = ["@maven//:io.grpc.grpc-all"],
 )
 
 agent_srcs = glob(["src/**/*.kt"])

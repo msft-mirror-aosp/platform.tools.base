@@ -8,7 +8,6 @@ android_java_proto_library(
     srcs = glob(["**/*.proto"]),
     grpc_support = True,
     java_deps = [
-        "@maven//:io.grpc.grpc-all",
         "@perfetto_repo//:perfetto_config_java_proto",
     ],
     proto_deps = [

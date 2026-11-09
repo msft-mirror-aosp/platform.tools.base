@@ -6,7 +6,6 @@ android_java_proto_library(
     name = "deploy-service-proto",
     srcs = glob(["proto/**/*.proto"]),
     grpc_support = True,
-    java_deps = ["@maven//:io.grpc.grpc-all"],
     visibility = ["//visibility:public"],
 )
 

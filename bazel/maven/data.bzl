@@ -1692,7 +1692,6 @@ _SOURCE_JARS = [
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "dev.sebastiano.spectre:spectre-core:jar:sources:0.7.1",
     "dev.sebastiano.spectre:spectre-input-coordinator:jar:sources:0.7.1",
-    "io.grpc:grpc-all:jar:sources:1.69.1",
     "io.grpc:grpc-api:jar:sources:1.69.1",
     "io.grpc:grpc-auth:jar:sources:1.69.1",
     "io.grpc:grpc-context:jar:sources:1.69.1",

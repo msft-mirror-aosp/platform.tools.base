@@ -27,7 +27,6 @@ android_java_proto_library(
     name = "fake_device_proto",
     srcs = ["fake_device.proto"],
     grpc_support = True,
-    java_deps = ["@maven//:io.grpc.grpc-all"],
     visibility = ["//visibility:public"],
 )
 

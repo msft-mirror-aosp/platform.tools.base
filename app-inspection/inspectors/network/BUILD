@@ -10,7 +10,6 @@ android_java_proto_library(
     name = "network_inspector_java_proto",
     srcs = ["resources/proto/network-inspector.proto"],
     grpc_support = True,
-    java_deps = ["@maven//:io.grpc.grpc-all"],
 )
 
 agent_srcs = glob(["src/**/*.kt"])
@@ -59,7 +58,6 @@ java_proto_library(
     name = "test_server_java_proto",
     srcs = ["testProto/test-server.proto"],
     grpc_support = True,
-    java_deps = ["@maven//:io.grpc.grpc-all"],
 )
 
 robolectric_test(
@@ -79,7 +77,12 @@ robolectric_test(
         "@maven//:com.google.truth.truth",
         "@maven//:com.squareup.okhttp.okhttp",
         "@maven//:com.squareup.okhttp3.okhttp",
-        "@maven//:io.grpc.grpc-all",
+        "@maven//:io.grpc.grpc-api",
+        "@maven//:io.grpc.grpc-core",
+        "@maven//:io.grpc.grpc-inprocess",
+        "@maven//:io.grpc.grpc-okhttp",
+        "@maven//:io.grpc.grpc-protobuf",
+        "@maven//:io.grpc.grpc-stub",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",

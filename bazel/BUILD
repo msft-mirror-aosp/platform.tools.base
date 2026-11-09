@@ -561,9 +561,6 @@ java_proto_library(
     name = "grpc-common-java_proto",
     srcs = ["@grpc-common-protos//:files"],
     grpc_support = True,
-    java_deps = [
-        "@maven//:io.grpc.grpc-all",
-    ],
     visibility = ["//visibility:public"],
 )
 

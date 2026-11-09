@@ -53,6 +53,7 @@ maven_repository(
         "@maven//:com.google.apis.google-api-services-testing",
         "@maven//:com.google.apis.google-api-services-toolresults",
         "@maven//:com.google.auth.google-auth-library-bom_1.30.0",
+        "@maven//:com.google.guava.guava_33.3.1-jre",
         "@maven//:com.google.http-client.google-http-client-bom_1.42.0",
         "@maven//:com.google.http-client.google-http-client-bom_1.42.3",
         "@maven//:com.google.http-client.google-http-client-bom_1.43.3",

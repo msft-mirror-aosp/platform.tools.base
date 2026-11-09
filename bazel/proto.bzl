@@ -30,6 +30,26 @@ PROTO_DISABLE_CHECKS_JAVACOPTS = [
     "-nowarn",
 ]
 
+# Minimal gRPC dependencies needed to compile protoc-gen-grpc-java generated stubs (no transport).
+_GRPC_JAVA_STUB_DEPS = [
+    "@maven//:io.grpc.grpc-api",
+    "@maven//:io.grpc.grpc-core",
+    "@maven//:io.grpc.grpc-protobuf",
+    "@maven//:io.grpc.grpc-stub",
+]
+
+# Full gRPC Java runtime/transport dependencies used by kotlin_proto_library when use_grpc_okhttp = False.
+_GRPC_JAVA_FULL_DEPS = _GRPC_JAVA_STUB_DEPS + [
+    "@maven//:io.grpc.grpc-auth",
+    "@maven//:io.grpc.grpc-context",
+    "@maven//:io.grpc.grpc-inprocess",
+    "@maven//:io.grpc.grpc-netty",
+    "@maven//:io.grpc.grpc-netty-shaded",
+    "@maven//:io.grpc.grpc-okhttp",
+    "@maven//:io.grpc.grpc-protobuf-lite",
+    "@maven//:io.grpc.grpc-util",
+]
+
 ProtoPackageInfo = provider(fields = ["proto_src", "proto_paths"])
 
 def _gen_proto_impl(ctx):
@@ -181,6 +201,7 @@ def java_proto_library(
         proto_java_runtime_library = ["@maven//:com.google.protobuf.protobuf-java"],
         strip_prefix = "",
         skip_default_includes = False,
+        grpc_java_deps = _GRPC_JAVA_STUB_DEPS,
         **kwargs):
     """Compiles protobuf into a .jar file and optionally creates a maven artifact.
 
@@ -209,6 +230,7 @@ def java_proto_library(
       skip_default_includes: don't add //tools/base/bazel:common-java_proto as a dependency.
                              This should probably only be used by
                              //tools/base/bazel:common-java_proto itself.
+      grpc_java_deps: A list of gRPC java_library labels added when grpc_support is True.
       **kwargs: other arguments accepted by bazel rule `java_library` are passed untouched.
     """
 
@@ -231,9 +253,11 @@ def java_proto_library(
         strip_prefix = strip_prefix,
     )
 
-    grpc_extra_deps = ["@//prebuilts/tools/common/m2:javax.annotation.javax.annotation-api.1.3.2"]
-    java_deps = list(java_deps) + (grpc_extra_deps if grpc_support else [])
-    java_deps += proto_java_runtime_library
+    grpc_extra_deps = [
+        "@//prebuilts/tools/common/m2:javax.annotation.javax.annotation-api.1.3.2",
+    ] + grpc_java_deps
+    java_deps = list(java_deps) + ([d for d in grpc_extra_deps if d not in java_deps] if grpc_support else [])
+    java_deps += [d for d in proto_java_runtime_library if d not in java_deps]
     java_library(
         name = name,
         srcs = outs,
@@ -477,39 +501,26 @@ def kotlin_proto_library(
     java_proto_label = ":" + java_proto_name
 
     if use_grpc_okhttp:
-        grpc_java_deps = [
-            "@maven//:io.grpc.grpc-api",
-            "@maven//:io.grpc.grpc-core",
-            "@maven//:io.grpc.grpc-protobuf",
-            "@maven//:io.grpc.grpc-stub",
+        grpc_java_deps = _GRPC_JAVA_STUB_DEPS + [
             "@maven//:io.grpc.grpc-okhttp",
             "@maven//:com.squareup.okhttp.okhttp",
         ]
     else:
-        grpc_java_deps = [
-            "@maven//:io.grpc.grpc-api",
-            "@maven//:io.grpc.grpc-auth",
-            "@maven//:io.grpc.grpc-context",
-            "@maven//:io.grpc.grpc-core",
-            "@maven//:io.grpc.grpc-netty",
-            "@maven//:io.grpc.grpc-netty-shaded",
-            "@maven//:io.grpc.grpc-protobuf",
-            "@maven//:io.grpc.grpc-protobuf-lite",
-            "@maven//:io.grpc.grpc-stub",
-        ]
+        grpc_java_deps = _GRPC_JAVA_FULL_DEPS
 
     # Generate a java_proto_library target implicitly as a dependency of the kotlin target.
     java_proto_library(
         name = java_proto_name,
         srcs = srcs,
         proto_deps = proto_deps,
-        java_deps = list(deps) + (grpc_java_deps if grpc_support else []),
+        java_deps = list(deps),
         visibility = visibility,
         grpc_support = grpc_support,
         protoc_version = protoc_version,
         protoc_grpc_version = protoc_java_grpc_version,
         proto_java_runtime_library = proto_java_runtime_library,
         strip_prefix = strip_prefix,
+        grpc_java_deps = grpc_java_deps,
     )
 
     kt_srcs_name = name + "_srcs"
@@ -538,7 +549,7 @@ def kotlin_proto_library(
     ] + ([
         "@maven//:io.grpc.grpc-api",
         "@maven//:io.grpc.grpc-stub",
-    ] if use_grpc_okhttp else ["@maven//:io.grpc.grpc-all"])
+    ] if use_grpc_okhttp else grpc_java_deps)
     deps = list(deps) + (grpc_extra_deps if grpc_support else []) + proto_kotlin_runtime_library
 
     kotlin_library(
