@@ -272,6 +272,99 @@ jboolean JNICALL SendObjectCountNative(JNIEnv* env, jclass j_class,
   return JNI_TRUE;
 }
 
+jboolean JNICALL SendAnalysisProgressNative(JNIEnv* env, jclass j_class,
+                                            jint percent) {
+  if (env == nullptr) {
+    Log::E(Log::Tag::PROFILER,
+           "JNIEnv is null in SendAnalysisProgressNative. Abandoning event.");
+    return JNI_FALSE;
+  }
+  if (!Agent::Instance().IsConnectedToDaemon()) {
+    Log::I(Log::Tag::PROFILER,
+           "Agent not connected to daemon. Abandoning analysis progress "
+           "event.");
+    return JNI_FALSE;
+  }
+  if (percent < 0 || percent > 100) {
+    Log::I(Log::Tag::PROFILER,
+           "Invalid analysis progress received: %d. Abandoning event.",
+           percent);
+    return JNI_TRUE;
+  }
+
+  Event event;
+  event.set_pid(getpid());
+  event.set_timestamp(SteadyClock().GetCurrentTime());
+  event.set_kind(Event::LEAKCANARY_ANALYSIS_PROGRESS);
+  event.mutable_leakcanary_analysis_progress()->set_percent(percent);
+
+  SendEventRequest request;
+  *request.mutable_event() = event;
+  Agent::Instance().SubmitAgentTasks(
+      {[request](AgentService::Stub& stub, ClientContext& context) mutable {
+        profiler::proto::EmptyResponse response;
+        grpc::Status status = stub.SendEvent(&context, request, &response);
+
+        if (!status.ok()) {
+          Log::E(Log::Tag::PROFILER,
+                 "Failed to send analysis progress event. Error: %s",
+                 status.error_message().c_str());
+        }
+        return status;
+      }});
+  return JNI_TRUE;
+}
+
+jboolean JNICALL SendAnalysisResultNative(JNIEnv* env, jclass j_class,
+                                          jbyteArray data) {
+  if (env == nullptr) {
+    Log::E(Log::Tag::PROFILER,
+           "JNIEnv is null in SendAnalysisResultNative. Abandoning event.");
+    return JNI_FALSE;
+  }
+  if (data == nullptr) {
+    Log::E(Log::Tag::PROFILER,
+           "Analysis result data is null. Abandoning event.");
+    return JNI_FALSE;
+  }
+  if (!Agent::Instance().IsConnectedToDaemon()) {
+    Log::I(Log::Tag::PROFILER,
+           "Agent not connected to daemon. Abandoning analysis result event.");
+    return JNI_FALSE;
+  }
+
+  jsize size = env->GetArrayLength(data);
+  std::string bytes(size, '\0');
+  env->GetByteArrayRegion(data, 0, size, reinterpret_cast<jbyte*>(&bytes[0]));
+
+  SendEventRequest request;
+  Event* event = request.mutable_event();
+  if (!event->mutable_leakcanary_analysis()->ParseFromString(bytes)) {
+    Log::E(Log::Tag::PROFILER,
+           "Failed to parse the analysis result. Abandoning event.");
+    return JNI_FALSE;
+  }
+  event->set_pid(getpid());
+  event->set_group_id(getpid());
+  event->set_timestamp(SteadyClock().GetCurrentTime());
+  event->set_kind(Event::LEAKCANARY_ANALYSIS);
+
+  Agent::Instance().SubmitAgentTasks(
+      {[request = std::move(request)](AgentService::Stub& stub,
+                                      ClientContext& context) mutable {
+        profiler::proto::EmptyResponse response;
+        grpc::Status status = stub.SendEvent(&context, request, &response);
+
+        if (!status.ok()) {
+          Log::E(Log::Tag::PROFILER,
+                 "Failed to send analysis result event. Error: %s",
+                 status.error_message().c_str());
+        }
+        return status;
+      }});
+  return JNI_TRUE;
+}
+
 void JNICALL SendErrorNative(JNIEnv* env, jclass j_class, jint error_code) {
   if (env == nullptr) {
     Log::E(Log::Tag::PROFILER,
@@ -307,6 +400,42 @@ void JNICALL SendErrorNative(JNIEnv* env, jclass j_class, jint error_code) {
       }});
 }
 
+// Returns the studio-leakcanary version saved by the last
+// getRetainedVisibleThreshold() call, or an empty string if there is none or
+// it can't be read.
+std::string GetStudioLeakCanaryVersion(JNIEnv* jni_env, jclass manager_class) {
+  jmethodID method = jni_env->GetStaticMethodID(
+      manager_class, "getStudioLeakCanaryVersion", "()Ljava/lang/String;");
+  if (method == nullptr) {
+    Log::E(Log::Tag::PROFILER,
+           "LeakCanaryManager.getStudioLeakCanaryVersion method not found.");
+    jni_env->ExceptionClear();
+    return "";
+  }
+
+  jstring j_version = static_cast<jstring>(
+      jni_env->CallStaticObjectMethod(manager_class, method));
+  if (jni_env->ExceptionCheck()) {
+    Log::E(Log::Tag::PROFILER, "Failed to get the studio-leakcanary version.");
+    jni_env->ExceptionClear();
+    return "";
+  }
+  if (j_version == nullptr) {
+    return "";
+  }
+
+  ScopedLocalRef<jstring> version_ref(jni_env, j_version);
+  const char* chars = jni_env->GetStringUTFChars(j_version, nullptr);
+  if (chars == nullptr) {
+    Log::E(Log::Tag::PROFILER, "Failed to read the studio-leakcanary version.");
+    jni_env->ExceptionClear();
+    return "";
+  }
+  std::string version(chars);
+  jni_env->ReleaseStringUTFChars(j_version, chars);
+  return version;
+}
+
 void RegisterLeakCanaryNatives(JNIEnv* jni_env) {
   if (jni_env == nullptr) {
     Log::E(Log::Tag::PROFILER,
@@ -324,9 +453,12 @@ void RegisterLeakCanaryNatives(JNIEnv* jni_env) {
 
   static const JNINativeMethod methods[] = {
       {"sendObjectCountNative", "(I)Z", (void*)SendObjectCountNative},
+      {"sendAnalysisProgressNative", "(I)Z", (void*)SendAnalysisProgressNative},
+      {"sendAnalysisResultNative", "([B)Z", (void*)SendAnalysisResultNative},
       {"sendErrorNative", "(I)V", (void*)SendErrorNative}};
 
-  jint result = jni_env->RegisterNatives(manager_class, methods, 2);
+  jint result = jni_env->RegisterNatives(manager_class, methods,
+                                         sizeof(methods) / sizeof(methods[0]));
   if (result != JNI_OK) {
     Log::E(Log::Tag::PROFILER, "Failed to register LeakCanary native methods.");
     jni_env->ExceptionClear();
@@ -412,6 +544,13 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
 
         jint threshold = jni_env->CallStaticIntMethod(support_class.get(),
                                                       get_threshold_method);
+        if (jni_env->ExceptionCheck()) {
+          Log::E(Log::Tag::PROFILER,
+                 "LeakCanaryManager.getRetainedVisibleThreshold failed.");
+          jni_env->ExceptionClear();
+        }
+        std::string version =
+            GetStudioLeakCanaryVersion(jni_env, support_class.get());
 
         Event event;
         event.set_pid(getpid());
@@ -419,6 +558,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
         event.set_command_id(command->command_id());
         event.set_kind(Event::LEAKCANARY_THRESHOLD);
         event.mutable_leakcanary_threshold()->set_threshold(threshold);
+        event.mutable_leakcanary_threshold()->set_studio_leakcanary_version(
+            version);
 
         SendEventRequest request;
         *request.mutable_event() = event;
@@ -501,10 +642,14 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
         ScopedLocalRef<jclass> manager_class_ref(jni_env, manager_class);
 
         jmethodID method = jni_env->GetStaticMethodID(
-            manager_class, "startListeningForRetainedObjects", "(I)V");
+            manager_class, "startListeningForRetainedObjects", "(IZ)V");
         if (method != nullptr) {
-          jint mode = command->set_studio_leakcanary_mode().mode();
-          jni_env->CallStaticVoidMethod(manager_class, method, mode);
+          const auto& data = command->set_studio_leakcanary_mode();
+          jint mode = data.mode();
+          jboolean occurrences_enabled =
+              data.profiler_leakcanary_occurrences() ? JNI_TRUE : JNI_FALSE;
+          jni_env->CallStaticVoidMethod(manager_class, method, mode,
+                                        occurrences_enabled);
         } else {
           Log::E(Log::Tag::PROFILER,
                  "LeakCanaryManager.startListeningForRetainedObjects method "

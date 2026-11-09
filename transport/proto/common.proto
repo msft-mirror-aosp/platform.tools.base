@@ -545,6 +545,12 @@ message LeakCanaryDeviceError {
     LEAKCANARY_ERROR_LOGCAT_PARSING_FAILURE = 3;
     // The app's LeakCanary version isn't supported by studio-leakcanary.
     LEAKCANARY_ERROR_UNSUPPORTED_VERSION = 4;
+    // LeakCanary couldn't dump the heap on the device.
+    LEAKCANARY_ERROR_ON_DEVICE_HEAP_DUMP_FAILED = 5;
+    // studio-leakcanary couldn't save the analysis result on the device.
+    LEAKCANARY_ERROR_ON_DEVICE_SAVE_FAILED = 6;
+    // perfa couldn't read, parse or send the analysis result on the device.
+    LEAKCANARY_ERROR_ON_DEVICE_RESULT_READ_FAILED = 7;
   }
   ErrorType error_type = 1;
 }

@@ -127,7 +127,6 @@ final class StudioLeakCanaryEventListener {
         intent.putExtra(HelperConfig.ANALYSIS_PROGRESS_EXTRA, percent);
         intent.setPackage(application.getPackageName()); // Security: Keep within app
         application.sendBroadcast(intent);
-        Log.d(HelperConfig.LOG_TAG, "Sent analysis progress broadcast with value: " + percent);
     }
 
     /**

@@ -199,4 +199,6 @@ message StartLeakCanaryTaskData {
 
 message StudioLeakCanaryModeData {
   StartLeakCanaryTaskData.LeakCanaryMode mode = 1;
+  // equivalent to StudioFlags.PROFILER_LEAKCANARY_OCCURRENCES
+  bool profiler_leakcanary_occurrences = 2;
 }
