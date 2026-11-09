@@ -29,9 +29,13 @@ import com.android.tools.preview.MAX_FONT_SCALE
 import com.android.tools.preview.UNDEFINED_API_LEVEL
 import com.android.tools.preview.UNDEFINED_DIMENSION
 import com.android.tools.render.common.PreviewScreenshot
+import com.android.tools.render.drawable.DrawablePreviewView
 import com.android.tools.render.drawable.DrawableScreenshot
 import com.android.tools.render.layout.LayoutScreenshot
 import java.util.HexFormat
+
+const val PARAMETER_LEVEL = "level"
+const val PARAMETER_STATE = "state"
 
 /** Validation rules and limits for individual preview annotation parameters. */
 object ParameterValidators {
@@ -55,6 +59,18 @@ object ParameterValidators {
 
   /** Highest valid `wallpaper` index, corresponding to the last entry in [Wallpaper]. */
   val MAX_WALLPAPER = Wallpaper.entries.lastIndex
+
+  /** Lowest valid `level` for a drawable (`Drawable.setLevel`). */
+  const val MIN_DRAWABLE_LEVEL = 0
+
+  /**
+   * Highest valid `level` for a drawable: `Drawable.setLevel` takes levels from 0 to 10000, which `<level-list>` items, `<clip>` and
+   * `<scale>` drawables map to the full range of their effect.
+   */
+  const val MAX_DRAWABLE_LEVEL = 10000
+
+  /** Drawable states accepted by the `state` parameter, see [DrawablePreviewView.States]. */
+  val DRAWABLE_STATES: Set<String> = DrawablePreviewView.States.ATTRS.keys + DrawablePreviewView.States.DISABLED
 
   private const val UI_MODE_TYPE_MASK = UiModeState.UI_MODE_TYPE_MASK
   /** Highest defined `Configuration.UI_MODE_TYPE_*` value (`UI_MODE_TYPE_VR_HEADSET`). */
@@ -327,6 +343,53 @@ object ParameterValidators {
     )
   }
 
+  /** Validates the `level` parameter for drawable previews (`0..10000`, matching `Drawable.setLevel`). */
+  fun validateLevel(value: String?): List<ValidationIssue> {
+    if (value.isNullOrEmpty()) return emptyList()
+    val level =
+      value.toIntOrNull()
+        ?: return listOf(
+          ValidationIssue(
+            message = "Parameter '$PARAMETER_LEVEL' must be an integer, got: '$value'",
+            severity = ValidationSeverity.ERROR,
+            category = ValidationCategory.PARAMETER,
+            target = PARAMETER_LEVEL,
+            value = value,
+          )
+        )
+
+    if (level in MIN_DRAWABLE_LEVEL..MAX_DRAWABLE_LEVEL) return emptyList()
+    return listOf(
+      ValidationIssue(
+        message = "Parameter '$PARAMETER_LEVEL' must be between $MIN_DRAWABLE_LEVEL and $MAX_DRAWABLE_LEVEL, got: $level",
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.PARAMETER,
+        target = PARAMETER_LEVEL,
+        value = value,
+      )
+    )
+  }
+
+  /**
+   * Validates the comma-separated `state` parameter for drawable previews (`pressed`, `focused`, `selected`, `checked`, `checkable`,
+   * `activated`, `hovered`, or `disabled`).
+   */
+  fun validateState(value: String?): List<ValidationIssue> {
+    if (value.isNullOrEmpty()) return emptyList()
+    val invalidStates = value.split(',').map { it.trim() }.filter { it.isNotEmpty() && it !in DRAWABLE_STATES }.distinct()
+    if (invalidStates.isEmpty()) return emptyList()
+    val allowed = DRAWABLE_STATES.joinToString()
+    return invalidStates.map { state ->
+      ValidationIssue(
+        message = "Parameter '$PARAMETER_STATE' has invalid state '$state'; expected one of: $allowed",
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.PARAMETER,
+        target = PARAMETER_STATE,
+        value = value,
+      )
+    }
+  }
+
   /**
    * Validates the `device` parameter: its syntax and, when the device catalog [devices] is given, that the referenced devices exist.
    *
@@ -426,6 +489,8 @@ class PreviewValidator(devices: Collection<Device>? = null) : Validator<PreviewS
       )
     )
     issues.addAll(ParameterValidators.validateWallpaper(previewParams["wallpaper"]))
+    issues.addAll(ParameterValidators.validateLevel(previewParams[PARAMETER_LEVEL]))
+    issues.addAll(ParameterValidators.validateState(previewParams[PARAMETER_STATE]))
     issues.addAll(ParameterValidators.validateDevice(previewParams["device"], deviceCatalog))
 
     return ValidationResult(issues)

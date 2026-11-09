@@ -22,7 +22,6 @@ import com.android.SdkConstants.ATTR_LAYOUT_WIDTH
 import com.android.SdkConstants.ATTR_SCALE_TYPE
 import com.android.SdkConstants.ATTR_SRC
 import com.android.SdkConstants.ATTR_THEME
-import com.android.SdkConstants.IMAGE_VIEW
 import com.android.SdkConstants.VALUE_TRUE
 import com.android.SdkConstants.VALUE_WRAP_CONTENT
 import com.android.ide.common.rendering.api.ResourceNamespace
@@ -44,6 +43,8 @@ import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.ResourceTarget
 import com.android.tools.render.common.ScreenshotPreviewElement
 import com.android.tools.render.common.toThemeReference
+import com.android.tools.render.validation.PARAMETER_LEVEL
+import com.android.tools.render.validation.PARAMETER_STATE
 import com.android.utils.XmlUtils.toXmlAttributeValue
 
 /** Resource types that can be previewed as a drawable. */
@@ -55,12 +56,16 @@ private val SCALE_TYPES = setOf("matrix", "fitXY", "fitStart", "fitCenter", "fit
 /**
  * Information required to render a screenshot of a drawable or mipmap resource, for example `R.drawable.ic_logo`.
  *
- * Like the drawable preview in Android Studio, the drawable is shown in an `ImageView`. By default the view wraps the drawable, so the
- * image has the drawable's intrinsic size on the preview device, and the background is transparent. Supported [previewParams]:
+ * Like the drawable preview in Android Studio, the drawable is shown in an `ImageView` ([DrawablePreviewView]). By default the view wraps
+ * the drawable, so the image has the drawable's intrinsic size on the preview device, and the background is transparent. Supported
+ * [previewParams]:
  * - `device`, `locale`, `uiMode` and `apiLevel`: the configuration to render with, as in Compose's `@Preview`. They select resource
  *   variants such as `drawable-night` or `drawable-xxhdpi`.
  * - `theme`: the theme that resolves `?attr/` references in the drawable, for example `@style/Theme.MyApp`. A plain name such as
  *   `Theme.Material` is the project's style of that name, or the framework style if the project doesn't have one.
+ * - `state`: comma-separated drawable states for `<selector>` drawables: `pressed`, `focused`, `selected`, `checked`, `checkable`,
+ *   `activated`, `hovered` or `disabled`, for example `pressed,checked`.
+ * - `level`: the drawable level for `<level-list>`, `<clip>` and `<scale>` drawables, from 0 to 10000.
  * - `widthDp` and `heightDp`: the size of the view, in dp, for example for shapes and nine-patches.
  * - `backgroundColor` and `scaleType`: the view's background and scale type, like `tools:background` and `tools:scaleType` in drawable
  *   files.
@@ -91,6 +96,8 @@ data class DrawableScreenshot(
     val widthDp = intParam(PARAMETER_WIDTH_DP)?.takeIf { it != UNDEFINED_DIMENSION }
     val heightDp = intParam(PARAMETER_HEIGHT_DP)?.takeIf { it != UNDEFINED_DIMENSION }
     val apiLevel = intParam(PARAMETER_API_LEVEL)?.takeIf { it != UNDEFINED_API_LEVEL }
+    val level = intParam(PARAMETER_LEVEL)
+    val states = param(PARAMETER_STATE)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
     val scaleType = param(ATTR_SCALE_TYPE)
     require(scaleType == null || scaleType in SCALE_TYPES) {
       "Invalid $ATTR_SCALE_TYPE '$scaleType': expected one of ${SCALE_TYPES.joinToString()}"
@@ -117,7 +124,7 @@ data class DrawableScreenshot(
       )
 
     val xmlBuilder =
-      PreviewXmlBuilder(IMAGE_VIEW)
+      PreviewXmlBuilder(DrawablePreviewView::class.java.name)
         .androidAttribute(ATTR_LAYOUT_WIDTH, widthDp?.let { "${it}dp" } ?: VALUE_WRAP_CONTENT)
         .androidAttribute(ATTR_LAYOUT_HEIGHT, heightDp?.let { "${it}dp" } ?: VALUE_WRAP_CONTENT)
         .androidAttribute(ATTR_SRC, resourceRef)
@@ -130,6 +137,10 @@ data class DrawableScreenshot(
     param(ATTR_THEME)?.let {
       xmlBuilder.androidAttribute(ATTR_THEME, toXmlAttributeValue(toThemeReference(it, module.resourceRepositoryManager.appResources)))
     }
+    if (states.isNotEmpty()) {
+      xmlBuilder.toolsAttribute(DrawablePreviewView.ATTR_DRAWABLE_STATE, toXmlAttributeValue(states.joinToString(",")))
+    }
+    level?.let { xmlBuilder.toolsAttribute(DrawablePreviewView.ATTR_DRAWABLE_LEVEL, it.toString()) }
 
     return DrawableScreenshotPreviewElement(
       displaySettings = displaySettings,

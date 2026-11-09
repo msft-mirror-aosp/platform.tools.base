@@ -91,6 +91,8 @@ class DrawableScreenshotTest {
     assertThat(defaultXml).contains("""android:layout_height="wrap_content"""")
     assertThat(defaultXml).contains("""android:src="@drawable/ic_logo"""")
     assertThat(defaultXml).contains("""android:adjustViewBounds="true"""")
+    assertThat(defaultXml).doesNotContain("drawableState")
+    assertThat(defaultXml).doesNotContain("drawableLevel")
 
     // Explicit widthDp or heightDp expands the canvas so sizes larger than the screen are not clamped while keeping device qualifiers.
     val expandedWidth =
@@ -110,7 +112,7 @@ class DrawableScreenshotTest {
     val undefinedElement =
       DrawableScreenshot(
           methodFQN = "R.drawable.ic_logo",
-          previewParams = mapOf("widthDp" to "-1", "heightDp" to " -1 ", "apiLevel" to "-1"),
+          previewParams = mapOf("widthDp" to "-1", "heightDp" to " -1 ", "apiLevel" to "-1", "state" to " , "),
           previewId = "ic_logo_undef",
         )
         .toPreviewElement(module)
@@ -118,12 +120,15 @@ class DrawableScreenshotTest {
     assertEquals(UNDEFINED_API_LEVEL, undefinedElement.configuration.apiLevel)
     assertThat(undefinedElement.xml()).contains("""android:layout_width="wrap_content"""")
     assertThat(undefinedElement.xml()).contains("""android:layout_height="wrap_content"""")
+    assertThat(undefinedElement.xml()).doesNotContain("drawableState")
 
     val configuredElement =
       DrawableScreenshot(
           methodFQN = "@mipmap/ic_launcher",
           previewParams =
             mapOf(
+              "state" to " pressed , \n checked , ",
+              "level" to "5000",
               "scaleType" to "centerInside",
               "theme" to "Theme.App",
               "backgroundColor" to "#FF112233",
@@ -137,6 +142,8 @@ class DrawableScreenshotTest {
     assertEquals(34, configuredElement.configuration.apiLevel)
     val configuredXml = configuredElement.xml()
     assertThat(configuredXml).contains("""android:src="@mipmap/ic_launcher"""")
+    assertThat(configuredXml).contains("""tools:drawableState="pressed,checked"""")
+    assertThat(configuredXml).contains("""tools:drawableLevel="5000"""")
     assertThat(configuredXml).contains("""android:scaleType="centerInside"""")
     assertThat(configuredXml).contains("""android:theme="@style/Theme.App"""")
     assertThat(configuredXml).contains("""android:background="#FF112233"""")

@@ -457,6 +457,75 @@ class PreviewValidatorTest {
   }
 
   @Test
+  fun testValidDrawableLevelsPassValidation() {
+    for (level in listOf("", "0", "1", "5000", "10000")) {
+      val result = validator.validateParams(mapOf("level" to level))
+      assertTrue("level '$level' should be valid but got: ${result.issues}", result.issues.isEmpty())
+    }
+    assertTrue(
+      validator
+        .validate(DrawableScreenshot(methodFQN = "R.drawable.ic_logo", previewParams = mapOf("level" to " 5000 "), previewId = "id"))
+        .isValid
+    )
+  }
+
+  @Test
+  fun testInvalidDrawableLevelsProduceError() {
+    for (nonInt in listOf("abc", "1.5", " 5000 ", "0x10", "99999999999999999999")) {
+      val result = validator.validateParams(mapOf("level" to nonInt))
+      assertFalse("level '$nonInt' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals("level", error.target)
+      assertEquals(nonInt, error.value)
+      assertTrue(error.message.contains("must be an integer"))
+    }
+
+    for (outOfRange in listOf("-1", "-100", "10001")) {
+      val result = validator.validateParams(mapOf("level" to outOfRange))
+      assertFalse("level '$outOfRange' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals("level", error.target)
+      assertEquals(outOfRange, error.value)
+      assertTrue(error.message.contains("between ${ParameterValidators.MIN_DRAWABLE_LEVEL} and ${ParameterValidators.MAX_DRAWABLE_LEVEL}"))
+    }
+  }
+
+  @Test
+  fun testValidDrawableStatesPassValidation() {
+    for (state in
+      listOf(
+        "",
+        "   ",
+        " , ",
+        "pressed",
+        "disabled",
+        "pressed,checked",
+        " pressed , \n checked , ",
+        ParameterValidators.DRAWABLE_STATES.joinToString(","),
+      )) {
+      val result = validator.validateParams(mapOf("state" to state))
+      assertTrue("state '$state' should be valid but got: ${result.issues}", result.issues.isEmpty())
+    }
+  }
+
+  @Test
+  fun testInvalidDrawableStatesProduceError() {
+    for (invalid in listOf("clicked", "PRESSED", "pressed,clicked", "clicked,clicked")) {
+      val result = validator.validateParams(mapOf("state" to invalid))
+      assertFalse("state '$invalid' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals("state", error.target)
+      assertEquals(invalid, error.value)
+      assertTrue(error.message.contains("expected one of:"))
+    }
+
+    val multiInvalid = validator.validateParams(mapOf("state" to "foo,pressed,bar"))
+    assertEquals(2, multiInvalid.errors.size)
+    assertTrue(multiInvalid.errors[0].message.contains("'foo'"))
+    assertTrue(multiInvalid.errors[1].message.contains("'bar'"))
+  }
+
+  @Test
   fun testValidationResultAggregationAndComposition() {
     val r1 = ValidationResult.error("Error 1", ValidationCategory.PARAMETER, target = "widthDp")
     val r2 = ValidationResult.warning("Warning 1", ValidationCategory.METHOD, target = "myMethod")

@@ -12,6 +12,7 @@ kotlin_library(
     resources = glob(["resources/**"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//prebuilts/studio/layoutlib/data:layoutlib",
         "//prebuilts/tools/common/lint-psi/intellij-core",
         "//tools/adt/idea/compose-designer:ui-animation-tooling-internal",
         "//tools/adt/idea/layoutlib:tools.layoutlib",

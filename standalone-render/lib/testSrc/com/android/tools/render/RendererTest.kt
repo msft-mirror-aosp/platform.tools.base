@@ -3364,6 +3364,87 @@ class RendererTest {
   }
 
   @Test
+  fun testRenderDrawableScreenshot_appliesStateAndLevel() {
+    withDrawableRenderer({ resFolder ->
+      val drawableFolder = File(resFolder, "drawable").apply { mkdirs() }
+      writeVectorDrawable(drawableFolder, "ic_red", "#FFFF0000")
+      writeVectorDrawable(drawableFolder, "ic_green", "#FF00FF00")
+      writeVectorDrawable(drawableFolder, "ic_blue", "#FF0000FF")
+      writeVectorDrawable(drawableFolder, "ic_yellow", "#FFFFFF00")
+      drawableFolder
+        .resolve("selector.xml")
+        .writeText(
+          """
+          <selector xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:state_window_focused="false" android:state_enabled="true" android:drawable="@drawable/ic_red" />
+              <item android:state_enabled="false" android:drawable="@drawable/ic_blue" />
+              <item android:state_pressed="true" android:drawable="@drawable/ic_green" />
+              <item android:state_focused="true" android:drawable="@drawable/ic_yellow" />
+              <item android:drawable="@drawable/ic_red" />
+          </selector>
+          """
+            .trimIndent()
+        )
+      drawableFolder
+        .resolve("levels.xml")
+        .writeText(
+          """
+          <level-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:maxLevel="1" android:drawable="@drawable/ic_red" />
+              <item android:maxLevel="2" android:drawable="@drawable/ic_green" />
+          </level-list>
+          """
+            .trimIndent()
+        )
+    }) { renderer, outputDir ->
+      val device = "spec:width=400px,height=400px,dpi=320"
+      fun renderDrawable(name: String, params: Map<String, String> = emptyMap(), previewId: String = name): BufferedImage {
+        val result =
+          renderer
+            .render(
+              DrawableScreenshot(methodFQN = "R.drawable.$name", previewParams = mapOf("device" to device) + params, previewId = previewId),
+              outputDir.absolutePath,
+            )
+            .single()
+        assertNull(result.error)
+        return ImageIO.read(outputDir.resolve(result.imagePath!!))
+      }
+
+      assertEquals(0xFFFF0000.toInt(), renderDrawable("selector").getRGB(24, 24))
+      assertEquals(0xFF00FF00.toInt(), renderDrawable("selector", mapOf("state" to "pressed"), "selector_pressed").getRGB(24, 24))
+      assertEquals(0xFFFFFF00.toInt(), renderDrawable("selector", mapOf("state" to "focused"), "selector_focused").getRGB(24, 24))
+      assertEquals(0xFF0000FF.toInt(), renderDrawable("selector", mapOf("state" to "disabled"), "selector_disabled").getRGB(24, 24))
+
+      assertEquals(0xFFFF0000.toInt(), renderDrawable("levels", mapOf("level" to "1")).getRGB(24, 24))
+      assertEquals(0xFF00FF00.toInt(), renderDrawable("levels", mapOf("level" to "2"), "levels_2").getRGB(24, 24))
+
+      val invalidLevel =
+        renderer
+          .render(
+            DrawableScreenshot(methodFQN = "R.drawable.levels", previewParams = mapOf("level" to "10001"), previewId = "bad_level"),
+            outputDir.absolutePath,
+          )
+          .single()
+      assertEquals("VALIDATION_ERROR", invalidLevel.error?.status)
+      assertTrue(invalidLevel.error?.message?.contains("Parameter 'level' must be between 0 and 10000") == true)
+
+      val invalidState =
+        renderer
+          .render(
+            DrawableScreenshot(
+              methodFQN = "R.drawable.selector",
+              previewParams = mapOf("state" to "pressed,clicked"),
+              previewId = "bad_state",
+            ),
+            outputDir.absolutePath,
+          )
+          .single()
+      assertEquals("VALIDATION_ERROR", invalidState.error?.status)
+      assertTrue(invalidState.error?.message?.contains("Parameter 'state' has invalid state 'clicked'") == true)
+    }
+  }
+
+  @Test
   fun testRenderDrawableScreenshot_rendersBitmapsAndNinePatches() {
     withDrawableRenderer({ resFolder ->
       val drawableFolder = File(resFolder, "drawable").apply { mkdirs() }
