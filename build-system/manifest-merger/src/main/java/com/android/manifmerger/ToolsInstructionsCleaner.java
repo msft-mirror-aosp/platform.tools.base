@@ -40,7 +40,7 @@ import java.util.List;
 /**
  * Removes all "tools:" statements from the resulting xml.
  *
- * All attributes belonging to the {@link com.android.SdkConstants#ANDROID_URI} namespace will be
+ * <p>All attributes belonging to the {@link com.android.SdkConstants#TOOLS_URI} namespace will be
  * removed. If an element contained a "tools:node=\"remove\"" attribute, the element will be
  * deleted. And elements that are themselves in the tools namespace will also be removed.
  */
@@ -57,7 +57,7 @@ public class ToolsInstructionsCleaner {
      *
      * @param document the document to clean
      * @param logger logger to use in case of errors and warnings.
-     * @return the cleaned document or null if an error occurred.
+     * @return the cleaned document or {@link Optional#absent()} if an error occurred.
      */
     public static Optional<Document> cleanToolsReferences(
             @NotNull ManifestMerger2.MergeType mergeType,
