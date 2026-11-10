@@ -1,3 +1,5 @@
+bazel_dep(name = "goldfish_build", version = "0.0.3", repo_name = "build_conf")
+
 macos_sdk_repository = use_repo_rule("//tools/base/bazel/migration/toolchains/cc:repository_rules.bzl", "macos_sdk_repository")
 
 msvc_tools_repository = use_repo_rule("//tools/base/bazel/migration/toolchains/cc:repository_rules.bzl", "msvc_tools_repository")

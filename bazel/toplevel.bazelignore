@@ -11,18 +11,10 @@ prebuilts/rust
 # Packages that are typically ignored in WORKSPACE due to a local_repository
 # pointing to them are not ignored with bzlmod.
 # See https://github.com/bazelbuild/bazel/issues/22208#issuecomment-2174586425
+build/bazel
 tools/base/bazel/coverage
 tools/external/bazelbuild-rules-kotlin
 prebuilts/tools/common/external-src-archives/bazel-skylib/bazel-skylib-1.6.1
 prebuilts/tools/common/external-src-archives/bazel-toolchains/bazel-toolchains-5.1.2
 prebuilts/tools/common/external-src-archives/bazelbuild-rules_android
 hardware/google/aemu
-
-# Selectively exclude packages that require build/bazel being imported as a
-# module.
-# TODO(b/500818780) exclude the entire subdirectory after importing as module.
-build/bazel/platforms
-build/bazel/registry
-build/bazel/tests
-build/bazel/toolchains
-build/bazel/utils
