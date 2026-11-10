@@ -421,6 +421,38 @@ class LocalEmulatorProvisionerPluginTest {
   }
 
   @Test
+  fun displaylessAudioGlassesDevice() = runBlockingWithTimeout {
+    val audioGlassesAvdInfo =
+      with(SdkFixture()) {
+        val deviceProfile = deviceManager.getDevice("ai_glasses_displayless", "Google")!!
+        val builder = avdManager.createAvdBuilder(deviceProfile)
+        builder.systemImage = testSystemImages.aiGlasses.image
+        avdManager
+          .createAvd(builder)
+          .copy(iniFile = avdsPath.resolve("audio_glasses.ini"), dataFolderPath = avdsPath.resolve("audio_glasses.avd"))
+      }
+    avdManager.createAvd(audioGlassesAvdInfo)
+
+    yieldUntil { provisioner.devices.value.size == 1 }
+
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.AI_GLASSES)
+    assertThat(handle.state.properties.isDisplayless).isTrue()
+    assertThat(handle.state.properties.resolution).isNull()
+    assertThat(handle.state.properties.density).isNull()
+    assertThat(handle.state.properties.resolutionDp).isNull()
+
+    avdManager.startAvd(handle.avdInfo, QuickBoot)
+    handle.awaitReady()
+
+    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.AI_GLASSES)
+    assertThat(handle.state.properties.isDisplayless).isTrue()
+    assertThat(handle.state.properties.resolution).isNull()
+    assertThat(handle.state.properties.density).isNull()
+    assertThat(handle.state.properties.resolutionDp).isNull()
+  }
+
+  @Test
   fun editDevice() = runBlockingWithTimeout {
     avdManager.createAvd(avdManager.makeAvdInfo(1, tag = SystemImageTags.GOOGLE_TV_TAG))
 

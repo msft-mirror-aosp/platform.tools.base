@@ -65,7 +65,9 @@ class PhysicalDeviceProvisionerPlugin(val scope: CoroutineScope, private val dev
       if (connectionType == null) {
         connectionType = ConnectionType.USB
       }
-      resolution = Resolution.readFromDevice(device)
+      if (isDisplayless != true) {
+        resolution = Resolution.readFromDevice(device)
+      }
       icon =
         when (deviceType) {
           DeviceType.HANDHELD -> deviceIcons.handheld

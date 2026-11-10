@@ -59,7 +59,9 @@ class DefaultProvisionerPlugin(val scope: CoroutineScope, private val defaultIco
       readDeviceType(device, properties)
       populateDeviceInfoProto(PLUGIN_ID, device.serialNumber, properties, randomConnectionId())
       icon = defaultIcons.iconForDeviceType(deviceType)
-      resolution = Resolution.readFromDevice(device)
+      if (isDisplayless != true) {
+        resolution = Resolution.readFromDevice(device)
+      }
     }
     val handle = DefaultDeviceHandle.create(scope.createChildScope(isSupervisor = true), Connected(deviceProperties, device))
 

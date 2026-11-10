@@ -180,6 +180,15 @@ class DevicePropertiesTest {
   }
 
   @Test
+  fun readCommonProperties_displayless() {
+    val props = props("ro.boot.display_device" to "none", "ro.sf.lcd_density" to "160")
+    assertThat(props.isDisplayless).isTrue()
+    assertThat(props.density).isNull()
+    assertThat(props.resolution).isNull()
+    assertThat(props.resolutionDp).isNull()
+  }
+
+  @Test
   fun title() {
     val propsBoth = DeviceProperties.buildForTest {
       manufacturer = "Google"
@@ -240,6 +249,7 @@ private val pixel8Props =
       isRemote = false
       isDebuggable = true
       isResizable = false
+      isDisplayless = false
       resolution = Resolution(1920, 1080)
       density = 240
       connectionType = ConnectionType.USB

@@ -169,6 +169,11 @@ data class AvdInfo(
   val isAiGlassesCompatibleDevice: Boolean
     get() = hasTag(SystemImageTags.AI_GLASSES_COMPATIBLE_TAG.getId())
 
+  val isDisplayless: Boolean
+    get() =
+      properties[ConfigKey.DISPLAYLESS] == "yes" ||
+        (isAiGlassesDevice && properties[HardwareProperties.HW_LCD_WIDTH] == null && properties[HardwareProperties.HW_LCD_HEIGHT] == null)
+
   companion object {
     /** Extracts the name of the AVD from the file name. */
     @JvmStatic

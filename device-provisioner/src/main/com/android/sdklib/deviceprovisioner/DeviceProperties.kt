@@ -98,6 +98,10 @@ interface DeviceProperties {
   /** If true, the device's screen can be resized dynamically. */
   val isResizable: Boolean?
 
+  /** If true, the device does not have a display. */
+  val isDisplayless: Boolean?
+    get() = null
+
   /** Icon used to represent this device in UIs */
   val icon: Icon
 
@@ -107,6 +111,7 @@ interface DeviceProperties {
   /** The screen resolution in device-independent pixels ("dp"). */
   val resolutionDp: Resolution?
     get() {
+      if (isDisplayless == true) return null
       val resolution = resolution ?: return null
       val density = density ?: return null
       return Resolution(
@@ -187,6 +192,7 @@ interface DeviceProperties {
     var isRemote: Boolean? = null
     var isDebuggable: Boolean? = null
     var isResizable: Boolean? = null
+    var isDisplayless: Boolean? = null
     var wearPairingId: String? = null
     var pairedPhoneId: DeviceId? = null
     var pairedGlassesInfos: List<PairedGlassesInfo> = emptyList()
@@ -210,6 +216,7 @@ interface DeviceProperties {
       isRemote = properties.isRemote
       isDebuggable = properties.isDebuggable
       isResizable = properties.isResizable
+      isDisplayless = properties.isDisplayless
       wearPairingId = properties.wearPairingId
       pairedPhoneId = properties.pairedPhoneId
       pairedGlassesInfos = properties.pairedGlassesInfos
@@ -248,7 +255,11 @@ interface DeviceProperties {
       androidRelease = properties[RO_BUILD_VERSION_RELEASE]
 
       isDebuggable = properties[RO_BUILD_TYPE] in setOf("userdebug", "eng")
-      density = properties[RO_SF_LCD_DENSITY]?.toIntOrNull()
+      isDisplayless = isDisplayless == true || properties["ro.boot.display_device"] == "none"
+      density = if (isDisplayless == true) null else properties[RO_SF_LCD_DENSITY]?.toIntOrNull()
+      if (isDisplayless == true) {
+        resolution = null
+      }
 
       readEmulatorProperties(properties)
     }
@@ -326,6 +337,7 @@ interface DeviceProperties {
         isRemote = isRemote,
         isDebuggable = isDebuggable,
         isResizable = isResizable,
+        isDisplayless = isDisplayless,
         wearPairingId = wearPairingId,
         pairedPhoneId = pairedPhoneId,
         pairedGlassesInfos = pairedGlassesInfos,
@@ -353,6 +365,7 @@ data class BaseDeviceProperties(
   override val isRemote: Boolean?,
   override val isDebuggable: Boolean?,
   override val isResizable: Boolean?,
+  override val isDisplayless: Boolean? = null,
   override val wearPairingId: String?,
   override val pairedPhoneId: DeviceId?,
   override val pairedGlassesInfos: List<PairedGlassesInfo> = emptyList(),

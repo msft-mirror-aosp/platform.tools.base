@@ -372,7 +372,7 @@ class LocalEmulatorDeviceHandle(
                 DevicePropertiesUpdate(
                   connectedDevice,
                   runCatching { connectedDevice.deviceProperties().all().asMap() },
-                  Resolution.readFromDevice(connectedDevice),
+                  if (activeAvdInfo.isDisplayless) null else Resolution.readFromDevice(connectedDevice),
                 )
               )
             }
@@ -391,8 +391,10 @@ class LocalEmulatorDeviceHandle(
                   readCommonProperties(newProperties)
                   populateDeviceInfoProto(PLUGIN_ID, connectedDevice.serialNumber, newProperties, randomConnectionId())
                   deviceType = activeAvdInfo.deviceType()
-                  density = newProperties[DevicePropertyNames.QEMU_SF_LCD_DENSITY]?.toIntOrNull()
-                  resolution = message.resolution
+                  if (isDisplayless != true) {
+                    density = newProperties[DevicePropertyNames.QEMU_SF_LCD_DENSITY]?.toIntOrNull()
+                    resolution = message.resolution
+                  }
                   disambiguator = emulatorConsolePort.toString()
                   wearPairingId = activeAvdInfo.dataFolderPath.toString().takeIf { isPairable() }
                   icon = context.deviceIcons.iconForDeviceType(deviceType)
@@ -646,6 +648,7 @@ data class LocalEmulatorProperties(
   override val isRemote: Boolean?,
   override val isDebuggable: Boolean?,
   override val isResizable: Boolean?,
+  override val isDisplayless: Boolean? = null,
   override val wearPairingId: String?,
   override val pairedPhoneId: DeviceId?,
   override val pairedGlassesInfos: List<PairedGlassesInfo>,
@@ -721,6 +724,7 @@ data class LocalEmulatorProperties(
       wearPairingId = avdInfo.id.takeIf { isPairable() }
       pairedPhoneId = avdInfo.userSettings["${UserSettingsKey.PAIRED_PHONE_AVD_ID_PREFIX}1"]?.let { DeviceId.fromString(it) }
       pairedGlassesInfos = PairedGlassesInfo.parseFromSettings(avdInfo.userSettings)
+      isDisplayless = avdInfo.isDisplayless
       density = avdInfo.density
       resolution = avdInfo.resolution
       isDebuggable = !avdInfo.hasPlayStore()
@@ -745,6 +749,7 @@ data class LocalEmulatorProperties(
         isRemote = isRemote,
         isDebuggable = isDebuggable,
         isResizable = isResizable,
+        isDisplayless = isDisplayless,
         wearPairingId = wearPairingId,
         pairedPhoneId = pairedPhoneId,
         pairedGlassesInfos = pairedGlassesInfos.toList(),
@@ -800,12 +805,16 @@ private data class TransitionResult(val result: Result<Any>) : LocalEmulatorMess
 private object CheckTimeout : LocalEmulatorMessage
 
 private val AvdInfo.density
-  get() = properties[HardwareProperties.HW_LCD_DENSITY]?.toIntOrNull()
+  get() = if (isDisplayless) null else properties[HardwareProperties.HW_LCD_DENSITY]?.toIntOrNull()
 
 private val AvdInfo.resolution
   get() =
-    properties[HardwareProperties.HW_LCD_WIDTH]?.toIntOrNull()?.let { width ->
-      properties[HardwareProperties.HW_LCD_HEIGHT]?.toIntOrNull()?.let { height -> Resolution(width, height) }
+    if (isDisplayless) {
+      null
+    } else {
+      properties[HardwareProperties.HW_LCD_WIDTH]?.toIntOrNull()?.let { width ->
+        properties[HardwareProperties.HW_LCD_HEIGHT]?.toIntOrNull()?.let { height -> Resolution(width, height) }
+      }
     }
 
 private val AvdInfo.deviceError
