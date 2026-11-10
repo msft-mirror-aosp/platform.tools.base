@@ -225,6 +225,13 @@ object ParameterValidators {
       else -> emptyList()
     }
   }
+
+  /**
+   * Validates the syntax of the `device` parameter.
+   *
+   * @see DeviceParameterValidator
+   */
+  fun validateDevice(value: String?): List<ValidationIssue> = DeviceParameterValidator.validate(value)
 }
 
 /** Main orchestrator for validating Compose preview. */
@@ -245,6 +252,7 @@ class PreviewValidator : Validator<PreviewScreenshot> {
     issues.addAll(ParameterValidators.validateApiLevel(previewParams["apiLevel"]))
     issues.addAll(ParameterValidators.validateLocale(previewParams["locale"]))
     issues.addAll(ParameterValidators.validateBackgroundColor(previewParams["backgroundColor"], previewParams["showBackground"]))
+    issues.addAll(ParameterValidators.validateDevice(previewParams["device"]))
 
     return ValidationResult(issues)
   }
