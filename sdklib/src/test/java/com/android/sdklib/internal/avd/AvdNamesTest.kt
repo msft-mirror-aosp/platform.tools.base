@@ -47,6 +47,7 @@ class AvdNamesTest {
     assertThat(cleanDisplayName("either/or")).isEqualTo("either or")
     assertThat(cleanDisplayName("9\" nails")).isEqualTo("9 nails")
     assertThat(cleanDisplayName("6' under")).isEqualTo("6 under")
+    assertThat(cleanDisplayName("Foldable (4:3 inner display)")).isEqualTo("Foldable (4-3 inner display)")
   }
 
   @Test

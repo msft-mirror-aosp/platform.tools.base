@@ -36,7 +36,7 @@ object AvdNames {
 
   @JvmStatic
   fun cleanDisplayName(candidateName: String): String {
-    return ALLOWED_DISPLAY_NAME_CHARS.negate().or(`is`(' ')).trimAndCollapseFrom(candidateName, ' ')
+    return ALLOWED_DISPLAY_NAME_CHARS.negate().or(`is`(' ')).trimAndCollapseFrom(candidateName.replace(':', '-'), ' ')
   }
 
   @JvmStatic fun humanReadableAllowedCharacters(): String = ALLOWED_CHARS_READABLE

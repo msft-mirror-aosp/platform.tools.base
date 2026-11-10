@@ -2261,11 +2261,11 @@
                 <d:pixel-density>420dpi</d:pixel-density>
                 <d:screen-ratio>notlong</d:screen-ratio>
                 <d:dimensions>
-                    <d:x-dimension>2448</d:x-dimension>
-                    <d:y-dimension>1848</d:y-dimension>
+                    <d:x-dimension>2688</d:x-dimension>
+                    <d:y-dimension>2016</d:y-dimension>
                 </d:dimensions>
-                <d:xdpi>403.6</d:xdpi>
-                <d:ydpi>403.6</d:ydpi>
+                <d:xdpi>442.1</d:xdpi>
+                <d:ydpi>442.1</d:ydpi>
                 <d:touch>
                     <d:multitouch>jazz-hands</d:multitouch>
                     <d:mechanism>finger</d:mechanism>
@@ -2274,8 +2274,8 @@
                 <d:foldable-region>
                     <d:x-folded-offset>0</d:x-folded-offset>
                     <d:y-folded-offset>0</d:y-folded-offset>
-                    <d:x-folded-dimension>1248</d:x-folded-dimension>
-                    <d:y-folded-dimension>1972</d:y-folded-dimension>
+                    <d:x-folded-dimension>1260</d:x-folded-dimension>
+                    <d:y-folded-dimension>2016</d:y-folded-dimension>
                 </d:foldable-region>
             </d:screen>
             <d:hinge>
@@ -2285,7 +2285,7 @@
                 <d:sub-type>0</d:sub-type>
                 <d:ranges>0-180</d:ranges>
                 <d:defaults>180</d:defaults>
-                <d:areas>1224-0-0-1848</d:areas>
+                <d:areas>1344-0-0-2016</d:areas>
                 <d:change-orientation-on-fold>1</d:change-orientation-on-fold>
                 <d:posture-list>1, 2, 3</d:posture-list>
                 <d:hinge-angles-posture-definitions>0-30, 30-150, 150-180</d:hinge-angles-posture-definitions>
@@ -2407,11 +2407,11 @@
                 <d:pixel-density>390dpi</d:pixel-density>
                 <d:screen-ratio>notlong</d:screen-ratio>
                 <d:dimensions>
-                    <d:x-dimension>2076</d:x-dimension>
-                    <d:y-dimension>2152</d:y-dimension>
+                    <d:x-dimension>2106</d:x-dimension>
+                    <d:y-dimension>2106</d:y-dimension>
                 </d:dimensions>
-                <d:xdpi>373</d:xdpi>
-                <d:ydpi>373</d:ydpi>
+                <d:xdpi>372.3</d:xdpi>
+                <d:ydpi>372.3</d:ydpi>
                 <d:touch>
                     <d:multitouch>jazz-hands</d:multitouch>
                     <d:mechanism>finger</d:mechanism>
@@ -2420,8 +2420,8 @@
                 <d:foldable-region>
                     <d:x-folded-offset>0</d:x-folded-offset>
                     <d:y-folded-offset>0</d:y-folded-offset>
-                    <d:x-folded-dimension>1080</d:x-folded-dimension>
-                    <d:y-folded-dimension>2364</d:y-folded-dimension>
+                    <d:x-folded-dimension>1053</d:x-folded-dimension>
+                    <d:y-folded-dimension>1872</d:y-folded-dimension>
                 </d:foldable-region>
             </d:screen>
             <d:hinge>
@@ -2431,7 +2431,7 @@
                 <d:sub-type>0</d:sub-type>
                 <d:ranges>0-180</d:ranges>
                 <d:defaults>180</d:defaults>
-                <d:areas>1038-0-0-2152</d:areas>
+                <d:areas>1053-0-0-2106</d:areas>
                 <d:change-orientation-on-fold>1</d:change-orientation-on-fold>
                 <d:posture-list>1, 2, 3</d:posture-list>
                 <d:hinge-angles-posture-definitions>0-30, 30-150, 150-180</d:hinge-angles-posture-definitions>
