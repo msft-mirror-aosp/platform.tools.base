@@ -28,6 +28,12 @@ object ParameterValidators {
 
   const val MIN_FONT_SCALE = 0.0f
 
+  /** Smallest valid `backgroundColor`: fully transparent black (`0x00000000`). */
+  const val MIN_BACKGROUND_COLOR = 0L
+
+  /** Largest valid `backgroundColor`: opaque white (`0xFFFFFFFF`), the maximum value of a 32-bit ARGB color. */
+  const val MAX_BACKGROUND_COLOR = 0xFFFFFFFFL
+
   /** Validates dimension parameters (`widthDp`, `heightDp`). */
   fun validateDimension(paramName: String, value: String?): List<ValidationIssue> {
     if (value.isNullOrEmpty()) return emptyList()
@@ -158,6 +164,54 @@ object ParameterValidators {
       )
     )
   }
+
+  /**
+   * Validates the `backgroundColor` parameter, together with the `showBackground` parameter that controls whether it is applied.
+   *
+   * The value is the decimal representation of the Long declared in the annotation, which must be a 32-bit ARGB color (`4278255360` for
+   * `0xFF00FF00`). The renderer formats it as hexadecimal without any check, so a negative value produces a broken color and a value that
+   * is not a Long is silently ignored.
+   */
+  fun validateBackgroundColor(value: String?, showBackground: String?): List<ValidationIssue> {
+    if (value.isNullOrEmpty()) return emptyList()
+    val color =
+      value.toLongOrNull()
+        ?: return listOf(
+          ValidationIssue(
+            message =
+              "Parameter 'backgroundColor' must be a 32-bit ARGB color as a decimal Long, e.g. 4278255360 (0xFF00FF00 in Kotlin), " +
+                "got: '$value'. Hexadecimal strings are not supported",
+            severity = ValidationSeverity.ERROR,
+            category = ValidationCategory.PARAMETER,
+            target = "backgroundColor",
+            value = value,
+          )
+        )
+
+    return when {
+      color !in MIN_BACKGROUND_COLOR..MAX_BACKGROUND_COLOR ->
+        listOf(
+          ValidationIssue(
+            message = "Parameter 'backgroundColor' must be a 32-bit ARGB color between 0 and 4294967295 (0xFFFFFFFF), got: $value",
+            severity = ValidationSeverity.ERROR,
+            category = ValidationCategory.PARAMETER,
+            target = "backgroundColor",
+            value = value,
+          )
+        )
+      !showBackground.equals("true", ignoreCase = true) ->
+        listOf(
+          ValidationIssue(
+            message = "Parameter 'backgroundColor' has no effect unless 'showBackground' is set to true",
+            severity = ValidationSeverity.WARNING,
+            category = ValidationCategory.PARAMETER,
+            target = "backgroundColor",
+            value = value,
+          )
+        )
+      else -> emptyList()
+    }
+  }
 }
 
 /** Main orchestrator for validating Compose preview. */
@@ -177,6 +231,7 @@ class PreviewValidator : Validator<PreviewScreenshot> {
     issues.addAll(ParameterValidators.validateFontScale(previewParams["fontScale"]))
     issues.addAll(ParameterValidators.validateApiLevel(previewParams["apiLevel"]))
     issues.addAll(ParameterValidators.validateLocale(previewParams["locale"]))
+    issues.addAll(ParameterValidators.validateBackgroundColor(previewParams["backgroundColor"], previewParams["showBackground"]))
 
     return ValidationResult(issues)
   }

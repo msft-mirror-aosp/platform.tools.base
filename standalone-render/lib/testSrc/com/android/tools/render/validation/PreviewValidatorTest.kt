@@ -159,6 +159,62 @@ class PreviewValidatorTest {
   }
 
   @Test
+  fun testValidBackgroundColorsPassValidation() {
+    // Bytecode discovery reports the Long constant in decimal: 0xFF00FF00 -> 4278255360, 0xFFFFFFFF -> 4294967295.
+    for (color in listOf("0", "4278255360", "4294967295", "255")) {
+      val result = validator.validateParams(mapOf("backgroundColor" to color, "showBackground" to "true"))
+      assertTrue("Color '$color' should be valid but got: ${result.issues}", result.issues.isEmpty())
+    }
+    assertTrue(validator.validateParams(mapOf("backgroundColor" to "", "showBackground" to "false")).issues.isEmpty())
+  }
+
+  @Test
+  fun testBackgroundColorOutOfArgbRangeProducesError() {
+    for (color in listOf("-1", "-4278255360", "4294967296", "281474976710655")) {
+      val result = validator.validateParams(mapOf("backgroundColor" to color, "showBackground" to "true"))
+      assertFalse("Color '$color' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("backgroundColor", error.target)
+      assertEquals(color, error.value)
+      assertTrue(error.message.contains("0xFFFFFFFF"))
+    }
+  }
+
+  @Test
+  fun testNonNumericBackgroundColorProducesError() {
+    // Hexadecimal strings only reach the validator through the settings JSON; the renderer cannot parse them either.
+    for (color in listOf("0xFF00FF00", "#FF00FF00", "red", "1.5")) {
+      val result = validator.validateParams(mapOf("backgroundColor" to color, "showBackground" to "true"))
+      assertFalse("Color '$color' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals("backgroundColor", error.target)
+      assertEquals(color, error.value)
+      assertTrue(error.message.contains("Long"))
+    }
+  }
+
+  @Test
+  fun testBackgroundColorWithoutShowBackgroundProducesWarning() {
+    for (showBackground in listOf(null, "false", "FALSE", "yes")) {
+      val params = mutableMapOf("backgroundColor" to "4278255360")
+      showBackground?.let { params["showBackground"] = it }
+
+      val result = validator.validateParams(params)
+      assertTrue("Ignored colors must not fail validation (showBackground=$showBackground)", result.isValid)
+      assertTrue(result.hasWarnings)
+      val warning = result.warnings.single()
+      assertEquals(ValidationSeverity.WARNING, warning.severity)
+      assertEquals("backgroundColor", warning.target)
+      assertTrue(warning.message.contains("showBackground"))
+    }
+
+    // Case-insensitive like String.toBoolean(), which the renderer uses to read showBackground.
+    assertTrue(validator.validateParams(mapOf("backgroundColor" to "4278255360", "showBackground" to "TRUE")).issues.isEmpty())
+  }
+
+  @Test
   fun testValidationResultAggregationAndComposition() {
     val r1 = ValidationResult.error("Error 1", ValidationCategory.PARAMETER, target = "widthDp")
     val r2 = ValidationResult.warning("Warning 1", ValidationCategory.METHOD, target = "myMethod")
