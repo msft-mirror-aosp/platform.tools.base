@@ -17,6 +17,7 @@ package com.android.repository.impl.manager
 
 import com.android.repository.Revision
 import com.android.repository.api.LocalPackage
+import com.android.repository.api.PackageOperation
 import com.android.repository.api.ProgressRunner
 import com.android.repository.api.RemotePackage
 import com.android.repository.api.RepoManager
@@ -696,6 +697,43 @@ class RepoManagerImplTest {
     mgr.loadSynchronously(-1, null, null, null, runner, downloader, null)
     assertFalse(localRan.get())
     assertTrue(remoteRan.compareAndSet(true, false))
+  }
+
+  @Test
+  fun testConcurrentInProgressInstalls() = runBlocking {
+    val repoRoot = createInMemoryFileSystemAndFolder("repo")
+    val mgr = RepoManagerImpl(repoRoot, FakeLoader<LocalPackage>(), FakeLoader<RemotePackage>())
+    val packages = (0..<32).map { FakeRemotePackage("pkg;$it") }
+    val operations = packages.associateWith { org.mockito.Mockito.mock(PackageOperation::class.java) }
+
+    val jobs =
+      packages.map { pkg ->
+        val op = operations.getValue(pkg)
+        async(Dispatchers.Default) {
+          repeat(500) {
+            mgr.installBeginning(pkg, op)
+            assertSame(op, mgr.getInProgressInstallOperation(pkg))
+            mgr.installEnded(pkg)
+          }
+        }
+      } +
+        (0..<4).map {
+          async(Dispatchers.Default) {
+            repeat(2000) {
+              for (pkg in packages) {
+                val observed = mgr.getInProgressInstallOperation(pkg)
+                if (observed != null) {
+                  assertSame(operations.getValue(pkg), observed)
+                }
+              }
+            }
+          }
+        }
+
+    jobs.forEach { it.await() }
+    for (pkg in packages) {
+      assertNull(mgr.getInProgressInstallOperation(pkg))
+    }
   }
 
   private open class RunningLoader<T : RepoPackage>(private val didRun: AtomicBoolean) : FakeLoader<T>() {

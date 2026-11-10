@@ -37,6 +37,7 @@ import com.android.repository.impl.meta.SchemaModuleUtil
 import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
 import kotlinx.coroutines.CancellationException
@@ -136,7 +137,7 @@ internal constructor(
   private val remoteListeners = CopyOnWriteArrayList<RepoLoadedListener>()
 
   /** Install/uninstall operations that are currently running. */
-  private val inProgressInstalls = mutableMapOf<RepoPackage, PackageOperation>()
+  private val inProgressInstalls = ConcurrentHashMap<RepoPackage, PackageOperation>()
 
   override fun getSources(downloader: Downloader?, progress: ProgressIndicator, forceRefresh: Boolean): List<RepositorySource> =
     sourceProviders.flatMap {
