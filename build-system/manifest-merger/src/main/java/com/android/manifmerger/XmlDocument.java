@@ -171,7 +171,7 @@ public class XmlDocument {
     }
 
     /**
-     * merge this higher priority document with a higher priority document.
+     * merge this higher priority document with a lower priority document.
      *
      * @param lowerPriorityDocument the lower priority document to merge in.
      * @param mergingReportBuilder the merging report to record errors and actions.
@@ -194,7 +194,7 @@ public class XmlDocument {
     }
 
     /**
-     * merge this higher priority document with a higher priority document.
+     * merge this higher priority document with a lower priority document.
      *
      * @param lowerPriorityDocument the lower priority document to merge in.
      * @param mergingReportBuilder the merging report to record errors and actions.
