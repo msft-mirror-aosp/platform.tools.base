@@ -52,5 +52,6 @@ class LocaleValueTest {
       // bytearray is utf-8 representation of 'tarask' followed by two null values
       // as it is 6 bytes in length but represented by 8 bytes.
       .isEqualTo(byteArrayOf(116, 97, 114, 97, 115, 107, 0, 0))
+    Truth.assertThat(resTableConfig.getBcp47Locale()).isEqualTo("be-tarask")
   }
 }

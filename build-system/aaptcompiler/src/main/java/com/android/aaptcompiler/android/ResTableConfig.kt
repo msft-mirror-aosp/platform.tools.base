@@ -1441,7 +1441,7 @@ open class ResTableConfig(
     }
 
     if (localeVariant[0] != 0.toByte()) {
-      var localeVariantEnd = localeScript.indexOf(0.toByte())
+      var localeVariantEnd = localeVariant.indexOf(0.toByte())
       if (localeVariantEnd == -1) {
         localeVariantEnd = localeVariant.size
       }

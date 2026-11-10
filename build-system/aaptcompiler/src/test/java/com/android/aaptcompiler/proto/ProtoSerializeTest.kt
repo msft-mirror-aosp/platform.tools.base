@@ -265,6 +265,8 @@ class ProtoSerializeTest {
     testSerializeDeserialize(parse("en"))
     testSerializeDeserialize(parse("en-rGB"))
     testSerializeDeserialize(parse("b+en+GB"))
+    testSerializeDeserialize(parse("b+ca+valencia"))
+    testSerializeDeserialize(parse("b+sr+Latn+RS+rozaj"))
 
     testSerializeDeserialize(parse("ldltr"))
     testSerializeDeserialize(parse("ldrtl"))
