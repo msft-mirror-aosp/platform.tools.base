@@ -317,13 +317,19 @@ bool Instrumenter::InstrumentMethod(
   // synthetic constructor that evaluates them and calls the primary one.
   const bool is_default_arguments_constructor =
       ConstructorAnalyzer::IsDefaultArgumentsConstructor(ir_method);
+  // It compiles those of function parameters into a synthetic $default method
+  // that evaluates them and calls the function.
+  constexpr std::string_view kDefaultSuffix = "$default";
+  const bool is_default_arguments_method =
+      filter_context.IsKotlinClass() && name.size() >= kDefaultSuffix.size() &&
+      name.substr(name.size() - kDefaultSuffix.size()) == kDefaultSuffix;
 
   // Skip synthetic compiler-generated methods unless they contain user lambdas,
   // Compose logic or default values.
   if (ir_method->access_flags & dex::kAccSynthetic) {
     // We allow synthetic methods if they are likely user-authored lambda bodies
     // or Compose helpers.
-    if (!is_default_arguments_constructor &&
+    if (!is_default_arguments_constructor && !is_default_arguments_method &&
         name.find("invoke") == std::string_view::npos &&
         name.find("lambda") == std::string_view::npos &&
         name.find("Composable") == std::string_view::npos) {
