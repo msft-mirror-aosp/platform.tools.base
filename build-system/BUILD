@@ -670,6 +670,7 @@ maven_repository(
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.guava.guava-testlib",
         "@maven//:com.google.guava.guava_33.3.1-jre",
+        "@maven//:com.google.guava.guava_33.6.0-jre",
         "@maven//:com.google.guava.guava_33.7.2-android",
         "@maven//:com.google.http-client.google-http-client-bom_1.42.0",
         "@maven//:com.google.http-client.google-http-client-bom_1.42.3",

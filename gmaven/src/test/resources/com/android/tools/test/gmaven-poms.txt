@@ -181,7 +181,7 @@ com.android.tools:play-sdk-proto:$BASE_VERSION
   pomName=com.android.tools.play-sdk-proto
   description=A protobuf message used for Google Play SDK Index
   dependencies:
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
 
 com.android.tools:repository:$BASE_VERSION
   pomName=com.android.tools.repository
@@ -204,7 +204,7 @@ com.android.tools:sdk-common:$BASE_VERSION
     com.android.tools:sdklib:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     javax.inject:javax.inject:1 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
     org.apache.commons:commons-compress:1.27.1 (runtime)
@@ -248,7 +248,7 @@ com.android.tools.adblib:adblib:$BUILD_VERSION
   dependencies:
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     at.yawk.lz4:lz4-java:1.11.4 (runtime)
 
 com.android.tools.adblib:adblib-ddmlibcompatibility:$BUILD_VERSION
@@ -269,7 +269,7 @@ com.android.tools.adblib:adblib-tools:$BUILD_VERSION
   description=Tooling for the library used to communicate with Android devices
   dependencies:
     com.android.tools.adblib:adblib:$BUILD_VERSION (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
@@ -292,13 +292,13 @@ com.android.tools.analytics-library:inspector:$BASE_VERSION
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
 
 com.android.tools.analytics-library:protos:$BASE_VERSION
   pomName=Android Tools Analytics Protobufs
   description=Library containing protobufs for usage analytics.
   dependencies:
-    com.google.protobuf:protobuf-java:3.25.5 (compile)
+    com.google.protobuf:protobuf-java:3.25.9 (compile)
 
 com.android.tools.analytics-library:publisher:$BASE_VERSION
   pomName=Android Tools Analytics Publisher
@@ -310,7 +310,7 @@ com.android.tools.analytics-library:publisher:$BASE_VERSION
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
 com.android.tools.analytics-library:shared:$BASE_VERSION
@@ -337,7 +337,7 @@ com.android.tools.analytics-library:testing:$BASE_VERSION
     com.android.tools:common:$BASE_VERSION (runtime)
     com.android.tools:testutils:$BASE_VERSION (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
 com.android.tools.analytics-library:tracker:$BASE_VERSION
@@ -349,7 +349,7 @@ com.android.tools.analytics-library:tracker:$BASE_VERSION
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
 
@@ -358,7 +358,7 @@ com.android.tools.androidtest:android-test-engine:$BUILD_VERSION
   description=A JUnit TestEngine for running Android instrumentation tests.
   dependencies:
     com.android.tools.androidtest:test-result-proto:$BUILD_VERSION (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
     org.junit.platform:junit-platform-engine:1.13.3 (runtime)
@@ -369,7 +369,7 @@ com.android.tools.androidtest:android-test-engine-result-listener:$BUILD_VERSION
   dependencies:
     com.android.tools.androidtest:test-result-event-proto:$BUILD_VERSION (runtime)
     com.android.tools.androidtest:test-result-proto:$BUILD_VERSION (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.junit.platform:junit-platform-engine:1.13.3 (runtime)
     org.junit.platform:junit-platform-launcher:1.13.3 (runtime)
@@ -378,13 +378,13 @@ com.android.tools.androidtest:test-result-event-proto:$BUILD_VERSION
   pomName=com.android.tools.androidtest.test-result-event-proto
   description=A protobuf messages used to listen test results
   dependencies:
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
 
 com.android.tools.androidtest:test-result-proto:$BUILD_VERSION
   pomName=com.android.tools.androidtest.test-result-proto
   description=Proto definitions for storing test results.
   dependencies:
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
 
 com.android.tools.apkdeployer:apkdeployer:$BUILD_VERSION
   pomName=com.android.tools.apkdeployer.apkdeployer
@@ -400,7 +400,7 @@ com.android.tools.apkdeployer:apkdeployer:$BUILD_VERSION
     com.android:zipflinger:$BUILD_VERSION (runtime)
     com.android.tools:r8 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     org.jetbrains:annotations:23.0.0 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
@@ -442,7 +442,7 @@ com.android.tools.build:aapt2-proto:$AAPT2_VERSION
   pomName=com.android.tools.build.aapt2-proto
   description=Android Asset Packaging Tool 2. Protocol Buffer Files
   dependencies:
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
 
 com.android.tools.build:aaptcompiler:$BUILD_VERSION
   pomName=com.android.tools.build.aaptcompiler
@@ -451,7 +451,7 @@ com.android.tools.build:aaptcompiler:$BUILD_VERSION
     com.android.tools.build:aapt2-proto:$AAPT2_VERSION (runtime)
     com.android.tools.layoutlib:layoutlib-api:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
     org.jetbrains.kotlin:kotlin-stdlib:2.2.10 (runtime)
 
@@ -547,8 +547,8 @@ com.android.tools.build:gradle:$BUILD_VERSION
     com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10 (runtime)
     com.squareup:javapoet:1.13.0 (runtime)
     org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.20 (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
-    com.google.protobuf:protobuf-java-util:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
+    com.google.protobuf:protobuf-java-util:3.25.9 (runtime)
     com.google.code.gson:gson:2.15.0 (runtime)
     com.google.crypto.tink:tink:1.15.0 (runtime)
     org.tensorflow:tensorflow-lite-metadata:0.4.4 (runtime)
@@ -626,7 +626,7 @@ com.android.tools.ddms:ddmlib:$BASE_VERSION
   description=Library providing APIs to talk to Android devices
   dependencies:
     com.android.tools:common:$BASE_VERSION (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
     org.jetbrains:annotations:23.0.0 (runtime)
 
@@ -636,12 +636,12 @@ com.android.tools.emulator:proto:$BASE_VERSION
   dependencies:
     com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    io.grpc:grpc-core:1.69.1 (runtime)
-    io.grpc:grpc-netty:1.69.1 (runtime)
-    io.grpc:grpc-protobuf:1.69.1 (runtime)
-    io.grpc:grpc-stub:1.69.1 (runtime)
+    io.grpc:grpc-core:1.85.1 (runtime)
+    io.grpc:grpc-netty:1.85.1 (runtime)
+    io.grpc:grpc-protobuf:1.85.1 (runtime)
+    io.grpc:grpc-stub:1.85.1 (runtime)
     javax.annotation:javax.annotation-api:1.3.2 (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
 
 com.android.tools.external.com-intellij:intellij-core:$BASE_VERSION
   pomName=com.android.tools.external.com-intellij.intellij-core
@@ -661,7 +661,7 @@ com.android.tools.fakeadbserver:fakeadbserver:$BASE_VERSION
   dependencies:
     com.android.tools:common:$BASE_VERSION (runtime)
     at.yawk.lz4:lz4-java:1.11.4 (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
     org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
@@ -737,7 +737,7 @@ com.android.tools.lint:lint-checks:$BASE_VERSION
     com.android.tools:sdklib:$BASE_VERSION (runtime)
     com.google.code.gson:gson:2.15.0 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     net.sf.kxml:kxml2:2.3.0 (runtime)
     org.ow2.asm:asm-analysis:9.11.1 (runtime)
 
@@ -810,7 +810,7 @@ com.android.tools.utp:gradle-work-action:$BASE_VERSION
     com.android.tools.androidtest:android-test-engine-result-listener:$BUILD_VERSION (runtime)
     com.android.tools.androidtest:android-test-engine:$BUILD_VERSION (runtime)
     com.android.tools.androidtest:test-result-proto:$BUILD_VERSION (runtime)
-    com.google.protobuf:protobuf-java:3.25.5 (runtime)
+    com.google.protobuf:protobuf-java:3.25.9 (runtime)
     org.junit.platform:junit-platform-engine:1.13.3 (runtime)
     org.junit.platform:junit-platform-launcher:1.13.3 (runtime)
     com.android.tools.utp:gradle-work-action-api:$BASE_VERSION (provided)

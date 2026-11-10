@@ -23,8 +23,16 @@ maven_repository(
     # keep sorted
     artifacts = [
         "//tools/base/journeys/journeys-junit-engine-test-support",
+        # The guava 33.6.0-android Gradle module metadata (from io.grpc 1.85.1)
+        # points JVM consumers at the 33.6.0-jre jar.
+        "@maven//:com.google.guava.guava_33.6.0-jre",
         "@maven//:com.google.http-client.google-http-client-bom_1.43.3",
         "@maven//:com.google.http-client.google-http-client-bom_1.45.0",
+        "@maven//:com.google.http-client.google-http-client-bom_2.1.0",
+        "@maven//:com.google.protobuf.protobuf-bom_3.25.8",
+        "@maven//:org.bouncycastle.bc-jdk18on-bom_1.84",
+        "@maven//:org.junit.junit-bom_5.11.4",
+        "@maven//:org.junit.junit-bom_5.14.1",
     ],
 )
 

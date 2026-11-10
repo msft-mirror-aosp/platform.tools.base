@@ -1057,6 +1057,7 @@ _CLASS_JARS = [
     "com.google.http-client:google-http-client-bom:pom:1.43.3",
     "com.google.http-client:google-http-client-bom:pom:1.45.0",
     "com.google.http-client:google-http-client-bom:pom:1.45.2",
+    "com.google.http-client:google-http-client-bom:pom:2.1.0",  # imported by com.google.auth:google-auth-library-parent:1.42.1
     "com.google.j2objc:j2objc-annotations:2.8",
     "com.google.jimfs:jimfs:1.2",
     "com.google.oauth-client:google-oauth-client-bom:pom:1.34.1",
@@ -1070,6 +1071,7 @@ _CLASS_JARS = [
     "com.google.protobuf:protobuf-bom:pom:3.22.3",
     "com.google.protobuf:protobuf-bom:pom:3.24.4",
     "com.google.protobuf:protobuf-bom:pom:3.25.5",
+    "com.google.protobuf:protobuf-bom:pom:3.25.8",  # imported by com.google.protobuf:protobuf-parent:3.25.8
     "com.google.protobuf:protobuf-bom:pom:4.27.2",
     "com.google.protobuf:protobuf-bom:pom:4.28.3",  # Used by Lightbuild (AGP 9.2.0) integration tests
     "com.google.protobuf:protobuf-bom:pom:4.33.2",
@@ -1077,6 +1079,7 @@ _CLASS_JARS = [
     "com.google.protobuf:protobuf-java:4.27.2",
     "com.google.protobuf:protobuf-java:4.28.3",
     "com.google.protobuf:protobuf-java:4.33.2",
+    "com.google.protobuf:protobuf-java-util:3.25.5",
     "com.google.protobuf:protobuf-java-util:4.27.2",
     "com.google.protobuf:protobuf-java-util:4.28.3",
     "com.google.protobuf:protobuf-java-util:4.33.2",
@@ -1194,6 +1197,7 @@ _CLASS_JARS = [
     "org.apache.maven.resolver:maven-resolver-transport-file:1.9.18",
     "org.apache.maven.resolver:maven-resolver-transport-http:1.9.18",
     "org.apache.maven.resolver:maven-resolver-util:1.9.18",
+    "org.bouncycastle:bc-jdk18on-bom:pom:1.84",  # imported by io.netty:netty-parent:4.2.17.Final
     "org.bouncycastle:bcprov-jdk16:1.46",
     "org.bouncycastle:bcprov-jdk18on:1.77",
     "org.brotli:dec:0.1.2",
@@ -1631,6 +1635,8 @@ _CLASS_JARS = [
     "org.junit:junit-bom:pom:5.10.1",
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.11.0-M2",
+    "org.junit:junit-bom:pom:5.11.4",  # imported by com.google.auth:google-auth-library-parent:1.42.1
+    "org.junit:junit-bom:pom:5.14.1",  # imported by org.codehaus.mojo:mojo-parent:95
     "org.junit:junit-bom:pom:5.14.2",  # imported by org.apache.commons:commons-parent:98
     "org.junit:junit-bom:pom:5.14.4",  # imported by org.apache.commons:commons-parent:105
     "org.junit:junit-bom:pom:5.9.2",
@@ -1692,17 +1698,17 @@ _SOURCE_JARS = [
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "dev.sebastiano.spectre:spectre-core:jar:sources:0.7.1",
     "dev.sebastiano.spectre:spectre-input-coordinator:jar:sources:0.7.1",
-    "io.grpc:grpc-api:jar:sources:1.69.1",
-    "io.grpc:grpc-auth:jar:sources:1.69.1",
-    "io.grpc:grpc-context:jar:sources:1.69.1",
-    "io.grpc:grpc-core:jar:sources:1.69.1",
-    "io.grpc:grpc-inprocess:jar:sources:1.69.1",
-    "io.grpc:grpc-netty:jar:sources:1.69.1",
-    "io.grpc:grpc-netty-shaded:jar:sources:1.69.1",
-    "io.grpc:grpc-okhttp:jar:sources:1.69.1",
-    "io.grpc:grpc-protobuf:jar:sources:1.69.1",
-    "io.grpc:grpc-protobuf-lite:jar:sources:1.69.1",
-    "io.grpc:grpc-stub:jar:sources:1.69.1",
+    "io.grpc:grpc-api:jar:sources:1.85.1",
+    "io.grpc:grpc-auth:jar:sources:1.85.1",
+    "io.grpc:grpc-context:jar:sources:1.85.1",
+    "io.grpc:grpc-core:jar:sources:1.85.1",
+    "io.grpc:grpc-inprocess:jar:sources:1.85.1",
+    "io.grpc:grpc-netty:jar:sources:1.85.1",
+    "io.grpc:grpc-netty-shaded:jar:sources:1.85.1",
+    "io.grpc:grpc-okhttp:jar:sources:1.85.1",
+    "io.grpc:grpc-protobuf:jar:sources:1.85.1",
+    "io.grpc:grpc-protobuf-lite:jar:sources:1.85.1",
+    "io.grpc:grpc-stub:jar:sources:1.85.1",
     "junit:junit:jar:sources:4.13.2",
     "org.brotli:dec:jar:sources:0.1.2",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:jar:sources:1.0.0",

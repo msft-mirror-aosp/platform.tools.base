@@ -339,6 +339,8 @@ java_jarjar(
         "@maven//:io.grpc.grpc-util",
         "@maven//:io.netty.netty-buffer",
         "@maven//:io.netty.netty-codec",
+        "@maven//:io.netty.netty-codec-base",
+        "@maven//:io.netty.netty-codec-compression",
         "@maven//:io.netty.netty-codec-http",
         "@maven//:io.netty.netty-codec-http2",
         "@maven//:io.netty.netty-codec-socks",
