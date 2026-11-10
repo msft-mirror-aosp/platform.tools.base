@@ -534,4 +534,55 @@ class TestSystemImages(val sdkHandler: AndroidSdkHandler) {
 """,
       )
     }
+
+  val apiCanary20261007 =
+    TestSystemImage("android-canary-20261007/google_apis/x86_64") {
+      write("system.img")
+      createDirectories("data")
+      // Note that we must use the current schema version here ("/04") for multiple ABIs to work.
+      write(
+        "package.xml",
+        """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns3:sdk-sys-img xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/03"
+                 xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/05"
+                 xmlns:ns4="http://schemas.android.com/repository/android/common/02"
+                 xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/03">
+    <localPackage path="system-images;android-canary-20261007;google_apis;x86_64" obsolete="false">
+        <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns3:sysImgDetailsType">
+            <api-level>37.2</api-level>
+            <canary-number>20261007</canary-number>
+            <codename>CANARY</codename>
+            <extension-level>24</extension-level>
+            <base-extension>true</base-extension>
+            <tag>
+                <id>google_apis</id>
+                <display>Google APIs</display>
+            </tag>
+            <vendor>
+                <id>google</id>
+                <display>Google Inc.</display>
+            </vendor>
+            <abi>x86_64</abi>
+            <abis>x86_64</abis>
+            <translatedAbis>arm64-v8a</translatedAbis>
+        </type-details>
+        <revision>
+            <major>7</major>
+        </revision>
+        <display-name>Google APIs Intel x86_64 Atom System Image</display-name>
+        <uses-license ref="android-sdk-license"/>
+        <dependencies>
+            <dependency path="emulator">
+                <min-revision>
+                    <major>35</major>
+                    <minor>4</minor>
+                    <micro>9</micro>
+                </min-revision>
+            </dependency>
+        </dependencies>
+    </localPackage>
+</ns3:sdk-sys-img>
+""",
+      )
+    }
 }

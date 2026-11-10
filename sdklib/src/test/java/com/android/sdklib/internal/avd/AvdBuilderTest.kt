@@ -17,6 +17,7 @@ package com.android.sdklib.internal.avd
 
 import com.android.prefs.AbstractAndroidLocations
 import com.android.resources.ScreenOrientation
+import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.PathFileWrapper
 import com.android.sdklib.devices.Abi
 import com.android.sdklib.devices.DeviceManager
@@ -251,5 +252,18 @@ class AvdBuilderTest {
     assertThat(environmentIni.exists()).isTrue()
     val envProps = AvdManager.parseIniFile(PathFileWrapper(environmentIni), null)
     assertThat(envProps).containsExactly(EnvironmentKey.SCENE_MODE, "image360:${PathUtils.toSystemIndependentPath(backgroundFile)}")
+  }
+
+  @Test
+  fun createCanaryAvd() {
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val androidCanary = testSystemImages.apiCanary20261007.image
+
+    val avdBuilder = avdManager.createAvdBuilder(deviceManager.getDevice("medium_phone", "Generic")!!)
+    avdBuilder.systemImage = androidCanary
+
+    val avdInfo = avdManager.createAvd(avdBuilder)
+    assertThat(avdInfo.androidVersion.canaryNumber).isEqualTo(20261007)
+    assertThat(avdInfo.androidVersion.androidApiLevel).isEqualTo(AndroidApiLevel(37, 2))
   }
 }

@@ -103,7 +103,10 @@ data class AvdInfo(
   }
 
   val androidVersion: AndroidVersion
-    get() = getProperty(ConfigKey.TARGET)?.let { AndroidTargetHash.getPlatformVersion(it) } ?: AndroidVersion.DEFAULT
+    get() =
+      systemImage?.androidVersion
+        ?: getProperty(ConfigKey.TARGET)?.let { AndroidTargetHash.getPlatformVersion(it) }
+        ?: AndroidVersion.DEFAULT
 
   val cpuArch: String
     get() = properties[ConfigKey.CPU_ARCH] ?: SdkConstants.CPU_ARCH_ARM
