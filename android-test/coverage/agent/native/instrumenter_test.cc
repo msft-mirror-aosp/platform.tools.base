@@ -32,10 +32,16 @@
 extern "C" const unsigned char instrumenter_test_target_dex[];
 extern "C" const long long instrumenter_test_target_dex_len;
 
+// testdata/com/example/InstrumenterTestKotlinTarget.kt, compiled to dex.
+extern "C" const unsigned char instrumenter_test_kotlin_target_dex[];
+extern "C" const long long instrumenter_test_kotlin_target_dex_len;
+
 namespace coverage {
 namespace {
 
 constexpr char kTargetClass[] = "Lcom/example/InstrumenterTestTarget;";
+constexpr char kKotlinTargetClass[] =
+    "Lcom/example/InstrumenterTestKotlinTarget;";
 
 // Lines of InstrumenterTestTarget.java.
 constexpr int kIgnoredCallGeneratedLine = 31;
@@ -114,18 +120,21 @@ class TestFilter : public IFilter {
 
 REGISTER_NON_KOTLIN_FILTER(TestFilter)
 
-// Instruments the target class once. Returns the metadata of its method named
-// `name`, or nullptr if that method was not instrumented.
-const proto::MethodMetadata* InstrumentedMethod(std::string_view name) {
+// Instruments the target classes once. Returns the metadata of the method named
+// `name` of `class_name`, or nullptr if that method was not instrumented.
+const proto::MethodMetadata* InstrumentedMethod(
+    std::string_view name, std::string_view class_name = kTargetClass) {
   static const proto::CoverageMetadata* const metadata = [] {
     Instrumenter instrumenter(/*jvmti=*/nullptr, "com/example");
     instrumenter.AddUnloadedClasses(instrumenter_test_target_dex,
                                     instrumenter_test_target_dex_len);
+    instrumenter.AddUnloadedClasses(instrumenter_test_kotlin_target_dex,
+                                    instrumenter_test_kotlin_target_dex_len);
     return new proto::CoverageMetadata(
         MetadataCollector::Instance().BuildMetadata());
   }();
   for (const auto& class_meta : metadata->classes()) {
-    if (class_meta.class_name() != kTargetClass) {
+    if (class_meta.class_name() != class_name) {
       continue;
     }
     for (const auto& method : class_meta.methods()) {
@@ -220,6 +229,31 @@ TEST(InstrumenterTest, MethodWithNothingToReportIsSkipped) {
   // The other methods of the class are instrumented.
   ASSERT_NE(InstrumentedMethod("user"), nullptr);
   EXPECT_EQ(InstrumentedMethod("allIgnored"), nullptr);
+}
+
+TEST(InstrumenterTest, DefaultArgumentsMethodIsInstrumented) {
+  // greet$default checks whether to use the default value of `name`. The jump
+  // of that check is ignored, and the default value is counted.
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("greet$default", kKotlinTargetClass);
+  ASSERT_NE(method, nullptr);
+  uint32_t instructions = 0;
+  for (const auto& block : method->blocks()) {
+    EXPECT_LE(block.branch_count(), 1u);
+    for (const auto& line : block.lines()) {
+      instructions += line.instruction_count();
+    }
+  }
+  // and-int/lit8, const-string, invoke-virtual, move-result-object and
+  // return-object.
+  EXPECT_EQ(instructions, 5u);
+}
+
+TEST(InstrumenterTest, OtherSyntheticMethodsAreSkipped) {
+  // The other methods of the class are instrumented.
+  ASSERT_NE(InstrumentedMethod("greet", kKotlinTargetClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("access$getCount$p", kKotlinTargetClass),
+            nullptr);
 }
 
 }  // namespace
