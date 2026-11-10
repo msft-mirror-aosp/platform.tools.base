@@ -17,14 +17,20 @@
 #ifndef COVERAGE_AGENT_KOTLIN_GENERATED_FILTER_H_
 #define COVERAGE_AGENT_KOTLIN_GENERATED_FILTER_H_
 
-#include "filter_interface.h"
+#include "tools/base/android-test/coverage/agent/native/filter_interface.h"
 
 namespace coverage {
 
+/**
+ * Filters the code that the Kotlin compiler generates without line numbers:
+ * the methods without line numbers, such as the methods of data classes, and
+ * the code before the first line number of the other methods, such as the
+ * checks that parameters are not null.
+ */
 class KotlinGeneratedFilter : public IFilter {
  public:
-  bool FilterBranch(ir::EncodedMethod* ir_method,
-                    lir::Instruction* branch_instr) override;
+  void Filter(const FilterContext& context, ir::EncodedMethod* ir_method,
+              lir::CodeIr& code_ir, FilterOutput& output) override;
 };
 
 }  // namespace coverage
