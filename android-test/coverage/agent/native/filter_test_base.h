@@ -41,12 +41,22 @@ class TestMethod {
   // "(Ljava/lang/String;)V".
   TestMethod(const char* name, const char* signature);
 
+  // Creates a method with the given name and JNI signature whose code is
+  // disassembled from `bytecode`, with debug information that starts at line
+  // `line_start` and continues with the opcodes `debug_info`.
+  TestMethod(const char* name, const char* signature,
+             std::vector<dex::u2> bytecode, dex::u4 line_start,
+             std::vector<dex::u1> debug_info);
+
   TestMethod(const TestMethod&) = delete;
   TestMethod& operator=(const TestMethod&) = delete;
 
   // Appends a bytecode and returns it.
   lir::Bytecode* Add(dex::Opcode opcode,
                      std::vector<lir::Operand*> operands = {});
+
+  // Appends the annotation of line number `line` and returns it.
+  lir::DbgInfoAnnotation* AddLine(int line);
 
   // Returns a new label, which Place() appends.
   lir::Label* NewLabel();
@@ -62,7 +72,8 @@ class TestMethod {
   // Returns the last instruction appended.
   lir::Instruction* Last() const { return last_; }
 
-  // Returns the position of `instr` in the code, counting labels, or -1.
+  // Returns the position of `instr` in the code, counting labels and
+  // annotations, or -1.
   int IndexOf(const lir::Instruction* instr) const;
 
   // Operands, in the order that the bytecode format takes them.
@@ -89,6 +100,9 @@ class TestMethod {
   ir::EncodedMethod* ir_method_;
   std::unique_ptr<lir::CodeIr> code_ir_;
   lir::Instruction* last_ = nullptr;
+  // What the code of the method is disassembled from, if anything.
+  std::vector<dex::u2> bytecode_;
+  std::vector<dex::u1> debug_info_;
 };
 
 // Base class for tests of IFilter implementations. Tests build a TestMethod,

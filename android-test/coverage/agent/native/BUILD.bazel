@@ -124,6 +124,7 @@ cc_test(
         "hits_extractor_test.cc",
         "kotlin_compose_filter_test.cc",
         "kotlin_coroutine_filter_test.cc",
+        "kotlin_generated_filter_test.cc",
         "kotlin_lateinit_filter_test.cc",
         "metadata_collector_test.cc",
     ],

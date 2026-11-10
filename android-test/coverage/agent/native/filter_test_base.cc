@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include "slicer/code_ir.h"
 #include "slicer/common.h"
+#include "slicer/dex_format.h"
 #include "slicer/dex_ir.h"
 #include "slicer/dex_ir_builder.h"
 
@@ -42,6 +43,26 @@ TestMethod::TestMethod(const char* name, const char* signature)
   ir_method_->code = dex_ir_->Alloc<ir::Code>();
 }
 
+TestMethod::TestMethod(const char* name, const char* signature,
+                       std::vector<dex::u2> bytecode, dex::u4 line_start,
+                       std::vector<dex::u1> debug_info)
+    : TestMethod(name, signature) {
+  bytecode_ = std::move(bytecode);
+  debug_info_ = std::move(debug_info);
+  // The disassembler reads the source file of the class.
+  ir::Type* type = ir_method_->decl->parent;
+  type->class_def = dex_ir_->Alloc<ir::Class>();
+  type->class_def->type = type;
+  ir::Code* code = ir_method_->code;
+  code->instructions =
+      slicer::ArrayView<const dex::u2>(bytecode_.data(), bytecode_.size());
+  code->debug_info = dex_ir_->Alloc<ir::DebugInfo>();
+  code->debug_info->line_start = line_start;
+  code->debug_info->data =
+      slicer::MemView(debug_info_.data(), debug_info_.size());
+  code_ir_ = std::make_unique<lir::CodeIr>(ir_method_, dex_ir_);
+}
+
 lir::Bytecode* TestMethod::Add(dex::Opcode opcode,
                                std::vector<lir::Operand*> operands) {
   auto* bytecode = code_ir_->Alloc<lir::Bytecode>();
@@ -50,6 +71,15 @@ lir::Bytecode* TestMethod::Add(dex::Opcode opcode,
   code_ir_->instructions.push_back(bytecode);
   last_ = bytecode;
   return bytecode;
+}
+
+lir::DbgInfoAnnotation* TestMethod::AddLine(int line) {
+  auto* annotation =
+      code_ir_->Alloc<lir::DbgInfoAnnotation>(dex::DBG_ADVANCE_LINE);
+  annotation->operands.push_back(code_ir_->Alloc<lir::LineNumber>(line));
+  code_ir_->instructions.push_back(annotation);
+  last_ = annotation;
+  return annotation;
 }
 
 lir::Label* TestMethod::NewLabel() {
