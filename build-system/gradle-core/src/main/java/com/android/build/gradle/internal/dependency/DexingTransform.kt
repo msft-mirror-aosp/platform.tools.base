@@ -20,10 +20,14 @@ import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.withR8ClassLoader
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.services.BaseServices
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.tasks.creationconfig.DexMergingCreationConfig
 import com.android.build.gradle.internal.utils.DesugarConfigJson.Companion.combineFileContents
 import com.android.build.gradle.options.BooleanOption
@@ -32,12 +36,9 @@ import com.android.build.gradle.tasks.toSerializable
 import com.android.builder.dexing.ClassFileInput
 import com.android.builder.dexing.ClassFileInputs
 import com.android.builder.dexing.DependencyGraphUpdater
-import com.android.builder.dexing.DexArchiveBuilder
 import com.android.builder.dexing.DexFilePerClassFile
-import com.android.builder.dexing.DexParameters
 import com.android.builder.dexing.MutableDependencyGraph
 import com.android.builder.dexing.isJarFile
-import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.builder.files.SerializableFileChanges
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
@@ -91,6 +92,11 @@ abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : Transfo
      */
     @get:Input val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
     @get:Input val enableApiModeling: Property<Boolean>
+
+    /** Maven-resolved R8 to dex with, or empty to use the R8 bundled with AGP. */
+    @get:Classpath val r8Classpath: ConfigurableFileCollection
+
+    @get:Internal val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
   }
 
   @get:Inject abstract val inputChanges: InputChanges
@@ -241,31 +247,36 @@ abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : Transfo
     provideIncrementalSupport: Boolean,
     desugarGraph: DesugarGraph?, // Not-null iff provideIncrementalSupport == true
   ) {
-    @Suppress("UnstableApiUsage")
-    Closer.create().use { closer ->
-      val d8DexBuilder =
-        DexArchiveBuilder.createD8DexBuilder(
-          DexParameters(
-            minSdkVersion = parameters.minSdkVersion.get(),
-            debuggable = parameters.debuggable.get(),
-            // dexPerClass iff provideIncrementalSupport == true
-            dexPerClass = provideIncrementalSupport,
-            withDesugaring = parameters.enableDesugaring.get(),
-            desugarBootclasspath = ClassFileProviderFactory(parameters.bootClasspath.files.map(File::toPath)).also { closer.register(it) },
-            desugarClasspath = ClassFileProviderFactory(classpath?.map(File::toPath) ?: emptyList()).also { closer.register(it) },
-            coreLibDesugarConfig = combineFileContents(parameters.desugarLibConfigFiles.files),
-            enableApiModeling = parameters.enableApiModeling.get(),
-            messageReceiver = MessageReceiverImpl(parameters.errorFormat.get(), LoggerFactory.getLogger(BaseDexingTransform::class.java)),
-            useNoOpGlobalSyntheticsConsumer = parameters.useNoOpGlobalSyntheticsConsumer.get(),
-          )
-        )
+    withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
+      val r8Tools = createR8Tools(r8ClassLoader)
+      wrapIsolatedR8Failures(r8ClassLoader) {
+        @Suppress("UnstableApiUsage")
+        Closer.create().use { closer ->
+          val d8DexBuilder =
+            r8Tools.createD8DexBuilder(
+              minSdkVersion = parameters.minSdkVersion.get(),
+              debuggable = parameters.debuggable.get(),
+              // dexPerClass iff provideIncrementalSupport == true
+              dexPerClass = provideIncrementalSupport,
+              withDesugaring = parameters.enableDesugaring.get(),
+              desugarBootclasspath =
+                r8Tools.createClassFileProviderFactory(parameters.bootClasspath.files.map(File::toPath)).also { closer.register(it) },
+              desugarClasspath =
+                r8Tools.createClassFileProviderFactory(classpath?.map(File::toPath) ?: emptyList()).also { closer.register(it) },
+              coreLibDesugarConfig = combineFileContents(parameters.desugarLibConfigFiles.files),
+              enableApiModeling = parameters.enableApiModeling.get(),
+              messageReceiver = MessageReceiverImpl(parameters.errorFormat.get(), LoggerFactory.getLogger(BaseDexingTransform::class.java)),
+              useNoOpGlobalSyntheticsConsumer = parameters.useNoOpGlobalSyntheticsConsumer.get(),
+            )
 
-      ClassFileInputs.fromPath(inputDirOrJar.toPath()).use { classFileInput ->
-        classFileInput
-          .entries { rootPath, relativePath -> inputFilter(rootPath.toFile(), relativePath) }
-          .use { classesInput ->
-            d8DexBuilder.convert(classesInput, dexOutputDir.toPath(), globalSyntheticsOutputDir?.toPath(), desugarGraph)
+          ClassFileInputs.fromPath(inputDirOrJar.toPath()).use { classFileInput ->
+            classFileInput
+              .entries { rootPath, relativePath -> inputFilter(rootPath.toFile(), relativePath) }
+              .use { classesInput ->
+                d8DexBuilder.convert(classesInput, dexOutputDir.toPath(), globalSyntheticsOutputDir?.toPath(), desugarGraph)
+              }
           }
+        }
       }
     }
   }
@@ -402,6 +413,8 @@ object DexingRegistration {
     val desugarLibConfigFiles: FileCollection,
     val disableIncrementalDexing: Boolean,
     val components: List<ComponentCreationConfig>,
+    val r8Classpath: FileCollection?,
+    val r8ClassloaderBuildService: Provider<R8ClassloaderBuildService>,
   )
 
   /**
@@ -539,6 +552,8 @@ object DexingRegistration {
         enableGlobalSynthetics.set(component.enableGlobalSynthetics)
         useNoOpGlobalSyntheticsConsumer.set(component.useNoOpGlobalSyntheticsConsumer)
         enableApiModeling.set(component.enableApiModeling)
+        allComponents.r8Classpath?.let { r8Classpath.from(it) }
+        r8ClassloaderBuildService.set(allComponents.r8ClassloaderBuildService)
       }
       // There are 2 transform flows for DEX:
       //   1. (JACOCO_)CLASSES_DIR -> (JACOCO_)CLASSES -> DEX

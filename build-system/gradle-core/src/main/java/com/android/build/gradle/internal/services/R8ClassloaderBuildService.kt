@@ -58,14 +58,19 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
 
   companion object {
     /**
-     * Types that appear in `runR8` signature, directly or inside another type, and that don't touch com.android.tools.r8.*. If one did
-     * reference R8, the parent copy would link to the bundled R8 instead of the downloaded one. Anything that touches R8 must be loaded by
-     * the child, so it links against the maven downloaded R8 The isolated loader takes these from the parent (AGP's) loader, so AGP can
-     * pass its own objects to the child-loaded `builder-r8` code. Nested classes (e.g. `KeepRuleFile$MavenOrigin`) are matched by their
-     * outer class.
+     * Types that appear in `R8Tools` signatures (e.g. `runR8`, or the D8 dex builder and the class file entries it reads), directly or
+     * inside another type, and that don't touch com.android.tools.r8.*. If one did reference R8, the parent copy would link to the bundled
+     * R8 instead of the downloaded one. Anything that touches R8 must be loaded by the child, so it links against the maven downloaded R8.
+     * The isolated loader takes these from the parent (AGP's) loader, so AGP can pass its own objects to the child-loaded `builder-r8`
+     * code. Nested classes (e.g. `KeepRuleFile$MavenOrigin`) are matched by their outer class.
      */
     private val PARENT_DELEGATED_DEXING_CLASSES =
       setOf(
+        "com.android.builder.dexing.ClassFileEntry",
+        "com.android.builder.dexing.ClassFileInput",
+        "com.android.builder.dexing.DependencyGraphUpdater",
+        "com.android.builder.dexing.DexArchiveBuilder",
+        "com.android.builder.dexing.DexArchiveBuilderException",
         "com.android.builder.dexing.KeepRuleFile",
         "com.android.builder.dexing.KeepRulesConfig",
         "com.android.builder.dexing.L8OutputMode",
@@ -106,6 +111,15 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
   }
 
   private class R8ClassLoader(urls: Array<URL>, parent: ClassLoader) : URLClassLoader(urls, parent) {
+    companion object {
+      init {
+        // Many parallel D8 workers share one cached R8ClassLoader. Registering it as parallel capable makes getClassLoadingLock() return a
+        // lock per class name instead of locking the whole loader, so workers loading different classes don't block each other. This must
+        // run in R8ClassLoader's static initializer (Kotlin puts companion init blocks there).
+        registerAsParallelCapable()
+      }
+    }
+
     override fun loadClass(name: String, resolve: Boolean): Class<*> {
       synchronized(getClassLoadingLock(name)) {
         var c = findLoadedClass(name)

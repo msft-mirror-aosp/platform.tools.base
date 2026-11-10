@@ -17,11 +17,15 @@
 package com.android.build.gradle.internal.dexing
 
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
+import com.android.builder.dexing.ClassFileInputs
+import com.android.builder.dexing.DexArchiveBuilder
+import com.android.builder.dexing.DexArchiveBuilderException
 import com.android.builder.dexing.KeepRulesConfig
 import com.android.builder.dexing.L8OutputMode
 import com.android.builder.dexing.MainDexListConfig
 import com.android.builder.dexing.ProguardConfig
 import com.android.builder.dexing.R8OutputType
+import com.android.builder.dexing.R8Tools
 import com.android.builder.dexing.R8ToolsImpl
 import com.android.builder.dexing.ToolConfig
 import com.android.ide.common.blame.Message
@@ -31,6 +35,7 @@ import com.android.testutils.TestUtils
 import com.android.testutils.truth.DexSubject.assertThatDex
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
+import java.io.Closeable
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -220,6 +225,71 @@ class CreateR8ToolsTest {
       assertThat(withDesugarLib).containsExactlyElementsIn(bundled.generateDesugaredMethods(desugarLibConfig, setOf(androidJar), 21))
     }
   }
+
+  @Test
+  fun createD8DexBuilder_throughIsolatedClassLoader() {
+    val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
+    val tmp = temporaryFolder.root.toPath()
+    val inputJar = tmp.resolve("input.jar")
+    writeClassUsingOptional(inputJar)
+    val brokenJar = tmp.resolve("broken.jar")
+    JarOutputStream(Files.newOutputStream(brokenJar)).use { out ->
+      out.putNextEntry(JarEntry("test/Broken.class"))
+      out.write(byteArrayOf(1, 2, 3, 4))
+      out.closeEntry()
+    }
+    val dexDir = temporaryFolder.newFolder("dex").toPath()
+
+    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+      val r8Tools = createR8Tools(isolatedLoader)
+      r8Tools.createClassFileProviderFactory(listOf(androidJar)).use { bootclasspath ->
+        r8Tools.createClassFileProviderFactory(emptyList()).use { classpath ->
+          // The providers and the builder are loaded next to the isolated R8...
+          assertThat(bootclasspath.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
+          val dexBuilder = createD8DexBuilder(r8Tools, bootclasspath, classpath)
+          assertThat(dexBuilder.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
+          // ...but the builder is still AGP's DexArchiveBuilder type, so AGP can call it without reflection.
+          assertThat(dexBuilder).isInstanceOf(DexArchiveBuilder::class.java)
+
+          ClassFileInputs.fromPath(inputJar).use { input ->
+            input.entries { _, _ -> true }.use { entries -> dexBuilder.convert(entries, dexDir, null) }
+          }
+          assertThatDex(dexDir.resolve("classes.dex").toFile()).containsClass("Ltest/App;")
+
+          // D8 failures surface as AGP's own DexArchiveBuilderException, which AGP catches when reporting dexing errors.
+          ClassFileInputs.fromPath(brokenJar).use { input ->
+            input
+              .entries { _, _ -> true }
+              .use { entries ->
+                assertThrows(DexArchiveBuilderException::class.java) {
+                  dexBuilder.convert(entries, temporaryFolder.newFolder("broken_dex").toPath(), null)
+                }
+              }
+          }
+
+          // Class path providers from another ClassLoader are rejected with a clear message rather than a ClassCastException.
+          createR8Tools(null).createClassFileProviderFactory(emptyList()).use { agpProvider ->
+            val e = assertThrows(IllegalArgumentException::class.java) { createD8DexBuilder(r8Tools, agpProvider, classpath) }
+            assertThat(e.message).contains("same ClassLoader")
+          }
+        }
+      }
+    }
+  }
+
+  private fun createD8DexBuilder(r8Tools: R8Tools, desugarBootclasspath: Closeable, desugarClasspath: Closeable): DexArchiveBuilder =
+    r8Tools.createD8DexBuilder(
+      minSdkVersion = 21,
+      debuggable = true,
+      dexPerClass = false,
+      withDesugaring = true,
+      desugarBootclasspath = desugarBootclasspath,
+      desugarClasspath = desugarClasspath,
+      coreLibDesugarConfig = null,
+      enableApiModeling = false,
+      messageReceiver = noOpMessageReceiver,
+      useNoOpGlobalSyntheticsConsumer = false,
+    )
 
   /** Writes a jar with `test.App`, whose `static Object get()` returns `java.util.Optional.empty()`. */
   private fun writeClassUsingOptional(jar: Path) {

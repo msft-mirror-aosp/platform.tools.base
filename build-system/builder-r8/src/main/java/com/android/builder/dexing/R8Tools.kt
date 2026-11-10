@@ -17,6 +17,7 @@
 package com.android.builder.dexing
 
 import com.android.ide.common.blame.MessageReceiver
+import java.io.Closeable
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
@@ -87,4 +88,29 @@ interface R8Tools {
 
   /** Same parameters as D8DesugaredMethodsGenerator.generate, so the implementation just forwards them. */
   fun generateDesugaredMethods(coreLibDesugarConfig: String?, bootclasspath: Set<File>, minSdkVersion: Int): List<String>
+
+  /**
+   * Creates a provider of the classes in [paths] for D8 desugaring: a ClassFileProviderFactory from this implementation's ClassLoader.
+   *
+   * ClassFileProviderFactory uses R8 types, so it can't be shared with AGP's ClassLoader and is returned as a [Closeable]. Only pass it to
+   * [createD8DexBuilder] of an [R8Tools] from the same ClassLoader, and close it after all dex builders using it are done.
+   */
+  fun createClassFileProviderFactory(paths: Collection<Path>): Closeable
+
+  /**
+   * Creates a D8 [DexArchiveBuilder]. The parameters are the same as DexParameters, except that [desugarBootclasspath] and
+   * [desugarClasspath] must come from [createClassFileProviderFactory] of an [R8Tools] from the same ClassLoader.
+   */
+  fun createD8DexBuilder(
+    minSdkVersion: Int,
+    debuggable: Boolean,
+    dexPerClass: Boolean,
+    withDesugaring: Boolean,
+    desugarBootclasspath: Closeable,
+    desugarClasspath: Closeable,
+    coreLibDesugarConfig: String?,
+    enableApiModeling: Boolean,
+    messageReceiver: MessageReceiver,
+    useNoOpGlobalSyntheticsConsumer: Boolean,
+  ): DexArchiveBuilder
 }

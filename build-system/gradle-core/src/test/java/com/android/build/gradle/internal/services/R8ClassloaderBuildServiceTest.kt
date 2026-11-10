@@ -66,12 +66,36 @@ class R8ClassloaderBuildServiceTest {
         .isSameInstanceAs(com.android.builder.dexing.KeepRulesConfig::class.java)
       assertThat(classLoader.loadClass("com.android.builder.dexing.L8OutputMode"))
         .isSameInstanceAs(com.android.builder.dexing.L8OutputMode::class.java)
+      // The D8 dex builder and the types AGP passes to it or catches from it.
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveBuilder"))
+        .isSameInstanceAs(com.android.builder.dexing.DexArchiveBuilder::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveBuilder\$Companion"))
+        .isSameInstanceAs(com.android.builder.dexing.DexArchiveBuilder.Companion::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.ClassFileEntry"))
+        .isSameInstanceAs(com.android.builder.dexing.ClassFileEntry::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.ClassFileInput"))
+        .isSameInstanceAs(com.android.builder.dexing.ClassFileInput::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DependencyGraphUpdater"))
+        .isSameInstanceAs(com.android.builder.dexing.DependencyGraphUpdater::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveBuilderException"))
+        .isSameInstanceAs(com.android.builder.dexing.DexArchiveBuilderException::class.java)
 
       // Still child-first: the code that actually calls R8.
       assertThat(classLoader.loadClass("com.android.builder.dexing.R8Tool").classLoader).isSameInstanceAs(classLoader)
       assertThat(classLoader.loadClass("com.android.builder.dexing.L8Tool").classLoader).isSameInstanceAs(classLoader)
       assertThat(classLoader.loadClass("com.android.builder.dexing.TraceReferenceToolKt").classLoader).isSameInstanceAs(classLoader)
       assertThat(classLoader.loadClass("com.android.builder.dexing.D8DesugaredMethodsGenerator").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.D8DexArchiveBuilder").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexParameters").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.r8.ClassFileProviderFactory").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.MutableDependencyGraph").classLoader).isSameInstanceAs(classLoader)
+    }
+  }
+
+  @Test
+  fun testClassLoaderIsParallelCapable() {
+    R8ClassloaderBuildService.createClassLoader(setOf(jar1)).use { classLoader ->
+      assertThat(classLoader.isRegisteredAsParallelCapable).isTrue()
     }
   }
 

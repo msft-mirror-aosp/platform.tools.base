@@ -16,7 +16,9 @@
 
 package com.android.builder.dexing
 
+import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.ide.common.blame.MessageReceiver
+import java.io.Closeable
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
@@ -133,4 +135,42 @@ class R8ToolsImpl : R8Tools {
 
   override fun generateDesugaredMethods(coreLibDesugarConfig: String?, bootclasspath: Set<File>, minSdkVersion: Int): List<String> =
     D8DesugaredMethodsGenerator.generate(coreLibDesugarConfig, bootclasspath, minSdkVersion)
+
+  override fun createClassFileProviderFactory(paths: Collection<Path>): Closeable = ClassFileProviderFactory(paths)
+
+  override fun createD8DexBuilder(
+    minSdkVersion: Int,
+    debuggable: Boolean,
+    dexPerClass: Boolean,
+    withDesugaring: Boolean,
+    desugarBootclasspath: Closeable,
+    desugarClasspath: Closeable,
+    coreLibDesugarConfig: String?,
+    enableApiModeling: Boolean,
+    messageReceiver: MessageReceiver,
+    useNoOpGlobalSyntheticsConsumer: Boolean,
+  ): DexArchiveBuilder =
+    // Not DexArchiveBuilder.createD8DexBuilder: DexArchiveBuilder is loaded by AGP's ClassLoader, so its factory would create AGP's own
+    // D8DexArchiveBuilder, which can't take the DexParameters from this ClassLoader.
+    D8DexArchiveBuilder(
+      DexParameters(
+        minSdkVersion = minSdkVersion,
+        debuggable = debuggable,
+        dexPerClass = dexPerClass,
+        withDesugaring = withDesugaring,
+        desugarBootclasspath = desugarBootclasspath.asClassFileProviderFactory(),
+        desugarClasspath = desugarClasspath.asClassFileProviderFactory(),
+        coreLibDesugarConfig = coreLibDesugarConfig,
+        enableApiModeling = enableApiModeling,
+        messageReceiver = messageReceiver,
+        useNoOpGlobalSyntheticsConsumer = useNoOpGlobalSyntheticsConsumer,
+      )
+    )
+
+  private fun Closeable.asClassFileProviderFactory(): ClassFileProviderFactory =
+    this as? ClassFileProviderFactory
+      ?: throw IllegalArgumentException(
+        "Expected a class path provider created by createClassFileProviderFactory in the same ClassLoader, but got ${javaClass.name} " +
+          "from ${javaClass.classLoader}"
+      )
 }

@@ -25,6 +25,7 @@ import com.android.builder.dexing.DependencyGraphUpdater
 import com.android.builder.dexing.DexArchiveBuilder
 import com.android.builder.dexing.DexArchiveBuilderException
 import com.android.builder.dexing.MutableDependencyGraph
+import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.ide.common.blame.MessageReceiver
 import com.android.utils.FileUtils
 import com.google.common.io.Closer
@@ -61,11 +62,33 @@ abstract class DexWorkActionParams : ProfileAwareWorkAction.Parameters() {
 }
 
 fun launchProcessing(dexWorkActionParams: DexWorkActionParams, receiver: MessageReceiver) {
-  val dexArchiveBuilder = getDexArchiveBuilder(dexWorkActionParams, receiver)
-  if (dexWorkActionParams.dexSpec.get().isIncremental) {
-    processIncrementally(dexArchiveBuilder, dexWorkActionParams)
-  } else {
-    processNonIncrementally(dexArchiveBuilder, dexWorkActionParams)
+  val dexParams = dexWorkActionParams.dexSpec.get().dexParams
+  val desugarBootclasspath = DexArchiveBuilderTaskDelegate.sharedState.getService(dexParams.desugarBootclasspath).service
+  val desugarClasspath = DexArchiveBuilderTaskDelegate.sharedState.getService(dexParams.desugarClasspath).service
+  // DexArchiveBuilderTaskDelegate created the class path providers with the R8 ClassLoader of the task, and keeps that ClassLoader open
+  // until all workers are done. The dex builder must come from the same ClassLoader as the providers: AGP's own (null) if the provider is
+  // AGP's ClassFileProviderFactory, or the isolated R8 ClassLoader that loaded it otherwise.
+  val r8ClassLoader = desugarBootclasspath.javaClass.classLoader.takeUnless { desugarBootclasspath is ClassFileProviderFactory }
+  wrapIsolatedR8Failures(r8ClassLoader) {
+    val dexArchiveBuilder =
+      createR8Tools(r8ClassLoader)
+        .createD8DexBuilder(
+          minSdkVersion = dexParams.minSdkVersion,
+          debuggable = dexParams.debuggable,
+          dexPerClass = dexParams.dexPerClass,
+          withDesugaring = dexParams.withDesugaring,
+          desugarBootclasspath = desugarBootclasspath,
+          desugarClasspath = desugarClasspath,
+          coreLibDesugarConfig = dexParams.coreLibDesugarConfig,
+          enableApiModeling = dexParams.enableApiModeling,
+          messageReceiver = receiver,
+          useNoOpGlobalSyntheticsConsumer = dexParams.useNoOpGlobalSyntheticsConsumer,
+        )
+    if (dexWorkActionParams.dexSpec.get().isIncremental) {
+      processIncrementally(dexArchiveBuilder, dexWorkActionParams)
+    } else {
+      processNonIncrementally(dexArchiveBuilder, dexWorkActionParams)
+    }
   }
 }
 
@@ -166,29 +189,6 @@ private fun process(
   } catch (ex: DexArchiveBuilderException) {
     throw DexArchiveBuilderException("Failed to process: ${inputRoots.joinToString(", ") { it.path }}", ex)
   }
-}
-
-private fun getDexArchiveBuilder(dexWorkActionParams: DexWorkActionParams, messageReceiver: MessageReceiver): DexArchiveBuilder {
-  val dexArchiveBuilder: DexArchiveBuilder
-  with(dexWorkActionParams) {
-    val dexSpec = dexSpec.get()
-    dexArchiveBuilder =
-      DexArchiveBuilder.createD8DexBuilder(
-        com.android.builder.dexing.DexParameters(
-          minSdkVersion = dexSpec.dexParams.minSdkVersion,
-          debuggable = dexSpec.dexParams.debuggable,
-          dexPerClass = dexSpec.dexParams.dexPerClass,
-          withDesugaring = dexSpec.dexParams.withDesugaring,
-          desugarBootclasspath = DexArchiveBuilderTaskDelegate.sharedState.getService(dexSpec.dexParams.desugarBootclasspath).service,
-          desugarClasspath = DexArchiveBuilderTaskDelegate.sharedState.getService(dexSpec.dexParams.desugarClasspath).service,
-          coreLibDesugarConfig = dexSpec.dexParams.coreLibDesugarConfig,
-          enableApiModeling = dexSpec.dexParams.enableApiModeling,
-          messageReceiver = messageReceiver,
-          useNoOpGlobalSyntheticsConsumer = dexSpec.dexParams.useNoOpGlobalSyntheticsConsumer,
-        )
-      )
-  }
-  return dexArchiveBuilder
 }
 
 fun readDesugarGraph(desugarGraphFile: File): MutableDependencyGraph<File> {

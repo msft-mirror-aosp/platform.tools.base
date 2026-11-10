@@ -18,10 +18,15 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.dependency.AsmClassesTransform
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.withR8ClassLoader
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationActionImpl
@@ -32,9 +37,6 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.ClassFileInputs
-import com.android.builder.dexing.DexArchiveBuilder
-import com.android.builder.dexing.DexParameters
-import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.sdklib.AndroidVersion
 import com.google.common.io.Closer
 import java.io.File
@@ -42,6 +44,7 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
@@ -78,6 +81,11 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
    */
   @get:Input abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
 
+  /** Maven-resolved R8 to dex with, or empty to use the R8 bundled with AGP. */
+  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
+
+  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
+
   private lateinit var errorFormatMode: SyncOptions.ErrorFormatMode
 
   // TODO: make incremental
@@ -100,6 +108,8 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
         it.enableApiModeling.set(enableApiModeling)
         it.useNoOpGlobalSyntheticsConsumer.set(useNoOpGlobalSyntheticsConsumer)
         it.outputGlobalSynthetics.set(outputGlobalSynthetics.dir("${index}_${input.name}"))
+        it.r8Classpath.from(r8Classpath)
+        it.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
       }
     }
   }
@@ -121,6 +131,8 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
      */
     abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
     abstract val outputGlobalSynthetics: DirectoryProperty
+    abstract val r8Classpath: ConfigurableFileCollection
+    abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
   }
 
   abstract class DexFileDependenciesWorkerAction : ProfileAwareWorkAction<WorkerActionParams>() {
@@ -128,37 +140,40 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
     override fun run() {
       val bootClasspath = parameters.bootClasspath.map(File::toPath)
       val classpath = parameters.classpath.map(File::toPath)
-      Closer.create().use { closer ->
-        val d8DexBuilder =
-          DexArchiveBuilder.createD8DexBuilder(
-            DexParameters(
-              minSdkVersion = parameters.minSdkVersion.get(),
-              debuggable = parameters.debuggable.get(),
-              dexPerClass = false,
-              withDesugaring = true,
-              desugarBootclasspath = ClassFileProviderFactory(bootClasspath).also { closer.register(it) },
-              desugarClasspath = ClassFileProviderFactory(classpath).also { closer.register(it) },
-              coreLibDesugarConfig = parameters.libConfiguration.orNull,
-              enableApiModeling = parameters.enableApiModeling.get(),
-              useNoOpGlobalSyntheticsConsumer = parameters.useNoOpGlobalSyntheticsConsumer.get(),
-              messageReceiver =
-                MessageReceiverImpl(
-                  errorFormatMode = parameters.errorFormatMode.get(),
-                  logger = Logging.getLogger(DexFileDependenciesWorkerAction::class.java),
-                ),
-            )
-          )
-
-        ClassFileInputs.fromPath(parameters.input.get().toPath()).use { classFileInput ->
-          classFileInput
-            .entries { _, _ -> true }
-            .use { classesInput ->
-              d8DexBuilder.convert(
-                classesInput,
-                parameters.outputFile.asFile.get().toPath(),
-                parameters.outputGlobalSynthetics.asFile.orNull?.toPath(),
+      withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
+        val r8Tools = createR8Tools(r8ClassLoader)
+        wrapIsolatedR8Failures(r8ClassLoader) {
+          Closer.create().use { closer ->
+            val d8DexBuilder =
+              r8Tools.createD8DexBuilder(
+                minSdkVersion = parameters.minSdkVersion.get(),
+                debuggable = parameters.debuggable.get(),
+                dexPerClass = false,
+                withDesugaring = true,
+                desugarBootclasspath = r8Tools.createClassFileProviderFactory(bootClasspath).also { closer.register(it) },
+                desugarClasspath = r8Tools.createClassFileProviderFactory(classpath).also { closer.register(it) },
+                coreLibDesugarConfig = parameters.libConfiguration.orNull,
+                enableApiModeling = parameters.enableApiModeling.get(),
+                messageReceiver =
+                  MessageReceiverImpl(
+                    errorFormatMode = parameters.errorFormatMode.get(),
+                    logger = Logging.getLogger(DexFileDependenciesWorkerAction::class.java),
+                  ),
+                useNoOpGlobalSyntheticsConsumer = parameters.useNoOpGlobalSyntheticsConsumer.get(),
               )
+
+            ClassFileInputs.fromPath(parameters.input.get().toPath()).use { classFileInput ->
+              classFileInput
+                .entries { _, _ -> true }
+                .use { classesInput ->
+                  d8DexBuilder.convert(
+                    classesInput,
+                    parameters.outputFile.asFile.get().toPath(),
+                    parameters.outputGlobalSynthetics.asFile.orNull?.toPath(),
+                  )
+                }
             }
+          }
         }
       }
     }
@@ -238,6 +253,9 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
       }
       task.enableApiModeling.set(creationConfig.enableApiModeling)
       task.useNoOpGlobalSyntheticsConsumer.set(creationConfig.useUniversalGlobalSyntheticsDex)
+      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
+      task.r8Classpath.disallowChanges()
+      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
 
       task.classpath.disallowChanges()
       task.bootClasspath.disallowChanges()

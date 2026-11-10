@@ -22,7 +22,11 @@ import com.android.build.gradle.internal.crash.PluginCrashReporter
 import com.android.build.gradle.internal.dexing.DexParameters
 import com.android.build.gradle.internal.dexing.DexWorkAction
 import com.android.build.gradle.internal.dexing.IncrementalDexSpec
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.withR8ClassLoader
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.profile.AnalyticsService
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.workeractions.WorkerActionServiceRegistry
 import com.android.builder.dexing.ClassBucket
 import com.android.builder.dexing.ClassBucketGroup
@@ -30,18 +34,20 @@ import com.android.builder.dexing.ClassFileInput
 import com.android.builder.dexing.DexFilePerClassFile
 import com.android.builder.dexing.DirectoryBucketGroup
 import com.android.builder.dexing.JarBucketGroup
-import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.utils.FileUtils
 import com.google.common.base.Throwables
 import com.google.common.collect.Lists
 import com.google.common.hash.Hashing
 import com.google.common.io.Closer
 import java.io.BufferedInputStream
+import java.io.Closeable
 import java.io.File
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicLong
 import org.gradle.api.file.FileType
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.work.ChangeType
 import org.gradle.work.FileChange
@@ -85,6 +91,10 @@ class DexArchiveBuilderTaskDelegate(
   private val projectPath: Provider<String>,
   private val taskPath: String,
   private val analyticsService: Provider<AnalyticsService>,
+
+  /** Maven-resolved R8 to dex with, or empty to use the R8 bundled with AGP. */
+  private val r8Classpath: Set<File> = emptySet(),
+  private val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>? = null,
 ) {
   private val outputMapping = OutputMapping(isIncremental)
 
@@ -113,95 +123,113 @@ class DexArchiveBuilderTaskDelegate(
     check(dexParams.withDesugaring xor (desugarGraphDir == null))
   }
 
-  /** Classpath resources provider is shared between invocations, and this key uniquely identifies it. */
-  data class ClasspathServiceKey(private val id: Long) : WorkerActionServiceRegistry.ServiceKey<ClassFileProviderFactory> {
+  /**
+   * Classpath resources provider is shared between invocations, and this key uniquely identifies it.
+   *
+   * The provider is a ClassFileProviderFactory from the R8 ClassLoader the task runs with (see
+   * [com.android.builder.dexing.R8Tools.createClassFileProviderFactory]), which may not be AGP's own ClassFileProviderFactory class, so it
+   * is registered as a [Closeable].
+   */
+  data class ClasspathServiceKey(private val id: Long) : WorkerActionServiceRegistry.ServiceKey<Closeable> {
 
-    override val type = ClassFileProviderFactory::class.java
+    override val type = Closeable::class.java
   }
 
   companion object {
     // Shared state used by worker actions.
     internal val sharedState = WorkerActionServiceRegistry()
+
+    // Ids for the ClasspathServiceKeys registered in sharedState. They come from this AGP-side counter rather than from
+    // ClassFileProviderFactory's own ids: each isolated R8 ClassLoader has its own copy of ClassFileProviderFactory and of its id counter,
+    // so those ids can collide across builds sharing this JVM-wide registry (e.g. composite builds), and the registry silently ignores a
+    // duplicate key.
+    private val nextClasspathServiceKeyId = AtomicLong()
   }
 
   fun doProcess() {
     loggerWrapper.verbose("Dex builder is incremental : %b ", isIncremental)
 
     try {
-      Closer.create().use { closer ->
-        val classpath = getClasspath(dexParams.withDesugaring)
-        val bootclasspath = getBootClasspath(dexParams.desugarBootclasspath, dexParams.withDesugaring)
+      // DexWorkAction workers use the class path providers created below until workerExecutor.await() returns, and they create their dex
+      // builders from the same ClassLoader as the providers. So the whole block, including the wait, stays inside withR8ClassLoader: a
+      // one-off ClassLoader must not be closed before the workers are done.
+      withR8ClassLoader(r8Classpath, r8ClassloaderBuildService) { r8ClassLoader ->
+        Closer.create().use { closer ->
+          val classpath = getClasspath(dexParams.withDesugaring)
+          val bootclasspath = getBootClasspath(dexParams.desugarBootclasspath, dexParams.withDesugaring)
 
-        val bootClasspathProvider = ClassFileProviderFactory(bootclasspath)
-        closer.register(bootClasspathProvider)
-        val libraryClasspathProvider = ClassFileProviderFactory(classpath)
-        closer.register(libraryClasspathProvider)
+          val r8Tools = createR8Tools(r8ClassLoader)
+          val bootClasspathProvider = wrapIsolatedR8Failures(r8ClassLoader) { r8Tools.createClassFileProviderFactory(bootclasspath) }
+          closer.register(bootClasspathProvider)
+          val libraryClasspathProvider = wrapIsolatedR8Failures(r8ClassLoader) { r8Tools.createClassFileProviderFactory(classpath) }
+          closer.register(libraryClasspathProvider)
 
-        val bootclasspathServiceKey = ClasspathServiceKey(bootClasspathProvider.id)
-        val classpathServiceKey = ClasspathServiceKey(libraryClasspathProvider.id)
-        sharedState.registerServiceAsCloseable(bootclasspathServiceKey, bootClasspathProvider).also { closer.register(it) }
+          val bootclasspathServiceKey = ClasspathServiceKey(nextClasspathServiceKeyId.incrementAndGet())
+          val classpathServiceKey = ClasspathServiceKey(nextClasspathServiceKeyId.incrementAndGet())
+          sharedState.registerServiceAsCloseable(bootclasspathServiceKey, bootClasspathProvider).also { closer.register(it) }
 
-        sharedState.registerServiceAsCloseable(classpathServiceKey, libraryClasspathProvider).also { closer.register(it) }
+          sharedState.registerServiceAsCloseable(classpathServiceKey, libraryClasspathProvider).also { closer.register(it) }
 
-        val processInputType =
-          {
-            classes: Set<File>,
-            changedClasses: Set<FileChange>,
-            outputDir: File,
-            globalSynthetics: File?,
-            // Not null iff desugaring is enabled
-            desugarGraphDir: File? ->
-            processClassFromInput(
-              inputFiles = classes,
-              inputFileChanges = changedClasses,
-              outputDir = outputDir,
-              globalSyntheticsDir = globalSynthetics,
-              desugarGraphDir = desugarGraphDir,
-              bootClasspathKey = bootclasspathServiceKey,
-              classpathKey = classpathServiceKey,
+          val processInputType =
+            {
+              classes: Set<File>,
+              changedClasses: Set<FileChange>,
+              outputDir: File,
+              globalSynthetics: File?,
+              // Not null iff desugaring is enabled
+              desugarGraphDir: File? ->
+              processClassFromInput(
+                inputFiles = classes,
+                inputFileChanges = changedClasses,
+                outputDir = outputDir,
+                globalSyntheticsDir = globalSynthetics,
+                desugarGraphDir = desugarGraphDir,
+                bootClasspathKey = bootclasspathServiceKey,
+                classpathKey = classpathServiceKey,
+              )
+            }
+          processInputType(
+            projectClasses,
+            projectChangedClasses,
+            projectOutputs.dex,
+            projectOutputs.globalSynthetics,
+            desugarGraphDir?.resolve("currentProject"),
+          )
+          subProjectOutputs?.let {
+            processInputType(
+              subProjectClasses,
+              subProjectChangedClasses,
+              subProjectOutputs.dex,
+              subProjectOutputs.globalSynthetics,
+              desugarGraphDir?.resolve("otherProjects"),
             )
           }
-        processInputType(
-          projectClasses,
-          projectChangedClasses,
-          projectOutputs.dex,
-          projectOutputs.globalSynthetics,
-          desugarGraphDir?.resolve("currentProject"),
-        )
-        subProjectOutputs?.let {
-          processInputType(
-            subProjectClasses,
-            subProjectChangedClasses,
-            subProjectOutputs.dex,
-            subProjectOutputs.globalSynthetics,
-            desugarGraphDir?.resolve("otherProjects"),
-          )
-        }
-        mixedScopeOutputs?.let {
-          processInputType(
-            mixedScopeClasses,
-            mixedScopeChangedClasses,
-            mixedScopeOutputs.dex,
-            mixedScopeOutputs.globalSynthetics,
-            desugarGraphDir?.resolve("mixedScopes"),
-          )
-        }
-        externalLibsOutputs?.let {
-          processInputType(
-            externalLibClasses,
-            externalLibChangedClasses,
-            externalLibsOutputs.dex,
-            externalLibsOutputs.globalSynthetics,
-            desugarGraphDir?.resolve("externalLibs"),
-          )
-        }
+          mixedScopeOutputs?.let {
+            processInputType(
+              mixedScopeClasses,
+              mixedScopeChangedClasses,
+              mixedScopeOutputs.dex,
+              mixedScopeOutputs.globalSynthetics,
+              desugarGraphDir?.resolve("mixedScopes"),
+            )
+          }
+          externalLibsOutputs?.let {
+            processInputType(
+              externalLibClasses,
+              externalLibChangedClasses,
+              externalLibsOutputs.dex,
+              externalLibsOutputs.globalSynthetics,
+              desugarGraphDir?.resolve("externalLibs"),
+            )
+          }
 
-        // all work items have been submitted, now wait for completion.
-        // TODO (gavra): use build services in worker actions so ClassFileProviderFactory are not
-        // closed too early
-        workerExecutor.await()
+          // all work items have been submitted, now wait for completion.
+          // TODO (gavra): use build services in worker actions so ClassFileProviderFactory are not
+          // closed too early
+          workerExecutor.await()
 
-        loggerWrapper.verbose("Done with all dex archive conversions")
+          loggerWrapper.verbose("Done with all dex archive conversions")
+        }
       }
     } catch (e: Exception) {
       PluginCrashReporter.maybeReportException(e)

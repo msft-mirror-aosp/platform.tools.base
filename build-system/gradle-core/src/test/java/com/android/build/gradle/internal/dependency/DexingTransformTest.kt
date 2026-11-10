@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
 import com.android.build.gradle.internal.fixtures.FakeInputChanges
 import com.android.build.gradle.internal.fixtures.FakeTransformOutputs
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.transforms.testdata.Animal
 import com.android.build.gradle.internal.transforms.testdata.CarbonForm
 import com.android.build.gradle.internal.transforms.testdata.Cat
@@ -286,6 +287,8 @@ class DexingTransformTest {
       override val enableGlobalSynthetics = FakeGradleProperty(enableGlobalSynthetics)
       override val useNoOpGlobalSyntheticsConsumer = FakeGradleProperty(useNoOpGlobalSyntheticsConsumer)
       override val enableApiModeling = FakeGradleProperty(enableGlobalSynthetics)
+      override val r8Classpath = FakeConfigurableFileCollection()
+      override val r8ClassloaderBuildService = FakeGradleProperty<R8ClassloaderBuildService>()
     }
 
     override fun getParameters(): Parameters {

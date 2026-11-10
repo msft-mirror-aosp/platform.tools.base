@@ -530,6 +530,9 @@ class DependencyConfigurator(private val project: Project, private val projectSe
     if (allComponents.isNotEmpty()) {
       val bootClasspath = project.files(globalConfig.bootClasspath)
       val services = allComponents.first().services
+      val r8Classpath = isolatedR8Classpath(projectOptions, services.r8FromMaven)
+      val r8ClassloaderBuildService =
+        getBuildService<R8ClassloaderBuildService, BuildServiceParameters.None>(projectServices.buildServiceRegistry)
       DexingRegistration.registerTransforms(
         allComponents,
         DexingRegistration.ComponentAgnosticParameters(
@@ -542,13 +545,12 @@ class DependencyConfigurator(private val project: Project, private val projectSe
           // feature module (b/246326007)
           disableIncrementalDexing = allComponents.any { it.componentType.isDynamicFeature },
           components = allComponents,
+          r8Classpath = r8Classpath,
+          r8ClassloaderBuildService = r8ClassloaderBuildService,
         ),
       )
 
       val d8Version = R8Version.getVersionString()
-      val r8Classpath = isolatedR8Classpath(projectOptions, services.r8FromMaven)
-      val r8ClassloaderBuildService =
-        getBuildService<R8ClassloaderBuildService, BuildServiceParameters.None>(projectServices.buildServiceRegistry)
 
       allComponents
         .mapTo(linkedSetOf()) { it.minSdk.apiLevel }
