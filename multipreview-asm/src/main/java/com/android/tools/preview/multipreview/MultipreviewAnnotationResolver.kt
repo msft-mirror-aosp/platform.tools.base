@@ -27,10 +27,21 @@ import org.objectweb.asm.Opcodes
  * Note that this class is *not* thread-safe.
  */
 class MultipreviewAnnotationResolver(
-  private val previewAnnotationClassDescriptor: String,
-  private val previewAnnotationContainerClassDescriptor: String,
+  private val previewAnnotationToContainerClassDescriptors: Map<String, String>,
   private val classResolver: (String) -> ClassReader?,
 ) {
+
+  constructor(
+    previewAnnotationClassDescriptor: String,
+    previewAnnotationContainerClassDescriptor: String,
+    classResolver: (String) -> ClassReader?,
+  ) : this(
+    mapOf(previewAnnotationClassDescriptor to previewAnnotationContainerClassDescriptor),
+    classResolver,
+  )
+
+  private val previewAnnotationContainerClassDescriptors: Set<String> =
+    previewAnnotationToContainerClassDescriptors.values.filterTo(mutableSetOf()) { it.isNotEmpty() }
 
   private val resolvedAnnotationClasses: MutableMap<String, Set<BaseAnnotationRepresentation>> = mutableMapOf()
   private val currentlyResolvingAnnotationClasses: MutableSet<String> = mutableSetOf()
@@ -50,7 +61,7 @@ class MultipreviewAnnotationResolver(
     onFindFinished: (Set<BaseAnnotationRepresentation>) -> Unit,
   ): AnnotationVisitor? {
     return when (annotationClassDescriptor) {
-      previewAnnotationClassDescriptor -> {
+      in previewAnnotationToContainerClassDescriptors.keys -> {
         object : AnnotationVisitor(Opcodes.ASM9) {
           val parameters = mutableMapOf<String, Any>()
 
@@ -63,7 +74,7 @@ class MultipreviewAnnotationResolver(
           }
         }
       }
-      previewAnnotationContainerClassDescriptor -> {
+      in previewAnnotationContainerClassDescriptors -> {
         object : AnnotationVisitor(Opcodes.ASM9) {
           val previewAnnotations = mutableSetOf<BaseAnnotationRepresentation>()
 

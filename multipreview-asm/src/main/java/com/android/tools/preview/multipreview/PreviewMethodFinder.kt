@@ -40,10 +40,16 @@ class PreviewMethodFinder(
 
   companion object {
     private const val COMPOSABLE_ANNOTATION = "Landroidx/compose/runtime/Composable;"
-    private const val PREV_PARAMS_ANNOTATION = "Landroidx/compose/ui/tooling/preview/PreviewParameter;"
+    private val PREV_PARAMS_ANNOTATIONS =
+      setOf(
+        "Landroidx/compose/ui/tooling/preview/PreviewParameter;",
+        "Lorg/jetbrains/compose/ui/tooling/preview/PreviewParameter;",
+      )
 
     internal const val COMPOSE_PREVIEW_ANNOTATION = "Landroidx/compose/ui/tooling/preview/Preview;"
     internal const val COMPOSE_PREVIEW_ANNOTATION_CONTAINER = "Landroidx/compose/ui/tooling/preview/Preview\$Container;"
+    internal const val MULTIPLATFORM_PREVIEW_ANNOTATION = "Lorg/jetbrains/compose/ui/tooling/preview/Preview;"
+    internal const val MULTIPLATFORM_PREVIEW_ANNOTATION_CONTAINER = "Lorg/jetbrains/compose/ui/tooling/preview/Preview\$Container;"
 
     private const val TILE_PREVIEW_DATA = "Landroidx/wear/tiles/tooling/preview/TilePreviewData;"
     private const val ANDROID_CONTEXT = "Landroid/content/Context;"
@@ -98,8 +104,10 @@ class PreviewMethodFinder(
 
   private val composeAnnotationResolver =
     MultipreviewAnnotationResolver(
-      COMPOSE_PREVIEW_ANNOTATION,
-      COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
+      mapOf(
+        COMPOSE_PREVIEW_ANNOTATION to COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
+        MULTIPLATFORM_PREVIEW_ANNOTATION to MULTIPLATFORM_PREVIEW_ANNOTATION_CONTAINER,
+      ),
       ::resolveClassReader,
     )
 
@@ -273,7 +281,7 @@ class PreviewMethodFinder(
   private fun Array<List<AnnotationNode>?>?.findAllPreviewParameters(onFound: (ParameterRepresentation) -> Unit) {
     this?.forEach {
       it?.forEach {
-        if (it.desc == PREV_PARAMS_ANNOTATION) {
+        if (it.desc in PREV_PARAMS_ANNOTATIONS) {
           val annotationParams = mutableMapOf<String, Any>()
           it.accept(
             object : AnnotationVisitor(Opcodes.ASM9) {

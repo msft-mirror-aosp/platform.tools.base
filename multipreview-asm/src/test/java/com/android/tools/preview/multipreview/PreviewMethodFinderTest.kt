@@ -24,6 +24,9 @@ import java.util.zip.ZipInputStream
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 
 class PreviewMethodFinderTest {
 
@@ -131,6 +134,120 @@ class PreviewMethodFinderTest {
           .trimIndent()
       )
     assertThat(previewMethods).hasSize(11)
+  }
+
+  @Test
+  fun testFindMultiplatformPreviewMethods() {
+    val targetDir = tempDir.newFolder("kmpTarget")
+    val mainDir = tempDir.newFolder("kmpMain")
+
+    // Equivalent Kotlin Multiplatform MultiPreview annotation in mainDir:
+    //   package org.example.kmp
+    //   import org.jetbrains.compose.ui.tooling.preview.Preview
+    //   @Preview(name = "KMP Light", showBackground = false)
+    //   @Preview(name = "KMP Dark", showBackground = true)
+    //   annotation class KmpThemePreviews
+    val multiPreviewCw = ClassWriter(0)
+    multiPreviewCw.visit(
+      Opcodes.V17,
+      Opcodes.ACC_PUBLIC or Opcodes.ACC_ANNOTATION or Opcodes.ACC_ABSTRACT or Opcodes.ACC_INTERFACE,
+      "org/example/kmp/KmpThemePreviews",
+      null,
+      "java/lang/Object",
+      arrayOf("java/lang/annotation/Annotation"),
+    )
+    multiPreviewCw.visitAnnotation("Lorg/jetbrains/compose/ui/tooling/preview/Preview\$Container;", false).apply {
+      visitArray("value").apply {
+        visitAnnotation(null, "Lorg/jetbrains/compose/ui/tooling/preview/Preview;").apply {
+          visit("name", "KMP Light")
+          visit("showBackground", false)
+          visitEnd()
+        }
+        visitAnnotation(null, "Lorg/jetbrains/compose/ui/tooling/preview/Preview;").apply {
+          visit("name", "KMP Dark")
+          visit("showBackground", true)
+          visitEnd()
+        }
+        visitEnd()
+      }
+      visitEnd()
+    }
+    multiPreviewCw.visitEnd()
+    File(mainDir, "org/example/kmp/KmpThemePreviews.class").apply {
+      parentFile.mkdirs()
+      writeBytes(multiPreviewCw.toByteArray())
+    }
+
+    // Equivalent Kotlin Multiplatform preview functions in targetDir:
+    //   package org.example.kmp
+    //   import androidx.compose.runtime.Composable
+    //   import org.jetbrains.compose.ui.tooling.preview.Preview
+    //   import org.jetbrains.compose.ui.tooling.preview.PreviewParameter
+    //
+    //   @Preview(name = "Direct KMP")
+    //   @Composable
+    //   fun DirectKmpPreview(@PreviewParameter(provider = SampleProvider::class, limit = 3) label: String) {}
+    //
+    //   @KmpThemePreviews
+    //   @Composable
+    //   fun MultiKmpPreview() {}
+    val ktClassCw = ClassWriter(0)
+    ktClassCw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC or Opcodes.ACC_FINAL, "org/example/kmp/CommonScreenKt", null, "java/lang/Object", null)
+    ktClassCw.visitMethod(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "DirectKmpPreview", "(Ljava/lang/String;)V", null, null).apply {
+      visitAnnotation("Landroidx/compose/runtime/Composable;", true).visitEnd()
+      visitAnnotation("Lorg/jetbrains/compose/ui/tooling/preview/Preview;", false).apply {
+        visit("name", "Direct KMP")
+        visitEnd()
+      }
+      visitParameterAnnotation(0, "Lorg/jetbrains/compose/ui/tooling/preview/PreviewParameter;", false).apply {
+        visit("provider", Type.getObjectType("org/example/kmp/SampleProvider"))
+        visit("limit", 3)
+        visitEnd()
+      }
+      visitEnd()
+    }
+    ktClassCw.visitMethod(Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC, "MultiKmpPreview", "()V", null, null).apply {
+      visitAnnotation("Landroidx/compose/runtime/Composable;", true).visitEnd()
+      visitAnnotation("Lorg/example/kmp/KmpThemePreviews;", false).visitEnd()
+      visitEnd()
+    }
+    ktClassCw.visitEnd()
+    File(targetDir, "org/example/kmp/CommonScreenKt.class").apply {
+      parentFile.mkdirs()
+      writeBytes(ktClassCw.toByteArray())
+    }
+
+    val kmpFinder =
+      PreviewMethodFinder(
+        screenshotTestDirectory = listOf(targetDir),
+        screenshotTestJars = emptyList(),
+        mainDirectory = listOf(mainDir),
+        mainJars = emptyList(),
+        dependencyJars = emptyList(),
+      )
+
+    val previewMethods = kmpFinder.findAllPreviewMethods()
+    assertThat(previewMethods.flatMap { it.toDebugString() }.sorted().joinToString("----\n").trim())
+      .isEqualTo(
+        """
+        org.example.kmp.CommonScreenKt.DirectKmpPreview
+        type: Compose
+        name: Direct KMP
+        provider: Lorg/example/kmp/SampleProvider;
+        limit: 3
+        ----
+        org.example.kmp.CommonScreenKt.MultiKmpPreview
+        type: Compose
+        name: KMP Dark
+        showBackground: true
+        ----
+        org.example.kmp.CommonScreenKt.MultiKmpPreview
+        type: Compose
+        name: KMP Light
+        showBackground: false
+        """
+          .trimIndent()
+      )
   }
 
   private fun PreviewMethod.toDebugString(): List<String> {
