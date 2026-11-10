@@ -21,7 +21,7 @@ dependencies {
     testImplementation libs.mockito.core
     testImplementation libs.com.android.tools.testutils
     testImplementation libs.mockito.kotlin
-    testImplementation libs.aapt2.proto
+    testImplementation project(':base:build-system:aapt2-proto')
 }
 
 sourceSets {
