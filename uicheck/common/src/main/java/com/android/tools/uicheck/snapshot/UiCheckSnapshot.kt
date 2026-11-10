@@ -21,7 +21,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** Bounding rectangle in rendered screen pixels. */
-data class VisualLintRectData(
+data class UiCheckBounds(
   val left: Int,
   val top: Int,
   val right: Int,
@@ -37,10 +37,10 @@ data class VisualLintRectData(
     get() = width * height
 
   /** Returns true if this rectangle and [other] both have positive dimensions and intersect with non-zero overlapping area. */
-  fun intersects(other: VisualLintRectData): Boolean = intersectionArea(other) > 0
+  fun intersects(other: UiCheckBounds): Boolean = intersectionArea(other) > 0
 
   /** Returns the overlapping area in square pixels between this rectangle and [other], or 0 if they do not intersect. */
-  fun intersectionArea(other: VisualLintRectData): Int {
+  fun intersectionArea(other: UiCheckBounds): Int {
     val overlapWidth = max(0, min(right, other.right) - max(left, other.left))
     val overlapHeight = max(0, min(bottom, other.bottom) - max(top, other.top))
     return overlapWidth * overlapHeight
@@ -54,7 +54,7 @@ data class VisualLintRectData(
  * @property lineNumber 1-based line number in [filePath] (matching Compose source information), or `-1` when unknown.
  * @property functionName Simple name of the Composable or view at the call site, if known.
  */
-data class VisualLintSourceLocationData(
+data class UiCheckSourceLocation(
   val filePath: String,
   val lineNumber: Int = -1,
   val functionName: String? = null,
@@ -71,12 +71,12 @@ data class VisualLintSourceLocationData(
  * @property viewBounds Bounding box of the offending component in rendered screen pixels, or `null` if not tied to a specific element.
  * @property viewClassName Simple class or Composable name of the UI component associated with this finding, or `null` if unknown.
  */
-data class VisualLintAnalyzerIssueData(
+data class UiCheckIssue(
   val errorType: VisualLintErrorType,
   val message: String,
   val description: String? = null,
-  val sourceLocation: VisualLintSourceLocationData? = null,
-  val viewBounds: VisualLintRectData? = null,
+  val sourceLocation: UiCheckSourceLocation? = null,
+  val viewBounds: UiCheckBounds? = null,
   val viewClassName: String? = null,
 )
 
@@ -85,14 +85,14 @@ data class VisualLintAnalyzerIssueData(
  *
  * Headless UI Check runners produce these in-memory without needing Android Lint's `lint-api` on their classpath.
  */
-data class VisualLintSnapshotData(
+data class UiCheckSnapshot(
   val name: String,
   val configurationDescription: String,
   val screenWidthPx: Int,
   val screenHeightPx: Int,
   val densityDpi: Int = DEFAULT_DENSITY_DPI,
   val fontScale: Float = 1.0f,
-  val analyzerIssues: List<VisualLintAnalyzerIssueData> = emptyList(),
+  val issues: List<UiCheckIssue> = emptyList(),
   val previewId: String? = null,
   val imagePath: String? = null,
 ) {

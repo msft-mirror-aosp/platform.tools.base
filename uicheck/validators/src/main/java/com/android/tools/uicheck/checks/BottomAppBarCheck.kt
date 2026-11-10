@@ -17,7 +17,7 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ComponentTreeNode
-import com.android.tools.uicheck.snapshot.VisualLintAnalyzerIssueData
+import com.android.tools.uicheck.snapshot.UiCheckIssue
 import com.android.tools.visuallint.VisualLintErrorType
 
 /** Finds bottom app bars on screens that aren't compact, where Material Design recommends other navigation. */
@@ -33,7 +33,7 @@ object BottomAppBarCheck : ComponentTreeCheck {
     )
 
   /** Checks for bottom app bars placed on screens both wider than 600dp and taller than 360dp. */
-  override fun check(context: CheckContext): List<VisualLintAnalyzerIssueData> {
+  override fun check(context: CheckContext): List<UiCheckIssue> {
     val isCompact =
       context.screenWidthPx.pxToDp(context.densityDpi) <= COMPACT_WIDTH_BREAKPOINT_DP ||
         context.screenHeightPx.pxToDp(context.densityDpi) <= COMPACT_HEIGHT_BREAKPOINT_DP
@@ -45,7 +45,7 @@ object BottomAppBarCheck : ComponentTreeCheck {
   private fun createIssueData(
     node: ComponentTreeNode,
     context: CheckContext,
-  ): VisualLintAnalyzerIssueData =
+  ): UiCheckIssue =
     buildIssueData(
       node = node,
       context = context,

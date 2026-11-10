@@ -17,7 +17,7 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ComponentTreeNode
-import com.android.tools.uicheck.snapshot.VisualLintSourceLocationData
+import com.android.tools.uicheck.snapshot.UiCheckSourceLocation
 import java.util.Collections
 import java.util.IdentityHashMap
 
@@ -27,22 +27,21 @@ import java.util.IdentityHashMap
  * A node uses its own call site when that is in user code (see [UserCodeFilter]). Otherwise it inherits its nearest ancestor's, so a
  * finding on a library's inner node (for example the `Surface` inside a Material `Button`) points at the user's `Button(...)` call. Library
  * ancestors above any user code (such as a root `MaterialTheme` wrapper) resolve to `null`, while sibling/leaf nodes without user ancestors
- * or descendants fall back to the first user call site in the tree (preserving that call site's [VisualLintSourceLocationData.functionName]
- * so source highlighters match the token on [VisualLintSourceLocationData.lineNumber], while `viewClassName` on the issue still names the
- * rendered component itself).
+ * or descendants fall back to the first user call site in the tree (preserving that call site's [UiCheckSourceLocation.functionName] so
+ * source highlighters match the token on [UiCheckSourceLocation.lineNumber], while `viewClassName` on the issue still names the rendered
+ * component itself).
  */
 class SourceLocations
 private constructor(
-  private val byNode: Map<ComponentTreeNode, VisualLintSourceLocationData?>,
+  private val byNode: Map<ComponentTreeNode, UiCheckSourceLocation?>,
   private val ancestorsAboveUserCode: Set<ComponentTreeNode>,
-  private val fallback: VisualLintSourceLocationData?,
+  private val fallback: UiCheckSourceLocation?,
 ) {
   /**
    * Returns the resolved user call-site location for [node], `null` for library ancestors wrapping user code, or [fallback] (the first user
    * call site in the tree, including its call-site `functionName`) for unattributed leaves.
    */
-  operator fun get(node: ComponentTreeNode): VisualLintSourceLocationData? =
-    byNode[node] ?: if (node in ancestorsAboveUserCode) null else fallback
+  operator fun get(node: ComponentTreeNode): UiCheckSourceLocation? = byNode[node] ?: if (node in ancestorsAboveUserCode) null else fallback
 
   companion object {
     @JvmField val EMPTY = SourceLocations(emptyMap(), emptySet(), null)
@@ -51,9 +50,9 @@ private constructor(
     @JvmStatic
     fun resolve(roots: List<ComponentTreeNode>, userCode: UserCodeFilter): SourceLocations {
       // Identity collections: distinct nodes can be equal data classes (same name and bounds).
-      val byNode = IdentityHashMap<ComponentTreeNode, VisualLintSourceLocationData?>()
+      val byNode = IdentityHashMap<ComponentTreeNode, UiCheckSourceLocation?>()
       val ancestorsAboveUserCode = Collections.newSetFromMap(IdentityHashMap<ComponentTreeNode, Boolean>())
-      var fallback: VisualLintSourceLocationData? = null
+      var fallback: UiCheckSourceLocation? = null
       roots.forEach { root ->
         val result =
           collectNodeLocations(
@@ -71,22 +70,22 @@ private constructor(
 
     /** Result of traversing a subtree: the first observed user call site and whether the subtree contained any user code. */
     private data class TraversalResult(
-      val fallback: VisualLintSourceLocationData?,
+      val fallback: UiCheckSourceLocation?,
       val hasUserCodeInSubtree: Boolean,
     )
 
     /** Recursively records source locations for [node] and its subtree, tracking library ancestors that wrap user code. */
     private fun collectNodeLocations(
       node: ComponentTreeNode,
-      inherited: VisualLintSourceLocationData?,
+      inherited: UiCheckSourceLocation?,
       userCode: UserCodeFilter,
-      byNode: IdentityHashMap<ComponentTreeNode, VisualLintSourceLocationData?>,
+      byNode: IdentityHashMap<ComponentTreeNode, UiCheckSourceLocation?>,
       ancestorsAboveUserCode: MutableSet<ComponentTreeNode>,
-      currentFallback: VisualLintSourceLocationData?,
+      currentFallback: UiCheckSourceLocation?,
     ): TraversalResult {
       val own =
         node.sourceLocation?.takeIf(userCode::isUserCode)?.let {
-          VisualLintSourceLocationData(
+          UiCheckSourceLocation(
             filePath = it.fileName,
             lineNumber = it.lineNumber,
             functionName = node.simpleComponentName(),

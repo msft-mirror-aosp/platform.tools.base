@@ -17,7 +17,7 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ComponentTreeNode
-import com.android.tools.uicheck.snapshot.VisualLintSourceLocationData
+import com.android.tools.uicheck.snapshot.UiCheckSourceLocation
 import java.awt.image.BufferedImage
 
 /** One rendered preview configuration, as seen by a [ComponentTreeCheck]. */
@@ -34,5 +34,5 @@ data class CheckContext(
   private val sourceLocations: SourceLocations = SourceLocations.EMPTY,
 ) {
   /** Returns the user's source location that a finding on [node] should point to. */
-  fun sourceLocationOf(node: ComponentTreeNode): VisualLintSourceLocationData? = sourceLocations[node]
+  fun sourceLocationOf(node: ComponentTreeNode): UiCheckSourceLocation? = sourceLocations[node]
 }

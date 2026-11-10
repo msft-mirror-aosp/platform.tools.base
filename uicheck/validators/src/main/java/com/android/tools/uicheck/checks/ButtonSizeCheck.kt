@@ -17,7 +17,7 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ComponentTreeNode
-import com.android.tools.uicheck.snapshot.VisualLintAnalyzerIssueData
+import com.android.tools.uicheck.snapshot.UiCheckIssue
 import com.android.tools.visuallint.VisualLintErrorType
 
 /** Finds buttons (Compose `Role.Button` nodes and View button widgets) wider than Material Design's recommended 320dp. */
@@ -25,7 +25,7 @@ object ButtonSizeCheck : ComponentTreeCheck {
   private const val MAX_BUTTON_WIDTH_DP = 320
 
   /** Checks for buttons exceeding the maximum recommended width of 320dp, skipping internal descendants of button components. */
-  override fun check(context: CheckContext): List<VisualLintAnalyzerIssueData> =
+  override fun check(context: CheckContext): List<UiCheckIssue> =
     context
       .visibleNodes(stopAt = { it.isButtonComponent() })
       .filter { it.isWideableButton() && it.bounds.width.pxToDp(context.densityDpi) > MAX_BUTTON_WIDTH_DP }
@@ -37,7 +37,7 @@ object ButtonSizeCheck : ComponentTreeCheck {
   private fun createIssueData(
     node: ComponentTreeNode,
     context: CheckContext,
-  ): VisualLintAnalyzerIssueData =
+  ): UiCheckIssue =
     buildIssueData(
       node = node,
       context = context,

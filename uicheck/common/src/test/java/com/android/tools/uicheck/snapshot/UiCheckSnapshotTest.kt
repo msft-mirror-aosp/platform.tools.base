@@ -21,17 +21,17 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class VisualLintSnapshotDataTest {
+class UiCheckSnapshotTest {
 
   /** Verifies rectangle dimensions, area, and clamping on inverted coordinates. */
   @Test
   fun computesDimensionsAndClampsInvertedBounds() {
-    val rect = VisualLintRectData(left = 10, top = 20, right = 110, bottom = 70)
+    val rect = UiCheckBounds(left = 10, top = 20, right = 110, bottom = 70)
     assertEquals(100, rect.width)
     assertEquals(50, rect.height)
     assertEquals(5000, rect.area)
 
-    val inverted = VisualLintRectData(left = 50, top = 50, right = 20, bottom = 30)
+    val inverted = UiCheckBounds(left = 50, top = 50, right = 20, bottom = 30)
     assertEquals(0, inverted.width)
     assertEquals(0, inverted.height)
     assertEquals(0, inverted.area)
@@ -40,10 +40,10 @@ class VisualLintSnapshotDataTest {
   /** Verifies non-zero overlap detection, touching-edge exclusion, and inverted-rectangle rejection. */
   @Test
   fun computesIntersectionAndOverlapArea() {
-    val first = VisualLintRectData(left = 0, top = 0, right = 100, bottom = 100)
-    val overlapping = VisualLintRectData(left = 60, top = 40, right = 140, bottom = 90)
-    val touchingEdge = VisualLintRectData(left = 100, top = 0, right = 200, bottom = 100)
-    val inverted = VisualLintRectData(left = 50, top = 50, right = 20, bottom = 30)
+    val first = UiCheckBounds(left = 0, top = 0, right = 100, bottom = 100)
+    val overlapping = UiCheckBounds(left = 60, top = 40, right = 140, bottom = 90)
+    val touchingEdge = UiCheckBounds(left = 100, top = 0, right = 200, bottom = 100)
+    val inverted = UiCheckBounds(left = 50, top = 50, right = 20, bottom = 30)
 
     assertTrue(first.intersects(overlapping))
     assertEquals(2000, first.intersectionArea(overlapping))
@@ -58,17 +58,17 @@ class VisualLintSnapshotDataTest {
   @Test
   fun usesDefaultPhoneDensityAndFontScale() {
     val snapshot =
-      VisualLintSnapshotData(
+      UiCheckSnapshot(
         name = "MainActivityKt.PreviewCard",
         configurationDescription = "Phone",
         screenWidthPx = 1080,
         screenHeightPx = 2340,
       )
-    val unknownLineLocation = VisualLintSourceLocationData(filePath = "MainActivity.kt")
+    val unknownLineLocation = UiCheckSourceLocation(filePath = "MainActivity.kt")
 
-    assertEquals(VisualLintSnapshotData.DEFAULT_DENSITY_DPI, snapshot.densityDpi)
+    assertEquals(UiCheckSnapshot.DEFAULT_DENSITY_DPI, snapshot.densityDpi)
     assertEquals(1.0f, snapshot.fontScale)
-    assertTrue(snapshot.analyzerIssues.isEmpty())
+    assertTrue(snapshot.issues.isEmpty())
     assertEquals(-1, unknownLineLocation.lineNumber)
   }
 }

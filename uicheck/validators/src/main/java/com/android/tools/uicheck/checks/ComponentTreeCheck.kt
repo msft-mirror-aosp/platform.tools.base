@@ -18,8 +18,8 @@ package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ComponentBounds
 import com.android.tools.uicheck.ComponentTreeNode
-import com.android.tools.uicheck.snapshot.VisualLintAnalyzerIssueData
-import com.android.tools.uicheck.snapshot.VisualLintRectData
+import com.android.tools.uicheck.snapshot.UiCheckBounds
+import com.android.tools.uicheck.snapshot.UiCheckIssue
 import com.android.tools.visuallint.VisualLintErrorType
 
 /**
@@ -28,18 +28,18 @@ import com.android.tools.visuallint.VisualLintErrorType
  */
 interface ComponentTreeCheck {
   /** Evaluates this check against the rendered UI hierarchy in [context] and returns any findings. */
-  fun check(context: CheckContext): List<VisualLintAnalyzerIssueData>
+  fun check(context: CheckContext): List<UiCheckIssue>
 
-  /** Builds a [VisualLintAnalyzerIssueData] populated with [node]'s resolved source location, pixel [bounds], and component class name. */
+  /** Builds a [UiCheckIssue] populated with [node]'s resolved source location, pixel [bounds], and component class name. */
   fun buildIssueData(
     node: ComponentTreeNode,
     context: CheckContext,
     errorType: VisualLintErrorType,
     message: String,
     description: String? = null,
-    bounds: VisualLintRectData = node.bounds.toRectData(),
-  ): VisualLintAnalyzerIssueData =
-    VisualLintAnalyzerIssueData(
+    bounds: UiCheckBounds = node.bounds.toRectData(),
+  ): UiCheckIssue =
+    UiCheckIssue(
       errorType = errorType,
       message = message,
       description = description,
@@ -49,8 +49,8 @@ interface ComponentTreeCheck {
     )
 }
 
-/** Converts this [ComponentBounds] into a serializable [VisualLintRectData]. */
-internal fun ComponentBounds.toRectData(): VisualLintRectData = VisualLintRectData(left = left, top = top, right = right, bottom = bottom)
+/** Converts this [ComponentBounds] into a serializable [UiCheckBounds]. */
+internal fun ComponentBounds.toRectData(): UiCheckBounds = UiCheckBounds(left = left, top = top, right = right, bottom = bottom)
 
 /** Extracts the simple unqualified name for [ComponentTreeNode.name], mapping generic View to Composable when semantics are present. */
 internal fun ComponentTreeNode.simpleComponentName(): String {

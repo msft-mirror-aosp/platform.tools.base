@@ -17,9 +17,9 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ProjectSourceFile
-import com.android.tools.uicheck.snapshot.VisualLintAnalyzerIssueData
-import com.android.tools.uicheck.snapshot.VisualLintRectData
-import com.android.tools.uicheck.snapshot.VisualLintSourceLocationData
+import com.android.tools.uicheck.snapshot.UiCheckBounds
+import com.android.tools.uicheck.snapshot.UiCheckIssue
+import com.android.tools.uicheck.snapshot.UiCheckSourceLocation
 import com.android.tools.visuallint.VisualLintErrorType
 import java.awt.image.BufferedImage
 import org.junit.Assert.assertEquals
@@ -72,13 +72,13 @@ class ComponentTreeCheckTest {
     assertTrue(ctx.showSystemUi)
     assertSame(image, ctx.renderedImage)
 
-    val expectedLoc = VisualLintSourceLocationData("HomeScreen.kt", 34, "MaterialButton")
+    val expectedLoc = UiCheckSourceLocation("HomeScreen.kt", 34, "MaterialButton")
     assertEquals(expectedLoc, ctx.sourceLocationOf(innerSurface))
 
-    val customBounds = VisualLintRectData(12, 22, 400, 90)
+    val customBounds = UiCheckBounds(12, 22, 400, 90)
     val check =
       object : ComponentTreeCheck {
-        override fun check(context: CheckContext): List<VisualLintAnalyzerIssueData> =
+        override fun check(context: CheckContext): List<UiCheckIssue> =
           listOf(
             buildIssueData(
               node = innerSurface,
@@ -105,7 +105,7 @@ class ComponentTreeCheckTest {
     assertEquals("Too wide", issue.message)
     assertEquals("Details", issue.description)
     assertEquals(expectedLoc, issue.sourceLocation)
-    assertEquals(VisualLintRectData(10, 20, 410, 100), issue.viewBounds)
+    assertEquals(UiCheckBounds(10, 20, 410, 100), issue.viewBounds)
     assertEquals("Surface", issue.viewClassName)
 
     val secondIssue = issues[1]

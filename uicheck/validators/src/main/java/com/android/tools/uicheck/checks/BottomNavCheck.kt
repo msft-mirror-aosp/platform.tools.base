@@ -17,7 +17,7 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ComponentTreeNode
-import com.android.tools.uicheck.snapshot.VisualLintAnalyzerIssueData
+import com.android.tools.uicheck.snapshot.UiCheckIssue
 import com.android.tools.visuallint.VisualLintErrorType
 
 /** Finds bottom navigation bars wider than 600dp, where Material Design recommends a navigation rail or drawer instead. */
@@ -32,7 +32,7 @@ object BottomNavCheck : ComponentTreeCheck {
     )
 
   /** Checks for bottom navigation bars wider than 600dp. */
-  override fun check(context: CheckContext): List<VisualLintAnalyzerIssueData> =
+  override fun check(context: CheckContext): List<UiCheckIssue> =
     context
       .visibleNodes()
       .filter { it.isBottomNav() && it.bounds.width.pxToDp(context.densityDpi) > COMPACT_WIDTH_BREAKPOINT_DP }
@@ -44,7 +44,7 @@ object BottomNavCheck : ComponentTreeCheck {
   private fun createIssueData(
     node: ComponentTreeNode,
     context: CheckContext,
-  ): VisualLintAnalyzerIssueData =
+  ): UiCheckIssue =
     buildIssueData(
       node = node,
       context = context,

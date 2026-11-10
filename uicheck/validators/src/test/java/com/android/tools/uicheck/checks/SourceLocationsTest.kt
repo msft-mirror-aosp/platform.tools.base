@@ -17,7 +17,7 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ProjectSourceFile
-import com.android.tools.uicheck.snapshot.VisualLintSourceLocationData
+import com.android.tools.uicheck.snapshot.UiCheckSourceLocation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -29,7 +29,7 @@ class SourceLocationsTest {
       ProjectSourceFile("LoginScreen.kt", "com.example"),
       ProjectSourceFile("Button.kt", "com.example.ui"),
     )
-  private val loginButton = VisualLintSourceLocationData("LoginScreen.kt", 42, "Button")
+  private val loginButton = UiCheckSourceLocation("LoginScreen.kt", 42, "Button")
 
   /** Verifies that a node directly in user code resolves to its own source call site. */
   @Test
@@ -72,7 +72,7 @@ class SourceLocationsTest {
     val myButton = node("MyButton", bounds(0, 0, 100, 100), sourceLoc("Button.kt", 7, "com.example.ui"))
 
     assertEquals(
-      VisualLintSourceLocationData("Button.kt", 7, "MyButton"),
+      UiCheckSourceLocation("Button.kt", 7, "MyButton"),
       SourceLocations.resolve(listOf(myButton), UserCodeFilter(projectFiles))[myButton],
     )
   }
@@ -91,7 +91,7 @@ class SourceLocationsTest {
     val userCode = UserCodeFilter(emptyList(), previewMethodFqn = "com.example.LoginScreenKt.LoginPreview")
 
     assertEquals(
-      VisualLintSourceLocationData("LoginScreen.kt", 30, "Column"),
+      UiCheckSourceLocation("LoginScreen.kt", 30, "Column"),
       SourceLocations.resolve(listOf(column), userCode)[text],
     )
   }
@@ -110,7 +110,7 @@ class SourceLocationsTest {
       )
     val locations = SourceLocations.resolve(listOf(theme), UserCodeFilter(projectFiles))
 
-    val firstUserCallSite = VisualLintSourceLocationData("LoginScreen.kt", 50, "Text")
+    val firstUserCallSite = UiCheckSourceLocation("LoginScreen.kt", 50, "Text")
     assertNull(locations[theme])
     assertEquals(firstUserCallSite, locations[spacer])
   }
@@ -154,7 +154,7 @@ class SourceLocationsTest {
       )
     val locations = SourceLocations.resolve(listOf(row1, row2), UserCodeFilter(projectFiles))
 
-    assertEquals(VisualLintSourceLocationData("LoginScreen.kt", 10, "Row"), locations[leaf1])
-    assertEquals(VisualLintSourceLocationData("LoginScreen.kt", 25, "Row"), locations[leaf2])
+    assertEquals(UiCheckSourceLocation("LoginScreen.kt", 10, "Row"), locations[leaf1])
+    assertEquals(UiCheckSourceLocation("LoginScreen.kt", 25, "Row"), locations[leaf2])
   }
 }

@@ -17,7 +17,7 @@
 package com.android.tools.uicheck.checks
 
 import com.android.tools.uicheck.ComponentTreeNode
-import com.android.tools.uicheck.snapshot.VisualLintAnalyzerIssueData
+import com.android.tools.uicheck.snapshot.UiCheckIssue
 import com.android.tools.visuallint.VisualLintErrorType
 
 /** Finds text fields (Compose text fields and View `EditText` widgets) wider than the recommended 488dp. */
@@ -25,7 +25,7 @@ object TextFieldSizeCheck : ComponentTreeCheck {
   private const val MAX_TEXT_FIELD_WIDTH_DP = 488
 
   /** Checks for text fields exceeding the maximum recommended width of 488dp, evaluating only the outermost text field node. */
-  override fun check(context: CheckContext): List<VisualLintAnalyzerIssueData> =
+  override fun check(context: CheckContext): List<UiCheckIssue> =
     context
       .visibleNodes(stopAt = { it.isTextFieldComponent() })
       .filter { it.isTextFieldComponent() && it.bounds.width.pxToDp(context.densityDpi) > MAX_TEXT_FIELD_WIDTH_DP }
@@ -37,7 +37,7 @@ object TextFieldSizeCheck : ComponentTreeCheck {
   private fun createIssueData(
     node: ComponentTreeNode,
     context: CheckContext,
-  ): VisualLintAnalyzerIssueData =
+  ): UiCheckIssue =
     buildIssueData(
       node = node,
       context = context,
