@@ -58,6 +58,7 @@ import com.android.build.gradle.internal.dependency.RecalculateStackFramesTransf
 import com.android.build.gradle.internal.dependency.RecalculateStackFramesTransform.Companion.registerRecalculateStackFramesTransformForComponent
 import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.build.gradle.internal.dependency.registerDexingOutputSplitTransform
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dsl.BaseFlavor
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.DefaultConfig
@@ -562,8 +563,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
               parameters.d8Version.set(d8Version)
               parameters.desugarLibConfigFiles.setFrom(getDesugarLibConfigFiles(services))
               parameters.bootclasspath.from(bootClasspath)
-              r8Classpath?.let { parameters.r8Classpath.from(it) }
-              parameters.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
+              parameters.configureIsolatedR8(r8Classpath, r8ClassloaderBuildService)
             }
             spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
             spec.from.attribute(ATTR_ENABLE_CORE_LIBRARY_DESUGARING, TRUE.toString())
@@ -578,8 +578,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
             spec.parameters { parameters ->
               parameters.minSdkVersion.set(minSdkVersion)
               parameters.d8Version.set(d8Version)
-              r8Classpath?.let { parameters.r8Classpath.from(it) }
-              parameters.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
+              parameters.configureIsolatedR8(r8Classpath, r8ClassloaderBuildService)
             }
             spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
             spec.from.attribute(ATTR_ENABLE_CORE_LIBRARY_DESUGARING, FALSE.toString())

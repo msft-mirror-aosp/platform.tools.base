@@ -17,21 +17,19 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.component.ApkCreationConfig
+import com.android.build.gradle.internal.dexing.IsolatedR8TaskInputs
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
-import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
-import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -50,18 +48,13 @@ import org.gradle.api.tasks.TaskProvider
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.DEXING)
-abstract class GlobalSyntheticsGeneratorTask : NonIncrementalTask() {
+abstract class GlobalSyntheticsGeneratorTask : NonIncrementalTask(), IsolatedR8TaskInputs {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val bootClasspath: ConfigurableFileCollection
 
   @get:Input abstract val minSdk: Property<Int>
 
   @get:OutputDirectory abstract val outputDir: DirectoryProperty
-
-  /** Maven-resolved R8 to generate the global synthetics with, or empty to use the R8 bundled with AGP. */
-  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
-
-  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
 
   override fun doTaskAction() {
     val outputLocation = outputDir.get().asFile.toPath()
@@ -96,9 +89,7 @@ abstract class GlobalSyntheticsGeneratorTask : NonIncrementalTask() {
       super.configure(task)
       task.minSdk.setDisallowChanges(creationConfig.dexing.minSdkVersionForDexing)
       task.bootClasspath.from(creationConfig.global.bootClasspath)
-      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
-      task.r8Classpath.disallowChanges()
-      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
+      task.configureIsolatedR8(task.project, creationConfig.services)
     }
   }
 }

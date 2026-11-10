@@ -23,15 +23,15 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.ToolExecutionOptions
+import com.android.build.gradle.internal.dexing.IsolatedR8TaskInputs
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.DUPLICATE_CLASSES_CHECK
 import com.android.build.gradle.internal.scope.Java8LangSupport
-import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -78,7 +78,7 @@ import org.gradle.work.DisableCachingByDefault
 /** Base task for R8 invocations, sharing common inputs, outputs, and creation actions. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
-abstract class BaseR8Task(projectLayout: ProjectLayout) : ProguardConfigurableTask(projectLayout) {
+abstract class BaseR8Task(projectLayout: ProjectLayout) : ProguardConfigurableTask(projectLayout), IsolatedR8TaskInputs {
 
   @get:InputFile @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val multiDexKeepFile: RegularFileProperty
 
@@ -87,10 +87,6 @@ abstract class BaseR8Task(projectLayout: ProjectLayout) : ProguardConfigurableTa
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val mainDexRulesFiles: ConfigurableFileCollection
 
   @get:Classpath abstract val bootClasspath: ConfigurableFileCollection
-
-  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
-
-  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
 
   @get:Internal abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
 
@@ -249,9 +245,6 @@ abstract class BaseR8Task(projectLayout: ProjectLayout) : ProguardConfigurableTa
       task.featureClassJars.disallowChanges()
       task.featureJavaResourceJars.disallowChanges()
 
-      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
-      task.r8Classpath.disallowChanges()
-
       if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
         task.resourceShrinkingParams.initialize(creationConfig)
       } else {
@@ -326,7 +319,7 @@ abstract class BaseR8Task(projectLayout: ProjectLayout) : ProguardConfigurableTa
       task.r8D8ThreadPoolBuildService.setDisallowChanges(
         R8D8ThreadPoolBuildService.RegistrationAction(task.project, services.projectOptions).execute()
       )
-      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
+      task.configureIsolatedR8(task.project, services)
     }
   }
 }

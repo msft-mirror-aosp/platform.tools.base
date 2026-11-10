@@ -20,6 +20,8 @@ import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
+import com.android.build.gradle.internal.dexing.IsolatedR8TransformParameters
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
@@ -75,7 +77,7 @@ import org.slf4j.LoggerFactory
 @CacheableTransform
 abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : TransformAction<T> {
 
-  interface Parameters : GenericTransformParameters {
+  interface Parameters : IsolatedR8TransformParameters {
     @get:Input val minSdkVersion: Property<Int>
     @get:Input val debuggable: Property<Boolean>
     @get:Input val enableDesugaring: Property<Boolean>
@@ -92,11 +94,6 @@ abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : Transfo
      */
     @get:Input val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
     @get:Input val enableApiModeling: Property<Boolean>
-
-    /** Maven-resolved R8 to dex with, or empty to use the R8 bundled with AGP. */
-    @get:Classpath val r8Classpath: ConfigurableFileCollection
-
-    @get:Internal val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
   }
 
   @get:Inject abstract val inputChanges: InputChanges
@@ -552,8 +549,7 @@ object DexingRegistration {
         enableGlobalSynthetics.set(component.enableGlobalSynthetics)
         useNoOpGlobalSyntheticsConsumer.set(component.useNoOpGlobalSyntheticsConsumer)
         enableApiModeling.set(component.enableApiModeling)
-        allComponents.r8Classpath?.let { r8Classpath.from(it) }
-        r8ClassloaderBuildService.set(allComponents.r8ClassloaderBuildService)
+        configureIsolatedR8(allComponents.r8Classpath, allComponents.r8ClassloaderBuildService)
       }
       // There are 2 transform flows for DEX:
       //   1. (JACOCO_)CLASSES_DIR -> (JACOCO_)CLASSES -> DEX

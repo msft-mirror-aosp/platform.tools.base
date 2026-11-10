@@ -24,10 +24,10 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.dependency.GenericTransformParameters
 import com.android.build.gradle.internal.dependency.L8DesugarLibTransformRegistration
 import com.android.build.gradle.internal.dependency.VariantDependencies.Companion.CONFIG_NAME_CORE_LIBRARY_DESUGARING
+import com.android.build.gradle.internal.dexing.IsolatedR8TransformParameters
 import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
-import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.utils.DesugarConfigJson.Companion.combineFileContents
@@ -54,11 +54,9 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
-import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -361,7 +359,7 @@ abstract class DesugarLibLintExtractor : TransformAction<DesugarLibLintExtractor
 @CacheableTransform
 abstract class D8BackportedMethodsGenerator : TransformAction<D8BackportedMethodsGenerator.Parameters> {
 
-  interface Parameters : GenericTransformParameters {
+  interface Parameters : IsolatedR8TransformParameters {
 
     @get:Input val d8Version: Property<String>
 
@@ -370,11 +368,6 @@ abstract class D8BackportedMethodsGenerator : TransformAction<D8BackportedMethod
     @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val desugarLibConfigFiles: ConfigurableFileCollection
 
     @get:CompileClasspath @get:Optional val bootclasspath: ConfigurableFileCollection
-
-    /** Maven-resolved R8 to run D8 from, or empty to use the R8 bundled with AGP. */
-    @get:Classpath val r8Classpath: ConfigurableFileCollection
-
-    @get:Internal val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
   }
 
   @get:InputArtifact @get:PathSensitive(PathSensitivity.NONE) abstract val inputArtifact: Provider<FileSystemLocation>

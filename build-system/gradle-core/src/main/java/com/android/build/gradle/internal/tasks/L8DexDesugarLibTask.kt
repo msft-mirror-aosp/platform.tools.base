@@ -18,12 +18,13 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.internal.component.ApkCreationConfig
+import com.android.build.gradle.internal.dexing.IsolatedR8TaskInputs
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
@@ -33,7 +34,6 @@ import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreati
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
 import com.android.build.gradle.internal.utils.getDesugarLibJarFromMaven
 import com.android.build.gradle.internal.utils.getDesugaredDesugarLib
-import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.KeepRulesConfig
 import com.android.builder.dexing.L8OutputMode
@@ -43,7 +43,6 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
@@ -59,7 +58,7 @@ import org.gradle.api.tasks.TaskProvider
 /** A task using L8 to dex and shrink(if needed) desugar library with keep rules computed with trace reference tool. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.DEXING)
-abstract class L8DexDesugarLibTask : NonIncrementalTask() {
+abstract class L8DexDesugarLibTask : NonIncrementalTask(), IsolatedR8TaskInputs {
 
   @get:Input abstract val libConfiguration: Property<String>
 
@@ -99,10 +98,6 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
 
   /** Merged partitioned mapping file combining R8's and L8's partitions. */
   @get:OutputFile @get:Optional abstract val outputPartitionMappingFile: RegularFileProperty
-
-  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
-
-  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
 
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(L8DexWorkAction::class.java) {
@@ -166,9 +161,7 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
       task.minSdkVersion.set(dexingCreationConfig.minSdkVersionForDexing)
       task.debuggable.set(creationConfig.debuggable)
       task.fullBootClasspath.from(creationConfig.global.fullBootClasspath)
-      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
-      task.r8Classpath.disallowChanges()
-      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
+      task.configureIsolatedR8(task.project, creationConfig.services)
 
       if (dexingCreationConfig.needsShrinkDesugarLibrary && creationConfig.optimizationCreationConfig.minifiedEnabled) {
         creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.UNMERGED_OBFUSCATION_MAPPING_FILE, task.inputMappingFile)

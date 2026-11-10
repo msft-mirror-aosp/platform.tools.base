@@ -21,11 +21,11 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.dependency.BaseDexingTransform
 import com.android.build.gradle.internal.dependency.computeGlobalSyntheticsDirName
 import com.android.build.gradle.internal.dexing.DexParameters
+import com.android.build.gradle.internal.dexing.IsolatedR8TaskInputs
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
-import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.Java8LangSupport
-import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationActionImpl
@@ -47,7 +47,6 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.CompileClasspath
@@ -75,7 +74,7 @@ import org.gradle.work.InputChanges
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.DEXING)
-abstract class DexArchiveBuilderTask : NewIncrementalTask() {
+abstract class DexArchiveBuilderTask : NewIncrementalTask(), IsolatedR8TaskInputs {
 
   @get:Incremental @get:Classpath abstract val projectClasses: ConfigurableFileCollection
 
@@ -116,11 +115,6 @@ abstract class DexArchiveBuilderTask : NewIncrementalTask() {
   @get:LocalState abstract val previousRunNumberOfBucketsFile: RegularFileProperty
 
   @get:Incremental @get:PathSensitive(PathSensitivity.NONE) @get:InputFiles abstract val externalLibDexFiles: ConfigurableFileCollection
-
-  /** Maven-resolved R8 to dex with, or empty to use the R8 bundled with AGP. */
-  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
-
-  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
 
   /**
    * Task runs incrementally if input changes allow that and if the number of buckets is the same as in the previous run. This is necessary
@@ -328,9 +322,7 @@ abstract class DexArchiveBuilderTask : NewIncrementalTask() {
       task.dexParams.enableApiModeling.set(creationConfig.enableApiModeling)
       task.dexParams.enableGlobalSynthetics.set(creationConfig.enableGlobalSynthetics)
       task.dexParams.useNoOpGlobalSyntheticsConsumer.set(creationConfig.useUniversalGlobalSyntheticsDex)
-      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
-      task.r8Classpath.disallowChanges()
-      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
+      task.configureIsolatedR8(task.project, creationConfig.services)
 
       if (dexExternalLibsInArtifactTransform) {
         task.externalLibDexFiles.from(getDexForExternalLibs(task, "jar"))
@@ -357,8 +349,7 @@ abstract class DexArchiveBuilderTask : NewIncrementalTask() {
           this.enableGlobalSynthetics.set(task.dexParams.enableGlobalSynthetics)
           this.useNoOpGlobalSyntheticsConsumer.set(task.dexParams.useNoOpGlobalSyntheticsConsumer)
           this.enableApiModeling.set(task.dexParams.enableApiModeling)
-          this.r8Classpath.from(task.r8Classpath)
-          this.r8ClassloaderBuildService.set(task.r8ClassloaderBuildService)
+          configureIsolatedR8(task.r8Classpath, task.r8ClassloaderBuildService)
         }
 
         // Until Gradle provides a better way to run artifact transforms for arbitrary

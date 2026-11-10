@@ -17,12 +17,13 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.dexing.IsolatedR8TaskInputs
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
@@ -39,7 +40,6 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
@@ -58,7 +58,7 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION)
-abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
+abstract class VerifyLibraryClassesTask : NonIncrementalTask(), IsolatedR8TaskInputs {
 
   @get:OutputDirectory abstract val verifiedOutputDirectory: DirectoryProperty
 
@@ -73,10 +73,6 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
   @get:Classpath abstract val runtimeRSymbolLists: ConfigurableFileCollection
 
   @get:Internal abstract val symbolTableBuildService: Property<SymbolTableBuildService>
-
-  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
-
-  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
 
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(TraceReferencesWorkAction::class.java) {
@@ -162,9 +158,7 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask() {
         ),
       )
       task.symbolTableBuildService.setDisallowChanges(getBuildService(creationConfig.services.buildServiceRegistry))
-      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
-      task.r8Classpath.disallowChanges()
-      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
+      task.configureIsolatedR8(task.project, creationConfig.services)
     }
   }
 }

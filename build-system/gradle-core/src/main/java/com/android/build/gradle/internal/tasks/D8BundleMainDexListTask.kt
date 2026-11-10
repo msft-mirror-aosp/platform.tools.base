@@ -20,13 +20,14 @@ import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.gradle.internal.component.ApkCreationConfig
+import com.android.build.gradle.internal.dexing.IsolatedR8TaskInputs
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
@@ -42,7 +43,6 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
@@ -57,7 +57,7 @@ import org.gradle.api.tasks.TaskProvider
 /** A task calculating the main dex list for bundle using D8. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.DEXING)
-abstract class D8BundleMainDexListTask : NonIncrementalTask() {
+abstract class D8BundleMainDexListTask : NonIncrementalTask(), IsolatedR8TaskInputs {
 
   @get:Input abstract val errorFormat: Property<SyncOptions.ErrorFormatMode>
 
@@ -76,11 +76,6 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask() {
   @get:Classpath abstract val libraryClasses: ConfigurableFileCollection
 
   @get:OutputFile abstract val output: RegularFileProperty
-
-  /** Maven-resolved R8 to generate the main dex list with, or empty to use the R8 bundled with AGP. */
-  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
-
-  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
 
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(MainDexListWorkerAction::class.java) { params ->
@@ -197,9 +192,7 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask() {
           AndroidArtifacts.ArtifactType.FEATURE_PUBLISHED_DEX,
         )
       )
-      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
-      task.r8Classpath.disallowChanges()
-      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
+      task.configureIsolatedR8(task.project, creationConfig.services)
     }
   }
 }

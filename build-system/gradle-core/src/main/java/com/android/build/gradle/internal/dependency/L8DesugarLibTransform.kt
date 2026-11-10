@@ -19,6 +19,8 @@ package com.android.build.gradle.internal.dependency
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.dexing.IsolatedR8TransformParameters
+import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dexing.createR8Tools
 import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
@@ -49,7 +51,6 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 
@@ -59,15 +60,10 @@ import org.gradle.api.tasks.PathSensitivity
  */
 @CacheableTransform
 abstract class L8DesugarLibTransform : TransformAction<L8DesugarLibTransform.Parameters> {
-  interface Parameters : GenericTransformParameters {
+  interface Parameters : IsolatedR8TransformParameters {
     @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val desugarLibConfigFiles: ConfigurableFileCollection
     @get:Input val minSdkVersion: Property<Int>
     @get:Classpath val fullBootClasspath: ConfigurableFileCollection
-
-    /** Maven-resolved R8 to run L8 from, or empty to use the R8 bundled with AGP. */
-    @get:Classpath val r8Classpath: ConfigurableFileCollection
-
-    @get:Internal val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
   }
 
   @get:Classpath @get:InputArtifact abstract val primaryInput: Provider<FileSystemLocation>
@@ -166,8 +162,7 @@ object L8DesugarLibTransformRegistration {
         desugarLibConfigFiles.setFrom(sharedParameters.desugarLibConfigFiles)
         fullBootClasspath.from(sharedParameters.fullBootClasspath)
         minSdkVersion.set(parameters.minSdkVersion)
-        sharedParameters.r8Classpath?.let { r8Classpath.from(it) }
-        r8ClassloaderBuildService.set(sharedParameters.r8ClassloaderBuildService)
+        configureIsolatedR8(sharedParameters.r8Classpath, sharedParameters.r8ClassloaderBuildService)
       }
       parameters.getAttributes().apply {
         addAttributesToContainer(spec.from)
