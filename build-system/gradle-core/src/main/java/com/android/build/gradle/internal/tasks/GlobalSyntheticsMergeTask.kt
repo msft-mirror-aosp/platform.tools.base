@@ -18,7 +18,9 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.getGlobalSyntheticsInput
@@ -91,6 +93,9 @@ abstract class GlobalSyntheticsMergeTask : NonIncrementalTask() {
         r8D8ThreadPoolBuildService.setDisallowChanges(
           R8D8ThreadPoolBuildService.RegistrationAction(task.project, creationConfig.services.projectOptions).execute()
         )
+        isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { r8Classpath.from(it) }
+        r8Classpath.disallowChanges()
+        r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
       }
 
       task.globalSynthetics.from(

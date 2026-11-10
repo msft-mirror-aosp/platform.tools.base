@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.profile.AnalyticsService
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.transforms.NoOpMessageReceiver
 import com.android.build.gradle.options.SyncOptions
@@ -324,6 +325,9 @@ class DexMergingTaskTest {
 
                     override val useThreadPool: Property<Boolean>
                       get() = FakeObjectFactory.factory.property<Boolean>(Boolean::class.java).value(false)
+
+                    override val r8Classpath = FakeConfigurableFileCollection()
+                    override val r8ClassloaderBuildService = FakeGradleProperty<R8ClassloaderBuildService>()
                   }
                 )
               }

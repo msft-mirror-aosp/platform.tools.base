@@ -67,11 +67,11 @@ final class D8DexArchiveMerger implements DexArchiveMerger {
             @NonNull MessageReceiver messageReceiver,
             @NonNull DexingType dexingType,
             int minSdkVersion,
-            @NonNull CompilationMode compilationMode,
+            boolean isDebuggable,
             @NonNull ExecutorService d8ExecutorService) {
         this.dexingType = dexingType;
         this.minSdkVersion = minSdkVersion;
-        this.compilationMode = compilationMode;
+        this.compilationMode = isDebuggable ? CompilationMode.DEBUG : CompilationMode.RELEASE;
         this.messageReceiver = messageReceiver;
         this.d8ExecutorService = d8ExecutorService;
     }

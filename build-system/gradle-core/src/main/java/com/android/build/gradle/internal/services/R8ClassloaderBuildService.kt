@@ -58,7 +58,7 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
 
   companion object {
     /**
-     * Types that appear in `R8Tools` signatures (e.g. `runR8`, or the D8 dex builder and the class file entries it reads), directly or
+     * Types that appear in `R8Tools` signatures (e.g. `runR8`, or the D8 dex builder and merger and the entries they read), directly or
      * inside another type, and that don't touch com.android.tools.r8.*. If one did reference R8, the parent copy would link to the bundled
      * R8 instead of the downloaded one. Anything that touches R8 must be loaded by the child, so it links against the maven downloaded R8.
      * The isolated loader takes these from the parent (AGP's) loader, so AGP can pass its own objects to the child-loaded `builder-r8`
@@ -69,8 +69,13 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
         "com.android.builder.dexing.ClassFileEntry",
         "com.android.builder.dexing.ClassFileInput",
         "com.android.builder.dexing.DependencyGraphUpdater",
+        "com.android.builder.dexing.DexArchive",
         "com.android.builder.dexing.DexArchiveBuilder",
         "com.android.builder.dexing.DexArchiveBuilderException",
+        "com.android.builder.dexing.DexArchiveEntry",
+        "com.android.builder.dexing.DexArchiveMerger",
+        "com.android.builder.dexing.DexArchiveMergerException",
+        "com.android.builder.dexing.DexingType",
         "com.android.builder.dexing.KeepRuleFile",
         "com.android.builder.dexing.KeepRulesConfig",
         "com.android.builder.dexing.L8OutputMode",
@@ -87,12 +92,22 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
         "com.android.builder.dexing.ToolConfig",
       )
 
+    /**
+     * The only R8-free class in `com.android.builder.multidex` that crosses the isolated ClassLoader boundary: the exception main dex list
+     * generation throws. Matched by exact binary name, because the enclosing `D8MainDexList` and its other nested class use R8 and must be
+     * loaded child-first.
+     */
+    private const val MAIN_DEX_LIST_EXCEPTION_CLASS = "com.android.builder.multidex.D8MainDexList\$MainDexListException"
+
     private fun shouldLoadChildFirst(name: String): Boolean {
       if (name.startsWith("com.android.tools.r8.")) {
         return true
       }
       if (name.startsWith("com.android.builder.dexing.")) {
         return name.substringBefore('$') !in PARENT_DELEGATED_DEXING_CLASSES
+      }
+      if (name.startsWith("com.android.builder.multidex.")) {
+        return name != MAIN_DEX_LIST_EXCEPTION_CLASS
       }
       return false
     }

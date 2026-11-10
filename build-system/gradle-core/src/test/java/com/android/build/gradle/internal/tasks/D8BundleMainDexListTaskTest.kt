@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.build.gradle.internal.profile.AnalyticsService
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.transforms.NoOpMessageReceiver
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.dexing.ClassFileInputs
@@ -142,6 +143,12 @@ class D8BundleMainDexListTaskTest {
 
             override val errorFormat: Property<SyncOptions.ErrorFormatMode>
               get() = FakeGradleProperty(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
+
+            override val r8Classpath: ConfigurableFileCollection
+              get() = FakeConfigurableFileCollection()
+
+            override val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
+              get() = FakeGradleProperty()
 
             override val projectPath: Property<String>
               get() = FakeGradleProperty("projectName")

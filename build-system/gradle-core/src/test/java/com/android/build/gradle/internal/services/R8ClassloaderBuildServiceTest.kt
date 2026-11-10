@@ -79,6 +79,17 @@ class R8ClassloaderBuildServiceTest {
         .isSameInstanceAs(com.android.builder.dexing.DependencyGraphUpdater::class.java)
       assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveBuilderException"))
         .isSameInstanceAs(com.android.builder.dexing.DexArchiveBuilderException::class.java)
+      // The D8 dex merger and the types AGP passes to it or catches from it.
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveMerger"))
+        .isSameInstanceAs(com.android.builder.dexing.DexArchiveMerger::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveMergerException"))
+        .isSameInstanceAs(com.android.builder.dexing.DexArchiveMergerException::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchive"))
+        .isSameInstanceAs(com.android.builder.dexing.DexArchive::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveEntry"))
+        .isSameInstanceAs(com.android.builder.dexing.DexArchiveEntry::class.java)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.DexingType"))
+        .isSameInstanceAs(com.android.builder.dexing.DexingType::class.java)
 
       // Still child-first: the code that actually calls R8.
       assertThat(classLoader.loadClass("com.android.builder.dexing.R8Tool").classLoader).isSameInstanceAs(classLoader)
@@ -89,6 +100,22 @@ class R8ClassloaderBuildServiceTest {
       assertThat(classLoader.loadClass("com.android.builder.dexing.DexParameters").classLoader).isSameInstanceAs(classLoader)
       assertThat(classLoader.loadClass("com.android.builder.dexing.r8.ClassFileProviderFactory").classLoader).isSameInstanceAs(classLoader)
       assertThat(classLoader.loadClass("com.android.builder.dexing.MutableDependencyGraph").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.D8DexArchiveMerger").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.dexing.GlobalSyntheticsGeneratorTool").classLoader)
+        .isSameInstanceAs(classLoader)
+    }
+  }
+
+  @Test
+  fun testMultidexClassesAreChildFirstExceptMainDexListException() {
+    R8ClassloaderBuildService.createClassLoader(setOf(jar1)).use { classLoader ->
+      // D8MainDexList and its diagnostics handler call R8, so they are loaded next to the isolated R8.
+      assertThat(classLoader.loadClass("com.android.builder.multidex.D8MainDexList").classLoader).isSameInstanceAs(classLoader)
+      assertThat(classLoader.loadClass("com.android.builder.multidex.D8MainDexList\$InterceptingDiagnosticsHandler").classLoader)
+        .isSameInstanceAs(classLoader)
+      // The exception it throws is shared with AGP, so AGP code can catch it by type.
+      assertThat(classLoader.loadClass("com.android.builder.multidex.D8MainDexList\$MainDexListException"))
+        .isSameInstanceAs(com.android.builder.multidex.D8MainDexList.MainDexListException::class.java)
     }
   }
 

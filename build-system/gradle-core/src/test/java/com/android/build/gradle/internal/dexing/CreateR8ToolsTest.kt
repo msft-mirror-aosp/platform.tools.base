@@ -20,6 +20,9 @@ import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.builder.dexing.ClassFileInputs
 import com.android.builder.dexing.DexArchiveBuilder
 import com.android.builder.dexing.DexArchiveBuilderException
+import com.android.builder.dexing.DexArchiveMerger
+import com.android.builder.dexing.DexArchives
+import com.android.builder.dexing.DexingType
 import com.android.builder.dexing.KeepRulesConfig
 import com.android.builder.dexing.L8OutputMode
 import com.android.builder.dexing.MainDexListConfig
@@ -28,6 +31,7 @@ import com.android.builder.dexing.R8OutputType
 import com.android.builder.dexing.R8Tools
 import com.android.builder.dexing.R8ToolsImpl
 import com.android.builder.dexing.ToolConfig
+import com.android.builder.multidex.D8MainDexList
 import com.android.ide.common.blame.Message
 import com.android.ide.common.blame.MessageReceiver
 import com.android.testutils.TestInputsGenerator
@@ -37,6 +41,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
 import java.io.Closeable
 import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.jar.JarEntry
@@ -275,6 +281,103 @@ class CreateR8ToolsTest {
         }
       }
     }
+  }
+
+  @Test
+  fun createD8DexMerger_throughIsolatedClassLoader() {
+    val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
+    val inputJar = temporaryFolder.root.toPath().resolve("input.jar")
+    writeClassUsingOptional(inputJar)
+    val mergedDir = temporaryFolder.newFolder("merged").toPath()
+
+    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+      val r8Tools = createR8Tools(isolatedLoader)
+      val dexDir = dexWith(r8Tools, androidJar, inputJar, "dex")
+
+      val merger =
+        r8Tools.createD8DexMerger(
+          messageReceiver = noOpMessageReceiver,
+          dexingType = DexingType.NATIVE_MULTIDEX,
+          minSdkVersion = 21,
+          isDebuggable = true,
+          d8ExecutorService = MoreExecutors.newDirectExecutorService(),
+        )
+      // The merger is loaded next to the isolated R8, but it is still AGP's DexArchiveMerger type.
+      assertThat(merger.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
+      assertThat(merger).isInstanceOf(DexArchiveMerger::class.java)
+
+      // The dex archive entries are read by AGP's code and passed to the merger, as DexMergingTask does.
+      DexArchives.fromInput(dexDir).use { dexArchive ->
+        merger.mergeDexArchives(dexArchive.sortedDexArchiveEntries, emptyList(), mergedDir, null, null, null, null, null, null, null)
+      }
+      assertThatDex(mergedDir.resolve("classes.dex").toFile()).containsClass("Ltest/App;")
+    }
+  }
+
+  @Test
+  fun generateMainDexList_throughIsolatedClassLoader() {
+    val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
+    val inputJar = temporaryFolder.root.toPath().resolve("input.jar")
+    writeClassUsingOptional(inputJar)
+
+    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+      val r8Tools = createR8Tools(isolatedLoader)
+      val dexDir = dexWith(r8Tools, androidJar, inputJar, "dex")
+
+      val mainDexList =
+        r8Tools.generateMainDexList(
+          mainDexRules = listOf("-keep class test.App"),
+          mainDexRulesFiles = emptyList(),
+          programFiles = listOf(dexDir),
+          libraryFiles = listOf(androidJar),
+          messageReceiver = noOpMessageReceiver,
+        )
+      assertThat(mainDexList).containsExactly("test/App.class")
+
+      // The same class in two program inputs fails. The failure is AGP's own MainDexListException, which is shared with the isolated
+      // ClassLoader, while the rest of D8MainDexList is loaded next to the isolated R8.
+      val duplicateDexDir = dexWith(r8Tools, androidJar, inputJar, "duplicate_dex")
+      val e =
+        assertThrows(D8MainDexList.MainDexListException::class.java) {
+          r8Tools.generateMainDexList(
+            mainDexRules = emptyList(),
+            mainDexRulesFiles = emptyList(),
+            programFiles = listOf(dexDir, duplicateDexDir),
+            libraryFiles = listOf(androidJar),
+            messageReceiver = noOpMessageReceiver,
+          )
+        }
+      assertThat(e.message).contains("is defined multiple times")
+      assertThat(isolatedLoader.loadClass("com.android.builder.multidex.D8MainDexList").classLoader).isSameInstanceAs(isolatedLoader)
+    }
+  }
+
+  @Test
+  fun generateGlobalSynthetics_throughIsolatedClassLoader() {
+    val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
+    val outputDir = temporaryFolder.newFolder("global_synthetics").toPath()
+
+    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+      createR8Tools(isolatedLoader).generateGlobalSynthetics(listOf(androidJar), 21, outputDir)
+    }
+
+    // The global synthetics are written as a dex file with at least one class (class_defs_size is at offset 0x60 of the dex header).
+    val dexBytes = Files.readAllBytes(outputDir.resolve("classes.dex"))
+    assertThat(ByteBuffer.wrap(dexBytes).order(ByteOrder.LITTLE_ENDIAN).getInt(0x60)).isGreaterThan(0)
+  }
+
+  /** Dexes [inputJar] into a new directory with the dex builder from [r8Tools], and returns the directory. */
+  private fun dexWith(r8Tools: R8Tools, androidJar: Path, inputJar: Path, dirName: String): Path {
+    val dexDir = temporaryFolder.newFolder(dirName).toPath()
+    r8Tools.createClassFileProviderFactory(listOf(androidJar)).use { bootclasspath ->
+      r8Tools.createClassFileProviderFactory(emptyList()).use { classpath ->
+        val dexBuilder = createD8DexBuilder(r8Tools, bootclasspath, classpath)
+        ClassFileInputs.fromPath(inputJar).use { input ->
+          input.entries { _, _ -> true }.use { entries -> dexBuilder.convert(entries, dexDir, null) }
+        }
+      }
+    }
+    return dexDir
   }
 
   private fun createD8DexBuilder(r8Tools: R8Tools, desugarBootclasspath: Closeable, desugarClasspath: Closeable): DexArchiveBuilder =

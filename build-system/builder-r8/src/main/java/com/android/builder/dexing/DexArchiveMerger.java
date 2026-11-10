@@ -3,7 +3,6 @@ package com.android.builder.dexing;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.MessageReceiver;
-import com.android.tools.r8.CompilationMode;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -26,11 +25,7 @@ public interface DexArchiveMerger {
             boolean isDebuggable,
             @NonNull ExecutorService d8ExecutorService) {
         return new D8DexArchiveMerger(
-                messageReceiver,
-                dexingType,
-                minSdkVersion,
-                isDebuggable ? CompilationMode.DEBUG : CompilationMode.RELEASE,
-                d8ExecutorService);
+                messageReceiver, dexingType, minSdkVersion, isDebuggable, d8ExecutorService);
     }
 
     /**

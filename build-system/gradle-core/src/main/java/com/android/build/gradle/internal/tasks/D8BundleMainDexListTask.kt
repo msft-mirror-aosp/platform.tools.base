@@ -20,24 +20,29 @@ import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.gradle.internal.component.ApkCreationConfig
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.withR8ClassLoader
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationActionImpl
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.builder.multidex.D8MainDexList
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
@@ -72,6 +77,11 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask() {
 
   @get:OutputFile abstract val output: RegularFileProperty
 
+  /** Maven-resolved R8 to generate the main dex list with, or empty to use the R8 bundled with AGP. */
+  @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
+
+  @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
+
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(MainDexListWorkerAction::class.java) { params ->
       params.initializeFromBaseTask(this)
@@ -83,6 +93,8 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask() {
       params.userMultidexKeepFile.set(userMultidexKeepFile)
       params.output.set(output)
       params.errorFormat.set(errorFormat)
+      params.r8Classpath.from(r8Classpath)
+      params.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
     }
   }
 
@@ -95,6 +107,8 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask() {
       abstract val userMultidexKeepFile: RegularFileProperty
       abstract val output: RegularFileProperty
       abstract val errorFormat: Property<SyncOptions.ErrorFormatMode>
+      abstract val r8Classpath: ConfigurableFileCollection
+      abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
     }
 
     override fun run() {
@@ -108,15 +122,20 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask() {
 
       val mainDexClasses = mutableSetOf<String>()
 
-      mainDexClasses.addAll(
-        D8MainDexList.generate(
-          getPlatformRules(),
-          parameters.proguardRules.map { it.toPath() },
-          parameters.programDexFiles.map { it.toPath() },
-          libraryFiles.map { it.toPath() },
-          MessageReceiverImpl(parameters.errorFormat.get(), logger),
-        )
-      )
+      withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
+        val r8Tools = createR8Tools(r8ClassLoader)
+        wrapIsolatedR8Failures(r8ClassLoader) {
+          mainDexClasses.addAll(
+            r8Tools.generateMainDexList(
+              getPlatformRules(),
+              parameters.proguardRules.map { it.toPath() },
+              parameters.programDexFiles.map { it.toPath() },
+              libraryFiles.map { it.toPath() },
+              MessageReceiverImpl(parameters.errorFormat.get(), logger),
+            )
+          )
+        }
+      }
 
       parameters.userMultidexKeepFile.orNull?.let { mainDexClasses.addAll(it.asFile.readLines()) }
 
@@ -178,6 +197,9 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask() {
           AndroidArtifacts.ArtifactType.FEATURE_PUBLISHED_DEX,
         )
       )
+      isolatedR8Classpath(creationConfig.services.projectOptions, creationConfig.services.r8FromMaven)?.let { task.r8Classpath.from(it) }
+      task.r8Classpath.disallowChanges()
+      task.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
     }
   }
 }

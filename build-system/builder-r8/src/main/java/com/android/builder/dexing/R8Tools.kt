@@ -113,4 +113,28 @@ interface R8Tools {
     messageReceiver: MessageReceiver,
     useNoOpGlobalSyntheticsConsumer: Boolean,
   ): DexArchiveBuilder
+
+  /** Creates a D8 [DexArchiveMerger]. Same parameters as DexArchiveMerger.createD8DexMerger. */
+  fun createD8DexMerger(
+    messageReceiver: MessageReceiver,
+    dexingType: DexingType,
+    minSdkVersion: Int,
+    isDebuggable: Boolean,
+    d8ExecutorService: ExecutorService,
+  ): DexArchiveMerger
+
+  /**
+   * Same parameters as D8MainDexList.generate, so the implementation just forwards them. Failures are thrown as
+   * D8MainDexList.MainDexListException, which is shared with AGP's ClassLoader.
+   */
+  fun generateMainDexList(
+    mainDexRules: List<String>,
+    mainDexRulesFiles: List<Path>,
+    programFiles: Collection<Path>,
+    libraryFiles: Collection<Path>,
+    messageReceiver: MessageReceiver,
+  ): List<String>
+
+  /** Same parameters as GlobalSyntheticsGeneratorTool.generate, so the implementation just forwards them. */
+  fun generateGlobalSynthetics(bootClasspath: Collection<Path>, minSdk: Int, outputDir: Path)
 }

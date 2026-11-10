@@ -17,6 +17,7 @@
 package com.android.builder.dexing
 
 import com.android.builder.dexing.r8.ClassFileProviderFactory
+import com.android.builder.multidex.D8MainDexList
 import com.android.ide.common.blame.MessageReceiver
 import java.io.Closeable
 import java.io.File
@@ -166,6 +167,29 @@ class R8ToolsImpl : R8Tools {
         useNoOpGlobalSyntheticsConsumer = useNoOpGlobalSyntheticsConsumer,
       )
     )
+
+  override fun createD8DexMerger(
+    messageReceiver: MessageReceiver,
+    dexingType: DexingType,
+    minSdkVersion: Int,
+    isDebuggable: Boolean,
+    d8ExecutorService: ExecutorService,
+  ): DexArchiveMerger =
+    // Not DexArchiveMerger.createD8DexMerger: DexArchiveMerger is loaded by AGP's ClassLoader, so its factory would create AGP's own
+    // D8DexArchiveMerger, which runs the R8 bundled with AGP.
+    D8DexArchiveMerger(messageReceiver, dexingType, minSdkVersion, isDebuggable, d8ExecutorService)
+
+  override fun generateMainDexList(
+    mainDexRules: List<String>,
+    mainDexRulesFiles: List<Path>,
+    programFiles: Collection<Path>,
+    libraryFiles: Collection<Path>,
+    messageReceiver: MessageReceiver,
+  ): List<String> = D8MainDexList.generate(mainDexRules, mainDexRulesFiles, programFiles, libraryFiles, messageReceiver)
+
+  override fun generateGlobalSynthetics(bootClasspath: Collection<Path>, minSdk: Int, outputDir: Path) {
+    GlobalSyntheticsGeneratorTool.generate(bootClasspath, minSdk, outputDir)
+  }
 
   private fun Closeable.asClassFileProviderFactory(): ClassFileProviderFactory =
     this as? ClassFileProviderFactory

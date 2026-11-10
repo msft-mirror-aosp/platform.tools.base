@@ -24,11 +24,16 @@ import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.crash.PluginCrashReporter
 import com.android.build.gradle.internal.dependency.AndroidAttributes
 import com.android.build.gradle.internal.dependency.DexingRegistration
+import com.android.build.gradle.internal.dexing.createR8Tools
+import com.android.build.gradle.internal.dexing.withR8ClassLoader
+import com.android.build.gradle.internal.dexing.wrapIsolatedR8Failures
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.doClose
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_ALL
@@ -49,7 +54,6 @@ import com.android.build.gradle.options.SyncOptions
 import com.android.build.gradle.tasks.toSerializable
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.DexArchiveEntry
-import com.android.builder.dexing.DexArchiveMerger
 import com.android.builder.dexing.DexEntry
 import com.android.builder.dexing.DexEntryBucket
 import com.android.builder.dexing.DexingType
@@ -130,6 +134,11 @@ abstract class DexMergingTask : NewIncrementalTask() {
     @get:Optional // used if useThreadPool=true
     @get:ServiceReference
     abstract val r8D8ThreadPoolBuildService: Property<R8D8ThreadPoolBuildService>
+
+    /** Maven-resolved R8 to merge with, or empty to use the R8 bundled with AGP. */
+    @get:Classpath abstract val r8Classpath: ConfigurableFileCollection
+
+    @get:ServiceReference abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
 
     /** Parameters for generating main dex list and merging dex files in [LEGACY_MULTIDEX] mode. */
     abstract class MainDexListConfig {
@@ -306,6 +315,9 @@ abstract class DexMergingTask : NewIncrementalTask() {
           R8D8ThreadPoolBuildService.RegistrationAction(task.project, projectOptions).execute()
         )
       }
+      isolatedR8Classpath(projectOptions, creationConfig.services.r8FromMaven)?.let { task.sharedParams.r8Classpath.from(it) }
+      task.sharedParams.r8Classpath.disallowChanges()
+      task.sharedParams.r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(task.project).execute())
 
       // Input properties
       task.numberOfBuckets.setDisallowChanges(numberOfBuckets)
@@ -802,32 +814,36 @@ abstract class DexMergingWorkAction : ProfileAwareWorkAction<DexMergingWorkActio
     val messageReceiver = MessageReceiverImpl(sharedParams.errorFormatMode.get(), Logging.getLogger(DexMergingTask::class.java))
 
     try {
-      val merger =
-        DexArchiveMerger.createD8DexMerger(
-          messageReceiver,
-          sharedParams.dexingType.get(),
-          sharedParams.minSdkVersion.get(),
-          sharedParams.debuggable.get(),
-          d8ExecutorService,
-        )
-
       val proguardRules = mutableListOf<Path>()
       sharedParams.mainDexListConfig.aaptGeneratedRules.asFile.orNull?.let { proguardRules.add(it.toPath()) }
       sharedParams.mainDexListConfig.userMultidexProguardRules.get().asSequence().map(RegularFile::getAsFile).map(File::toPath).forEach {
         proguardRules.add(it)
       }
-      merger.mergeDexArchives(
-        dexArchiveEntries,
-        globalSynthetics,
-        outputDir.toPath(),
-        proguardRules,
-        sharedParams.mainDexListConfig.platformMultidexProguardRules.orNull,
-        sharedParams.mainDexListConfig.userMultidexKeepFile.orNull?.asFile?.toPath(),
-        sharedParams.mainDexListConfig.libraryClasses.map { it.toPath() },
-        inputProfileForDexStartupOptimization,
-        mainDexListOutput,
-        d8Metadata,
-      )
+      withR8ClassLoader(sharedParams.r8Classpath, sharedParams.r8ClassloaderBuildService) { r8ClassLoader ->
+        val r8Tools = createR8Tools(r8ClassLoader)
+        wrapIsolatedR8Failures(r8ClassLoader) {
+          val merger =
+            r8Tools.createD8DexMerger(
+              messageReceiver,
+              sharedParams.dexingType.get(),
+              sharedParams.minSdkVersion.get(),
+              sharedParams.debuggable.get(),
+              d8ExecutorService,
+            )
+          merger.mergeDexArchives(
+            dexArchiveEntries,
+            globalSynthetics,
+            outputDir.toPath(),
+            proguardRules,
+            sharedParams.mainDexListConfig.platformMultidexProguardRules.orNull,
+            sharedParams.mainDexListConfig.userMultidexKeepFile.orNull?.asFile?.toPath(),
+            sharedParams.mainDexListConfig.libraryClasses.map { it.toPath() },
+            inputProfileForDexStartupOptimization,
+            mainDexListOutput,
+            d8Metadata,
+          )
+        }
+      }
     } catch (e: Exception) {
       PluginCrashReporter.maybeReportException(e)
       // Print the error always, even without --stacktrace
