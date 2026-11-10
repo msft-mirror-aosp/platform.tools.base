@@ -16,6 +16,7 @@
 
 package com.android.tools.render.validation
 
+import com.android.ide.common.resources.configuration.LocaleQualifier
 import com.android.tools.preview.MAX_DIMENSION_DP
 import com.android.tools.preview.MAX_FONT_SCALE
 import com.android.tools.preview.UNDEFINED_API_LEVEL
@@ -138,6 +139,25 @@ object ParameterValidators {
       else -> emptyList()
     }
   }
+
+  /**
+   * Validates the `locale` parameter.
+   *
+   * The value must be a locale resource qualifier (`en`, `en-rUS`, `b+sr+Latn+RS`) because that is what the renderer resolves it with
+   * (`Locale.create`), which silently falls back to the default locale for anything else, e.g. the BCP-47 style `en-US`.
+   */
+  fun validateLocale(value: String?): List<ValidationIssue> {
+    if (value.isNullOrEmpty() || LocaleQualifier.getQualifier(value) != null) return emptyList()
+    return listOf(
+      ValidationIssue(
+        message = "Parameter 'locale' must be a locale resource qualifier such as 'en', 'en-rUS' or 'b+sr+Latn+RS', got: '$value'",
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.PARAMETER,
+        target = "locale",
+        value = value,
+      )
+    )
+  }
 }
 
 /** Main orchestrator for validating Compose preview. */
@@ -156,6 +176,7 @@ class PreviewValidator : Validator<PreviewScreenshot> {
     issues.addAll(ParameterValidators.validateDimension("heightDp", previewParams["heightDp"]))
     issues.addAll(ParameterValidators.validateFontScale(previewParams["fontScale"]))
     issues.addAll(ParameterValidators.validateApiLevel(previewParams["apiLevel"]))
+    issues.addAll(ParameterValidators.validateLocale(previewParams["locale"]))
 
     return ValidationResult(issues)
   }

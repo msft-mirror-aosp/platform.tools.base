@@ -127,6 +127,38 @@ class PreviewValidatorTest {
   }
 
   @Test
+  fun testValidLocalesPassValidation() {
+    // Resource qualifier forms accepted by Locale.create: language, language + region, uppercase, M.49 numeric region and BCP-47.
+    for (locale in listOf("en", "EN", "fil", "en-rUS", "pt-rBR", "es-r419", "b+en+US", "b+sr+Latn+RS")) {
+      val result = validator.validateParams(mapOf("locale" to locale))
+      assertTrue("Locale '$locale' should be valid but got: ${result.issues}", result.isValid)
+      assertTrue(result.issues.isEmpty())
+    }
+  }
+
+  @Test
+  fun testEmptyLocalePassesValidation() {
+    assertTrue(validator.validateParams(mapOf("locale" to "")).issues.isEmpty())
+    assertTrue(validator.validateParams(emptyMap()).issues.isEmpty())
+  }
+
+  @Test
+  fun testInvalidLocalesProduceError() {
+    // "en-US" is the most common mistake: the region must use the resource qualifier 'r' prefix (en-rUS).
+    for (locale in listOf("en-US", "en_US", "english", "e", "en-rUSA", "en-r", "b+", " ", "en-rUS-x")) {
+      val result = validator.validateParams(mapOf("locale" to locale))
+      assertFalse("Locale '$locale' should be invalid", result.isValid)
+      assertEquals(1, result.errors.size)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("locale", error.target)
+      assertEquals(locale, error.value)
+      assertTrue(error.message.contains("'en-rUS'"))
+    }
+  }
+
+  @Test
   fun testValidationResultAggregationAndComposition() {
     val r1 = ValidationResult.error("Error 1", ValidationCategory.PARAMETER, target = "widthDp")
     val r2 = ValidationResult.warning("Warning 1", ValidationCategory.METHOD, target = "myMethod")
