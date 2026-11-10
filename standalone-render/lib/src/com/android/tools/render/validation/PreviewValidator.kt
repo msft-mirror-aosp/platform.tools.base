@@ -17,6 +17,7 @@
 package com.android.tools.render.validation
 
 import com.android.ide.common.resources.configuration.LocaleQualifier
+import com.android.sdklib.SdkVersionInfo
 import com.android.tools.preview.MAX_DIMENSION_DP
 import com.android.tools.preview.MAX_FONT_SCALE
 import com.android.tools.preview.UNDEFINED_API_LEVEL
@@ -33,6 +34,12 @@ object ParameterValidators {
 
   /** Largest valid `backgroundColor`: opaque white (`0xFFFFFFFF`), the maximum value of a 32-bit ARGB color. */
   const val MAX_BACKGROUND_COLOR = 0xFFFFFFFFL
+
+  /** Lowest `apiLevel` accepted for a preview, the same lower bound Android Studio uses for `compileSdk`. */
+  const val MIN_API_LEVEL = SdkVersionInfo.LOWEST_COMPILE_SDK_VERSION
+
+  /** Highest `apiLevel` accepted for a preview, the highest API level supported by the tools. */
+  const val MAX_API_LEVEL = SdkVersionInfo.HIGHEST_SUPPORTED_API
 
   /** Validates dimension parameters (`widthDp`, `heightDp`). */
   fun validateDimension(paramName: String, value: String?): List<ValidationIssue> {
@@ -115,7 +122,12 @@ object ParameterValidators {
     }
   }
 
-  /** Validates apiLevel parameter. */
+  /**
+   * Validates the `apiLevel` parameter.
+   *
+   * Besides `-1` (undefined), only API levels within [MIN_API_LEVEL]..[MAX_API_LEVEL] are accepted, matching the range enforced by the
+   * `PreviewApiLevelMustBeValid` inspection in Android Studio when no SDK platform is installed.
+   */
   fun validateApiLevel(value: String?): List<ValidationIssue> {
     if (value.isNullOrEmpty()) return emptyList()
     val apiLevel =
@@ -132,10 +144,11 @@ object ParameterValidators {
 
     return when {
       apiLevel == UNDEFINED_API_LEVEL -> emptyList()
-      apiLevel <= 0 ->
+      apiLevel !in MIN_API_LEVEL..MAX_API_LEVEL ->
         listOf(
           ValidationIssue(
-            message = "API level must be positive or -1 (undefined), got: $apiLevel",
+            message =
+              "Parameter 'apiLevel' must be -1 (undefined) or an API level between $MIN_API_LEVEL and $MAX_API_LEVEL, got: $apiLevel",
             severity = ValidationSeverity.ERROR,
             category = ValidationCategory.PARAMETER,
             target = "apiLevel",

@@ -127,6 +127,28 @@ class PreviewValidatorTest {
   }
 
   @Test
+  fun testApiLevelMustBeWithinSupportedRange() {
+    val min = ParameterValidators.MIN_API_LEVEL
+    val max = ParameterValidators.MAX_API_LEVEL
+
+    for (apiLevel in listOf(min, max, (min + max) / 2)) {
+      val result = validator.validateParams(mapOf("apiLevel" to apiLevel.toString()))
+      assertTrue("API level $apiLevel should be valid but got: ${result.issues}", result.issues.isEmpty())
+    }
+
+    for (apiLevel in listOf(min - 1, max + 1, 1)) {
+      val result = validator.validateParams(mapOf("apiLevel" to apiLevel.toString()))
+      assertFalse("API level $apiLevel should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("apiLevel", error.target)
+      assertEquals(apiLevel.toString(), error.value)
+      assertTrue(error.message.contains("between $min and $max"))
+    }
+  }
+
+  @Test
   fun testValidLocalesPassValidation() {
     // Resource qualifier forms accepted by Locale.create: language, language + region, uppercase, M.49 numeric region and BCP-47.
     for (locale in listOf("en", "EN", "fil", "en-rUS", "pt-rBR", "es-r419", "b+en+US", "b+sr+Latn+RS")) {
