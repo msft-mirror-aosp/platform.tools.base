@@ -2692,7 +2692,7 @@ package com.android.build.api.testsuites {
   public static final class TestSuiteExecutionClient.Companion {
     method @org.gradle.api.Incubating public com.android.build.api.testsuites.TestSuiteExecutionClient default();
     method @org.gradle.api.Incubating public com.android.build.api.testsuites.TestSuiteExecutionClient withEnvVariable(String variableName);
-    property public static String DEFAULT_ENV_VARIABLE;
+    property @org.gradle.api.Incubating public static String DEFAULT_ENV_VARIABLE;
   }
 
 }

@@ -832,8 +832,11 @@ gradle_build(
 maven_repository(
     name = "metalava_tool",
     artifacts = [
-        "@maven//:com.android.tools.metalava.metalava_1.0.0-alpha14",
+        "@maven//:androidx.annotation.annotation_1.10.0",
+        "@maven//:androidx.collection.collection_1.6.0",
+        "@maven//:androidx.tracing.tracing-wire_2.0.3",
         "@maven//:ch.randelshofer.fastdoubleparser_0.8.0",
+        "@maven//:com.android.tools.metalava.metalava_1.0.0-alpha16",
         "@maven//:com.google.protobuf.protobuf-bom_3.19.3",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
     ],

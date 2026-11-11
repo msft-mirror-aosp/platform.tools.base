@@ -24,7 +24,7 @@ iml_module(
     test_deps = [
         "//tools/base/manifest-parser:studio.android.sdktools.manifest-parser",
         "//tools/base/common:studio.android.sdktools.common",
-        "//prebuilts/tools/common/m2:junit-4.12",
+        "//prebuilts/tools/common/m2:junit-4.13.2",
         "//tools/base/testutils:studio.android.sdktools.testutils",
     ],
     test_friends = ["//tools/base/manifest-parser:studio.android.sdktools.manifest-parser"],
