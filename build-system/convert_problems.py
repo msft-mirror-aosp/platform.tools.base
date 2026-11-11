@@ -86,8 +86,8 @@ def extract_problems(html_path):
     problems = list()
     for d in diagnostics:
         problem = serialize_problem(d)
-        # Filter out compilation problems
-        if not problem.startswith("compilation >"):
+        # Filter out compilation problems (Java compilation and KGP 2.4+ Kotlin compiler warnings)
+        if not problem.startswith(("compilation >", "kotlin > compiler:")):
             problems.append(serialize_problem(d))
 
     return sorted(problems)
