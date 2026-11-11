@@ -38,6 +38,12 @@ class InstrumenterTestKotlinTarget {
 
   class Node(val next: Node?, val name: String?)
 
+  // Kotlin gives the object a private constructor that only calls the
+  // constructor of Object.
+  object Defaults {
+    fun name(): String = "World"
+  }
+
   inner class Reader {
     // Reads `count` through the synthetic accessor access$getCount$p.
     fun read(): Int = count

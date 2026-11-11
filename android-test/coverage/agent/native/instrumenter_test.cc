@@ -348,5 +348,15 @@ TEST(InstrumenterTest, ChecksOfSafeCallsShareNullBranch) {
   EXPECT_EQ(instructions, 12u);
 }
 
+TEST(InstrumenterTest, PrivateEmptyConstructorIsNotReported) {
+  // The constructor has only one register, so the agent grows its frame and
+  // copies `this` back after the call to the constructor of Object.
+  constexpr char kDefaultsClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Defaults;";
+  // The other methods of the object are instrumented.
+  ASSERT_NE(InstrumentedMethod("name", kDefaultsClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("<init>", kDefaultsClass), nullptr);
+}
+
 }  // namespace
 }  // namespace coverage
