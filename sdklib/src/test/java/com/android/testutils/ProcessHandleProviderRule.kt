@@ -15,8 +15,7 @@
  */
 package com.android.testutils
 
-import com.android.sdklib.deviceprovisioner.ProcessHandleProvider
-import fleet.fastutil.longs.Long2ObjectOpenHashMap
+import com.android.sdklib.util.ProcessHandleProvider
 import java.time.Duration
 import java.time.Instant
 import java.util.Optional
@@ -38,7 +37,7 @@ class ProcessHandleProviderRule(var factory: ProcessHandleProvider.Factory? = nu
 
   private val fakeProcessHandleFactory =
     object : ProcessHandleProvider.Factory {
-      val processHandles = Long2ObjectOpenHashMap<ProcessHandle>()
+      val processHandles = mutableMapOf<Long, ProcessHandle>()
 
       override fun getProcessHandle(pid: Long): ProcessHandle? {
         synchronized(processHandles) {

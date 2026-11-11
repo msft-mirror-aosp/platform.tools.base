@@ -44,6 +44,7 @@ import com.android.sdklib.internal.avd.AvdNames.cleanAvdName
 import com.android.sdklib.internal.project.ProjectProperties
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper
+import com.android.sdklib.util.ProcessHandleProvider
 import com.android.utils.FileUtils
 import com.android.utils.GrabProcessOutput
 import com.android.utils.GrabProcessOutput.IProcessOutput
@@ -72,6 +73,7 @@ import java.util.regex.Pattern
 import java.util.stream.Collectors.toList
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.name
+import kotlinx.coroutines.future.await
 
 /**
  * Android Virtual Device Manager to manage AVDs.
@@ -149,6 +151,25 @@ private constructor(
   /** Returns the [AvdInfo] with the given id (path of the AVD folder), or null if not found. */
   fun findAvdWithFolder(avdFolder: Path): AvdInfo? {
     return allAvds.firstOrNull { it.dataFolderPath == avdFolder }
+  }
+
+  /** Stops the emulator if it is running and waits for it to terminate. */
+  @JvmOverloads
+  suspend fun stopAvd(avd: AvdInfo, forcibly: Boolean = false) {
+    val pid = getPid(avd)
+    if (pid != 0L) {
+      ProcessHandleProvider.getProcessHandle(pid)?.let {
+        // Kill the emulator process if it is running.
+        val termination = it.onExit()
+        if (!termination.isDone) {
+          val success = if (forcibly) it.destroyForcibly() else it.destroy()
+          if (success) {
+            // Wait for the emulator process to terminate.
+            termination.await()
+          }
+        }
+      }
+    }
   }
 
   /** Returns the process ID of the emulator running for the given AVD, or zero if the AVD is not running. */

@@ -28,7 +28,9 @@ import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.sdklib.repository.IdDisplay
 import com.android.sdklib.repository.targets.SystemImage
 import com.android.sdklib.testing.TestSystemImages
+import com.android.sdklib.util.ProcessHandleProvider
 import com.android.testutils.MockLog
+import com.android.testutils.ProcessHandleProviderRule
 import com.android.testutils.file.createInMemoryFileSystem
 import com.android.testutils.file.recordExistingFile
 import com.android.testutils.file.someRoot
@@ -64,6 +66,7 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class AvdManagerTest {
   @get:Rule var name = TestName()
+  @get:Rule val processHandleProviderRule = ProcessHandleProviderRule()
 
   private lateinit var androidSdkHandler: AndroidSdkHandler
   private lateinit var avdManager: AvdManager
@@ -168,6 +171,22 @@ class AvdManagerTest {
 
     // Assert
     assertThat(pid).isEqualTo(0)
+  }
+
+  @Test
+  fun stopAvd() {
+    val avd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
+    val file = avdManager.resolveLockFile(avd, "hardware-qemu.ini.lock")
+    Files.createDirectories(file.parent)
+    Files.write(file, "412503".toByteArray())
+    val processHandle = ProcessHandleProvider.getProcessHandle(412503)!!
+    assertThat(processHandle.isAlive).isTrue()
+
+    runBlocking {
+      avdManager.stopAvd(avd)
+    }
+
+    assertThat(processHandle.isAlive).isFalse()
   }
 
   @Test

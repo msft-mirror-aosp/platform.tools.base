@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.sdklib.deviceprovisioner
+package com.android.sdklib.util
 
 import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.annotations.TestOnly
