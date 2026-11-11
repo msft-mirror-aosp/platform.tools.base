@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="24" viewBox="0 0 48 24">
+  <rect x="2" y="2" width="44" height="20" fill="#0e0"/>
+  <!-- The text is not filled to make the image independent of the fallback font. -->
+  <text x="2" y="18" font-family="'No Such Font 1', NoSuchFont2" font-size="16" fill="none">Hello</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <path d="M32,0 v64" stroke="#f00" stroke-width="0.5"/>
+  <g font-family="Droid Sans" font-size="16">
+    <text x="32" y="18">Abc</text>
+    <text x="32" y="38" text-anchor="middle">Abc</text>
+    <text x="32" y="58" style="text-anchor:end">Abc</text>
+  </g>
+</svg>

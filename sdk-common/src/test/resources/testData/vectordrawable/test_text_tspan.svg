@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48" viewBox="0 0 64 48">
+  <text x="2" y="18" class="label">
+    Ab
+    <tspan fill="#f00">cd</tspan>
+    <tspan x="2" dy="24" class="big">Ef</tspan>
+  </text>
+  <!-- The style element intentionally follows the text. -->
+  <style>
+    .label { font-family: Droid Sans; font-size: 16px; fill: #00f }
+    tspan.big { font-size: 24px; font-weight: bold }
+  </style>
+</svg>

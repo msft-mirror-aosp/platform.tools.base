@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- All four texts are expected to start at the vertical line. -->
+  <path d="M30,0 v64" stroke="#f00" stroke-width="0.5"/>
+  <g font-family="Droid Sans" font-size="12">
+    <text x="10" dx="20" y="14">Ab</text>
+    <!-- "dx" and "dy" of an ancestor are not affected by "x" and "y" of a descendant. -->
+    <text dx="20" y="30"><tspan x="10">Ab</tspan></text>
+    <text x="30" y="100" dy="10"><tspan y="36">Ab</tspan></text>
+    <!-- "dx" of a descendant takes precedence over "dx" of an ancestor. -->
+    <text x="10" dx="40" y="62"><tspan dx="20">Ab</tspan></text>
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="116" height="27.997" viewBox="0 0 116 27.997">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #4285f4;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5 {
+        fill-rule: evenodd;
+      }
+
+      .cls-2 {
+        fill: #34a853;
+      }
+
+      .cls-3 {
+        fill: #fbbc05;
+      }
+
+      .cls-4 {
+        fill: #ea4335;
+      }
+
+      .cls-5 {
+        fill: none;
+      }
+
+      .cls-6 {
+        font-size: 20px;
+        font-family: Inter-SemiBold, Inter;
+        font-weight: 600;
+        opacity: 0.54;
+      }
+    </style>
+  </defs>
+  <g id="accounts_google_plus_logo" transform="translate(-23 -449)">
+    <g id="logo_googleg_48dp" transform="translate(23 449)">
+      <path id="Shape" class="cls-1" d="M22.438,10.227a16.085,16.085,0,0,0-.255-2.863H9v5.415h7.534A6.44,6.44,0,0,1,13.74,17v3.512h4.524a13.652,13.652,0,0,0,4.174-10.289Z" transform="translate(4.998 4.09)"/>
+      <path id="Shape-2" data-name="Shape" class="cls-2" d="M13.467,22.049a13.364,13.364,0,0,0,9.264-3.391l-4.524-3.512A8.445,8.445,0,0,1,5.634,10.71H.957v3.627a13.993,13.993,0,0,0,12.509,7.712Z" transform="translate(0.532 5.948)"/>
+      <path id="Shape-3" data-name="Shape" class="cls-3" d="M6.166,13.9a8.276,8.276,0,0,1,0-5.319V4.958H1.489a14.016,14.016,0,0,0,0,12.573L6.166,13.9Z" transform="translate(0 2.754)"/>
+      <path id="Shape-4" data-name="Shape" class="cls-4" d="M13.467,5.568a7.562,7.562,0,0,1,5.351,2.093l4.015-4.015A13.453,13.453,0,0,0,13.467,0,13.993,13.993,0,0,0,.957,7.712l4.677,3.627a8.343,8.343,0,0,1,7.833-5.771Z" transform="translate(0.532)"/>
+      <path id="Shape-5" data-name="Shape" class="cls-5" d="M0,0H28V28H0Z"/>
+    </g>
+    <text id="Google" class="cls-6" transform="translate(75 470)"><tspan x="0" y="0">Google</tspan></text>
+  </g>
+</svg>

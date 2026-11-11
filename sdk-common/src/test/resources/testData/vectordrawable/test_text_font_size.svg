@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g font-family="Droid Sans" style="font-size:20px">
+    <text x="2" y="12" font-size="10">Small</text>
+    <text x="2" y="34">Mid</text>
+    <text x="2" y="60" style="font: bold 150% 'Droid Serif'">Big</text>
+  </g>
+</svg>

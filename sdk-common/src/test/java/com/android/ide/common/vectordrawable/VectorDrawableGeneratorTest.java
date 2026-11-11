@@ -17,6 +17,8 @@ package com.android.ide.common.vectordrawable;
 
 import static com.android.io.Images.readImage;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.android.annotations.NonNull;
@@ -606,7 +608,134 @@ public class VectorDrawableGeneratorTest extends TestCase {
 
     public void testSvgUnsupportedElement() throws Exception {
         String errors = checkSvgConversion("test_unsupported_element");
-        assertEquals("ERROR @ line 4: <text> is not supported", errors);
+        assertThat(errors).isEqualTo("ERROR @ line 4: <foreignObject> is not supported");
+    }
+
+    // Text tests. To make the produced images independent of the fonts installed on the computer
+    // running the tests, the test files use fonts that are bundled with JetBrains Runtime.
+    public void testSvgText() throws Exception {
+        assertThat(checkSvgConversion("test_text")).isEmpty();
+    }
+
+    public void testSvgTextEmpty() throws Exception {
+        checkSvgConversionAndContainsError("test_text_empty", "ERROR: No vector content found");
+    }
+
+    public void testSvgTextFontSize() throws Exception {
+        assertThat(checkSvgConversion("test_text_font_size")).isEmpty();
+    }
+
+    public void testSvgTextFontShorthand() throws Exception {
+        String errors = checkSvgConversion("test_text_font_shorthand");
+        assertThat(errors)
+                .isEqualTo(
+                        "WARNING @ line 3: \"font-stretch: condensed\" is not supported\n"
+                                + "WARNING @ line 4: \"font-stretch: semi-expanded\" is not"
+                                + " supported");
+    }
+
+    public void testSvgTextCssSpecificity() throws Exception {
+        assertThat(checkSvgConversion("test_text_css_specificity")).isEmpty();
+    }
+
+    public void testSvgTextGroupStyle() throws Exception {
+        assertThat(checkSvgConversion("test_text_group_style")).isEmpty();
+    }
+
+    public void testSvgTextOpacity() throws Exception {
+        assertThat(checkSvgConversion("test_text_opacity")).isEmpty();
+    }
+
+    public void testSvgTextAnchor() throws Exception {
+        assertThat(checkSvgConversion("test_text_anchor")).isEmpty();
+    }
+
+    public void testSvgTextTspan() throws Exception {
+        assertThat(checkSvgConversion("test_text_tspan")).isEmpty();
+    }
+
+    public void testSvgTextTransform() throws Exception {
+        assertThat(checkSvgConversion("test_text_transform")).isEmpty();
+    }
+
+    public void testSvgTextUse() throws Exception {
+        assertThat(checkSvgConversion("test_text_use")).isEmpty();
+    }
+
+    public void testSvgTextHidden() throws Exception {
+        assertThat(checkSvgConversion("test_text_hidden")).isEmpty();
+    }
+
+    public void testSvgTextPosition() throws Exception {
+        assertThat(checkSvgConversion("test_text_position")).isEmpty();
+    }
+
+    public void testSvgTextLineBreak() throws Exception {
+        assertThat(checkSvgConversion("test_text_line_break")).isEmpty();
+    }
+
+    public void testSvgTextHiddenPosition() throws Exception {
+        assertThat(checkSvgConversion("test_text_hidden_position")).isEmpty();
+    }
+
+    public void testSvgTextGoogle() throws Exception {
+        assertThat(checkSvgConversion("test_text_google")).isEmpty();
+    }
+
+    public void testSvgTextFontFallback() throws Exception {
+        assertThat(checkSvgConversion("test_text_font_fallback")).isEmpty();
+    }
+
+    public void testSvgTextMissingCharacter() throws Exception {
+        String errors = checkSvgConversion("test_text_missing_character");
+        assertThat(errors)
+                .isEqualTo(
+                        "WARNING @ line 3: No font is available for the following characters:"
+                                + " U+0378");
+    }
+
+    public void testSvgTextInvalidNumbers() throws Exception {
+        String errors = checkSvgConversion("test_text_invalid_numbers");
+        assertThat(errors)
+                .isEqualTo(
+                        "ERROR @ line 5: Invalid font size \"NaN\"\n"
+                                + "ERROR @ line 6: Invalid font size \"Infinity\"\n"
+                                + "ERROR @ line 9: Invalid font size \"1e400\"\n"
+                                + "ERROR @ line 10: Invalid font size \"0x10p0\"\n"
+                                + "ERROR @ line 14: Invalid attribute value: x=\"Infinity\"\n"
+                                + "ERROR @ line 15: Invalid attribute value: dx=\"NaN\"\n"
+                                + "ERROR @ line 19: Invalid attribute value: dy=\"-Infinity\"\n"
+                                + "ERROR @ line 20: Invalid attribute value: dy=\"1e400\"\n"
+                                + "ERROR @ line 25: Text position or size is out of range\n"
+                                + "ERROR @ line 26: Text position or size is out of range");
+    }
+
+    public void testSvgTextUnsupportedProperties() throws Exception {
+        String errors = checkSvgConversion("test_text_unsupported_properties");
+        assertThat(errors)
+                .isEqualTo(
+                        "WARNING @ line 3: \"text-decoration: underline\" is not supported\n"
+                            + "WARNING @ line 4: \"word-spacing: 4px\" is not supported\n"
+                            + "WARNING @ line 5: \"textLength\" attribute is not supported\n"
+                            + "WARNING @ line 6: \"writing-mode: tb\" is not supported\n"
+                            + "WARNING @ line 7: \"direction: rtl\" is not supported\n"
+                            + "WARNING @ line 8: \"baseline-shift: super\" is not supported\n"
+                            + "WARNING @ line 9: \"font-variant: small-caps\" is not supported\n"
+                            + "WARNING @ line 10: \"font-stretch: condensed\" is not supported\n"
+                            + "WARNING @ line 16: \"direction: rtl\" is not supported");
+    }
+
+    public void testSvgTextUnavailableFont() throws Exception {
+        String errors = checkSvgConversion("test_text_unavailable_font");
+        assertThat(errors)
+                .isEqualTo(
+                        "WARNING @ line 4: Font \"'No Such Font 1', NoSuchFont2\" is not"
+                                + " available, a sans-serif font is used instead");
+    }
+
+    public void testSvgTextPathUnsupported() throws Exception {
+        String errors = checkSvgConversion("test_text_path_unsupported");
+        assertThat(errors).isEqualTo("ERROR @ line 4: <textPath> is not supported");
     }
 
     public void testSvgImageOnly() throws Exception {

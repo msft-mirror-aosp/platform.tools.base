@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="24" viewBox="0 0 48 24">
+  <path id="p" d="M2,18 h44" stroke="#00f"/>
+  <text font-family="Droid Sans" font-size="16">
+    <textPath href="#p">Hello</textPath>
+  </text>
+</svg>

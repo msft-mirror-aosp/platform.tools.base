@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48" viewBox="0 0 64 48">
+  <!-- Opacity of an element is multiplied by opacity of its ancestors. -->
+  <g font-family="Droid Sans" font-size="16" font-weight="bold">
+    <text x="2" y="20" opacity="0.5">Ab<tspan opacity="0.5">cd<tspan style="opacity: 50%">ef</tspan></tspan></text>
+    <text x="2" y="44" fill="#00f" style="opacity: 0.8">Ab<tspan>cd</tspan><tspan opacity="0.25">ef</tspan></text>
+  </g>
+</svg>

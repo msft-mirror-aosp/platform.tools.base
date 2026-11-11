@@ -58,7 +58,7 @@ import java.util.regex.Pattern;
  */
 public class Svg2Vector {
     private static final Logger logger = Logger.getLogger(Svg2Vector.class.getSimpleName());
-    private static final String SVG_DEFS = "defs";
+    static final String SVG_DEFS = "defs";
     private static final String SVG_USE = "use";
     static final String SVG_HREF = "href";
     static final String SVG_XLINK_HREF = "xlink:href";
@@ -74,6 +74,8 @@ public class Svg2Vector {
     public static final String SVG_STYLE = "style";
     public static final String SVG_DISPLAY = "display";
     public static final String SVG_CLIP_PATH_ELEMENT = "clipPath";
+    public static final String SVG_TEXT = "text";
+    public static final String SVG_TSPAN = "tspan";
 
     public static final String SVG_D = "d";
     public static final String SVG_CLIP = "clip";
@@ -185,12 +187,10 @@ public class Svg2Vector {
             "altGlyphItem",
             "glyph",
             "glyphRef",
-            "text",
             // Text content child elements.
             "altGlyph",
             "textPath",
             "tref",
-            "tspan",
             // Uncategorized elements.
             "color-profile",
             "cursor",
@@ -234,6 +234,12 @@ public class Svg2Vector {
 
         // Parse all the group and path nodes recursively.
         traverseSvgAndExtract(svgTree, root, rootElement);
+
+        // Convert text to paths. This has to be done after all <style> elements have been
+        // processed, but before resolving the <use> references.
+        for (SvgTextConverter textConverter : svgTree.getPendingTexts()) {
+            textConverter.convert();
+        }
 
         resolveUseNodes(svgTree);
         resolveGradientReferences(svgTree);
@@ -460,6 +466,15 @@ public class Svg2Vector {
                     traverseSvgAndExtract(svgTree, childGroup, childElement);
                     break;
                 }
+
+                case SVG_TEXT:
+                    {
+                        SvgGroupNode textGroup =
+                                SvgTextConverter.extract(
+                                        svgTree, childElement, currentGroup, tagName + i);
+                        processIdName(svgTree, textGroup);
+                        break;
+                    }
 
                 case SVG_USE: {
                     SvgGroupNode childGroup = new SvgGroupNode(svgTree, childElement, "child" + i);

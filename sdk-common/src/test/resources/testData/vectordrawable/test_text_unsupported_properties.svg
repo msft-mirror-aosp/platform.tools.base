@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g font-family="Droid Sans" font-size="12">
+    <text x="2" y="12" text-decoration="underline">Ab</text>
+    <text x="2" y="24" style="word-spacing: 4px">A b</text>
+    <text x="2" y="36" textLength="60">Ab</text>
+    <text x="2" y="48" writing-mode="tb">Ab</text>
+    <text x="2" y="60" direction="rtl">Ab</text>
+    <text x="34" y="12">A<tspan baseline-shift="super">b</tspan></text>
+    <text x="34" y="24" font-variant="small-caps">Ab</text>
+    <text x="34" y="36" style="font: condensed 12px Droid Sans">Ab</text>
+    <!-- Default values of the unsupported properties are not reported. -->
+    <text x="34" y="48" text-decoration="none" word-spacing="0" writing-mode="lr-tb" direction="ltr"
+        baseline-shift="baseline" font-variant="normal" font-stretch="normal">Ab</text>
+    <!-- Unsupported properties inherited by the text element are reported too. -->
+    <g direction="rtl">
+      <text x="34" y="60">Ab</text>
+    </g>
+  </g>
+</svg>

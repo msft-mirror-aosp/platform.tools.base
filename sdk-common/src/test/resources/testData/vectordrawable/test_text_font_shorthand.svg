@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="70" viewBox="0 0 64 70">
+  <!-- Font stretch keywords are ignored. -->
+  <text x="2" y="12" style="font: condensed 12px Droid Sans">Ab cd ef</text>
+  <text x="2" y="25" style="font: italic bold semi-expanded 12px/14px Droid Serif">Ab cd ef</text>
+  <!-- The style attribute takes precedence over presentation attributes. -->
+  <text x="2" y="38" font-size="4" font-family="Droid Serif" style="font: 12px Droid Sans">Ab cd ef</text>
+  <!-- The last declaration in the style attribute takes precedence. -->
+  <text x="2" y="51" style="font-size: 4px; font: 12px Droid Sans">Ab cd ef</text>
+  <text x="2" y="64" style="font: 4px Droid Sans; font-size: 12px">Ab cd ef</text>
+</svg>

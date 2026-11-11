@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48" viewBox="0 0 64 48">
+  <!-- A line break between words is rendered as a space even when it is not accompanied by other whitespace. -->
+  <text x="2" y="18" font-family="Droid Sans" font-size="16">Ab
+cd</text>
+  <text x="2" y="42" font-family="Droid Sans" font-size="16">
+Ab<tspan fill="#f00">
+cd</tspan>
+ef
+</text>
+</svg>

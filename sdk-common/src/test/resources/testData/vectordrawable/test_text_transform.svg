@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <text transform="translate(8 20) rotate(30) scale(1.5)" font-family="Droid Sans" font-size="12"
+      fill="#cfc" stroke="#080" stroke-width="0.5">Text</text>
+</svg>

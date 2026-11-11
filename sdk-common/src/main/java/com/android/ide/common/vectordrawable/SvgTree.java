@@ -19,13 +19,20 @@ import static com.android.ide.common.vectordrawable.SvgNode.CONTINUATION_INDENT;
 import static com.android.ide.common.vectordrawable.SvgNode.INDENT_UNIT;
 import static com.android.utils.DecimalUtils.trimInsignificantZeros;
 import static com.android.utils.PositionXmlParser.getPosition;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
+
 import com.google.common.base.Preconditions;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+
 import java.awt.geom.AffineTransform;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -44,10 +51,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.xml.parsers.ParserConfigurationException;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 
 /**
  * Represents the SVG file in an internal data structure as a tree.
@@ -88,6 +93,9 @@ class SvgTree {
 
     /** Set of SvgGradientNodes that contain "href"" elements. */
     private final Set<SvgGradientNode> mPendingGradientRefSet = new HashSet<>();
+
+    /** Converters of <text> elements that haven't been converted to paths yet. */
+    private final List<SvgTextConverter> mPendingTexts = new ArrayList<>();
 
     /**
      * Key is SvgNode that references a clipPath. Value is SvgGroupNode that is the parent of that
@@ -402,6 +410,15 @@ class SvgTree {
     @NonNull
     public Set<SvgGradientNode> getPendingGradientRefSet() {
         return mPendingGradientRefSet;
+    }
+
+    void addPendingText(@NonNull SvgTextConverter textConverter) {
+        mPendingTexts.add(textConverter);
+    }
+
+    @NonNull
+    List<SvgTextConverter> getPendingTexts() {
+        return mPendingTexts;
     }
 
     public void addIgnoredId(@NonNull String id) {

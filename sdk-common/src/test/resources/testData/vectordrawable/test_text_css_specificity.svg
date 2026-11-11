@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- All text is expected to be blue except for "Ab" on the third line, which is expected to be red. -->
+  <style>
+    .a { fill: #f00 }
+    text.a { fill: #00f }
+    text.b { fill: #00f }
+    .b { fill: #f00 }
+    text { font-family: Droid Sans; font-size: 14px; font-weight: bold; fill: #f00 }
+    .c { fill: #f00 }
+    .d { fill: #00f }
+    tspan.e { fill: #00f }
+  </style>
+  <!-- A "tag.class" selector takes precedence over a ".class" selector regardless of their order. -->
+  <text x="2" y="14" class="a">Abcdef</text>
+  <text x="2" y="30" class="b">Abcdef</text>
+  <!-- A "tag.class" selector takes precedence over a ".class" selector for a different class. -->
+  <text x="2" y="46" class="c">Ab<tspan class="c e">cd</tspan><tspan class="e c">ef</tspan></text>
+  <!-- A ".class" selector takes precedence over a "tag" selector. -->
+  <text x="2" y="62" class="d">Abcdef</text>
+</svg>

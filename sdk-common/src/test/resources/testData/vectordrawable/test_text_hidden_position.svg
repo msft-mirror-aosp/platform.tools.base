@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g font-family="Droid Sans" font-size="16">
+    <!-- Position attributes of hidden and empty elements don't affect the text position. -->
+    <text x="2" y="14">Ab<tspan x="40" dy="20" display="none">X</tspan>cd</text>
+    <text x="2" y="30">Ab<tspan x="40" dy="20"></tspan>cd</text>
+    <!-- Position attributes of an element apply to its first rendered character. -->
+    <text x="2" y="46">Ab<tspan x="30"><tspan display="none">X</tspan>cd</tspan></text>
+    <text x="2" y="62">Ab<tspan dx="10"><tspan display="none">X</tspan>c</tspan>d</text>
+  </g>
+</svg>

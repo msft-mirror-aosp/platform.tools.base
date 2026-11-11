@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Invalid values of attributes are reported and ignored. -->
+  <g font-family="Droid Sans" font-size="16">
+    <text x="2" y="14">
+      <tspan font-size="NaN">Ab</tspan>
+      <tspan font-size="Infinity">cd</tspan>
+    </text>
+    <text x="2" y="30">
+      <tspan font-size="1e400">Ab</tspan>
+      <tspan font-size="0x10p0">cd</tspan>
+    </text>
+    <text x="2" y="46">
+      Ab
+      <tspan x="Infinity">cd</tspan>
+      <tspan dx="NaN">ef</tspan>
+    </text>
+    <text x="2" y="62" font-weight="NaN">
+      Ab
+      <tspan dy="-Infinity">cd</tspan>
+      <tspan dy="1e400">ef</tspan>
+    </text>
+  </g>
+  <!-- Values that are too large to be represented in a vector drawable. -->
+  <g font-family="Droid Sans" font-size="16">
+    <text x="1e300" y="14">Ab</text>
+    <text x="2" y="14" font-size="1e300">Ab</text>
+  </g>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48" viewBox="0 0 64 48">
+  <defs>
+    <text id="t" x="2" y="18" font-family="Droid Sans" font-size="16">Use</text>
+  </defs>
+  <use href="#t" fill="#0a0"/>
+  <use href="#t" y="24"/>
+</svg>
