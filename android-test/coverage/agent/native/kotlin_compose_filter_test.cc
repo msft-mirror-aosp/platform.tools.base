@@ -216,6 +216,83 @@ TEST_F(KotlinComposeFilterTest, ShouldFilterSkippableComposable) {
                     update});
 }
 
+// Conventional layout where skipToGroupEnd() comes after the body rather than
+// before it; the body between the check and :skip must not be ignored.
+TEST_F(KotlinComposeFilterTest,
+       ShouldFilterSkippableComposableWithSkipAfterBody) {
+  const dex::u4 composer = 4;
+  const dex::u4 changed = 5;
+  TestMethod m("example", "(Landroidx/compose/runtime/Composer;I)V");
+  lir::Label* body = m.NewLabel();
+  lir::Label* skip = m.NewLabel();
+  lir::Label* end = m.NewLabel();
+  lir::Bytecode* first = m.Add(dex::OP_CONST, {m.Reg(0), m.Literal(1234)});
+  AddComposerCall(m, {composer, 0}, "startRestartGroup",
+                  "(I)Landroidx/compose/runtime/Composer;");
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(composer)});
+  m.Add(dex::OP_AND_INT_LIT8, {m.Reg(2), m.Reg(changed), m.Literal(3)});
+  m.Add(dex::OP_CONST_4, {m.Reg(3), m.Literal(2)});
+  m.Add(dex::OP_IF_NE, {m.Reg(2), m.Reg(3), m.Target(body)});
+  AddComposerCall(m, {composer}, "getSkipping", "()Z");
+  m.Add(dex::OP_MOVE_RESULT, {m.Reg(2)});
+  lir::Bytecode* check = m.Add(dex::OP_IF_NEZ, {m.Reg(2), m.Target(skip)});
+  m.Place(body);
+  Range trace_start = AddTraceEventStart(m);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({composer}),
+         m.MethodRef(kTestClassName, "body",
+                     "(Landroidx/compose/runtime/Composer;)V")});
+  Range trace_end = AddTraceEventEnd(m);
+  m.Add(dex::OP_GOTO, {m.Target(end)});
+  m.Place(skip);
+  AddComposerCall(m, {composer}, "skipToGroupEnd", "()V");
+  m.Place(end);
+  Range update = AddUpdateScope(m, composer);
+  lir::Bytecode* last = m.Add(dex::OP_RETURN_VOID);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m,
+                {{first, check}, {skip, last}, trace_start, trace_end, update});
+}
+
+// Composable lambda (`invoke(Composer, I)V`) without startRestartGroup() or
+// endRestartGroup().
+TEST_F(KotlinComposeFilterTest, ShouldFilterComposableLambda) {
+  const dex::u4 composer = 4;
+  const dex::u4 changed = 5;
+  TestMethod m("invoke", "(Landroidx/compose/runtime/Composer;I)V");
+  lir::Label* skip = m.NewLabel();
+  lir::Label* body = m.NewLabel();
+  lir::Label* end = m.NewLabel();
+  lir::Bytecode* first =
+      m.Add(dex::OP_AND_INT_LIT8, {m.Reg(0), m.Reg(changed), m.Literal(3)});
+  m.Add(dex::OP_CONST_4, {m.Reg(1), m.Literal(2)});
+  m.Add(dex::OP_IF_NE, {m.Reg(0), m.Reg(1), m.Target(body)});
+  AddComposerCall(m, {composer}, "getSkipping", "()Z");
+  m.Add(dex::OP_MOVE_RESULT, {m.Reg(0)});
+  lir::Bytecode* check = m.Add(dex::OP_IF_NEZ, {m.Reg(0), m.Target(skip)});
+  m.Add(dex::OP_GOTO, {m.Target(body)});
+  m.Place(skip);
+  AddComposerCall(m, {composer}, "skipToGroupEnd", "()V");
+  lir::Bytecode* skipped = m.Add(dex::OP_GOTO, {m.Target(end)});
+  m.Place(body);
+  Range trace_start = AddTraceEventStart(m);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({composer}),
+         m.MethodRef(kTestClassName, "body",
+                     "(Landroidx/compose/runtime/Composer;)V")});
+  Range trace_end = AddTraceEventEnd(m);
+  m.Place(end);
+  lir::Bytecode* last = m.Add(dex::OP_RETURN_VOID);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m,
+      {{first, check}, {skip, skipped}, {end, last}, trace_start, trace_end});
+}
+
 // With pausable composition, the call to skipToGroupEnd() is kept.
 TEST_F(KotlinComposeFilterTest, ShouldFilterPausableComposition) {
   TestMethod m("example", "(Landroidx/compose/runtime/Composer;I)V");
