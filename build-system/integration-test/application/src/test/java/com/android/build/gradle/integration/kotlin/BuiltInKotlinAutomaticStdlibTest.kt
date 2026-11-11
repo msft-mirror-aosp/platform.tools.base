@@ -17,10 +17,10 @@
 package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.testutils.TestUtils.BUILT_IN_KOTLIN_VERSION
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -33,12 +33,14 @@ import org.junit.Test
 
 class BuiltInKotlinAutomaticStdlibTest {
 
+  private val expectedKotlinVersion = KgpTestLayer.fromSystemProperty().version
+
   @get:Rule val rule = GradleRule.from { androidApplication { HelloWorldAndroid.setupKotlin(files) } }
 
   @Test
   fun `test kotlin-stdlib automatically added`() {
     val result = rule.build.executor.run(":app:dependencies", "--configuration", "debugCompileClasspath")
-    result.assertOutputContains("--- org.jetbrains.kotlin:kotlin-stdlib:$BUILT_IN_KOTLIN_VERSION")
+    result.assertOutputContains("--- org.jetbrains.kotlin:kotlin-stdlib:$expectedKotlinVersion")
   }
 
   @Test
@@ -80,7 +82,7 @@ class BuiltInKotlinAutomaticStdlibTest {
   fun `test kotlin_stdlib_default_dependency=false`() {
     val build = rule.build { gradleProperties { add("kotlin.stdlib.default.dependency", "false") } }
     val result = build.executor.run(":app:dependencies", "--configuration", "debugCompileClasspath")
-    result.assertOutputDoesNotContain("--- org.jetbrains.kotlin:kotlin-stdlib:$BUILT_IN_KOTLIN_VERSION")
+    result.assertOutputDoesNotContain("--- org.jetbrains.kotlin:kotlin-stdlib:$expectedKotlinVersion")
   }
 
   /** Regression test for b/443037365 and b/471410336. */
@@ -96,8 +98,8 @@ class BuiltInKotlinAutomaticStdlibTest {
       gradleProperties { add("kotlin.stdlib.default.dependency", "false") }
     }
     val result = build.executor.run(":app:dependencies", "--configuration", "debugCompileClasspath")
-    result.assertOutputContains("+--- org.jetbrains.kotlin:kotlin-stdlib -> $BUILT_IN_KOTLIN_VERSION")
-    result.assertOutputContains("+--- org.jetbrains.kotlin:kotlin-test-junit -> $BUILT_IN_KOTLIN_VERSION")
+    result.assertOutputContains("+--- org.jetbrains.kotlin:kotlin-stdlib -> $expectedKotlinVersion")
+    result.assertOutputContains("+--- org.jetbrains.kotlin:kotlin-test-junit -> $expectedKotlinVersion")
   }
 
   /** Regression test for b/450851465. */

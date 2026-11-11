@@ -14,7 +14,7 @@ MINIMUM_BUILT_IN_KOTLIN_VERSION = "2.2.10"
 BUILT_IN_KOTLIN_VERSION = "2.4.20"
 
 # KSP version used in AGP tests
-KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2"
+KSP_VERSION_FOR_TESTS = "2.3.10"
 
 # KGP dependencies used in AGP tests
 KGP_FOR_TESTS = [

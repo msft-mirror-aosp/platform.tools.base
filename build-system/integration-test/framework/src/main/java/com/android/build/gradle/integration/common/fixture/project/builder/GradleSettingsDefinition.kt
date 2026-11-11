@@ -91,7 +91,12 @@ internal class GradleSettingsDefinitionImpl : GradleSettingsDefinition {
     // search for existing one
     plugins.firstOrNull { it.plugin == type }?.let { throw RuntimeException("Plugin $type is already applied! (version: ${it.version}") }
 
-    val appliedPlugin = AppliedPlugin(type, version ?: type.version ?: INTERNAL_PLUGIN_VERSION)
+    val appliedPlugin =
+      AppliedPlugin(
+        type,
+        version ?: type.version ?: INTERNAL_PLUGIN_VERSION,
+        hasExplicitVersion = version != null,
+      )
     if (applyFirst) {
       plugins.add(0, appliedPlugin)
     } else {
@@ -105,7 +110,7 @@ internal class GradleSettingsDefinitionImpl : GradleSettingsDefinition {
     }
     val match = plugins.firstOrNull { it.plugin == type } ?: throw RuntimeException("Plugin $type not yet applied")
 
-    val appliedPlugin = AppliedPlugin(type, version)
+    val appliedPlugin = AppliedPlugin(type, version, hasExplicitVersion = true)
     val index = plugins.indexOf(match)
     plugins[index] = appliedPlugin
   }
@@ -142,6 +147,7 @@ internal class GradleSettingsDefinitionImpl : GradleSettingsDefinition {
     name: String,
     location: Path,
     useOldPluginStyle: Boolean,
+    kgpTestLayer: KgpTestLayer,
     repositories: Collection<Path>?,
     includedBuilds: Collection<GradleBuildDefinitionImpl>,
     subProjectPaths: Collection<GradleProjectDefinitionImpl>,
@@ -174,7 +180,7 @@ internal class GradleSettingsDefinitionImpl : GradleSettingsDefinition {
 
         block("plugins") {
           for (plugin in plugins.toSet()) {
-            pluginId(plugin.plugin.id, plugin.version)
+            pluginId(plugin.plugin.id, plugin.resolveVersion(kgpTestLayer))
           }
         }
 

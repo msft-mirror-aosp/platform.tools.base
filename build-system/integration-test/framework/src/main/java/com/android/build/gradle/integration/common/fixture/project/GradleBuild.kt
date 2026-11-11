@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Globa
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
@@ -332,6 +333,9 @@ internal class GradleBuildImpl(
 
   internal val useOldPluginStyle: Boolean
     get() = definition.useOldPluginStyleForSeparateClassloaders
+
+  internal val kgpTestLayer: KgpTestLayer
+    get() = definition.kgpTestLayer
 
   /**
    * Runs the provided action with this build. At the end of the action, all file changes made via [GradleProjectFiles] are reversed so that

@@ -38,26 +38,57 @@ import com.google.common.base.Strings
 
 /**
  * Represents the KGP version layer to use when configuring the root project's buildscript classpath
- * in tests.
+ * and default Kotlin plugin versions in tests.
+ *
+ * @property version The actual KGP version string for this layer.
+ * @property explicitKgpVersion The KGP version to add to the test project's buildscript classpath,
+ *   or `null` for [DEFAULT] (where AGP's runtime KGP dependency is used directly).
+ * @property failOnWarning Whether `--warning-mode=fail` should be enabled by default for tests
+ *   running on this layer. Disabled on [MINIMUM] because older KGP versions may emit deprecation
+ *   warnings on newer Gradle versions.
  */
-enum class KgpTestLayer(val explicitKgpVersion: String?) {
+enum class KgpTestLayer(
+  val version: String,
+  val explicitKgpVersion: String?,
+  val failOnWarning: Boolean,
+) {
   /**
    * Modifies the root buildscript classpath to pin KGP to the minimum supported version
    * ([TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION]).
    */
-  MINIMUM(TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION),
+  MINIMUM(
+    version = TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    explicitKgpVersion = TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    failOnWarning = false,
+  ),
 
   /**
    * Does not add an explicit KGP classpath dependency, so AGP resolves its default KGP version
    * ([TestUtils.BUILT_IN_KOTLIN_VERSION]).
    */
-  DEFAULT(null),
+  DEFAULT(
+    version = TestUtils.BUILT_IN_KOTLIN_VERSION,
+    explicitKgpVersion = null,
+    failOnWarning = true,
+  ),
 
   /**
    * Modifies the root buildscript classpath to upgrade KGP to the latest version used in tests
    * ([TestUtils.KOTLIN_VERSION_FOR_TESTS]).
    */
-  LATEST(TestUtils.KOTLIN_VERSION_FOR_TESTS),
+  LATEST(
+    version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+    explicitKgpVersion = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+    failOnWarning = true,
+  );
+
+  companion object {
+    const val SYSTEM_PROPERTY = "test.android.build.gradle.integration.kgp.layer"
+
+    @JvmStatic
+    fun fromSystemProperty(): KgpTestLayer =
+      System.getProperty(SYSTEM_PROPERTY)?.let { valueOf(it.uppercase()) } ?: DEFAULT
+  }
 }
 
 /** Represents a Gradle Build that can be configured before being written on disk */

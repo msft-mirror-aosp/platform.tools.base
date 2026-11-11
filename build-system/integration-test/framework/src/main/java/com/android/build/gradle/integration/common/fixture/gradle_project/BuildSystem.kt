@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.gradle_project
 
 import com.android.build.gradle.integration.BazelIntegrationTestsSuite
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.testutils.TestUtils
 import com.google.common.base.Splitter
 import com.google.common.collect.ImmutableList
@@ -82,6 +83,11 @@ internal enum class BuildSystem {
     }
     if (withBuiltInKotlinSupport) {
       script.append("        classpath \"com.android.tools.build:gradle-kotlin:\${libs.versions.buildVersion.get()}\"\n")
+      KgpTestLayer.fromSystemProperty().explicitKgpVersion?.let { explicitKgpVersion ->
+        if (!withKotlinGradlePlugin) {
+          script.append("        classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:$explicitKgpVersion\"\n")
+        }
+      }
     }
     script.append("    }\n")
     script.append("}")

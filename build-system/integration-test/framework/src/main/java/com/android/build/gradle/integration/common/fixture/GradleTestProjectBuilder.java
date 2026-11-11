@@ -24,6 +24,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.BazelIntegrationTestsSuite;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer;
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder;
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionsDelegate;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
@@ -156,7 +157,7 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
         }
 
         if (kotlinVersion == null) {
-            kotlinVersion = TestUtils.KOTLIN_VERSION_FOR_TESTS;
+            kotlinVersion = KgpTestLayer.fromSystemProperty().getVersion();
         }
 
         return new GradleTestProject(

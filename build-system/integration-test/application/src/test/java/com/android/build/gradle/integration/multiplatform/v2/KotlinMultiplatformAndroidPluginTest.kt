@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -184,11 +185,15 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             "com/example/kmpfirstlib/KmpAndroidActivity",
           )
         resources {
-          if (publishLibs) {
-            containsExactly("kmp_resource.txt", "META-INF/com.example_kmpFirstLib.kotlin_module")
-          } else {
-            containsExactly("kmp_resource.txt", "META-INF/Kotlin Multiplatform_kmpFirstLib.kotlin_module")
-          }
+          // KGP < 2.4.0 omits the `${project.group}_` prefix from JVM/Android `.kotlin_module` names.
+          val expectedKotlinModule =
+            when {
+              KgpTestLayer.fromSystemProperty() == KgpTestLayer.MINIMUM ->
+                "META-INF/kmpFirstLib.kotlin_module"
+              publishLibs -> "META-INF/com.example_kmpFirstLib.kotlin_module"
+              else -> "META-INF/Kotlin Multiplatform_kmpFirstLib.kotlin_module"
+            }
+          containsExactly("kmp_resource.txt", expectedKotlinModule)
           resourceAsText("kmp_resource.txt").isEqualTo("kmp resource")
         }
       }

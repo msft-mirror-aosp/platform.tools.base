@@ -17,17 +17,17 @@
   {
     "binaryType": "KOTLIN_COMPILE",
     "classpath": [
-      "{LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{KOTLIN_VERSION_FOR_TESTS}/kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar"
+      "{LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar"
     ],
     "coordinates": {
       "group": "org.jetbrains.kotlin",
       "module": "kotlin-stdlib",
-      "version": "{KOTLIN_VERSION_FOR_TESTS}",
+      "version": "{BUILT_IN_KOTLIN_VERSION}",
       "capabilities": [
         {
           "group": "org.jetbrains.kotlin",
           "name": "kotlin-stdlib",
-          "version": "{KOTLIN_VERSION_FOR_TESTS}"
+          "version": "{BUILT_IN_KOTLIN_VERSION}"
         }
       ],
       "attributes": {
@@ -41,7 +41,7 @@
       }
     },
     "extras": {
-      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar -\u003e kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar (org.jetbrains.kotlin:kotlin-stdlib:{KOTLIN_VERSION_FOR_TESTS})",
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar -\u003e kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar (org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION})",
       "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
     }
   },

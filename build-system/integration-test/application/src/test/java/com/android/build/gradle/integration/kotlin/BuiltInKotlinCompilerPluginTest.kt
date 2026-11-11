@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.kotlin
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.options.BooleanOption
@@ -72,6 +73,25 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
     result.assertOutputContains(
       "KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugScreenshotTest, debugUnitTest, release, releaseScreenshotTest]"
     )
+    val isMinimumKgp = KgpTestLayer.fromSystemProperty() == KgpTestLayer.MINIMUM
+    // In KGP < 2.3.0, KotlinCompilation exposed the deprecated `compileKotlinTask` and
+    // `compileKotlinTaskProvider` properties (removed in KGP 2.3.0; KT-73041), and KGP 2.2.10's
+    // legacy kotlin-android plugin logged the `-Xuse-inline-scopes-numbers` flag when realizing
+    // `compileDebugKotlin` for the first time via `compileKotlinTask`.
+    fun compileKotlinTaskLines(taskName: String): String =
+      if (isMinimumKgp) {
+        listOfNotNull(
+            "Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :app:$taskName"
+              .takeIf { !builtInKotlin && taskName == "compileDebugKotlin" },
+            "compileKotlinTask = task ':app:$taskName'",
+            "compileKotlinTaskName = $taskName",
+            "compileKotlinTaskProvider = provider(task '$taskName', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)",
+          )
+          .joinToString("\n" + " ".repeat(12))
+      } else {
+        "compileKotlinTaskName = $taskName"
+      }
+
     val expectedDefaultSourceSetForDebug =
       when {
         builtInKotlin && disallowKotlinSourceSets -> "[]"
@@ -95,13 +115,13 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compileAllTaskName = debugClasses
             compileDependencyConfigurationName = debugCompileClasspath
             compileDependencyFiles = <can't resolve at this point as it is too early>
-            compileKotlinTaskName = compileDebugKotlin
+            ${compileKotlinTaskLines("compileDebugKotlin")}
             compileOnlyConfigurationName = debugCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebug
             defaultSourceSetName = debug
-            disambiguatedName = Debug
+            disambiguatedName = ${if (isMinimumKgp) "debug" else "Debug"}
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, main))]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debug
@@ -149,13 +169,13 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compileAllTaskName = debugUnitTestClasses
             compileDependencyConfigurationName = debugUnitTestCompileClasspath
             compileDependencyFiles = <can't resolve at this point as it is too early>
-            compileKotlinTaskName = compileDebugUnitTestKotlin
+            ${compileKotlinTaskLines("compileDebugUnitTestKotlin")}
             compileOnlyConfigurationName = debugUnitTestCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugUnitTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebugUnitTest
             defaultSourceSetName = debugUnitTest
-            disambiguatedName = DebugUnitTest
+            disambiguatedName = ${if (isMinimumKgp) "debugUnitTest" else "DebugUnitTest"}
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, test))]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debugUnitTest
@@ -195,13 +215,13 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compileAllTaskName = debugScreenshotTestClasses
             compileDependencyConfigurationName = debugScreenshotTestCompileClasspath
             compileDependencyFiles = <can't resolve at this point as it is too early>
-            compileKotlinTaskName = compileDebugScreenshotTestKotlin
+            ${compileKotlinTaskLines("compileDebugScreenshotTestKotlin")}
             compileOnlyConfigurationName = debugScreenshotTestCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugScreenshotTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebugScreenshotTest
             defaultSourceSetName = debugScreenshotTest
-            disambiguatedName = DebugScreenshotTest
+            disambiguatedName = ${if (isMinimumKgp) "debugScreenshotTest" else "DebugScreenshotTest"}
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=None]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debugScreenshotTest

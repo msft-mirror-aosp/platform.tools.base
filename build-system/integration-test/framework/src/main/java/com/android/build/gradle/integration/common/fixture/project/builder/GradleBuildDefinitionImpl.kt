@@ -69,10 +69,7 @@ internal class GradleBuildDefinitionImpl(
 
   override var buildFileType: BuildFileType = BuildFileType.GROOVY
   override var useOldPluginStyleForSeparateClassloaders: Boolean = false
-  override var kgpTestLayer: KgpTestLayer =
-    System.getProperty("test.android.build.gradle.integration.kgp.layer")?.let {
-      KgpTestLayer.valueOf(it)
-    } ?: KgpTestLayer.DEFAULT
+  override var kgpTestLayer: KgpTestLayer = KgpTestLayer.fromSystemProperty()
 
   override var useLatestKgpVersion: Boolean
     get() = kgpTestLayer == KgpTestLayer.LATEST
@@ -435,6 +432,7 @@ internal class GradleBuildDefinitionImpl(
         allPlugins,
         customPluginMap,
         useOldPluginStyleForSeparateClassloaders,
+        kgpTestLayer,
         projectRepositories,
         buildFileType.getNewWriter(),
       )
@@ -462,6 +460,7 @@ internal class GradleBuildDefinitionImpl(
       name = name,
       location = location,
       useOldPluginStyle = useOldPluginStyleForSeparateClassloaders,
+      kgpTestLayer = kgpTestLayer,
       repositories = globalDefinitionState.repositories,
       includedBuilds = includedBuilds.values,
       subProjectPaths = subProjects.values,
@@ -507,7 +506,7 @@ internal class GradleBuildDefinitionImpl(
       project.plugins.forEach { entry ->
         val set = allPlugins.computeIfAbsent(entry.plugin) { mutableSetOf() } as MutableSet<String>
 
-        set.add(entry.version)
+        set.add(entry.resolveVersion(kgpTestLayer))
       }
     }
     return allPlugins

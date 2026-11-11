@@ -319,7 +319,7 @@ fun AndroidProjectDefinition<out CommonExtension>.setupScreenshotTestSuiteProjec
   applyPlugin(
     PluginType.Custom(
       id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
-      version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+      version = TestUtils.BUILT_IN_KOTLIN_VERSION,
       artifact = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin",
       hasMarker = false,
     )

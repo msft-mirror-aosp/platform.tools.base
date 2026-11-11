@@ -1021,13 +1021,13 @@ _CLASS_JARS = [
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:1.9.0-1.0.11",
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:2.2.10-2.0.2",  # Used by AGP privacy-sandbox tests
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:2.2.20-RC-2.0.2",  # Used by AGP tests
-    "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:2.3.10",  # Used by Lightbuild
+    "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:2.3.10",  # Used by Lightbuild and AGP tests
     "com.google.devtools.ksp:symbol-processing:1.7.10-1.0.6",
     "com.google.devtools.ksp:symbol-processing:2.2.10-2.0.2",  # Used by AGP privacy-sandbox tests
     "com.google.devtools.ksp:symbol-processing:2.2.20-RC-2.0.2",  # Used by AGP tests
     "com.google.devtools.ksp:symbol-processing-aa-embeddable:2.2.10-2.0.2",  # Used by AGP privacy-sandbox tests
     "com.google.devtools.ksp:symbol-processing-aa-embeddable:2.2.20-RC-2.0.2",  # Used by AGP tests
-    "com.google.devtools.ksp:symbol-processing-aa-embeddable:2.3.10",  # Used by by Lightbuild
+    "com.google.devtools.ksp:symbol-processing-aa-embeddable:2.3.10",  # Used by Lightbuild and AGP tests
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:1.7.10-1.0.6",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.20-RC-2.0.2",  # Used by AGP tests
     "com.google.errorprone:error_prone_annotations:2.23.0",

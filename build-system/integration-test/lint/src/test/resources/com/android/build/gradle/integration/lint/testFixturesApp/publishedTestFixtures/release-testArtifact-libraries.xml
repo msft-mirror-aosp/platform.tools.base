@@ -14,9 +14,9 @@
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
   <library
-      name="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar"
-      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/${BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-${BUILT_IN_KOTLIN_VERSION}.jar"
-      resolved="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}"/>
+      name="org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}@jar"
+      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/${kotlinVersion}/kotlin-stdlib-${kotlinVersion}.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"/>
   <library
       name="com.example.javaLib:javaLib:1.0@jar"
       jars="${projectDir}/testrepo/com/example/javaLib/javaLib/1.0/javaLib-1.0.jar"

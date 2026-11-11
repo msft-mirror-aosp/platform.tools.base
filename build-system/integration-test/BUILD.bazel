@@ -179,8 +179,9 @@ maven_repository(
     name = "ksp_gradle_plugin",
     artifacts = [
         "@maven//:com.google.devtools.ksp.com.google.devtools.ksp.gradle.plugin_" + KSP_VERSION_FOR_TESTS,
-        "@maven//:com.google.devtools.ksp.symbol-processing_" + KSP_VERSION_FOR_TESTS,
         "@maven//:com.google.devtools.ksp.symbol-processing-aa-embeddable_" + KSP_VERSION_FOR_TESTS,
+        "@maven//:com.google.devtools.ksp.symbol-processing-api_" + KSP_VERSION_FOR_TESTS,
+        "@maven//:com.google.devtools.ksp.symbol-processing-common-deps_" + KSP_VERSION_FOR_TESTS,
         "@maven//:com.google.devtools.ksp.symbol-processing-gradle-plugin_" + KSP_VERSION_FOR_TESTS,
     ],
     visibility = ["//visibility:public"],

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import org.junit.Rule
 import org.junit.Test
@@ -36,8 +37,14 @@ class BuiltInKotlinAndKmpTest() {
 
     val result = build.executor.expectFailure().run(":app:assembleDebug")
 
-    // See https://youtrack.jetbrains.com/issue/KT-81117
-    result.assertErrorContains("Failed to apply plugin 'org.jetbrains.kotlin.multiplatform'")
+    // In KGP 2.2.10 (MINIMUM), KotlinBasePluginWrapper.apply() fails synchronously when registering
+    // the duplicate 'kotlin' extension without wrapping the exception in "Failed to apply plugin".
+    if (KgpTestLayer.fromSystemProperty() == KgpTestLayer.MINIMUM) {
+      result.assertErrorContains("Cannot add extension with name 'kotlin', as there is an extension already registered with that name.")
+    } else {
+      // See https://youtrack.jetbrains.com/issue/KT-81117
+      result.assertErrorContains("Failed to apply plugin 'org.jetbrains.kotlin.multiplatform'")
+    }
   }
 
   @Test

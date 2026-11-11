@@ -96,20 +96,14 @@ fun createReplacements(project: GradleTestProject): Map<String, String> {
       put(Version.ANDROID_GRADLE_PLUGIN_VERSION, "${"$"}androidGradlePluginVersion")
       put(File.separator, "/")
       put(File.pathSeparator, ":")
-      put("kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib:${"$"}{kotlinVersion}")
-      put("kotlin-stdlib/${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib/${"$"}{kotlinVersion}")
-      put("kotlin-stdlib-${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-${"$"}{kotlinVersion}")
-      put("kotlin-stdlib-common:${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common:${"$"}{kotlinVersion}")
-      put("kotlin-stdlib-common/${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common/${"$"}{kotlinVersion}")
-      put("kotlin-stdlib-common-${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common-${"$"}{kotlinVersion}")
-      put(
-        "org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}",
-        "org.jetbrains.kotlin:kotlin-stdlib:${"$"}{BUILT_IN_KOTLIN_VERSION}",
-      )
-      put(
-        "org/jetbrains/kotlin/kotlin-stdlib/${TestUtils.BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-${TestUtils.BUILT_IN_KOTLIN_VERSION}.jar",
-        "org/jetbrains/kotlin/kotlin-stdlib/${"$"}{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-${"$"}{BUILT_IN_KOTLIN_VERSION}.jar",
-      )
+      for (kotlinVersion in setOf(TestUtils.KOTLIN_VERSION_FOR_TESTS, TestUtils.BUILT_IN_KOTLIN_VERSION)) {
+        put("kotlin-stdlib:$kotlinVersion", "kotlin-stdlib:${"$"}{kotlinVersion}")
+        put("kotlin-stdlib/$kotlinVersion", "kotlin-stdlib/${"$"}{kotlinVersion}")
+        put("kotlin-stdlib-$kotlinVersion", "kotlin-stdlib-${"$"}{kotlinVersion}")
+        put("kotlin-stdlib-common:$kotlinVersion", "kotlin-stdlib-common:${"$"}{kotlinVersion}")
+        put("kotlin-stdlib-common/$kotlinVersion", "kotlin-stdlib-common/${"$"}{kotlinVersion}")
+        put("kotlin-stdlib-common-$kotlinVersion", "kotlin-stdlib-common-${"$"}{kotlinVersion}")
+      }
     }
   )
 }

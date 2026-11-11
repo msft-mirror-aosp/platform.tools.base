@@ -32,6 +32,8 @@ sealed class PluginType(
   open val artifact: String? = null,
   open val version: String? = null,
   open val hasMarker: Boolean = true,
+  internal val usesKgpTestLayerVersion: Boolean = false,
+  internal val isKotlinGradlePlugin: Boolean = false,
 ) {
 
   // Core Java plugins
@@ -55,9 +57,11 @@ sealed class PluginType(
     PluginTypeWithExtension<KotlinExtension>(
       id = "org.jetbrains.kotlin.jvm",
       artifact = "org.jetbrains.kotlin:kotlin-gradle-plugin",
-      version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+      version = KgpTestLayer.fromSystemProperty().version,
       extensionType = KotlinExtension::class.java,
       extensionName = "kotlin",
+      usesKgpTestLayerVersion = true,
+      isKotlinGradlePlugin = true,
     )
 
   @Deprecated("Consider using the built-in support with AGP 9.0 default behavior")
@@ -66,10 +70,19 @@ sealed class PluginType(
       id = KOTLIN_ANDROID_PLUGIN_ID,
       isAndroid = true,
       artifact = "org.jetbrains.kotlin:kotlin-gradle-plugin",
-      version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+      version = KgpTestLayer.fromSystemProperty().version,
+      usesKgpTestLayerVersion = true,
+      isKotlinGradlePlugin = true,
     )
 
-  object KAPT : PluginType(id = "org.jetbrains.kotlin.kapt", version = TestUtils.KOTLIN_VERSION_FOR_TESTS)
+  object KAPT :
+    PluginType(
+      id = "org.jetbrains.kotlin.kapt",
+      artifact = "org.jetbrains.kotlin:kotlin-gradle-plugin",
+      version = KgpTestLayer.fromSystemProperty().version,
+      usesKgpTestLayerVersion = true,
+      isKotlinGradlePlugin = true,
+    )
 
   object KSP : PluginType(id = "com.google.devtools.ksp", version = TestUtils.KSP_VERSION_FOR_TESTS)
 
@@ -77,11 +90,17 @@ sealed class PluginType(
     PluginType(
       id = "org.jetbrains.kotlin.multiplatform",
       artifact = "org.jetbrains.kotlin:kotlin-gradle-plugin",
-      version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+      version = KgpTestLayer.fromSystemProperty().version,
+      usesKgpTestLayerVersion = true,
+      isKotlinGradlePlugin = true,
     )
 
   object COMPOSE_COMPILER_PLUGIN :
-    PluginType(id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID, version = TestUtils.KOTLIN_VERSION_FOR_TESTS)
+    PluginType(
+      id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
+      version = KgpTestLayer.fromSystemProperty().version,
+      usesKgpTestLayerVersion = true,
+    )
 
   // -----------
   // AGP Plugins
@@ -156,7 +175,9 @@ sealed class PluginType(
     /** extension type to allow usage via [PluginBuilder] */
     val extensionType: Class<T>,
     val extensionName: String,
-  ) : PluginType(id, isAndroid, isSettings, artifact, version, hasMarker)
+    usesKgpTestLayerVersion: Boolean = false,
+    isKotlinGradlePlugin: Boolean = false,
+  ) : PluginType(id, isAndroid, isSettings, artifact, version, hasMarker, usesKgpTestLayerVersion, isKotlinGradlePlugin)
 
   // ---------------
   // internal plugin implementations

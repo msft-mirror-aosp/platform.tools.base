@@ -283,7 +283,10 @@ ${it.multiLineMessage}
 
     // Gradle suppresses identical issues over some threshold (15 as of now).
     // Next occurrences are only aggregated as counters in ProblemSummariesEvent.
-    val suppressedCount = problemEvents.filterIsInstance<ProblemSummariesEvent>().sumOf { it.problemSummaries.sumOf { it.count } }
+    val suppressedCount =
+      problemEvents.filterIsInstance<ProblemSummariesEvent>().sumOf { event ->
+        event.problemSummaries.filter { it.problemId.group.name == "agp-sync-issues" }.sumOf { it.count }
+      }
     Truth.assertThat(problemsAsStrings).hasSize(issuesAsStrings.size - suppressedCount)
     Truth.assertThat(issuesAsStrings).containsAtLeastElementsIn(problemsAsStrings)
   }

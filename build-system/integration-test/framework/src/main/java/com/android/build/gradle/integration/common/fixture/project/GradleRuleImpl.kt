@@ -258,18 +258,14 @@ internal constructor(
     GradleTaskExecutor(locations.toProjectLocation(buildDefinition), getTestInfo(), ruleOptionBuilder.gradleOptions, projectConnection) {
         lastBuildResult = it
       }
-      // KGP < 2.3.20 (such as MINIMUM_BUILT_IN_KOTLIN_VERSION = 2.2.10) calls
-      // Configuration.setVisible(boolean), which is deprecated in Gradle 9.8.2.
-      .withFailOnWarning(buildDefinition.kgpTestLayer != KgpTestLayer.MINIMUM)
+      .withFailOnWarning(buildDefinition.kgpTestLayer.failOnWarning)
 
   private fun instantiateModelBuilder(): ModelBuilderV2 =
     ModelBuilderV2(locations.toProjectLocation(buildDefinition), getTestInfo(), ruleOptionBuilder.gradleOptions, projectConnection) {
         lastBuildResult = it
       }
+      .withFailOnWarning(buildDefinition.kgpTestLayer.failOnWarning)
       .withPerTestPrefsRoot(true)
-      // KGP < 2.3.20 (such as MINIMUM_BUILT_IN_KOTLIN_VERSION = 2.2.10) calls
-      // Configuration.setVisible(boolean), which is deprecated in Gradle 9.8.2.
-      .withFailOnWarning(buildDefinition.kgpTestLayer != KgpTestLayer.MINIMUM)
 
   private fun getTestInfo(): GradleTestInfo =
     object : GradleTestInfo {

@@ -112,6 +112,7 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
       allPlugins,
       customPluginMap,
       useOldPluginStyle,
+      build.kgpTestLayer,
       repositories,
       build.getNewWriter(),
     )

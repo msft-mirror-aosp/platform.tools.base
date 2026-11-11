@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture
 
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionsDelegate
@@ -88,7 +89,7 @@ internal constructor(
   private var offline: Boolean = true
   private var localPrefsRoot: Boolean = false
   private var perTestPrefsRoot: Boolean = false
-  private var failOnWarning: Boolean = true
+  private var failOnWarning: Boolean = KgpTestLayer.fromSystemProperty().failOnWarning
   private var crashOnOutOfMemory: Boolean = false
   private val adhocJvmArguments: MutableList<String> = mutableListOf()
   private val gradleOptionsDelegate = GradleOptionsDelegate(gradleOptions)

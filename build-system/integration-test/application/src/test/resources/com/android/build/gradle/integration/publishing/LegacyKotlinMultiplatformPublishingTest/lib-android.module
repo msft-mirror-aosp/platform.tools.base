@@ -28,7 +28,7 @@
           "group": "org.jetbrains.kotlin",
           "module": "kotlin-stdlib",
           "version": {
-            "requires": "{KOTLIN_VERSION_FOR_TESTS}"
+            "requires": "{BUILT_IN_KOTLIN_VERSION}"
           }
         }
       ],
@@ -57,7 +57,7 @@
           "group": "org.jetbrains.kotlin",
           "module": "kotlin-stdlib",
           "version": {
-            "requires": "{KOTLIN_VERSION_FOR_TESTS}"
+            "requires": "{BUILT_IN_KOTLIN_VERSION}"
           },
           "excludes": [
             {

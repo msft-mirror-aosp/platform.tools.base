@@ -26,19 +26,9 @@ import com.android.build.gradle.options.BooleanOption
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
 /** Tests built-in Kotlin when the user applies the `com.android.built-in-kotlin` plugin. */
-@RunWith(Parameterized::class)
-class BuiltInKotlinPluginTest(private val kgpTestLayer: KgpTestLayer) {
-
-  companion object {
-
-    @Parameterized.Parameters(name = "kgpTestLayer_{0}")
-    @JvmStatic
-    fun parameters() = KgpTestLayer.entries
-  }
+class BuiltInKotlinPluginTest {
 
   @get:Rule
   val rule = GradleRule.from {
@@ -51,7 +41,6 @@ class BuiltInKotlinPluginTest(private val kgpTestLayer: KgpTestLayer) {
       add(BooleanOption.BUILT_IN_KOTLIN, false)
       add(BooleanOption.USE_NEW_DSL, false)
     }
-    kgpTestLayer = this@BuiltInKotlinPluginTest.kgpTestLayer
   }
 
   @Test
@@ -66,7 +55,14 @@ class BuiltInKotlinPluginTest(private val kgpTestLayer: KgpTestLayer) {
 
     val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
 
-    result.assertErrorContains("The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0.")
+    // In KGP 2.2.10 (MINIMUM), KotlinBasePluginWrapper.apply() registers the 'kotlin' extension
+    // synchronously before Gradle fires AGP's pluginManager.withPlugin("org.jetbrains.kotlin.android")
+    // callback, so Gradle fails immediately with the duplicate 'kotlin' extension error.
+    if (KgpTestLayer.fromSystemProperty() == KgpTestLayer.MINIMUM) {
+      result.assertErrorContains("Cannot add extension with name 'kotlin', as there is an extension already registered with that name.")
+    } else {
+      result.assertErrorContains("The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0.")
+    }
   }
 
   @Test
@@ -75,7 +71,7 @@ class BuiltInKotlinPluginTest(private val kgpTestLayer: KgpTestLayer) {
 
     val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
 
-    if (kgpTestLayer == KgpTestLayer.LATEST) {
+    if (KgpTestLayer.fromSystemProperty() == KgpTestLayer.LATEST) {
       result.assertErrorContains(
         "The 'org.jetbrains.kotlin.android' plugin in project ':app' is no longer required for Kotlin support since AGP 9.0."
       )

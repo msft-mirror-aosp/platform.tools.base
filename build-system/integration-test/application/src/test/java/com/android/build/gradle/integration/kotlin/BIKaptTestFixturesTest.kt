@@ -122,7 +122,6 @@ class BIKaptTestFixturesTest {
     )
     project
       .executor()
-      .withFailOnWarning(true)
       .with(BooleanOption.BUILT_IN_KOTLIN, false)
       .with(BooleanOption.USE_NEW_DSL, false)
       .run("app:assembleDebugTestFixtures")
@@ -187,7 +186,7 @@ class BIKaptTestFixturesTest {
     TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.caching=true")
 
     val executor =
-      project.executor().withFailOnWarning(true).with(BooleanOption.BUILT_IN_KOTLIN, false).with(BooleanOption.USE_NEW_DSL, false)
+      project.executor().with(BooleanOption.BUILT_IN_KOTLIN, false).with(BooleanOption.USE_NEW_DSL, false)
     // test for caching when useBuildCache = true
     assertThat(executor.run("app:assembleDebugTestFixtures").didWorkTasks).contains(":app:kaptDebugTestFixturesKotlin")
     assertThat(executor.run("clean", "app:assembleDebugTestFixtures").fromCacheTasks).contains(":app:kaptDebugTestFixturesKotlin")

@@ -7,9 +7,9 @@
       jars="${mavenRepo}/com/google/truth/truth/0.44/truth-0.44.jar"
       resolved="com.google.truth:truth:0.44"/>
   <library
-      name="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar"
-      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/${BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-${BUILT_IN_KOTLIN_VERSION}.jar"
-      resolved="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}"
+      name="org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}@jar"
+      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/${kotlinVersion}/kotlin-stdlib-${kotlinVersion}.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
       provided="true"/>
   <library
       name="com.google.guava:guava:27.0.1-android@jar"

@@ -17,6 +17,10 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.Version
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectImpl
+import com.android.build.gradle.integration.common.fixture.project.GradleBuildImpl
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.google.common.truth.Truth
 import java.nio.file.Path
@@ -330,6 +334,221 @@ class GradleBuildDefinitionTest {
       plugins {
         id('com.android.application') version '${Version.ANDROID_GRADLE_PLUGIN_VERSION}' apply false
       }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val kotlinPluginDefaultFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.DEFAULT
+      genericProject(":lib") { applyPlugin(PluginType.KOTLIN_JVM) }
+    }
+    checkFile(
+      kotlinPluginDefaultFolder.resolve("build.gradle"),
+      "root build file for KOTLIN_JVM on DEFAULT layer",
+      """
+      plugins {
+        id('org.jetbrains.kotlin.jvm') version '${TestUtils.BUILT_IN_KOTLIN_VERSION}' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val kotlinPluginMinimumFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.MINIMUM
+      genericProject(":lib") { applyPlugin(PluginType.KOTLIN_JVM) }
+    }
+    checkFile(
+      kotlinPluginMinimumFolder.resolve("build.gradle"),
+      "root build file for KOTLIN_JVM on MINIMUM layer",
+      """
+      plugins {
+        id('org.jetbrains.kotlin.jvm') version '${TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION}' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val kotlinPluginLatestFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.LATEST
+      genericProject(":lib") { applyPlugin(PluginType.KOTLIN_JVM) }
+    }
+    checkFile(
+      kotlinPluginLatestFolder.resolve("build.gradle"),
+      "root build file for KOTLIN_JVM on LATEST layer",
+      """
+      plugins {
+        id('org.jetbrains.kotlin.jvm') version '${TestUtils.KOTLIN_VERSION_FOR_TESTS}' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val kotlinAndroidMinimumFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.MINIMUM
+      androidApplication { @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID) }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
+      }
+    }
+    checkFile(
+      kotlinAndroidMinimumFolder.resolve("build.gradle"),
+      "root build file for KOTLIN_ANDROID on MINIMUM layer (no duplicate buildscript classpath)",
+      """
+      plugins {
+        id('com.android.application') version '${Version.ANDROID_GRADLE_PLUGIN_VERSION}' apply false
+        id('org.jetbrains.kotlin.android') version '${TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION}' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val kaptLatestFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.LATEST
+      androidApplication { applyPlugin(PluginType.KAPT) }
+    }
+    checkFile(
+      kaptLatestFolder.resolve("build.gradle"),
+      "root build file for KAPT on LATEST layer (no duplicate buildscript classpath)",
+      """
+      plugins {
+        id('com.android.application') version '${Version.ANDROID_GRADLE_PLUGIN_VERSION}' apply false
+        id('org.jetbrains.kotlin.kapt') version '${TestUtils.KOTLIN_VERSION_FOR_TESTS}' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val explicitVersionFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.LATEST
+      genericProject(":lib") { applyPlugin(PluginType.KOTLIN_JVM, version = "1.9.22") }
+    }
+    checkFile(
+      explicitVersionFolder.resolve("build.gradle"),
+      "root build file for explicit KOTLIN_JVM version on LATEST layer",
+      """
+      plugins {
+        id('org.jetbrains.kotlin.jvm') version '1.9.22' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val replacedVersionFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.LATEST
+      genericProject(":lib") {
+        applyPlugin(PluginType.KOTLIN_JVM)
+        replaceAppliedPlugin(PluginType.KOTLIN_JVM, "2.2.10")
+      }
+    }
+    checkFile(
+      replacedVersionFolder.resolve("build.gradle"),
+      "root build file for replaced KOTLIN_JVM version on LATEST layer",
+      """
+      plugins {
+        id('org.jetbrains.kotlin.jvm') version '2.2.10' apply false
+      }
+
+
+      """
+        .trimIndent(),
+    )
+
+    val oldPluginStyleMinimumFolder = writeBuild {
+      kgpTestLayer = KgpTestLayer.MINIMUM
+      useOldPluginStyleForSeparateClassloaders = true
+      genericProject(":lib") {
+        applyPlugin(PluginType.KOTLIN_JVM)
+        applyPlugin(PluginType.KAPT)
+      }
+    }
+    checkFile(
+      oldPluginStyleMinimumFolder.resolve("lib/build.gradle"),
+      "subproject build file for oldPluginStyle on MINIMUM layer",
+      """
+      buildscript {
+        repositories {
+        }
+        dependencies {
+          classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION}')
+        }
+      }
+
+      apply plugin: 'org.jetbrains.kotlin.jvm'
+      apply plugin: 'org.jetbrains.kotlin.kapt'
+
+
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testReconfigureSubProjectPreservesKgpTestLayer() {
+    val buildDefinition =
+      GradleBuildDefinitionImpl("root", "root", enableDefaultContentCreation = true).apply {
+        kgpTestLayer = KgpTestLayer.MINIMUM
+        useOldPluginStyleForSeparateClassloaders = true
+        genericProject(":lib") { applyPlugin(PluginType.KOTLIN_JVM) }
+      }
+    val folder = temporaryFolder.newFolder().toPath()
+    val globalState =
+      GlobalDefinitionStateImpl(
+        additionalProperties = listOf(),
+        repositories = listOf(),
+        customPluginMap = mapOf(),
+      )
+    buildDefinition.write(
+      location = folder,
+      globalDefinitionState = globalState,
+      disableUnnecessaryBuiltInKotlinOptOutChecks = false,
+      disableUnnecessaryNewDslOptOutChecks = false,
+    )
+    val libDefinition = buildDefinition.subProjects.getValue(":lib") as GenericProjectDefinition
+    val libProject = GenericProjectImpl(folder.resolve("lib"), libDefinition)
+    val gradleBuild =
+      GradleBuildImpl(
+        directory = folder,
+        subProjects = mapOf(":lib" to libProject),
+        definition = buildDefinition,
+        executorProvider = { throw UnsupportedOperationException() },
+        modelBuilderProvider = { throw UnsupportedOperationException() },
+        mavenRepoPath = folder.resolve("maven"),
+        profileDirectory = null,
+      )
+    libProject.build = gradleBuild
+
+    libProject.reconfigure { group = "com.example" }
+
+    checkFile(
+      folder.resolve("lib/build.gradle"),
+      "reconfigured subproject build file on MINIMUM layer",
+      """
+      buildscript {
+        repositories {
+        }
+        dependencies {
+          classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION}')
+        }
+      }
+
+      apply plugin: 'org.jetbrains.kotlin.jvm'
+
+      group = 'com.example'
 
 
       """

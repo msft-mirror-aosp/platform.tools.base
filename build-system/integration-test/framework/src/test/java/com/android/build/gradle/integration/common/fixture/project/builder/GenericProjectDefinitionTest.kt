@@ -48,6 +48,7 @@ class GenericProjectDefinitionTest {
       useOldPluginStyle = false,
       projectRepositories = listOf(),
       buildWriter = GroovyBuildWriter(),
+      kgpTestLayer = KgpTestLayer.DEFAULT,
     )
 
     val fooFile = location.resolve("foo.txt")
@@ -72,6 +73,7 @@ class GenericProjectDefinitionTest {
       useOldPluginStyle = false,
       projectRepositories = listOf(),
       buildWriter = GroovyBuildWriter(),
+      kgpTestLayer = KgpTestLayer.DEFAULT,
     )
 
     val fooFile = location.resolve("foo.txt")
@@ -95,6 +97,7 @@ class GenericProjectDefinitionTest {
       useOldPluginStyle = false,
       projectRepositories = listOf(),
       buildWriter = GroovyBuildWriter(),
+      kgpTestLayer = KgpTestLayer.DEFAULT,
     )
 
     val fooFile = location.resolve("foo.txt")
@@ -122,6 +125,7 @@ class GenericProjectDefinitionTest {
       useOldPluginStyle = false,
       projectRepositories = listOf(),
       buildWriter = GroovyBuildWriter(),
+      kgpTestLayer = KgpTestLayer.DEFAULT,
     )
 
     val buildFile = location.resolve("build.gradle")

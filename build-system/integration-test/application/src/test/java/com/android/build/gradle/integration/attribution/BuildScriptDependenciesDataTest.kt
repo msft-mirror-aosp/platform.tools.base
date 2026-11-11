@@ -33,10 +33,6 @@ class BuildScriptDependenciesDataTest {
   @get:Rule
   val rule = GradleRule.from {
     androidApplication { HelloWorldAndroid.setupKotlin(files) }
-    // Setting useLatestKgpVersion = true will add
-    // org.jetbrains.kotlin:kotlin-gradle-plugin:<KOTLIN_VERSION_FOR_TESTS>
-    // to the build script classpath
-    useLatestKgpVersion = true
   }
 
   @get:Rule val temporaryFolder = TemporaryFolder()
@@ -52,6 +48,6 @@ class BuildScriptDependenciesDataTest {
 
     val attributionData = AndroidGradlePluginAttributionData.load(attributionDir)!!
     assertThat(attributionData.buildscriptDependenciesInfo)
-      .contains("org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+      .contains("org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.BUILT_IN_KOTLIN_VERSION}")
   }
 }

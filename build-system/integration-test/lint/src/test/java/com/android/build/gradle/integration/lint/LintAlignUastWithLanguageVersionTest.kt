@@ -47,7 +47,7 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
 
   @get:Rule val rule = createGradleRule()
 
-  private val kotlinLanguageVersion = TestUtils.KOTLIN_VERSION_FOR_TESTS.substringBeforeLast(".")
+  private val kotlinLanguageVersion = TestUtils.BUILT_IN_KOTLIN_VERSION.substringBeforeLast(".")
 
   /** Test default behavior */
   @Test
@@ -84,7 +84,7 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
   fun testKotlinExperimentalTryNext() {
     // When updating the Kotlin version used for tests, be sure to also update this constant to
     // the next version.
-    val nextLanguageVersion = "2.6"
+    val nextLanguageVersion = "2.5"
     check(nextLanguageVersion != kotlinLanguageVersion) {
       "nextLanguageVersion must be higher than the current language version ($kotlinLanguageVersion)"
     }
@@ -143,8 +143,8 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
           implementation(project(":kotlin-lib"))
           implementation(project(":kmp-android-lib"))
           implementation(project(":kmp-jvm-lib"))
-          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}")
+          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}")
         }
 
         files.add(
@@ -169,8 +169,8 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
         }
 
         dependencies {
-          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}")
+          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}")
         }
       }
 
@@ -185,8 +185,8 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
 
         dependencies {
           implementation(project(":app"))
-          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+          implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}")
+          androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}")
         }
       }
 
