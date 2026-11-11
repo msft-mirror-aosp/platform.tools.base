@@ -7550,13 +7550,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext.gradle-idea-ext_0.8.1",
-    pom = "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/0.8.1/gradle-idea-ext-0.8.1.pom",
+    name = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext.gradle-idea-ext_1.4.1",
+    pom = "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/1.4.1/gradle-idea-ext-1.4.1.pom",
     repo_root_path = "",
-    repo_path = "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/0.8.1",
+    repo_path = "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/1.4.1",
     deps = [
-        "com.google.code.gson.gson_2.8.6",
-        "com.google.guava.guava_28.2-jre",
+        "com.google.code.gson.gson_2.10.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -7565,19 +7564,17 @@ maven_import(
     name = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext.gradle-idea-ext",
     classifiers = [],
     jars = [
-        "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/0.8.1/gradle-idea-ext-0.8.1.jar"
+        "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/1.4.1/gradle-idea-ext-1.4.1.jar"
     ],
     deps = [
         "com.google.code.gson.gson",
-        "com.google.guava.guava",
     ],
     original_deps = [
-        "com.google.code.gson.gson_2.8.6",
-        "com.google.guava.guava_28.2-jre",
+        "com.google.code.gson.gson_2.10.1",
     ],
-    pom = "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/0.8.1/gradle-idea-ext-0.8.1.pom",
+    pom = "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/1.4.1/gradle-idea-ext-1.4.1.pom",
     repo_root_path = "",
-    repo_path = "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/0.8.1",
+    repo_path = "gradle/plugin/org/jetbrains/gradle/plugin/idea-ext/gradle-idea-ext/1.4.1",
     visibility = ["//visibility:public"],
 )
 

@@ -115,7 +115,7 @@ ARTIFACTS = [
     "commons-cli:commons-cli:1.4",
     "commons-io:commons-io:2.22.0",
     "commons-logging:commons-logging:1.2",
-    "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.8.1",
+    "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.4.1",
     "info.picocli:picocli:4.7.4",
     "io.github.oshai:kotlin-logging-jvm:7.0.0",
     "io.grpc:grpc-api:1.85.1",
