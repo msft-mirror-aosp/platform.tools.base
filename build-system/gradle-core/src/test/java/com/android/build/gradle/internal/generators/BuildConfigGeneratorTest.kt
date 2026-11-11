@@ -295,4 +295,217 @@ class BuildConfigGeneratorTest {
       .that(success)
       .isTrue()
   }
+
+  @Test
+  fun testEscapingDollarSigns() {
+    val tempDir = mTemporaryFolder.newFolder()
+    val buildConfigData =
+      BuildConfigData.Builder()
+        .setOutputPath(tempDir.toPath())
+        .setNamespace("my.app.pkg")
+        .addItem(
+          "DOLLAR_FIELD",
+          BuildConfigField(
+            "String",
+            "\"Value with \$100 and \$L \$S \$T \$N\"",
+            "Comment with \$100 and \$L \$S \$T \$N",
+          ),
+        )
+        .addItem(
+          "FORMAT_EXPR",
+          BuildConfigField(
+            "String",
+            "String.format(\"VALUE=%1\$d\", 42)",
+            null,
+          ),
+        )
+        .build()
+    val generator = BuildConfigGenerator(buildConfigData)
+    generator.generate()
+    val actual = Files.asCharSource(generator.generatedFilePath, Charsets.UTF_8).read().trim()
+    assertThat(actual)
+      .isEqualTo(
+        """
+        /*
+         * Automatically generated file. DO NOT MODIFY
+         */
+        package my.app.pkg;
+
+        public final class BuildConfig {
+          // Comment with ${'$'}100 and ${'$'}L ${'$'}S ${'$'}T ${'$'}N
+          public static final String DOLLAR_FIELD = "Value with ${'$'}100 and ${'$'}L ${'$'}S ${'$'}T ${'$'}N";
+          public static final String FORMAT_EXPR = String.format("VALUE=%1${'$'}d", 42);
+        }
+        """
+          .trimIndent()
+      )
+    assertCompilesWarningFree(generator.generatedFilePath)
+  }
+
+  @Test
+  fun testPrimitivesAndRecursiveArrays() {
+    val tempDir = mTemporaryFolder.newFolder()
+    val buildConfigData =
+      BuildConfigData.Builder()
+        .setOutputPath(tempDir.toPath())
+        .setNamespace("my.app.pkg")
+        .addItem("BYTE_VAL", BuildConfigField("byte", "1", null))
+        .addItem("SHORT_VAL", BuildConfigField("short", "2", null))
+        .addItem("CHAR_VAL", BuildConfigField("char", "'a'", null))
+        .addItem("INT_ARRAY", BuildConfigField("int[]", "new int[]{1, 2}", null))
+        .addItem("BYTE_2D_ARRAY", BuildConfigField("byte[][]", "new byte[][]{{1}, {2}}", null))
+        .addItem("SPACED_ARRAY", BuildConfigField("int [] []", "new int[][]{}", null))
+        .addItem("STRING_2D_ARRAY", BuildConfigField("String[][]", "new String[][]{}", null))
+        .addItem("BOXED_INT_ARRAY", BuildConfigField("Integer[]", "new Integer[]{1}", null))
+        .addItem("FQ_JAVA_LANG_ARRAY", BuildConfigField("java.lang.Long[]", "new Long[]{1L}", null))
+        .addItem("OPTIONAL_INT_ARRAY", BuildConfigField("java.util.OptionalInt[]", "new java.util.OptionalInt[]{}", null))
+        .build()
+    val generator = BuildConfigGenerator(buildConfigData)
+    generator.generate()
+    val actual = Files.asCharSource(generator.generatedFilePath, Charsets.UTF_8).read().trim()
+    assertThat(actual)
+      .isEqualTo(
+        """
+        /*
+         * Automatically generated file. DO NOT MODIFY
+         */
+        package my.app.pkg;
+
+        public final class BuildConfig {
+          public static final byte BYTE_VAL = 1;
+          public static final short SHORT_VAL = 2;
+          public static final char CHAR_VAL = 'a';
+          public static final int[] INT_ARRAY = new int[]{1, 2};
+          public static final byte[][] BYTE_2D_ARRAY = new byte[][]{{1}, {2}};
+          public static final int [] [] SPACED_ARRAY = new int[][]{};
+          public static final String[][] STRING_2D_ARRAY = new String[][]{};
+          public static final Integer[] BOXED_INT_ARRAY = new Integer[]{1};
+          public static final Long[] FQ_JAVA_LANG_ARRAY = new Long[]{1L};
+          public static final java.util.OptionalInt[] OPTIONAL_INT_ARRAY = new java.util.OptionalInt[]{};
+        }
+        """
+          .trimIndent()
+      )
+    assertCompilesWarningFree(generator.generatedFilePath)
+  }
+
+  @Test
+  fun testGenericsWildcardsAndNestedClasses() {
+    val tempDir = mTemporaryFolder.newFolder()
+    val buildConfigData =
+      BuildConfigData.Builder()
+        .setOutputPath(tempDir.toPath())
+        .setNamespace("my.app.pkg")
+        .addItem("STRING_LIST", BuildConfigField("java.util.List<String>", "java.util.Collections.emptyList()", null))
+        .addItem("FQ_JAVA_LANG_ARG", BuildConfigField("java.util.List<java.lang.String>", "java.util.Collections.emptyList()", null))
+        .addItem("WILDCARD_MAP", BuildConfigField("java.util.Map<String, ? extends Number>", "java.util.Collections.emptyMap()", null))
+        .addItem("SUPER_WILDCARD", BuildConfigField("java.util.List<? super Integer>", "null", null))
+        .addItem("UNBOUNDED_WILDCARD", BuildConfigField("java.util.List<?>", "null", null))
+        .addItem("DEEP_GENERICS", BuildConfigField("java.util.Map<String, java.util.List<java.util.Set<?>>>", "null", null))
+        .addItem("PRIMITIVE_ARRAY_ARG", BuildConfigField("java.util.List<int[]>", "null", null))
+        .addItem("WILDCARD_ARRAY_BOUND", BuildConfigField("java.util.List<? extends byte[][]>", "null", null))
+        .addItem("ENTRY_ARRAY", BuildConfigField("java.util.Map.Entry<String, Integer>[]", "null", null))
+        .addItem("NESTED_CLASS", BuildConfigField("com.example.Outer.StaticInner", "null", null))
+        .addItem("GENERIC_NESTED", BuildConfigField("com.example.Outer<String>.Inner<Integer>", "null", null))
+        .addItem("GENERIC_OUTER_RAW_INNER", BuildConfigField("com.example.Outer<String>.RawInner", "null", null))
+        .addItem("THREAD_STATE", BuildConfigField("java.lang.Thread.State", "Thread.State.NEW", null))
+        .addItem("SAME_PKG_TYPE", BuildConfigField("CustomHelper", "null", null))
+        .addItem("FQ_SAME_PKG_GENERIC", BuildConfigField("my.app.pkg.SamePkgOuter<String>.Inner<Integer>", "null", null))
+        .addItem("COLLIDING_EXTERNAL_TYPE", BuildConfigField("com.other.CustomHelper", "null", null))
+        .build()
+    val generator = BuildConfigGenerator(buildConfigData)
+    generator.generate()
+    val actual = Files.asCharSource(generator.generatedFilePath, Charsets.UTF_8).read().trim()
+    assertThat(actual)
+      .isEqualTo(
+        """
+        /*
+         * Automatically generated file. DO NOT MODIFY
+         */
+        package my.app.pkg;
+
+        public final class BuildConfig {
+          public static final java.util.List<String> STRING_LIST = java.util.Collections.emptyList();
+          public static final java.util.List<String> FQ_JAVA_LANG_ARG = java.util.Collections.emptyList();
+          public static final java.util.Map<String, ? extends Number> WILDCARD_MAP = java.util.Collections.emptyMap();
+          public static final java.util.List<? super Integer> SUPER_WILDCARD = null;
+          public static final java.util.List<?> UNBOUNDED_WILDCARD = null;
+          public static final java.util.Map<String, java.util.List<java.util.Set<?>>> DEEP_GENERICS = null;
+          public static final java.util.List<int[]> PRIMITIVE_ARRAY_ARG = null;
+          public static final java.util.List<? extends byte[][]> WILDCARD_ARRAY_BOUND = null;
+          public static final java.util.Map.Entry<String, Integer>[] ENTRY_ARRAY = null;
+          public static final com.example.Outer.StaticInner NESTED_CLASS = null;
+          public static final com.example.Outer<String>.Inner<Integer> GENERIC_NESTED = null;
+          public static final com.example.Outer<String>.RawInner GENERIC_OUTER_RAW_INNER = null;
+          public static final Thread.State THREAD_STATE = Thread.State.NEW;
+          public static final CustomHelper SAME_PKG_TYPE = null;
+          public static final SamePkgOuter<String>.Inner<Integer> FQ_SAME_PKG_GENERIC = null;
+          public static final com.other.CustomHelper COLLIDING_EXTERNAL_TYPE = null;
+        }
+        """
+          .trimIndent()
+      )
+
+    val stubsDir = mTemporaryFolder.newFolder()
+    val outerStub =
+      stubsDir.resolve("com/example/Outer.java").apply {
+        parentFile.mkdirs()
+        writeText(
+          """
+          package com.example;
+          public class Outer<T> {
+            public static class StaticInner {}
+            public class Inner<U> {}
+            public class RawInner {}
+          }
+          """
+            .trimIndent()
+        )
+      }
+    val samePkgHelperStub =
+      stubsDir.resolve("my/app/pkg/CustomHelper.java").apply {
+        parentFile.mkdirs()
+        writeText("package my.app.pkg;\npublic class CustomHelper {}\n")
+      }
+    val samePkgOuterStub =
+      stubsDir.resolve("my/app/pkg/SamePkgOuter.java").apply {
+        parentFile.mkdirs()
+        writeText("package my.app.pkg;\npublic class SamePkgOuter<T> { public class Inner<U> {} }\n")
+      }
+    val externalHelperStub =
+      stubsDir.resolve("com/other/CustomHelper.java").apply {
+        parentFile.mkdirs()
+        writeText("package com.other;\npublic class CustomHelper {}\n")
+      }
+    assertCompilesWarningFree(
+      generator.generatedFilePath,
+      outerStub,
+      samePkgHelperStub,
+      samePkgOuterStub,
+      externalHelperStub,
+    )
+  }
+
+  private fun assertCompilesWarningFree(vararg sources: java.io.File) {
+    val compiler = checkNotNull(ToolProvider.getSystemJavaCompiler()) { "Test must run on a JDK, not a JRE" }
+    val diagnostics = DiagnosticCollector<JavaFileObject>()
+    val classesDir = mTemporaryFolder.newFolder()
+    val success =
+      compiler.getStandardFileManager(diagnostics, null, Charsets.UTF_8).use { fileManager ->
+        fileManager.setLocation(StandardLocation.CLASS_PATH, emptyList())
+        compiler
+          .getTask(
+            null,
+            fileManager,
+            diagnostics,
+            listOf("-proc:none", "-Xlint:all", "-Werror", "-d", classesDir.path),
+            null,
+            fileManager.getJavaFileObjects(*sources),
+          )
+          .call()
+      }
+    assertWithMessage("Generated BuildConfig.java must compile warning-free:\n" + diagnostics.diagnostics.joinToString("\n"))
+      .that(success)
+      .isTrue()
+  }
 }
