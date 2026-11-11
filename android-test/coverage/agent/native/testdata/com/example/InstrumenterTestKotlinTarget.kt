@@ -23,6 +23,12 @@ class InstrumenterTestKotlinTarget {
   // Kotlin evaluates the default value in the synthetic greet$default method.
   fun greet(name: String = "World"): String = "Hello $name"
 
+  // Kotlin inlines the body of twice() into callsTwice(), on lines after the
+  // end of this file.
+  inline fun twice(value: Int, block: (Int) -> Int): Int = block(value) * 2
+
+  fun callsTwice(): Int = twice(count) { it + 1 }
+
   inner class Reader {
     // Reads `count` through the synthetic accessor access$getCount$p.
     fun read(): Int = count

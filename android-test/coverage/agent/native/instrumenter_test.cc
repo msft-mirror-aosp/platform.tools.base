@@ -256,5 +256,50 @@ TEST(InstrumenterTest, OtherSyntheticMethodsAreSkipped) {
             nullptr);
 }
 
+// Returns the lines that `method` reports, and adds their instructions to
+// `instructions`.
+std::set<int32_t> ReportedLines(const proto::MethodMetadata& method,
+                                uint32_t* instructions) {
+  std::set<int32_t> lines;
+  for (const auto& block : method.blocks()) {
+    for (const auto& line : block.lines()) {
+      lines.insert(line.line_number());
+      *instructions += line.instruction_count();
+    }
+  }
+  return lines;
+}
+
+TEST(InstrumenterTest, InlinedCodeIsNotReported) {
+  // twice() is inlined into callsTwice() on lines after the end of the file.
+  // Only the line of callsTwice(), which also holds the lambda, is reported.
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("callsTwice", kKotlinTargetClass);
+  ASSERT_NE(method, nullptr);
+  uint32_t instructions = 0;
+  std::set<int32_t> lines = ReportedLines(*method, &instructions);
+  EXPECT_EQ(lines.size(), 1u);
+  // iget, the const/4 that marks the start of the inlined function,
+  // add-int/lit8 of the lambda and return.
+  EXPECT_EQ(instructions, 4u);
+}
+
+TEST(InstrumenterTest, InlineFunctionIsInstrumented) {
+  // The inline function itself is reported on its own line, before the line of
+  // callsTwice().
+  const proto::MethodMetadata* twice =
+      InstrumentedMethod("twice", kKotlinTargetClass);
+  const proto::MethodMetadata* calls_twice =
+      InstrumentedMethod("callsTwice", kKotlinTargetClass);
+  ASSERT_NE(twice, nullptr);
+  ASSERT_NE(calls_twice, nullptr);
+  uint32_t instructions = 0;
+  std::set<int32_t> lines = ReportedLines(*twice, &instructions);
+  std::set<int32_t> caller_lines = ReportedLines(*calls_twice, &instructions);
+  ASSERT_EQ(lines.size(), 1u);
+  ASSERT_EQ(caller_lines.size(), 1u);
+  EXPECT_EQ(*lines.begin() + 2, *caller_lines.begin());
+}
+
 }  // namespace
 }  // namespace coverage
