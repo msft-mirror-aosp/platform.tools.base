@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.test.report
 
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.build.gradle.internal.coverage.renderer.utils.openUncachedStream
 import com.android.utils.FileUtils
 import com.android.utils.ILogger
 import com.android.utils.XmlUtils
@@ -107,7 +108,7 @@ internal constructor(
 
     RENDERER_RESOURCES.forEach { relativePath ->
       val resourcePath = "/com/android/build/gradle/internal/test/report/renderer/$relativePath"
-      val stream = XMLReportAggregator::class.java.getResourceAsStream(resourcePath)
+      val stream = XMLReportAggregator::class.java.getResource(resourcePath)?.let { openUncachedStream(it) }
       if (stream == null) {
         logger.warning("Missing HTML test report renderer resource: $resourcePath")
       } else {

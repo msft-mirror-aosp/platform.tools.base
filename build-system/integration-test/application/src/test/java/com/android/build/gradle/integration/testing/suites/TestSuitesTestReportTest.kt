@@ -485,7 +485,11 @@ class TestSuitesTestReportTest {
     }
 
     // Both variants run in the same build, as with testAllSuites.
-    build.executor.run(":app:testDebugVariantCoverageSuiteT1TestSuite", ":app:testReleaseVariantCoverageSuiteT1TestSuite")
+    val result = build.executor.run(":app:testDebugVariantCoverageSuiteT1TestSuite", ":app:testReleaseVariantCoverageSuiteT1TestSuite")
+
+    // A failed coverage report is only a warning, so check the output first to fail with the cause (b/584462568).
+    result.assertOutputDoesNotContain("Unable to generate coverage report")
+    result.assertOutputDoesNotContain("No code coverage data was found")
 
     // Each variant has its own report under testSuites, and there is no report for the whole suite.
     val coverageReportsDir = build.androidApplication().buildDir.resolve("reports/coverage")

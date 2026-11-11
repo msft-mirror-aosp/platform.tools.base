@@ -18,6 +18,9 @@ package com.android.build.gradle.internal.coverage.renderer.utils
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.io.IOException
+import java.net.URLClassLoader
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Assert.fail
@@ -83,4 +86,38 @@ class RendererUtilsTest {
     assertThat(outputFile2.exists()).isTrue()
     assertThat(outputFile2.readText().trim()).isEqualTo(expectedContent2)
   }
+
+  /**
+   * Regression test for b/584462568: Gradle closes the isolated class loader of a finished worker action while the coverage report action
+   * of another variant still copies its resources from the same JAR.
+   */
+  @Test
+  fun `openResourceStream keeps reading when another class loader of the same JAR is closed`() {
+    val anchorClassFile = ResourceAnchor::class.java.name.replace('.', '/') + ".class"
+    val resourcePath = anchorClassFile.substringBeforeLast('/') + "/jar-resource.txt"
+    val content = "Resource read from a JAR. ".repeat(100)
+    val jar = tempFolder.newFile("resources.jar")
+    JarOutputStream(jar.outputStream()).use { output ->
+      output.putNextEntry(JarEntry(anchorClassFile))
+      ResourceAnchor::class.java.classLoader.getResourceAsStream(anchorClassFile)!!.use { it.copyTo(output) }
+      output.putNextEntry(JarEntry(resourcePath))
+      output.write(content.toByteArray())
+    }
+    val jarUrls = arrayOf(jar.toURI().toURL())
+
+    URLClassLoader(jarUrls, null).use { readingLoader ->
+      val anchorClass = readingLoader.loadClass(ResourceAnchor::class.java.name)
+      val closingLoader = URLClassLoader(jarUrls, null)
+      // Opens the JAR through the JVM-wide cache of open JAR files, as Class.getResourceAsStream does.
+      closingLoader.getResourceAsStream(resourcePath)!!.close()
+
+      openResourceStream("jar-resource.txt", anchorClass).use { input ->
+        closingLoader.close()
+        assertThat(input.readBytes().decodeToString()).isEqualTo(content)
+      }
+    }
+  }
+
+  /** A class to load from a JAR in a separate class loader, to read the resources of the JAR with. */
+  class ResourceAnchor
 }

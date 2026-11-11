@@ -93,7 +93,7 @@ abstract class TestSuiteCoverageWorkAction : WorkAction<TestSuiteCoverageWorkPar
         }
       }
     } catch (e: Exception) {
-      logger.warn("Unable to generate coverage report", e)
+      logger.warn("Unable to generate coverage report in ${parameters.reportDir.asFile.orNull}", e)
     }
   }
 
