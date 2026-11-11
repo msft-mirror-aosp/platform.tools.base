@@ -202,7 +202,7 @@ ARTIFACTS = [
     "org.fusesource.jansi:jansi:2.4.3",
     "org.glassfish.jaxb:jaxb-runtime:2.3.9",
     "org.glassfish.jaxb:jaxb-xjc:2.3.9",
-    "org.gradle:gradle-tooling-api:9.7.1",
+    "org.gradle:gradle-tooling-api:9.8.2",
     "org.hamcrest:hamcrest:2.2",
     "org.hamcrest:hamcrest-core:1.3",
     "org.hamcrest:hamcrest-library:1.3",

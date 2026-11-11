@@ -49,9 +49,9 @@ public class TestWithMismatchDep {
     private static final String EXCEPTION_MSG =
             "Cannot find a version of 'com.google.guava:guava' that satisfies the version"
                 + " constraints:\n"
-                + "   Dependency path: 'root project 'testDependency''"
+                + "   Dependency path: root project 'testDependency'"
                 + " (debugAndroidTestRuntimeClasspath) --> 'com.google.guava:guava:19.0'\n"
-                + "   Constraint path: 'root project 'testDependency''"
+                + "   Constraint path: root project 'testDependency'"
                 + " (debugAndroidTestRuntimeClasspath) --> 'com.google.guava:guava:{strictly 18.0}'"
                 + " because of the following reason: version resolved in configuration"
                 + " ':debugRuntimeClasspath' by consistent resolution\n";
@@ -62,9 +62,9 @@ public class TestWithMismatchDep {
                 + "         root project 'testDependency'\n"
                 + "      > Cannot find a version of 'com.google.guava:guava' that satisfies the"
                 + " version constraints:\n"
-                + "           Dependency path: 'root project 'testDependency''"
+                + "           Dependency path: root project 'testDependency'"
                 + " (debugAndroidTestRuntimeClasspath) --> 'com.google.guava:guava:19.0'\n"
-                + "           Constraint path: 'root project 'testDependency''"
+                + "           Constraint path: root project 'testDependency'"
                 + " (debugAndroidTestRuntimeClasspath) --> 'com.google.guava:guava:{strictly 18.0}'"
                 + " because of the following reason: version resolved in configuration"
                 + " ':debugRuntimeClasspath' by consistent resolution";

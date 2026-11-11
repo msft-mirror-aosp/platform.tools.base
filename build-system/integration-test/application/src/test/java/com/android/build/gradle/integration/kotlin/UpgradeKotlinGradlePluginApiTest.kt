@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.integration.kotlin
 
+import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.testutils.TestUtils.BUILT_IN_KOTLIN_VERSION
@@ -71,9 +73,10 @@ class UpgradeKotlinGradlePluginApiTest {
       rootProject { buildscript { classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$MINIMUM_BUILT_IN_KOTLIN_VERSION") } }
     }
 
-    build.executor.run(":app:assembleDebug")
+    val executor = build.executorForLegacyKgp()
+    executor.run(":app:assembleDebug")
 
-    val result = build.executor.run("buildEnvironment")
+    val result = executor.run("buildEnvironment")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugin-api:$MINIMUM_BUILT_IN_KOTLIN_VERSION")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugin:$MINIMUM_BUILT_IN_KOTLIN_VERSION")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugins-bom:$MINIMUM_BUILT_IN_KOTLIN_VERSION")
@@ -86,9 +89,10 @@ class UpgradeKotlinGradlePluginApiTest {
     val intermediateVersion = "2.3.10"
     val build = rule.build { rootProject { buildscript { classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$intermediateVersion") } } }
 
-    build.executor.run(":app:assembleDebug")
+    val executor = build.executorForLegacyKgp()
+    executor.run(":app:assembleDebug")
 
-    val result = build.executor.run("buildEnvironment")
+    val result = executor.run("buildEnvironment")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugin-api:$intermediateVersion")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugin:$intermediateVersion")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugins-bom:$intermediateVersion")
@@ -110,14 +114,21 @@ class UpgradeKotlinGradlePluginApiTest {
       }
     }
 
-    build.executor.run(":app:assembleDebug")
+    val executor = build.executorForLegacyKgp()
+    executor.run(":app:assembleDebug")
 
-    val result = build.executor.run("buildEnvironment")
+    val result = executor.run("buildEnvironment")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugin-api:$intermediateVersion")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugin:$intermediateVersion")
     ScannerSubject.assertThat(result.stdout).contains("org.jetbrains.kotlin:kotlin-gradle-plugins-bom:$intermediateVersion")
     ScannerSubject.assertThat(result.stdout).doesNotContain("-> $BUILT_IN_KOTLIN_VERSION")
   }
+
+  /**
+   * KGP < 2.3.20 (such as [MINIMUM_BUILT_IN_KOTLIN_VERSION] = 2.2.10 and 2.3.10) calls `Configuration.setVisible(boolean)`, which is
+   * deprecated in Gradle 9.8.2.
+   */
+  private fun GradleBuild.executorForLegacyKgp(): GradleTaskExecutor = executor.withFailOnWarning(false)
 
   /** Test that users can upgrade the version of kotlin artifacts by adding KGP to their buildscript classpath with the desired version. */
   @Test

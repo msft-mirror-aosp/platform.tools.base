@@ -55,6 +55,25 @@ class RelocatedNoOpBuildTaskStatesTest {
     val build2 = rule2.build(projectDef)
     val relocatedDir = build2.directory.toFile()
 
+    // In Gradle 9.8+, configuration cache is invalidated when the root project directory changes,
+    // so the second build configures a fresh task graph at relocatedDir and HandleStaleOutputsStep
+    // checks .gradle/buildOutputCleanup/outputFiles.bin (which is keyed by absolute path and checks
+    // whether any ancestor directory is a recorded OutputKind.OUTPUT). Pre-register relocatedDir/app/build
+    // in outputFiles.bin during build1 so HandleStaleOutputsStep does not delete relocated outputs
+    // before up-to-date checks run.
+    val relocatedAppBuildDir = relocatedDir.resolve("app/build").apply { mkdirs() }
+    build1.androidApplication(":app").files.update("build.gradle") {
+      append(
+        """
+        tasks.register("recordRelocatedOutputDir") {
+            outputs.dir("${relocatedAppBuildDir.absolutePath.replace("\\", "/")}")
+            doLast {}
+        }
+        """
+          .trimIndent()
+      )
+    }
+
     val tasks =
       arrayOf(
         ":app:assembleDebug",
@@ -69,7 +88,7 @@ class RelocatedNoOpBuildTaskStatesTest {
       )
 
     // 1. Initial build on project1
-    build1.executor.run(tasks.toList())
+    build1.executor.run(tasks.toList() + ":app:recordRelocatedOutputDir")
 
     // 2. Copy full built workspace (source + build/ + .gradle/) to destination project
     FileUtils.copyDirectory(initialDir, relocatedDir)
@@ -77,11 +96,29 @@ class RelocatedNoOpBuildTaskStatesTest {
     // 3. Execute tasks on relocated workspace via rule2 (NO clean step)
     val result = build2.executor.run(tasks.toList())
 
-    // Tasks configured with outputs.upToDateWhen { false } (terminal stdout report printers)
-    val alwaysRunReportingTasks = setOf(":app:lintDebug", ":app:lintVitalRelease")
+    // Tasks that are expected to re-execute when the configuration cache is invalidated on relocation:
+    // - Terminal lint tasks configured with outputs.upToDateWhen { false }
+    // - Non-cacheable (@DisableCachingByDefault) tasks that intentionally declare @Input properties
+    //   containing absolute project/build directory paths or PathSensitivity.ABSOLUTE
+    //   (ListingFileRedirectTask, MapSourceSetPathsTask, and AndroidLintInputs when lintMode != LintMode.ANALYSIS)
+    val alwaysRunOrLocationDependentTasks =
+      setOf(
+        ":app:lintDebug",
+        ":app:lintVitalRelease",
+        ":app:createDebugApkListingFileRedirect",
+        ":app:createReleaseApkListingFileRedirect",
+        ":app:mapDebugSourceSetPaths",
+        ":app:mapReleaseSourceSetPaths",
+        ":app:generateDebugLintReportModel",
+        ":app:generateReleaseLintVitalReportModel",
+        ":app:generateDebugAndroidTestLintModel",
+        ":app:generateDebugUnitTestLintModel",
+        ":app:lintReportDebug",
+        ":app:lintVitalReportRelease",
+      )
 
     // Assert 100% up-to-dateness for all real execution tasks
-    val unexpectedExecutedTasks = result.didWorkTasks - alwaysRunReportingTasks
+    val unexpectedExecutedTasks = result.didWorkTasks - alwaysRunOrLocationDependentTasks
     assertThat(unexpectedExecutedTasks).named("Unexpected tasks re-executed after workspace relocation").isEmpty()
 
     // Verify lint partial results directory exists and check for host path leaks (b/533527424)

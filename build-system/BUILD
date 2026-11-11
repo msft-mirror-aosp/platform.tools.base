@@ -29,9 +29,9 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.7.1"
+GRADLE_VERSION = "9.8.2"
 
-GRADLE_BASE_VERSION = "9.7.1"
+GRADLE_BASE_VERSION = "9.8.2"
 
 filegroup(
     name = "gradle-distrib",
@@ -56,8 +56,8 @@ maven_repository(
     name = "gradle-runtime-maven",
     # keep sorted
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.4.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.4.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -69,18 +69,24 @@ maven_repository(
     name = "gradle-bundled-kotlin-plugins",
     # keep sorted
     artifacts = [
-        "@maven//:org.gradle.kotlin.kotlin-dsl.org.gradle.kotlin.kotlin-dsl.gradle.plugin_6.7.3",
-        "@maven//:org.jetbrains.kotlin.kotlin-assignment-compiler-plugin-embeddable_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-cri-impl_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-sam-with-receiver-compiler-plugin-embeddable_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-scripting-common_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-scripting-jvm_2.4.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.4.0",
+        "@maven//:org.gradle.kotlin.kotlin-dsl.org.gradle.kotlin.kotlin-dsl.gradle.plugin_6.7.6",
+        "@maven//:org.jetbrains.kotlin.kotlin-assignment-compiler-plugin-embeddable_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-cri-impl_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-sam-with-receiver-compiler-plugin-embeddable_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-common_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-jvm_2.4.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.4.10",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.8.2",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.8.2"],
     visibility = ["//visibility:public"],
 )
 

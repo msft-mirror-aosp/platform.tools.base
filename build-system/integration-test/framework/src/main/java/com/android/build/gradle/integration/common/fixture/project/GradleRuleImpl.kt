@@ -33,6 +33,7 @@ import com.android.build.gradle.integration.common.fixture.gradle_project.initia
 import com.android.build.gradle.integration.common.fixture.project.builder.GlobalDefinitionStateImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.KgpTestLayer
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
 import com.android.build.gradle.integration.common.truth.forEachLine
@@ -255,14 +256,20 @@ internal constructor(
 
   private fun instantiateExecutor(): GradleTaskExecutor =
     GradleTaskExecutor(locations.toProjectLocation(buildDefinition), getTestInfo(), ruleOptionBuilder.gradleOptions, projectConnection) {
-      lastBuildResult = it
-    }
+        lastBuildResult = it
+      }
+      // KGP < 2.3.20 (such as MINIMUM_BUILT_IN_KOTLIN_VERSION = 2.2.10) calls
+      // Configuration.setVisible(boolean), which is deprecated in Gradle 9.8.2.
+      .withFailOnWarning(buildDefinition.kgpTestLayer != KgpTestLayer.MINIMUM)
 
   private fun instantiateModelBuilder(): ModelBuilderV2 =
     ModelBuilderV2(locations.toProjectLocation(buildDefinition), getTestInfo(), ruleOptionBuilder.gradleOptions, projectConnection) {
         lastBuildResult = it
       }
       .withPerTestPrefsRoot(true)
+      // KGP < 2.3.20 (such as MINIMUM_BUILT_IN_KOTLIN_VERSION = 2.2.10) calls
+      // Configuration.setVisible(boolean), which is deprecated in Gradle 9.8.2.
+      .withFailOnWarning(buildDefinition.kgpTestLayer != KgpTestLayer.MINIMUM)
 
   private fun getTestInfo(): GradleTestInfo =
     object : GradleTestInfo {

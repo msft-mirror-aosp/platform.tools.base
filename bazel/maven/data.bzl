@@ -1212,7 +1212,7 @@ _CLASS_JARS = [
     "org.fusesource.jansi:jansi:1.18",
     "org.gradle.experimental.plugin-ecosystem:org.gradle.experimental.plugin-ecosystem.gradle.plugin:pom:0.1.62",  # for declarative testing
     "org.gradle:gradle-core:4.2.1",
-    "org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:pom:6.7.3",  # used for Signal, not in its repo.zip as it comes as a requirement of using Gradle 9.7.1
+    "org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:pom:6.7.6",  # used for Signal, not in its repo.zip as it comes as a requirement of using Gradle 9.8.2
     "org.gradle.plugin-compatibility:org.gradle.plugin-compatibility.gradle.plugin:pom:1.0.0",  # for AGP configuration cache compatibility
     "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:1.0.0",
     "org.hamcrest:hamcrest-core:2.2",
@@ -1221,12 +1221,14 @@ _CLASS_JARS = [
     "org.jacoco:org.jacoco.agent:0.8.12",
     "org.jacoco:org.jacoco.agent:0.8.13",
     "org.jacoco:org.jacoco.agent:0.8.14",
+    "org.jacoco:org.jacoco.agent:0.8.15",
     "org.jacoco:org.jacoco.agent:0.8.16",
     "org.jacoco:org.jacoco.agent:0.8.7",
     "org.jacoco:org.jacoco.agent:0.8.8",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.12",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.13",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.14",
+    "org.jacoco:org.jacoco.agent:jar:runtime:0.8.15",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.16",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.7",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.8",
@@ -1234,6 +1236,7 @@ _CLASS_JARS = [
     "org.jacoco:org.jacoco.ant:0.8.12",
     "org.jacoco:org.jacoco.ant:0.8.13",
     "org.jacoco:org.jacoco.ant:0.8.14",
+    "org.jacoco:org.jacoco.ant:0.8.15",
     "org.jacoco:org.jacoco.ant:0.8.16",
     "org.jacoco:org.jacoco.ant:0.8.7",
     "org.jacoco:org.jacoco.ant:0.8.8",
@@ -1273,6 +1276,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.21",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.4.0",
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.4.10",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.5.20-dev-2076",
@@ -1292,6 +1296,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.21",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.0",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.5.20-dev-2076",
@@ -1304,6 +1309,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.21",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.4.0",
+    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.4.10",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.5.20-dev-2076",
@@ -1324,10 +1330,12 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.3.20",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.3.21",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.4.0",
+    "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.4.10",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable:2.2.10",  # Minimum KGP version in AGP
     "org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable:2.4.0",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable:2.4.10",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.0",
@@ -1336,6 +1344,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.20",
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.21",
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.0",
+    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.10",
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.5.20-dev-2076",
@@ -1347,6 +1356,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.20",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.21",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.0",
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.10",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.5.20-dev-2076",
@@ -1359,6 +1369,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-compiler:2.3.20",  # Used by AGP build
     "org.jetbrains.kotlin:kotlin-compiler:2.3.21",
     "org.jetbrains.kotlin:kotlin-compiler:2.4.0",  # Studio build
+    "org.jetbrains.kotlin:kotlin-compiler:2.4.10",
     "org.jetbrains.kotlin:kotlin-compiler:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-compiler:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
@@ -1375,6 +1386,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.3.10",  # Used by AGP Compose tests
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.3.20",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.4.0",
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.4.10",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-dom-api-compat:2.2.10",  # Minimum KGP version in AGP
@@ -1458,10 +1470,12 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-reflect:2.3.20",  # Studio build
     "org.jetbrains.kotlin:kotlin-reflect:2.3.21",
     "org.jetbrains.kotlin:kotlin-reflect:2.4.0",
+    "org.jetbrains.kotlin:kotlin-reflect:2.4.10",
     "org.jetbrains.kotlin:kotlin-reflect:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-reflect:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-sam-with-receiver-compiler-plugin-embeddable:2.2.10",  # Minimum KGP version in AGP
     "org.jetbrains.kotlin:kotlin-sam-with-receiver-compiler-plugin-embeddable:2.4.0",
+    "org.jetbrains.kotlin:kotlin-sam-with-receiver-compiler-plugin-embeddable:2.4.10",
     "org.jetbrains.kotlin:kotlin-sam-with-receiver-compiler-plugin-embeddable:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-sam-with-receiver-compiler-plugin-embeddable:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-script-runtime:1.5.21",
@@ -1480,12 +1494,14 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-script-runtime:2.3.20",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.3.21",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.4.0",
+    "org.jetbrains.kotlin:kotlin-script-runtime:2.4.10",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-script-runtime:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.10",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.20",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.21",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.4.0",
+    "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.4.10",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-serialization:2.4.20",  # Default KGP version in AGP
@@ -1505,6 +1521,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.4.0",
+    "org.jetbrains.kotlin:kotlin-stdlib:2.4.10",
     "org.jetbrains.kotlin:kotlin-stdlib:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-stdlib:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib:2.5.20-dev-2076",
@@ -1520,6 +1537,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.21",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.0",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.10",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.5.20-dev-2076",
@@ -1529,6 +1547,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.2.0",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.21",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.0",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.10",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.31",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21",
@@ -1550,6 +1569,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.20",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.21",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.10",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.5.20-dev-2076",
@@ -1561,12 +1581,14 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-test:2.3.20",
     "org.jetbrains.kotlin:kotlin-test:2.3.21",
     "org.jetbrains.kotlin:kotlin-test:2.4.0",
+    "org.jetbrains.kotlin:kotlin-test:2.4.10",
     "org.jetbrains.kotlin:kotlin-test:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-test-junit:1.7.10",
     "org.jetbrains.kotlin:kotlin-test-junit:2.3.10",
     "org.jetbrains.kotlin:kotlin-test-junit:2.3.20",
     "org.jetbrains.kotlin:kotlin-test-junit:2.3.21",
     "org.jetbrains.kotlin:kotlin-test-junit:2.4.0",
+    "org.jetbrains.kotlin:kotlin-test-junit:2.4.10",
     "org.jetbrains.kotlin:kotlin-test-junit:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin:kotlin-test-junit:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-test-junit5:2.1.0",
@@ -1576,6 +1598,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.3.21",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.4.0",
+    "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.4.10",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.21",
@@ -1583,6 +1606,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.10",  # Used by AGP Compose tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.4.0",
+    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.4.10",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.4.20",  # Default KGP version in AGP
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.5.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.5.20-dev-2076",
@@ -1651,19 +1675,24 @@ _CLASS_JARS = [
     "org.mockito:mockito-bom:pom:4.11.0",  # imported by org.apache.commons:commons-parent:105
     "org.mockito:mockito-core:5.20.0",
     "org.mockito:mockito-core:5.4.0",
+    "org.ow2.asm:asm:9.10.1",
     "org.ow2.asm:asm:9.6",
     "org.ow2.asm:asm:9.8",
     "org.ow2.asm:asm:9.9",
+    "org.ow2.asm:asm-bom:pom:9.10.1",
     "org.ow2.asm:asm-bom:pom:9.6",
     "org.ow2.asm:asm-bom:pom:9.7",
     "org.ow2.asm:asm-bom:pom:9.8",
     "org.ow2.asm:asm-bom:pom:9.9",
+    "org.ow2.asm:asm-commons:9.10.1",
     "org.ow2.asm:asm-commons:9.6",
     "org.ow2.asm:asm-commons:9.8",
     "org.ow2.asm:asm-commons:9.9",
+    "org.ow2.asm:asm-tree:9.10.1",
     "org.ow2.asm:asm-tree:9.6",
     "org.ow2.asm:asm-tree:9.8",
     "org.ow2.asm:asm-tree:9.9",
+    "org.ow2.asm:asm-util:9.10.1",
     "org.ow2.asm:asm-util:9.6",
     "org.ow2.asm:asm-util:9.8",
     "org.ow2.asm:asm-util:9.9",

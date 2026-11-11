@@ -1,0 +1,9 @@
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
+deprecation > the-configuration-setvisible-boolean-method-has-been-deprecated | plugin:com.google.protobuf
