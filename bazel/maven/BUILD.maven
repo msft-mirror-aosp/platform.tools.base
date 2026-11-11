@@ -95647,21 +95647,24 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.gradle.plugin-compatibility.org.gradle.plugin-compatibility.gradle.plugin_1.0.0",
-    pom = "org/gradle/plugin-compatibility/org.gradle.plugin-compatibility.gradle.plugin/1.0.0/org.gradle.plugin-compatibility.gradle.plugin-1.0.0.pom",
+    name = "org.gradle.plugin-compatibility.org.gradle.plugin-compatibility.gradle.plugin_1.1.0",
+    pom = "org/gradle/plugin-compatibility/org.gradle.plugin-compatibility.gradle.plugin/1.1.0/org.gradle.plugin-compatibility.gradle.plugin-1.1.0.pom",
     repo_root_path = "",
-    repo_path = "org/gradle/plugin-compatibility/org.gradle.plugin-compatibility.gradle.plugin/1.0.0",
+    repo_path = "org/gradle/plugin-compatibility/org.gradle.plugin-compatibility.gradle.plugin/1.1.0",
     deps = [
-        "org.gradle.plugin.compatibility-plugin_1.0.0",
+        "org.gradle.plugin.compatibility-plugin_1.1.0",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.gradle.plugin.compatibility-plugin_1.0.0",
-    pom = "org/gradle/plugin/compatibility-plugin/1.0.0/compatibility-plugin-1.0.0.pom",
+    name = "org.gradle.plugin.compatibility-plugin_1.1.0",
+    pom = "org/gradle/plugin/compatibility-plugin/1.1.0/compatibility-plugin-1.1.0.pom",
     repo_root_path = "",
-    repo_path = "org/gradle/plugin/compatibility-plugin/1.0.0",
+    repo_path = "org/gradle/plugin/compatibility-plugin/1.1.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
+    ],
     visibility = ["//visibility:public"],
 )
 

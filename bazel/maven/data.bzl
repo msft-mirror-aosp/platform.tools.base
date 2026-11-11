@@ -1213,7 +1213,7 @@ _CLASS_JARS = [
     "org.gradle.experimental.plugin-ecosystem:org.gradle.experimental.plugin-ecosystem.gradle.plugin:pom:0.1.62",  # for declarative testing
     "org.gradle:gradle-core:4.2.1",
     "org.gradle.kotlin.kotlin-dsl:org.gradle.kotlin.kotlin-dsl.gradle.plugin:pom:6.7.6",  # used for Signal, not in its repo.zip as it comes as a requirement of using Gradle 9.8.2
-    "org.gradle.plugin-compatibility:org.gradle.plugin-compatibility.gradle.plugin:pom:1.0.0",  # for AGP configuration cache compatibility
+    "org.gradle.plugin-compatibility:org.gradle.plugin-compatibility.gradle.plugin:pom:1.1.0",  # for AGP configuration cache compatibility
     "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:1.0.0",
     "org.hamcrest:hamcrest-core:2.2",
     "org.jacoco:org.jacoco.agent:0.7.4.201502262128",  # Keep old Jacoco version for testing.
