@@ -608,4 +608,36 @@ class ReportAggregatorTest {
     assertThat(src.branches.covered).isEqualTo(0)
     assertThat(src.branches.missed).isEqualTo(0)
   }
+
+  @Test
+  fun testClassWithoutMethodsIsNotCounted() {
+    // MyObject has no methods left in the metadata, for example because the agent filtered all of them out.
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/MyClass")
+            .setSourceFile("MyClass.kt")
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("method1")
+                .addBlocks(
+                  BlockMetadata.newBuilder().setBlockId(0).addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5))
+                )
+            )
+        )
+        .addClasses(ClassMetadata.newBuilder().setClassName("com/example/MyObject").setSourceFile("MyClass.kt"))
+        .build()
+
+    val hits = BitSet()
+    hits.set(0) // Hit method1
+    val report = ReportAggregator().aggregate(CoverageData(metadata, hits), "test")
+
+    val pkg = report.packages["com/example"]!!
+    assertThat(pkg.classes["com/example/MyObject"]!!.classesCounter).isEqualTo(Counter(covered = 0, missed = 0))
+    assertThat(pkg.classes["com/example/MyClass"]!!.classesCounter).isEqualTo(Counter(covered = 1, missed = 0))
+    assertThat(pkg.sourceFiles["MyClass.kt"]!!.classesCounter).isEqualTo(Counter(covered = 1, missed = 0))
+    assertThat(pkg.classesCounter).isEqualTo(Counter(covered = 1, missed = 0))
+    assertThat(report.classesCounter).isEqualTo(Counter(covered = 1, missed = 0))
+  }
 }

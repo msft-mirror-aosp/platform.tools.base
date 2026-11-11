@@ -213,8 +213,11 @@ class ReportAggregator {
         cls.branches.add(method.branches)
         cls.lines.add(method.lines)
       }
-      cls.classesCounter.covered = if (cls.instructions.covered > 0) 1 else 0
-      cls.classesCounter.missed = if (cls.instructions.covered == 0) 1 else 0
+      // A class without methods, for example one whose methods were all filtered out, doesn't count as a class.
+      if (cls.methods.isNotEmpty()) {
+        cls.classesCounter.covered = if (cls.instructions.covered > 0) 1 else 0
+        cls.classesCounter.missed = if (cls.instructions.covered == 0) 1 else 0
+      }
     }
 
     // Step 2: Hierarchical Aggregation

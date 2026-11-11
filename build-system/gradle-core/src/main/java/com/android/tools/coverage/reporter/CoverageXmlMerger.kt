@@ -142,7 +142,10 @@ class CoverageXmlMerger {
           method.methodsCounter.set(covered = method.instructions.covered > 0)
           cls.add(method)
         }
-        cls.classesCounter.set(covered = cls.methodsCounter.covered > 0)
+        // A class without methods doesn't count as a class.
+        if (cls.methods.isNotEmpty()) {
+          cls.classesCounter.set(covered = cls.methodsCounter.covered > 0)
+        }
         pkg.instructions.add(cls.instructions)
         pkg.branches.add(cls.branches)
         pkg.methodsCounter.add(cls.methodsCounter)

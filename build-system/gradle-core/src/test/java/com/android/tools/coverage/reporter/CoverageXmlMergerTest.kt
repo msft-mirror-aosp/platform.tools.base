@@ -106,6 +106,20 @@ class CoverageXmlMergerTest {
   }
 
   @Test
+  fun classesWithoutMethodsAreNotCounted() {
+    val onDevice = report(method("add", line = 5, instructions = Counter(covered = 1, missed = 0)), lines = listOf(line(5, mi = 0, ci = 1)))
+    // All the methods of the companion object were filtered out.
+    val companion = report(emptyList(), className = "com/example/Calculator\$Companion")
+
+    val merged = merge(onDevice, companion)
+
+    assertThat(merged.classNames()).containsExactly("com/example/Calculator", "com/example/Calculator\$Companion")
+    assertThat(merged.counter("sourcefile", "CLASS")).isEqualTo("missed=0 covered=1")
+    assertThat(merged.counter("package", "CLASS")).isEqualTo("missed=0 covered=1")
+    assertThat(merged.counter("report", "CLASS")).isEqualTo("missed=0 covered=1")
+  }
+
+  @Test
   fun readsReportsThatDeclareTheJacocoDtd() {
     val jacoco =
       report(method("add", line = 5, instructions = Counter(covered = 1, missed = 0)), lines = listOf(line(5, mi = 0, ci = 1))).apply {
