@@ -66,6 +66,8 @@ public class Gradle implements Closeable {
     @NonNull private final Set<File> usedGradleUserHomes = new HashSet<>();
     private final boolean useInitScript;
     @Nullable private Set<String> allowedWarnings = null;
+    @NonNull
+    private final Set<String> matchedWarnings = Collections.synchronizedSet(new HashSet<>());
 
     public Gradle(@NonNull File project, @NonNull File outDir, @NonNull File distribution, File javaHome)
             throws IOException {
@@ -252,11 +254,11 @@ public class Gradle implements Closeable {
                 launcher.addProgressListener(
                         event -> {
                             if (event instanceof SingleProblemEvent) {
-                                recordIfUnexpectedDeprecation(
+                                recordDeprecation(
                                         ((SingleProblemEvent) event).getProblem().getDefinition(),
                                         unexpectedWarnings);
                             } else if (event instanceof ProblemAggregationEvent) {
-                                recordIfUnexpectedDeprecation(
+                                recordDeprecation(
                                         ((ProblemAggregationEvent) event)
                                                 .getProblemAggregation()
                                                 .getDefinition(),
@@ -280,7 +282,7 @@ public class Gradle implements Closeable {
         }
     }
 
-    private void recordIfUnexpectedDeprecation(
+    private void recordDeprecation(
             @NonNull ProblemDefinition definition, @NonNull Set<String> unexpectedWarnings) {
         // --warning-mode=fail only fails on Gradle deprecation warnings, whereas
         // OperationType.PROBLEMS also receives compiler/plugin warnings.
@@ -288,8 +290,12 @@ public class Gradle implements Closeable {
             return;
         }
         String displayName = definition.getId().getDisplayName();
-        if (allowedWarnings != null && !allowedWarnings.contains(displayName)) {
-            unexpectedWarnings.add(displayName);
+        if (allowedWarnings != null) {
+            if (allowedWarnings.contains(displayName)) {
+                matchedWarnings.add(displayName);
+            } else {
+                unexpectedWarnings.add(displayName);
+            }
         }
     }
 
@@ -349,6 +355,16 @@ public class Gradle implements Closeable {
             // This is an issue on windows without the sandbox and with stricter file locking
             System.err.println(
                     "Failed to cleanup output directory. Will be cleaned up at next invocation");
+        }
+
+        if (allowedWarnings != null) {
+            Set<String> unmatchedWarnings = new LinkedHashSet<>(allowedWarnings);
+            unmatchedWarnings.removeAll(matchedWarnings);
+            if (!unmatchedWarnings.isEmpty()) {
+                throw new RuntimeException(
+                        "Allowed Gradle deprecation warnings were not emitted:\n"
+                                + String.join("\n", unmatchedWarnings));
+            }
         }
     }
 
