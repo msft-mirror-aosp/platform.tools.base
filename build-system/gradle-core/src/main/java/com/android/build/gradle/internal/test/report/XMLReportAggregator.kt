@@ -1123,6 +1123,7 @@ internal constructor(
         "suites/suite-registry.js",
         "suites/screenshot.js",
         "suites/backup.js",
+        "detail-view.js",
         "script.js",
       )
 

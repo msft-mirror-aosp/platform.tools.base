@@ -225,6 +225,7 @@ class XMLReportAggregatorTest {
     assertThat(File(outputDir, "suites/suite-registry.js").exists()).isTrue()
     assertThat(File(outputDir, "suites/screenshot.js").exists()).isTrue()
     assertThat(File(outputDir, "suites/backup.js").exists()).isTrue()
+    assertThat(File(outputDir, "detail-view.js").exists()).isTrue()
     assertThat(File(outputDir, "script.js").exists()).isTrue()
 
     val dataJsContent = File(outputDir, "data.js").readText()

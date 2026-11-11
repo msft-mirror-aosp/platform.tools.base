@@ -1,3 +1,4 @@
+load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@rules_java//java:defs.bzl", "java_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
@@ -282,4 +283,15 @@ filegroup(
         "build.gradle",
     ],
     visibility = ["//tools/base/build-system:__pkg__"],
+)
+
+js_test(
+    name = "test_report_renderer_js_test",
+    size = "small",
+    data = glob(["src/main/resources/com/android/build/gradle/internal/test/report/renderer/**"]),
+    entry_point = "src/test/js/test_report_renderer_test.js",
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
