@@ -609,11 +609,15 @@ internal class SqliteInspector(
 
   private fun registerAndroidXInvalidationHooks(hookRegistry: EntryExitMatchingHookRegistry, cls: Class<out SQLiteConnection>) {
     Log.i(TAG, "registerAndroidXInvalidationHooks: ${cls.name}")
+    val isLocked = ThreadLocal.withInitial { false }
+    val connectionLocking = ConnectionLocking()
     hookRegistry.registerHook<SQLiteConnection, androidx.sqlite.SQLiteStatement>(
       cls,
       ANDROIDX_CONNECTION_PREPARE_SIG,
-      entryHook = { connection, _ -> ConnectionLocking.acquireLock(connection as SQLiteConnection) },
-      onExitCallback = { connection, args, result ->
+      entryHook = { connection, _ ->
+        isLocked.set(connectionLocking.acquireLock(connection as SQLiteConnection))
+      },
+      onExitCallback = { connection, args, statement ->
         // if the prepared statement is not a SELECT, we wrap it with a wrapper that triggers
         // invalidation when step() is
         // called
@@ -621,8 +625,20 @@ internal class SqliteInspector(
           // Should not happen because prepare is an instance method and must have a non-null thisObject.
           throw IllegalStateException("Unexpected null connection")
         }
-        val statement = result ?: return@registerHook null
-        val sql = args.firstOrNull() as? String ?: return@registerHook statement
+        val locked = isLocked.get()
+        if (statement == null) {
+          if (locked) {
+            connectionLocking.releaseLock(connection)
+          }
+          return@registerHook null
+        }
+        val sql = args.firstOrNull() as? String
+        if (sql == null) {
+          if (locked) {
+            connectionLocking.releaseLock(connection)
+          }
+          return@registerHook statement
+        }
         val lambda =
           when (shouldInvalidate(sql)) {
             true -> { ->
@@ -631,7 +647,7 @@ internal class SqliteInspector(
             false -> { ->
             }
           }
-        SQLiteStatementWrapper(connection, statement, lambda)
+        SQLiteStatementWrapper(connectionLocking, connection, statement, locked, lambda)
       },
     )
   }

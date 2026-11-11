@@ -22,23 +22,26 @@ import com.android.tools.appinspection.database.TAG
 import java.util.WeakHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
-object ConnectionLocking {
+class ConnectionLocking(private val timeout: Duration = 3.seconds) {
   private val guard = Any()
 
   @GuardedBy("guard") private val locations = WeakHashMap<SQLiteConnection, Exception>()
 
   @GuardedBy("guard") private val locks = WeakHashMap<SQLiteConnection, Lock>()
 
-  fun acquireLock(connection: SQLiteConnection) {
+  fun acquireLock(connection: SQLiteConnection): Boolean {
     val lock = synchronized(guard) { locks.getOrPut(connection) { AnyThreadReentrantLock() } }
 
-    val acquired = lock.tryLock(3, TimeUnit.SECONDS)
+    val acquired = lock.tryLock(timeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)
 
     when (acquired) {
       true -> handleAcquired(connection)
       false -> handleTimedOut(connection)
     }
+    return acquired
   }
 
   private fun handleAcquired(connection: SQLiteConnection) {
@@ -49,14 +52,7 @@ object ConnectionLocking {
     val lock =
       synchronized(guard) {
         val location = locations.remove(connection)
-        val msg = buildString {
-          append("Failed to acquire a lock on the database connection.")
-          if (location != null) {
-            appendLine(" A previous statement was prepared and not released.")
-            append(location.getPrepareStackTrace())
-          }
-        }
-        Log.e(TAG, msg)
+        Log.e(TAG, "Failed to acquire a lock on the database connection.", location)
         locks[connection]
       }
     lock?.unlock()
@@ -74,10 +70,4 @@ object ConnectionLocking {
     }
     lock.unlock()
   }
-}
-
-private fun Exception.getPrepareStackTrace(): String {
-  return stackTrace
-    .dropWhile { it.methodName != "prepare" }
-    .joinToString("\n") { "at ${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})" }
 }

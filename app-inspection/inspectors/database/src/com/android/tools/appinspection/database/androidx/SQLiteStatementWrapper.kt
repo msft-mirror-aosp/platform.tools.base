@@ -15,6 +15,7 @@
  */
 package com.android.tools.appinspection.database.androidx
 
+import androidx.annotation.GuardedBy
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
 
@@ -23,21 +24,155 @@ import androidx.sqlite.SQLiteStatement
  *
  * Exposes things that are not available in the actual class:
  * * Calls an `invalidate` lambda when a mutating action might have occurred.
+ * * Locks and unlocks the underlying [SQLiteConnection] across statement execution lifecycles, including cached statements that are reset
+ *   and reused.
  */
 internal class SQLiteStatementWrapper(
+  private val connectionLocking: ConnectionLocking,
   private val connection: SQLiteConnection,
   private val delegate: SQLiteStatement,
+  isLocked: Boolean = true,
   private val onInvalidate: () -> Unit = {},
-) : SQLiteStatement by delegate {
+) : SQLiteStatement {
 
-  override fun step(): Boolean {
-    val result = delegate.step()
-    onInvalidate()
-    return result
+  private enum class LockState {
+    UNLOCKED,
+    LOCKED,
+    TIMED_OUT,
   }
 
-  override fun close() {
+  private val guard = Any()
+
+  // Initialized based on whether ConnectionLocking.acquireLock(connection) succeeded in the
+  // SQLiteConnection.prepare() entry hook prior to constructing this wrapper.
+  @GuardedBy("guard") private var lockState = if (isLocked) LockState.LOCKED else LockState.TIMED_OUT
+
+  override fun bindBlob(index: Int, value: ByteArray) = withLockAcquired {
+    delegate.bindBlob(index, value)
+  }
+
+  override fun bindDouble(index: Int, value: Double) = withLockAcquired {
+    delegate.bindDouble(index, value)
+  }
+
+  override fun bindFloat(index: Int, value: Float) = withLockAcquired {
+    delegate.bindFloat(index, value)
+  }
+
+  override fun bindLong(index: Int, value: Long) = withLockAcquired {
+    delegate.bindLong(index, value)
+  }
+
+  override fun bindInt(index: Int, value: Int) = withLockAcquired {
+    delegate.bindInt(index, value)
+  }
+
+  override fun bindBoolean(index: Int, value: Boolean) = withLockAcquired {
+    delegate.bindBoolean(index, value)
+  }
+
+  override fun bindText(index: Int, value: String) = withLockAcquired {
+    delegate.bindText(index, value)
+  }
+
+  override fun bindNull(index: Int) = withLockAcquired {
+    delegate.bindNull(index)
+  }
+
+  override fun getBlob(index: Int): ByteArray = withLockAcquired {
+    delegate.getBlob(index)
+  }
+
+  override fun getDouble(index: Int): Double = withLockAcquired {
+    delegate.getDouble(index)
+  }
+
+  override fun getFloat(index: Int): Float = withLockAcquired {
+    delegate.getFloat(index)
+  }
+
+  override fun getLong(index: Int): Long = withLockAcquired {
+    delegate.getLong(index)
+  }
+
+  override fun getInt(index: Int): Int = withLockAcquired {
+    delegate.getInt(index)
+  }
+
+  override fun getBoolean(index: Int): Boolean = withLockAcquired {
+    delegate.getBoolean(index)
+  }
+
+  override fun getText(index: Int): String = withLockAcquired {
+    delegate.getText(index)
+  }
+
+  override fun isNull(index: Int): Boolean = withLockAcquired {
+    delegate.isNull(index)
+  }
+
+  override fun getColumnCount(): Int = withLockAcquired {
+    delegate.getColumnCount()
+  }
+
+  override fun getColumnName(index: Int): String = withLockAcquired {
+    delegate.getColumnName(index)
+  }
+
+  override fun getColumnNames(): List<String> = withLockAcquired {
+    delegate.getColumnNames()
+  }
+
+  override fun getColumnType(index: Int): Int = withLockAcquired {
+    delegate.getColumnType(index)
+  }
+
+  override fun step(): Boolean = withLockAcquired {
+    val result = delegate.step()
+    onInvalidate()
+    result
+  }
+
+  override fun clearBindings() {
+    delegate.clearBindings()
+  }
+
+  override fun reset() = withLockReleased {
+    delegate.reset()
+  }
+
+  override fun close() = withLockReleased {
     delegate.close()
-    ConnectionLocking.releaseLock(connection)
+  }
+
+  private inline fun <T> withLockAcquired(block: () -> T): T {
+    acquireLock()
+    return block()
+  }
+
+  private inline fun withLockReleased(block: () -> Unit) {
+    try {
+      block()
+    } finally {
+      releaseLock()
+    }
+  }
+
+  private fun acquireLock() {
+    synchronized(guard) {
+      if (lockState == LockState.UNLOCKED) {
+        val acquired = connectionLocking.acquireLock(connection)
+        lockState = if (acquired) LockState.LOCKED else LockState.TIMED_OUT
+      }
+    }
+  }
+
+  private fun releaseLock() {
+    synchronized(guard) {
+      if (lockState == LockState.LOCKED) {
+        connectionLocking.releaseLock(connection)
+      }
+      lockState = LockState.UNLOCKED
+    }
   }
 }
