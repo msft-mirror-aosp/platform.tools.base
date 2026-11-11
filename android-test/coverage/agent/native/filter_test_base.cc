@@ -94,10 +94,48 @@ void TestMethod::Place(lir::Label* label) {
 void TestMethod::AddPackedSwitchPayload(dex::s4 first_key,
                                         std::vector<lir::Label*> targets) {
   auto* payload = code_ir_->Alloc<lir::PackedSwitchPayload>();
+  // Like the disassembler, count the references to the labels.
+  for (auto* target : targets) {
+    ++target->refCount;
+  }
   payload->first_key = first_key;
   payload->targets = std::move(targets);
   code_ir_->instructions.push_back(payload);
   last_ = payload;
+}
+
+void TestMethod::AddSparseSwitchPayload(
+    std::vector<lir::SparseSwitchPayload::SwitchCase> cases) {
+  auto* payload = code_ir_->Alloc<lir::SparseSwitchPayload>();
+  // Like the disassembler, count the references to the labels.
+  for (const auto& switch_case : cases) {
+    ++switch_case.target->refCount;
+  }
+  payload->switch_cases = std::move(cases);
+  code_ir_->instructions.push_back(payload);
+  last_ = payload;
+}
+
+lir::TryBlockBegin* TestMethod::AddTryBlockBegin() {
+  auto* begin = code_ir_->Alloc<lir::TryBlockBegin>();
+  code_ir_->instructions.push_back(begin);
+  last_ = begin;
+  return begin;
+}
+
+void TestMethod::AddTryBlockEnd(lir::TryBlockBegin* begin, lir::Label* handler,
+                                const char* exception) {
+  auto* end = code_ir_->Alloc<lir::TryBlockEnd>();
+  end->try_begin = begin;
+  // Like the disassembler, count the references to the label.
+  ++handler->refCount;
+  if (exception == nullptr) {
+    end->catch_all = handler;
+  } else {
+    end->handlers.push_back({builder_.GetType(exception), handler});
+  }
+  code_ir_->instructions.push_back(end);
+  last_ = end;
 }
 
 int TestMethod::IndexOf(const lir::Instruction* instr) const {
@@ -186,13 +224,20 @@ void FilterTestBase::Output::Ignore(lir::Instruction* from,
 }
 
 void FilterTestBase::Output::ReplaceBranches(
-    lir::Instruction* /*source*/, std::vector<lir::Instruction*> /*targets*/) {
-  ADD_FAILURE() << "Unexpected call to ReplaceBranches()";
+    lir::Instruction* source, std::vector<lir::Instruction*> targets) {
+  replaced_.push_back({source, std::move(targets)});
 }
 
 FilterTestBase::FilterTestBase() {
   context_.class_name = kTestClassName;
   context_.super_class_name = "Ljava/lang/Object;";
+}
+
+void FilterTestBase::TearDown() {
+  if (!replacements_checked_) {
+    EXPECT_TRUE(output_.replaced().empty())
+        << "Unexpected call to ReplaceBranches()";
+  }
 }
 
 void FilterTestBase::ExpectIgnored(const TestMethod& m,
@@ -207,6 +252,25 @@ void FilterTestBase::ExpectIgnored(const TestMethod& m,
   };
   EXPECT_EQ(describe(expected), describe(output_.ignored()))
       << "ignored ranges";
+}
+
+void FilterTestBase::ExpectReplaced(const TestMethod& m,
+                                    const std::vector<Replacement>& expected) {
+  replacements_checked_ = true;
+  auto describe = [&m](const std::vector<Replacement>& replacements) {
+    std::ostringstream out;
+    for (const auto& replacement : replacements) {
+      out << "branches of instruction " << m.IndexOf(replacement.source)
+          << " to instructions";
+      for (const auto* target : replacement.targets) {
+        out << " " << m.IndexOf(target);
+      }
+      out << "\n";
+    }
+    return out.str();
+  };
+  EXPECT_EQ(describe(expected), describe(output_.replaced()))
+      << "replaced branches";
 }
 
 }  // namespace coverage

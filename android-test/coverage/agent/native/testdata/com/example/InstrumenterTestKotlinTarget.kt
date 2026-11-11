@@ -29,6 +29,15 @@ class InstrumenterTestKotlinTarget {
 
   fun callsTwice(): Int = twice(count) { it + 1 }
 
+  // The null checks of the safe calls (?.) and of the elvis operator (?:) all
+  // lead to `return 0`, which only runs when one of the values is null.
+  fun nameLength(node: Node?): Int {
+    val name = node?.next?.name ?: return 0
+    return name.length
+  }
+
+  class Node(val next: Node?, val name: String?)
+
   inner class Reader {
     // Reads `count` through the synthetic accessor access$getCount$p.
     fun read(): Int = count

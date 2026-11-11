@@ -69,6 +69,19 @@ class TestMethod {
   void AddPackedSwitchPayload(dex::s4 first_key,
                               std::vector<lir::Label*> targets);
 
+  // Appends the payload of a sparse-switch: each case jumps to its target.
+  // Place a label right before it for the switch to refer to.
+  void AddSparseSwitchPayload(
+      std::vector<lir::SparseSwitchPayload::SwitchCase> cases);
+
+  // Appends the start of a try block and returns it.
+  lir::TryBlockBegin* AddTryBlockBegin();
+
+  // Appends the end of the try block that starts at `begin`. The exceptions of
+  // type `exception` go to `handler`, or all of them without `exception`.
+  void AddTryBlockEnd(lir::TryBlockBegin* begin, lir::Label* handler,
+                      const char* exception = nullptr);
+
   // Returns the last instruction appended.
   lir::Instruction* Last() const { return last_; }
 
@@ -115,6 +128,13 @@ class FilterTestBase : public ::testing::Test {
     lir::Instruction* to;
   };
 
+  // The branches of the block that ends with `source`, replaced with one to
+  // each of `targets`.
+  struct Replacement {
+    lir::Instruction* source;
+    std::vector<lir::Instruction*> targets;
+  };
+
   // Records what a filter reports.
   class Output : public FilterOutput {
    public:
@@ -123,22 +143,36 @@ class FilterTestBase : public ::testing::Test {
                          std::vector<lir::Instruction*> targets) override;
 
     const std::vector<Range>& ignored() const { return ignored_; }
+    const std::vector<Replacement>& replaced() const { return replaced_; }
 
    private:
     std::vector<Range> ignored_;
+    std::vector<Replacement> replaced_;
   };
 
   FilterTestBase();
+
+  // Fails if the filter replaced branches and the test didn't check them with
+  // ExpectReplaced().
+  void TearDown() override;
 
   // Expects the filter to have ignored exactly the `expected` ranges of `m`,
   // in this order.
   void ExpectIgnored(const TestMethod& m,
                      const std::vector<Range>& expected) const;
 
+  // Expects the filter to have replaced exactly the `expected` branches of
+  // `m`, in this order.
+  void ExpectReplaced(const TestMethod& m,
+                      const std::vector<Replacement>& expected);
+
   // Describes kTestClassName: a subclass of java.lang.Object without
   // annotations.
   FilterContext context_;
   Output output_;
+
+ private:
+  bool replacements_checked_ = false;
 };
 
 }  // namespace coverage

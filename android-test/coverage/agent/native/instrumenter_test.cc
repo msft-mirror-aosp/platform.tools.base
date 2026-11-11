@@ -301,5 +301,52 @@ TEST(InstrumenterTest, InlineFunctionIsInstrumented) {
   EXPECT_EQ(*lines.begin() + 2, *caller_lines.begin());
 }
 
+TEST(InstrumenterTest, ChecksOfSafeCallsShareNullBranch) {
+  // The two checks of node?.next?.name and the check of the elvis operator all
+  // have the code of `return 0` as their null branch, although D8 makes the
+  // check of the elvis operator jump there through a goto.
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("nameLength", kKotlinTargetClass);
+  ASSERT_NE(method, nullptr);
+  int checks = 0;
+  std::set<uint32_t> shared;
+  for (const auto& block : method->blocks()) {
+    if (block.branch_count() != 2) {
+      continue;
+    }
+    std::set<uint32_t> successors = Successors(block);
+    EXPECT_EQ(successors.size(), 2u);
+    if (checks++ == 0) {
+      shared = successors;
+      continue;
+    }
+    // Keep the successors that this check shares with the previous ones.
+    for (auto it = shared.begin(); it != shared.end();) {
+      if (successors.count(*it) == 0) {
+        it = shared.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+  EXPECT_EQ(checks, 3);
+  ASSERT_EQ(shared.size(), 1u);
+  // The shared successor is the code of `return 0`.
+  bool found = false;
+  for (const auto& block : method->blocks()) {
+    if (block.block_id() == *shared.begin()) {
+      found = true;
+      EXPECT_EQ(block.successor_block_ids_size(), 0);
+    }
+  }
+  EXPECT_TRUE(found);
+  // The goto after the check of the elvis operator only ran when the name was
+  // null, which that branch now covers, so it isn't counted: 12 instructions
+  // are left.
+  uint32_t instructions = 0;
+  ReportedLines(*method, &instructions);
+  EXPECT_EQ(instructions, 12u);
+}
+
 }  // namespace
 }  // namespace coverage
