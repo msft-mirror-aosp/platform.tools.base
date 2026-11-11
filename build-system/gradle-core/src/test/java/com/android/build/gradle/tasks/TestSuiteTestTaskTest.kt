@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.resolveTargetDevices
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.test.report.JunitAttachmentsArgumentProvider
+import com.android.build.gradle.internal.test.report.SuiteEnvironmentMetadataExtractor
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_NAME
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_TARGET_NAME
 import com.android.builder.core.ComponentType
@@ -580,14 +581,14 @@ class TestSuiteTestTaskTest {
     }
 
     val genericProps =
-      TestSuiteTestTask.buildSuiteEnvironmentProperties(
+      SuiteEnvironmentMetadataExtractor.buildSuiteEnvironmentProperties(
         suiteType = null,
         testedApplicationId = "com.example.journalingapp.debug",
         agpVersion = "9.6.0-dev",
         gradleVersion = "9.8.0",
         testLibraryVersion = null,
         runner = "junit-jupiter",
-        manifestMetadata = TestSuiteTestTask.parseMergedManifest(manifestFile, emptyList()),
+        manifestMetadata = SuiteEnvironmentMetadataExtractor.parseMergedManifest(manifestFile, emptyList()),
       )
     assertThat(genericProps).doesNotContainKey("suiteType")
     assertThat(genericProps).doesNotContainKey("allowBackup")
@@ -595,14 +596,14 @@ class TestSuiteTestTaskTest {
     assertThat(genericProps["targetSdkVersion"]).isEqualTo("33")
 
     val enrichedProps =
-      TestSuiteTestTask.buildSuiteEnvironmentProperties(
+      SuiteEnvironmentMetadataExtractor.buildSuiteEnvironmentProperties(
         suiteType = "androidx.test.backup",
         testedApplicationId = "com.example.journalingapp.debug",
         agpVersion = "9.6.0-dev",
         gradleVersion = "9.8.0",
         testLibraryVersion = "1.0.0-alpha04",
         runner = "junit-jupiter",
-        manifestMetadata = TestSuiteTestTask.parseMergedManifest(manifestFile, listOf(debugRes, mainRes)),
+        manifestMetadata = SuiteEnvironmentMetadataExtractor.parseMergedManifest(manifestFile, listOf(debugRes, mainRes)),
         extraProperties = mapOf("allowBackup" to "true", "blankIgnored" to "   "),
       )
     assertThat(enrichedProps["suiteType"]).isEqualTo("androidx.test.backup")

@@ -58,18 +58,8 @@ import com.android.build.gradle.internal.tasks.getApkFiles
 import com.android.build.gradle.internal.test.BuiltArtifactsSplitOutputMatcher.computeBestOutput
 import com.android.build.gradle.internal.test.report.JUNIT_PLATFORM_REPORTING_OUTPUT_DIR_PROPERTY
 import com.android.build.gradle.internal.test.report.JunitAttachmentsArgumentProvider
-import com.android.build.gradle.internal.test.report.KEY_AGP_VERSION
-import com.android.build.gradle.internal.test.report.KEY_APPLICATION_ID
-import com.android.build.gradle.internal.test.report.KEY_APPLICATION_NAME
-import com.android.build.gradle.internal.test.report.KEY_GRADLE_VERSION
-import com.android.build.gradle.internal.test.report.KEY_RUNNER
-import com.android.build.gradle.internal.test.report.KEY_SUITE_TYPE
-import com.android.build.gradle.internal.test.report.KEY_TARGET_SDK_VERSION
-import com.android.build.gradle.internal.test.report.KEY_TEST_LIBRARY_VERSION
-import com.android.build.gradle.internal.test.report.KEY_VERSION_CODE
-import com.android.build.gradle.internal.test.report.KEY_VERSION_NAME
+import com.android.build.gradle.internal.test.report.SuiteEnvironmentMetadataExtractor
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
-import com.android.build.gradle.internal.test.report.androidAttr
 import com.android.build.gradle.internal.test.report.clearTestReportAggregationResults
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.COVERAGE_DIR_ON_DEVICE_KEY
@@ -98,9 +88,7 @@ import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceException
-import com.android.ide.common.resources.ValueXmlHelper
 import com.android.utils.FileUtils
-import com.android.utils.XmlUtils
 import com.google.common.collect.ImmutableList
 import java.io.File
 import java.util.Locale
@@ -108,7 +96,6 @@ import java.util.Properties
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import javax.inject.Inject
-import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.collections.asIterable
 import kotlin.collections.joinToString
 import kotlin.collections.plus
@@ -668,12 +655,12 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       if (xmlResultsDirectory.isPresent) {
         val existingResDirs = testedVariantResDirectories.files.filter { it.exists() }
         val manifestMetadata =
-          parseMergedManifest(
+          SuiteEnvironmentMetadataExtractor.parseMergedManifest(
             manifestFile = testedVariantMergedManifest.orNull?.asFile,
             resDirs = existingResDirs,
           )
         val suiteEnvironmentProps =
-          buildSuiteEnvironmentProperties(
+          SuiteEnvironmentMetadataExtractor.buildSuiteEnvironmentProperties(
             suiteType = suiteType.orNull,
             testedApplicationId = testedApplicationId.orNull,
             agpVersion = Version.ANDROID_GRADLE_PLUGIN_VERSION,
@@ -1749,104 +1736,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         arg.startsWith("$propFlag=") -> arg.substring(propFlag.length + 1)
         else -> null
       }
-    }
-
-    internal data class ParsedManifestMetadata(
-      val packageName: String?,
-      val applicationName: String?,
-      val versionName: String?,
-      val versionCode: Int?,
-      val targetSdkVersion: Int?,
-    )
-
-    internal fun buildSuiteEnvironmentProperties(
-      suiteType: String? = null,
-      testedApplicationId: String?,
-      agpVersion: String,
-      gradleVersion: String?,
-      testLibraryVersion: String?,
-      runner: String?,
-      manifestMetadata: ParsedManifestMetadata?,
-      extraProperties: Map<String, String> = emptyMap(),
-    ): Map<String, String> = buildMap {
-      fun putNonBlank(key: String, value: String?) {
-        if (!value.isNullOrBlank()) put(key, value)
-      }
-      putNonBlank(KEY_SUITE_TYPE, suiteType)
-      putNonBlank(KEY_APPLICATION_ID, testedApplicationId ?: manifestMetadata?.packageName)
-      putNonBlank(KEY_APPLICATION_NAME, manifestMetadata?.applicationName)
-      putNonBlank(KEY_VERSION_NAME, manifestMetadata?.versionName)
-      putNonBlank(KEY_VERSION_CODE, manifestMetadata?.versionCode?.toString())
-      putNonBlank(KEY_TARGET_SDK_VERSION, manifestMetadata?.targetSdkVersion?.toString())
-      putNonBlank(KEY_AGP_VERSION, agpVersion)
-      putNonBlank(KEY_GRADLE_VERSION, gradleVersion)
-      putNonBlank(KEY_TEST_LIBRARY_VERSION, testLibraryVersion)
-      putNonBlank(KEY_RUNNER, runner)
-      extraProperties.forEach { (key, value) -> putNonBlank(key, value) }
-    }
-
-    internal fun parseMergedManifest(
-      manifestFile: File?,
-      resDirs: List<File>,
-    ): ParsedManifestMetadata? {
-      if (manifestFile == null || !manifestFile.isFile) return null
-      val docFactory = XmlUtils.createDocumentBuilderFactory().apply { isNamespaceAware = true }
-      val document = runCatching { docFactory.newDocumentBuilder().parse(manifestFile) }.getOrNull() ?: return null
-      val manifestEl = document.documentElement ?: return null
-      val manifestChildren = XmlUtils.getSubTagsAsList(manifestEl)
-
-      val packageName = manifestEl.getAttribute("package").takeIf { it.isNotBlank() }
-      val versionName = manifestEl.androidAttr("versionName")
-      val versionCode = manifestEl.androidAttr("versionCode")?.toIntOrNull()
-      val targetSdkVersion =
-        manifestChildren.firstOrNull { (it.localName ?: it.tagName) == "uses-sdk" }?.androidAttr("targetSdkVersion")?.toIntOrNull()
-
-      val appEl = manifestChildren.firstOrNull { (it.localName ?: it.tagName) == "application" }
-      val rawLabel = appEl?.androidAttr("label")
-      val applicationName =
-        when {
-          rawLabel.isNullOrBlank() -> null
-          rawLabel.startsWith("@string/") -> resolveStringResource(rawLabel.removePrefix("@string/"), resDirs, docFactory)
-          else -> rawLabel
-        }
-
-      return ParsedManifestMetadata(
-        packageName = packageName,
-        applicationName = applicationName,
-        versionName = versionName,
-        versionCode = versionCode,
-        targetSdkVersion = targetSdkVersion,
-      )
-    }
-
-    internal fun resolveStringResource(
-      stringName: String,
-      resDirs: List<File>,
-      docFactory: DocumentBuilderFactory = XmlUtils.createDocumentBuilderFactory().apply { isNamespaceAware = true },
-    ): String? {
-      if (stringName.isBlank()) return null
-      for (resDir in resDirs) {
-        val valuesDir = File(resDir, "values")
-        if (!valuesDir.isDirectory) continue
-        val xmlFiles =
-          valuesDir
-            .listFiles()
-            ?.filter { it.isFile && it.extension.equals("xml", ignoreCase = true) }
-            ?.sortedWith(compareBy<File> { it.name != "strings.xml" }.thenBy { it.name })
-            .orEmpty()
-        for (xmlFile in xmlFiles) {
-          val doc = runCatching { docFactory.newDocumentBuilder().parse(xmlFile) }.getOrNull() ?: continue
-          val root = doc.documentElement ?: continue
-          for (child in XmlUtils.getSubTagsAsList(root)) {
-            if ((child.localName ?: child.tagName) == "string" && child.getAttribute("name") == stringName) {
-              val rawText = child.textContent ?: continue
-              val unescaped = ValueXmlHelper.unescapeResourceString(rawText, false, true)
-              if (unescaped.isNotEmpty()) return unescaped
-            }
-          }
-        }
-      }
-      return null
     }
 
     /** Returns the test targets for the [devices] connected through adb. */

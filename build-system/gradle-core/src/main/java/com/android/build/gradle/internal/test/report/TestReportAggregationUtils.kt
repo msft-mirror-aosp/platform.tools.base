@@ -18,7 +18,6 @@
 
 package com.android.build.gradle.internal.test.report
 
-import com.android.SdkConstants
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_TARGET_KEY
@@ -141,7 +140,14 @@ private fun injectPropertiesToXmlResults(
   val allProperties = if (additionalProperties.isEmpty()) routingProperties else additionalProperties + routingProperties
   val existingMaxSlot =
     outputDir.resolve(ATTACHMENTS_DIR_NAME).resolve(hashString).listFiles()?.mapNotNull { it.name.toIntOrNull() }?.maxOrNull() ?: 0
-  val attachmentSlotCounter = intArrayOf(existingMaxSlot)
+  val attachmentRewriter =
+    AttachmentRewriter(
+      outputDir = outputDir,
+      hashString = hashString,
+      allowedAttachmentRoot = allowedAttachmentRoot,
+      logger = logger,
+      initialSlot = existingMaxSlot,
+    )
 
   try {
     val docFactory = XmlUtils.createDocumentBuilderFactory()
@@ -163,10 +169,7 @@ private fun injectPropertiesToXmlResults(
           injectProperties(
             xmlFile = sourceFile,
             properties = allProperties,
-            outputDir = outputDir,
-            hashString = hashString,
-            attachmentSlotCounter = attachmentSlotCounter,
-            allowedAttachmentRoot = allowedAttachmentRoot,
+            attachmentRewriter = attachmentRewriter,
             targetFile = xmlTargetFile,
             docFactory = docFactory,
             transformerFactory = transformerFactory,
@@ -193,10 +196,7 @@ private fun calculateHash(properties: Map<String, String>): String {
 private fun injectProperties(
   xmlFile: File,
   properties: Map<String, String>,
-  outputDir: File,
-  hashString: String,
-  attachmentSlotCounter: IntArray,
-  allowedAttachmentRoot: File?,
+  attachmentRewriter: AttachmentRewriter,
   targetFile: File,
   docFactory: DocumentBuilderFactory,
   transformerFactory: TransformerFactory,
@@ -239,15 +239,7 @@ private fun injectProperties(
         }
       }
 
-      rewriteSuiteElementAttachments(
-        suiteElement = suiteElement,
-        xmlFile = xmlFile,
-        outputDir = outputDir,
-        hashString = hashString,
-        attachmentSlotCounter = attachmentSlotCounter,
-        allowedAttachmentRoot = allowedAttachmentRoot,
-        logger = logger,
-      )
+      attachmentRewriter.rewriteSuite(suiteElement, xmlFile)
     }
 
     val transformer = transformerFactory.newTransformer()
@@ -264,88 +256,80 @@ private fun injectProperties(
   }
 }
 
-private fun rewriteSuiteElementAttachments(
-  suiteElement: Element,
-  xmlFile: File,
-  outputDir: File,
-  hashString: String,
-  attachmentSlotCounter: IntArray,
-  allowedAttachmentRoot: File?,
-  logger: Logger,
+private class AttachmentRewriter(
+  private val outputDir: File,
+  private val hashString: String,
+  private val allowedAttachmentRoot: File?,
+  private val logger: Logger,
+  initialSlot: Int,
 ) {
-  for (child in XmlUtils.getSubTagsAsList(suiteElement)) {
-    when (child.tagName) {
-      TAG_SYSTEM_OUT ->
-        rewriteSystemOutAttachments(child, xmlFile, outputDir, hashString, attachmentSlotCounter, allowedAttachmentRoot, logger)
-      TAG_TESTCASE ->
-        for (tcChild in XmlUtils.getSubTagsAsList(child)) {
-          if (tcChild.tagName == TAG_SYSTEM_OUT) {
-            rewriteSystemOutAttachments(tcChild, xmlFile, outputDir, hashString, attachmentSlotCounter, allowedAttachmentRoot, logger)
+  private var nextSlot = initialSlot
+
+  fun rewriteSuite(suiteElement: Element, xmlFile: File) {
+    for (child in XmlUtils.getSubTagsAsList(suiteElement)) {
+      when (child.tagName) {
+        TAG_SYSTEM_OUT -> rewriteSystemOut(child, xmlFile)
+        TAG_TESTCASE ->
+          for (tcChild in XmlUtils.getSubTagsAsList(child)) {
+            if (tcChild.tagName == TAG_SYSTEM_OUT) {
+              rewriteSystemOut(tcChild, xmlFile)
+            }
+          }
+        TAG_TESTSUITE -> rewriteSuite(child, xmlFile)
+      }
+    }
+  }
+
+  private fun rewriteSystemOut(systemOutElement: Element, xmlFile: File) {
+    val rawText = systemOutElement.textContent ?: return
+    if (!rawText.contains(ATTACHMENT_MARKER_PREFIX)) return
+
+    val rewritten = StringBuilder(rawText.length)
+    var mutated = false
+    var index = 0
+    while (index < rawText.length) {
+      val newlineIndex = rawText.indexOf('\n', index)
+      val lineEnd = if (newlineIndex == -1) rawText.length else newlineIndex
+      val hasCr = lineEnd > index && rawText[lineEnd - 1] == '\r'
+      val contentEnd = if (hasCr) lineEnd - 1 else lineEnd
+      val line = rawText.substring(index, contentEnd)
+      val lineEnding =
+        when {
+          newlineIndex == -1 -> ""
+          hasCr -> "\r\n"
+          else -> "\n"
+        }
+
+      val trimmed = line.trim()
+      if (trimmed.startsWith(ATTACHMENT_MARKER_PREFIX) && trimmed.endsWith(ATTACHMENT_MARKER_SUFFIX)) {
+        mutated = true
+        val rawMarkerPath = trimmed.substring(ATTACHMENT_MARKER_PREFIX.length, trimmed.length - ATTACHMENT_MARKER_SUFFIX.length).trim()
+        val validatedFile =
+          PathSafetyUtils.resolveAllowedAttachmentFile(rawMarkerPath, xmlFile.parentFile, allowedAttachmentRoot, logger::warn)
+        if (validatedFile != null) {
+          val slot = ++nextSlot
+          val safeName = PathSafetyUtils.sanitizeFileName(validatedFile.name, "attachment.bin")
+          val relativeDestPath = "$ATTACHMENTS_DIR_NAME/$hashString/$slot/$safeName"
+          val destFile = outputDir.resolve(relativeDestPath)
+          try {
+            Files.createDirectories(destFile.parentFile.toPath())
+            FileUtils.copyFile(validatedFile, destFile)
+            rewritten.append(ATTACHMENT_MARKER_PREFIX).append(relativeDestPath).append(ATTACHMENT_MARKER_SUFFIX).append(lineEnding)
+          } catch (e: IOException) {
+            // Only this attachment is dropped; the test results in the file are still reported.
+            logger.warn("Failed to copy test attachment '$rawMarkerPath': ${e.message}")
           }
         }
-      TAG_TESTSUITE ->
-        rewriteSuiteElementAttachments(child, xmlFile, outputDir, hashString, attachmentSlotCounter, allowedAttachmentRoot, logger)
-    }
-  }
-}
-
-private fun rewriteSystemOutAttachments(
-  systemOutElement: Element,
-  xmlFile: File,
-  outputDir: File,
-  hashString: String,
-  attachmentSlotCounter: IntArray,
-  allowedAttachmentRoot: File?,
-  logger: Logger,
-) {
-  val rawText = systemOutElement.textContent ?: return
-  if (!rawText.contains(ATTACHMENT_MARKER_PREFIX)) return
-
-  val rewritten = StringBuilder(rawText.length)
-  var mutated = false
-  var index = 0
-  while (index < rawText.length) {
-    val newlineIndex = rawText.indexOf('\n', index)
-    val lineEnd = if (newlineIndex == -1) rawText.length else newlineIndex
-    val hasCr = lineEnd > index && rawText[lineEnd - 1] == '\r'
-    val contentEnd = if (hasCr) lineEnd - 1 else lineEnd
-    val line = rawText.substring(index, contentEnd)
-    val lineEnding =
-      when {
-        newlineIndex == -1 -> ""
-        hasCr -> "\r\n"
-        else -> "\n"
+      } else {
+        rewritten.append(line).append(lineEnding)
       }
 
-    val trimmed = line.trim()
-    if (trimmed.startsWith(ATTACHMENT_MARKER_PREFIX) && trimmed.endsWith(ATTACHMENT_MARKER_SUFFIX)) {
-      mutated = true
-      val rawMarkerPath = trimmed.substring(ATTACHMENT_MARKER_PREFIX.length, trimmed.length - ATTACHMENT_MARKER_SUFFIX.length).trim()
-      val validatedFile =
-        PathSafetyUtils.resolveAllowedAttachmentFile(rawMarkerPath, xmlFile.parentFile, allowedAttachmentRoot, logger::warn)
-      if (validatedFile != null) {
-        val slot = ++attachmentSlotCounter[0]
-        val safeName = PathSafetyUtils.sanitizeFileName(validatedFile.name, "attachment.bin")
-        val relativeDestPath = "$ATTACHMENTS_DIR_NAME/$hashString/$slot/$safeName"
-        val destFile = outputDir.resolve(relativeDestPath)
-        try {
-          Files.createDirectories(destFile.parentFile.toPath())
-          FileUtils.copyFile(validatedFile, destFile)
-          rewritten.append(ATTACHMENT_MARKER_PREFIX).append(relativeDestPath).append(ATTACHMENT_MARKER_SUFFIX).append(lineEnding)
-        } catch (e: IOException) {
-          // Only this attachment is dropped; the test results in the file are still reported.
-          logger.warn("Failed to copy test attachment '$rawMarkerPath': ${e.message}")
-        }
-      }
-    } else {
-      rewritten.append(line).append(lineEnding)
+      index = if (newlineIndex == -1) rawText.length else newlineIndex + 1
     }
 
-    index = if (newlineIndex == -1) rawText.length else newlineIndex + 1
-  }
-
-  if (mutated) {
-    systemOutElement.textContent = rewritten.toString()
+    if (mutated) {
+      systemOutElement.textContent = rewritten.toString()
+    }
   }
 }
 
@@ -355,9 +339,3 @@ private fun createSafeTransformerFactory(): TransformerFactory =
     runCatching { setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "") }
     runCatching { setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "") }
   }
-
-internal fun Element.androidAttr(localName: String): String? {
-  val nsValue = getAttributeNS(SdkConstants.ANDROID_URI, localName)
-  if (nsValue.isNotBlank()) return nsValue
-  return getAttribute("android:$localName").takeIf { it.isNotBlank() }
-}

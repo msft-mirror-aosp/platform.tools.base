@@ -237,7 +237,7 @@ class SuiteReportAdapterTest {
     assertThat(descriptor.suiteType).isEqualTo("androidx.test.backup")
     assertThat(descriptor.title).isEqualTo("Backup & Restore")
     assertThat(descriptor.likelyCauseHeading).isEqualTo("Backup rule that left the data out · Likely cause")
-    assertThat(descriptor.docsUrl).isEqualTo("https://developer.android.com/identity/data/testing")
+    assertThat(descriptor.docsUrl).isEqualTo("https://developer.android.com/studio/preview/backup-restore-testing")
     assertThat(descriptor.summaryColumns)
       .containsExactly(
         SummaryColumnDef(
@@ -989,6 +989,22 @@ class SuiteReportAdapterTest {
     assertThat(stepNames("prepare_1", "1", "2", "cleanup_1"))
       .containsExactly("Step prepare_1", "Step 1", "Step 2", "Step cleanup_1")
       .inOrder()
+
+    val paddedRecord =
+      checkNotNull(
+        TestDetailRecordReader.parseDetailRecordFromEntries(
+          rawProperties =
+            linkedMapOf(
+              "androidx.report.schemaVersion" to "1",
+              "androidx.report.actor. source .name" to "Pixel 8",
+              "androidx.report.step. 1 .name" to "Verify",
+              "androidx.report.step. 1 .status" to "PASSED",
+            ),
+          logger = MockLog(),
+        )
+      )
+    assertThat(paddedRecord.actors?.single()).isEqualTo(ActorInfo(id = "source", name = "Pixel 8"))
+    assertThat(paddedRecord.steps?.single()).isEqualTo(StepInfo(n = 1, name = "Verify", status = "PASSED"))
   }
 
   @Test

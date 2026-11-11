@@ -148,7 +148,7 @@ class TestReportDataModelTest {
               tooltip = "Source and target Android devices used by the test",
             ),
           ),
-        docsUrl = "https://developer.android.com/identity/data/testing",
+        docsUrl = "https://developer.android.com/studio/preview/backup-restore-testing",
       )
     val descriptorJson = JsonParser.parseString(gson.toJson(descriptor)).asJsonObject
     assertThat(descriptorJson.keySet())
@@ -297,19 +297,27 @@ class TestReportDataModelTest {
         )
       )
 
-    assertThat(summaries).hasSize(1)
-    assertThat(summaries[0].name).isEqualTo("gmdSuite")
-    assertThat(summaries[0].variantSummaries)
-      .containsExactly(
+    assertThat(summaries.map { it.name }).containsExactly("gmdSuite", AGGREGATED_TEST_SUITE_NAME).inOrder()
+    val expectedVariants =
+      listOf(
         VariantSummary(name = "free", total = 1, passed = 0, failed = 1, skipped = 0, rate = 0.0, durationMs = 50L),
         VariantSummary(name = "free_debug", total = 1, passed = 1, failed = 0, skipped = 0, rate = 100.0, durationMs = 50L),
         VariantSummary(name = "timeless", total = 1, passed = 1, failed = 0, skipped = 0, rate = 100.0, durationMs = null),
       )
-      .inOrder()
+    assertThat(summaries[0].variantSummaries).containsExactlyElementsIn(expectedVariants).inOrder()
+    assertThat(summaries[1].variantSummaries).containsExactlyElementsIn(expectedVariants).inOrder()
 
     val rolledUp = rollupChildSuiteSummaries(listOf(summaries))
     val aggregatedSummaries = rolledUp.single { it.name == AGGREGATED_TEST_SUITE_NAME }.variantSummaries.associateBy { it.name }
     assertThat(aggregatedSummaries["timeless"]?.durationMs).isNull()
     assertThat(aggregatedSummaries["free"]?.durationMs).isEqualTo(50L)
+  }
+
+  @Test
+  fun testAllocateUniqueFileNameDeduplicatesCaseInsensitively() {
+    val usedNames = HashSet<String>()
+    assertThat(PathSafetyUtils.allocateUniqueFileName("Host-Log.txt", "log.txt", usedNames)).isEqualTo("Host-Log.txt")
+    assertThat(PathSafetyUtils.allocateUniqueFileName("host-log.txt", "log.txt", usedNames)).isEqualTo("host-log_2.txt")
+    assertThat(PathSafetyUtils.allocateUniqueFileName("HOST-LOG_2.TXT", "log.txt", usedNames)).isEqualTo("HOST-LOG_2_2.TXT")
   }
 }

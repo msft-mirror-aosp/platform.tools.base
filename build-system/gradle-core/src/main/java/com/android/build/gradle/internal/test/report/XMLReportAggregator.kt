@@ -258,6 +258,52 @@ internal constructor(
     val attachments: List<String>,
   )
 
+  private enum class XmlTextTarget {
+    NONE,
+    PROPERTY,
+    FAILURE,
+    TESTCASE_SYSTEM_OUT,
+    SUITE_SYSTEM_OUT,
+    TESTCASE_SYSTEM_ERR,
+  }
+
+  private class TestCaseFrame(
+    val classname: String?,
+    val testcaseName: String?,
+    val durationMs: Long?,
+  ) {
+    var status: String = STATUS_PASS
+    var failureBuffer: StringBuilder? = null
+    var systemOutCollector: SystemOutStreamCollector? = null
+    var systemErrBuffer: StringBuilder? = null
+    var systemErrCapped: Boolean = false
+    val properties = LinkedHashMap<String, String>()
+
+    fun toParsedTestCase(): ParsedXmlTestCase? {
+      val cls = classname ?: return null
+      val tcName = testcaseName ?: return null
+      val parsedSystemOut = systemOutCollector?.finish()
+      val parsedSystemOutTruncated = parsedSystemOut != null && systemOutCollector?.truncated == true
+      val parsedSystemErr = finalizeStreamBuffer(systemErrBuffer)
+      val parsedSystemErrTruncated = parsedSystemErr != null && systemErrCapped
+      // The output of a passing test without report entries is never shown, so it isn't held until the suite ends.
+      val keepOutput = status != STATUS_PASS || properties.keys.any { it.startsWith(INTERNAL_REPORT_KEY_PREFIX) }
+      return ParsedXmlTestCase(
+        classname = cls,
+        testcaseName = tcName,
+        durationMs = durationMs,
+        status = status,
+        stackTrace = failureBuffer?.toString()?.trim()?.takeIf { it.isNotEmpty() },
+        systemOut = parsedSystemOut.takeIf { keepOutput },
+        systemOutTruncated = keepOutput && parsedSystemOutTruncated,
+        systemErr = parsedSystemErr.takeIf { keepOutput },
+        systemErrTruncated = keepOutput && parsedSystemErrTruncated,
+        properties = properties,
+        attachments = systemOutCollector?.attachments?.toList().orEmpty(),
+      )
+    }
+  }
+
   private class SuiteFrame(
     val suiteName: String? = null,
     var modulePath: String? = null,
@@ -300,29 +346,15 @@ internal constructor(
         var seenRootElement = false
 
         val suiteStack = ArrayDeque<SuiteFrame>().apply { addLast(SuiteFrame()) }
-
-        var inTestCase = false
-        var inFailureOrError = false
-        var inTestCaseSystemOut = false
-        var inSuiteSystemOut = false
-        var inSystemErr = false
-        var inProperty = false
+        var activeTestCase: TestCaseFrame? = null
+        var textTarget = XmlTextTarget.NONE
         var pendingPropertyName: String? = null
         var pendingPropertyText: StringBuilder? = null
 
-        var currentClassname: String? = null
-        var currentTestcaseName: String? = null
-        var currentDurationMs: Long? = null
-        var currentStatus = STATUS_PASS
-        var failureBuffer: StringBuilder? = null
-        var testcaseSystemOutCollector: SystemOutStreamCollector? = null
-        var systemErrBuffer: StringBuilder? = null
-        var systemErrCapped = false
-        val testcaseProperties = LinkedHashMap<String, String>()
-
         fun recordProperty(name: String, value: String) {
-          if (inTestCase) {
-            testcaseProperties[name] = value
+          val tc = activeTestCase
+          if (tc != null) {
+            tc.properties[name] = value
           } else {
             val activeFrame = suiteStack.last()
             when (name) {
@@ -352,13 +384,7 @@ internal constructor(
               extraEnvironmentKeys = adapterRegistry.allSuiteEnvironmentPropertyKeys,
             )
           val suiteEnvPair = suiteEnvRecord?.let { rec ->
-            val key =
-              SuiteEnvironmentKey(
-                modulePath = rec.modulePath!!,
-                variantName = rec.variantName!!,
-                suiteName = rec.suiteName!!,
-                targetName = rec.targetName?.takeIf { it.isNotBlank() } ?: UNKNOWN_TARGET,
-              )
+            val key = rec.key
             rootReportBuilder.addEnvironment(key, rec)
             key to rec
           }
@@ -440,7 +466,7 @@ internal constructor(
                 when (tagName) {
                   TAG_TESTSUITE -> {
                     suiteStack.addLast(suiteStack.last().createChild(reader.getAttributeValue(null, ATTR_NAME)))
-                    inSuiteSystemOut = false
+                    if (textTarget == XmlTextTarget.SUITE_SYSTEM_OUT) textTarget = XmlTextTarget.NONE
                   }
                   TAG_PROPERTY -> {
                     val name = reader.getAttributeValue(null, ATTR_NAME)
@@ -448,80 +474,75 @@ internal constructor(
                     if (name != null) {
                       if (value != null) {
                         recordProperty(name, value)
-                        inProperty = false
+                        if (textTarget == XmlTextTarget.PROPERTY) textTarget = XmlTextTarget.NONE
                       } else {
-                        inProperty = true
+                        textTarget = XmlTextTarget.PROPERTY
                         pendingPropertyName = name
                         pendingPropertyText = StringBuilder()
                       }
                     }
                   }
                   TAG_TESTCASE -> {
-                    inTestCase = true
-                    inFailureOrError = false
-                    inTestCaseSystemOut = false
-                    inSystemErr = false
-                    inProperty = false
-                    currentClassname = reader.getAttributeValue(null, ATTR_CLASSNAME)
-                    currentTestcaseName = reader.getAttributeValue(null, ATTR_NAME)
-                    currentDurationMs = parseDurationMs(reader.getAttributeValue(null, ATTR_TIME))
-                    currentStatus = STATUS_PASS
-                    failureBuffer = null
-                    testcaseSystemOutCollector = null
-                    systemErrBuffer = null
-                    systemErrCapped = false
-                    testcaseProperties.clear()
+                    activeTestCase =
+                      TestCaseFrame(
+                        classname = reader.getAttributeValue(null, ATTR_CLASSNAME),
+                        testcaseName = reader.getAttributeValue(null, ATTR_NAME),
+                        durationMs = parseDurationMs(reader.getAttributeValue(null, ATTR_TIME)),
+                      )
+                    textTarget = XmlTextTarget.NONE
+                    pendingPropertyName = null
+                    pendingPropertyText = null
                   }
                   TAG_SKIPPED -> {
-                    if (inTestCase) {
-                      currentStatus = STATUS_SKIPPED
-                    }
+                    activeTestCase?.let { it.status = STATUS_SKIPPED }
                   }
                   TAG_FAILURE,
                   TAG_ERROR -> {
-                    if (inTestCase) {
-                      currentStatus = STATUS_FAIL
-                      inFailureOrError = true
-                      failureBuffer = StringBuilder()
+                    activeTestCase?.let { tc ->
+                      tc.status = STATUS_FAIL
+                      tc.failureBuffer = StringBuilder()
+                      textTarget = XmlTextTarget.FAILURE
                     }
                   }
                   TAG_SYSTEM_OUT -> {
-                    if (inTestCase) {
-                      inTestCaseSystemOut = true
-                      if (testcaseSystemOutCollector == null) {
-                        testcaseSystemOutCollector = SystemOutStreamCollector(MAX_STREAM_CHARS)
+                    val tc = activeTestCase
+                    if (tc != null) {
+                      if (tc.systemOutCollector == null) {
+                        tc.systemOutCollector = SystemOutStreamCollector(MAX_STREAM_CHARS)
                       }
+                      textTarget = XmlTextTarget.TESTCASE_SYSTEM_OUT
                     } else {
-                      inSuiteSystemOut = true
                       val activeFrame = suiteStack.last()
                       if (activeFrame.suiteSystemOutCollector == null) {
                         activeFrame.suiteSystemOutCollector = SystemOutStreamCollector(maxChars = 0)
                       }
+                      textTarget = XmlTextTarget.SUITE_SYSTEM_OUT
                     }
                   }
                   TAG_SYSTEM_ERR -> {
-                    if (inTestCase) {
-                      inSystemErr = true
-                      if (systemErrBuffer == null) {
-                        systemErrBuffer = StringBuilder()
+                    activeTestCase?.let { tc ->
+                      if (tc.systemErrBuffer == null) {
+                        tc.systemErrBuffer = StringBuilder()
                       }
+                      textTarget = XmlTextTarget.TESTCASE_SYSTEM_ERR
                     }
                   }
                 }
               }
               XMLStreamConstants.CHARACTERS,
               XMLStreamConstants.CDATA -> {
-                when {
-                  inProperty && pendingPropertyText != null -> pendingPropertyText.append(reader.text)
-                  inFailureOrError && failureBuffer != null -> failureBuffer.append(reader.text)
-                  inTestCaseSystemOut && testcaseSystemOutCollector != null -> {
-                    testcaseSystemOutCollector.append(reader.text)
-                  }
-                  inSuiteSystemOut -> {
-                    suiteStack.last().suiteSystemOutCollector?.append(reader.text)
-                  }
-                  inSystemErr && !systemErrCapped && systemErrBuffer != null -> {
-                    systemErrCapped = appendCapped(systemErrBuffer, reader.text, MAX_STREAM_CHARS)
+                when (textTarget) {
+                  XmlTextTarget.NONE -> {}
+                  XmlTextTarget.PROPERTY -> pendingPropertyText?.append(reader.text)
+                  XmlTextTarget.FAILURE -> activeTestCase?.failureBuffer?.append(reader.text)
+                  XmlTextTarget.TESTCASE_SYSTEM_OUT -> activeTestCase?.systemOutCollector?.append(reader.text)
+                  XmlTextTarget.SUITE_SYSTEM_OUT -> suiteStack.last().suiteSystemOutCollector?.append(reader.text)
+                  XmlTextTarget.TESTCASE_SYSTEM_ERR -> {
+                    val tc = activeTestCase
+                    val errBuf = tc?.systemErrBuffer
+                    if (tc != null && !tc.systemErrCapped && errBuf != null) {
+                      tc.systemErrCapped = appendCapped(errBuf, reader.text, MAX_STREAM_CHARS)
+                    }
                   }
                 }
               }
@@ -529,73 +550,34 @@ internal constructor(
                 when (reader.localName) {
                   TAG_PROPERTY -> {
                     val propName = pendingPropertyName
-                    if (inProperty && propName != null) {
+                    if (textTarget == XmlTextTarget.PROPERTY && propName != null) {
                       recordProperty(propName, pendingPropertyText?.toString() ?: "")
                     }
-                    inProperty = false
+                    if (textTarget == XmlTextTarget.PROPERTY) textTarget = XmlTextTarget.NONE
                     pendingPropertyName = null
                     pendingPropertyText = null
                   }
                   TAG_FAILURE,
                   TAG_ERROR -> {
-                    inFailureOrError = false
+                    if (textTarget == XmlTextTarget.FAILURE) textTarget = XmlTextTarget.NONE
                   }
                   TAG_SYSTEM_OUT -> {
-                    if (inTestCase) {
-                      inTestCaseSystemOut = false
-                    } else {
-                      inSuiteSystemOut = false
+                    if (textTarget == XmlTextTarget.TESTCASE_SYSTEM_OUT || textTarget == XmlTextTarget.SUITE_SYSTEM_OUT) {
+                      textTarget = XmlTextTarget.NONE
                     }
                   }
                   TAG_SYSTEM_ERR -> {
-                    inSystemErr = false
+                    if (textTarget == XmlTextTarget.TESTCASE_SYSTEM_ERR) textTarget = XmlTextTarget.NONE
                   }
                   TAG_TESTCASE -> {
-                    val cls = currentClassname
-                    val tcName = currentTestcaseName
-                    if (cls != null && tcName != null) {
-                      val parsedSystemOut = testcaseSystemOutCollector?.finish()
-                      val parsedSystemOutTruncated = parsedSystemOut != null && testcaseSystemOutCollector?.truncated == true
-                      val parsedSystemErr = finalizeStreamBuffer(systemErrBuffer)
-                      val parsedSystemErrTruncated = parsedSystemErr != null && systemErrCapped
-                      // The output of a passing test without report entries is never shown, so it isn't held until the suite ends.
-                      val keepOutput =
-                        currentStatus != STATUS_PASS || testcaseProperties.keys.any { it.startsWith(INTERNAL_REPORT_KEY_PREFIX) }
-                      suiteStack
-                        .last()
-                        .pendingTestCases
-                        .add(
-                          ParsedXmlTestCase(
-                            classname = cls,
-                            testcaseName = tcName,
-                            durationMs = currentDurationMs,
-                            status = currentStatus,
-                            stackTrace = failureBuffer?.toString()?.trim()?.takeIf { it.isNotEmpty() },
-                            systemOut = parsedSystemOut.takeIf { keepOutput },
-                            systemOutTruncated = keepOutput && parsedSystemOutTruncated,
-                            systemErr = parsedSystemErr.takeIf { keepOutput },
-                            systemErrTruncated = keepOutput && parsedSystemErrTruncated,
-                            properties = LinkedHashMap(testcaseProperties),
-                            attachments = testcaseSystemOutCollector?.attachments?.toList().orEmpty(),
-                          )
-                        )
-                    }
-                    inTestCase = false
-                    inFailureOrError = false
-                    inTestCaseSystemOut = false
-                    inSystemErr = false
-                    currentClassname = null
-                    currentTestcaseName = null
-                    currentDurationMs = null
-                    failureBuffer = null
-                    testcaseSystemOutCollector = null
-                    systemErrBuffer = null
-                    systemErrCapped = false
-                    testcaseProperties.clear()
+                    activeTestCase?.toParsedTestCase()?.let(suiteStack.last().pendingTestCases::add)
+                    activeTestCase = null
+                    textTarget = XmlTextTarget.NONE
                   }
                   TAG_TESTSUITE -> {
                     val completedFrame = if (suiteStack.size > 1) suiteStack.removeLast() else suiteStack.last()
                     flushSuiteFrame(completedFrame)
+                    if (textTarget == XmlTextTarget.SUITE_SYSTEM_OUT) textTarget = XmlTextTarget.NONE
                   }
                 }
               }
@@ -738,12 +720,7 @@ internal constructor(
       val resolvedLogs = mutableListOf<Pair<LogRecord, File>>()
       if (exec.xmlDir != null && !exec.rawLogs.isNullOrEmpty()) {
         for (logRecord in exec.rawLogs) {
-          val logPath = logRecord.path?.takeIf { it.isNotBlank() } ?: continue
-          val safeFile = PathSafetyUtils.resolveAttachmentFile(exec.xmlDir, logPath, logger) ?: continue
-          if (!safeFile.isFile) {
-            logger.warning("Referenced test log file '$logPath' does not exist in '${exec.xmlDir.path}'.")
-            continue
-          }
+          val safeFile = PathSafetyUtils.resolveAttachmentFile(exec.xmlDir, logRecord.path, logger) ?: continue
           resolvedLogs.add(logRecord to safeFile)
         }
       }
@@ -753,26 +730,20 @@ internal constructor(
         for (artifactRecord in exec.rawArtifacts) {
           val rawPath = artifactRecord.path?.takeIf { it.isNotBlank() } ?: continue
           val safeFile = PathSafetyUtils.resolveAttachmentFile(exec.xmlDir, rawPath, logger) ?: continue
-          if (!safeFile.isFile) {
-            logger.warning("Referenced test artifact '$rawPath' does not exist in '${exec.xmlDir.path}'.")
-            continue
-          }
           resolvedArtifactFiles[artifactRecord] = safeFile
         }
       }
 
       val needsLazyDetail = resolvedLogs.isNotEmpty() || exec.systemOut != null || exec.systemErr != null
       val needsArtifactSlot = needsLazyDetail || resolvedArtifactFiles.isNotEmpty()
+      val allocatedId = if (needsArtifactSlot) String.format(Locale.US, "t_%04d", nextDetailSequence++) else null
 
-      var detailId: String? = null
       val logMetaList = mutableListOf<LogMetaInfo>()
       val artifactInfoList = mutableListOf<ArtifactInfo>()
+      val usedFileNames = HashSet<String>()
+      val pendingLogs = mutableListOf<PendingLazyLogSpec>()
 
-      if (needsArtifactSlot) {
-        val allocatedId = String.format(Locale.US, "t_%04d", nextDetailSequence++)
-        val usedFileNames = HashSet<String>()
-        val pendingLogs = mutableListOf<PendingLazyLogSpec>()
-
+      if (allocatedId != null) {
         for ((logRecord, sourceFile) in resolvedLogs) {
           val destFileName = PathSafetyUtils.allocateUniqueFileName(sourceFile.name, "log.txt", usedFileNames)
           val relPath = "artifacts/$allocatedId/$destFileName"
@@ -785,48 +756,39 @@ internal constructor(
               title = title,
               sourceFile = sourceFile,
               lineCount = lineCount,
-              capturedTruncated = logRecord.truncated == true,
+              capturedTruncated = logRecord.truncated,
               artifactPath = relPath,
             )
           )
           copiedFiles.add(FileCopySpec(sourceFile = sourceFile, relativeDestPath = relPath))
         }
+      }
 
-        exec.rawArtifacts?.forEach { artifactRecord ->
-          val name = artifactRecord.name?.takeIf { it.isNotBlank() } ?: return@forEach
-          val sourceFile = resolvedArtifactFiles[artifactRecord]
-          if (artifactRecord.path.isNullOrBlank()) {
-            artifactInfoList.add(ArtifactInfo(name = name, values = artifactRecord.values, path = null))
-          } else if (sourceFile != null) {
-            val destFileName = PathSafetyUtils.allocateUniqueFileName(sourceFile.name, "artifact.bin", usedFileNames)
-            val relPath = "artifacts/$allocatedId/$destFileName"
-            val effectiveValues =
-              artifactRecord.values?.takeIf { it.isNotEmpty() } ?: mapOf("size" to formatArtifactByteSize(sourceFile.length()))
-            artifactInfoList.add(ArtifactInfo(name = name, values = effectiveValues, path = relPath))
-            copiedFiles.add(FileCopySpec(sourceFile = sourceFile, relativeDestPath = relPath))
-          } else if (!artifactRecord.values.isNullOrEmpty()) {
-            artifactInfoList.add(ArtifactInfo(name = name, values = artifactRecord.values, path = null))
-          }
+      exec.rawArtifacts?.forEach { artifactRecord ->
+        val name = artifactRecord.name.takeIf { it.isNotBlank() } ?: return@forEach
+        val sourceFile = resolvedArtifactFiles[artifactRecord]
+        if (sourceFile != null && allocatedId != null) {
+          val destFileName = PathSafetyUtils.allocateUniqueFileName(sourceFile.name, "artifact.bin", usedFileNames)
+          val relPath = "artifacts/$allocatedId/$destFileName"
+          val effectiveValues =
+            artifactRecord.values?.takeIf { it.isNotEmpty() } ?: mapOf("size" to formatArtifactByteSize(sourceFile.length()))
+          artifactInfoList.add(ArtifactInfo(name = name, values = effectiveValues, path = relPath))
+          copiedFiles.add(FileCopySpec(sourceFile = sourceFile, relativeDestPath = relPath))
+        } else if (artifactRecord.path.isNullOrBlank() || !artifactRecord.values.isNullOrEmpty()) {
+          artifactInfoList.add(ArtifactInfo(name = name, values = artifactRecord.values, path = null))
         }
+      }
 
-        if (needsLazyDetail) {
-          detailId = allocatedId
-          lazyTestDetails[allocatedId] =
-            PendingLazyTestDetail(
-              logs = pendingLogs,
-              systemOut = exec.systemOut,
-              systemOutTruncated = exec.systemOutTruncated,
-              systemErr = exec.systemErr,
-              systemErrTruncated = exec.systemErrTruncated,
-            )
-        }
-      } else {
-        exec.rawArtifacts?.forEach { artifactRecord ->
-          val name = artifactRecord.name?.takeIf { it.isNotBlank() } ?: return@forEach
-          if (artifactRecord.path.isNullOrBlank() || !artifactRecord.values.isNullOrEmpty()) {
-            artifactInfoList.add(ArtifactInfo(name = name, values = artifactRecord.values, path = null))
-          }
-        }
+      val detailId = allocatedId?.takeIf { needsLazyDetail }
+      if (detailId != null) {
+        lazyTestDetails[detailId] =
+          PendingLazyTestDetail(
+            logs = pendingLogs,
+            systemOut = exec.systemOut,
+            systemOutTruncated = exec.systemOutTruncated,
+            systemErr = exec.systemErr,
+            systemErrTruncated = exec.systemErrTruncated,
+          )
       }
 
       return exec.adaptedResult.copy(
@@ -895,8 +857,7 @@ internal constructor(
       }
       val incomingOverridesGeneric =
         existing.adapterId == ADAPTER_ID_DEFAULT &&
-          existing.suiteType.isNullOrBlank() &&
-          (incoming.adapterId != ADAPTER_ID_DEFAULT || !incoming.suiteType.isNullOrBlank())
+          (incoming.adapterId != ADAPTER_ID_DEFAULT || (existing.suiteType.isNullOrBlank() && !incoming.suiteType.isNullOrBlank()))
       val primary = if (incomingOverridesGeneric) incoming else existing
       val secondary = if (primary === existing) incoming else existing
 
@@ -949,7 +910,7 @@ internal constructor(
             modulePath = key.modulePath,
             variantName = key.variantName,
             suiteName = key.suiteName,
-            targetName = rawEnv.targetName?.takeIf { it.isNotBlank() } ?: key.targetName,
+            targetName = rawEnv.targetName.takeIf { it.isNotBlank() } ?: key.targetName,
             suiteType = rawEnv.suiteType,
             applicationId = rawEnv.applicationId,
             applicationName = rawEnv.applicationName,
@@ -1034,21 +995,11 @@ internal constructor(
 
     fun build(collector: ArtifactCollector): ClassType {
       val testCasesList = testCases.values.sortedBy { it.name }.map { it.build(collector) }
-      val testSuiteSummaries = summarizeClassExecutions(testCases.values.map { it.executions }).toMutableList()
-      val allVariants =
-        testCasesList
-          .flatMap { tc ->
-            tc.targets.flatMap { target ->
-              target.testSuiteSummaries
-                .filter { it.name != AGGREGATED_TEST_SUITE_NAME }
-                .flatMap { ts -> ts.variantSummaries.map { v -> v.name } }
-            }
-          }
-          .distinct()
-          .sorted()
-      val aggregatedVariantSummaries = flattenVariantSummaries(testSuiteSummaries.flatMap { it.variantSummaries }, allVariants)
-      testSuiteSummaries.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregatedVariantSummaries))
-      return ClassType(name = name, testSuiteSummaries = testSuiteSummaries, testCases = testCasesList)
+      return ClassType(
+        name = name,
+        testSuiteSummaries = summarizeClassExecutions(testCases.values.map { it.executions }),
+        testCases = testCasesList,
+      )
     }
   }
 
@@ -1083,22 +1034,15 @@ internal constructor(
               targetExecutions
                 .groupBy { it.testSuiteName }
                 .map { (suiteName, suiteExecs) ->
-                  val winningExecByVariant = LinkedHashMap<String, TestCaseExecution>()
-                  suiteExecs.forEach { exec ->
-                    val existing = winningExecByVariant[exec.variantName]
-                    if (shouldReplaceExecution(existing, exec)) {
-                      winningExecByVariant[exec.variantName] = exec
-                    }
-                  }
-
-                  val variantResults = LinkedHashMap<String, VariantTestResult>()
-                  winningExecByVariant.forEach { (variantName, exec) ->
-                    variantResults[variantName] =
-                      collector.buildVariantTestResult(
-                        exec = exec,
-                        stackTraceId = exec.stackTrace?.let { stackTraceToId[it] },
-                      )
-                  }
+                  val variantResults =
+                    deduplicateExecutions(suiteExecs) { it.variantName }
+                      .associateTo(LinkedHashMap()) { exec ->
+                        exec.variantName to
+                          collector.buildVariantTestResult(
+                            exec = exec,
+                            stackTraceId = exec.stackTrace?.let { stackTraceToId[it] },
+                          )
+                      }
                   TestSuiteTestResult(suiteName, variantResults)
                 }
 

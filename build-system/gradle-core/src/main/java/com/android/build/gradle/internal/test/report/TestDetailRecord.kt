@@ -56,11 +56,11 @@ internal data class TestDetailRecord(
  * @property filterable Whether the attribute creates a filterable suite table column.
  */
 internal data class SummaryAttributeRecord(
-  val key: String? = null,
+  val key: String,
   val label: String? = null,
-  val value: String? = null,
-  val displayValue: String? = null,
-  val filterable: Boolean? = null,
+  val value: String,
+  val displayValue: String = value,
+  val filterable: Boolean = false,
 )
 
 /**
@@ -72,8 +72,8 @@ internal data class SummaryAttributeRecord(
  */
 internal data class LogRecord(
   val title: String? = null,
-  val path: String? = null,
-  val truncated: Boolean? = null,
+  val path: String,
+  val truncated: Boolean = false,
 )
 
 /**
@@ -84,7 +84,7 @@ internal data class LogRecord(
  * @property path Optional file path relative to the test results directory.
  */
 internal data class ArtifactRecord(
-  val name: String? = null,
+  val name: String,
   val values: Map<String, String>? = null,
   val path: String? = null,
 )
@@ -109,10 +109,10 @@ internal data class ArtifactRecord(
  * @property extraProperties Suite-specific `<testsuite><properties>` entries matched via [SuiteReportAdapter.suiteEnvironmentPropertyKeys].
  */
 internal data class SuiteEnvironmentRecord(
-  val modulePath: String? = null,
-  val variantName: String? = null,
-  val suiteName: String? = null,
-  val targetName: String? = null,
+  val modulePath: String = "",
+  val variantName: String = "",
+  val suiteName: String = "",
+  val targetName: String = UNKNOWN_TARGET,
   val suiteType: String? = null,
   val applicationId: String? = null,
   val applicationName: String? = null,
@@ -124,7 +124,10 @@ internal data class SuiteEnvironmentRecord(
   val testLibraryVersion: String? = null,
   val runner: String? = null,
   val extraProperties: Map<String, String> = emptyMap(),
-)
+) {
+  val key: SuiteEnvironmentKey
+    get() = SuiteEnvironmentKey(modulePath = modulePath, variantName = variantName, suiteName = suiteName, targetName = targetName)
+}
 
 /**
  * Unique logical key identifying a test suite execution environment.
@@ -159,6 +162,7 @@ internal object TestDetailRecordReader {
 
   private val ACTOR_FIELDS = setOf("role", "name", "api", "serial", "image", "playServices")
   private val STEP_FIELDS = setOf("name", "on", "shared", "call", "durationMs", "status")
+  private val ARTIFACT_FIELDS = setOf("name", "values")
   private val ARTIFACT_VALUES_SPLIT_REGEX = Regex(",\\s*(?=[^,=]+=)")
 
   /** Reconstructs a [SuiteEnvironmentRecord] from `<testsuite><properties>` when present. */
@@ -278,58 +282,35 @@ internal object TestDetailRecordReader {
         )
     }
 
-    val actorIds = LinkedHashSet<String>()
-    for (key in rawProperties.keys) {
-      if (!key.startsWith(REPORT_ACTOR_PREFIX)) continue
-      val rest = key.removePrefix(REPORT_ACTOR_PREFIX)
-      val dot = rest.lastIndexOf('.')
-      if (dot <= 0) continue
-      val id = rest.substring(0, dot).trim()
-      val field = rest.substring(dot + 1)
-      if (id.isNotEmpty() && field in ACTOR_FIELDS) {
-        actorIds += id
+    val actors =
+      groupPrefixedFields(rawProperties, REPORT_ACTOR_PREFIX, ACTOR_FIELDS).map { (id, fields) ->
+        ActorInfo(
+          id = id,
+          role = fields["role"]?.takeIf { it.isNotBlank() },
+          name = fields["name"]?.takeIf { it.isNotBlank() } ?: id,
+          api = fields["api"]?.trim()?.toIntOrNull(),
+          serial = fields["serial"]?.takeIf { it.isNotBlank() },
+          image = fields["image"]?.takeIf { it.isNotBlank() },
+          playServices = fields["playServices"]?.takeIf { it.isNotBlank() },
+        )
       }
-    }
-    val actors = actorIds.map { id ->
-      val p = "$REPORT_ACTOR_PREFIX$id"
-      ActorInfo(
-        id = id,
-        role = rawProperties["$p.role"]?.takeIf { it.isNotBlank() },
-        name = rawProperties["$p.name"]?.takeIf { it.isNotBlank() } ?: id,
-        api = rawProperties["$p.api"]?.trim()?.toIntOrNull(),
-        serial = rawProperties["$p.serial"]?.takeIf { it.isNotBlank() },
-        image = rawProperties["$p.image"]?.takeIf { it.isNotBlank() },
-        playServices = rawProperties["$p.playServices"]?.takeIf { it.isNotBlank() },
-      )
-    }
 
-    val stepKeys = LinkedHashSet<String>()
-    for (key in rawProperties.keys) {
-      if (!key.startsWith(REPORT_STEP_PREFIX)) continue
-      val rest = key.removePrefix(REPORT_STEP_PREFIX)
-      val dot = rest.lastIndexOf('.')
-      if (dot <= 0) continue
-      val stepKey = rest.substring(0, dot).trim()
-      val field = rest.substring(dot + 1)
-      if (stepKey.isNotEmpty() && field in STEP_FIELDS) {
-        stepKeys += stepKey
+    val stepFieldsByKey = groupPrefixedFields(rawProperties, REPORT_STEP_PREFIX, STEP_FIELDS)
+    val steps =
+      orderStepKeys(stepFieldsByKey.keys).mapNotNull { stepKey ->
+        val fields = stepFieldsByKey.getValue(stepKey)
+        val name = fields["name"]?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        val status = fields["status"]?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        StepInfo(
+          n = stepKey.toIntOrNull(),
+          name = name,
+          on = fields["on"]?.takeIf { it.isNotBlank() },
+          shared = fields["shared"]?.trim()?.equals("true", ignoreCase = true) == true,
+          call = fields["call"]?.takeIf { it.isNotBlank() },
+          durationMs = fields["durationMs"]?.trim()?.toLongOrNull(),
+          status = status,
+        )
       }
-    }
-    val orderedStepKeys = orderStepKeys(stepKeys)
-    val steps = orderedStepKeys.mapNotNull { stepKey ->
-      val p = "$REPORT_STEP_PREFIX$stepKey"
-      val name = rawProperties["$p.name"]?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-      val status = rawProperties["$p.status"]?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-      StepInfo(
-        n = stepKey.toIntOrNull(),
-        name = name,
-        on = rawProperties["$p.on"]?.takeIf { it.isNotBlank() },
-        shared = rawProperties["$p.shared"]?.trim()?.equals("true", ignoreCase = true) == true,
-        call = rawProperties["$p.call"]?.takeIf { it.isNotBlank() },
-        durationMs = rawProperties["$p.durationMs"]?.trim()?.toLongOrNull(),
-        status = status,
-      )
-    }
 
     val callout =
       CalloutInfo(
@@ -343,23 +324,12 @@ internal object TestDetailRecordReader {
           it.kind != null || it.failedStep != null || it.title != null || it.message != null || it.likelyCause != null
         }
 
-    val artifactIndices = LinkedHashSet<String>()
-    for (key in rawProperties.keys) {
-      if (!key.startsWith(REPORT_ARTIFACT_PREFIX)) continue
-      val rest = key.removePrefix(REPORT_ARTIFACT_PREFIX)
-      val dot = rest.lastIndexOf('.')
-      if (dot <= 0) continue
-      val idx = rest.substring(0, dot).trim()
-      val field = rest.substring(dot + 1)
-      if (idx.isNotEmpty() && (field == "name" || field == "values")) {
-        artifactIndices += idx
-      }
-    }
+    val artifactFieldsByIdx = groupPrefixedFields(rawProperties, REPORT_ARTIFACT_PREFIX, ARTIFACT_FIELDS)
     val artifacts = ArrayList<ArtifactRecord>()
-    for (idx in artifactIndices.sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE }) {
-      val p = "$REPORT_ARTIFACT_PREFIX$idx"
-      val name = rawProperties["$p.name"]?.takeIf { it.isNotBlank() } ?: continue
-      val parsedValues = parseArtifactValues(rawProperties["$p.values"])
+    for (idx in artifactFieldsByIdx.keys.sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE }) {
+      val fields = artifactFieldsByIdx.getValue(idx)
+      val name = fields["name"]?.takeIf { it.isNotBlank() } ?: continue
+      val parsedValues = parseArtifactValues(fields["values"])
       artifacts += ArtifactRecord(name = name, values = parsedValues, path = null)
     }
 
@@ -442,4 +412,24 @@ internal object TestDetailRecordReader {
   /** Orders numbered steps by number. Otherwise keeps the order the steps were published in, which is the order they ran in. */
   private fun orderStepKeys(stepKeys: Set<String>): List<String> =
     if (stepKeys.all { it.toIntOrNull() != null }) stepKeys.sortedBy { it.toInt() } else stepKeys.toList()
+
+  private fun groupPrefixedFields(
+    rawProperties: Map<String, String>,
+    prefix: String,
+    allowedFields: Set<String>,
+  ): Map<String, Map<String, String>> {
+    val grouped = LinkedHashMap<String, MutableMap<String, String>>()
+    for ((key, value) in rawProperties) {
+      if (!key.startsWith(prefix)) continue
+      val rest = key.removePrefix(prefix)
+      val dot = rest.lastIndexOf('.')
+      if (dot <= 0) continue
+      val id = rest.substring(0, dot).trim()
+      val field = rest.substring(dot + 1)
+      if (id.isNotEmpty() && field in allowedFields) {
+        grouped.getOrPut(id) { LinkedHashMap() }[field] = value
+      }
+    }
+    return grouped
+  }
 }

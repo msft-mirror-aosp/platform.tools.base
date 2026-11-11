@@ -38,7 +38,7 @@ internal data class TestCaseExecution(
 )
 
 /** Prioritizes execution statuses (`Fail > Pass > Skipped`) across duplicate runs. */
-internal fun shouldReplaceExecution(
+private fun shouldReplaceExecution(
   existing: TestCaseExecution?,
   candidate: TestCaseExecution,
 ): Boolean {
@@ -93,10 +93,7 @@ internal fun mergeTestSuiteSummaries(
 internal fun rollupChildSuiteSummaries(childSummariesList: List<List<TestSuiteSummary>>): List<TestSuiteSummary> {
   val nonAggregatedChildren = childSummariesList.flatMap { list -> list.filter { it.name != AGGREGATED_TEST_SUITE_NAME } }
   val allVariants = nonAggregatedChildren.flatMap { ts -> ts.variantSummaries.map { v -> v.name } }.distinct().sorted()
-  val merged = mergeTestSuiteSummaries(nonAggregatedChildren, allVariants).toMutableList()
-  val aggregatedVariantSummaries = flattenVariantSummaries(merged.flatMap { it.variantSummaries }, allVariants)
-  merged.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregatedVariantSummaries))
-  return merged
+  return withAggregatedSummary(mergeTestSuiteSummaries(nonAggregatedChildren, allVariants), allVariants)
 }
 
 /** Computes per-suite + [AGGREGATED_TEST_SUITE_NAME] summaries for a single target of a test case. */
@@ -109,13 +106,14 @@ internal fun summarizeTargetExecutions(targetExecutions: List<TestCaseExecution>
         summarizeWinningExecutions(suiteName, winningExecs)
       }
       .sortedBy { it.name }
-      .toMutableList()
   val allVariants = targetExecutions.map { it.variantName }.distinct().sorted()
-  perSuite.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, flattenVariantSummaries(perSuite.flatMap { it.variantSummaries }, allVariants)))
-  return perSuite
+  return withAggregatedSummary(perSuite, allVariants)
 }
 
-/** Computes per-suite summaries across all test cases of a class, deduplicating each `(variant, target)` pair per test case. */
+/**
+ * Computes per-suite + [AGGREGATED_TEST_SUITE_NAME] summaries across all test cases of a class, deduplicating each `(variant, target)` pair
+ * per test case.
+ */
 internal fun summarizeClassExecutions(testCaseExecutionsList: Iterable<List<TestCaseExecution>>): List<TestSuiteSummary> {
   val executionsBySuite = mutableMapOf<String, MutableList<TestCaseExecution>>()
   for (tcExecs in testCaseExecutionsList) {
@@ -126,10 +124,22 @@ internal fun summarizeClassExecutions(testCaseExecutionsList: Iterable<List<Test
         executionsBySuite.getOrPut(suiteName) { mutableListOf() }.addAll(winning)
       }
   }
-  return executionsBySuite.map { (suiteName, winningExecs) -> summarizeWinningExecutions(suiteName, winningExecs) }.sortedBy { it.name }
+  val perSuite =
+    executionsBySuite.map { (suiteName, winningExecs) -> summarizeWinningExecutions(suiteName, winningExecs) }.sortedBy { it.name }
+  val allVariants = perSuite.flatMap { ts -> ts.variantSummaries.map { v -> v.name } }.distinct().sorted()
+  return withAggregatedSummary(perSuite, allVariants)
 }
 
-private fun <K> deduplicateExecutions(
+private fun withAggregatedSummary(
+  perSuite: List<TestSuiteSummary>,
+  allVariants: List<String>,
+): List<TestSuiteSummary> {
+  val aggregated = flattenVariantSummaries(perSuite.flatMap { it.variantSummaries }, allVariants)
+  return perSuite + TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregated)
+}
+
+/** Deduplicates [executions] by [keySelector], keeping the highest-priority status (`Fail > Pass > Skipped`) per key. */
+internal fun <K> deduplicateExecutions(
   executions: List<TestCaseExecution>,
   keySelector: (TestCaseExecution) -> K,
 ): Collection<TestCaseExecution> {

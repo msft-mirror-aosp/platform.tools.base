@@ -1707,4 +1707,39 @@ class XMLReportAggregatorTest {
     val hierarchicalCases = checkNotNull(classesByName["HierarchicalTest"]).testCases.map { it.name }
     assertThat(hierarchicalCases).containsExactly("outerBeforeNested", "innerNestedCase", "outerAfterNested")
   }
+
+  @Test
+  fun testMergeSuiteDescriptor_specializedAdapterOverridesDefaultWithDeclaredSuiteType() {
+    createXmlReport(
+      inputDir1,
+      "TEST-MixedDescriptorSuite.xml",
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<testsuite name="com.example.app.ScreenshotWithSkippedTest" tests="2" failures="0" errors="0" skipped="1" time="0.2">
+      |    <properties>
+      |        <property name="modulePath" value=":app"/>
+      |        <property name="testedVariantName" value="debug"/>
+      |        <property name="testSuiteName" value="screenshotTest"/>
+      |        <property name="testTarget" value="host"/>
+      |        <property name="suiteType" value="com.android.compose.screenshot"/>
+      |    </properties>
+      |    <testcase name="skippedPreview" classname="com.example.app.ScreenshotWithSkippedTest" time="0.0">
+      |        <skipped message="Disabled"/>
+      |    </testcase>
+      |    <testcase name="activePreview" classname="com.example.app.ScreenshotWithSkippedTest" time="0.2">
+      |        <properties>
+      |            <property name="PreviewScreenshot.refImagePath" value="src/screenshotTest/reference/card.png"/>
+      |        </properties>
+      |    </testcase>
+      |</testsuite>
+      """
+        .trimMargin(),
+    )
+
+    val aggregator = createAggregator(files = listOf(inputDir1), projectName = "MixedDescriptorProject")
+    val report = aggregator.generateReport(outputDir)
+    val descriptor = checkNotNull(report.suiteDescriptors?.get("screenshotTest"))
+    assertThat(descriptor.adapterId).isEqualTo("screenshot")
+    assertThat(descriptor.suiteType).isEqualTo("com.android.compose.screenshot")
+  }
 }

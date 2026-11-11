@@ -21,10 +21,13 @@ package com.android.build.gradle.internal.test.report
  *
  * Returns `true` when [text] exceeded [maxChars] and characters were dropped.
  */
-internal fun appendCapped(buffer: StringBuilder, text: String, maxChars: Int): Boolean {
-  val remaining = maxChars - buffer.length
-  if (remaining <= 0) return text.isNotEmpty()
+internal fun appendCapped(buffer: StringBuilder, text: CharSequence, maxChars: Int): Boolean {
   if (text.isEmpty()) return false
+  if (buffer.isNotEmpty() && buffer[buffer.length - 1].isHighSurrogate() && !text[0].isLowSurrogate()) {
+    buffer.setLength(buffer.length - 1)
+  }
+  val remaining = maxChars - buffer.length
+  if (remaining <= 0) return true
   if (text.length < remaining || (text.length == remaining && !text[remaining - 1].isHighSurrogate())) {
     buffer.append(text)
     return false
@@ -54,7 +57,6 @@ internal class SystemOutStreamCollector(private val maxChars: Int = MAX_STREAM_C
   private val lineBuffer = StringBuilder()
   private var lineOverflowed = false
   private var pendingCr = false
-  private var pendingHighSurrogate: Char? = null
 
   var truncated: Boolean = false
     private set
@@ -63,21 +65,41 @@ internal class SystemOutStreamCollector(private val maxChars: Int = MAX_STREAM_C
 
   fun append(chunk: String) {
     if (chunk.isEmpty()) return
-    for (i in chunk.indices) {
-      val ch = chunk[i]
-      if (pendingCr) {
-        pendingCr = false
-        if (ch == '\n') {
-          finishLine("\r\n")
-          continue
-        } else {
-          finishLine("\r")
-        }
+    var index = 0
+    if (pendingCr) {
+      pendingCr = false
+      if (chunk[0] == '\n') {
+        finishLine("\r\n")
+        index = 1
+      } else {
+        finishLine("\r")
       }
-      when (ch) {
-        '\r' -> pendingCr = true
-        '\n' -> finishLine("\n")
-        else -> appendLineChar(ch)
+    }
+    while (index < chunk.length) {
+      var delimIndex = index
+      while (delimIndex < chunk.length && chunk[delimIndex] != '\r' && chunk[delimIndex] != '\n') {
+        delimIndex++
+      }
+      if (delimIndex > index) {
+        appendLineSlice(chunk, index, delimIndex)
+        index = delimIndex
+      }
+      if (index < chunk.length) {
+        val ch = chunk[index++]
+        if (ch == '\r') {
+          if (index < chunk.length) {
+            if (chunk[index] == '\n') {
+              index++
+              finishLine("\r\n")
+            } else {
+              finishLine("\r")
+            }
+          } else {
+            pendingCr = true
+          }
+        } else {
+          finishLine("\n")
+        }
       }
     }
   }
@@ -86,54 +108,31 @@ internal class SystemOutStreamCollector(private val maxChars: Int = MAX_STREAM_C
     if (pendingCr) {
       pendingCr = false
       finishLine("\r")
-    } else if (lineOverflowed || lineBuffer.isNotEmpty() || pendingHighSurrogate != null) {
+    } else if (lineOverflowed || lineBuffer.isNotEmpty()) {
       finishLine("")
     }
     return if (maxChars > 0) finalizeStreamBuffer(output) else null
   }
 
-  private fun appendLineChar(ch: Char) {
-    if (!lineOverflowed) {
-      lineBuffer.append(ch)
-      if (lineBuffer.length >= MAX_MARKER_LINE_CHARS) {
-        if (ch.isHighSurrogate()) {
-          flushBufferToOutput(lineBuffer.substring(0, lineBuffer.length - 1))
-          pendingHighSurrogate = ch
-        } else {
-          flushBufferToOutput(lineBuffer.toString())
-        }
-        lineBuffer.setLength(0)
-        lineOverflowed = true
-      }
+  private fun appendLineSlice(chunk: String, start: Int, end: Int) {
+    val segLen = end - start
+    if (lineOverflowed) {
+      flushBufferToOutput(chunk.subSequence(start, end))
       return
     }
-
-    val prevHigh = pendingHighSurrogate
-    if (prevHigh != null) {
-      pendingHighSurrogate = null
-      if (ch.isLowSurrogate()) {
-        flushBufferToOutput(charArrayOf(prevHigh, ch).concatToString())
-      } else {
-        flushBufferToOutput(prevHigh.toString())
-        if (ch.isHighSurrogate()) {
-          pendingHighSurrogate = ch
-        } else {
-          flushBufferToOutput(ch.toString())
-        }
-      }
-    } else if (ch.isHighSurrogate()) {
-      pendingHighSurrogate = ch
-    } else {
-      flushBufferToOutput(ch.toString())
+    if (lineBuffer.length + segLen < MAX_MARKER_LINE_CHARS) {
+      lineBuffer.append(chunk, start, end)
+      return
     }
+    if (lineBuffer.isNotEmpty()) {
+      flushBufferToOutput(lineBuffer)
+      lineBuffer.setLength(0)
+    }
+    flushBufferToOutput(chunk.subSequence(start, end))
+    lineOverflowed = true
   }
 
   private fun finishLine(lineEnding: String) {
-    val trailingHigh = pendingHighSurrogate
-    if (trailingHigh != null) {
-      pendingHighSurrogate = null
-      flushBufferToOutput(trailingHigh.toString())
-    }
     if (lineOverflowed) {
       if (lineEnding.isNotEmpty()) {
         flushBufferToOutput(lineEnding)
@@ -161,11 +160,12 @@ internal class SystemOutStreamCollector(private val maxChars: Int = MAX_STREAM_C
     }
 
     if (line.isNotEmpty() || lineEnding.isNotEmpty()) {
-      flushBufferToOutput(line + lineEnding)
+      flushBufferToOutput(line)
+      flushBufferToOutput(lineEnding)
     }
   }
 
-  private fun flushBufferToOutput(text: String) {
+  private fun flushBufferToOutput(text: CharSequence) {
     if (text.isEmpty()) return
     if (maxChars <= 0) {
       truncated = true

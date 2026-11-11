@@ -40,7 +40,7 @@ import java.util.Locale
 internal const val ADAPTER_ID_BACKUP_RESTORE = "backupRestore"
 internal const val SUITE_TYPE_BACKUP_RESTORE = "androidx.test.backup"
 internal const val BACKUP_RESTORE_PROPERTY_PREFIX = "BackupRestore."
-internal const val BACKUP_RESTORE_DOCS_URL = "https://developer.android.com/identity/data/testing"
+internal const val BACKUP_RESTORE_DOCS_URL = "https://developer.android.com/studio/preview/backup-restore-testing"
 
 /** Adapts AndroidX Backup and Restore test results and manifest rule files for the HTML report. */
 internal object BackupRestoreReportAdapter : SuiteReportAdapter {
@@ -155,7 +155,7 @@ internal object BackupRestoreReportAdapter : SuiteReportAdapter {
     if (logs.isEmpty()) return logs
     return logs
       .map { log ->
-        val fileName = log.path?.substringAfterLast('/')?.substringAfterLast('\\').orEmpty()
+        val fileName = log.path.substringAfterLast('/').substringAfterLast('\\')
         val lower = fileName.lowercase(Locale.ROOT)
         val resolvedTitle =
           when {
@@ -173,8 +173,8 @@ internal object BackupRestoreReportAdapter : SuiteReportAdapter {
         log.copy(title = resolvedTitle)
       }
       .sortedBy { log ->
-        val fileName = log.path?.substringAfterLast('/')?.substringAfterLast('\\')
-        if (fileName?.equals("host-log.txt", ignoreCase = true) == true) 0 else 1
+        val fileName = log.path.substringAfterLast('/').substringAfterLast('\\')
+        if (fileName.equals("host-log.txt", ignoreCase = true)) 0 else 1
       }
   }
 

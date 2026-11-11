@@ -16,11 +16,12 @@
 
 package com.android.build.gradle.internal.testsuites.backup
 
+import com.android.build.gradle.internal.test.report.SuiteEnvironmentMetadataExtractor
 import com.android.build.gradle.internal.test.report.androidAttr
+import com.android.build.gradle.internal.test.report.putNonBlank
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.ide.common.resources.configuration.VersionQualifier
 import com.android.sdklib.AndroidApiLevel
-import com.android.utils.XmlUtils
 import java.io.File
 
 internal const val INPUT_TARGET_SDK_VERSION = "com.android.agp.test.TARGET_SDK_VERSION"
@@ -70,18 +71,9 @@ internal data class ExtractedBackupRules(
 internal object BackupManifestRulesExtractor {
 
   fun extract(manifestFile: File?, resDirs: List<File>): ExtractedBackupRules? {
-    if (manifestFile == null || !manifestFile.isFile) return null
-    val docFactory = XmlUtils.createDocumentBuilderFactory().apply { isNamespaceAware = true }
-    val document = runCatching { docFactory.newDocumentBuilder().parse(manifestFile) }.getOrNull() ?: return null
-    val manifestEl = document.documentElement ?: return null
-    val manifestChildren = XmlUtils.getSubTagsAsList(manifestEl)
-
-    val targetSdkVersion =
-      manifestChildren.firstOrNull { (it.localName ?: it.tagName) == "uses-sdk" }?.androidAttr("targetSdkVersion")?.toIntOrNull()
-    val appEl = manifestChildren.firstOrNull { (it.localName ?: it.tagName) == "application" }
-    if (appEl == null) {
-      return targetSdkVersion?.let { ExtractedBackupRules(targetSdkVersion = it) }
-    }
+    val parsed = SuiteEnvironmentMetadataExtractor.parseManifestDocument(manifestFile) ?: return null
+    val targetSdkVersion = parsed.targetSdkVersion
+    val appEl = parsed.applicationElement ?: return targetSdkVersion?.let { ExtractedBackupRules(targetSdkVersion = it) }
 
     val rawAllowBackup = appEl.androidAttr("allowBackup")
     val allowBackup =
@@ -169,9 +161,5 @@ internal object BackupManifestRulesExtractor {
     val matched = bestVersioned?.second ?: defaultFile ?: return fileName to null
     // An unreadable rules file is left out of the report instead of failing the build.
     return fileName to runCatching { matched.readText(Charsets.UTF_8) }.getOrNull()
-  }
-
-  private fun MutableMap<String, String>.putNonBlank(key: String, value: String?) {
-    if (!value.isNullOrBlank()) put(key, value)
   }
 }

@@ -198,88 +198,28 @@ internal fun extractDetailRecordFields(record: TestDetailRecord?): ExtractedDeta
   val attrMap = LinkedHashMap<String, SummaryAttributeValue>()
   val dynamicColumns = LinkedHashMap<String, SummaryColumnDef>()
   record.summaryAttributes?.forEach { attr ->
-    val key = attr.key?.takeIf { it.isNotBlank() } ?: return@forEach
-    val value = attr.value?.takeIf { it.isNotBlank() } ?: return@forEach
+    val key = attr.key.takeIf { it.isNotBlank() } ?: return@forEach
+    val value = attr.value.takeIf { it.isNotBlank() } ?: return@forEach
     val label = attr.label?.takeIf { it.isNotBlank() }
     attrMap[key] =
       SummaryAttributeValue(
         value = value,
-        displayValue = attr.displayValue?.takeIf { it.isNotBlank() } ?: value,
+        displayValue = attr.displayValue.takeIf { it.isNotBlank() } ?: value,
         label = label,
       )
-    if (attr.filterable == true) {
+    if (attr.filterable) {
       dynamicColumns[key] = SummaryColumnDef(key = key, label = label ?: key, filterable = true, sortable = true)
     } else {
       dynamicColumns.remove(key)
     }
   }
 
-  val sourceLocation =
-    record.sourceLocation
-      ?.let {
-        SourceLocationInfo(
-          file = it.file?.takeIf { s -> s.isNotBlank() },
-          line = it.line,
-          className = it.className?.takeIf { s -> s.isNotBlank() },
-          methodName = it.methodName?.takeIf { s -> s.isNotBlank() },
-        )
-      }
-      ?.takeIf { it.file != null || it.line != null || it.className != null || it.methodName != null }
-
-  val callout =
-    record.callout
-      ?.let {
-        CalloutInfo(
-          kind = it.kind?.takeIf { s -> s.isNotBlank() },
-          failedStep = it.failedStep,
-          title = it.title?.takeIf { s -> s.isNotBlank() },
-          message = it.message?.takeIf { s -> s.isNotBlank() },
-          likelyCause = it.likelyCause?.takeIf { s -> s.isNotBlank() },
-        )
-      }
-      ?.takeIf {
-        it.kind != null || it.failedStep != null || it.title != null || it.message != null || it.likelyCause != null
-      }
-
-  val actors =
-    record.actors
-      ?.mapNotNull { actor ->
-        val id = actor.id.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-        ActorInfo(
-          id = id,
-          role = actor.role?.takeIf { it.isNotBlank() },
-          name = actor.name.takeIf { it.isNotBlank() } ?: id,
-          api = actor.api,
-          serial = actor.serial?.takeIf { it.isNotBlank() },
-          image = actor.image?.takeIf { it.isNotBlank() },
-          playServices = actor.playServices?.takeIf { it.isNotBlank() },
-        )
-      }
-      ?.takeIf { it.isNotEmpty() }
-
-  val steps =
-    record.steps
-      ?.mapNotNull { step ->
-        val name = step.name.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-        val status = step.status.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-        StepInfo(
-          n = step.n,
-          name = name,
-          on = step.on?.takeIf { it.isNotBlank() },
-          shared = step.shared,
-          call = step.call?.takeIf { it.isNotBlank() },
-          durationMs = step.durationMs,
-          status = status,
-        )
-      }
-      ?.takeIf { it.isNotEmpty() }
-
   return ExtractedDetailFields(
     summaryAttributes = attrMap.takeIf { it.isNotEmpty() },
     dynamicColumns = dynamicColumns.values.toList(),
-    sourceLocation = sourceLocation,
-    callout = callout,
-    actors = actors,
-    steps = steps,
+    sourceLocation = record.sourceLocation,
+    callout = record.callout,
+    actors = record.actors,
+    steps = record.steps,
   )
 }
