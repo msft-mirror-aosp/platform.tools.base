@@ -83,9 +83,9 @@ internal enum class BuildSystem {
     }
     if (withBuiltInKotlinSupport) {
       script.append("        classpath \"com.android.tools.build:gradle-kotlin:\${libs.versions.buildVersion.get()}\"\n")
-      KgpTestLayer.fromSystemProperty().explicitKgpVersion?.let { explicitKgpVersion ->
+      KgpTestLayer.fromSystemProperty().buildscriptClasspathVersion?.let { buildscriptClasspathVersion ->
         if (!withKotlinGradlePlugin) {
-          script.append("        classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:$explicitKgpVersion\"\n")
+          script.append("        classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:$buildscriptClasspathVersion\"\n")
         }
       }
     }

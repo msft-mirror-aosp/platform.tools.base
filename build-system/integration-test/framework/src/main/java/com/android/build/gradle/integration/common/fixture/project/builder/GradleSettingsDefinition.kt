@@ -89,14 +89,15 @@ internal class GradleSettingsDefinitionImpl : GradleSettingsDefinition {
       throw RuntimeException("Cannot apply project plugin to a project")
     }
     // search for existing one
-    plugins.firstOrNull { it.plugin == type }?.let { throw RuntimeException("Plugin $type is already applied! (version: ${it.version}") }
+    plugins
+      .firstOrNull { it.plugin == type }
+      ?.let {
+        throw RuntimeException(
+          "Plugin $type is already applied! (version: ${it.explicitVersion ?: type.version ?: INTERNAL_PLUGIN_VERSION}"
+        )
+      }
 
-    val appliedPlugin =
-      AppliedPlugin(
-        type,
-        version ?: type.version ?: INTERNAL_PLUGIN_VERSION,
-        hasExplicitVersion = version != null,
-      )
+    val appliedPlugin = AppliedPlugin(type, explicitVersion = version)
     if (applyFirst) {
       plugins.add(0, appliedPlugin)
     } else {
@@ -110,7 +111,7 @@ internal class GradleSettingsDefinitionImpl : GradleSettingsDefinition {
     }
     val match = plugins.firstOrNull { it.plugin == type } ?: throw RuntimeException("Plugin $type not yet applied")
 
-    val appliedPlugin = AppliedPlugin(type, version, hasExplicitVersion = true)
+    val appliedPlugin = AppliedPlugin(type, explicitVersion = version)
     val index = plugins.indexOf(match)
     plugins[index] = appliedPlugin
   }

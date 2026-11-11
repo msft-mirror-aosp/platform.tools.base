@@ -279,6 +279,10 @@ class GradleBuildDefinitionTest {
 
   @Test
   fun testKgpTestLayer() {
+    Truth.assertThat(KgpTestLayer.MINIMUM.buildscriptClasspathVersion).isEqualTo(TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION)
+    Truth.assertThat(KgpTestLayer.DEFAULT.buildscriptClasspathVersion).isNull()
+    Truth.assertThat(KgpTestLayer.LATEST.buildscriptClasspathVersion).isEqualTo(TestUtils.KOTLIN_VERSION_FOR_TESTS)
+
     val defaultFolder = writeBuild {
       kgpTestLayer = KgpTestLayer.DEFAULT
       androidApplication {}
@@ -554,6 +558,31 @@ class GradleBuildDefinitionTest {
       """
         .trimIndent(),
     )
+  }
+
+  @Test
+  fun testAppliedPluginResolveVersion() {
+    val defaultKgp = AppliedPlugin(PluginType.KOTLIN_JVM)
+    Truth.assertThat(defaultKgp.explicitVersion).isNull()
+    Truth.assertThat(defaultKgp.resolveVersion(KgpTestLayer.MINIMUM)).isEqualTo(TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION)
+    Truth.assertThat(defaultKgp.resolveVersion(KgpTestLayer.DEFAULT)).isEqualTo(TestUtils.BUILT_IN_KOTLIN_VERSION)
+    Truth.assertThat(defaultKgp.resolveVersion(KgpTestLayer.LATEST)).isEqualTo(TestUtils.KOTLIN_VERSION_FOR_TESTS)
+
+    val explicitKgp = AppliedPlugin(PluginType.KOTLIN_JVM, explicitVersion = "1.9.22")
+    Truth.assertThat(explicitKgp.resolveVersion(KgpTestLayer.MINIMUM)).isEqualTo("1.9.22")
+    Truth.assertThat(explicitKgp.resolveVersion(KgpTestLayer.DEFAULT)).isEqualTo("1.9.22")
+    Truth.assertThat(explicitKgp.resolveVersion(KgpTestLayer.LATEST)).isEqualTo("1.9.22")
+
+    val defaultAgp = AppliedPlugin(PluginType.ANDROID_APP)
+    Truth.assertThat(defaultAgp.resolveVersion(KgpTestLayer.MINIMUM)).isEqualTo(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+    Truth.assertThat(defaultAgp.resolveVersion(KgpTestLayer.LATEST)).isEqualTo(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+
+    val explicitAgp = AppliedPlugin(PluginType.ANDROID_APP, explicitVersion = "8.9.0")
+    Truth.assertThat(explicitAgp.resolveVersion(KgpTestLayer.MINIMUM)).isEqualTo("8.9.0")
+
+    val internalPlugin = AppliedPlugin(PluginType.JAVA_LIBRARY)
+    Truth.assertThat(internalPlugin.resolveVersion(KgpTestLayer.MINIMUM)).isEqualTo(INTERNAL_PLUGIN_VERSION)
+    Truth.assertThat(internalPlugin.resolveVersion(KgpTestLayer.DEFAULT)).isEqualTo(INTERNAL_PLUGIN_VERSION)
   }
 
   private fun checkFile(file: Path, named: String, content: String) {

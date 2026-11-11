@@ -37,57 +37,46 @@ import com.android.testutils.TestUtils
 import com.google.common.base.Strings
 
 /**
- * Represents the KGP version layer to use when configuring the root project's buildscript classpath
- * and default Kotlin plugin versions in tests.
+ * Represents the KGP version layer to use when configuring the root project's buildscript classpath and default Kotlin plugin versions in
+ * tests.
  *
  * @property version The actual KGP version string for this layer.
- * @property explicitKgpVersion The KGP version to add to the test project's buildscript classpath,
- *   or `null` for [DEFAULT] (where AGP's runtime KGP dependency is used directly).
- * @property failOnWarning Whether `--warning-mode=fail` should be enabled by default for tests
- *   running on this layer. Disabled on [MINIMUM] because older KGP versions may emit deprecation
- *   warnings on newer Gradle versions.
+ * @property failOnWarning Whether `--warning-mode=fail` should be enabled by default for tests running on this layer. Disabled on [MINIMUM]
+ *   because older KGP versions may emit deprecation warnings on newer Gradle versions.
  */
 enum class KgpTestLayer(
   val version: String,
-  val explicitKgpVersion: String?,
   val failOnWarning: Boolean,
 ) {
-  /**
-   * Modifies the root buildscript classpath to pin KGP to the minimum supported version
-   * ([TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION]).
-   */
+  /** Modifies the root buildscript classpath to pin KGP to the minimum supported version ([TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION]). */
   MINIMUM(
     version = TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    explicitKgpVersion = TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION,
     failOnWarning = false,
   ),
 
-  /**
-   * Does not add an explicit KGP classpath dependency, so AGP resolves its default KGP version
-   * ([TestUtils.BUILT_IN_KOTLIN_VERSION]).
-   */
+  /** Does not add an explicit KGP classpath dependency, so AGP resolves its default KGP version ([TestUtils.BUILT_IN_KOTLIN_VERSION]). */
   DEFAULT(
     version = TestUtils.BUILT_IN_KOTLIN_VERSION,
-    explicitKgpVersion = null,
     failOnWarning = true,
   ),
 
-  /**
-   * Modifies the root buildscript classpath to upgrade KGP to the latest version used in tests
-   * ([TestUtils.KOTLIN_VERSION_FOR_TESTS]).
-   */
+  /** Modifies the root buildscript classpath to upgrade KGP to the latest version used in tests ([TestUtils.KOTLIN_VERSION_FOR_TESTS]). */
   LATEST(
     version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
-    explicitKgpVersion = TestUtils.KOTLIN_VERSION_FOR_TESTS,
     failOnWarning = true,
   );
+
+  /**
+   * KGP version to add to the root project's `buildscript` classpath when KGP is not already declared in `plugins {}`. `null` for [DEFAULT]
+   * so AGP resolves its default KGP constraint.
+   */
+  val buildscriptClasspathVersion: String?
+    get() = if (this == DEFAULT) null else version
 
   companion object {
     const val SYSTEM_PROPERTY = "test.android.build.gradle.integration.kgp.layer"
 
-    @JvmStatic
-    fun fromSystemProperty(): KgpTestLayer =
-      System.getProperty(SYSTEM_PROPERTY)?.let { valueOf(it.uppercase()) } ?: DEFAULT
+    @JvmStatic fun fromSystemProperty(): KgpTestLayer = System.getProperty(SYSTEM_PROPERTY)?.let { valueOf(it.uppercase()) } ?: DEFAULT
   }
 }
 
@@ -121,8 +110,7 @@ interface GradleBuildDefinition {
   /**
    * Which [KgpTestLayer] to use for the root buildscript classpath.
    *
-   * Defaults to the JVM system property `test.android.build.gradle.integration.kgp.layer` if set,
-   * or [KgpTestLayer.DEFAULT].
+   * Defaults to the JVM system property `test.android.build.gradle.integration.kgp.layer` if set, or [KgpTestLayer.DEFAULT].
    */
   var kgpTestLayer: KgpTestLayer
 

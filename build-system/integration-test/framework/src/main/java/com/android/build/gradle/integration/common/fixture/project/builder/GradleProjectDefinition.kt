@@ -148,15 +148,10 @@ interface FlatDirBuilder {
 
 internal data class AppliedPlugin(
   val plugin: PluginType,
-  val version: String,
-  val hasExplicitVersion: Boolean = false,
+  val explicitVersion: String? = null,
 ) {
   fun resolveVersion(kgpTestLayer: KgpTestLayer): String =
-    if (!hasExplicitVersion && plugin.usesKgpTestLayerVersion) {
-      kgpTestLayer.version
-    } else {
-      version
-    }
+    explicitVersion ?: (if (plugin.usesKgpTestLayerVersion) kgpTestLayer.version else plugin.version) ?: INTERNAL_PLUGIN_VERSION
 }
 
 private data class PluginExtensionData(val name: String, val dslRecorder: DslRecorder)
@@ -186,14 +181,15 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
       throw RuntimeException("Cannot apply settings plugin to a project")
     }
     // search for existing one
-    plugins.firstOrNull { it.plugin == type }?.let { throw RuntimeException("Plugin $type is already applied! (version: ${it.version}") }
+    plugins
+      .firstOrNull { it.plugin == type }
+      ?.let {
+        throw RuntimeException(
+          "Plugin $type is already applied! (version: ${it.explicitVersion ?: type.version ?: INTERNAL_PLUGIN_VERSION}"
+        )
+      }
 
-    val appliedPlugin =
-      AppliedPlugin(
-        type,
-        version ?: type.version ?: INTERNAL_PLUGIN_VERSION,
-        hasExplicitVersion = version != null,
-      )
+    val appliedPlugin = AppliedPlugin(type, explicitVersion = version)
     if (applyFirst) {
       plugins.add(0, appliedPlugin)
     } else {
@@ -218,7 +214,7 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
     }
     val match = plugins.firstOrNull { it.plugin == type } ?: throw RuntimeException("Plugin $type not yet applied")
 
-    val appliedPlugin = AppliedPlugin(type, version, hasExplicitVersion = true)
+    val appliedPlugin = AppliedPlugin(type, explicitVersion = version)
     val index = plugins.indexOf(match)
     plugins[index] = appliedPlugin
   }
@@ -321,9 +317,7 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
                 plugins
                   .mapNotNull { plugin ->
                     val resolvedVersion = plugin.resolveVersion(kgpTestLayer)
-                    plugin.plugin.artifact
-                      ?.takeIf { resolvedVersion != INTERNAL_PLUGIN_VERSION }
-                      ?.let { "$it:$resolvedVersion" }
+                    plugin.plugin.artifact?.takeIf { resolvedVersion != INTERNAL_PLUGIN_VERSION }?.let { "$it:$resolvedVersion" }
                   }
                   .distinct()
                   .forEach { dependency("classpath", it) }
@@ -373,17 +367,15 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
           // Note: if 2+ versions of a KGP plugin are used across subprojects (`versions.size > 1`) and
           // the root project does not apply it directly, the root `plugins {}` block omits the plugin
           // declaration (`if (versions.size > 1) continue`), so `hasKgpPluginWithVersionInRoot` is false
-          // and `explicitKgpVersion` is still added to the root `buildscript` classpath when needed.
-          val hasKgpPluginWithVersionInRoot =
-            allPlugins.any { (plugin, versions) ->
-              plugin.isKotlinGradlePlugin &&
-                ((versions.size == 1 && versions.first() != INTERNAL_PLUGIN_VERSION) ||
-                  plugins.any { it.plugin == plugin && it.resolveVersion(kgpTestLayer) != INTERNAL_PLUGIN_VERSION })
-            }
-          val explicitKgpVersion =
-            if (isRoot && !hasKgpPluginWithVersionInRoot) kgpTestLayer.explicitKgpVersion else null
+          // and `buildscriptClasspathVersion` is still added to the root `buildscript` classpath when needed.
+          val hasKgpPluginWithVersionInRoot = allPlugins.any { (plugin, versions) ->
+            plugin.isKotlinGradlePlugin &&
+              ((versions.size == 1 && versions.first() != INTERNAL_PLUGIN_VERSION) ||
+                plugins.any { it.plugin == plugin && it.resolveVersion(kgpTestLayer) != INTERNAL_PLUGIN_VERSION })
+          }
+          val buildscriptClasspathVersion = if (isRoot && !hasKgpPluginWithVersionInRoot) kgpTestLayer.buildscriptClasspathVersion else null
 
-          if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin || explicitKgpVersion != null) {
+          if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin || buildscriptClasspathVersion != null) {
             block("buildscript") {
               block("dependencies") {
                 writeDependencyBuilderContent(location)
@@ -396,8 +388,8 @@ internal abstract class GradleProjectDefinitionImpl(override val path: String) :
                     dependency("classpath", "${plugin.artifact}:$version")
                   }
                 }
-                if (explicitKgpVersion != null) {
-                  dependency("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:$explicitKgpVersion")
+                if (buildscriptClasspathVersion != null) {
+                  dependency("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:$buildscriptClasspathVersion")
                 }
               }
             }
