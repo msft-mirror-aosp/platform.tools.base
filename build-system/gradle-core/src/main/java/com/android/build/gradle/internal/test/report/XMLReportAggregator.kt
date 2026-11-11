@@ -1115,7 +1115,16 @@ internal constructor(
   }
 
   companion object {
-    private val RENDERER_RESOURCES = listOf("index.html", "styles.css", "script.js")
+    private val RENDERER_RESOURCES =
+      listOf(
+        "index.html",
+        "styles.css",
+        "detail-view.css",
+        "suites/suite-registry.js",
+        "suites/screenshot.js",
+        "suites/backup.js",
+        "script.js",
+      )
 
     /** Parses a JUnit `time` attribute, in seconds written as a plain decimal number, into milliseconds. */
     internal fun parseDurationMs(timeAttribute: String?): Long? {

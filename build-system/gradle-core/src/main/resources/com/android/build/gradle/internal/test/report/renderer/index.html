@@ -21,6 +21,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Test Status Report</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="detail-view.css">
 </head>
 
 <body>
@@ -60,24 +61,32 @@
       </div>
 
       <div class="header-stats">
-        <div class="stat-item">
-          <span class="stat-label" data-info-key="stat.modules" tabindex="0">MODULES</span>
-          <span class="stat-value" id="total-modules">0</span>
+        <div id="header-stats-multi">
+          <div class="stat-item">
+            <span class="stat-label" data-info-key="stat.modules" tabindex="0">MODULES</span>
+            <span class="stat-value" id="total-modules">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label" data-info-key="stat.packages" tabindex="0">PACKAGES</span>
+            <span class="stat-value" id="total-packages">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label" data-info-key="stat.classes" tabindex="0">CLASSES</span>
+            <span class="stat-value" id="total-classes">0</span>
+          </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-label" data-info-key="stat.packages" tabindex="0">PACKAGES</span>
-          <span class="stat-value" id="total-packages">0</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label" data-info-key="stat.classes" tabindex="0">CLASSES</span>
-          <span class="stat-value" id="total-classes">0</span>
-        </div>
+        <div class="hidden" id="header-stats-single"></div>
       </div>
     </div>
 
+    <div id="suite-env-bar" class="suite-env-bar hidden" role="region" aria-label="Test suite environment"></div>
+
     <nav class="header-toolbar" aria-label="Filters and actions">
       <div id="report-view-controls" class="header-toolbar-inner">
-        <div class="flex-1 flex-start-gap-4">
+        <div class="flex-1 flex-start-gap-4 toolbar-filters-wrap">
+          <div id="status-segments" class="segmented-control status-tabs hidden" role="group" aria-label="Filter by test status"></div>
+          <div id="suite-attr-filters" class="suite-attr-filters hidden"></div>
+
           <div class="filter-icon" title="Filter Options">
             <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M7 12h10M10 18h4" />
@@ -288,17 +297,23 @@
 
   <div id="stack-trace-view" class="container-custom hidden-view">
     <main>
-      <nav aria-label="Breadcrumb">
-        <div id="stack-trace-breadcrumbs" class="breadcrumbs-container"></div>
-      </nav>
+      <div class="detail-topbar">
+        <nav aria-label="Breadcrumb">
+          <div id="stack-trace-breadcrumbs" class="breadcrumbs-container"></div>
+        </nav>
+        <div id="detail-topbar-actions" class="detail-topbar-actions"></div>
+      </div>
 
       <div id="stack-trace-grid" class="stack-trace-grid">
-        <!-- Stack traces will be dynamically injected here -->
+        <!-- Test details and stack traces will be dynamically injected here -->
       </div>
     </main>
   </div>
 
   <script src="data.js"></script>
+  <script src="suites/suite-registry.js"></script>
+  <script src="suites/screenshot.js"></script>
+  <script src="suites/backup.js"></script>
   <script src="script.js"></script>
 <!-- Help Hub FAB -->
 <button id="help-hub-fab" class="fab" aria-label="Open Help" data-tooltip="Help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-hub-panel">

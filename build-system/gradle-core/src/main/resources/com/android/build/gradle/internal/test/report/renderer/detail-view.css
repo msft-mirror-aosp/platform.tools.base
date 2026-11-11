@@ -1,0 +1,566 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* ==========================================================================
+   EXTENSIBLE TEST SUITE & RICH DETAIL VIEW STYLES
+   Scoped so classic unit/instrumentation/screenshot/matrix views match
+   styles.css without layout shifts.
+   ========================================================================== */
+
+body.rich-suite-active {
+  font-family: "Google Sans", "Google Sans Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+body.rich-suite-active header {
+  box-shadow: none;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+body.rich-suite-active .header-top-row {
+  padding: 0.75rem 1.5rem;
+  border-bottom: none;
+}
+
+.single-suite-row:focus-visible,
+.detail-log:focus-visible,
+.detail-rule-xml:focus-visible {
+  outline-offset: -2px !important;
+}
+
+.suite-env-bar .flex-wrap,
+#stack-trace-view.rich-detail-active .flex-wrap {
+  flex-wrap: wrap;
+}
+
+.rich-suite-toolbar .justify-between,
+#stack-trace-view.rich-detail-active .justify-between {
+  justify-content: space-between;
+}
+
+#stack-trace-view.rich-detail-active .text-right {
+  text-align: right;
+}
+
+#stack-trace-view.rich-detail-active {
+  min-height: 0;
+  max-height: none;
+}
+
+@media (forced-colors: active) {
+  .detail-run-pill.active,
+  .detail-log-tab.active {
+    outline: 2px solid SelectedItem !important;
+    outline-offset: -2px;
+  }
+}
+
+.num { font-variant-numeric: tabular-nums; }
+a.copy-btn { text-decoration: none; }
+
+.status-badge-lg.neutral {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.status-badge-sm {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.6875rem;
+  line-height: 1;
+  gap: 0.25rem;
+}
+
+/* Outlined status tag matching UX */
+.rich-status-tag {
+  background: #ffffff;
+  border: 1px solid;
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 5px 9px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rich-status-passed {
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.rich-status-failed {
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.rich-status-neutral {
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+#header-stats-multi:not(.hidden) {
+  display: contents;
+}
+
+#header-stats-single:not(.hidden) {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+#header-stats-single .stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 1.25rem;
+}
+
+#header-stats-single .stat-item + .stat-item {
+  border-left: 1px solid #e2e8f0;
+}
+
+#header-stats-single .stat-item:last-child {
+  padding-right: 0;
+}
+
+#header-stats-single .stat-label {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#header-stats-single .stat-value {
+  color: #0f172a;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 0;
+}
+
+#header-stats-single .stat-tone-green .stat-value,
+.stat-tone-green .stat-value,
+.detail-step.is-passed .detail-step-status { color: #15803d; }
+
+#header-stats-single .stat-tone-amber .stat-value,
+.stat-tone-amber .stat-value { color: #b45309; }
+
+#header-stats-single .stat-tone-red .stat-value,
+.stat-tone-red .stat-value,
+.detail-step.is-failed .detail-step-phase,
+.detail-step.is-failed .detail-step-status { color: #dc2626; }
+
+.detail-artifact-title .status-badge-lg,
+.suite-env-items .status-badge-lg {
+  text-transform: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/* Suite Environment Metadata Bar */
+.suite-env-bar {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.suite-env-bar-inner {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0.4rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+.suite-env-items {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+}
+
+.suite-env-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.suite-env-label { color: #64748b; font-weight: 500; }
+.suite-env-value { color: #0f172a; font-weight: 600; }
+.suite-env-sep { color: #cbd5e1; user-select: none; }
+
+.suite-env-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.suite-env-docs-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #1d4ed8;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 0.375rem;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: inherit;
+  line-height: 1.35;
+  transition: background-color 0.15s ease;
+}
+
+.suite-env-docs-link:hover {
+  background: #dbeafe;
+  text-decoration: underline;
+}
+
+.suite-env-rules-btn:hover {
+  text-decoration: none;
+}
+
+.suite-env-rules-drawer {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0.25rem 1.5rem 0.75rem;
+}
+
+.suite-env-rules-card {
+  background: #ffffff;
+}
+
+/* Toolbar Status Tabs & Dynamic Suite Filters */
+body.rich-suite-active .header-toolbar {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+#report-view-controls.rich-suite-toolbar {
+  height: auto;
+  min-height: 46px;
+  padding: 0.45rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+#report-view-controls.rich-suite-toolbar > .toolbar-filters-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+#report-view-controls.rich-suite-toolbar > .flex-end-gap-3 {
+  flex: 0 0 auto;
+  gap: 0.75rem;
+}
+
+/* Hide classic multi-suite clutter in single-module / single-variant rich views */
+#report-view-controls.rich-suite-toolbar.rich-single-variant #variant-filter-btn {
+  display: none;
+}
+
+#report-view-controls.rich-suite-toolbar.rich-single-module .filter-icon,
+#report-view-controls.rich-suite-toolbar.rich-single-module #add-filter-container,
+#report-view-controls.rich-suite-toolbar.rich-single-module #view-segments,
+#report-view-controls.rich-suite-toolbar.rich-single-module #density-segments {
+  display: none;
+}
+
+.status-tabs {
+  background: #f3f4f6;
+  border-radius: 0.375rem;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+}
+
+.status-tabs .segment-btn {
+  width: auto;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 0.6rem;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  border-radius: 0.3rem;
+  white-space: nowrap;
+}
+
+.status-tabs .segment-btn.active {
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  color: #2563eb;
+}
+
+.status-tabs .segment-btn.active .segment-count {
+  color: #2563eb;
+}
+
+.segment-count {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.suite-attr-filters {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.suite-attr-filters .dropdown-btn {
+  height: 28px;
+  padding: 0 0.6rem;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.suite-attr-filters .dropdown-btn:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.dropdown-btn-label { color: #64748b; font-weight: 400; }
+.dropdown-btn-value { color: #0f172a; font-weight: 600; }
+.dropdown-caret { color: #64748b; }
+
+.dropdown-btn.has-selection {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.dropdown-btn.has-selection .dropdown-btn-label,
+.dropdown-btn.has-selection .dropdown-btn-value,
+.dropdown-btn.has-selection .dropdown-caret {
+  color: #1e40af;
+}
+
+.dropdown-count {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.active-popover-item .dropdown-count { color: inherit; }
+
+#report-view-controls.rich-suite-toolbar #search-reveal-btn {
+  display: none !important;
+}
+
+.search-input-wrapper.always-expanded {
+  width: 260px;
+  min-width: 220px;
+  flex: 0 0 260px;
+  opacity: 1;
+  margin-left: 0;
+}
+
+.rich-suite-toolbar .search-input {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.55rem center;
+  padding-left: 2rem;
+  height: 28px;
+  font-size: 0.8125rem;
+}
+
+.rich-suite-toolbar .search-input::placeholder {
+  color: #64748b;
+}
+
+.breadcrumb-row-style.rich-hide-breadcrumb-row {
+  display: none;
+}
+
+/* ==========================================================================
+   LEVEL 1 SINGLE-SUITE TABLE
+   ========================================================================== */
+
+.table-container.rich-table-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin-top: 0;
+}
+
+table.single-suite-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  min-width: 720px;
+}
+
+table.single-suite-table th,
+table.single-suite-table td {
+  border-right: none;
+  text-align: left;
+}
+
+table.single-suite-table thead th {
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  height: 56px;
+  letter-spacing: 0.06em;
+  padding: 16px 20px;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+}
+
+table.single-suite-table thead th[data-sort-by]:hover,
+table.single-suite-table thead th[data-sort-by]:focus-visible {
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.rich-sort-arrow {
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-style: normal;
+  margin-left: 2px;
+}
+
+.rich-sort-arrow.active {
+  color: #2563eb;
+}
+
+table.single-suite-table tbody td {
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+  height: 68px;
+  padding: 14px 20px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table.single-suite-table tbody tr {
+  border-bottom: none;
+}
+
+table.single-suite-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+table.single-suite-table tbody tr.single-suite-row {
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+table.single-suite-table tbody tr.single-suite-row:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Column proportions matching UX */
+table.single-suite-table .col-test { width: 44%; }
+table.single-suite-table .col-transport { width: 18%; }
+table.single-suite-table .col-devices { width: 22%; }
+table.single-suite-table .col-dynamic { width: 18%; }
+table.single-suite-table .col-status { width: 8%; }
+table.single-suite-table .col-duration { width: 8%; }
+table.single-suite-table .col-target {
+  width: 12%;
+  min-width: 0;
+  max-width: none;
+}
+
+/* Cell primitives */
+.cell-title {
+  color: #0f172a;
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-meta {
+  color: #64748b;
+  display: block;
+  font-size: 11.5px;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.failed-step-inline {
+  color: #dc2626;
+  font-weight: 400;
+}
+
+.cell-value {
+  color: #0f172a;
+  display: block;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-sub {
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 400;
+}
+
+.cell-arrow {
+  color: #64748b;
+  margin: 0 2px;
+}
+
+/* ==========================================================================
+   LEVEL 2 TEST DETAIL VIEW
+   ========================================================================== */
+
+.detail-topbar {
+  display: contents;
+}
+
+.detail-topbar-actions {
+  display: none;
+}
