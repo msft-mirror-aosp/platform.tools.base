@@ -837,18 +837,15 @@ public class XmlDocument {
 
     /**
      * Adds a new element of type nodeType with a specific keyValue if the element is absent in this
-     * document. Will also add attributes expressed through key value pairs.
+     * document.
      *
      * @param actionRecorder to records creation actions.
      * @param keyValue the optional key for the element.
-     * @param attributes the optional array of key value pairs for extra element attribute.
      */
-    @SafeVarargs
     private final void addIfAbsent(
             @NotNull ActionRecorder actionRecorder,
             @Nullable String keyValue,
-            @Nullable String reason,
-            @Nullable Pair<String, String>... attributes) {
+            @Nullable String reason) {
 
         Optional<XmlElement> xmlElementOptional =
                 getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION, keyValue);
@@ -865,13 +862,6 @@ public class XmlDocument {
         if (keyAttributesNames.size() == 1) {
             elementNS.setAttributeNS(
                     SdkConstants.ANDROID_URI, "android:" + keyAttributesNames.get(0), keyValue);
-        }
-        if (attributes != null) {
-            for (Pair<String, String> attribute : attributes) {
-                elementNS.setAttributeNS(
-                        SdkConstants.ANDROID_URI, "android:" + attribute.getFirst(),
-                        attribute.getSecond());
-            }
         }
 
         // record creation.
