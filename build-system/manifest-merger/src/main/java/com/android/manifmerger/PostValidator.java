@@ -478,7 +478,6 @@ public class PostValidator {
                                                             "%1$s(%2$s)",
                                                             entry.getKey(), entry.getValue()))
                                     .collect(Collectors.joining(System.lineSeparator() + "    "))));
-            mergingReport.build();
         }
     }
 
