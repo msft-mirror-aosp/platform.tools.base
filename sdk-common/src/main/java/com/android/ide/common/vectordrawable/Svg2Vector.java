@@ -914,21 +914,7 @@ public class Svg2Vector {
                     } else if (name.equals(SVG_CLIP_PATH) || name.equals(SVG_MASK)) {
                         svgTree.addClipPathAffectedNode(child, currentGroup, value);
                     } else if (name.equals(SVG_POINTS)) {
-                        PathBuilder builder = new PathBuilder();
-                        String[] split = SPACE_OR_COMMA.split(value);
-                        float baseX = Float.parseFloat(split[0]);
-                        float baseY = Float.parseFloat(split[1]);
-                        builder.absoluteMoveTo(baseX, baseY);
-                        for (int j = 2; j < split.length; j += 2) {
-                            float x = Float.parseFloat(split[j]);
-                            float y = Float.parseFloat(split[j + 1]);
-                            builder.relativeLineTo(x - baseX, y - baseY);
-                            baseX = x;
-                            baseY = y;
-                        }
-                        if (SVG_POLYGON.equals(currentGroupNode.getNodeName())) {
-                            builder.relativeClose();
-                        }
+                        PathBuilder builder = createPathBuilder(currentGroupNode, value);
                         child.setPathData(builder.toString());
                     } else if (name.equals("class")) {
                         svgTree.addAffectedNodeToStyleClass("." + value, child);
@@ -940,6 +926,26 @@ public class Svg2Vector {
                 }
             }
         }
+    }
+
+    @NonNull
+    private static PathBuilder createPathBuilder(@NonNull Node currentGroupNode, @NonNull String value) {
+        PathBuilder builder = new PathBuilder();
+        String[] split = SPACE_OR_COMMA.split(value);
+        float baseX = Float.parseFloat(split[0]);
+        float baseY = Float.parseFloat(split[1]);
+        builder.absoluteMoveTo(baseX, baseY);
+        for (int j = 2; j < split.length; j += 2) {
+            float x = Float.parseFloat(split[j]);
+            float y = Float.parseFloat(split[j + 1]);
+            builder.relativeLineTo(x - baseX, y - baseY);
+            baseX = x;
+            baseY = y;
+        }
+        if (SVG_POLYGON.equals(currentGroupNode.getNodeName())) {
+            builder.relativeClose();
+        }
+        return builder;
     }
 
     /** Convert rectangle element into a path. */
