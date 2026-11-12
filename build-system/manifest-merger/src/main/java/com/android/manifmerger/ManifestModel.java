@@ -199,8 +199,6 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                 }
             };
 
-;
-
     /**
      * Implementation of {@link NodeKeyResolver} that combined two attributes values to create the
      * key value.

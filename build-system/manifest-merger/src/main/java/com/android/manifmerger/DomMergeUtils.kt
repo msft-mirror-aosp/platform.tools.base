@@ -18,7 +18,6 @@ package com.android.manifmerger
 import com.android.manifmerger.ManifestMerger2.MergeFailureException
 import com.android.utils.Pair
 import com.google.common.base.Predicate
-import java.lang.Exception
 import org.w3c.dom.Document
 import org.w3c.dom.Node
 
