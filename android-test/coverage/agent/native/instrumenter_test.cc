@@ -358,5 +358,71 @@ TEST(InstrumenterTest, PrivateEmptyConstructorIsNotReported) {
   EXPECT_EQ(InstrumentedMethod("<init>", kDefaultsClass), nullptr);
 }
 
+// Returns the branch counts of the blocks of `method` that have branches.
+std::vector<uint32_t> BranchCounts(const proto::MethodMetadata& method) {
+  std::vector<uint32_t> counts;
+  for (const auto& block : method.blocks()) {
+    if (block.branch_count() > 1) {
+      counts.push_back(block.branch_count());
+    }
+  }
+  return counts;
+}
+
+TEST(InstrumenterTest, ImpossibleWhenBranchesAreNotReported) {
+  // The check of the last case of sides() jumps to the throw of
+  // NoWhenBranchMatchedException, which can't run, so only the check of the
+  // first case has branches.
+  const proto::MethodMetadata* sides =
+      InstrumentedMethod("sides", kKotlinTargetClass);
+  ASSERT_NE(sides, nullptr);
+  EXPECT_EQ(BranchCounts(*sides), std::vector<uint32_t>{2});
+  // The switch of severity() has one branch per case, null included, and the
+  // null check before it has none. The successors of the switch are the
+  // blocks of the cases, which are reported, unlike the block of the throw.
+  const proto::MethodMetadata* severity =
+      InstrumentedMethod("severity", kKotlinTargetClass);
+  ASSERT_NE(severity, nullptr);
+  EXPECT_EQ(BranchCounts(*severity), std::vector<uint32_t>{4});
+  std::set<uint32_t> reported;
+  for (const auto& block : severity->blocks()) {
+    reported.insert(block.block_id());
+  }
+  for (const auto& block : severity->blocks()) {
+    if (block.branch_count() != 4) {
+      continue;
+    }
+    std::set<uint32_t> successors = Successors(block);
+    EXPECT_EQ(successors.size(), 4u);
+    for (uint32_t id : successors) {
+      EXPECT_EQ(reported.count(id), 1u);
+    }
+  }
+}
+
+TEST(InstrumenterTest, NullChecksThatShareMinusOneHaveNoBranches) {
+  // D8 loads the -1 of both null checks of severities() only once. Each switch
+  // has one branch per case, null included, and the null checks have none.
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("severities", kKotlinTargetClass);
+  ASSERT_NE(method, nullptr);
+  EXPECT_EQ(BranchCounts(*method), (std::vector<uint32_t>{4, 4}));
+}
+
+TEST(InstrumenterTest, InlinedWhenHasNoBranches) {
+  // The inlined switch ends the block of the read of `count`. Its branches,
+  // which the Kotlin when filter replaces, aren't reported, since the Kotlin
+  // inline filter ignores it.
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("callsLevel", kKotlinTargetClass);
+  ASSERT_NE(method, nullptr);
+  EXPECT_TRUE(BranchCounts(*method).empty());
+  // The inline function itself has one branch per case.
+  const proto::MethodMetadata* level =
+      InstrumentedMethod("level", kKotlinTargetClass);
+  ASSERT_NE(level, nullptr);
+  EXPECT_EQ(BranchCounts(*level), std::vector<uint32_t>{3});
+}
+
 }  // namespace
 }  // namespace coverage
