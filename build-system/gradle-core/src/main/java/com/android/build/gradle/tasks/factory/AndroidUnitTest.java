@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer;
 import com.android.build.gradle.internal.tasks.UsesAnalytics;
 import com.android.build.gradle.internal.tasks.VariantTask;
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
+import com.android.build.gradle.internal.test.report.MarkdownReportFailureMessages;
 import com.android.build.gradle.internal.test.report.TestReportAggregationUtils;
 import com.android.build.gradle.internal.test.report.XMLReportAggregator;
 import com.android.build.gradle.internal.utils.HasConfigurableValuesKt;
@@ -74,6 +75,7 @@ import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.VerificationException;
 import org.gradle.api.tasks.testing.JUnitXmlReport;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.api.tasks.testing.TestTaskReports;
@@ -210,8 +212,14 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
             systemProperty("java.library.path", sb.toString());
         }
 
+        // Gradle's exception for failing tests, rethrown at the end with the location of report.md,
+        // which only exists after the finally block.
+        VerificationException testFailure = null;
+        File markdownReport = null;
         try {
             super.executeTests();
+        } catch (VerificationException e) {
+            testFailure = e;
         } finally {
             if (this.getTestReportAggregationEnabled().get()) {
                 TestReportAggregationUtils.clearTestReportAggregationResults(
@@ -231,8 +239,12 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                 XMLReportAggregator aggregator =
                         new XMLReportAggregator(
                                 List.of(resultsDir), getModulePath().get(), rootDir);
-                aggregator.writeReport(htmlOutputDirFile, getMarkdownReportEnabled().get());
+                markdownReport =
+                        aggregator.writeReport(htmlOutputDirFile, getMarkdownReportEnabled().get());
             }
+        }
+        if (testFailure != null) {
+            throw MarkdownReportFailureMessages.withMarkdownReportLine(testFailure, markdownReport);
         }
     }
 

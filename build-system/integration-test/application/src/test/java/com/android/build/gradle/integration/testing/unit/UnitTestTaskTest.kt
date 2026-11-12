@@ -107,13 +107,16 @@ class UnitTestTaskTest {
     val build = rule.build
     build.reconfigureGradleProperties { add(BooleanOption.ENABLE_MARKDOWN_TEST_REPORT, true) }
 
-    build.executor.expectFailure().run(":app:testDebugUnitTest")
+    val result = build.executor.expectFailure().run(":app:testDebugUnitTest")
 
     val reportDir = build.androidApplication().buildDir.resolve("reports/tests/testDebugUnitTest")
     assertThat(reportDir.resolve("report.md")).exists()
     val markdown = reportDir.resolve("report.md").readText()
     assertThat(markdown).contains("### :app > com.example.FailingTest > failingTest")
     assertThat(markdown).contains("This test is supposed to fail")
+    // The failure message, the last thing the build prints, points to report.md too.
+    result.assertErrorContains("Markdown version: ")
+    result.assertErrorContains("reports/tests/testDebugUnitTest/report.md")
   }
 
   @Test
