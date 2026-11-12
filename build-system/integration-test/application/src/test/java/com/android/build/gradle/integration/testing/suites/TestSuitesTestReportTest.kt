@@ -198,6 +198,7 @@ class TestSuitesTestReportTest {
     val result = build.executor.withArgument("--continue").expectFailure().run(":app:testAllSuites")
 
     result.assertErrorContains("Markdown version: ")
+    result.assertErrorContains("reports/tests/testDebugListedT1TestSuite/report.md")
     result.assertErrorContains("reports/testAllSuites/test-report/report.md")
   }
 

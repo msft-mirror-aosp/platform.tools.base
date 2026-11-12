@@ -62,6 +62,7 @@ import com.android.build.gradle.internal.test.report.SuiteEnvironmentMetadataExt
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
 import com.android.build.gradle.internal.test.report.clearTestReportAggregationResults
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
+import com.android.build.gradle.internal.test.report.withMarkdownReportLine
 import com.android.build.gradle.internal.testing.COVERAGE_DIR_ON_DEVICE_KEY
 import com.android.build.gradle.internal.testing.COVERAGE_FILE_ON_DEVICE_KEY
 import com.android.build.gradle.internal.testing.COVERAGE_TYPE_KEY
@@ -637,8 +638,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       )
     suppressDefaultJunitAttachmentsDir.set(customReportingOutputDir != null)
 
+    // Gradle's exception for failing tests, rethrown at the end with the location of report.md, which only exists after the finally block.
+    var testFailure: VerificationException? = null
+    var markdownReport: File? = null
     try {
       super.executeTests()
+    } catch (e: VerificationException) {
+      testFailure = e
     } finally {
       val testResultsDir = resultsDir.get().asFile
       val htmlOutputDirFile = this.reports.html.outputLocation.get().asFile
@@ -706,7 +712,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
         val rootDir = this.rootProjectDir.get().asFile
         val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), this.modulePath.get(), rootDir)
-        aggregator.writeReport(htmlOutputDirFile, writeMarkdown = markdownReportEnabled.getOrElse(false))
+        markdownReport = aggregator.writeReport(htmlOutputDirFile, writeMarkdown = markdownReportEnabled.getOrElse(false))
       }
 
       // Also write metadata to coverage directory so that the coverage collection task can identify the suite
@@ -774,6 +780,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         }
       }
     }
+    testFailure?.let { throw withMarkdownReportLine(it, markdownReport) }
   }
 
   private fun providerToPath(value: Provider<out FileSystemLocation>): String = value.get().asFile.absolutePath
