@@ -24,6 +24,7 @@ genrule(
 cc_library(
     name = "agent_lib",
     srcs = [
+        "bridge_filter.cc",
         "constructor_analyzer.cc",
         "hits_extractor.cc",
         "instrumenter.cc",
@@ -43,6 +44,7 @@ cc_library(
         "tagging_manager.cc",
     ],
     hdrs = [
+        "bridge_filter.h",
         "constructor_analyzer.h",
         "filter_interface.h",
         "hits_extractor.h",
