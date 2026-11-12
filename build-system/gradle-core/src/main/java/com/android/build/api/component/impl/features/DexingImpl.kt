@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
 import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.dexing.DexingType
 import com.android.builder.errors.IssueReporter
@@ -64,7 +65,8 @@ class DexingImpl(
   override val shouldPackageDesugarLibDex: Boolean
     get() =
       when (component) {
-        is DeviceTestCreationConfig -> {
+        is DeviceTestCreationConfig,
+        is TestSuiteApkCreationConfig -> {
           when {
             !isCoreLibraryDesugaringEnabled -> false
             component.mainVariant.componentType.isAar -> true

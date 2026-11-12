@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
+import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
@@ -25,6 +26,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.Properties
+import org.gradle.api.JavaVersion
 import org.junit.Rule
 import org.junit.Test
 
@@ -297,6 +299,94 @@ class TestSuiteApkIntegrationTest {
 
     val result = build.executor.run(":app:assembleDebug", ":app:packageDebugCustomTest")
     assertThat(result.didWorkTasks).contains(":app:jacocoDebug")
+  }
+
+  @Test
+  fun testTestApkDesugarLibDexAppVsLibrary() {
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          defaultConfig { minSdk = 21 }
+          compileOptions {
+            isCoreLibraryDesugaringEnabled = true
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
+          }
+        }
+        dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION") }
+        files {
+          update("src/customTest/java/com/example/test/SuiteTestClass.java")
+            .replaceWith(
+              """
+              package com.example.test;
+              import java.time.LocalDate;
+              public class SuiteTestClass {
+                public String date() {
+                  return LocalDate.of(2026, 1, 1).toString();
+                }
+              }
+              """
+                .trimIndent()
+            )
+        }
+      }
+      androidLibrary(":lib") {
+        android {
+          defaultConfig { minSdk = 21 }
+          compileOptions {
+            isCoreLibraryDesugaringEnabled = true
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
+          }
+          testOptions.customSuites.create("customTest") {
+            it.useJunitEngine.apply {
+              includeEngines.add("[engine:toy-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:toy-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+              inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
+            }
+            it.testApk {}
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+        dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION") }
+        files {
+          add(
+            "src/customTest/java/com/example/lib/LibDesugarTest.java",
+            """
+            package com.example.lib;
+            import java.time.LocalDate;
+            public class LibDesugarTest {
+              public String date() {
+                return LocalDate.of(2026, 1, 1).toString();
+              }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    val appResult = build.executor.run(":app:packageDebugCustomTest")
+    assertThat(appResult.didWorkTasks).doesNotContain(":app:l8DexDesugarLibDebugCustomTest")
+    assertThatApk(customTestApk()).doesNotContainClass("Lj$/time/LocalDate;")
+
+    val libResult = build.executor.run(":lib:packageDebugCustomTest")
+    assertThat(libResult.didWorkTasks).contains(":lib:l8DexDesugarLibDebugCustomTest")
+    val libBuildDir = build.androidLibrary(":lib").buildDir.toFile()
+    val libTestApk =
+      checkNotNull(
+        libBuildDir.walkTopDown().firstOrNull {
+          it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true) && it.path.contains("debug")
+        }
+      ) {
+        "No debug customTest APK found under $libBuildDir"
+      }
+    assertThatApk(libTestApk).containsClass("Lj$/time/LocalDate;")
   }
 
   private fun customTestApk(): File {
