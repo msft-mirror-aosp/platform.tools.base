@@ -17,6 +17,7 @@
 package com.android.tools.appinspection.database.testing
 
 import android.util.Log
+import com.android.tools.appinspection.database.TAG
 import org.robolectric.shadows.ShadowLog
 
 private val LOG_LEVELS =
@@ -31,6 +32,13 @@ private val LOG_LEVELS =
 
 private fun ShadowLog.LogItem.getLevel() = LOG_LEVELS[type]
 
-private fun ShadowLog.LogItem.toLine() = "${getLevel()}: $tag: $msg (${throwable::class.java.simpleName})"
+private fun ShadowLog.LogItem.toLine(): String {
+  return buildString {
+    append("${getLevel()}: $tag: $msg")
+    if (throwable != null) {
+      append(" (${throwable::class.java.simpleName})")
+    }
+  }
+}
 
-internal fun getLogLines() = ShadowLog.getLogsForTag("SqliteInspector").map { it.toLine() }
+internal fun getLogLines(level: Int = Log.WARN) = ShadowLog.getLogsForTag(TAG).filter { it.type >= level }.map { it.toLine() }

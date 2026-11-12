@@ -106,7 +106,7 @@ private const val OPEN_DATABASE_COMMAND_SIG_API_11 =
   "openDatabase" +
     "(" +
     "Ljava/lang/String;" +
-    "Landroid/database/sqlite/SQLiteDatabase\$CursorFactory;" +
+    $$"Landroid/database/sqlite/SQLiteDatabase$CursorFactory;" +
     "I" +
     "Landroid/database/DatabaseErrorHandler;" +
     ")" +
@@ -116,12 +116,12 @@ private const val OPEN_DATABASE_COMMAND_SIG_API_27 =
   "openDatabase" +
     "(" +
     "Ljava/io/File;" +
-    "Landroid/database/sqlite/SQLiteDatabase\$OpenParams;" +
+    $$"Landroid/database/sqlite/SQLiteDatabase$OpenParams;" +
     ")" +
     "Landroid/database/sqlite/SQLiteDatabase;"
 
 private const val CREATE_IN_MEMORY_DATABASE_COMMAND_SIG_API_27 =
-  "createInMemory" + "(" + "Landroid/database/sqlite/SQLiteDatabase\$OpenParams;" + ")" + "Landroid/database/sqlite/SQLiteDatabase;"
+  "createInMemory" + "(" + $$"Landroid/database/sqlite/SQLiteDatabase$OpenParams;" + ")" + "Landroid/database/sqlite/SQLiteDatabase;"
 
 private const val ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE = "onAllReferencesReleased()V"
 
@@ -422,7 +422,7 @@ internal class SqliteInspector(
         try {
           onDatabaseOpened(FrameworkDatabase(database))
         } catch (e: Throwable) {
-          Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
+          Log.w(TAG, "Error in onDatabaseAdded event", e)
           connection.sendEvent(
             createErrorOccurredEvent(
                 "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
@@ -464,7 +464,7 @@ internal class SqliteInspector(
         try {
           onDatabaseOpened(AndroidXDatabase(sqliteConnection, path, flags))
         } catch (e: Throwable) {
-          Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
+          Log.w(TAG, "Error in onDatabaseAdded event", e)
           connection.sendEvent(
             createErrorOccurredEvent(
                 "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
@@ -546,7 +546,7 @@ internal class SqliteInspector(
 
     val rawQueryMethodSignature =
       ("rawQueryWithFactory(" +
-        "Landroid/database/sqlite/SQLiteDatabase\$CursorFactory;" +
+        $$"Landroid/database/sqlite/SQLiteDatabase$CursorFactory;" +
         "Ljava/lang/String;" +
         "[Ljava/lang/String;" +
         "Ljava/lang/String;" +
@@ -880,7 +880,7 @@ internal class SqliteInspector(
       roomInvalidationRegistry.invalidateCache()
       databaseRegistry.notifyDatabaseOpened(database)
     } catch (e: Throwable) {
-      Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
+      Log.w(TAG, "Error in onDatabaseAdded event", e)
       connection.sendEvent(
         createErrorOccurredEvent(
             "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
@@ -915,8 +915,7 @@ internal class SqliteInspector(
         // The Application database path is under "/data/user/<user>" but pragma_database_list
         // returns "/data/data"
         // paths, so we need to get the user id and change the path so it matches.
-        val user = application?.getSystemService(UserManager::class.java)?.getSerialNumberForUser(Process.myUserHandle())
-        when (user) {
+        when (val user = application?.getSystemService(UserManager::class.java)?.getSerialNumberForUser(Process.myUserHandle())) {
           null -> filename
           else -> filename.replace("/data/data/", "/data/user/$user/")
         }
@@ -1061,11 +1060,11 @@ private inline fun <reified T> loadClass(className: String): Class<T>? {
     cls as Class<T>
   } catch (e: ClassNotFoundException) {
     if (className != BUNDLED_DRIVER) {
-      Log.w("SqliteInspector", "Can't load class '$className'", e)
+      Log.w(TAG, "Can't load class '$className'", e)
     }
     null
   } catch (e: Throwable) {
-    Log.w("SqliteInspector", "Can't load class '$className'", e)
+    Log.w(TAG, "Can't load class '$className'", e)
     null
   }
 }
