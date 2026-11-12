@@ -121,4 +121,12 @@ class InstrumenterTestKotlinTarget {
   // Topic gets a bridge to the default method of Labeled, which isn't
   // synthetic.
   class Topic : Labeled
+
+  private operator fun invoke(): Int = count
+
+  // Caller calls the private invoke() through the synthetic accessor
+  // access$invoke.
+  inner class Caller {
+    fun call(): Int = this@InstrumenterTestKotlinTarget()
+  }
 }

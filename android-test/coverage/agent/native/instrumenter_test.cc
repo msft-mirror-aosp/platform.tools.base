@@ -471,5 +471,12 @@ TEST(InstrumenterTest, BridgeOfJavaClassIsNotReported) {
       nullptr);
 }
 
+TEST(InstrumenterTest, SyntheticAccessorIsNotReported) {
+  // The private invoke() is instrumented, but not its accessor, although the
+  // agent instruments synthetic methods whose names contain invoke.
+  ASSERT_NE(InstrumentedMethod("invoke", kKotlinTargetClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("access$invoke", kKotlinTargetClass), nullptr);
+}
+
 }  // namespace
 }  // namespace coverage
