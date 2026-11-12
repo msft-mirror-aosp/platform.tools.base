@@ -19,11 +19,13 @@ package com.android.build.gradle.integration.testing.suites
 import com.android.Version
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
@@ -187,6 +189,19 @@ class TestSuitesTestReportTest {
   }
 
   @Test
+  fun testMarkdownReport_failureMessagesPointToReportMd() {
+    val build = rule.build {
+      gradleProperties { add(BooleanOption.ENABLE_MARKDOWN_TEST_REPORT, true) }
+      androidApplication { addListedTestSuite("com.example.FailingTest") }
+    }
+
+    val result = build.executor.withArgument("--continue").expectFailure().run(":app:testAllSuites")
+
+    result.assertErrorContains("Markdown version: ")
+    result.assertErrorContains("reports/testAllSuites/test-report/report.md")
+  }
+
+  @Test
   fun testAcrossModuleReporting() {
     val build = rule.build {
       androidLibrary {
@@ -291,26 +306,7 @@ class TestSuitesTestReportTest {
 
   @Test
   fun testReportingWithFailingAndRemovedTests() {
-    val build = rule.build {
-      androidApplication {
-        android {
-          testOptions.customSuites.create("listed") {
-            it.useJunitEngine.apply {
-              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
-              includeEngines.add("listed-tests-junit-engine")
-              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
-              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
-              enginesDependencies.add("com.test:listed-tests-junit-engine:1.0")
-              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
-            }
-            it.assets {}
-            it.targetVariants.add("debug")
-            it.targets.create("t1") {}
-          }
-        }
-        files { add("src/listed/tests.txt", "com.example.FailingTest\ncom.example.PassingTest") }
-      }
-    }
+    val build = rule.build { androidApplication { addListedTestSuite("com.example.FailingTest", "com.example.PassingTest") } }
 
     // With --continue, the failing test doesn't prevent the report from being generated, and testAllSuites then fails because the report
     // contains a failing test.
@@ -885,4 +881,27 @@ class TestSuitesTestReportTest {
       listener.executionFinished(root, TestExecutionResult.successful())
     }
   }
+}
+
+/**
+ * Adds a "listed" test suite on the debug variant whose engine runs one test per class in [testClasses]. Classes whose name contains
+ * "Failing" fail.
+ */
+private fun AndroidProjectDefinition<out CommonExtension>.addListedTestSuite(vararg testClasses: String) {
+  android {
+    testOptions.customSuites.create("listed") {
+      it.useJunitEngine.apply {
+        inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+        includeEngines.add("listed-tests-junit-engine")
+        enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+        enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+        enginesDependencies.add("com.test:listed-tests-junit-engine:1.0")
+        enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+      }
+      it.assets {}
+      it.targetVariants.add("debug")
+      it.targets.create("t1") {}
+    }
+  }
+  files { add("src/listed/tests.txt", testClasses.joinToString("\n")) }
 }

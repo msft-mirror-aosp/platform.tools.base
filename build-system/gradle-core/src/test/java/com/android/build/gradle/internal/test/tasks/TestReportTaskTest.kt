@@ -91,9 +91,23 @@ class TestReportTaskTest {
     writeTestResults(failingTest = true)
     task.markdownReportEnabled.set(true)
 
-    assertFailsWith<VerificationException> { task.runTaskAction() }
+    val exception = assertFailsWith<VerificationException> { task.runTaskAction() }
 
     assertThat(testReportDir.resolve("report.md").readText()).contains("### :app > com.example.app.ExampleTest > testOther")
+    // The failure message is the last thing the build prints, so it also points to report.md.
+    assertThat(exception.message).startsWith("There were failing tests. See the report at: ")
+    assertThat(exception.message!!.lines().last()).startsWith("Markdown version: ")
+    assertThat(exception.message!!.lines().last()).endsWith("report.md")
+  }
+
+  @Test
+  fun doTaskAction_failingTestWithoutMarkdownReport_doesNotMentionReportMd() {
+    writeTestResults(failingTest = true)
+    task.markdownReportEnabled.set(false)
+
+    val exception = assertFailsWith<VerificationException> { task.runTaskAction() }
+
+    assertThat(exception.message).doesNotContain("report.md")
   }
 
   @Test

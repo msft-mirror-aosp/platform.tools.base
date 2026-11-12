@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
+import com.android.build.gradle.internal.test.report.markdownReportFailureLine
 import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
@@ -68,7 +69,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
     val rootDir = rootProjectDir.get().asFile
     val aggregator = XMLReportAggregator(inputDirectories, rootProjectName.get(), rootDir)
-    aggregator.writeReport(testReport, writeMarkdown = markdownReportEnabled.getOrElse(false))
+    val markdownReport = aggregator.writeReport(testReport, writeMarkdown = markdownReportEnabled.getOrElse(false))
 
     // --- CODE COVERAGE REPORT GENERATION ---
     if (coverageXmlReports.isPresent && coverageXmlReports.get().isNotEmpty()) {
@@ -103,7 +104,8 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
     if (aggregator.getFailedTestCount() > 0) {
       val reportUrl = ConsoleRenderer().asClickableFileUrl(File(testReport, "index.html"))
-      throw VerificationException("There were failing tests. See the report at: $reportUrl")
+      val message = "There were failing tests. See the report at: $reportUrl"
+      throw VerificationException(if (markdownReport != null) "$message\n${markdownReportFailureLine(markdownReport)}" else message)
     }
   }
 
