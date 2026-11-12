@@ -19,9 +19,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
 import com.android.adblib.testingutils.FakeAdbServerProviderRule;
-import com.android.ddmlib.AndroidDebugBridge;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.testutils.TestUtils;
 import com.android.tools.deployer.DeployerRunner;
@@ -40,7 +38,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.RuleChain;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -55,17 +52,13 @@ public class DeployerRunnerDeviceSelectorTest {
 
     private final FakeDeviceHandler handler = new FakeDeviceHandler();
 
-    private final FakeAdbServerProviderRule fakeAdbRule =
+    @Rule
+    public final FakeAdbServerProviderRule fakeAdbRule =
             new FakeAdbServerProviderRule(
                     provider -> {
                         provider.installDeviceHandler(handler);
                         return kotlin.Unit.INSTANCE;
                     });
-
-    @Rule
-    public final RuleChain chain =
-            RuleChain.outerRule(fakeAdbRule)
-                    .around(new UseAdbLibAndroidDebugBridgeRule(fakeAdbRule::getAdbSession));
 
     private FakeAdbServer fakeAdbServer;
     private static File dexDbFile;
@@ -98,7 +91,6 @@ public class DeployerRunnerDeviceSelectorTest {
         service = Mockito.mock(UIService.class);
 
         fakeAdbServer = fakeAdbRule.getFakeAdb().getFakeAdbServer();
-        AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.getPort());
 
         FakeDeviceLibrary library = new FakeDeviceLibrary();
         device0 = library.build(DeviceId.API_28, "Google", "Pixel", "0");
@@ -230,9 +222,6 @@ public class DeployerRunnerDeviceSelectorTest {
         if (device2 != null) {
             device2.shutdown();
         }
-        AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS);
-        AndroidDebugBridge.terminate();
-        AndroidDebugBridge.disableFakeAdbServerMode();
     }
 
     private static void assertInstalled(FakeDevice device, String packageName, Path... files)

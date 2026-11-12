@@ -20,29 +20,27 @@ import com.android.adblib.AdbSessionKt;
 import com.android.adblib.ConnectedDevice;
 import com.android.adblib.ConnectedDevicesTracker;
 import com.android.adblib.ConnectedDevicesTrackerKt;
-import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
 import com.android.adblib.testingutils.CoroutineTestUtils;
 import com.android.adblib.testingutils.FakeAdbServerProviderRule;
 import com.android.adblib.testingutils.TestingAdbSessionHost;
-import com.android.ddmlib.AndroidDebugBridge;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.tools.deployer.devices.DeviceId;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
 import com.android.tools.deployer.devices.FakeDeviceLibrary;
 
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.time.Duration;
+
 /**
- * A JUnit {@link TestRule} that sets up a {@link FakeDevice} and connects it to a {@link FakeAdbServer}.
- * <p>
- * This rule handles the lifecycle of the device and the ADB bridge, ensuring that they are
+ * A JUnit {@link TestRule} that sets up a {@link FakeDevice} and connects it to a {@link
+ * FakeAdbServer}.
+ *
+ * <p>This rule handles the lifecycle of the device and the ADB server, ensuring that they are
  * properly initialized before each test and shut down afterward.
  */
 public class FakeDeviceConnection implements TestRule {
@@ -57,12 +55,6 @@ public class FakeDeviceConnection implements TestRule {
             }
     );
 
-    /**
-     * This rule is responsible for configuring the bridge and connecting the device.
-     * It is separated from {@link #fakeAdbRule} so that {@link UseAdbLibAndroidDebugBridgeRule}
-     * can be inserted between them. This ensures that the bridge is redirected *before*
-     * we enable fake ADB server mode and connect the device.
-     */
     private final TestRule deviceConnectionRule = new TestRule() {
         @Override
         public Statement apply(Statement base, Description description) {
@@ -71,16 +63,12 @@ public class FakeDeviceConnection implements TestRule {
                 public void evaluate() throws Throwable {
                     device = new FakeDeviceLibrary().build(deviceId);
                     FakeAdbServer adbServer = fakeAdbRule.getFakeAdb().getFakeAdbServer();
-                    AndroidDebugBridge.enableFakeAdbServerMode(adbServer.getPort());
                     handler.connect(device, adbServer);
 
                     try {
                         base.evaluate();
                     } finally {
                         device.shutdown();
-                        AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS);
-                        AndroidDebugBridge.terminate();
-                        AndroidDebugBridge.disableFakeAdbServerMode();
                     }
                 }
             };
@@ -125,7 +113,6 @@ public class FakeDeviceConnection implements TestRule {
     @Override
     public Statement apply(Statement base, Description description) {
         return RuleChain.outerRule(fakeAdbRule)
-                .around(new UseAdbLibAndroidDebugBridgeRule(this::getAdbSession))
                 .around(deviceConnectionRule)
                 .apply(base, description);
     }

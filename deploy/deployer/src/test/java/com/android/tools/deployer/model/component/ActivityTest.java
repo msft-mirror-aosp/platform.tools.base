@@ -18,9 +18,6 @@ package com.android.tools.deployer.model.component;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.TimeoutException;
 import com.android.testutils.TestUtils;
 import com.android.tools.deployer.common.DeployerIShellOutputReceiver;
 import com.android.tools.deployer.common.DeployerNullOutputReceiver;
@@ -87,12 +84,7 @@ public class ActivityTest {
     }
 
     @Test
-    public void testFlags()
-            throws ModelException,
-                    ShellCommandUnresponsiveException,
-                    AdbCommandRejectedException,
-                    IOException,
-                    TimeoutException {
+    public void testFlags() throws ModelException, IOException {
         DeviceHolder deviceHolder = Mockito.mock(DeviceHolder.class);
         Mockito.when(deviceHolder.getSerialNumber()).thenReturn("1234");
         ManifestActivityInfo info =
