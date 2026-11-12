@@ -377,8 +377,8 @@ public class Actions {
                 mappings.put(element.getPosition().getStartLine(), nodeRecord);
             }
             for (XmlAttribute xmlAttribute : element.getAttributes()) {
-                Actions.AttributeRecord attributeRecord = findAttributeRecord(decisionTreeRecord,
-                        xmlAttribute);
+                Actions.AttributeRecord attributeRecord =
+                        findAttributeRecord(decisionTreeRecord, xmlAttribute.getName());
                 if (attributeRecord != null) {
                     mappings.put(xmlAttribute.getPosition().getStartLine(), attributeRecord);
                 }
@@ -432,22 +432,17 @@ public class Actions {
 
     @Nullable
     public Actions.NodeRecord findNodeRecord(@NotNull XmlNode.NodeKey nodeKey) {
-        for (Actions.NodeRecord nodeRecord : getNodeRecords(nodeKey)) {
-            if (nodeRecord.getActionType() == Actions.ActionType.ADDED
-                    || nodeRecord.getActionType() == Actions.ActionType.INJECTED) {
-                return nodeRecord;
-            }
-        }
-        return null;
+        DecisionTreeRecord decisionTreeRecord = mRecords.get(nodeKey);
+        return decisionTreeRecord != null ? findNodeRecord(decisionTreeRecord) : null;
     }
 
     @Nullable
     private static Actions.AttributeRecord findAttributeRecord(
             @NotNull DecisionTreeRecord decisionTreeRecord,
-            @NotNull XmlAttribute xmlAttribute) {
+            @NotNull XmlNode.NodeName attributeName) {
         Actions.AttributeRecord addedRecord = null;
-        for (Actions.AttributeRecord attributeRecord : decisionTreeRecord
-                .getAttributeRecords(xmlAttribute.getName())) {
+        for (Actions.AttributeRecord attributeRecord :
+                decisionTreeRecord.getAttributeRecords(attributeName)) {
             if (attributeRecord.getActionType() == Actions.ActionType.INJECTED) {
                 return attributeRecord;
             }
@@ -461,17 +456,10 @@ public class Actions {
     @Nullable
     public Actions.AttributeRecord findAttributeRecord(
             @NotNull XmlNode.NodeKey nodeKey, @NotNull XmlNode.NodeName attributeName) {
-        Actions.AttributeRecord addedRecord = null;
-        for (Actions.AttributeRecord attributeRecord :
-                getAttributeRecords(nodeKey, attributeName)) {
-            if (attributeRecord.getActionType() == Actions.ActionType.INJECTED) {
-                return attributeRecord;
-            }
-            if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
-                addedRecord = attributeRecord;
-            }
-        }
-        return addedRecord;
+        DecisionTreeRecord decisionTreeRecord = mRecords.get(nodeKey);
+        return decisionTreeRecord != null
+                ? findAttributeRecord(decisionTreeRecord, attributeName)
+                : null;
     }
 
     /**
