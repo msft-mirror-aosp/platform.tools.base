@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Project
@@ -101,7 +102,8 @@ class JacocoLibraryProjectTest {
   }
 
   private fun verifyJacocoExecution(build: GradleBuild) {
-    val result = build.executor.run(":lib:createDebugUnitTestCoverageReport")
+    // The checks below are for the legacy JaCoCo HTML report, which is only generated when report aggregation is disabled.
+    val result = build.executor.with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false).run(":lib:createDebugUnitTestCoverageReport")
 
     result.assertOutputDoesNotContain("Cannot process instrumented class")
 

@@ -261,7 +261,7 @@ class AndroidTestUtil(
       }
     }
 
-    executor.expectFailure().run(testTaskName)
+    executor.withArgument("--continue").expectFailure().run(testTaskName)
 
     verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
@@ -269,6 +269,9 @@ class AndroidTestUtil(
 
   fun androidTest() {
     selectModule("app")
+
+    // Keeps covering the legacy report format, which is only generated when report aggregation is disabled.
+    rule.build.reconfigureGradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) }
 
     executor.run(testTaskName)
 
@@ -719,7 +722,7 @@ class AndroidTestUtil(
     executor.run("clean")
 
     assertThat(resolveTestResultXmlPath()).doesNotExist()
-    assertThat(project.resolve(testReportPath)).doesNotExist()
+    verifyReportDoesNotExist()
     assertThat(resolveTestResultPbPath()).doesNotExist()
 
     executor.run(testTaskName)
@@ -891,8 +894,14 @@ class AndroidTestUtil(
     }
   }
 
+  /**
+   * Verifies the test report.
+   *
+   * @param enableReportAggregation whether [BooleanOption.REPORT_AGGREGATION_SUPPORT] is enabled for the build. Defaults to the option's
+   *   default value; the legacy report format is only verified when it is `false` (and the built-in test platform isn't used).
+   */
   fun verifyReport(
-    enableReportAggregation: Boolean = false,
+    enableReportAggregation: Boolean = BooleanOption.REPORT_AGGREGATION_SUPPORT.defaultValue,
     customReportDir: Path? = null,
     expectedDataJsContents: List<String> = emptyList(),
   ) {
@@ -911,6 +920,7 @@ class AndroidTestUtil(
         assertThat(dataJsContent).contains(content)
       }
     } else {
+      // Legacy report format, only generated when report aggregation is disabled.
       assertThat(reportFile).exists()
       assertThat(reportDir.resolve("index.html")).exists()
     }
@@ -926,6 +936,16 @@ class AndroidTestUtil(
         assertThat(mergedReportDir.resolve("index.html")).exists()
       }
     }
+  }
+
+  /**
+   * Verifies that the test report doesn't exist (e.g. after `clean`).
+   *
+   * Checks `index.html`, which both the legacy and the new report format generate (see [verifyReport]), so that the check isn't vacuous for
+   * either format.
+   */
+  fun verifyReportDoesNotExist() {
+    assertThat(project.resolve(testReportPath).parent.resolve("index.html")).doesNotExist()
   }
 }
 

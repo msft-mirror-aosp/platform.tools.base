@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.multiplatform.fixture.publishLibs
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -94,7 +95,8 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
         .trimIndent(),
     )
 
-    executor().run(":kmpFirstLib:createAndroidHostTestCoverageReport")
+    // The checks below are for the legacy test and JaCoCo HTML reports, which are only generated when report aggregation is disabled.
+    executor().with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false).run(":kmpFirstLib:createAndroidHostTestCoverageReport")
 
     val testReportFiles =
       FileUtils.join(project.getSubproject("kmpFirstLib").buildDir, "reports", "tests", "testAndroidHostTest")
@@ -188,8 +190,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
           // KGP < 2.4.0 omits the `${project.group}_` prefix from JVM/Android `.kotlin_module` names.
           val expectedKotlinModule =
             when {
-              KgpTestLayer.fromSystemProperty() == KgpTestLayer.MINIMUM ->
-                "META-INF/kmpFirstLib.kotlin_module"
+              KgpTestLayer.fromSystemProperty() == KgpTestLayer.MINIMUM -> "META-INF/kmpFirstLib.kotlin_module"
               publishLibs -> "META-INF/com.example_kmpFirstLib.kotlin_module"
               else -> "META-INF/Kotlin Multiplatform_kmpFirstLib.kotlin_module"
             }

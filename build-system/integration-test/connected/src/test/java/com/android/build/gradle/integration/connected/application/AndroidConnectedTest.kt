@@ -262,7 +262,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
     // restored from the configuration cache. We expect no crashes.
     util.executor.run("clean")
 
-    assertThat(util.project.resolve(util.testReportPath)).doesNotExist()
+    util.verifyReportDoesNotExist()
     assertThat(util.resolveTestResultPbPath()).doesNotExist()
 
     testExecutionStartTime = System.currentTimeMillis()

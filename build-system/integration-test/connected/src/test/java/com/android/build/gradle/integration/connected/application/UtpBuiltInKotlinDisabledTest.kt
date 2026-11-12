@@ -81,6 +81,8 @@ class UtpBuiltInKotlinDisabledTest {
         // Intentionally opting out of AGP 9.0 default behavior to test legacy Kotlin support.
         add(BooleanOption.BUILT_IN_KOTLIN, false)
         add(BooleanOption.USE_NEW_DSL, false)
+        // The report check is for the legacy report format, which is only generated when report aggregation is disabled.
+        add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
       }
     }
 

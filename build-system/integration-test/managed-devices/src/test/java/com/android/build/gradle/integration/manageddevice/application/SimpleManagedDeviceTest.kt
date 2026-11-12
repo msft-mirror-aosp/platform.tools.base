@@ -162,7 +162,9 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun runBasicManagedDevice() {
-    val result = executor.withEnableInfoLogging(true).run(":app:device1DebugAndroidTest")
+    // The report checks below are for the legacy report format, which is only generated when report aggregation is disabled.
+    val result =
+      executor.withEnableInfoLogging(true).with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false).run(":app:device1DebugAndroidTest")
 
     assertTestReportExists()
     assertTestPassedInReport()
@@ -206,7 +208,12 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
           .trimIndent()
       )
 
-    val result = executor.with(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE, 2).run(":app:device1DebugAndroidTest")
+    // The report checks below are for the legacy report format, which is only generated when report aggregation is disabled.
+    val result =
+      executor
+        .with(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE, 2)
+        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+        .run(":app:device1DebugAndroidTest")
 
     assertTestReportExists()
     assertTestPassedInReport()

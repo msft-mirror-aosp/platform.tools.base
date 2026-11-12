@@ -17,6 +17,7 @@ package com.android.build.gradle.integration.connected.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import org.apache.commons.io.FileUtils
@@ -71,7 +72,8 @@ class MlModelBindingConnectedTest {
   @Test
   @Throws(Exception::class)
   fun verifyModelInferenceWithValidOutput() {
-    project.executor().run("connectedAndroidTest")
+    // The report check below is for the legacy report format, which is only generated when report aggregation is disabled.
+    project.executor().with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false).run("connectedAndroidTest")
     val htmlResults = project.file("build/reports/androidTests/connected/debug/com.example.app.ModelTest.html")
     assertThat(htmlResults).isFile()
   }

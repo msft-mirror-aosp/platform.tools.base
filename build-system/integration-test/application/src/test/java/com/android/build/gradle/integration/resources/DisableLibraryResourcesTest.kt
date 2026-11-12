@@ -228,7 +228,12 @@ class DisableLibraryResourcesTest {
 
   @Test
   fun testAndroidAndUnitTests() {
-    project.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false).run(":leaflib:assembleDebugAndroidTest", ":leaflib:test")
+    // The check below is for the legacy HTML test report, which is only generated when report aggregation is disabled.
+    project
+      .executor()
+      .with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
+      .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+      .run(":leaflib:assembleDebugAndroidTest", ":leaflib:test")
     val htmlFiles = project.file("leafLib/build/reports/tests/testDebugUnitTest").walkTopDown().filter { it.extension == "html" }.toList()
     assertThat(htmlFiles.any { it.readText().contains("ExampleTest has some output") }).isTrue()
     // By default, only debug unit tests are run. Verify release unit tests did not run, and

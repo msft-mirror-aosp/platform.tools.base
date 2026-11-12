@@ -104,8 +104,8 @@ class KmpManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun runManagedDeviceTest() {
-    executor
-      .run(":kmpLibrary:device1AndroidDeviceTest")
+    // The report checks below are for the legacy report format, which is only generated when report aggregation is disabled.
+    executor.with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false).run(":kmpLibrary:device1AndroidDeviceTest")
 
     val reportDir =
       FileUtils.join(

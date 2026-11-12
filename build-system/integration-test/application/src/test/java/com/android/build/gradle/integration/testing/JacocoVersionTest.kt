@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.internal.coverage.JacocoOptions
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -118,6 +119,8 @@ class JacocoVersionTest {
       }
       pluginCallbacks += JacocoReportTaskCallback::class.java
     }
+    // AGP's coverage report only shows the JaCoCo version in the legacy JaCoCo HTML format.
+    gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) }
   }
 
   open class JacocoReportTaskCallback : GenericCallback {

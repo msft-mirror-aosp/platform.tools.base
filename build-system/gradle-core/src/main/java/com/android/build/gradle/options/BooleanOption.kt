@@ -356,9 +356,6 @@ enum class BooleanOption(
     futureStage = FutureStage(defaultValue = true, stage = FeatureStage.SoftlyEnforced(VERSION_10_0), version = Version.VERSION_9_0),
   ),
 
-  /** When enabled, registers code coverage and test results aggregation tasks. */
-  REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", false, FeatureStage.Experimental),
-
   /**
    * When enabled, test tasks that write the new HTML test report also write a Markdown version of it, `report.md`, to the same directory.
    * Unit test tasks and the `testAllSuites` tasks also need [REPORT_AGGREGATION_SUPPORT].
@@ -557,6 +554,9 @@ enum class BooleanOption(
    * Note: This flag takes effect only if [USE_NON_FINAL_RES_IDS] is enabled.
    */
   R8_OPTIMIZED_RESOURCE_SHRINKING("android.r8.optimizedResourceShrinking", true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
+
+  /** When enabled, registers code coverage and test results aggregation tasks. */
+  REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
 
   /* -------------------
    * DEPRECATED API

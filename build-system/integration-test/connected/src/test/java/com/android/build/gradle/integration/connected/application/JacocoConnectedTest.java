@@ -82,8 +82,11 @@ public class JacocoConnectedTest {
 
     @Test
     public void connectedCheck() throws Exception {
+        // The coverage report checks are for the legacy JaCoCo HTML report, which is only
+        // generated when report aggregation is disabled.
         project.executor()
                 .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
                 .run("connectedCheck");
         assertThat(project.file("build/reports/coverage/androidTest/debug/connected/index.html"))
                 .exists();
@@ -194,8 +197,11 @@ public class JacocoConnectedTest {
                         .resolve("src/androidTest/java/com/example/helloworld/HelloWorldTest.java");
         Files.deleteIfExists(deprecatedTest);
 
+        // The coverage report checks are for the legacy JaCoCo HTML report, which is only
+        // generated when report aggregation is disabled.
         project.executor()
                 .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
                 .run("connectedCheck");
         List<File> files = FileUtils.find(getCoverageDir(), Pattern.compile(".*\\.ec"));
 
@@ -219,8 +225,11 @@ public class JacocoConnectedTest {
                         + "    renderScript = false\n"
                         + "  }\n"
                         + "}\n");
+        // The coverage report checks are for the legacy JaCoCo HTML report, which is only
+        // generated when report aggregation is disabled.
         project.executor()
                 .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
                 .run("connectedCheck");
         assertThat(
                         project.file(

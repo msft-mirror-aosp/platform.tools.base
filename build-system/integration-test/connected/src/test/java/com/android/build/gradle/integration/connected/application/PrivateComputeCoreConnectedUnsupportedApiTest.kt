@@ -80,7 +80,11 @@ class PrivateComputeCoreConnectedUnsupportedApiTest(val runWithBuiltInPlatform: 
           )
         }
       }
-      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
+      gradleProperties {
+        add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+        // The report check is for the legacy report format, which is only generated when report aggregation is disabled.
+        add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+      }
     }
 
   @Test

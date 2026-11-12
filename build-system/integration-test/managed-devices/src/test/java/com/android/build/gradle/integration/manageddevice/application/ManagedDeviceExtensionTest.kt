@@ -30,6 +30,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.manageddevice.utils.simpleProject
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import java.io.File
@@ -150,7 +151,8 @@ class ManagedDeviceExtensionTest {
 
   @Test
   fun runCustomManagedDevice() {
-    executor.run(":app:myCustomDeviceCheck")
+    // The report checks below are for the legacy report format, which is only generated when report aggregation is disabled.
+    executor.with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false).run(":app:myCustomDeviceCheck")
 
     val project = rule.build.androidApplication()
 

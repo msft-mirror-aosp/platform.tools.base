@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Before
@@ -66,17 +67,16 @@ class KotlinMultiplatformAndroidConnectedTest {
     project.addAdbTimeout()
     // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
     // of each test and (2) check the adb connection before taking the time to build anything.
-    project
-      .executor()
-      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-      .run("androidUninstallAll")
+    project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("androidUninstallAll")
   }
 
   @Test
   fun connectedKmpLibraryTests() {
+    // The checks below are for the legacy test and JaCoCo HTML reports, which are only generated when report aggregation is disabled.
     project
       .executor()
       .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
       .run(":kmpFirstLib:androidConnectedCheck")
 
     val testResultFolder =

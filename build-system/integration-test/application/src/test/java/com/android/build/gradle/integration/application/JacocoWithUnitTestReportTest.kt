@@ -58,7 +58,7 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
 
   @Test
   fun `test expected report contents`() {
-    val run = testProject.executor().run("createDebugUnitTestCoverageReport")
+    val run = testProject.executor().with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false).run("createDebugUnitTestCoverageReport")
     checkHighlightedSourceCodeReportFiles(testProject.buildDir)
     val reportDir = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug")
     val generatedCoverageReport = File(reportDir, "index.html")
@@ -71,7 +71,7 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
     val totalUnitTestCoveragePercentage = totalCoverageInfo!!.groups[1]!!.value
     // Checks if the report title is expected.
     assertThat(reportTitle!!.groups[1]!!.value).isEqualTo("debug")
-    // Checks if the total line coverage on unit tests exceeds 0% i.e
+    // Checks if the total line coverage on unit tests exceeds 0% i.e.
     assertThat(totalUnitTestCoveragePercentage.trimEnd('%').toInt() > 0).isTrue()
 
     // Verify XML report is generated
@@ -262,7 +262,11 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
   fun `unit test report with the on-device coverage agent enabled and aggregation disabled`() {
     // The on-device agent requires report aggregation, but only for the reports it produces. The
     // JaCoCo report for unit tests must not fail on that requirement.
-    testProject.executor().with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true).run("createDebugUnitTestCoverageReport")
+    testProject
+      .executor()
+      .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+      .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+      .run("createDebugUnitTestCoverageReport")
 
     val reportDir = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug")
     assertThat(File(reportDir, "index.html").exists()).isTrue()

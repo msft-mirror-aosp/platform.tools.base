@@ -55,9 +55,12 @@ public class KotlinAppConnectedTest {
 
     @Test
     public void connectedAndroidTest() throws Exception {
+        // The report checks below are for the legacy report format, which is only generated when
+        // report aggregation is disabled.
         project.executor()
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
                 .withArgument("-Dorg.gradle.unsafe.configuration-cache.max-problems=10000")
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
                 .run("connectedAndroidTest");
 
         String testReportPath =
