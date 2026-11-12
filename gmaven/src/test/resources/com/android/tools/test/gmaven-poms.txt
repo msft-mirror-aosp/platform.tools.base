@@ -395,7 +395,6 @@ com.android.tools.apkdeployer:apkdeployer:$BUILD_VERSION
     com.android.tools:annotations:$BASE_VERSION (runtime)
     com.android.tools.apkparser:binary-resources:$BASE_VERSION (runtime)
     com.android.tools:common:$BASE_VERSION (runtime)
-    com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
     com.android.tools:sdk-common:$BASE_VERSION (runtime)
     com.android:zipflinger:$BUILD_VERSION (runtime)
     com.android.tools:r8 (runtime)
