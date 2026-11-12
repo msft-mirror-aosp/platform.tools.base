@@ -81,6 +81,7 @@ cc_test(
         "testdata/unity.tar",
     ],
     linkstatic = 1,
+    tags = ["noci:studio-win"],  # b/576423687
     deps = [
         ":trace_processor_service_impl",
         "@com_google_absl//absl/strings",
