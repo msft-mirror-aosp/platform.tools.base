@@ -50,7 +50,8 @@ class FilterResult : public FilterOutput {
   }
 
   // Returns the replacement branch targets registered for the block terminated
-  // by `source`, or nullptr if its branches were not replaced.
+  // by `source`, or nullptr if its branches were not replaced or `source` is
+  // ignored.
   const std::vector<lir::Instruction*>* GetReplacedBranches(
       const lir::Instruction* source) const;
 

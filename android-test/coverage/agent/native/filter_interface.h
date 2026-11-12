@@ -67,7 +67,8 @@ class FilterOutput {
   virtual void Ignore(lir::Instruction* from, lir::Instruction* to) = 0;
 
   // Replaces the outgoing branches of the block terminated by `source` with
-  // one branch per instruction in `targets`.
+  // one branch per instruction in `targets`. If `source` is also ignored, it
+  // has no branches.
   virtual void ReplaceBranches(lir::Instruction* source,
                                std::vector<lir::Instruction*> targets) = 0;
 };

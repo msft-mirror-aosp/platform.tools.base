@@ -114,6 +114,10 @@ void FilterResult::SuppressBranch(const lir::Instruction* branch_instr) {
 
 const std::vector<lir::Instruction*>* FilterResult::GetReplacedBranches(
     const lir::Instruction* source) const {
+  // An ignored instruction has no branches, even if a filter replaced them.
+  if (IsIgnored(source)) {
+    return nullptr;
+  }
   auto it = replaced_branches_.find(source);
   return it == replaced_branches_.end() ? nullptr : &it->second;
 }

@@ -89,6 +89,21 @@ TEST(FilterResultTest, ReplaceBranchesIsLookedUpBySource) {
   EXPECT_EQ(result.GetReplacedBranches(&other), nullptr);
 }
 
+TEST(FilterResultTest, IgnoredInstructionHasNoReplacedBranches) {
+  // A filter can replace the branches of an instruction that another filter
+  // ignores, before or after that filter runs.
+  lir::Bytecode before, after, target;
+  Link({&before, &after});
+
+  FilterResult result;
+  result.ReplaceBranches(&before, {&target});
+  result.Ignore(&before, &after);
+  result.ReplaceBranches(&after, {&target});
+
+  EXPECT_EQ(result.GetReplacedBranches(&before), nullptr);
+  EXPECT_EQ(result.GetReplacedBranches(&after), nullptr);
+}
+
 TEST(FilterResultTest, SuppressBranchIsLookedUpByInstruction) {
   lir::Bytecode branch, other;
 
