@@ -160,6 +160,8 @@ class TestSuitesTestReportTest {
     assertThat(reportDir.resolve("index.html").toFile().exists()).isTrue()
     assertThat(reportDir.resolve("report.md").toFile().exists()).isTrue()
     assertThat(reportDir.resolve("report.md").toFile().readText()).contains("# Test report: :app")
+    // index.html points agents that open it to report.md.
+    assertThat(reportDir.resolve("index.html").toFile().readLines().first()).contains("report.md")
   }
 
   @Test

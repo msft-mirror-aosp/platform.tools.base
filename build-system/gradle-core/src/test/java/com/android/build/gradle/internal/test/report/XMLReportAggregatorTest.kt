@@ -253,9 +253,24 @@ class XMLReportAggregatorTest {
   fun testWriteReport_withoutMarkdown_doesNotWriteReportMd() {
     createXmlReport(inputDir1, "test-report.xml", singlePassingTestXml())
 
-    createAggregator(files = listOf(inputDir1), projectName = "MyProject").writeReport(outputDir)
+    val markdownFile = createAggregator(files = listOf(inputDir1), projectName = "MyProject").writeReport(outputDir)
 
+    assertThat(markdownFile).isNull()
     assertThat(File(outputDir, MARKDOWN_REPORT_FILE_NAME).exists()).isFalse()
+    assertThat(File(outputDir, "index.html").readText()).doesNotContain(MARKDOWN_REPORT_FILE_NAME)
+  }
+
+  @Test
+  fun testWriteReport_withMarkdown_returnsReportMdAndPointsToItFromIndexHtml() {
+    createXmlReport(inputDir1, "test-report.xml", singlePassingTestXml())
+
+    val markdownFile = createAggregator(files = listOf(inputDir1), projectName = "MyProject").writeReport(outputDir, writeMarkdown = true)
+
+    assertThat(markdownFile).isEqualTo(File(outputDir, MARKDOWN_REPORT_FILE_NAME))
+    val indexHtml = File(outputDir, "index.html").readText()
+    assertThat(indexHtml.lines().first()).isEqualTo(MARKDOWN_REPORT_HTML_HINT)
+    // The rest of the page is the unchanged renderer resource.
+    assertThat(indexHtml.substringAfter("\n")).startsWith("<!--\n Copyright")
   }
 
   @Test

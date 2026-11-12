@@ -100,6 +100,13 @@ internal const val MAX_INLINE_LOG_BYTES = 524_288
 /** Name of the Markdown test report written next to the HTML report's `index.html`. */
 const val MARKDOWN_REPORT_FILE_NAME = "report.md"
 
+/**
+ * First line of the HTML report's `index.html` when [MARKDOWN_REPORT_FILE_NAME] is written next to it. Coding agents that open `index.html`
+ * read this before the viewer code, so they can switch to the much smaller Markdown report.
+ */
+internal const val MARKDOWN_REPORT_HTML_HINT =
+  "<!-- A Markdown version of this report, for coding agents and terminals, is in $MARKDOWN_REPORT_FILE_NAME in this directory. -->"
+
 internal const val AGGREGATED_TEST_SUITE_NAME = "Aggregated"
 
 const val UNKNOWN_TARGET = "unknown_target"

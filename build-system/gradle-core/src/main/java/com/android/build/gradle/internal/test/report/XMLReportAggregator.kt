@@ -88,10 +88,12 @@ internal constructor(
   /**
    * Writes `data.js`, lazy `details/<id>.js` scripts, copied `artifacts/`, and renderer assets to [outputDir].
    *
-   * @param writeMarkdown whether to also write a Markdown version of the report, [MARKDOWN_REPORT_FILE_NAME], to the same directory
+   * @param writeMarkdown whether to also write a Markdown version of the report, [MARKDOWN_REPORT_FILE_NAME], to the same directory. When
+   *   it's written, `index.html` starts with a comment that points to it.
+   * @return the Markdown report, or null if it wasn't requested or couldn't be written
    */
   @JvmOverloads
-  fun writeReport(outputDir: File, writeMarkdown: Boolean = false) {
+  fun writeReport(outputDir: File, writeMarkdown: Boolean = false): File? {
     if (!outputDir.exists()) {
       outputDir.mkdirs()
     }
@@ -100,6 +102,9 @@ internal constructor(
 
     val bundle = aggregatedBundle
     val finalReport = bundle.report.copy(relativeRootDir = calculateRelativeRootDir(outputDir, rootDir))
+
+    // Written before the HTML report so that index.html only points to a report.md that exists.
+    val markdownFile = if (writeMarkdown) writeMarkdownReport(finalReport, File(outputDir, MARKDOWN_REPORT_FILE_NAME)) else null
 
     File(outputDir, "data.js").bufferedWriter(Charsets.UTF_8).use { writer ->
       writer.write("const TEST_DATA_SOURCE = ")
@@ -116,6 +121,9 @@ internal constructor(
           val destFile = File(outputDir, relativePath)
           destFile.parentFile?.mkdirs()
           destFile.outputStream().use { outputStream ->
+            if (relativePath == "index.html" && markdownFile != null) {
+              outputStream.write("$MARKDOWN_REPORT_HTML_HINT\n".toByteArray(Charsets.UTF_8))
+            }
             inputStream.copyTo(outputStream)
           }
         }
@@ -170,19 +178,23 @@ internal constructor(
 
     val reportLocation = ConsoleRenderer().asClickableFileUrl(File(outputDir, "index.html"))
     logger.quiet("Test report generated at: $reportLocation")
-
-    if (writeMarkdown) {
-      writeMarkdownReport(finalReport, File(outputDir, MARKDOWN_REPORT_FILE_NAME))
+    if (markdownFile != null) {
+      logger.quiet("Markdown test report generated at: ${ConsoleRenderer().asClickableFileUrl(markdownFile)}")
     }
+    return markdownFile
   }
 
-  /** Writes [report] as Markdown to [markdownFile]. A failure is logged rather than thrown, so it never fails the test task. */
-  private fun writeMarkdownReport(report: RootReport, markdownFile: File) {
-    try {
+  /**
+   * Writes [report] as Markdown to [markdownFile] and returns it, or returns null if it couldn't be written. A failure is logged rather
+   * than thrown, so it never fails the test task.
+   */
+  private fun writeMarkdownReport(report: RootReport, markdownFile: File): File? {
+    return try {
       markdownFile.writeText(MarkdownReportRenderer().render(report))
-      logger.quiet("Markdown test report generated at: ${ConsoleRenderer().asClickableFileUrl(markdownFile)}")
+      markdownFile
     } catch (e: Exception) {
       logger.warning("Unable to write the Markdown test report to %s: %s", markdownFile.absolutePath, e.message)
+      null
     }
   }
 
