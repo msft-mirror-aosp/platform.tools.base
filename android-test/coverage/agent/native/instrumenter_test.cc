@@ -478,5 +478,16 @@ TEST(InstrumenterTest, SyntheticAccessorIsNotReported) {
   EXPECT_EQ(InstrumentedMethod("access$invoke", kKotlinTargetClass), nullptr);
 }
 
+TEST(InstrumenterTest, MethodOfDefaultImplsIsNotReported) {
+  constexpr char kCompanionClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Labeled$-CC;";
+  constexpr char kDefaultImplsClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Labeled$DefaultImpls;";
+  // The default code of label(), which D8 moves to a companion class when it
+  // desugars default methods, is instrumented.
+  ASSERT_NE(InstrumentedMethod("$default$label", kCompanionClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("label", kDefaultImplsClass), nullptr);
+}
+
 }  // namespace
 }  // namespace coverage

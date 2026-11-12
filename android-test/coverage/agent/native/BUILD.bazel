@@ -143,6 +143,7 @@ cc_test(
         "kotlin_compose_filter_test.cc",
         "kotlin_coroutine_filter_test.cc",
         "kotlin_default_arguments_filter_test.cc",
+        "kotlin_default_methods_filter_test.cc",
         "kotlin_generated_filter_test.cc",
         "kotlin_inline_filter_test.cc",
         "kotlin_lateinit_filter_test.cc",

@@ -114,6 +114,9 @@ class InstrumenterTestKotlinTarget {
       override fun invoke(value: Int): Int = value + 1
     }
 
+  // Kotlin also generates Labeled$DefaultImpls for the classes compiled against
+  // Labeled without default methods in the JVM. Its label() calls the default
+  // method.
   interface Labeled {
     fun label(): String = "label"
   }
