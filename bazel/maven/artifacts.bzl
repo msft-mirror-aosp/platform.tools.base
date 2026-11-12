@@ -189,7 +189,7 @@ ARTIFACTS = [
     "org.bouncycastle:bc-jdk18on-bom:pom:1.86",
     "org.bouncycastle:bcpkix-jdk18on:1.86",
     "org.bouncycastle:bcprov-jdk18on:1.86",
-    "org.bytedeco:ffmpeg:7.1.1-1.5.12",
+    "org.bytedeco:ffmpeg:8.1.2-1.5.14",
     "org.eclipse.aether:aether-connector-basic:1.0.2.v20150114",
     "org.eclipse.aether:aether-transport-file:1.0.2.v20150114",
     "org.eclipse.aether:aether-transport-http:1.0.2.v20150114",
