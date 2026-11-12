@@ -2,6 +2,7 @@
   <library name="inspection-testing">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/inspectors/lib/inspection-testing-1.0.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/prebuilts/tools/common/m2/_aar/androidx-monitor/classes_and_libs_merged.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
