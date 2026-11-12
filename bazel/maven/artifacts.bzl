@@ -212,7 +212,7 @@ ARTIFACTS = [
     "org.jacoco:org.jacoco.report:0.8.16",
     "org.jetbrains.compose.foundation:foundation-layout-desktop:1.9.3",
     "org.jetbrains.compose.ui:ui-desktop:1.9.3",
-    "org.jetbrains.dokka:dokka-core:2.2.0",
+    "org.jetbrains.dokka:dokka-core:2.3.0",
     "org.jetbrains.exposed:exposed-core:1.0.0-rc-4",
     "org.jetbrains.exposed:exposed-jdbc:1.0.0-rc-4",
     "org.jetbrains.intellij.deps:asm-all:8.0.1",

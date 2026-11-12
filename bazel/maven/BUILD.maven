@@ -4441,60 +4441,60 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.core.jackson-annotations_2.19.2",
-    pom = "com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.pom",
+    name = "com.fasterxml.jackson.core.jackson-annotations_2.22",
+    pom = "com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.19.2",
-    parent = "com.fasterxml.jackson.jackson-parent_2.19.3",
+    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.22",
+    parent = "com.fasterxml.jackson.jackson-parent_2.22",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "com.fasterxml.jackson.core.jackson-annotations",
     classifiers = [],
-    parent = "com.fasterxml.jackson.jackson-parent_2.19.3",
+    parent = "com.fasterxml.jackson.jackson-parent_2.22",
     jars = [
-        "com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.jar"
+        "com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.jar"
     ],
     original_deps = [],
-    pom = "com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.pom",
+    pom = "com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.19.2",
+    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.22",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.core.jackson-core_2.19.2",
-    pom = "com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.pom",
+    name = "com.fasterxml.jackson.core.jackson-core_2.22.2",
+    pom = "com/fasterxml/jackson/core/jackson-core/2.22.2/jackson-core-2.22.2.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-core/2.19.2",
-    parent = "com.fasterxml.jackson.jackson-base_2.19.2",
+    repo_path = "com/fasterxml/jackson/core/jackson-core/2.22.2",
+    parent = "com.fasterxml.jackson.jackson-base_2.22.2",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "com.fasterxml.jackson.core.jackson-core",
     classifiers = [],
-    parent = "com.fasterxml.jackson.jackson-base_2.19.2",
+    parent = "com.fasterxml.jackson.jackson-base_2.22.2",
     jars = [
-        "com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.jar"
+        "com/fasterxml/jackson/core/jackson-core/2.22.2/jackson-core-2.22.2.jar"
     ],
     original_deps = [],
-    pom = "com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.pom",
+    pom = "com/fasterxml/jackson/core/jackson-core/2.22.2/jackson-core-2.22.2.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-core/2.19.2",
+    repo_path = "com/fasterxml/jackson/core/jackson-core/2.22.2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.core.jackson-databind_2.19.2",
-    pom = "com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.pom",
+    name = "com.fasterxml.jackson.core.jackson-databind_2.22.2",
+    pom = "com/fasterxml/jackson/core/jackson-databind/2.22.2/jackson-databind-2.22.2.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.19.2",
-    parent = "com.fasterxml.jackson.jackson-base_2.19.2",
+    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.22.2",
+    parent = "com.fasterxml.jackson.jackson-base_2.22.2",
     deps = [
-        "com.fasterxml.jackson.core.jackson-annotations_2.19.2",
-        "com.fasterxml.jackson.core.jackson-core_2.19.2",
+        "com.fasterxml.jackson.core.jackson-annotations_2.22",
+        "com.fasterxml.jackson.core.jackson-core_2.22.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -4502,36 +4502,36 @@ maven_artifact(
 maven_import(
     name = "com.fasterxml.jackson.core.jackson-databind",
     classifiers = [],
-    parent = "com.fasterxml.jackson.jackson-base_2.19.2",
+    parent = "com.fasterxml.jackson.jackson-base_2.22.2",
     jars = [
-        "com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.jar"
+        "com/fasterxml/jackson/core/jackson-databind/2.22.2/jackson-databind-2.22.2.jar"
     ],
     exports = [
         "com.fasterxml.jackson.core.jackson-annotations",
         "com.fasterxml.jackson.core.jackson-core",
     ],
     original_deps = [
-        "com.fasterxml.jackson.core.jackson-annotations_2.19.2",
-        "com.fasterxml.jackson.core.jackson-core_2.19.2",
+        "com.fasterxml.jackson.core.jackson-annotations_2.22",
+        "com.fasterxml.jackson.core.jackson-core_2.22.2",
     ],
-    pom = "com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.pom",
+    pom = "com/fasterxml/jackson/core/jackson-databind/2.22.2/jackson-databind-2.22.2.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.19.2",
+    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.22.2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.dataformat.jackson-dataformat-xml_2.15.3",
-    pom = "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.15.3/jackson-dataformat-xml-2.15.3.pom",
+    name = "com.fasterxml.jackson.dataformat.jackson-dataformat-xml_2.22.2",
+    pom = "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.22.2/jackson-dataformat-xml-2.22.2.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.15.3",
-    parent = "com.fasterxml.jackson.jackson-base_2.15.3",
+    repo_path = "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.22.2",
+    parent = "com.fasterxml.jackson.jackson-base_2.22.2",
     deps = [
-        "com.fasterxml.jackson.core.jackson-core_2.15.3",
-        "com.fasterxml.jackson.core.jackson-annotations_2.15.3",
-        "com.fasterxml.jackson.core.jackson-databind_2.15.3",
-        "org.codehaus.woodstox.stax2-api_4.2.1",
-        "com.fasterxml.woodstox.woodstox-core_6.5.1",
+        "com.fasterxml.jackson.core.jackson-core_2.22.2",
+        "com.fasterxml.jackson.core.jackson-annotations_2.22",
+        "com.fasterxml.jackson.core.jackson-databind_2.22.2",
+        "org.codehaus.woodstox.stax2-api_4.3.0",
+        "com.fasterxml.woodstox.woodstox-core_7.2.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -4539,9 +4539,9 @@ maven_artifact(
 maven_import(
     name = "com.fasterxml.jackson.dataformat.jackson-dataformat-xml",
     classifiers = [],
-    parent = "com.fasterxml.jackson.jackson-base_2.15.3",
+    parent = "com.fasterxml.jackson.jackson-base_2.22.2",
     jars = [
-        "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.15.3/jackson-dataformat-xml-2.15.3.jar"
+        "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.22.2/jackson-dataformat-xml-2.22.2.jar"
     ],
     exports = [
         "org.codehaus.woodstox.stax2-api",
@@ -4553,15 +4553,15 @@ maven_import(
         "com.fasterxml.woodstox.woodstox-core",
     ],
     original_deps = [
-        "com.fasterxml.jackson.core.jackson-core_2.15.3",
-        "com.fasterxml.jackson.core.jackson-annotations_2.15.3",
-        "com.fasterxml.jackson.core.jackson-databind_2.15.3",
-        "org.codehaus.woodstox.stax2-api_4.2.1",
-        "com.fasterxml.woodstox.woodstox-core_6.5.1",
+        "com.fasterxml.jackson.core.jackson-core_2.22.2",
+        "com.fasterxml.jackson.core.jackson-annotations_2.22",
+        "com.fasterxml.jackson.core.jackson-databind_2.22.2",
+        "org.codehaus.woodstox.stax2-api_4.3.0",
+        "com.fasterxml.woodstox.woodstox-core_7.2.0",
     ],
-    pom = "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.15.3/jackson-dataformat-xml-2.15.3.pom",
+    pom = "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.22.2/jackson-dataformat-xml-2.22.2.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.15.3",
+    repo_path = "com/fasterxml/jackson/dataformat/jackson-dataformat-xml/2.22.2",
     deps_with_exclusions = [
         "com.fasterxml.woodstox.woodstox-core",
         "org.codehaus.woodstox.stax2-api",
@@ -4607,15 +4607,15 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.module.jackson-module-kotlin_2.15.3",
-    pom = "com/fasterxml/jackson/module/jackson-module-kotlin/2.15.3/jackson-module-kotlin-2.15.3.pom",
+    name = "com.fasterxml.jackson.module.jackson-module-kotlin_2.22.2",
+    pom = "com/fasterxml/jackson/module/jackson-module-kotlin/2.22.2/jackson-module-kotlin-2.22.2.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/module/jackson-module-kotlin/2.15.3",
-    parent = "com.fasterxml.jackson.jackson-base_2.15.3",
+    repo_path = "com/fasterxml/jackson/module/jackson-module-kotlin/2.22.2",
+    parent = "com.fasterxml.jackson.jackson-base_2.22.2",
     deps = [
-        "com.fasterxml.jackson.core.jackson-databind_2.15.3",
-        "com.fasterxml.jackson.core.jackson-annotations_2.15.3",
-        "org.jetbrains.kotlin.kotlin-reflect_1.5.32",
+        "com.fasterxml.jackson.core.jackson-databind_2.22.2",
+        "com.fasterxml.jackson.core.jackson-annotations_2.22",
+        "org.jetbrains.kotlin.kotlin-reflect_2.1.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -4623,34 +4623,36 @@ maven_artifact(
 maven_import(
     name = "com.fasterxml.jackson.module.jackson-module-kotlin",
     classifiers = [],
-    parent = "com.fasterxml.jackson.jackson-base_2.15.3",
+    parent = "com.fasterxml.jackson.jackson-base_2.22.2",
     jars = [
-        "com/fasterxml/jackson/module/jackson-module-kotlin/2.15.3/jackson-module-kotlin-2.15.3.jar"
+        "com/fasterxml/jackson/module/jackson-module-kotlin/2.22.2/jackson-module-kotlin-2.22.2.jar"
+    ],
+    exports = [
+        "com.fasterxml.jackson.core.jackson-databind",
     ],
     deps = [
-        "com.fasterxml.jackson.core.jackson-databind",
         "com.fasterxml.jackson.core.jackson-annotations",
         "org.jetbrains.kotlin.kotlin-reflect",
     ],
     original_deps = [
-        "com.fasterxml.jackson.core.jackson-databind_2.15.3",
-        "com.fasterxml.jackson.core.jackson-annotations_2.15.3",
-        "org.jetbrains.kotlin.kotlin-reflect_1.5.32",
+        "com.fasterxml.jackson.core.jackson-databind_2.22.2",
+        "com.fasterxml.jackson.core.jackson-annotations_2.22",
+        "org.jetbrains.kotlin.kotlin-reflect_2.1.21",
     ],
-    pom = "com/fasterxml/jackson/module/jackson-module-kotlin/2.15.3/jackson-module-kotlin-2.15.3.pom",
+    pom = "com/fasterxml/jackson/module/jackson-module-kotlin/2.22.2/jackson-module-kotlin-2.22.2.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/module/jackson-module-kotlin/2.15.3",
+    repo_path = "com/fasterxml/jackson/module/jackson-module-kotlin/2.22.2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.fasterxml.woodstox.woodstox-core_6.5.1",
-    pom = "com/fasterxml/woodstox/woodstox-core/6.5.1/woodstox-core-6.5.1.pom",
+    name = "com.fasterxml.woodstox.woodstox-core_7.2.0",
+    pom = "com/fasterxml/woodstox/woodstox-core/7.2.0/woodstox-core-7.2.0.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/woodstox/woodstox-core/6.5.1",
-    parent = "com.fasterxml.oss-parent_50",
+    repo_path = "com/fasterxml/woodstox/woodstox-core/7.2.0",
+    parent = "com.fasterxml.oss-parent_79",
     deps = [
-        "org.codehaus.woodstox.stax2-api_4.2.1",
+        "org.codehaus.woodstox.stax2-api_4.3.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -4658,19 +4660,19 @@ maven_artifact(
 maven_import(
     name = "com.fasterxml.woodstox.woodstox-core",
     classifiers = [],
-    parent = "com.fasterxml.oss-parent_50",
+    parent = "com.fasterxml.oss-parent_79",
     jars = [
-        "com/fasterxml/woodstox/woodstox-core/6.5.1/woodstox-core-6.5.1.jar"
+        "com/fasterxml/woodstox/woodstox-core/7.2.0/woodstox-core-7.2.0.jar"
     ],
     deps = [
         "org.codehaus.woodstox.stax2-api",
     ],
     original_deps = [
-        "org.codehaus.woodstox.stax2-api_4.2.1",
+        "org.codehaus.woodstox.stax2-api_4.3.0",
     ],
-    pom = "com/fasterxml/woodstox/woodstox-core/6.5.1/woodstox-core-6.5.1.pom",
+    pom = "com/fasterxml/woodstox/woodstox-core/7.2.0/woodstox-core-7.2.0.pom",
     repo_root_path = "",
-    repo_path = "com/fasterxml/woodstox/woodstox-core/6.5.1",
+    repo_path = "com/fasterxml/woodstox/woodstox-core/7.2.0",
     deps_with_exclusions = [
         "org.codehaus.woodstox.stax2-api",
      ],
@@ -14964,25 +14966,25 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.codehaus.woodstox.stax2-api_4.2.1",
-    pom = "org/codehaus/woodstox/stax2-api/4.2.1/stax2-api-4.2.1.pom",
+    name = "org.codehaus.woodstox.stax2-api_4.3.0",
+    pom = "org/codehaus/woodstox/stax2-api/4.3.0/stax2-api-4.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/codehaus/woodstox/stax2-api/4.2.1",
-    parent = "com.fasterxml.oss-parent_38",
+    repo_path = "org/codehaus/woodstox/stax2-api/4.3.0",
+    parent = "com.fasterxml.oss-parent_68",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "org.codehaus.woodstox.stax2-api",
     classifiers = [],
-    parent = "com.fasterxml.oss-parent_38",
+    parent = "com.fasterxml.oss-parent_68",
     jars = [
-        "org/codehaus/woodstox/stax2-api/4.2.1/stax2-api-4.2.1.jar"
+        "org/codehaus/woodstox/stax2-api/4.3.0/stax2-api-4.3.0.jar"
     ],
     original_deps = [],
-    pom = "org/codehaus/woodstox/stax2-api/4.2.1/stax2-api-4.2.1.pom",
+    pom = "org/codehaus/woodstox/stax2-api/4.3.0/stax2-api-4.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/codehaus/woodstox/stax2-api/4.2.1",
+    repo_path = "org/codehaus/woodstox/stax2-api/4.3.0",
     exclusions_for_parents = {
         "com.fasterxml.woodstox.woodstox-core": [
             "javax.xml.stream.stax-api",
@@ -18055,16 +18057,16 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.dokka.dokka-core_2.2.0",
-    pom = "org/jetbrains/dokka/dokka-core/2.2.0/dokka-core-2.2.0.pom",
+    name = "org.jetbrains.dokka.dokka-core_2.3.0",
+    pom = "org/jetbrains/dokka/dokka-core/2.3.0/dokka-core-2.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/dokka/dokka-core/2.2.0",
+    repo_path = "org/jetbrains/dokka/dokka-core/2.3.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
         "org.jetbrains.kotlin.kotlin-reflect_2.0.21",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
-        "com.fasterxml.jackson.module.jackson-module-kotlin_2.15.3",
-        "com.fasterxml.jackson.dataformat.jackson-dataformat-xml_2.15.3",
+        "com.fasterxml.jackson.module.jackson-module-kotlin_2.22.2",
+        "com.fasterxml.jackson.dataformat.jackson-dataformat-xml_2.22.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -18073,7 +18075,7 @@ maven_import(
     name = "org.jetbrains.dokka.dokka-core",
     classifiers = [],
     jars = [
-        "org/jetbrains/dokka/dokka-core/2.2.0/dokka-core-2.2.0.jar"
+        "org/jetbrains/dokka/dokka-core/2.3.0/dokka-core-2.3.0.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
@@ -18088,12 +18090,12 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
         "org.jetbrains.kotlin.kotlin-reflect_2.0.21",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
-        "com.fasterxml.jackson.module.jackson-module-kotlin_2.15.3",
-        "com.fasterxml.jackson.dataformat.jackson-dataformat-xml_2.15.3",
+        "com.fasterxml.jackson.module.jackson-module-kotlin_2.22.2",
+        "com.fasterxml.jackson.dataformat.jackson-dataformat-xml_2.22.2",
     ],
-    pom = "org/jetbrains/dokka/dokka-core/2.2.0/dokka-core-2.2.0.pom",
+    pom = "org/jetbrains/dokka/dokka-core/2.3.0/dokka-core-2.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/dokka/dokka-core/2.2.0",
+    repo_path = "org/jetbrains/dokka/dokka-core/2.3.0",
     visibility = ["//visibility:public"],
 )
 
@@ -82428,15 +82430,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.core.jackson-annotations_2.15.3",
-    pom = "com/fasterxml/jackson/core/jackson-annotations/2.15.3/jackson-annotations-2.15.3.pom",
-    repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.15.3",
-    parent = "com.fasterxml.jackson.jackson-parent_2.15",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.fasterxml.jackson.core.jackson-annotations_2.17.1",
     pom = "com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.pom",
     repo_root_path = "",
@@ -82464,6 +82457,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.fasterxml.jackson.core.jackson-annotations_2.19.2",
+    pom = "com/fasterxml/jackson/core/jackson-annotations/2.19.2/jackson-annotations-2.19.2.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.19.2",
+    parent = "com.fasterxml.jackson.jackson-parent_2.19.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.fasterxml.jackson.core.jackson-core_2.11.1",
     pom = "com/fasterxml/jackson/core/jackson-core/2.11.1/jackson-core-2.11.1.pom",
     repo_root_path = "",
@@ -82478,18 +82480,6 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "com/fasterxml/jackson/core/jackson-core/2.15.0",
     parent = "com.fasterxml.jackson.jackson-base_2.15.0",
-    deps = [
-        "org.junit.junit-bom_5.9.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.fasterxml.jackson.core.jackson-core_2.15.3",
-    pom = "com/fasterxml/jackson/core/jackson-core/2.15.3/jackson-core-2.15.3.pom",
-    repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-core/2.15.3",
-    parent = "com.fasterxml.jackson.jackson-base_2.15.3",
     deps = [
         "org.junit.junit-bom_5.9.2",
     ],
@@ -82524,6 +82514,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.fasterxml.jackson.core.jackson-core_2.19.2",
+    pom = "com/fasterxml/jackson/core/jackson-core/2.19.2/jackson-core-2.19.2.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/jackson/core/jackson-core/2.19.2",
+    parent = "com.fasterxml.jackson.jackson-base_2.19.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.fasterxml.jackson.core.jackson-databind_2.11.1",
     pom = "com/fasterxml/jackson/core/jackson-databind/2.11.1/jackson-databind-2.11.1.pom",
     repo_root_path = "",
@@ -82545,20 +82544,6 @@ maven_artifact(
     deps = [
         "com.fasterxml.jackson.core.jackson-annotations_2.15.0",
         "com.fasterxml.jackson.core.jackson-core_2.15.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.fasterxml.jackson.core.jackson-databind_2.15.3",
-    pom = "com/fasterxml/jackson/core/jackson-databind/2.15.3/jackson-databind-2.15.3.pom",
-    repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.15.3",
-    parent = "com.fasterxml.jackson.jackson-base_2.15.3",
-    deps = [
-        "com.fasterxml.jackson.core.jackson-annotations_2.15.3",
-        "com.fasterxml.jackson.core.jackson-core_2.15.3",
-        "org.junit.junit-bom_5.9.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82598,6 +82583,19 @@ maven_artifact(
     deps = [
         "com.fasterxml.jackson.core.jackson-annotations_2.18.2",
         "com.fasterxml.jackson.core.jackson-core_2.18.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.core.jackson-databind_2.19.2",
+    pom = "com/fasterxml/jackson/core/jackson-databind/2.19.2/jackson-databind-2.19.2.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.19.2",
+    parent = "com.fasterxml.jackson.jackson-base_2.19.2",
+    deps = [
+        "com.fasterxml.jackson.core.jackson-annotations_2.19.2",
+        "com.fasterxml.jackson.core.jackson-core_2.19.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82740,6 +82738,18 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "com/fasterxml/woodstox/woodstox-core/6.2.1",
     parent = "com.fasterxml.oss-parent_38",
+    deps = [
+        "org.codehaus.woodstox.stax2-api_4.2.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.fasterxml.woodstox.woodstox-core_6.5.1",
+    pom = "com/fasterxml/woodstox/woodstox-core/6.5.1/woodstox-core-6.5.1.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/woodstox/woodstox-core/6.5.1",
+    parent = "com.fasterxml.oss-parent_50",
     deps = [
         "org.codehaus.woodstox.stax2-api_4.2.1",
     ],
@@ -95426,6 +95436,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.codehaus.woodstox.stax2-api_4.2.1",
+    pom = "org/codehaus/woodstox/stax2-api/4.2.1/stax2-api-4.2.1.pom",
+    repo_root_path = "",
+    repo_path = "org/codehaus/woodstox/stax2-api/4.2.1",
+    parent = "com.fasterxml.oss-parent_38",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.eclipse.lsp4j.org.eclipse.lsp4j.debug_1.0.0",
     pom = "org/eclipse/lsp4j/org.eclipse.lsp4j.debug/1.0.0/org.eclipse.lsp4j.debug-1.0.0.pom",
     repo_root_path = "",
@@ -95490,11 +95509,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.freemarker.freemarker_2.3.32",
-    pom = "org/freemarker/freemarker/2.3.32/freemarker-2.3.32.pom",
+    name = "org.freemarker.freemarker_2.3.35",
+    pom = "org/freemarker/freemarker/2.3.35/freemarker-2.3.35.pom",
     repo_root_path = "",
-    repo_path = "org/freemarker/freemarker/2.3.32",
-    parent = "org.apache.apache_17",
+    repo_path = "org/freemarker/freemarker/2.3.35",
     visibility = ["//visibility:public"],
 )
 
@@ -97724,40 +97742,40 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.dokka.analysis-kotlin-descriptors_2.2.0",
-    pom = "org/jetbrains/dokka/analysis-kotlin-descriptors/2.2.0/analysis-kotlin-descriptors-2.2.0.pom",
+    name = "org.jetbrains.dokka.analysis-kotlin-symbols_2.3.0",
+    pom = "org/jetbrains/dokka/analysis-kotlin-symbols/2.3.0/analysis-kotlin-symbols-2.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/dokka/analysis-kotlin-descriptors/2.2.0",
+    repo_path = "org/jetbrains/dokka/analysis-kotlin-symbols/2.3.0",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.dokka.analysis-markdown_2.2.0",
-    pom = "org/jetbrains/dokka/analysis-markdown/2.2.0/analysis-markdown-2.2.0.pom",
+    name = "org.jetbrains.dokka.analysis-markdown_2.3.0",
+    pom = "org/jetbrains/dokka/analysis-markdown/2.3.0/analysis-markdown-2.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/dokka/analysis-markdown/2.2.0",
+    repo_path = "org/jetbrains/dokka/analysis-markdown/2.3.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
-        "org.jsoup.jsoup_1.16.1",
-        "org.jetbrains.markdown-jvm_0.7.3",
+        "org.jsoup.jsoup_1.23.2",
+        "org.jetbrains.markdown-jvm_0.7.10",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.dokka.dokka-base_2.2.0",
-    pom = "org/jetbrains/dokka/dokka-base/2.2.0/dokka-base-2.2.0.pom",
+    name = "org.jetbrains.dokka.dokka-base_2.3.0",
+    pom = "org/jetbrains/dokka/dokka-base/2.3.0/dokka-base-2.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/dokka/dokka-base/2.2.0",
+    repo_path = "org/jetbrains/dokka/dokka-base/2.3.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
-        "org.jetbrains.dokka.analysis-markdown_2.2.0",
+        "org.jetbrains.dokka.analysis-markdown_2.3.0",
         "org.jetbrains.kotlin.kotlin-reflect_2.0.21",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
-        "org.jsoup.jsoup_1.16.1",
-        "org.freemarker.freemarker_2.3.32",
+        "org.jsoup.jsoup_1.23.2",
+        "org.freemarker.freemarker_2.3.35",
         "org.jetbrains.kotlinx.kotlinx-html-jvm_0.9.1",
-        "com.fasterxml.jackson.module.jackson-module-kotlin_2.15.3",
+        "com.fasterxml.jackson.module.jackson-module-kotlin_2.22.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -97780,14 +97798,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.dokka.javadoc-plugin_2.2.0",
-    pom = "org/jetbrains/dokka/javadoc-plugin/2.2.0/javadoc-plugin-2.2.0.pom",
+    name = "org.jetbrains.dokka.javadoc-plugin_2.3.0",
+    pom = "org/jetbrains/dokka/javadoc-plugin/2.3.0/javadoc-plugin-2.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/dokka/javadoc-plugin/2.2.0",
+    repo_path = "org/jetbrains/dokka/javadoc-plugin/2.3.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
-        "org.jetbrains.dokka.dokka-base_2.2.0",
-        "org.jetbrains.dokka.kotlin-as-java-plugin_2.2.0",
+        "org.jetbrains.dokka.dokka-base_2.3.0",
+        "org.jetbrains.dokka.kotlin-as-java-plugin_2.3.0",
         "org.jetbrains.kotlin.kotlin-reflect_2.0.21",
         "com.soywiz.korlibs.korte.korte-jvm_4.0.10",
         "org.jetbrains.kotlinx.kotlinx-html-jvm_0.9.1",
@@ -97797,13 +97815,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.dokka.kotlin-as-java-plugin_2.2.0",
-    pom = "org/jetbrains/dokka/kotlin-as-java-plugin/2.2.0/kotlin-as-java-plugin-2.2.0.pom",
+    name = "org.jetbrains.dokka.kotlin-as-java-plugin_2.3.0",
+    pom = "org/jetbrains/dokka/kotlin-as-java-plugin/2.3.0/kotlin-as-java-plugin-2.3.0.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/dokka/kotlin-as-java-plugin/2.2.0",
+    repo_path = "org/jetbrains/dokka/kotlin-as-java-plugin/2.3.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
-        "org.jetbrains.dokka.dokka-base_2.2.0",
+        "org.jetbrains.dokka.dokka-base_2.3.0",
         "org.jetbrains.kotlin.kotlin-reflect_2.0.21",
     ],
     visibility = ["//visibility:public"],
@@ -105040,6 +105058,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-reflect_2.1.21",
+    pom = "org/jetbrains/kotlin/kotlin-reflect/2.1.21/kotlin-reflect-2.1.21.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.1.21",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-reflect_2.2.0",
     pom = "org/jetbrains/kotlin/kotlin-reflect/2.2.0/kotlin-reflect-2.2.0.pom",
     repo_root_path = "",
@@ -107019,6 +107048,14 @@ maven_artifact(
     pom = "org/jetbrains/kotlin/kotlin-stdlib-common/2.0.0/kotlin-stdlib-common-2.0.0.pom",
     repo_root_path = "",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.0.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.1.21",
+    pom = "org/jetbrains/kotlin/kotlin-stdlib-common/2.1.21/kotlin-stdlib-common-2.1.21.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.1.21",
     visibility = ["//visibility:public"],
 )
 
@@ -111831,10 +111868,21 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.markdown_0.7.3",
-    pom = "org/jetbrains/markdown/0.7.3/markdown-0.7.3.pom",
+    name = "org.jetbrains.markdown-jvm_0.7.10",
+    pom = "org/jetbrains/markdown-jvm/0.7.10/markdown-jvm-0.7.10.pom",
     repo_root_path = "",
-    repo_path = "org/jetbrains/markdown/0.7.3",
+    repo_path = "org/jetbrains/markdown-jvm/0.7.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.markdown_0.7.10",
+    pom = "org/jetbrains/markdown/0.7.10/markdown-0.7.10.pom",
+    repo_root_path = "",
+    repo_path = "org/jetbrains/markdown/0.7.10",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
     ],
@@ -111879,14 +111927,6 @@ maven_artifact(
     pom = "org/jsoup/jsoup/1.15.1/jsoup-1.15.1.pom",
     repo_root_path = "",
     repo_path = "org/jsoup/jsoup/1.15.1",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jsoup.jsoup_1.16.1",
-    pom = "org/jsoup/jsoup/1.16.1/jsoup-1.16.1.pom",
-    repo_root_path = "",
-    repo_path = "org/jsoup/jsoup/1.16.1",
     visibility = ["//visibility:public"],
 )
 
@@ -112259,6 +112299,14 @@ maven_artifact(
     pom = "org/junit/junit-bom/5.14.2/junit-bom-5.14.2.pom",
     repo_root_path = "",
     repo_path = "org/junit/junit-bom/5.14.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.junit-bom_5.14.3",
+    pom = "org/junit/junit-bom/5.14.3/junit-bom-5.14.3.pom",
+    repo_root_path = "",
+    repo_path = "org/junit/junit-bom/5.14.3",
     visibility = ["//visibility:public"],
 )
 
@@ -113898,14 +113946,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.jackson-base_2.15.3",
-    pom = "com/fasterxml/jackson/jackson-base/2.15.3/jackson-base-2.15.3.pom",
-    repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/jackson-base/2.15.3",
-    parent = "com.fasterxml.jackson.jackson-bom_2.15.3",
-)
-
-maven_artifact(
     name = "com.fasterxml.jackson.jackson-base_2.17.1",
     pom = "com/fasterxml/jackson/jackson-base/2.17.1/jackson-base-2.17.1.pom",
     repo_root_path = "",
@@ -113938,6 +113978,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.fasterxml.jackson.jackson-base_2.22.2",
+    pom = "com/fasterxml/jackson/jackson-base/2.22.2/jackson-base-2.22.2.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/jackson/jackson-base/2.22.2",
+    parent = "com.fasterxml.jackson.jackson-bom_2.22.2",
+)
+
+maven_artifact(
     name = "com.fasterxml.jackson.jackson-bom_2.11.1",
     pom = "com/fasterxml/jackson/jackson-bom/2.11.1/jackson-bom-2.11.1.pom",
     repo_root_path = "",
@@ -113950,14 +113998,6 @@ maven_artifact(
     pom = "com/fasterxml/jackson/jackson-bom/2.15.0/jackson-bom-2.15.0.pom",
     repo_root_path = "",
     repo_path = "com/fasterxml/jackson/jackson-bom/2.15.0",
-    parent = "com.fasterxml.jackson.jackson-parent_2.15",
-)
-
-maven_artifact(
-    name = "com.fasterxml.jackson.jackson-bom_2.15.3",
-    pom = "com/fasterxml/jackson/jackson-bom/2.15.3/jackson-bom-2.15.3.pom",
-    repo_root_path = "",
-    repo_path = "com/fasterxml/jackson/jackson-bom/2.15.3",
     parent = "com.fasterxml.jackson.jackson-parent_2.15",
 )
 
@@ -113991,6 +114031,14 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "com/fasterxml/jackson/jackson-bom/2.19.2",
     parent = "com.fasterxml.jackson.jackson-parent_2.19.3",
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.jackson-bom_2.22.2",
+    pom = "com/fasterxml/jackson/jackson-bom/2.22.2/jackson-bom-2.22.2.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/jackson/jackson-bom/2.22.2",
+    parent = "com.fasterxml.jackson.jackson-parent_2.22",
 )
 
 maven_artifact(
@@ -114031,6 +114079,14 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "com/fasterxml/jackson/jackson-parent/2.19.3",
     parent = "com.fasterxml.oss-parent_69",
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.jackson-parent_2.22",
+    pom = "com/fasterxml/jackson/jackson-parent/2.22/jackson-parent-2.22.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/jackson/jackson-parent/2.22",
+    parent = "com.fasterxml.oss-parent_79",
 )
 
 maven_artifact(
@@ -114083,10 +114139,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.fasterxml.oss-parent_68",
+    pom = "com/fasterxml/oss-parent/68/oss-parent-68.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/oss-parent/68",
+)
+
+maven_artifact(
     name = "com.fasterxml.oss-parent_69",
     pom = "com/fasterxml/oss-parent/69/oss-parent-69.pom",
     repo_root_path = "",
     repo_path = "com/fasterxml/oss-parent/69",
+)
+
+maven_artifact(
+    name = "com.fasterxml.oss-parent_79",
+    pom = "com/fasterxml/oss-parent/79/oss-parent-79.pom",
+    repo_root_path = "",
+    repo_path = "com/fasterxml/oss-parent/79",
 )
 
 maven_artifact(

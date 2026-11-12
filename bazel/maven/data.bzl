@@ -1258,9 +1258,9 @@ _CLASS_JARS = [
     "org.jetbrains.compose.ui:ui-desktop:1.10.1",
     "org.jetbrains.compose.ui:ui-tooling:1.10.1",
     "org.jetbrains.compose.ui:ui-tooling-preview:1.10.1",
-    "org.jetbrains.dokka:analysis-kotlin-descriptors:2.2.0",
-    "org.jetbrains.dokka:dokka-base:2.2.0",
-    "org.jetbrains.dokka:javadoc-plugin:2.2.0",
+    "org.jetbrains.dokka:analysis-kotlin-symbols:2.3.0",
+    "org.jetbrains.dokka:dokka-base:2.3.0",
+    "org.jetbrains.dokka:javadoc-plugin:2.3.0",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.6.21",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.10",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.20",
@@ -1530,6 +1530,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.23",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.24",
     "org.jetbrains.kotlin:kotlin-stdlib-common:2.0.21",  # Kotlin templates
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.21",  # Used by dokka-core 2.3.0 transitive deps
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.0",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.10",  # AGP dependencies + Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.20",
@@ -1650,8 +1651,8 @@ _CLASS_JARS = [
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3",
     "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3",
     "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.7.3",
-    "org.jetbrains:markdown:0.7.3",
-    "org.jetbrains:markdown-jvm:0.7.3",
+    "org.jetbrains:markdown:pom:0.7.10",
+    "org.jetbrains:markdown-jvm:0.7.10",
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
     "org.jetbrains.skiko:skiko-js-wasm-runtime:0.9.37.4",
@@ -1663,6 +1664,7 @@ _CLASS_JARS = [
     "org.junit:junit-bom:pom:5.11.4",  # imported by com.google.auth:google-auth-library-parent:1.42.1
     "org.junit:junit-bom:pom:5.14.1",  # imported by org.codehaus.mojo:mojo-parent:95
     "org.junit:junit-bom:pom:5.14.2",  # imported by org.apache.commons:commons-parent:98
+    "org.junit:junit-bom:pom:5.14.3",  # imported by com.fasterxml.jackson:jackson-base:2.22.2
     "org.junit:junit-bom:pom:5.14.4",  # imported by org.apache.commons:commons-parent:105
     "org.junit:junit-bom:pom:5.9.2",
     "org.junit:junit-bom:pom:5.9.3",

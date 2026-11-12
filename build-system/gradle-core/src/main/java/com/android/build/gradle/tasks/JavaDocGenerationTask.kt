@@ -248,12 +248,12 @@ abstract class JavaDocGenerationTask : NonIncrementalTask() {
 
   companion object {
     // this version should be same as the version of dokka-core that gradle-core depends on.
-    const val DOKKA_VERSION = "2.2.0"
+    const val DOKKA_VERSION = "2.3.0"
 
     private const val DOKKA_GROUP = "org.jetbrains.dokka"
     const val DOKKA_CORE = "$DOKKA_GROUP:dokka-core:$DOKKA_VERSION"
     const val DOKKA_JAVADOC_PLUGIN = "$DOKKA_GROUP:javadoc-plugin:$DOKKA_VERSION"
     const val DOKKA_BASE_PLUGIN = "$DOKKA_GROUP:dokka-base:$DOKKA_VERSION"
-    const val DOKKA_ANALYSIS = "$DOKKA_GROUP:analysis-kotlin-descriptors:$DOKKA_VERSION"
+    const val DOKKA_ANALYSIS = "$DOKKA_GROUP:analysis-kotlin-symbols:$DOKKA_VERSION"
   }
 }
