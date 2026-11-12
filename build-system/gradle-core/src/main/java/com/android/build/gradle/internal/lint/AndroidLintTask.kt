@@ -650,7 +650,9 @@ abstract class AndroidLintTask : NonIncrementalTask() {
           (this is LocalLintReportCreationAction || this is AggregatedLintReportCreationAction)
       )
       if (autoFix) {
-        task.lintFixBuildService.set(getBuildService(creationConfig.services.buildServiceRegistry))
+        val service = getBuildService(creationConfig.services.buildServiceRegistry, LintFixBuildService::class.java)
+        task.lintFixBuildService.set(service)
+        task.usesService(service)
       }
       task.lintFixBuildService.disallowChanges()
       task.checkOnly.setDisallowChanges(creationConfig.services.provider { creationConfig.global.lintOptions.checkOnly })
@@ -1005,7 +1007,9 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.autoFix.setDisallowChanges(autoFix)
     this.lintMode.setDisallowChanges(lintMode)
     if (autoFix) {
-      this.lintFixBuildService.set(getBuildService(taskCreationServices.buildServiceRegistry))
+      val service = getBuildService(taskCreationServices.buildServiceRegistry, LintFixBuildService::class.java)
+      this.lintFixBuildService.set(service)
+      this.usesService(service)
     }
     this.lintFixBuildService.disallowChanges()
     this.checkOnly.setDisallowChanges(lintOptions.checkOnly)
