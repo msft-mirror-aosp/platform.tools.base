@@ -355,7 +355,7 @@ public class XmlAttribute extends XmlNode {
      * (implicitly declared on the implicitNode).
      *
      * @param mergingReport report to log errors and actions.
-     * @param implicitNode the lower priority node where the implicit attribute value resides.
+     * @param implicitNode the higher priority node where the implicit attribute value resides.
      * @return the merged value that should be stored in the attribute or null if nothing should be
      *     stored.
      */
