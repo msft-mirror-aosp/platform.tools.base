@@ -209,10 +209,16 @@ class UtpTestUtilsTest {
     assertThat(results).isFalse()
   }
 
-  private fun captureWorkerSystemProperties(
-    instrumentationArgs: Map<String, String>,
+  private class WorkerForkOptions(val systemProperties: Map<String, Any?>, val environment: Map<String, Any?>)
+
+  private fun captureWorkerSystemProperties(instrumentationArgs: Map<String, String>, shardConfig: ShardConfig? = null): Map<String, Any?> =
+    captureWorkerForkOptions(instrumentationArgs, shardConfig).systemProperties
+
+  private fun captureWorkerForkOptions(
+    instrumentationArgs: Map<String, String> = emptyMap(),
     shardConfig: ShardConfig? = null,
-  ): Map<String, Any?> {
+    environment: Map<String, String> = emptyMap(),
+  ): WorkerForkOptions {
     val utpResultDir = temporaryFolderRule.newFolder()
 
     val mockProvider: Provider<String> = mock()
@@ -240,6 +246,7 @@ class UtpTestUtilsTest {
     }
 
     val systemProperties = mutableMapOf<String, Any?>()
+    val workerEnvironment = mutableMapOf<String, Any?>()
     whenever(mockWorkerExecutor.processIsolation(any())).then { invocation ->
       val specAction = invocation.getArgument<org.gradle.api.Action<org.gradle.workers.ProcessWorkerSpec>>(0)
       val mockSpec = mock<org.gradle.workers.ProcessWorkerSpec>(defaultAnswer = RETURNS_DEEP_STUBS)
@@ -250,13 +257,17 @@ class UtpTestUtilsTest {
           systemProperties[propInvocation.getArgument(0)] = propInvocation.getArgument(1)
           mockFork
         }
+        whenever(mockFork.environment(any<String>(), any())).then { envInvocation ->
+          workerEnvironment[envInvocation.getArgument(0)] = envInvocation.getArgument(1)
+          mockFork
+        }
         forkAction.execute(mockFork)
       }
       specAction.execute(mockSpec)
       mockWorkQueue
     }
 
-    runUtpTestSuiteAndWait(
+    runUtpTestSuiteAndWaitWithEnvironment(
       listOf(config),
       mockWorkerExecutor,
       "projectName",
@@ -265,8 +276,9 @@ class UtpTestUtilsTest {
       mockUtpDependencies,
       mockVersionedSdkLoader,
       mockProviderFactory,
+      environment,
     )
-    return systemProperties
+    return WorkerForkOptions(systemProperties, workerEnvironment)
   }
 
   @Test
@@ -282,5 +294,72 @@ class UtpTestUtilsTest {
 
     assertThat(systemProperties["android-test.num-shards[serial1]"]).isEqualTo("10")
     assertThat(systemProperties["android-test.shard-index[serial1]"]).isEqualTo("4")
+  }
+
+  @Test
+  fun forwardsAdbServerPortToWorkerEnvironment() {
+    val forkOptions =
+      captureWorkerForkOptions(environment = mapOf("ANDROID_ADB_SERVER_PORT" to "5038", "HOME" to "/home/user", "UNRELATED" to "value"))
+
+    // The engine's adb must use the same adb server as the device setup in the Gradle daemon.
+    assertThat(forkOptions.environment).containsExactly("ANDROID_ADB_SERVER_PORT", "5038", "HOME", "/home/user")
+  }
+
+  @Test
+  fun forwardsWindowsTempAndProfileVariablesToWorkerEnvironment() {
+    val forkOptions =
+      captureWorkerForkOptions(
+        environment =
+          mapOf(
+            "TEMP" to "C:\\Users\\runner\\AppData\\Local\\Temp",
+            "TMP" to "C:\\Users\\runner\\AppData\\Local\\Temp",
+            "USERPROFILE" to "C:\\Users\\runner",
+            "SYSTEMROOT" to "C:\\WINDOWS",
+            "Path" to "C:\\WINDOWS\\system32",
+          )
+      )
+
+    // Without these, adb on Windows writes its server log to C:\WINDOWS and fails to start a server.
+    assertThat(forkOptions.environment)
+      .containsExactly(
+        "TEMP",
+        "C:\\Users\\runner\\AppData\\Local\\Temp",
+        "TMP",
+        "C:\\Users\\runner\\AppData\\Local\\Temp",
+        "USERPROFILE",
+        "C:\\Users\\runner",
+        "SYSTEMROOT",
+        "C:\\WINDOWS",
+      )
+  }
+
+  @Test
+  fun utpWorkerEnvironmentKeepsOnlyAdbAndPlatformVariables() {
+    val environment =
+      mapOf(
+        "ANDROID_ADB_SERVER_PORT" to "5038",
+        "ANDROID_ADB_SERVER_ADDRESS" to "127.0.0.1",
+        "ADB_SERVER_SOCKET" to "tcp:localhost:5038",
+        "ADB_VENDOR_KEYS" to "/keys",
+        "TMPDIR" to "/tmp/runner",
+        "ANDROID_SERIAL" to "emulator-5556",
+        "ANDROID_HOME" to "/sdk",
+        "PATH" to "/usr/bin",
+        "GITHUB_TOKEN" to "secret",
+      )
+
+    assertThat(utpWorkerEnvironment(environment))
+      .containsExactly(
+        "ANDROID_ADB_SERVER_PORT",
+        "5038",
+        "ANDROID_ADB_SERVER_ADDRESS",
+        "127.0.0.1",
+        "ADB_SERVER_SOCKET",
+        "tcp:localhost:5038",
+        "ADB_VENDOR_KEYS",
+        "/keys",
+        "TMPDIR",
+        "/tmp/runner",
+      )
   }
 }

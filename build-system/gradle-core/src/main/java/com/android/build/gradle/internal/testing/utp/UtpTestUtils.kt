@@ -43,6 +43,46 @@ import org.gradle.workers.WorkerExecutor
 private const val TEST_RESULT_EXIT_CODE_FILE_NAME = "test-result-exit-code.txt"
 private const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
 
+/**
+ * Names of the environment variables that are forwarded to the UTP worker, in addition to the ones matching
+ * [UTP_WORKER_FORWARDED_ADB_ENVIRONMENT_VARIABLE].
+ */
+private val UTP_WORKER_FORWARDED_ENVIRONMENT_VARIABLES =
+  listOf(
+    // Bazel sandbox compatibility (reusing the writable HOME directory set by Bazel), and lets adb
+    // find its configuration (e.g. adbkey authentication) on Unix.
+    "HOME",
+    // Temp directory, used by adb for its server log (TMPDIR on Unix, TMP or TEMP on Windows).
+    "TMPDIR",
+    "TMP",
+    "TEMP",
+    // On Windows, used by adb to find its configuration and as a temp directory fallback.
+    "USERPROFILE",
+    // On Windows, required by system libraries, e.g. for networking.
+    "SystemRoot",
+  )
+
+/**
+ * Environment variables that configure adb, e.g. ANDROID_ADB_SERVER_PORT, ANDROID_ADB_SERVER_ADDRESS, ADB_SERVER_SOCKET and
+ * ADB_VENDOR_KEYS. They must reach the adb started by the engine, so that it uses the same adb server as the device setup in the Gradle
+ * daemon.
+ */
+private val UTP_WORKER_FORWARDED_ADB_ENVIRONMENT_VARIABLE = Regex("(ANDROID_)?ADB_.*", RegexOption.IGNORE_CASE)
+
+/**
+ * Returns the variables of [environment] to set in the environment of the process-isolated worker that runs the Android Test Engine.
+ *
+ * Gradle starts process-isolated workers with a sanitized environment (empty on Windows, only locale variables on Unix), but the engine
+ * starts adb, which depends on some environment variables. Without them, adb could connect to a different adb server than the one used to
+ * set up the devices, and on Windows it cannot start an adb server because it has no writable temp directory.
+ *
+ * Names are matched case-insensitively, as on Windows.
+ */
+internal fun utpWorkerEnvironment(environment: Map<String, String>): Map<String, String> = environment.filterKeys { name ->
+  UTP_WORKER_FORWARDED_ENVIRONMENT_VARIABLES.any { it.equals(name, ignoreCase = true) } ||
+    UTP_WORKER_FORWARDED_ADB_ENVIRONMENT_VARIABLE.matches(name)
+}
+
 /** Runs the given runner configs using Unified Test Platform. */
 fun runUtpTestSuiteAndWait(
   runnerConfigs: List<RunUtpWorkParameters.UtpRunConfig>,
@@ -53,6 +93,33 @@ fun runUtpTestSuiteAndWait(
   utpDependencies: UtpDependencies,
   versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
   provider: ProviderFactory,
+): Boolean =
+  runUtpTestSuiteAndWaitWithEnvironment(
+    runnerConfigs,
+    workerExecutor,
+    projectPath,
+    variantName,
+    resultsDir,
+    utpDependencies,
+    versionedSdkLoader,
+    provider,
+    System.getenv(),
+  )
+
+/**
+ * Runs the given runner configs using Unified Test Platform, forwarding the relevant variables of [environment] to the worker (see
+ * [utpWorkerEnvironment]).
+ */
+internal fun runUtpTestSuiteAndWaitWithEnvironment(
+  runnerConfigs: List<RunUtpWorkParameters.UtpRunConfig>,
+  workerExecutor: WorkerExecutor,
+  projectPath: String,
+  variantName: String,
+  resultsDir: File,
+  utpDependencies: UtpDependencies,
+  versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
+  provider: ProviderFactory,
+  environment: Map<String, String>,
 ): Boolean {
   val mergedUtpResultProtoOutputFile = File(resultsDir, TEST_RESULT_PB_FILE_NAME)
   val testResultExitCodeFile = File(resultsDir, TEST_RESULT_EXIT_CODE_FILE_NAME)
@@ -165,10 +232,9 @@ fun runUtpTestSuiteAndWait(
         }
       }
 
-      // Propagate HOME environment variable to ensure:
-      // 1. Bazel sandbox compatibility (reusing the writable HOME directory set by Bazel).
-      // 2. ADB/Emulator configurations (e.g. adbkey authentication) can be resolved.
-      System.getenv("HOME")?.let { fork.environment("HOME", it) }
+      // Gradle starts process-isolated workers with a sanitized environment, so forward the
+      // variables that adb (started by the Android Test Engine in the worker) depends on.
+      utpWorkerEnvironment(environment).forEach { (name, value) -> fork.environment(name, value) }
     }
   }
 
