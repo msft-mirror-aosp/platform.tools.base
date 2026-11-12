@@ -17,6 +17,7 @@
 package com.android.tools.render.discovery
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Composer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -26,6 +27,7 @@ import com.android.testutils.TestUtils
 import com.android.tools.render.RenderEnvironmentBootstrapper
 import kotlin.io.path.absolutePathString
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -145,6 +147,27 @@ class SamplePreviewTarget {
   @Composable
   @Preview(name = "Invalid Limit Param Preview")
   fun SampleMethodWithInvalidPreviewParameterLimit(@PreviewParameter(provider = SampleUserProvider::class, limit = -1) user: String) {}
+
+  /**
+   * Parameter fixtures mimic what the Compose compiler emits, e.g. `(count: Int, composer: Composer?, changed: Int)` for `fun Foo(count:
+   * Int)`: the fixtures are compiled without the Compose compiler, so the `Composer`, `$changed` and `$default` parameters are declared by
+   * hand. Methods without that shape have their parameters ignored, see `MethodDiscoveryContext.fromDescriptor`.
+   */
+  @Composable @Preview(name = "Plain Param Preview") fun SampleMethodWithPlainParameter(count: Int, composer: Composer?, changed: Int) {}
+
+  @Composable
+  @Preview(name = "Annotated And Plain Param Preview")
+  fun SampleMethodWithAnnotatedAndPlainParameters(
+    @PreviewParameter(provider = SampleUserProvider::class) user: String,
+    count: Int,
+    composer: Composer?,
+    changed: Int,
+  ) {}
+
+  /** `fun Foo(count: Int = 0)`: the trailing `$default` mask tells that a parameter has a default value. */
+  @Composable
+  @Preview(name = "Default Param Preview")
+  fun SampleMethodWithDefaultParameter(count: Int, composer: Composer?, changed: Int, defaults: Int) {}
 
   @Composable
   @Preview(name = "Multi Param Preview 1")
@@ -508,6 +531,36 @@ class PreviewDiscoveryEngineTest {
       assertEquals(1, discovered.size)
       assertTrue("Method without @PreviewParameter should have empty methodParams", discovered[0].methodParams.isEmpty())
       assertEquals(null, discovered[0].previewWrapperFqn)
+    }
+  }
+
+  @Test
+  fun testDiscoverMethodWithParameterWithoutPreviewParameterProducesValidationError() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithPlainParameter"
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      assertTrue("A parameter the renderer cannot supply must not be expanded into previews", result.previews.isEmpty())
+      val error = result.methodValidationResult.errors.single()
+      assertTrue(
+        error.message,
+        error.message.startsWith(
+          "Method '$methodFQN' annotated with @Preview has parameters without @PreviewParameter or a default value: parameter 1 ('int')"
+        ),
+      )
+
+      // The annotated parameter is not reported, and the Composer tail is not a declared parameter.
+      val mixed = engine.discoverAllPreviews("${SamplePreviewTarget::class.java.name}.SampleMethodWithAnnotatedAndPlainParameters").single()
+      assertTrue(mixed.previews.isEmpty())
+      val mixedError = mixed.methodValidationResult.errors.single()
+      assertTrue(mixedError.message, mixedError.message.contains("parameter 2 ('int')") && !mixedError.message.contains("parameter 1"))
+      assertFalse(mixedError.message, mixedError.message.contains("Composer"))
+
+      // A parameter that may have a default value, and a method without the Compose compiler's shape, are rendered.
+      for (name in listOf("SampleMethodWithDefaultParameter", "SampleMethodWithPreviewParameter")) {
+        val accepted = engine.discoverAllPreviews("${SamplePreviewTarget::class.java.name}.$name").single()
+        assertTrue(name, accepted.methodValidationResult.issues.isEmpty())
+        assertEquals(1, accepted.previews.size)
+      }
     }
   }
 

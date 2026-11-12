@@ -16,6 +16,7 @@
 
 package com.android.tools.render.validation
 
+import com.android.tools.render.discovery.DiscoveredParameter
 import com.android.tools.render.discovery.MethodDiscoveryContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -264,6 +265,67 @@ class MethodLevelValidatorTest {
     assertTrue("Invalid limit in @PreviewParameter should produce error", result.hasErrors)
     assertEquals(1, result.errors.size)
     assertEquals("Parameter 'limit' on @PreviewParameter must be a positive integer, got: '-5'", result.errors.first().message)
+  }
+
+  private fun validateParameters(isComposable: Boolean, mayHaveDefaults: Boolean, vararg parameters: DiscoveredParameter) =
+    validator.validate(
+      methodFQN = "com.example.MyScreenKt.MyPreview",
+      discoveryContext =
+        MethodDiscoveryContext(
+          isComposable = isComposable,
+          parameters = parameters.toMutableList(),
+          mayHaveDefaultParameters = mayHaveDefaults,
+          previewConfigurations = mutableListOf(mapOf("name" to "Preview")),
+          previewParameterConfigs =
+            parameters.filter { it.hasPreviewParameter }.mapTo(mutableListOf()) { mapOf("provider" to "com.example.UserProvider") },
+        ),
+    )
+
+  @Test
+  fun testParameterWithoutPreviewParameterOrDefaultProducesError() {
+    val result = validateParameters(isComposable = true, mayHaveDefaults = false, DiscoveredParameter("com.example.User"))
+    val error = result.errors.single()
+    assertEquals(
+      "Method 'com.example.MyScreenKt.MyPreview' annotated with @Preview has parameters without @PreviewParameter or a default value: " +
+        "parameter 1 ('com.example.User'). Composable functions with non-default parameters are not supported in Preview unless they " +
+        "are annotated with @PreviewParameter",
+      error.message,
+    )
+    assertEquals(ValidationCategory.METHOD, error.category)
+    assertEquals("com.example.MyScreenKt.MyPreview", error.target)
+  }
+
+  @Test
+  fun testParametersAreAcceptedWhenDefaultValuesMayExist() {
+    // `fun Card(modifier: Modifier = Modifier)` is the common case; bytecode cannot tell which parameter has the default value.
+    val result =
+      validateParameters(
+        isComposable = true,
+        mayHaveDefaults = true,
+        DiscoveredParameter("androidx.compose.ui.Modifier"),
+        DiscoveredParameter("int"),
+      )
+    assertTrue(result.issues.isEmpty())
+  }
+
+  @Test
+  fun testOnlyParametersWithoutPreviewParameterAreReported() {
+    val annotated = DiscoveredParameter("java.lang.String", hasPreviewParameter = true)
+    assertTrue(validateParameters(isComposable = true, mayHaveDefaults = false, annotated).issues.isEmpty())
+
+    val error = validateParameters(isComposable = true, mayHaveDefaults = false, annotated, DiscoveredParameter("int")).errors.single()
+    assertTrue(error.message, error.message.contains("parameter 2 ('int')") && !error.message.contains("parameter 1"))
+  }
+
+  @Test
+  fun testDeclaredParametersAreNotValidatedOnNonComposableMethods() {
+    // The missing @Composable is the actionable problem; reporting the parameters as well would be noise.
+    val result = validateParameters(isComposable = false, mayHaveDefaults = false, DiscoveredParameter("int"))
+    assertEquals(1, result.errors.size)
+    assertEquals(
+      "Method 'com.example.MyScreenKt.MyPreview' annotated with @Preview must be annotated with @Composable",
+      result.errors.single().message,
+    )
   }
 
   @Test

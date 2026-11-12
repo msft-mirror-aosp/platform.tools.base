@@ -41,9 +41,6 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     /** Descriptor for Jetpack Compose's `@Composable` annotation. */
     private const val COMPOSABLE_DESC = "Landroidx/compose/runtime/Composable;"
 
-    /** Descriptor for Jetpack Compose's `Composer` parameter. */
-    private const val COMPOSER_DESC = "Landroidx/compose/runtime/Composer;"
-
     private const val PREVIEW_DESC = "Landroidx/compose/ui/tooling/preview/Preview;"
 
     /**
@@ -109,7 +106,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
           if ((access and Opcodes.ACC_SYNTHETIC) != 0) return null
 
           methodFound = true
-          val discoveryContext = MethodDiscoveryContext()
+          val discoveryContext = MethodDiscoveryContext.fromDescriptor(descriptor)
           val traversalPath = mutableSetOf<String>()
           // MultiPreview annotation classes whose @PreviewWrapper has already been recorded. A class reachable through several paths
           // (e.g. a diamond of MultiPreviews) declares a single wrapper, so it is only counted once, as in Android Studio (AnnotationsGraph
@@ -139,6 +136,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
 
             override fun visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean): AnnotationVisitor? {
               if (desc == PREVIEW_PARAMETER_DESC) {
+                discoveryContext.parameters.getOrNull(parameter)?.hasPreviewParameter = true
                 val paramMap = mutableMapOf<String, String>()
                 discoveryContext.previewParameterConfigs.add(paramMap)
                 return createPreviewParameterVisitor(paramMap)

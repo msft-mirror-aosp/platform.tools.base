@@ -44,6 +44,7 @@ class MethodLevelValidator {
       )
     )
     if (discoveryContext.isComposable) {
+      issues.addAll(validateDeclaredParameters(methodFQN, discoveryContext))
       issues.addAll(
         validateMethodPreviewParameter(
           methodFQN = methodFQN,
@@ -149,6 +150,31 @@ class MethodLevelValidator {
       )
     }
     return issues
+  }
+
+  /**
+   * The renderer can only supply a parameter that is annotated with `@PreviewParameter` or has a default value; any other parameter is
+   * passed `null` (or `0` for primitives), which fails or silently renders the wrong content. Bytecode only tells whether some parameter
+   * has a default value, not which one (see [MethodDiscoveryContext.fromDescriptor]), so nothing is reported in that case: most previews
+   * have a parameter such as `modifier: Modifier = Modifier`.
+   */
+  private fun validateDeclaredParameters(methodFQN: String, discoveryContext: MethodDiscoveryContext): List<ValidationIssue> {
+    if (discoveryContext.mayHaveDefaultParameters) return emptyList()
+    val unannotated = discoveryContext.parameters.withIndex().filter { !it.value.hasPreviewParameter }
+    if (unannotated.isEmpty()) return emptyList()
+
+    val description = unannotated.joinToString(", ") { (index, parameter) -> "parameter ${index + 1} ('${parameter.type}')" }
+    return listOf(
+      ValidationIssue(
+        message =
+          "Method '$methodFQN' annotated with @Preview has parameters without @PreviewParameter or a default value: $description. " +
+            "Composable functions with non-default parameters are not supported in Preview unless they are annotated with " +
+            "@PreviewParameter",
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.METHOD,
+        target = methodFQN,
+      )
+    )
   }
 
   private fun validateMethodPreviewParameter(
