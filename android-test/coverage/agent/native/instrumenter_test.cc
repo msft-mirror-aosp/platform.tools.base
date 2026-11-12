@@ -424,5 +424,14 @@ TEST(InstrumenterTest, InlinedWhenHasNoBranches) {
   EXPECT_EQ(BranchCounts(*level), std::vector<uint32_t>{3});
 }
 
+TEST(InstrumenterTest, SwitchCountsEachTargetOnce) {
+  // The switch of sharedCases() has a branch for its default and one for each
+  // other code that its cases go to: cases that share their code or go to the
+  // default add none.
+  const proto::MethodMetadata* method = InstrumentedMethod("sharedCases");
+  ASSERT_NE(method, nullptr);
+  EXPECT_EQ(BranchCounts(*method), std::vector<uint32_t>{3});
+}
+
 }  // namespace
 }  // namespace coverage

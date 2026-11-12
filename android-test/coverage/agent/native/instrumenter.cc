@@ -15,8 +15,10 @@
  */
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
+
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -24,9 +26,11 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <set>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+
 #include "slicer/code_ir.h"
 #include "slicer/control_flow_graph.h"
 #include "slicer/dex_bytecode.h"
@@ -86,6 +90,46 @@ class JvmtiAllocator : public dex::Writer::Allocator {
  private:
   jvmtiEnv* jvmti_;
 };
+
+// Returns the number of branches of `switch_bytecode`: one for its default,
+// where it falls through, and one for each other target of its cases. Cases
+// that share a target, or that go to the default, add no branch. Returns 2 if
+// the payload of the switch isn't found.
+uint32_t SwitchBranchCount(const lir::Bytecode* switch_bytecode) {
+  auto* location =
+      switch_bytecode->operands.size() >= 2
+          ? dynamic_cast<lir::CodeLocation*>(switch_bytecode->operands[1])
+          : nullptr;
+  lir::Instruction* payload = location != nullptr && location->label != nullptr
+                                  ? location->label->next
+                                  : nullptr;
+  std::vector<const lir::Label*> targets;
+  if (auto* packed = dynamic_cast<lir::PackedSwitchPayload*>(payload)) {
+    targets.assign(packed->targets.begin(), packed->targets.end());
+  } else if (auto* sparse = dynamic_cast<lir::SparseSwitchPayload*>(payload)) {
+    for (const auto& switch_case : sparse->switch_cases) {
+      targets.push_back(switch_case.target);
+    }
+  } else {
+    return 2;
+  }
+  // The labels between the switch and the next bytecode mark its default.
+  std::set<const lir::Label*> defaults;
+  for (auto* node = switch_bytecode->next;
+       node != nullptr && dynamic_cast<lir::Bytecode*>(node) == nullptr;
+       node = node->next) {
+    if (auto* label = dynamic_cast<lir::Label*>(node)) {
+      defaults.insert(label);
+    }
+  }
+  std::set<const lir::Label*> others;
+  for (const lir::Label* target : targets) {
+    if (defaults.count(target) == 0) {
+      others.insert(target);
+    }
+  }
+  return 1 + static_cast<uint32_t>(others.size());
+}
 
 }  // namespace
 
@@ -669,26 +713,7 @@ bool Instrumenter::InstrumentMethod(
           branch_count = 1;  // Unconditional branch (e.g., GOTO)
         }
       } else if (flags & dex::kSwitch) {
-        // Safe Fallback: A switch statement must have at least 2 branches (the
-        // first case block and the default/fallthrough target), making '2' the
-        // mathematically smallest valid branch count for any non-trivial
-        // switch. If Slicer payload parsing fails to resolve targets, falling
-        // back to '2' guarantees we still track and report the switch block's
-        // binary coverage status.
-        branch_count = 2;
-        if (last_bytecode->operands.size() >= 2) {
-          if (auto* code_loc = dynamic_cast<lir::CodeLocation*>(last_bytecode->operands[1])) {
-            if (auto* label = code_loc->label) {
-              if (auto* payload = label->next) {
-                if (auto* packed_payload = dynamic_cast<lir::PackedSwitchPayload*>(payload)) {
-                  branch_count = packed_payload->targets.size() + 1;
-                } else if (auto* sparse_payload = dynamic_cast<lir::SparseSwitchPayload*>(payload)) {
-                  branch_count = sparse_payload->switch_cases.size() + 1;
-                }
-              }
-            }
-          }
-        }
+        branch_count = SwitchBranchCount(last_bytecode);
       } else if (flags & (dex::kReturn | dex::kThrow)) {
         branch_count = 0;  // Terminal block (no successors)
       }

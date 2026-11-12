@@ -58,4 +58,19 @@ class InstrumenterTestTarget {
     static void allIgnored() {
         generated();
     }
+
+    // Cases 1 and 2 share their code, and case 3 goes to the default code.
+    static void sharedCases(int value) {
+        switch (value) {
+            case 1:
+            case 2:
+                user();
+                break;
+            case 4:
+                generated();
+                break;
+            default:
+                break;
+        }
+    }
 }
