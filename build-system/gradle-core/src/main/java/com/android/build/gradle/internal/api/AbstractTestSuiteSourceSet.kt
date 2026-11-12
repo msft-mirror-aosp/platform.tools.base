@@ -19,6 +19,8 @@ package com.android.build.gradle.internal.api
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesForJavaImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
+import com.android.build.api.variant.impl.ResSourceDirectoriesImpl
+import com.android.build.api.variant.impl.SourceType
 import com.android.build.gradle.internal.services.VariantServices
 import java.io.File
 import kotlin.collections.forEach
@@ -87,6 +89,32 @@ abstract class AbstractTestSuiteSourceSet(
             directory = File(userAddedSourceSet.asFile, "kotlin"),
             filter = null,
             isUserAdded = true,
+            shouldBeAddedToIdeModel = true,
+          )
+        )
+      }
+    }
+
+  protected fun createResSources(variantServices: VariantServices) =
+    ResSourceDirectoriesImpl(SourceType.RES.folder, variantServices, null).also {
+      it.addStaticSource(
+        FileBasedDirectoryEntryImpl(
+          name = sourceSetName,
+          directory = File(rootFolder, SourceType.RES.folder),
+          filter = null,
+          isUserAdded = false,
+          shouldBeAddedToIdeModel = true,
+        )
+      )
+      userAddedSourceSets.forEach { userAddedFolder ->
+        it.addStaticSource(
+          FileBasedDirectoryEntryImpl(
+            name = sourceSetName,
+            directory = File(userAddedFolder.asFile, SourceType.RES.folder),
+            filter = null,
+            // Keep isUserAdded = false because DependencyResourcesComputer assumes a "variant"
+            // resource set exists whenever user-added static res folders are non-empty.
+            isUserAdded = false,
             shouldBeAddedToIdeModel = true,
           )
         )

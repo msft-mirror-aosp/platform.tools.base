@@ -23,6 +23,8 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.MavenRepoGenerator
+import com.android.testutils.generateAarWithContent
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.Properties
@@ -49,6 +51,20 @@ class TestSuiteApkIntegrationTest {
         jar("com.test:toy-junit-engine:1.0")
           .addClasses(ToyJunitEngineForTesting::class.java, ToyTestDescriptor::class.java, TestEngineLogger::class.java)
           .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", ToyJunitEngineForTesting::class.java.name)
+        library(
+          MavenRepoGenerator.Library(
+            "com.example:suite-aar:1.0",
+            "aar",
+            generateAarWithContent(
+              packageName = "com.example.suiteaar",
+              resources =
+                mapOf(
+                  "values/strings.xml" to """<resources><string name="suite_aar_str">from suite aar</string></resources>""".toByteArray()
+                ),
+              extraFiles = mapOf("R.txt" to "int string suite_aar_str 0x7f040001".toByteArray()),
+            ),
+          )
+        )
       }
       .from {
         gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
@@ -389,8 +405,373 @@ class TestSuiteApkIntegrationTest {
     assertThatApk(libTestApk).containsClass("Lj$/time/LocalDate;")
   }
 
-  private fun customTestApk(): File {
-    val buildDir = rule.build.androidApplication(":app").buildDir.toFile()
+  @Test
+  fun testTestApkGeneratesTestNamespaceRAndCompilesRReferences() {
+    val build = rule.build {
+      gradleProperties { add(BooleanOption.NON_TRANSITIVE_R_CLASS, true) }
+      androidApplication(":app") {
+        android {
+          testOptions.customSuites.named("customTest") {
+            it.testApk { dependencies.implementation.add("com.example:suite-aar:1.0") }
+          }
+        }
+        files {
+          add("src/main/res/values/strings.xml", """<resources><string name="app_str">from app</string></resources>""")
+          add(
+            "src/customTest/java/com/example/test/SuiteRJavaConsumer.java",
+            """
+            package com.example.test;
+
+            public class SuiteRJavaConsumer {
+              public Class<?> suiteR() {
+                return com.example.test.test.R.class;
+              }
+              public int ids() {
+                return com.example.test.R.string.app_str + com.example.suiteaar.R.string.suite_aar_str;
+              }
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/customTest/kotlin/com/example/test/SuiteRKotlinConsumer.kt",
+            """
+            package com.example.test
+
+            class SuiteRKotlinConsumer {
+              fun suiteR(): Class<*> = com.example.test.test.R::class.java
+              fun ids(): Int = com.example.test.R.string.app_str + com.example.suiteaar.R.string.suite_aar_str
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":app:packageDebugCustomTest")
+
+    assertThatApk(customTestApk()).apply {
+      containsClass("Lcom/example/test/test/R;")
+      containsClass("Lcom/example/test/SuiteRJavaConsumer;")
+      containsClass("Lcom/example/test/SuiteRKotlinConsumer;")
+      doesNotContainClass("Lcom/example/test/R;")
+    }
+  }
+
+  @Test
+  fun testTestApkHonorsCustomTestNamespaceAndTransitiveR() {
+    val build = rule.build {
+      gradleProperties { add(BooleanOption.NON_TRANSITIVE_R_CLASS, false) }
+      androidApplication(":app") {
+        android {
+          testNamespace = "com.example.custom.testns"
+          testOptions.customSuites.named("customTest") {
+            it.testApk { dependencies.implementation.add("com.example:suite-aar:1.0") }
+          }
+        }
+        files {
+          add(
+            "src/customTest/kotlin/com/example/test/SuiteCustomNsConsumer.kt",
+            """
+            package com.example.test
+
+            class SuiteCustomNsConsumer {
+              fun suiteAarStringId(): Int = com.example.custom.testns.R.string.suite_aar_str
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":app:packageDebugCustomTest")
+
+    assertThatApk(customTestApk()).apply {
+      containsClass("Lcom/example/custom/testns/R;")
+      containsClass("Lcom/example/custom/testns/R\$string;")
+      containsClass("Lcom/example/test/SuiteCustomNsConsumer;")
+      doesNotContainClass("Lcom/example/test/R;")
+    }
+  }
+
+  @Test
+  fun testTestApkGeneratesSuiteLayoutResAndCompilesAppAndTestR() {
+    val build = rule.build {
+      androidApplication(":app") {
+        files {
+          add("src/main/res/layout/main_layout.xml", layoutWithTextView("main_text"))
+          add("src/customTest/res/layout/test_layout_1.xml", layoutWithTextView("test_layout_1_textview"))
+          add(
+            "src/customTest/java/com/example/test/SuiteResJavaConsumer.java",
+            """
+            package com.example.test;
+
+            public class SuiteResJavaConsumer {
+              public int[] ids() {
+                return new int[] {
+                  com.example.test.R.id.main_text,
+                  com.example.test.test.R.layout.test_layout_1,
+                  com.example.test.test.R.id.test_layout_1_textview,
+                };
+              }
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/customTest/kotlin/com/example/test/SuiteResKotlinConsumer.kt",
+            """
+            package com.example.test
+
+            class SuiteResKotlinConsumer {
+              fun ids(): IntArray = intArrayOf(
+                com.example.test.R.id.main_text,
+                com.example.test.test.R.layout.test_layout_1,
+                com.example.test.test.R.id.test_layout_1_textview,
+              )
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":app:packageDebugCustomTest")
+
+    assertThatApk(customTestApk()).apply {
+      contains("resources.arsc")
+      contains("res/layout/test_layout_1.xml")
+      containsClass("Lcom/example/test/SuiteResJavaConsumer;")
+      containsClass("Lcom/example/test/SuiteResKotlinConsumer;")
+      hasClass("Lcom/example/test/test/R\$layout;").that().hasField("test_layout_1")
+      hasClass("Lcom/example/test/test/R\$id;").that().hasField("test_layout_1_textview")
+    }
+  }
+
+  @Test
+  fun testTestApkCompilesAndPackagesSuiteLayoutResWhenCompiledAsLibrary() {
+    val build = rule.build {
+      androidLibrary(":lib") {
+        android {
+          testOptions.customSuites.create("customTest") {
+            it.useJunitEngine.apply {
+              includeEngines.add("[engine:toy-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:toy-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+              inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
+            }
+            it.testApk {}
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+        files {
+          add("src/main/res/layout/lib_layout.xml", layoutWithTextView("lib_text"))
+          add("src/customTest/res/layout/test_layout_1.xml", layoutWithTextView("test_layout_1_textview"))
+          add(
+            "src/customTest/java/com/example/lib/SuiteLibResJavaConsumer.java",
+            """
+            package com.example.lib;
+
+            public class SuiteLibResJavaConsumer {
+              public int[] ids() {
+                return new int[] {
+                  com.example.lib.R.id.lib_text,
+                  com.example.lib.test.R.layout.test_layout_1,
+                  com.example.lib.test.R.id.test_layout_1_textview,
+                };
+              }
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/customTest/kotlin/com/example/lib/SuiteLibResKotlinConsumer.kt",
+            """
+            package com.example.lib
+
+            class SuiteLibResKotlinConsumer {
+              fun ids(): IntArray = intArrayOf(
+                com.example.lib.R.id.lib_text,
+                com.example.lib.test.R.layout.test_layout_1,
+                com.example.lib.test.R.id.test_layout_1_textview,
+              )
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":lib:packageDebugCustomTest")
+
+    assertThatApk(customTestApk(build.androidLibrary(":lib").buildDir.toFile())).apply {
+      contains("resources.arsc")
+      contains("res/layout/test_layout_1.xml")
+      containsClass("Lcom/example/lib/SuiteLibResJavaConsumer;")
+      containsClass("Lcom/example/lib/SuiteLibResKotlinConsumer;")
+      hasClass("Lcom/example/lib/test/R\$layout;").that().hasField("test_layout_1")
+      hasClass("Lcom/example/lib/test/R\$id;").that().hasField("test_layout_1_textview")
+    }
+  }
+
+  @Test
+  fun testTestApkCustomTestNamespaceWithSuiteLayoutRes() {
+    val build = rule.build {
+      androidApplication(":app") {
+        android { testNamespace = "com.example.custom.testns" }
+        files {
+          add("src/main/res/layout/main_layout.xml", layoutWithTextView("main_text"))
+          add("src/customTest/res/layout/test_layout_1.xml", layoutWithTextView("test_layout_1_textview"))
+          add(
+            "src/customTest/AndroidManifest.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application>
+                <activity android:name=".TestActivity" />
+              </application>
+            </manifest>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/customTest/kotlin/com/example/test/SuiteCustomNsResConsumer.kt",
+            """
+            package com.example.test
+
+            class SuiteCustomNsResConsumer {
+              fun ids(): IntArray = intArrayOf(
+                com.example.test.R.id.main_text,
+                com.example.custom.testns.R.layout.test_layout_1,
+                com.example.custom.testns.R.id.test_layout_1_textview,
+              )
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":app:packageDebugCustomTest")
+
+    val testApk = customTestApk()
+    assertThatApk(testApk).apply {
+      contains("resources.arsc")
+      contains("res/layout/test_layout_1.xml")
+      containsClass("Lcom/example/test/SuiteCustomNsResConsumer;")
+      hasClass("Lcom/example/custom/testns/R\$layout;").that().hasField("test_layout_1")
+      hasClass("Lcom/example/custom/testns/R\$id;").that().hasField("test_layout_1_textview")
+      doesNotContainClass("Lcom/example/test/R;")
+    }
+    ApkSubject.assertThat(testApk) {
+      manifest().contains("android:name=\"com.example.custom.testns.TestActivity\"")
+      manifest().doesNotContain("com.example.test.test.TestActivity")
+    }
+  }
+
+  @Test
+  fun testTestApkIncrementalAddModifyRemoveSuiteLayoutRes() {
+    val build = rule.build {
+      androidApplication(":app") {
+        files {
+          add("src/customTest/res/layout/test_layout_1.xml", layoutWithTextView("test_layout_1_textview"))
+          add(
+            "src/customTest/kotlin/com/example/test/SuiteIncrementalResConsumer.kt",
+            """
+            package com.example.test
+
+            class SuiteIncrementalResConsumer {
+              fun layout(): Int = com.example.test.test.R.layout.test_layout_1
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":app:packageDebugCustomTest")
+    assertThatApk(customTestApk()).apply {
+      contains("res/layout/test_layout_1.xml")
+      doesNotContain("res/layout/test_layout_2.xml")
+      hasClass("Lcom/example/test/test/R\$layout;").that().apply {
+        hasField("test_layout_1")
+        doesNotHaveField("test_layout_2")
+      }
+      hasClass("Lcom/example/test/test/R\$id;").that().apply {
+        hasField("test_layout_1_textview")
+        doesNotHaveField("test_layout_2_textview")
+      }
+    }
+
+    val appFiles = build.androidApplication(":app").files
+    appFiles.add("src/customTest/res/layout/test_layout_2.xml", layoutWithTextView("test_layout_2_textview"))
+    build.executor.run(":app:packageDebugCustomTest")
+    assertThatApk(customTestApk()).apply {
+      contains("res/layout/test_layout_1.xml")
+      contains("res/layout/test_layout_2.xml")
+      hasClass("Lcom/example/test/test/R\$layout;").that().apply {
+        hasField("test_layout_1")
+        hasField("test_layout_2")
+      }
+      hasClass("Lcom/example/test/test/R\$id;").that().apply {
+        hasField("test_layout_1_textview")
+        hasField("test_layout_2_textview")
+      }
+    }
+
+    appFiles.update("src/customTest/res/layout/test_layout_2.xml").searchAndReplace("test_layout_2_textview", "test_layout_3_textview")
+    build.executor.run(":app:packageDebugCustomTest")
+    assertThatApk(customTestApk()).apply {
+      hasClass("Lcom/example/test/test/R\$id;").that().apply {
+        hasField("test_layout_1_textview")
+        doesNotHaveField("test_layout_2_textview")
+        hasField("test_layout_3_textview")
+      }
+    }
+
+    appFiles.remove("src/customTest/res/layout/test_layout_2.xml")
+    build.executor.run(":app:packageDebugCustomTest")
+    assertThatApk(customTestApk()).apply {
+      contains("res/layout/test_layout_1.xml")
+      doesNotContain("res/layout/test_layout_2.xml")
+      hasClass("Lcom/example/test/test/R\$layout;").that().apply {
+        hasField("test_layout_1")
+        doesNotHaveField("test_layout_2")
+      }
+      hasClass("Lcom/example/test/test/R\$id;").that().apply {
+        hasField("test_layout_1_textview")
+        doesNotHaveField("test_layout_2_textview")
+        doesNotHaveField("test_layout_3_textview")
+      }
+    }
+  }
+
+  private fun layoutWithTextView(textViewId: String): String =
+    """
+    <?xml version="1.0" encoding="utf-8"?>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+      <TextView
+          android:id="@+id/$textViewId"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="Suite layout" />
+    </LinearLayout>
+    """
+      .trimIndent()
+
+  private fun customTestApk(buildDir: File = rule.build.androidApplication(":app").buildDir.toFile()): File {
     val testApk = buildDir.walkTopDown().firstOrNull { it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true) }
     return checkNotNull(testApk) { "No customTest APK found under $buildDir" }
   }

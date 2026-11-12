@@ -115,6 +115,7 @@ class TestApkTestSuiteSourceSetTest {
     Truth.assertThat(sourceSet.kotlin?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/test/kotlin"))
     Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/test/java"))
     Truth.assertThat(sourceSet.resources.all.get()).containsExactly(project.layout.projectDirectory.dir("src/test/resources"))
+    Truth.assertThat(sourceSet.res.all.get().flatten()).containsExactly(project.layout.projectDirectory.dir("src/test/res"))
   }
 
   @Test
@@ -134,6 +135,8 @@ class TestApkTestSuiteSourceSetTest {
     Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/backupTest/androidTest/java"))
     Truth.assertThat(sourceSet.resources.all.get())
       .containsExactly(project.layout.projectDirectory.dir("src/backupTest/androidTest/resources"))
+    Truth.assertThat(sourceSet.res.all.get().flatten())
+      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/androidTest/res"))
     Truth.assertThat(sourceSet.manifestFile)
       .isEqualTo(project.layout.projectDirectory.file("src/backupTest/androidTest/AndroidManifest.xml").asFile)
   }
@@ -189,5 +192,6 @@ class TestApkTestSuiteSourceSetTest {
     Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/test/java"), dir.dir("java"))
     Truth.assertThat(sourceSet.resources.all.get())
       .containsExactly(project.layout.projectDirectory.dir("src/test/resources"), dir.dir("resources"))
+    Truth.assertThat(sourceSet.res.all.get().flatten()).containsExactly(project.layout.projectDirectory.dir("src/test/res"), dir.dir("res"))
   }
 }

@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.testsuites.impl
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.features.DexingImpl
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.variant.ApkPackaging
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.InternalSources
@@ -48,6 +49,7 @@ import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.build.gradle.options.getOption
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
+import com.android.builder.errors.IssueReporter
 import com.android.utils.appendCapitalized
 import java.io.File
 import org.gradle.api.JavaVersion
@@ -73,6 +75,25 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
 
   override val baseName: String
     get() = sourceContainer.identifier
+
+  override val namespace: Provider<String> by lazy {
+    val testedExtension = sourceContainer.project.extensions.findByType(TestedExtension::class.java)
+    val testNs = testedExtension?.testNamespace
+    val issueReporter = testSuite.variantServices.issueReporter
+    testSuite.testedVariant.namespace.map { mainNs ->
+      if (testNs != null) {
+        if (testNs == mainNs) {
+          issueReporter.reportError(
+            IssueReporter.Type.NAMESPACE_CONFLICT,
+            "namespace and testNamespace have the same value (\"$testNs\"), which is not allowed.",
+          )
+        }
+        testNs
+      } else {
+        "$mainNs.test"
+      }
+    }
+  }
 
   override val artifacts: ArtifactsImpl
     get() = sourceContainer.artifacts
@@ -217,7 +238,7 @@ class TestSuiteSources(val delegate: InternalSources, val sourceContainer: TestS
     get() = null
 
   override val res: LayeredSourceDirectoriesImpl?
-    get() = null
+    get() = (sourceContainer.source as? TestApkTestSuiteSourceSet)?.res
 
   override val jniLibs: LayeredSourceDirectoriesImpl?
     get() = null

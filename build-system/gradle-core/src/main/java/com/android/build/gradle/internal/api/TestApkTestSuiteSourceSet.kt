@@ -20,6 +20,7 @@ import com.android.SdkConstants.FN_ANDROID_MANIFEST_XML
 import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
+import com.android.build.api.variant.impl.LayeredSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
 import java.io.File
 import org.gradle.api.file.Directory
@@ -52,4 +53,6 @@ class TestApkTestSuiteSourceSet(
   override val kotlin: FlatSourceDirectoriesImpl? = if (kotlinEnabled) createKotlinSources(variantServices) else null
 
   override val resources: FlatSourceDirectoriesImpl = resourcesSourcesFolder
+
+  internal val res: LayeredSourceDirectoriesImpl = createResSources(variantServices)
 }

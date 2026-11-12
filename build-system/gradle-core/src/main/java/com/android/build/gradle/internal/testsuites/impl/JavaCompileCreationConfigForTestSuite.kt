@@ -24,10 +24,12 @@ import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.api.AbstractTestSuiteSourceSet
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.creationconfig.JavaCompileCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
@@ -134,9 +136,22 @@ internal fun getTestSuiteSourcesCompileClasspath(
 ): FileCollection {
   val classes = getTestSuiteCompileClasses(sourceContainer.suiteSourceClasspath, services)
   val suiteLinkedRClasses =
-    (sourceContainer.creationConfig as? TestSuiteHostJarCreationConfig)
-      ?.takeIf { it.hasLinkedRClasses() }
-      ?.androidResourcesCreationConfig
-      ?.getCompiledRClasses(ConsumedConfigType.COMPILE_CLASSPATH) ?: return classes
+    when (val creationConfig = sourceContainer.creationConfig) {
+      is TestSuiteHostJarCreationConfig ->
+        creationConfig
+          .takeIf { it.hasLinkedRClasses() }
+          ?.androidResourcesCreationConfig
+          ?.getCompiledRClasses(ConsumedConfigType.COMPILE_CLASSPATH)
+      is TestSuiteApkCreationConfig -> {
+        val rJarArtifact =
+          if (services.projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]) {
+            InternalArtifactType.COMPILE_R_CLASS_JAR
+          } else {
+            InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR
+          }
+        services.fileCollection(creationConfig.artifacts.get(rJarArtifact))
+      }
+      else -> null
+    } ?: return classes
   return services.fileCollection(suiteLinkedRClasses, classes)
 }

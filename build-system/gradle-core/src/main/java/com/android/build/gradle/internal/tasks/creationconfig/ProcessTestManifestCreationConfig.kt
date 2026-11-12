@@ -295,9 +295,6 @@ abstract class TestSuiteProcessTestManifestCreationConfig(
   override val testedApplicationId: Provider<String>
     get() = testSuiteCreationConfig.instrumentationTargetPackageId
 
-  override val namespace: Provider<String>
-    get() = testSuiteCreationConfig.testedVariant.namespace.map { "$it.test" }
-
   override val instrumentationRunner: Provider<String>
     get() = testSuiteCreationConfig.instrumentationRunner(source)
 

@@ -20,6 +20,7 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.InternalSources
 import com.android.build.api.variant.TestSuiteSourceSet
@@ -54,10 +55,13 @@ import com.android.build.gradle.internal.testsuites.impl.TestSuiteSources
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteTargetBuilderImpl
 import com.android.build.gradle.internal.variant.VariantComponentInfo
 import com.android.builder.core.ComponentTypeImpl
+import com.android.builder.errors.IssueReporter
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.gradle.api.Action
+import org.gradle.api.Project
 import org.gradle.api.file.Directory
+import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
@@ -65,6 +69,7 @@ import org.gradle.api.tasks.testing.Test as GradleTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.withSettings
 import org.mockito.kotlin.any
@@ -350,15 +355,18 @@ class TestSuiteImplTest {
     val mockJava = mock(FlatSourceDirectoriesImpl::class.java)
     val mockKotlin = mock(FlatSourceDirectoriesImpl::class.java)
     val mockResources = mock(FlatSourceDirectoriesImpl::class.java)
+    val mockRes = mock(LayeredSourceDirectoriesImpl::class.java)
     `when`(sourceSet.java).thenReturn(mockJava)
     `when`(sourceSet.kotlin).thenReturn(mockKotlin)
     `when`(sourceSet.resources).thenReturn(mockResources)
+    `when`(sourceSet.res).thenReturn(mockRes)
 
     val testSuiteSources = TestSuiteSources(delegate, sourceContainer)
 
     assertThat(testSuiteSources.java).isSameInstanceAs(mockJava)
     assertThat(testSuiteSources.kotlin).isSameInstanceAs(mockKotlin)
     assertThat(testSuiteSources.resources).isSameInstanceAs(mockResources)
+    assertThat(testSuiteSources.res).isSameInstanceAs(mockRes)
   }
 
   @Test
@@ -712,5 +720,43 @@ class TestSuiteImplTest {
     assertThat(t3Actions).hasSize(2)
     t3Actions.forEach { it.execute(dummyTask) }
     assertThat(recorded).containsExactly("suite:t3", "variant:t3").inOrder()
+  }
+
+  @Test
+  fun testTestSuiteApkNamespaceAndConflict() {
+    fun createApkConfig(testNs: String?): Pair<TestSuiteApkCreationConfig, IssueReporter> {
+      val testSuite = mock(TestSuiteCreationConfig::class.java)
+      val testedVariant = mock(ApplicationCreationConfig::class.java)
+      `when`(testedVariant.namespace).thenReturn(ProjectFactory.project.providers.provider { "com.example.app" })
+      `when`(testSuite.testedVariant).thenReturn(testedVariant)
+
+      val issueReporter = mock(IssueReporter::class.java)
+      val variantServices = mock(VariantServices::class.java)
+      `when`(variantServices.issueReporter).thenReturn(issueReporter)
+      `when`(testSuite.variantServices).thenReturn(variantServices)
+
+      val project = mock(Project::class.java)
+      val extensions = mock(ExtensionContainer::class.java)
+      val testedExtension = mock(TestedExtension::class.java)
+      `when`(testedExtension.testNamespace).thenReturn(testNs)
+      `when`(extensions.findByType(TestedExtension::class.java)).thenReturn(testedExtension)
+      `when`(project.extensions).thenReturn(extensions)
+
+      val sourceContainer = mock(TestSuiteSourceContainer::class.java)
+      `when`(sourceContainer.project).thenReturn(project)
+
+      return TestSuiteApkCreationConfig(testSuite, sourceContainer) to issueReporter
+    }
+
+    assertThat(createApkConfig(null).first.namespace.get()).isEqualTo("com.example.app.test")
+    assertThat(createApkConfig("com.example.custom.testns").first.namespace.get()).isEqualTo("com.example.custom.testns")
+
+    val (conflictConfig, issueReporter) = createApkConfig("com.example.app")
+    assertThat(conflictConfig.namespace.get()).isEqualTo("com.example.app")
+    verify(issueReporter)
+      .reportError(
+        IssueReporter.Type.NAMESPACE_CONFLICT,
+        "namespace and testNamespace have the same value (\"com.example.app\"), which is not allowed.",
+      )
   }
 }
