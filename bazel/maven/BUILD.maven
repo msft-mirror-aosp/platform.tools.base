@@ -11999,29 +11999,6 @@ maven_import(
 )
 
 maven_artifact(
-    name = "javax.servlet.javax.servlet-api_3.0.1",
-    pom = "javax/servlet/javax.servlet-api/3.0.1/javax.servlet-api-3.0.1.pom",
-    repo_root_path = "",
-    repo_path = "javax/servlet/javax.servlet-api/3.0.1",
-    parent = "net.java.jvnet-parent_1",
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "javax.servlet.javax.servlet-api",
-    classifiers = [],
-    parent = "net.java.jvnet-parent_1",
-    jars = [
-        "javax/servlet/javax.servlet-api/3.0.1/javax.servlet-api-3.0.1.jar"
-    ],
-    original_deps = [],
-    pom = "javax/servlet/javax.servlet-api/3.0.1/javax.servlet-api-3.0.1.pom",
-    repo_root_path = "",
-    repo_path = "javax/servlet/javax.servlet-api/3.0.1",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "javax.xml.bind.jaxb-api_2.3.1",
     pom = "javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.pom",
     repo_root_path = "",
@@ -12721,6 +12698,26 @@ maven_import(
     pom = "org/apache/commons/commons-lang3/3.21.0/commons-lang3-3.21.0.pom",
     repo_root_path = "",
     repo_path = "org/apache/commons/commons-lang3/3.21.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.directory.api.api-parent_2.1.9",
+    pom = "org/apache/directory/api/api-parent/2.1.9/api-parent-2.1.9.pom",
+    repo_root_path = "",
+    repo_path = "org/apache/directory/api/api-parent/2.1.9",
+    parent = "org.apache.directory.project.project_52",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.directory.api.api-parent",
+    classifiers = [],
+    parent = "org.apache.directory.project.project_52",
+    original_deps = [],
+    pom = "org/apache/directory/api/api-parent/2.1.9/api-parent-2.1.9.pom",
+    repo_root_path = "",
+    repo_path = "org/apache/directory/api/api-parent/2.1.9",
     visibility = ["//visibility:public"],
 )
 
@@ -15479,6 +15476,284 @@ maven_import(
     pom = "org/eclipse/emf/org.eclipse.emf.ecore/2.12.0/org.eclipse.emf.ecore-2.12.0.pom",
     repo_root_path = "",
     repo_path = "org/eclipse/emf/org.eclipse.emf.ecore/2.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.ee8.jetty-ee8-nested_12.1.15",
+    pom = "org/eclipse/jetty/ee8/jetty-ee8-nested/12.1.15/jetty-ee8-nested-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/ee8/jetty-ee8-nested/12.1.15",
+    parent = "org.eclipse.jetty.ee8.jetty-ee8_12.1.15",
+    deps = [
+        "org.eclipse.jetty.jetty-http_12.1.15",
+        "org.eclipse.jetty.jetty-security_12.1.15",
+        "org.eclipse.jetty.jetty-server_12.1.15",
+        "org.eclipse.jetty.jetty-session_12.1.15",
+        "org.eclipse.jetty.toolchain.jetty-servlet-api_4.0.9",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.eclipse.jetty.ee8.jetty-ee8-nested",
+    classifiers = [],
+    parent = "org.eclipse.jetty.ee8.jetty-ee8_12.1.15",
+    jars = [
+        "org/eclipse/jetty/ee8/jetty-ee8-nested/12.1.15/jetty-ee8-nested-12.1.15.jar"
+    ],
+    exports = [
+        "org.eclipse.jetty.jetty-http",
+        "org.eclipse.jetty.jetty-security",
+        "org.eclipse.jetty.jetty-server",
+        "org.eclipse.jetty.jetty-session",
+        "org.eclipse.jetty.toolchain.jetty-servlet-api",
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.eclipse.jetty.jetty-http_12.1.15",
+        "org.eclipse.jetty.jetty-security_12.1.15",
+        "org.eclipse.jetty.jetty-server_12.1.15",
+        "org.eclipse.jetty.jetty-session_12.1.15",
+        "org.eclipse.jetty.toolchain.jetty-servlet-api_4.0.9",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    pom = "org/eclipse/jetty/ee8/jetty-ee8-nested/12.1.15/jetty-ee8-nested-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/ee8/jetty-ee8-nested/12.1.15",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.toolchain.jetty-servlet-api_4.0.9",
+    pom = "org/eclipse/jetty/toolchain/jetty-servlet-api/4.0.9/jetty-servlet-api-4.0.9.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/toolchain/jetty-servlet-api/4.0.9",
+    parent = "org.eclipse.jetty.jetty-parent_31",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.eclipse.jetty.toolchain.jetty-servlet-api",
+    classifiers = [],
+    parent = "org.eclipse.jetty.jetty-parent_31",
+    jars = [
+        "org/eclipse/jetty/toolchain/jetty-servlet-api/4.0.9/jetty-servlet-api-4.0.9.jar"
+    ],
+    original_deps = [],
+    pom = "org/eclipse/jetty/toolchain/jetty-servlet-api/4.0.9/jetty-servlet-api-4.0.9.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/toolchain/jetty-servlet-api/4.0.9",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-http_12.1.15",
+    pom = "org/eclipse/jetty/jetty-http/12.1.15/jetty-http-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-http/12.1.15",
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    deps = [
+        "org.eclipse.jetty.jetty-io_12.1.15",
+        "org.eclipse.jetty.jetty-util_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.eclipse.jetty.jetty-http",
+    classifiers = [],
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    jars = [
+        "org/eclipse/jetty/jetty-http/12.1.15/jetty-http-12.1.15.jar"
+    ],
+    exports = [
+        "org.eclipse.jetty.jetty-io",
+        "org.eclipse.jetty.jetty-util",
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.eclipse.jetty.jetty-io_12.1.15",
+        "org.eclipse.jetty.jetty-util_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    pom = "org/eclipse/jetty/jetty-http/12.1.15/jetty-http-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-http/12.1.15",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-io_12.1.15",
+    pom = "org/eclipse/jetty/jetty-io/12.1.15/jetty-io-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-io/12.1.15",
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    deps = [
+        "org.eclipse.jetty.jetty-util_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.eclipse.jetty.jetty-io",
+    classifiers = [],
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    jars = [
+        "org/eclipse/jetty/jetty-io/12.1.15/jetty-io-12.1.15.jar"
+    ],
+    exports = [
+        "org.eclipse.jetty.jetty-util",
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.eclipse.jetty.jetty-util_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    pom = "org/eclipse/jetty/jetty-io/12.1.15/jetty-io-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-io/12.1.15",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-security_12.1.15",
+    pom = "org/eclipse/jetty/jetty-security/12.1.15/jetty-security-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-security/12.1.15",
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    deps = [
+        "org.eclipse.jetty.jetty-server_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+        "org.apache.directory.api.api-parent_2.1.9",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.eclipse.jetty.jetty-security",
+    classifiers = [],
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    jars = [
+        "org/eclipse/jetty/jetty-security/12.1.15/jetty-security-12.1.15.jar"
+    ],
+    exports = [
+        "org.eclipse.jetty.jetty-server",
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.eclipse.jetty.jetty-server_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+        "org.apache.directory.api.api-parent_2.1.9",
+    ],
+    pom = "org/eclipse/jetty/jetty-security/12.1.15/jetty-security-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-security/12.1.15",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-server_12.1.15",
+    pom = "org/eclipse/jetty/jetty-server/12.1.15/jetty-server-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-server/12.1.15",
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    deps = [
+        "org.eclipse.jetty.jetty-http_12.1.15",
+        "org.eclipse.jetty.jetty-io_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.eclipse.jetty.jetty-server",
+    classifiers = [],
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    jars = [
+        "org/eclipse/jetty/jetty-server/12.1.15/jetty-server-12.1.15.jar"
+    ],
+    exports = [
+        "org.eclipse.jetty.jetty-http",
+        "org.eclipse.jetty.jetty-io",
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.eclipse.jetty.jetty-http_12.1.15",
+        "org.eclipse.jetty.jetty-io_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    pom = "org/eclipse/jetty/jetty-server/12.1.15/jetty-server-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-server/12.1.15",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-session_12.1.15",
+    pom = "org/eclipse/jetty/jetty-session/12.1.15/jetty-session-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-session/12.1.15",
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    deps = [
+        "org.eclipse.jetty.jetty-server_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.eclipse.jetty.jetty-session",
+    classifiers = [],
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    jars = [
+        "org/eclipse/jetty/jetty-session/12.1.15/jetty-session-12.1.15.jar"
+    ],
+    exports = [
+        "org.eclipse.jetty.jetty-server",
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.eclipse.jetty.jetty-server_12.1.15",
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    pom = "org/eclipse/jetty/jetty-session/12.1.15/jetty-session-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-session/12.1.15",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-util_12.1.15",
+    pom = "org/eclipse/jetty/jetty-util/12.1.15/jetty-util-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-util/12.1.15",
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.eclipse.jetty.jetty-util",
+    classifiers = [],
+    parent = "org.eclipse.jetty.jetty-core_12.1.15",
+    jars = [
+        "org/eclipse/jetty/jetty-util/12.1.15/jetty-util-12.1.15.jar"
+    ],
+    exports = [
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    pom = "org/eclipse/jetty/jetty-util/12.1.15/jetty-util-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-util/12.1.15",
     visibility = ["//visibility:public"],
 )
 
@@ -21044,86 +21319,6 @@ maven_import(
     pom = "org/mockito/mockito-core/5.20.0/mockito-core-5.20.0.pom",
     repo_root_path = "",
     repo_path = "org/mockito/mockito-core/5.20.0",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.mortbay.jetty.jetty-util_6.1.26",
-    pom = "org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/jetty-util/6.1.26",
-    parent = "org.mortbay.jetty.project_6.1.26",
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "org.mortbay.jetty.jetty-util",
-    classifiers = [],
-    parent = "org.mortbay.jetty.project_6.1.26",
-    jars = [
-        "org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26.jar"
-    ],
-    original_deps = [],
-    pom = "org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/jetty-util/6.1.26",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.mortbay.jetty.jetty_6.1.26",
-    pom = "org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/jetty/6.1.26",
-    parent = "org.mortbay.jetty.project_6.1.26",
-    deps = [
-        "org.mortbay.jetty.jetty-util_6.1.26",
-        "org.mortbay.jetty.servlet-api_2.5-20081211",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "org.mortbay.jetty.jetty",
-    classifiers = [],
-    parent = "org.mortbay.jetty.project_6.1.26",
-    jars = [
-        "org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.jar"
-    ],
-    exports = [
-        "org.mortbay.jetty.jetty-util",
-        "org.mortbay.jetty.servlet-api",
-    ],
-    original_deps = [
-        "org.mortbay.jetty.jetty-util_6.1.26",
-        "org.mortbay.jetty.servlet-api_2.5-20081211",
-    ],
-    pom = "org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/jetty/6.1.26",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.mortbay.jetty.servlet-api_2.5-20081211",
-    pom = "org/mortbay/jetty/servlet-api/2.5-20081211/servlet-api-2.5-20081211.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/servlet-api/2.5-20081211",
-    parent = "org.mortbay.jetty.jetty-parent_7",
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "org.mortbay.jetty.servlet-api",
-    classifiers = [],
-    parent = "org.mortbay.jetty.jetty-parent_7",
-    jars = [
-        "org/mortbay/jetty/servlet-api/2.5-20081211/servlet-api-2.5-20081211.jar"
-    ],
-    original_deps = [],
-    pom = "org/mortbay/jetty/servlet-api/2.5-20081211/servlet-api-2.5-20081211.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/servlet-api/2.5-20081211",
     visibility = ["//visibility:public"],
 )
 
@@ -116207,6 +116402,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.directory.project.project_52",
+    pom = "org/apache/directory/project/project/52/project-52.pom",
+    repo_root_path = "",
+    repo_path = "org/apache/directory/project/project/52",
+    parent = "org.apache.apache_39",
+)
+
+maven_artifact(
     name = "org.apache.geronimo.genesis.genesis-default-flava_2.0",
     pom = "org/apache/geronimo/genesis/genesis-default-flava/2.0/genesis-default-flava-2.0.pom",
     repo_root_path = "",
@@ -116870,10 +117073,33 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.eclipse.jetty.jetty-parent_14",
-    pom = "org/eclipse/jetty/jetty-parent/14/jetty-parent-14.pom",
+    name = "org.eclipse.jetty.ee8.jetty-ee8_12.1.15",
+    pom = "org/eclipse/jetty/ee8/jetty-ee8/12.1.15/jetty-ee8-12.1.15.pom",
     repo_root_path = "",
-    repo_path = "org/eclipse/jetty/jetty-parent/14",
+    repo_path = "org/eclipse/jetty/ee8/jetty-ee8/12.1.15",
+    parent = "org.eclipse.jetty.jetty-project_12.1.15",
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-core_12.1.15",
+    pom = "org/eclipse/jetty/jetty-core/12.1.15/jetty-core-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-core/12.1.15",
+    parent = "org.eclipse.jetty.jetty-project_12.1.15",
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-parent_31",
+    pom = "org/eclipse/jetty/jetty-parent/31/jetty-parent-31.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-parent/31",
+)
+
+maven_artifact(
+    name = "org.eclipse.jetty.jetty-project_12.1.15",
+    pom = "org/eclipse/jetty/jetty-project/12.1.15/jetty-project-12.1.15.pom",
+    repo_root_path = "",
+    repo_path = "org/eclipse/jetty/jetty-project/12.1.15",
 )
 
 maven_artifact(
@@ -117038,29 +117264,6 @@ maven_artifact(
     repo_root_path = "",
     repo_path = "org/jdeferred/jdeferred-parent/1.2.3",
     parent = "org.sonatype.oss.oss-parent_7",
-)
-
-maven_artifact(
-    name = "org.mortbay.jetty.jetty-parent_10",
-    pom = "org/mortbay/jetty/jetty-parent/10/jetty-parent-10.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/jetty-parent/10",
-    parent = "org.eclipse.jetty.jetty-parent_14",
-)
-
-maven_artifact(
-    name = "org.mortbay.jetty.jetty-parent_7",
-    pom = "org/mortbay/jetty/jetty-parent/7/jetty-parent-7.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/jetty-parent/7",
-)
-
-maven_artifact(
-    name = "org.mortbay.jetty.project_6.1.26",
-    pom = "org/mortbay/jetty/project/6.1.26/project-6.1.26.pom",
-    repo_root_path = "",
-    repo_path = "org/mortbay/jetty/project/6.1.26",
-    parent = "org.mortbay.jetty.jetty-parent_10",
 )
 
 maven_artifact(
