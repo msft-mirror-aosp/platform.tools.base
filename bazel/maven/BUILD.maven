@@ -4338,10 +4338,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.android.tools.r8_9.6.0-alpha09",
-    pom = "com/android/tools/r8/9.6.0-alpha09/r8-9.6.0-alpha09.pom",
+    name = "com.android.tools.r8_9.6.0-alpha13",
+    pom = "com/android/tools/r8/9.6.0-alpha13/r8-9.6.0-alpha13.pom",
     repo_root_path = "",
-    repo_path = "com/android/tools/r8/9.6.0-alpha09",
+    repo_path = "com/android/tools/r8/9.6.0-alpha13",
     visibility = ["//visibility:public"],
 )
 
@@ -4349,12 +4349,12 @@ maven_import(
     name = "com.android.tools.r8",
     classifiers = [],
     jars = [
-        "com/android/tools/r8/9.6.0-alpha09/r8-9.6.0-alpha09.jar"
+        "com/android/tools/r8/9.6.0-alpha13/r8-9.6.0-alpha13.jar"
     ],
     original_deps = [],
-    pom = "com/android/tools/r8/9.6.0-alpha09/r8-9.6.0-alpha09.pom",
+    pom = "com/android/tools/r8/9.6.0-alpha13/r8-9.6.0-alpha13.pom",
     repo_root_path = "",
-    repo_path = "com/android/tools/r8/9.6.0-alpha09",
+    repo_path = "com/android/tools/r8/9.6.0-alpha13",
     visibility = ["//visibility:public"],
 )
 
