@@ -102,4 +102,23 @@ class InstrumenterTestKotlinTarget {
       }
     return a + b
   }
+
+  interface Transform<T> {
+    operator fun invoke(value: T): T
+  }
+
+  // The object gets a synthetic bridge invoke(Any?): Any? that unboxes the
+  // parameter and calls invoke(Int).
+  val increment: Transform<Int> =
+    object : Transform<Int> {
+      override fun invoke(value: Int): Int = value + 1
+    }
+
+  interface Labeled {
+    fun label(): String = "label"
+  }
+
+  // Topic gets a bridge to the default method of Labeled, which isn't
+  // synthetic.
+  class Topic : Labeled
 }

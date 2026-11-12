@@ -73,4 +73,17 @@ class InstrumenterTestTarget {
                 break;
         }
     }
+
+    interface Action<T> {
+        T invoke();
+    }
+
+    // javac gives Constant a synthetic bridge invoke(): Object that calls
+    // invoke(): String.
+    static final class Constant implements Action<String> {
+        @Override
+        public String invoke() {
+            return "constant";
+        }
+    }
 }

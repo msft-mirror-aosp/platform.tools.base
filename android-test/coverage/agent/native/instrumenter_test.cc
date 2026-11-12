@@ -121,9 +121,11 @@ class TestFilter : public IFilter {
 REGISTER_NON_KOTLIN_FILTER(TestFilter)
 
 // Instruments the target classes once. Returns the metadata of the method named
-// `name` of `class_name`, or nullptr if that method was not instrumented.
+// `name` of `class_name`, with `signature` if given, or nullptr if that method
+// was not instrumented.
 const proto::MethodMetadata* InstrumentedMethod(
-    std::string_view name, std::string_view class_name = kTargetClass) {
+    std::string_view name, std::string_view class_name = kTargetClass,
+    std::string_view signature = {}) {
   static const proto::CoverageMetadata* const metadata = [] {
     Instrumenter instrumenter(/*jvmti=*/nullptr, "com/example");
     instrumenter.AddUnloadedClasses(instrumenter_test_target_dex,
@@ -138,7 +140,8 @@ const proto::MethodMetadata* InstrumentedMethod(
       continue;
     }
     for (const auto& method : class_meta.methods()) {
-      if (method.name() == name) {
+      if (method.name() == name &&
+          (signature.empty() || method.signature() == signature)) {
         return &method;
       }
     }
@@ -431,6 +434,41 @@ TEST(InstrumenterTest, SwitchCountsEachTargetOnce) {
   const proto::MethodMetadata* method = InstrumentedMethod("sharedCases");
   ASSERT_NE(method, nullptr);
   EXPECT_EQ(BranchCounts(*method), std::vector<uint32_t>{3});
+}
+
+TEST(InstrumenterTest, SyntheticBridgeIsNotReported) {
+  // The method that the bridge of `increment` calls is instrumented, but not
+  // the bridge, although the agent instruments synthetic methods whose names
+  // contain invoke.
+  constexpr char kIncrementClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$increment$1;";
+  ASSERT_NE(
+      InstrumentedMethod("invoke", kIncrementClass, "(I)Ljava/lang/Integer;"),
+      nullptr);
+  EXPECT_EQ(InstrumentedMethod("invoke", kIncrementClass,
+                               "(Ljava/lang/Object;)Ljava/lang/Object;"),
+            nullptr);
+}
+
+TEST(InstrumenterTest, BridgeThatIsNotSyntheticIsNotReported) {
+  constexpr char kTopicClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Topic;";
+  // The other method of the class, its constructor, is instrumented.
+  ASSERT_NE(InstrumentedMethod("<init>", kTopicClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("label", kTopicClass), nullptr);
+}
+
+TEST(InstrumenterTest, BridgeOfJavaClassIsNotReported) {
+  // Bridges are filtered in Java classes too, such as the synthetic bridge
+  // named invoke of Constant.
+  constexpr char kConstantClass[] =
+      "Lcom/example/InstrumenterTestTarget$Constant;";
+  ASSERT_NE(
+      InstrumentedMethod("invoke", kConstantClass, "()Ljava/lang/String;"),
+      nullptr);
+  EXPECT_EQ(
+      InstrumentedMethod("invoke", kConstantClass, "()Ljava/lang/Object;"),
+      nullptr);
 }
 
 }  // namespace
