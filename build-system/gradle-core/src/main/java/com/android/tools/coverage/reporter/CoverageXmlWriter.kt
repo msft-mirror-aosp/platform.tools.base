@@ -67,23 +67,18 @@ class CoverageXmlWriter {
   }
 
   private fun writeCounters(out: PrintWriter, indent: String, element: CoverageElement) {
-    out.println(
-      "${indent}<counter type=\"INSTRUCTION\" missed=\"${element.instructions.missed}\" covered=\"${element.instructions.covered}\"/>"
-    )
-
-    if (element.branches.total > 0) {
-      out.println("${indent}<counter type=\"BRANCH\" missed=\"${element.branches.missed}\" covered=\"${element.branches.covered}\"/>")
-    }
-
-    out.println("${indent}<counter type=\"LINE\" missed=\"${element.lines.missed}\" covered=\"${element.lines.covered}\"/>")
-    out.println(
-      "${indent}<counter type=\"METHOD\" missed=\"${element.methodsCounter.missed}\" covered=\"${element.methodsCounter.covered}\"/>"
-    )
-
+    writeCounter(out, indent, "INSTRUCTION", element.instructions)
+    writeCounter(out, indent, "BRANCH", element.branches)
+    writeCounter(out, indent, "LINE", element.lines)
+    writeCounter(out, indent, "METHOD", element.methodsCounter)
     if (element is AggregateElement) {
-      out.println(
-        "${indent}<counter type=\"CLASS\" missed=\"${element.classesCounter.missed}\" covered=\"${element.classesCounter.covered}\"/>"
-      )
+      writeCounter(out, indent, "CLASS", element.classesCounter)
+    }
+  }
+
+  private fun writeCounter(out: PrintWriter, indent: String, type: String, counter: Counter) {
+    if (counter.total > 0) {
+      out.println("${indent}<counter type=\"$type\" missed=\"${counter.missed}\" covered=\"${counter.covered}\"/>")
     }
   }
 
