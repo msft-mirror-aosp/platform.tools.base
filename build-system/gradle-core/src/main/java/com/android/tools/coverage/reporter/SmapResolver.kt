@@ -20,6 +20,7 @@ package com.android.tools.coverage.reporter
  * Resolves bytecode line numbers to original source lines using SMAP (JSR-45) data. This is essential for correctly attributing coverage in
  * Kotlin inline functions.
  */
+// TODO: Simplify or remove Kotlin SMAP resolution now that KotlinInlineFilter excludes inlined instructions in the agent.
 class SmapResolver(smapString: String) {
 
   private val lineMappings = mutableListOf<LineMapping>()
