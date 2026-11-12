@@ -88,7 +88,7 @@ ARTIFACTS = [
     "com.google.oauth-client:google-oauth-client:1.35.0",
     "com.google.oauth-client:google-oauth-client-java6:1.35.0",
     "com.google.protobuf:protobuf-bom:pom:3.25.9",
-    "com.google.protobuf:protobuf-gradle-plugin:0.10.0",
+    "com.google.protobuf:protobuf-gradle-plugin:0.10.1",
     "com.google.protobuf:protobuf-java:3.25.9",
     "com.google.protobuf:protobuf-java-util:3.25.9",
     "com.google.protobuf:protobuf-javalite:3.25.9",

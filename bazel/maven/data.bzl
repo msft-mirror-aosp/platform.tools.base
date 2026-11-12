@@ -1065,6 +1065,7 @@ _CLASS_JARS = [
     "com.google.oboe:oboe:1.6.1",
     "com.google.prefab:cli:jar:all:2.1.0",
     "com.google.protobuf:com.google.protobuf.gradle.plugin:pom:0.10.0",
+    "com.google.protobuf:com.google.protobuf.gradle.plugin:pom:0.10.1",
     "com.google.protobuf:protobuf-bom:pom:3.17.2",
     "com.google.protobuf:protobuf-bom:pom:3.19.3",
     "com.google.protobuf:protobuf-bom:pom:3.21.8",
