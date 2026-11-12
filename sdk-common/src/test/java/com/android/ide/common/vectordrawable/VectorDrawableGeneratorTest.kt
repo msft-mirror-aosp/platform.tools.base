@@ -19,6 +19,7 @@ import com.android.ide.common.util.GeneratorTester
 import com.android.io.readImage
 import com.android.testutils.TestResources
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintWriter
@@ -54,15 +55,14 @@ class VectorDrawableGeneratorTest : TestCase() {
       val outStream = ByteArrayOutputStream()
       errorLog = Svg2Vector.parseSvgToXml(incomingFile, outStream)
       if (expectedError != null) {
-        assertNotNull(errorLog)
-        assertFalse(errorLog.isEmpty())
-        assertTrue(errorLog.contains(expectedError))
+        assertThat(errorLog).isNotEmpty()
+        assertThat(errorLog).contains(expectedError)
       }
       xmlContent = outStream.toString()
       checkNoTrailingSpaces(xmlContent)
       if (xmlContent.isEmpty()) {
         if (expectedError == null) {
-          fail("Empty XML file.")
+          assertWithMessage("Empty XML file.").fail()
         }
         return errorLog
       }
@@ -70,9 +70,7 @@ class VectorDrawableGeneratorTest : TestCase() {
         val tempXmlFile = parentDir.resolve("$imageName.xml")
         PrintWriter(tempXmlFile.toFile(), UTF_8.name()).use { writer -> writer.println(xmlContent) }
       }
-      if (INVALID_XML_PATTERN.containsMatchIn(xmlContent)) {
-        fail("Invalid VectorDrawable produced")
-      }
+      assertWithMessage("Invalid VectorDrawable produced").that(INVALID_XML_PATTERN.containsMatchIn(xmlContent)).isFalse()
     } else {
       xmlContent = String(Files.readAllBytes(incomingFile), UTF_8)
     }
@@ -102,7 +100,7 @@ class VectorDrawableGeneratorTest : TestCase() {
 
   private fun checkNoTrailingSpaces(xmlContent: String) {
     for (line in xmlContent.split(LINE_SEPARATORS)) {
-      assertEquals("Unexpected trailing whitespace in: \"$line\"", 0, trailingWhiteSpaces(line))
+      assertWithMessage("Unexpected trailing whitespace in: \"$line\"").that(trailingWhiteSpaces(line)).isEqualTo(0)
     }
   }
 
@@ -945,8 +943,8 @@ class VectorDrawableGeneratorTest : TestCase() {
     val errorLog = Svg2Vector.parseSvgToXml(incomingFile, outStream)
     val xmlContent = outStream.toString()
 
-    assertFalse("VectorDrawable XML should not be empty", xmlContent.isEmpty())
-    assertTrue("Expected warning about unsupported color", errorLog.contains("Unsupported color value ?android:color/white"))
+    assertWithMessage("VectorDrawable XML should not be empty").that(xmlContent).isNotEmpty()
+    assertWithMessage("Expected warning about unsupported color").that(errorLog).contains("Unsupported color value ?android:color/white")
   }
 
   fun testSvgGradientTransform() {
@@ -1244,8 +1242,8 @@ class VectorDrawableGeneratorTest : TestCase() {
       checkXmlConversion("test_pathData_in_string_resource")
       fail("Expecting exception.")
     } catch (e: ResourcesNotSupportedException) {
-      assertEquals("@string/pathDataAsString", e.value)
-      assertEquals("android:pathData", e.name)
+      assertThat(e.value).isEqualTo("@string/pathDataAsString")
+      assertThat(e.name).isEqualTo("android:pathData")
     }
   }
 
