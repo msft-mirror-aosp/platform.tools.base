@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.options.StringOption
 import com.android.builder.dexing.R8Version
+import com.android.testutils.ZipContents
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -139,5 +140,62 @@ class R8FromMavenIntegrationTest {
     val result = build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":app:minifyReleaseWithR8")
 
     assertThat(result.didWorkTasks).contains(":app:minifyReleaseWithR8")
+  }
+
+  @Test
+  fun testTargetedConsumerRulesFilteredByVersionOverride() {
+    val build = rule.build
+    val targetedRulesJar =
+      ZipContents(
+          mapOf(
+            "META-INF/com.android.tools/r8-upto-99.0.0/upto-99.pro" to "# rules for R8 < 99.0.0".toByteArray(),
+            "META-INF/com.android.tools/r8-from-99.0.0/from-99.pro" to "# rules for R8 >= 99.0.0".toByteArray(),
+          )
+        )
+        .toByteArray()
+    build.androidApplication().files.add("libs/targeted-rules.jar", targetedRulesJar)
+    build.androidApplication().files.update("build.gradle.kts") {
+      append(
+        """
+
+        android {
+            buildTypes {
+                release {
+                    isMinifyEnabled = true
+                }
+            }
+        }
+        dependencies {
+            implementation(files("libs/targeted-rules.jar"))
+        }
+        tasks.register("printFilteredShrinkerRules") {
+            val filteredRules =
+                configurations
+                    .getByName("releaseRuntimeClasspath")
+                    .incoming
+                    .artifactView {
+                        attributes.attribute(
+                            org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+                            com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.FILTERED_PROGUARD_RULES.type,
+                        )
+                    }
+                    .files
+            inputs.files(filteredRules)
+            doLast {
+                println("filtered shrinker rules: " + filteredRules.files.map { it.name }.sorted())
+            }
+        }
+        """
+          .trimIndent()
+      )
+    }
+
+    val defaultResult = build.executor.run(":app:printFilteredShrinkerRules")
+    defaultResult.assertOutputContains("filtered shrinker rules: [upto-99.pro]")
+
+    // com.android.tools:r8:99.0.0 does not exist in the test repository and is never resolved here, because printFilteredShrinkerRules
+    // only resolves the FILTERED_PROGUARD_RULES artifact view (which uses the version string) and never runs R8.
+    val overrideResult = build.executor.with(StringOption.R8_VERSION_OVERRIDE, "99.0.0").run(":app:printFilteredShrinkerRules")
+    overrideResult.assertOutputContains("filtered shrinker rules: [from-99.pro]")
   }
 }

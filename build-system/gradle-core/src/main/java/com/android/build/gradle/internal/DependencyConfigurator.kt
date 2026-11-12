@@ -56,7 +56,6 @@ import com.android.build.gradle.internal.dependency.MultiVariantProductFlavorRul
 import com.android.build.gradle.internal.dependency.PlatformAttrTransform
 import com.android.build.gradle.internal.dependency.RecalculateStackFramesTransform.Companion.registerGlobalRecalculateStackFramesTransform
 import com.android.build.gradle.internal.dependency.RecalculateStackFramesTransform.Companion.registerRecalculateStackFramesTransformForComponent
-import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.build.gradle.internal.dependency.registerDexingOutputSplitTransform
 import com.android.build.gradle.internal.dexing.configureIsolatedR8
 import com.android.build.gradle.internal.dsl.BaseFlavor
@@ -69,6 +68,8 @@ import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
+import com.android.build.gradle.internal.r8.effectiveR8Version
+import com.android.build.gradle.internal.r8.effectiveShrinkerVersion
 import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
@@ -85,7 +86,6 @@ import com.android.build.gradle.internal.variant.VariantInputModel
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.options.SyncOptions
-import com.android.builder.dexing.R8Version
 import com.google.common.collect.Maps
 import java.lang.Boolean.FALSE
 import java.lang.Boolean.TRUE
@@ -552,7 +552,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
         ),
       )
 
-      val d8Version = R8Version.getVersionString()
+      val d8Version = effectiveR8Version(projectOptions, services.r8FromMaven)
 
       allComponents
         .mapTo(linkedSetOf()) { it.minSdk.apiLevel }
@@ -600,7 +600,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
         reg.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES.type)
         reg.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.FILTERED_PROGUARD_RULES.type)
         reg.parameters { params: FilterShrinkerRulesTransform.Parameters ->
-          params.shrinkerVersion.set(ShrinkerVersion.R8)
+          params.shrinkerVersion.set(effectiveShrinkerVersion(projectOptions, projectServices.r8FromMaven))
           params.projectName.set(project.name)
         }
       }

@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.r8
 
+import com.android.build.gradle.internal.dependency.ShrinkerVersion
+import com.android.build.gradle.internal.dependency.configDirMatchesVersion
 import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.options.ProjectOptions
@@ -275,5 +277,56 @@ class R8FromMavenTest {
 
     assertThat(isolatedR8Classpath(projectOptions, r8FromMaven)).isSameInstanceAs(r8FromMaven.r8Classpath)
     assertThat(isolatedR8Classpath(projectOptions, null)).isNull()
+  }
+
+  @Test
+  fun testEffectiveR8VersionWithoutOverrideUsesBundledR8Version() {
+    val r8FromMaven = R8FromMaven.create(project) { null }
+
+    for (options in listOf(emptyMap(), mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to " "))) {
+      val projectOptions = ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, options))
+
+      assertThat(effectiveR8Version(projectOptions, r8FromMaven)).isEqualTo(R8Version.getVersionString())
+      assertThat(effectiveR8Version(projectOptions, null)).isEqualTo(R8Version.getVersionString())
+    }
+  }
+
+  @Test
+  fun testEffectiveR8VersionWithOverrideUsesR8FromMavenVersion() {
+    val overrideVersion = "99.0.0"
+    val projectOptions =
+      ProjectOptions(
+        FakeProviderFactory(
+          FakeProviderFactory.factory,
+          mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to overrideVersion),
+        )
+      )
+    val r8FromMaven = R8FromMaven.create(project, projectOptions)
+
+    assertThat(effectiveR8Version(projectOptions, r8FromMaven)).isEqualTo(overrideVersion)
+    assertThat(effectiveR8Version(projectOptions, null)).isEqualTo(R8Version.getVersionString())
+  }
+
+  @Test
+  fun testEffectiveShrinkerVersionForRuleFiltering() {
+    fun resolveShrinkerVersion(override: String?): ShrinkerVersion {
+      val options = if (override != null) mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to override) else emptyMap()
+      val projectOptions = ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, options))
+      val r8FromMaven = R8FromMaven.create(project, projectOptions)
+      return effectiveShrinkerVersion(projectOptions, r8FromMaven)
+    }
+
+    val defaultShrinkerVersion = resolveShrinkerVersion(null)
+    assertThat(defaultShrinkerVersion).isEqualTo(ShrinkerVersion.R8)
+    assertThat(configDirMatchesVersion("r8-upto-99.0.0", defaultShrinkerVersion)).isTrue()
+    assertThat(configDirMatchesVersion("r8-from-99.0.0", defaultShrinkerVersion)).isFalse()
+
+    val overriddenShrinkerVersion = resolveShrinkerVersion("99.0.0")
+    assertThat(overriddenShrinkerVersion).isEqualTo(ShrinkerVersion.parse("99.0.0"))
+    assertThat(configDirMatchesVersion("r8-upto-99.0.0", overriddenShrinkerVersion)).isFalse()
+    assertThat(configDirMatchesVersion("r8-from-99.0.0", overriddenShrinkerVersion)).isTrue()
+
+    // Unparseable version overrides fall back to ShrinkerVersion.R8.
+    assertThat(resolveShrinkerVersion("latest")).isEqualTo(ShrinkerVersion.R8)
   }
 }

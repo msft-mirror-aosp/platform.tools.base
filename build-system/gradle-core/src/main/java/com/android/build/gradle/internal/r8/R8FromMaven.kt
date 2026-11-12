@@ -116,3 +116,16 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
  */
 fun isolatedR8Classpath(projectOptions: ProjectOptions, r8FromMaven: R8FromMaven?): FileCollection? =
   if (projectOptions[StringOption.R8_VERSION_OVERRIDE].isNullOrBlank()) null else r8FromMaven?.r8Classpath
+
+/** The R8 version the build runs: the override (Maven R8) when set, otherwise the R8 on AGP's own class loader. */
+fun effectiveR8Version(projectOptions: ProjectOptions, r8FromMaven: R8FromMaven?): String =
+  if (isolatedR8Classpath(projectOptions, r8FromMaven) != null) r8FromMaven!!.version else R8Version.getVersionString()
+
+/**
+ * The [ShrinkerVersion] the build runs, for filtering version-targeted consumer rules (`META-INF/com.android.tools/r8-from-...`).
+ *
+ * Falls back to [ShrinkerVersion.R8] when the version override cannot be parsed as a version (for example, a dynamic version), matching the
+ * leniency of [R8FromMaven.create].
+ */
+fun effectiveShrinkerVersion(projectOptions: ProjectOptions, r8FromMaven: R8FromMaven?): ShrinkerVersion =
+  ShrinkerVersion.tryParse(effectiveR8Version(projectOptions, r8FromMaven)) ?: ShrinkerVersion.R8
