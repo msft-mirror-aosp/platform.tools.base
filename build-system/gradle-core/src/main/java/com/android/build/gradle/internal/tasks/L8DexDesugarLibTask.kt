@@ -226,7 +226,7 @@ abstract class L8DexWorkAction : ProfileAwareWorkAction<L8DexWorkAction.Params>(
     // Keep rule generation and L8 run in the same ClassLoader, so both use the same R8.
     withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
       val r8Tools = createR8Tools(r8ClassLoader)
-      wrapIsolatedR8Failures(r8ClassLoader) {
+      wrapIsolatedR8Failures {
         val keepRuleFiles = mutableListOf<Path>()
         if (parameters.outputKeepRules.isPresent) {
           val outputKeepRule = parameters.outputKeepRules.get().asFile.toPath()

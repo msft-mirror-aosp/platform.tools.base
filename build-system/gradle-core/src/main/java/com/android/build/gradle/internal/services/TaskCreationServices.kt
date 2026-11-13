@@ -79,7 +79,7 @@ interface TaskCreationServices : BaseServices {
   fun <T : Named> named(type: Class<T>, name: String): T
 
   val lintFromMaven: LintFromMaven
-  val r8FromMaven: R8FromMaven?
+  val r8FromMaven: R8FromMaven
 
   val configurations: ConfigurationContainer
   val dependencies: DependencyHandler

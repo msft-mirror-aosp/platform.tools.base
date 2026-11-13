@@ -96,6 +96,8 @@ class R8FromMavenDesugarTransformsTest {
 
   @Test
   fun backportedMethodsGeneratorRunsWithVersionOverride() {
+    // Use a distinct minSdk so Gradle's shared transform cache doesn't reuse the default-R8 run's output.
+    rule.build.androidApplication().files.update("build.gradle.kts") { append("\nandroid.defaultConfig.minSdk = 22\n") }
     // Lint analysis reads the list of desugared methods, which the backported methods generator transform produces.
     val result =
       rule.build.executor
@@ -106,14 +108,16 @@ class R8FromMavenDesugarTransformsTest {
   }
 
   @Test
-  fun backportedMethodsGeneratorUsesBundledR8WithoutOverride() {
+  fun backportedMethodsGeneratorUsesDefaultR8FromMavenWithoutOverride() {
     val result = rule.build.executor.run(":app:lintAnalyzeDebug", ":app:printIsolatedR8ClassLoaders")
 
-    result.assertOutputContains("isolated R8 ClassLoaders: 0")
+    result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
 
   @Test
   fun l8DesugarLibTransformRunsWithVersionOverride() {
+    // Use a distinct minSdk so Gradle's shared transform cache doesn't reuse the default-R8 run's output.
+    rule.build.androidApplication().files.update("build.gradle.kts") { append("\nandroid.defaultConfig.minSdk = 22\n") }
     // Expanding the L8 ART profile reads the desugared desugar library, which L8DesugarLibTransform produces. Unlike
     // l8DexDesugarLibRelease,
     // this task doesn't run L8 or R8 itself.
@@ -126,9 +130,9 @@ class R8FromMavenDesugarTransformsTest {
   }
 
   @Test
-  fun l8DesugarLibTransformUsesBundledR8WithoutOverride() {
+  fun l8DesugarLibTransformUsesDefaultR8FromMavenWithoutOverride() {
     val result = rule.build.executor.run(":app:expandReleaseL8ArtProfileWildcards", ":app:printIsolatedR8ClassLoaders")
 
-    result.assertOutputContains("isolated R8 ClassLoaders: 0")
+    result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
 }

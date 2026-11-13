@@ -53,6 +53,7 @@ import com.android.build.gradle.internal.profile.NoOpAnalyticsService
 import com.android.build.gradle.internal.projectIsolationActive
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.getAttributes
+import com.android.build.gradle.internal.r8.R8FromMaven
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType.LINT_REPORT_LINT_MODEL
@@ -810,6 +811,7 @@ abstract class LintPlugin : Plugin<Project> {
         extraProperties = project.extensions.extraProperties,
         emptyTaskCreator = { name -> project.tasks.register(name) },
         project.pluginManager,
+        r8FromMaven = R8FromMaven.create(project, projectOptions::get),
       )
     projectOptions.allOptions.forEach { (option: Option<*>, value: Any) ->
       projectServices.deprecationReporter.reportOptionIssuesIfAny(option, value)

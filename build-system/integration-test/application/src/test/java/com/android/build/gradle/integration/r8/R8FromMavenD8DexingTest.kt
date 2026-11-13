@@ -27,12 +27,11 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Tests that D8 dex archive building runs on the R8 selected by [StringOption.R8_VERSION_OVERRIDE]: the dexBuilder task for the project
+ * Tests that D8 dex archive building runs on the Maven-resolved R8 in the isolated R8 ClassLoader: the dexBuilder task for the project
  * classes, the dexing artifact transform for external libraries, and the task that dexes file dependencies.
  *
  * Each test runs only the tasks that need one of them, and then prints how many isolated R8 ClassLoaders the shared
- * R8ClassloaderBuildService created. Nothing else in these builds uses an isolated R8 (dex merging still uses the bundled R8), so a
- * ClassLoader means that dex archive building used the Maven-resolved R8.
+ * R8ClassloaderBuildService created.
  */
 class R8FromMavenD8DexingTest {
 
@@ -114,7 +113,7 @@ class R8FromMavenD8DexingTest {
         .run(":app:dexBuilderDebug", ":app:printIsolatedR8ClassLoaders")
 
     assertThat(result.didWorkTasks).contains(":app:dexBuilderDebug")
-    result.assertOutputContains("dexBuilder r8Classpath: [r8-$overrideVersion.jar")
+    result.assertOutputContains("dexBuilder r8Classpath: [r8-$overrideVersion.jar]")
     result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
 
@@ -143,13 +142,14 @@ class R8FromMavenD8DexingTest {
         .run(":app:desugarDebugFileDependencies", ":app:printIsolatedR8ClassLoaders")
 
     assertThat(result.didWorkTasks).contains(":app:desugarDebugFileDependencies")
-    result.assertOutputContains("file dependencies r8Classpath: [r8-$overrideVersion.jar")
+    result.assertOutputContains("file dependencies r8Classpath: [r8-$overrideVersion.jar]")
     result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
 
   @Test
-  fun dexArchiveBuildingUsesBundledR8WithoutOverride() {
+  fun dexArchiveBuildingUsesDefaultR8FromMavenWithoutOverride() {
     addFileDependency()
+    val defaultVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
 
     val result =
       rule.build.executor.run(
@@ -160,9 +160,9 @@ class R8FromMavenD8DexingTest {
       )
 
     assertThat(result.didWorkTasks).containsAtLeast(":app:dexBuilderDebug", ":app:desugarDebugFileDependencies", ":app:mergeExtDexDebug")
-    result.assertOutputContains("dexBuilder r8Classpath: []")
-    result.assertOutputContains("file dependencies r8Classpath: []")
-    result.assertOutputContains("isolated R8 ClassLoaders: 0")
+    result.assertOutputContains("dexBuilder r8Classpath: [r8-$defaultVersion.jar]")
+    result.assertOutputContains("file dependencies r8Classpath: [r8-$defaultVersion.jar]")
+    result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
 
   /** Adds a local jar dependency, which the file dependencies task dexes. */

@@ -379,7 +379,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
       resourceShrinkingConfig: ResourceShrinkingConfig?,
       partialShrinkingIncludes: PartialShrinking?,
       r8ThreadPool: ExecutorService,
-      r8ClassLoader: ClassLoader? = null,
+      r8ClassLoader: ClassLoader,
     ) {
       val logger = LoggerWrapper.getLogger(R8Task::class.java)
 

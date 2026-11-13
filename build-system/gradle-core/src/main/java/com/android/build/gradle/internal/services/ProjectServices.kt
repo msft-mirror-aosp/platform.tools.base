@@ -68,7 +68,7 @@ constructor(
   val extraProperties: ExtraPropertiesExtension,
   val emptyTaskCreator: (String) -> TaskProvider<*>,
   val plugins: PluginManager,
-  val r8FromMaven: R8FromMaven? = null,
+  val r8FromMaven: R8FromMaven,
 ) {
   fun initializeAapt2Input(
     aapt2Input: Aapt2Input,

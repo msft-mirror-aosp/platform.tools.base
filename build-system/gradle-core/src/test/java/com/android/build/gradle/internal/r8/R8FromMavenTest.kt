@@ -253,58 +253,10 @@ class R8FromMavenTest {
   }
 
   @Test
-  fun testIsolatedR8ClasspathWithoutOverrideIsNull() {
-    val r8FromMaven = R8FromMaven.create(project) { null }
+  fun testBlankVersionOverrideFallsBackToDefault() {
+    val r8FromMaven = R8FromMaven.create(project) { option -> if (option == StringOption.R8_VERSION_OVERRIDE) " " else null }
 
-    for (options in listOf(emptyMap(), mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to " "))) {
-      val projectOptions = ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, options))
-
-      // Without the override, tasks run the R8 bundled with AGP.
-      assertThat(isolatedR8Classpath(projectOptions, r8FromMaven)).isNull()
-    }
-  }
-
-  @Test
-  fun testIsolatedR8ClasspathWithOverrideIsR8FromMavenClasspath() {
-    val projectOptions =
-      ProjectOptions(
-        FakeProviderFactory(
-          FakeProviderFactory.factory,
-          mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to R8Version.VERSION_AGP_WAS_SHIPPED_WITH),
-        )
-      )
-    val r8FromMaven = R8FromMaven.create(project, projectOptions)
-
-    assertThat(isolatedR8Classpath(projectOptions, r8FromMaven)).isSameInstanceAs(r8FromMaven.r8Classpath)
-    assertThat(isolatedR8Classpath(projectOptions, null)).isNull()
-  }
-
-  @Test
-  fun testEffectiveR8VersionWithoutOverrideUsesBundledR8Version() {
-    val r8FromMaven = R8FromMaven.create(project) { null }
-
-    for (options in listOf(emptyMap(), mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to " "))) {
-      val projectOptions = ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, options))
-
-      assertThat(effectiveR8Version(projectOptions, r8FromMaven)).isEqualTo(R8Version.getVersionString())
-      assertThat(effectiveR8Version(projectOptions, null)).isEqualTo(R8Version.getVersionString())
-    }
-  }
-
-  @Test
-  fun testEffectiveR8VersionWithOverrideUsesR8FromMavenVersion() {
-    val overrideVersion = "99.0.0"
-    val projectOptions =
-      ProjectOptions(
-        FakeProviderFactory(
-          FakeProviderFactory.factory,
-          mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to overrideVersion),
-        )
-      )
-    val r8FromMaven = R8FromMaven.create(project, projectOptions)
-
-    assertThat(effectiveR8Version(projectOptions, r8FromMaven)).isEqualTo(overrideVersion)
-    assertThat(effectiveR8Version(projectOptions, null)).isEqualTo(R8Version.getVersionString())
+    assertThat(r8FromMaven.version).isEqualTo(R8Version.VERSION_AGP_WAS_SHIPPED_WITH)
   }
 
   @Test
@@ -313,7 +265,7 @@ class R8FromMavenTest {
       val options = if (override != null) mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to override) else emptyMap()
       val projectOptions = ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, options))
       val r8FromMaven = R8FromMaven.create(project, projectOptions)
-      return effectiveShrinkerVersion(projectOptions, r8FromMaven)
+      return effectiveShrinkerVersion(r8FromMaven)
     }
 
     val defaultShrinkerVersion = resolveShrinkerVersion(null)

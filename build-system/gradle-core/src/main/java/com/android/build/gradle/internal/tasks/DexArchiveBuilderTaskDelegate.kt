@@ -92,8 +92,8 @@ class DexArchiveBuilderTaskDelegate(
   private val taskPath: String,
   private val analyticsService: Provider<AnalyticsService>,
 
-  /** Maven-resolved R8 to dex with, or empty to use the R8 bundled with AGP. */
-  private val r8Classpath: Set<File> = emptySet(),
+  /** Maven-resolved R8 classpath to dex with in the isolated R8 ClassLoader. */
+  private val r8Classpath: Set<File>,
   private val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>? = null,
 ) {
   private val outputMapping = OutputMapping(isIncremental)
@@ -159,9 +159,9 @@ class DexArchiveBuilderTaskDelegate(
           val bootclasspath = getBootClasspath(dexParams.desugarBootclasspath, dexParams.withDesugaring)
 
           val r8Tools = createR8Tools(r8ClassLoader)
-          val bootClasspathProvider = wrapIsolatedR8Failures(r8ClassLoader) { r8Tools.createClassFileProviderFactory(bootclasspath) }
+          val bootClasspathProvider = wrapIsolatedR8Failures { r8Tools.createClassFileProviderFactory(bootclasspath) }
           closer.register(bootClasspathProvider)
-          val libraryClasspathProvider = wrapIsolatedR8Failures(r8ClassLoader) { r8Tools.createClassFileProviderFactory(classpath) }
+          val libraryClasspathProvider = wrapIsolatedR8Failures { r8Tools.createClassFileProviderFactory(classpath) }
           closer.register(libraryClasspathProvider)
 
           val bootclasspathServiceKey = ClasspathServiceKey(nextClasspathServiceKeyId.incrementAndGet())

@@ -91,14 +91,15 @@ class R8FromMavenL8DesugarLibTest {
     val result = rule.build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":app:l8DexDesugarLibRelease")
 
     assertThat(result.didWorkTasks).contains(":app:l8DexDesugarLibRelease")
-    result.assertOutputContains("l8 r8Classpath: [r8-$overrideVersion.jar")
+    result.assertOutputContains("l8 r8Classpath: [r8-$overrideVersion.jar]")
   }
 
   @Test
-  fun l8DexingUsesBundledR8WithoutOverride() {
+  fun l8DexingUsesDefaultR8FromMavenWithoutOverride() {
+    val defaultVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
     val result = rule.build.executor.run(":app:l8DexDesugarLibRelease")
 
     assertThat(result.didWorkTasks).contains(":app:l8DexDesugarLibRelease")
-    result.assertOutputContains("l8 r8Classpath: []")
+    result.assertOutputContains("l8 r8Classpath: [r8-$defaultVersion.jar]")
   }
 }

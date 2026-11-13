@@ -22,13 +22,8 @@ import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
-import com.android.build.gradle.internal.transforms.NoOpMessageReceiver
 import com.android.build.gradle.options.SyncOptions
-import com.android.builder.dexing.ClassFileInputs
-import com.android.builder.dexing.DexArchiveBuilder
-import com.android.builder.dexing.DexParameters
 import com.android.builder.dexing.ERROR_DUPLICATE_HELP_PAGE
-import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.builder.multidex.D8MainDexList
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.TestUtils
@@ -145,7 +140,7 @@ class D8BundleMainDexListTaskTest {
               get() = FakeGradleProperty(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
 
             override val r8Classpath: ConfigurableFileCollection
-              get() = FakeConfigurableFileCollection()
+              get() = FakeConfigurableFileCollection(testR8Jar)
 
             override val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
               get() = FakeGradleProperty()
@@ -170,27 +165,7 @@ class D8BundleMainDexListTaskTest {
     val dexArchivePath = tmpDir.newFolder()
     val emptyClassesDir = tmpDir.newFolder().also { TestInputsGenerator.dirWithEmptyClasses(it.toPath(), emptyClassNames) }
     val globalSyntheticsPath = tmpDir.newFile()
-    generateDexArchive(emptyClassesDir, dexArchivePath, globalSyntheticsPath)
+    generateTestDexArchive(emptyClassesDir, dexArchivePath, globalSyntheticsPath.toPath())
     return dexArchivePath
-  }
-
-  private fun generateDexArchive(classesDirOrJar: File, dexArchivePath: File, globalSyntheticsFile: File) {
-    val builder =
-      DexArchiveBuilder.createD8DexBuilder(
-        DexParameters(
-          minSdkVersion = 1,
-          debuggable = true,
-          dexPerClass = true,
-          withDesugaring = false,
-          desugarBootclasspath = ClassFileProviderFactory(emptyList()),
-          desugarClasspath = ClassFileProviderFactory(emptyList()),
-          coreLibDesugarConfig = null,
-          enableApiModeling = true,
-          messageReceiver = NoOpMessageReceiver(),
-        )
-      )
-    ClassFileInputs.fromPath(classesDirOrJar.toPath()).use { input ->
-      builder.convert(input.entries { _, _ -> true }, dexArchivePath.toPath(), globalSyntheticsFile.toPath())
-    }
   }
 }

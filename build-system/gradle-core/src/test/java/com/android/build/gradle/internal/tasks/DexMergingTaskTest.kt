@@ -28,14 +28,9 @@ import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
-import com.android.build.gradle.internal.transforms.NoOpMessageReceiver
 import com.android.build.gradle.options.SyncOptions
 import com.android.build.gradle.tasks.toSerializable
-import com.android.builder.dexing.ClassFileInputs
-import com.android.builder.dexing.DexArchiveBuilder
-import com.android.builder.dexing.DexParameters
 import com.android.builder.dexing.DexingType
-import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.DexSubject.assertThatDex
@@ -326,7 +321,7 @@ class DexMergingTaskTest {
                     override val useThreadPool: Property<Boolean>
                       get() = FakeObjectFactory.factory.property<Boolean>(Boolean::class.java).value(false)
 
-                    override val r8Classpath = FakeConfigurableFileCollection()
+                    override val r8Classpath = FakeConfigurableFileCollection(testR8Jar)
                     override val r8ClassloaderBuildService = FakeGradleProperty<R8ClassloaderBuildService>()
                   }
                 )
@@ -371,26 +366,6 @@ class DexMergingTaskTest {
 
   private fun generateDexArchive(emptyClassNames: List<String>, dexArchivePath: File, globalSyntheticsOutput: Path) {
     val emptyClassesDir = tmp.newFolder().also { TestInputsGenerator.dirWithEmptyClasses(it.toPath(), emptyClassNames) }
-    generateDexArchive(emptyClassesDir, dexArchivePath, globalSyntheticsOutput)
-  }
-
-  private fun generateDexArchive(classesDirOrJar: File, dexArchivePath: File, globalSyntheticsOutput: Path) {
-    val builder =
-      DexArchiveBuilder.createD8DexBuilder(
-        DexParameters(
-          minSdkVersion = 1,
-          debuggable = true,
-          dexPerClass = true,
-          withDesugaring = false,
-          desugarBootclasspath = ClassFileProviderFactory(emptyList()),
-          desugarClasspath = ClassFileProviderFactory(emptyList()),
-          coreLibDesugarConfig = null,
-          enableApiModeling = true,
-          messageReceiver = NoOpMessageReceiver(),
-        )
-      )
-    ClassFileInputs.fromPath(classesDirOrJar.toPath()).use { input ->
-      builder.convert(input.entries { _, _ -> true }, dexArchivePath.toPath(), globalSyntheticsOutput)
-    }
+    generateTestDexArchive(emptyClassesDir, dexArchivePath, globalSyntheticsOutput)
   }
 }

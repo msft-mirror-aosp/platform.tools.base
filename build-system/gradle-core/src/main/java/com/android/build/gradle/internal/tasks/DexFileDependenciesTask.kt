@@ -137,7 +137,7 @@ abstract class DexFileDependenciesTask : NonIncrementalTask(), IsolatedR8TaskInp
       val classpath = parameters.classpath.map(File::toPath)
       withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
         val r8Tools = createR8Tools(r8ClassLoader)
-        wrapIsolatedR8Failures(r8ClassLoader) {
+        wrapIsolatedR8Failures {
           Closer.create().use { closer ->
             val d8DexBuilder =
               r8Tools.createD8DexBuilder(

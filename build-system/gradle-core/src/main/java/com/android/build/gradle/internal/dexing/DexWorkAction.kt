@@ -25,7 +25,6 @@ import com.android.builder.dexing.DependencyGraphUpdater
 import com.android.builder.dexing.DexArchiveBuilder
 import com.android.builder.dexing.DexArchiveBuilderException
 import com.android.builder.dexing.MutableDependencyGraph
-import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.ide.common.blame.MessageReceiver
 import com.android.utils.FileUtils
 import com.google.common.io.Closer
@@ -65,11 +64,10 @@ fun launchProcessing(dexWorkActionParams: DexWorkActionParams, receiver: Message
   val dexParams = dexWorkActionParams.dexSpec.get().dexParams
   val desugarBootclasspath = DexArchiveBuilderTaskDelegate.sharedState.getService(dexParams.desugarBootclasspath).service
   val desugarClasspath = DexArchiveBuilderTaskDelegate.sharedState.getService(dexParams.desugarClasspath).service
-  // DexArchiveBuilderTaskDelegate created the class path providers with the R8 ClassLoader of the task, and keeps that ClassLoader open
-  // until all workers are done. The dex builder must come from the same ClassLoader as the providers: AGP's own (null) if the provider is
-  // AGP's ClassFileProviderFactory, or the isolated R8 ClassLoader that loaded it otherwise.
-  val r8ClassLoader = desugarBootclasspath.javaClass.classLoader.takeUnless { desugarBootclasspath is ClassFileProviderFactory }
-  wrapIsolatedR8Failures(r8ClassLoader) {
+  // DexArchiveBuilderTaskDelegate created the class path providers with the isolated R8 ClassLoader of the task, and keeps that
+  // ClassLoader open until all workers are done. The dex builder must come from the same ClassLoader as the providers.
+  val r8ClassLoader = desugarBootclasspath.javaClass.classLoader
+  wrapIsolatedR8Failures {
     val dexArchiveBuilder =
       createR8Tools(r8ClassLoader)
         .createD8DexBuilder(

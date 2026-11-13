@@ -393,12 +393,11 @@ abstract class R8ToolParameters {
 }
 
 /**
- * Runs R8 through [R8Tools]: with the R8 bundled in AGP when [r8ClassLoader] is null, or with the Maven-resolved R8 in the isolated
- * [r8ClassLoader] otherwise. Config objects such as [ToolConfig] are passed as is, because the isolated ClassLoader shares those classes
- * with AGP (see `R8ClassloaderBuildService`).
+ * Runs R8 through [R8Tools] in the isolated [r8ClassLoader]. Config objects such as [ToolConfig] are passed as is, because the isolated
+ * ClassLoader shares those classes with AGP (see `R8ClassloaderBuildService`).
  */
 internal fun invokeRunR8(
-  r8ClassLoader: ClassLoader?,
+  r8ClassLoader: ClassLoader,
   inputClasses: Collection<Path>,
   output: Path?,
   inputJavaResJar: Path,
@@ -423,7 +422,7 @@ internal fun invokeRunR8(
   r8ExecutorService: ExecutorService? = null,
 ) {
   val r8Tools = createR8Tools(r8ClassLoader)
-  wrapIsolatedR8Failures(r8ClassLoader) {
+  wrapIsolatedR8Failures {
     r8Tools.runR8(
       inputClasses,
       output,

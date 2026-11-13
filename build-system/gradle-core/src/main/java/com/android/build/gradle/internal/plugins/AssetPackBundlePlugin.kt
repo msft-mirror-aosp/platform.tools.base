@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.profile.NoOpAnalyticsService
 import com.android.build.gradle.internal.projectIsolationActive
+import com.android.build.gradle.internal.r8.R8FromMaven
 import com.android.build.gradle.internal.res.Aapt2FromMaven.Companion.create
 import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
@@ -109,6 +110,7 @@ abstract class AssetPackBundlePlugin : Plugin<Project> {
         project.extensions.extraProperties,
         { name -> project.tasks.register(name) },
         project.pluginManager,
+        R8FromMaven.create(project, projectOptions::get),
       )
     registerServices(project, projectOptions)
 

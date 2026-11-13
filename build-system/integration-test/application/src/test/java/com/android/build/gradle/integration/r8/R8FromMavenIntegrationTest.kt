@@ -18,9 +18,11 @@ package com.android.build.gradle.integration.r8
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.StringOption
 import com.android.builder.dexing.R8Version
 import com.android.testutils.ZipContents
+import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -140,6 +142,58 @@ class R8FromMavenIntegrationTest {
     val result = build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":app:minifyReleaseWithR8")
 
     assertThat(result.didWorkTasks).contains(":app:minifyReleaseWithR8")
+  }
+
+  @Test
+  fun testR8OptimizationWithoutOverride() {
+    val build = rule.build
+
+    build.androidApplication().files.update("build.gradle.kts") {
+      append(
+        """
+
+        android {
+            buildTypes {
+                release {
+                    isMinifyEnabled = true
+                    proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                }
+            }
+        }
+        """
+          .trimIndent()
+      )
+    }
+
+    val result = build.executor.run(":app:minifyReleaseWithR8")
+
+    assertThat(result.didWorkTasks).contains(":app:minifyReleaseWithR8")
+    val mappingFile = build.androidApplication().buildDir.resolve("outputs/mapping/release/mapping.txt")
+    assertThat(mappingFile).exists()
+    assertThat(mappingFile.toFile().readText()).contains("# compiler_version: ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}")
+  }
+
+  @Test
+  fun testMissingDefaultR8InRepositoriesFailsResolution() {
+    val build = rule.build
+    TestFileUtils.appendToFile(
+      build.directory.resolve("settings.gradle.kts").toFile(),
+      """
+
+      dependencyResolutionManagement {
+          repositories.configureEach {
+              content {
+                  excludeModule("com.android.tools", "r8")
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    val result = build.executor.expectFailure().run(":app:dexBuilderDebug")
+
+    result.assertErrorContains("Could not find com.android.tools:r8:${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}")
   }
 
   @Test

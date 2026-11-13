@@ -126,7 +126,7 @@ class R8FromMavenD8MergingTest {
     assertThat(result.didWorkTasks).containsAtLeastElementsIn(mergingTasks)
     assertThat(result.didWorkTasks).doesNotContain(":app:dexBuilderDebug")
     for (task in mergingTasks) {
-      result.assertOutputContains("${task.substringAfterLast(':')} r8Classpath: [r8-$overrideVersion.jar")
+      result.assertOutputContains("${task.substringAfterLast(':')} r8Classpath: [r8-$overrideVersion.jar]")
     }
     result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
@@ -143,7 +143,7 @@ class R8FromMavenD8MergingTest {
         .run(":app:generateDebugGlobalSynthetics", ":app:printIsolatedR8ClassLoaders")
 
     assertThat(result.didWorkTasks).contains(":app:generateDebugGlobalSynthetics")
-    result.assertOutputContains("generateDebugGlobalSynthetics r8Classpath: [r8-$overrideVersion.jar")
+    result.assertOutputContains("generateDebugGlobalSynthetics r8Classpath: [r8-$overrideVersion.jar]")
     result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
 
@@ -157,7 +157,7 @@ class R8FromMavenD8MergingTest {
     val result = rule.build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":app:mergeReleaseGlobalSynthetics")
 
     assertThat(result.didWorkTasks).contains(":app:mergeReleaseGlobalSynthetics")
-    result.assertOutputContains("mergeReleaseGlobalSynthetics r8Classpath: [r8-$overrideVersion.jar")
+    result.assertOutputContains("mergeReleaseGlobalSynthetics r8Classpath: [r8-$overrideVersion.jar]")
   }
 
   @Test
@@ -170,7 +170,7 @@ class R8FromMavenD8MergingTest {
     val bundleResult = rule.build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":app:bundleDebug")
 
     assertThat(bundleResult.didWorkTasks).containsAtLeast(":app:mergeDexDebug", ":app:packageDebugBundle")
-    bundleResult.assertOutputContains("mergeDexDebug r8Classpath: [r8-$overrideVersion.jar")
+    bundleResult.assertOutputContains("mergeDexDebug r8Classpath: [r8-$overrideVersion.jar]")
     val bundle =
       rule.build.androidApplication().resolve("build/outputs/bundle/debug").toFile().listFiles()!!.single { it.extension == "aab" }
     ZipFile(bundle).use { zip ->
@@ -194,8 +194,9 @@ class R8FromMavenD8MergingTest {
   }
 
   @Test
-  fun dexMergingAndGlobalSyntheticsUseBundledR8WithoutOverride() {
+  fun dexMergingAndGlobalSyntheticsUseDefaultR8FromMavenWithoutOverride() {
     setDefaultConfig("minSdk = 21")
+    val defaultVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
 
     val result =
       rule.build.executor.run(
@@ -207,10 +208,10 @@ class R8FromMavenD8MergingTest {
 
     assertThat(result.didWorkTasks)
       .containsAtLeast(":app:mergeProjectDexDebug", ":app:mergeExtDexDebug", ":app:generateDebugGlobalSynthetics")
-    result.assertOutputContains("mergeProjectDexDebug r8Classpath: []")
-    result.assertOutputContains("mergeExtDexDebug r8Classpath: []")
-    result.assertOutputContains("generateDebugGlobalSynthetics r8Classpath: []")
-    result.assertOutputContains("isolated R8 ClassLoaders: 0")
+    result.assertOutputContains("mergeProjectDexDebug r8Classpath: [r8-$defaultVersion.jar]")
+    result.assertOutputContains("mergeExtDexDebug r8Classpath: [r8-$defaultVersion.jar]")
+    result.assertOutputContains("generateDebugGlobalSynthetics r8Classpath: [r8-$defaultVersion.jar]")
+    result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
 
   private fun setDefaultConfig(vararg settings: String) {

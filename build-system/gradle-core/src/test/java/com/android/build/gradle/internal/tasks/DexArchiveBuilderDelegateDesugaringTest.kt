@@ -417,6 +417,7 @@ class DexArchiveBuilderDelegateDesugaringTest {
       projectPath = FakeProviderFactory.factory.provider { "" },
       taskPath = "",
       analyticsService = FakeObjectFactory.factory.property(AnalyticsService::class.java).value(FakeNoOpAnalyticsService()),
+      r8Classpath = setOf(testR8Jar),
     )
   }
 

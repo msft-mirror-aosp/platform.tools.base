@@ -814,7 +814,7 @@ abstract class DexMergingWorkAction : ProfileAwareWorkAction<DexMergingWorkActio
       }
       withR8ClassLoader(sharedParams.r8Classpath, sharedParams.r8ClassloaderBuildService) { r8ClassLoader ->
         val r8Tools = createR8Tools(r8ClassLoader)
-        wrapIsolatedR8Failures(r8ClassLoader) {
+        wrapIsolatedR8Failures {
           val merger =
             r8Tools.createD8DexMerger(
               messageReceiver,

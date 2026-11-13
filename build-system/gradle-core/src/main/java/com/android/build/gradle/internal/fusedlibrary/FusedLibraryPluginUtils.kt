@@ -91,7 +91,7 @@ internal fun configureTransformsForFusedLibrary(project: Project, projectService
       reg.from.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES.type)
       reg.to.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.FILTERED_PROGUARD_RULES.type)
       reg.parameters { params: FilterShrinkerRulesTransform.Parameters ->
-        params.shrinkerVersion.set(effectiveShrinkerVersion(projectServices.projectOptions, projectServices.r8FromMaven))
+        params.shrinkerVersion.set(effectiveShrinkerVersion(projectServices.r8FromMaven))
         params.projectName.set(project.name)
       }
     }

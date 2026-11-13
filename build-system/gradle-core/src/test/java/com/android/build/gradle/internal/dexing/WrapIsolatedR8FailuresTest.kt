@@ -17,46 +17,36 @@
 package com.android.build.gradle.internal.dexing
 
 import com.google.common.truth.Truth.assertThat
-import java.net.URLClassLoader
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
 /** Unit tests for [wrapIsolatedR8Failures]. */
 class WrapIsolatedR8FailuresTest {
 
-  private val isolatedLoader = URLClassLoader(arrayOf(), null)
-
   @Test
   fun returnsResult() {
-    assertThat(wrapIsolatedR8Failures(isolatedLoader) { 42 }).isEqualTo(42)
+    assertThat(wrapIsolatedR8Failures { 42 }).isEqualTo(42)
   }
 
   @Test
-  fun isolatedPath_reportsLinkageErrorAsIncompatibleR8() {
+  fun reportsLinkageErrorAsIncompatibleR8() {
     val cause = NoSuchMethodError("missing")
-    val error = assertThrows(RuntimeException::class.java) { wrapIsolatedR8Failures(isolatedLoader) { throw cause } }
+    val error = assertThrows(RuntimeException::class.java) { wrapIsolatedR8Failures { throw cause } }
     assertThat(error).hasMessageThat().contains("may be incompatible with this version of the Android Gradle Plugin: missing")
     assertThat(error).hasCauseThat().isSameInstanceAs(cause)
   }
 
   @Test
-  fun isolatedPath_reportsReflectionFailureAsIncompatibleR8() {
+  fun reportsReflectionFailureAsIncompatibleR8() {
     val cause = NoSuchFieldException("missing")
-    val error = assertThrows(RuntimeException::class.java) { wrapIsolatedR8Failures(isolatedLoader) { throw cause } }
+    val error = assertThrows(RuntimeException::class.java) { wrapIsolatedR8Failures { throw cause } }
     assertThat(error).hasCauseThat().isSameInstanceAs(cause)
   }
 
   @Test
-  fun isolatedPath_rethrowsOtherFailuresUnchanged() {
+  fun rethrowsOtherFailuresUnchanged() {
     val cause = IllegalStateException("tool failure")
-    val error = assertThrows(IllegalStateException::class.java) { wrapIsolatedR8Failures(isolatedLoader) { throw cause } }
-    assertThat(error).isSameInstanceAs(cause)
-  }
-
-  @Test
-  fun bundledPath_rethrowsLinkageErrorUnchanged() {
-    val cause = NoSuchMethodError("missing")
-    val error = assertThrows(NoSuchMethodError::class.java) { wrapIsolatedR8Failures(null) { throw cause } }
+    val error = assertThrows(IllegalStateException::class.java) { wrapIsolatedR8Failures { throw cause } }
     assertThat(error).isSameInstanceAs(cause)
   }
 }

@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dexing
 
 import com.android.build.gradle.internal.dependency.GenericTransformParameters
-import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -37,7 +36,7 @@ import org.gradle.api.tasks.Internal
  */
 interface IsolatedR8TaskInputs {
 
-  /** Maven-resolved R8 to run, or empty to use the R8 bundled with AGP. */
+  /** Maven-resolved R8 classpath to run in the isolated R8 [ClassLoader]. */
   @get:Classpath val r8Classpath: ConfigurableFileCollection
 
   /** Caches the isolated R8 [ClassLoader] for [r8Classpath] across the build. */
@@ -51,28 +50,25 @@ interface IsolatedR8TaskInputs {
  */
 interface IsolatedR8TransformParameters : GenericTransformParameters {
 
-  /** Maven-resolved R8 to run, or empty to use the R8 bundled with AGP. */
+  /** Maven-resolved R8 classpath to run in the isolated R8 [ClassLoader]. */
   @get:Classpath val r8Classpath: ConfigurableFileCollection
 
   /** Caches the isolated R8 [ClassLoader] for [r8Classpath] across the build. */
   @get:Internal val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
 }
 
-/** Sets the [IsolatedR8TaskInputs] from [isolatedR8Classpath] and the registered [R8ClassloaderBuildService]. */
+/** Sets the [IsolatedR8TaskInputs] from [TaskCreationServices.r8FromMaven] and the registered [R8ClassloaderBuildService]. */
 fun IsolatedR8TaskInputs.configureIsolatedR8(project: Project, services: TaskCreationServices) {
-  isolatedR8Classpath(services.projectOptions, services.r8FromMaven)?.let { r8Classpath.from(it) }
+  r8Classpath.from(services.r8FromMaven.r8Classpath)
   r8Classpath.disallowChanges()
   r8ClassloaderBuildService.setDisallowChanges(R8ClassloaderBuildService.RegistrationAction(project).execute())
 }
 
-/**
- * Sets the [IsolatedR8TransformParameters] from the given [r8Classpath] (`null` means the R8 bundled with AGP, see [isolatedR8Classpath])
- * and [r8ClassloaderBuildService].
- */
+/** Sets the [IsolatedR8TransformParameters] from the given [r8Classpath] and [r8ClassloaderBuildService]. */
 fun IsolatedR8TransformParameters.configureIsolatedR8(
-  r8Classpath: FileCollection?,
+  r8Classpath: FileCollection,
   r8ClassloaderBuildService: Provider<R8ClassloaderBuildService>,
 ) {
-  r8Classpath?.let { this.r8Classpath.from(it) }
+  this.r8Classpath.from(r8Classpath)
   this.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
 }

@@ -63,14 +63,14 @@ class IsolatedR8InputsTest {
   }
 
   @Test
-  fun taskInputsWithoutOverride_useBundledR8() {
+  fun taskInputsWithoutOverride_useR8FromMaven() {
     val task = project.tasks.register("fakeTask", FakeIsolatedR8Task::class.java).get()
 
     task.configureIsolatedR8(project, createServices(r8VersionOverride = null))
 
-    assertThat(task.r8Classpath.files).isEmpty()
+    assertThat(task.r8Classpath.files).containsExactly(r8Jar)
     assertThat(task.r8ClassloaderBuildService.get()).isInstanceOf(R8ClassloaderBuildService::class.java)
-    assertThrows(IllegalStateException::class.java) { task.r8Classpath.from(r8Jar) }
+    assertThrows(IllegalStateException::class.java) { task.r8Classpath.from(temporaryFolder.newFile("other.jar")) }
     assertThrows(IllegalStateException::class.java) { task.r8ClassloaderBuildService.set(null as R8ClassloaderBuildService?) }
   }
 
@@ -89,10 +89,10 @@ class IsolatedR8InputsTest {
   fun transformParameters_setFromGivenClasspathAndService() {
     val service = R8ClassloaderBuildService.RegistrationAction(project).execute()
 
-    val bundled = project.objects.newInstance(IsolatedR8TransformParameters::class.java)
-    bundled.configureIsolatedR8(r8Classpath = null, r8ClassloaderBuildService = service)
-    assertThat(bundled.r8Classpath.files).isEmpty()
-    assertThat(bundled.r8ClassloaderBuildService.get()).isSameInstanceAs(service.get())
+    val withoutClasspath = project.objects.newInstance(IsolatedR8TransformParameters::class.java)
+    withoutClasspath.configureIsolatedR8(r8Classpath = project.files(), r8ClassloaderBuildService = service)
+    assertThat(withoutClasspath.r8Classpath.files).isEmpty()
+    assertThat(withoutClasspath.r8ClassloaderBuildService.get()).isSameInstanceAs(service.get())
 
     val fromMaven = project.objects.newInstance(IsolatedR8TransformParameters::class.java)
     fromMaven.configureIsolatedR8(r8Classpath = project.files(r8Jar), r8ClassloaderBuildService = service)

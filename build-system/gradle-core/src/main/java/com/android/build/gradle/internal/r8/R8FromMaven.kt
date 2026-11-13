@@ -106,26 +106,10 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
 }
 
 /**
- * Returns the R8 classpath that tasks should load into the isolated R8 ClassLoader, or `null` to run the R8 bundled with AGP.
- *
- * The Maven-resolved [R8FromMaven.r8Classpath] is only used when [StringOption.R8_VERSION_OVERRIDE] is set. Otherwise tasks use AGP's
- * bundled R8, which needs no dependency resolution and works offline. Overrides older than [R8Version.VERSION_AGP_WAS_SHIPPED_WITH] are
- * rejected by [R8FromMaven.create].
- *
- * TODO: always return [R8FromMaven.r8Classpath] once R8 is no longer bundled with AGP.
- */
-fun isolatedR8Classpath(projectOptions: ProjectOptions, r8FromMaven: R8FromMaven?): FileCollection? =
-  if (projectOptions[StringOption.R8_VERSION_OVERRIDE].isNullOrBlank()) null else r8FromMaven?.r8Classpath
-
-/** The R8 version the build runs: the override (Maven R8) when set, otherwise the R8 on AGP's own class loader. */
-fun effectiveR8Version(projectOptions: ProjectOptions, r8FromMaven: R8FromMaven?): String =
-  if (isolatedR8Classpath(projectOptions, r8FromMaven) != null) r8FromMaven!!.version else R8Version.getVersionString()
-
-/**
  * The [ShrinkerVersion] the build runs, for filtering version-targeted consumer rules (`META-INF/com.android.tools/r8-from-...`).
  *
  * Falls back to [ShrinkerVersion.R8] when the version override cannot be parsed as a version (for example, a dynamic version), matching the
  * leniency of [R8FromMaven.create].
  */
-fun effectiveShrinkerVersion(projectOptions: ProjectOptions, r8FromMaven: R8FromMaven?): ShrinkerVersion =
-  ShrinkerVersion.tryParse(effectiveR8Version(projectOptions, r8FromMaven)) ?: ShrinkerVersion.R8
+fun effectiveShrinkerVersion(r8FromMaven: R8FromMaven): ShrinkerVersion =
+  ShrinkerVersion.tryParse(r8FromMaven.version) ?: ShrinkerVersion.R8

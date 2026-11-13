@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dexing
 
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
+import com.android.build.gradle.internal.tasks.testR8Jar
 import com.android.builder.dexing.ClassFileInputs
 import com.android.builder.dexing.DexArchiveBuilder
 import com.android.builder.dexing.DexArchiveBuilderException
@@ -40,7 +41,6 @@ import com.android.testutils.truth.DexSubject.assertThatDex
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
 import java.io.Closeable
-import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
@@ -58,18 +58,8 @@ class CreateR8ToolsTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   @Test
-  fun withoutIsolatedClassLoader_usesAgpsOwnImplementation() {
-    val r8Tools = createR8Tools(null)
-
-    // AGP's own copy, which runs the R8 bundled with AGP.
-    assertThat(r8Tools).isInstanceOf(R8ToolsImpl::class.java)
-    assertThat(r8Tools.javaClass.classLoader).isSameInstanceAs(R8ToolsImpl::class.java.classLoader)
-  }
-
-  @Test
   fun withIsolatedClassLoader_usesImplementationFromThatLoader() {
-    val r8Jar = temporaryFolder.newFile("r8.jar")
-    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
       val r8Tools = createR8Tools(isolatedLoader)
 
       // Loaded by the isolated loader, so it runs the R8 in that loader...
@@ -85,7 +75,7 @@ class CreateR8ToolsTest {
     val sourceJar = temporaryFolder.root.toPath().resolve("source.jar")
     TestInputsGenerator.jarWithEmptyClasses(sourceJar, listOf("test/Source"))
 
-    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
       val r8Tools = createR8Tools(isolatedLoader)
       assertThat(r8Tools.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
 
@@ -114,7 +104,7 @@ class CreateR8ToolsTest {
     val keepRules = tmp.resolve("keep_rules.txt")
     val l8DexDir = temporaryFolder.newFolder("l8_dex").toPath()
 
-    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
       val r8Tools = createR8Tools(isolatedLoader)
       assertThat(r8Tools.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
 
@@ -210,25 +200,25 @@ class CreateR8ToolsTest {
   }
 
   @Test
-  fun generateDesugaredMethods_throughIsolatedClassLoader_matchesBundledR8() {
+  fun generateDesugaredMethods_throughIsolatedClassLoader() {
     val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
     val desugarLibConfig = TestUtils.getDesugarLibConfigContent()
-    val bundled = createR8Tools(null)
+    val direct = R8ToolsImpl()
 
-    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
       val isolated = createR8Tools(isolatedLoader)
       assertThat(isolated.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
 
       // Without core library desugaring: only the methods D8 backports.
       val backported = isolated.generateDesugaredMethods(null, emptySet(), 21)
       assertThat(backported).isNotEmpty()
-      assertThat(backported).containsExactlyElementsIn(bundled.generateDesugaredMethods(null, emptySet(), 21))
+      assertThat(backported).containsExactlyElementsIn(direct.generateDesugaredMethods(null, emptySet(), 21))
 
       // With core library desugaring, the desugared library APIs are listed too.
       val withDesugarLib = isolated.generateDesugaredMethods(desugarLibConfig, setOf(androidJar), 21)
       assertThat(withDesugarLib).containsAtLeastElementsIn(backported)
       assertThat(withDesugarLib.size).isGreaterThan(backported.size)
-      assertThat(withDesugarLib).containsExactlyElementsIn(bundled.generateDesugaredMethods(desugarLibConfig, setOf(androidJar), 21))
+      assertThat(withDesugarLib).containsExactlyElementsIn(direct.generateDesugaredMethods(desugarLibConfig, setOf(androidJar), 21))
     }
   }
 
@@ -246,7 +236,7 @@ class CreateR8ToolsTest {
     }
     val dexDir = temporaryFolder.newFolder("dex").toPath()
 
-    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
       val r8Tools = createR8Tools(isolatedLoader)
       r8Tools.createClassFileProviderFactory(listOf(androidJar)).use { bootclasspath ->
         r8Tools.createClassFileProviderFactory(emptyList()).use { classpath ->
@@ -274,9 +264,11 @@ class CreateR8ToolsTest {
           }
 
           // Class path providers from another ClassLoader are rejected with a clear message rather than a ClassCastException.
-          createR8Tools(null).createClassFileProviderFactory(emptyList()).use { agpProvider ->
-            val e = assertThrows(IllegalArgumentException::class.java) { createD8DexBuilder(r8Tools, agpProvider, classpath) }
-            assertThat(e.message).contains("same ClassLoader")
+          R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { otherLoader ->
+            createR8Tools(otherLoader).createClassFileProviderFactory(emptyList()).use { otherProvider ->
+              val e = assertThrows(IllegalArgumentException::class.java) { createD8DexBuilder(r8Tools, otherProvider, classpath) }
+              assertThat(e.message).contains("same ClassLoader")
+            }
           }
         }
       }
@@ -290,7 +282,7 @@ class CreateR8ToolsTest {
     writeClassUsingOptional(inputJar)
     val mergedDir = temporaryFolder.newFolder("merged").toPath()
 
-    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
       val r8Tools = createR8Tools(isolatedLoader)
       val dexDir = dexWith(r8Tools, androidJar, inputJar, "dex")
 
@@ -320,7 +312,7 @@ class CreateR8ToolsTest {
     val inputJar = temporaryFolder.root.toPath().resolve("input.jar")
     writeClassUsingOptional(inputJar)
 
-    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
       val r8Tools = createR8Tools(isolatedLoader)
       val dexDir = dexWith(r8Tools, androidJar, inputJar, "dex")
 
@@ -357,7 +349,7 @@ class CreateR8ToolsTest {
     val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
     val outputDir = temporaryFolder.newFolder("global_synthetics").toPath()
 
-    R8ClassloaderBuildService.createClassLoader(setOf(r8Jar)).use { isolatedLoader ->
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
       createR8Tools(isolatedLoader).generateGlobalSynthetics(listOf(androidJar), 21, outputDir)
     }
 
@@ -414,6 +406,4 @@ class CreateR8ToolsTest {
   }
 
   private val noOpMessageReceiver = MessageReceiver { _: Message -> }
-
-  private val r8Jar: File by lazy { File(Class.forName("com.android.tools.r8.R8").protectionDomain.codeSource.location.toURI()) }
 }

@@ -112,7 +112,7 @@ abstract class VerifyLibraryClassesTask : NonIncrementalTask(), IsolatedR8TaskIn
 
       withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
         val r8Tools = createR8Tools(r8ClassLoader)
-        wrapIsolatedR8Failures(r8ClassLoader) {
+        wrapIsolatedR8Failures {
           r8Tools.runTraceReferences(
             sourceFiles = sourceFiles,
             libraryFiles = parameters.runtime.map { it.toPath() } + parameters.bootclasspath.map { it.toPath() },

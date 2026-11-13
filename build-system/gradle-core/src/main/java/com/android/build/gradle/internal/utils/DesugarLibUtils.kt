@@ -377,7 +377,7 @@ abstract class D8BackportedMethodsGenerator : TransformAction<D8BackportedMethod
     val methods =
       withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
         val r8Tools = createR8Tools(r8ClassLoader)
-        wrapIsolatedR8Failures(r8ClassLoader) {
+        wrapIsolatedR8Failures {
           r8Tools.generateDesugaredMethods(
             combineFileContents(parameters.desugarLibConfigFiles.files),
             parameters.bootclasspath.files,

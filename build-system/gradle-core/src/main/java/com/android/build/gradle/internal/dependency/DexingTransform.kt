@@ -246,7 +246,7 @@ abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : Transfo
   ) {
     withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
       val r8Tools = createR8Tools(r8ClassLoader)
-      wrapIsolatedR8Failures(r8ClassLoader) {
+      wrapIsolatedR8Failures {
         @Suppress("UnstableApiUsage")
         Closer.create().use { closer ->
           val d8DexBuilder =
@@ -410,7 +410,7 @@ object DexingRegistration {
     val desugarLibConfigFiles: FileCollection,
     val disableIncrementalDexing: Boolean,
     val components: List<ComponentCreationConfig>,
-    val r8Classpath: FileCollection?,
+    val r8Classpath: FileCollection,
     val r8ClassloaderBuildService: Provider<R8ClassloaderBuildService>,
   )
 

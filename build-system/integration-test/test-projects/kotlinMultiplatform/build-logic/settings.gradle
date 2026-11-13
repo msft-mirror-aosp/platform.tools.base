@@ -1,29 +1,9 @@
 pluginManagement {
-    repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
-        mavenCentral()
-        gradlePluginPortal()
-    }
+    apply from: "../../commonLocalRepo.gradle", to: pluginManagement
 }
 
 dependencyResolutionManagement {
-    repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
-
-        mavenCentral()
-    }
+    apply from: "../../commonLocalRepo.gradle", to: dependencyResolutionManagement
 }
 
 include ':lib-foo'

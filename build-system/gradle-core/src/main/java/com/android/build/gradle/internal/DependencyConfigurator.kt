@@ -68,9 +68,7 @@ import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
-import com.android.build.gradle.internal.r8.effectiveR8Version
 import com.android.build.gradle.internal.r8.effectiveShrinkerVersion
-import com.android.build.gradle.internal.r8.isolatedR8Classpath
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.getBuildService
@@ -532,7 +530,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
     if (allComponents.isNotEmpty()) {
       val bootClasspath = project.files(globalConfig.bootClasspath)
       val services = allComponents.first().services
-      val r8Classpath = isolatedR8Classpath(projectOptions, services.r8FromMaven)
+      val r8Classpath = services.r8FromMaven.r8Classpath
       val r8ClassloaderBuildService =
         getBuildService<R8ClassloaderBuildService, BuildServiceParameters.None>(projectServices.buildServiceRegistry)
       DexingRegistration.registerTransforms(
@@ -552,7 +550,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
         ),
       )
 
-      val d8Version = effectiveR8Version(projectOptions, services.r8FromMaven)
+      val d8Version = services.r8FromMaven.version
 
       allComponents
         .mapTo(linkedSetOf()) { it.minSdk.apiLevel }
@@ -600,7 +598,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
         reg.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES.type)
         reg.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.FILTERED_PROGUARD_RULES.type)
         reg.parameters { params: FilterShrinkerRulesTransform.Parameters ->
-          params.shrinkerVersion.set(effectiveShrinkerVersion(projectOptions, projectServices.r8FromMaven))
+          params.shrinkerVersion.set(effectiveShrinkerVersion(projectServices.r8FromMaven))
           params.projectName.set(project.name)
         }
       }

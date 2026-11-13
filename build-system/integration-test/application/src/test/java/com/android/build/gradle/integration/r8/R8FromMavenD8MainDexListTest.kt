@@ -118,7 +118,7 @@ class R8FromMavenD8MainDexListTest {
     val bundleResult = rule.build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":app:bundleDebug")
 
     assertThat(bundleResult.didWorkTasks).containsAtLeast(":app:bundleMultiDexListDebug", ":app:packageDebugBundle")
-    bundleResult.assertOutputContains("bundleMultiDexListDebug r8Classpath: [r8-$overrideVersion.jar")
+    bundleResult.assertOutputContains("bundleMultiDexListDebug r8Classpath: [r8-$overrideVersion.jar]")
 
     deleteMainDexList()
     val result =
@@ -133,12 +133,13 @@ class R8FromMavenD8MainDexListTest {
   }
 
   @Test
-  fun bundleMainDexListUsesBundledR8WithoutOverride() {
+  fun bundleMainDexListUsesDefaultR8FromMavenWithoutOverride() {
+    val defaultVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
     val result = rule.build.executor.run(":app:bundleMultiDexListDebug", ":app:printIsolatedR8ClassLoaders")
 
     assertThat(result.didWorkTasks).contains(":app:bundleMultiDexListDebug")
-    result.assertOutputContains("bundleMultiDexListDebug r8Classpath: []")
-    result.assertOutputContains("isolated R8 ClassLoaders: 0")
+    result.assertOutputContains("bundleMultiDexListDebug r8Classpath: [r8-$defaultVersion.jar]")
+    result.assertOutputContains("isolated R8 ClassLoaders: 1")
   }
 
   /** Deletes the main dex list for the bundle, so that it is generated again in the next build while its inputs are up to date. */

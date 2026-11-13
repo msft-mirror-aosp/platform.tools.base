@@ -119,7 +119,7 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask(), IsolatedR8TaskInp
 
       withR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildService) { r8ClassLoader ->
         val r8Tools = createR8Tools(r8ClassLoader)
-        wrapIsolatedR8Failures(r8ClassLoader) {
+        wrapIsolatedR8Failures {
           mainDexClasses.addAll(
             r8Tools.generateMainDexList(
               getPlatformRules(),

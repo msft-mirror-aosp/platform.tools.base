@@ -84,7 +84,7 @@ class TaskCreationServicesImpl(projectServices: ProjectServices) : BaseServicesI
   override val lintFromMaven: LintFromMaven
     get() = projectServices.lintFromMaven
 
-  override val r8FromMaven: R8FromMaven?
+  override val r8FromMaven: R8FromMaven
     get() = projectServices.r8FromMaven
 
   override val configurations: ConfigurationContainer

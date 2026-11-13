@@ -65,7 +65,7 @@ abstract class GlobalSyntheticsGeneratorTask : NonIncrementalTask(), IsolatedR8T
 
     withR8ClassLoader(r8Classpath, r8ClassloaderBuildService) { r8ClassLoader ->
       val r8Tools = createR8Tools(r8ClassLoader)
-      wrapIsolatedR8Failures(r8ClassLoader) { r8Tools.generateGlobalSynthetics(libraryPaths, minApi, outputLocation) }
+      wrapIsolatedR8Failures { r8Tools.generateGlobalSynthetics(libraryPaths, minApi, outputLocation) }
     }
   }
 

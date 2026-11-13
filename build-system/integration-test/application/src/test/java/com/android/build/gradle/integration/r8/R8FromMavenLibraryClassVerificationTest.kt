@@ -83,7 +83,7 @@ class R8FromMavenLibraryClassVerificationTest {
     val result = build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":lib:verifyReleaseClasses")
 
     assertThat(result.didWorkTasks).contains(":lib:verifyReleaseClasses")
-    result.assertOutputContains("verify r8Classpath: [r8-$overrideVersion.jar")
+    result.assertOutputContains("verify r8Classpath: [r8-$overrideVersion.jar]")
 
     // The check itself runs on the override R8: a reference to a compileOnly class fails verification.
     build
@@ -96,10 +96,11 @@ class R8FromMavenLibraryClassVerificationTest {
   }
 
   @Test
-  fun verificationUsesBundledR8WithoutOverride() {
+  fun verificationUsesDefaultR8FromMavenWithoutOverride() {
+    val defaultVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
     val result = rule.build.executor.run(":lib:verifyReleaseClasses")
 
     assertThat(result.didWorkTasks).contains(":lib:verifyReleaseClasses")
-    result.assertOutputContains("verify r8Classpath: []")
+    result.assertOutputContains("verify r8Classpath: [r8-$defaultVersion.jar]")
   }
 }
