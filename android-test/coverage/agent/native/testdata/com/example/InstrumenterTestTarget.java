@@ -86,4 +86,11 @@ class InstrumenterTestTarget {
             return "constant";
         }
     }
+
+    // javac gives Color a constructor that only passes the name and the ordinal
+    // of a constant to the constructor of Enum.
+    enum Color {
+        RED,
+        GREEN
+    }
 }

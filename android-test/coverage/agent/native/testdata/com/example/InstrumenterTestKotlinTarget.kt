@@ -147,4 +147,11 @@ class InstrumenterTestKotlinTarget {
   // It gives the object a serializer() that returns the serializer that it
   // creates once.
   @Serializable object Ping
+
+  // Kotlin gives Size a constructor that only passes the name and the ordinal
+  // of a constant to the constructor of Enum.
+  enum class Size {
+    SMALL,
+    LARGE,
+  }
 }

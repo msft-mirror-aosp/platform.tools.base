@@ -533,5 +533,23 @@ TEST(InstrumenterTest, SerializerOfObjectIsNotReported) {
   EXPECT_EQ(InstrumentedMethod("serializer", kPingClass), nullptr);
 }
 
+TEST(InstrumenterTest, EmptyEnumConstructorIsNotReported) {
+  // The constructor uses all its registers for `this`, the name and the
+  // ordinal, so the agent grows its frame and copies them back after the call
+  // to the constructor of Enum.
+  constexpr char kSizeClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Size;";
+  // The other code of the enum is instrumented.
+  ASSERT_NE(InstrumentedMethod("<clinit>", kSizeClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("<init>", kSizeClass), nullptr);
+}
+
+TEST(InstrumenterTest, EmptyConstructorOfJavaEnumIsNotReported) {
+  // Empty enum constructors are filtered in Java classes too.
+  constexpr char kColorClass[] = "Lcom/example/InstrumenterTestTarget$Color;";
+  ASSERT_NE(InstrumentedMethod("<clinit>", kColorClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("<init>", kColorClass), nullptr);
+}
+
 }  // namespace
 }  // namespace coverage

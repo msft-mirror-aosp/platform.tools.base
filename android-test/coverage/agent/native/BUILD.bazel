@@ -142,6 +142,7 @@ cc_test(
     srcs = [
         "bridge_filter_test.cc",
         "bytecode_helpers_test.cc",
+        "enum_empty_constructor_filter_test.cc",
         "filter_result_test.cc",
         "hits_extractor_test.cc",
         "kotlin_compose_filter_test.cc",
