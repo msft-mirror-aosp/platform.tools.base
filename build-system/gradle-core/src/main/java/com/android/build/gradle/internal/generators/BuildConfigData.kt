@@ -27,6 +27,9 @@ private constructor(
   val buildConfigName: String,
   val buildConfigFields: Map<String, BuildConfigField<out Serializable>>,
 ) {
+  init {
+    require(namespace.isNotEmpty()) { "namespace cannot be empty." }
+  }
 
   class Builder(
     private var outputPath: Path? = null,

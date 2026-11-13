@@ -28,7 +28,6 @@ kotlin_library(
         "//tools/base/build-system/manifest-merger:tools.manifest-merger",
         "//tools/base/build-system/profile",
         "//tools/base/zipflinger",
-        "@maven//:com.squareup.javawriter",
     ],
     deps = [
         "//tools/analytics-library/protos/src/main/proto",

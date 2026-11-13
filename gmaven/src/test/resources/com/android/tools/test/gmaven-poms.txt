@@ -477,7 +477,6 @@ com.android.tools.build:builder:$BUILD_VERSION
     com.android:zipflinger:$BUILD_VERSION (compile)
     com.android.tools.build:apksig:$BUILD_VERSION (compile)
     com.android.tools.build:apkzlib:$BUILD_VERSION (compile)
-    com.squareup:javawriter:2.5.0 (compile)
     com.android.tools.build:builder-model:$BUILD_VERSION (runtime)
     com.android.tools.build:builder-test-api:$BUILD_VERSION (runtime)
     com.android.tools:sdklib:$BASE_VERSION (runtime)

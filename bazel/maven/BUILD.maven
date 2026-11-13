@@ -7233,30 +7233,6 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.squareup.javawriter_2.5.0",
-    pom = "com/squareup/javawriter/2.5.0/javawriter-2.5.0.pom",
-    repo_root_path = "",
-    repo_path = "com/squareup/javawriter/2.5.0",
-    parent = "org.sonatype.oss.oss-parent_7",
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "com.squareup.javawriter",
-    classifiers = [],
-    parent = "org.sonatype.oss.oss-parent_7",
-    jars = [
-        "com/squareup/javawriter/2.5.0/javawriter-2.5.0.jar"
-    ],
-    original_deps = [],
-    pom = "com/squareup/javawriter/2.5.0/javawriter-2.5.0.pom",
-    repo_root_path = "",
-    repo_path = "com/squareup/javawriter/2.5.0",
-    srcjar = "com/squareup/javawriter/2.5.0/javawriter-2.5.0-sources.jar",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.squareup.kotlinpoet_1.11.0",
     pom = "com/squareup/kotlinpoet/1.11.0/kotlinpoet-1.11.0.pom",
     repo_root_path = "",
@@ -89961,6 +89937,15 @@ maven_artifact(
     pom = "com/squareup/javawriter/2.1.1/javawriter-2.1.1.pom",
     repo_root_path = "",
     repo_path = "com/squareup/javawriter/2.1.1",
+    parent = "org.sonatype.oss.oss-parent_7",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.javawriter_2.5.0",
+    pom = "com/squareup/javawriter/2.5.0/javawriter-2.5.0.pom",
+    repo_root_path = "",
+    repo_path = "com/squareup/javawriter/2.5.0",
     parent = "org.sonatype.oss.oss-parent_7",
     visibility = ["//visibility:public"],
 )

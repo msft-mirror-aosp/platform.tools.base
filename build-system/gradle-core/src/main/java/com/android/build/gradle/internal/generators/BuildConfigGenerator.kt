@@ -17,16 +17,10 @@ package com.android.build.gradle.internal.generators
 
 import com.android.build.api.variant.BuildConfigField
 import com.android.builder.compiling.GeneratedCodeFileCreator
-import com.google.common.base.Charsets
-import com.google.common.io.Closer
-import com.squareup.javawriter.JavaWriter
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStreamWriter
 import java.io.Serializable
-import java.util.EnumSet
-import javax.lang.model.element.Modifier
+import java.nio.charset.StandardCharsets
 
 /**
  * Class able to generate a BuildConfig class in an Android project. The BuildConfig class contains constants related to the build target.
@@ -47,24 +41,20 @@ class BuildConfigGenerator(buildConfigData: BuildConfigData) : GeneratedCodeFile
     if (!folderPath.isDirectory && !folderPath.mkdirs()) {
       throw RuntimeException("Failed to create " + folderPath.absolutePath)
     }
-    Closer.create().use { closer ->
-      val fos = closer.register(FileOutputStream(generatedFilePath))
-      val out = closer.register(OutputStreamWriter(fos, Charsets.UTF_8))
-      val writer = closer.register(JavaWriter(out))
+    generatedFilePath.bufferedWriter(StandardCharsets.UTF_8).use { out ->
       // Not Javadoc: javac 23+ reports a /** before `package` as dangling (b/567587949).
-      // JavaWriter has no block-comment API and does not buffer, so write it to `out` first.
       out.write(FILE_HEADER)
-      writer.emitPackage(namespace).beginType("BuildConfig", "class", PUBLIC_FINAL)
+      out.write("package $namespace;\n\n")
+      out.write("public final class BuildConfig {\n")
       for ((key, value) in fields) {
-        value.emit(key, writer)
+        value.emit(key, out, namespace)
       }
-      writer.endType()
+      out.write("}\n")
     }
   }
 
   companion object {
     const val BUILD_CONFIG_NAME = "BuildConfig.java"
     private const val FILE_HEADER = "/*\n * Automatically generated file. DO NOT MODIFY\n */\n"
-    private val PUBLIC_FINAL: Set<Modifier> = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL)
   }
 }

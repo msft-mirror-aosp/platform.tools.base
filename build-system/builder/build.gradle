@@ -22,7 +22,6 @@ dependencies {
     api libs.com.android.tools.build.apkzlib
 
     implementation libs.kotlin.stdlib
-    api libs.javawriter
     implementation libs.javax.inject
     implementation libs.asm.commons
     implementation libs.gson
