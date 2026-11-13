@@ -338,7 +338,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
         }
 
         // Check that super-methods have @CompileTimeConstant annos where this method does
-        val overridden: Array<PsiMethod> = (node.javaPsi as? PsiMethod)?.findSuperMethods() ?: emptyArray()
+        val overridden: Array<PsiMethod> = node.javaPsi.findSuperMethods();
         if (overridden.isEmpty()) return
         val paramIndices =
           node.uastParameters.mapIndexedNotNull { i, param ->
