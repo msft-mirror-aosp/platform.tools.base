@@ -16,6 +16,8 @@
 
 package com.example
 
+import kotlinx.serialization.Serializable
+
 /** Instrumented by instrumenter_test.cc with the real Kotlin filters. */
 class InstrumenterTestKotlinTarget {
   private var count = 1
@@ -132,4 +134,17 @@ class InstrumenterTestKotlinTarget {
   inner class Caller {
     fun call(): Int = this@InstrumenterTestKotlinTarget()
   }
+
+  // The serialization plugin gives the companion object of Message a
+  // serializer() that returns the generated serializer, on the line of the
+  // class like the constructor of the companion object.
+  @Serializable class Message(val text: String)
+
+  // It gives the companion object of a sealed class a serializer() that returns
+  // the serializer that the companion object creates once.
+  @Serializable sealed class Event
+
+  // It gives the object a serializer() that returns the serializer that it
+  // creates once.
+  @Serializable object Ping
 }

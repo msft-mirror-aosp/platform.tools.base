@@ -120,12 +120,8 @@ class TestFilter : public IFilter {
 
 REGISTER_NON_KOTLIN_FILTER(TestFilter)
 
-// Instruments the target classes once. Returns the metadata of the method named
-// `name` of `class_name`, with `signature` if given, or nullptr if that method
-// was not instrumented.
-const proto::MethodMetadata* InstrumentedMethod(
-    std::string_view name, std::string_view class_name = kTargetClass,
-    std::string_view signature = {}) {
+// Instruments the target classes once and returns their metadata.
+const proto::CoverageMetadata& Metadata() {
   static const proto::CoverageMetadata* const metadata = [] {
     Instrumenter instrumenter(/*jvmti=*/nullptr, "com/example");
     instrumenter.AddUnloadedClasses(instrumenter_test_target_dex,
@@ -135,7 +131,26 @@ const proto::MethodMetadata* InstrumentedMethod(
     return new proto::CoverageMetadata(
         MetadataCollector::Instance().BuildMetadata());
   }();
-  for (const auto& class_meta : metadata->classes()) {
+  return *metadata;
+}
+
+// Returns whether the metadata has the class `class_name`, even without
+// methods.
+bool HasClass(std::string_view class_name) {
+  for (const auto& class_meta : Metadata().classes()) {
+    if (class_meta.class_name() == class_name) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Returns the metadata of the method named `name` of `class_name`, with
+// `signature` if given, or nullptr if that method was not instrumented.
+const proto::MethodMetadata* InstrumentedMethod(
+    std::string_view name, std::string_view class_name = kTargetClass,
+    std::string_view signature = {}) {
+  for (const auto& class_meta : Metadata().classes()) {
     if (class_meta.class_name() != class_name) {
       continue;
     }
@@ -487,6 +502,35 @@ TEST(InstrumenterTest, MethodOfDefaultImplsIsNotReported) {
   // desugars default methods, is instrumented.
   ASSERT_NE(InstrumentedMethod("$default$label", kCompanionClass), nullptr);
   EXPECT_EQ(InstrumentedMethod("label", kDefaultImplsClass), nullptr);
+}
+
+TEST(InstrumenterTest, SerializerOfCompanionObjectIsNotReported) {
+  constexpr char kMessageClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Message;";
+  constexpr char kMessageCompanionClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Message$Companion;";
+  // The code of the class itself is instrumented, and only the plugin gives it
+  // a companion object.
+  ASSERT_NE(InstrumentedMethod("getText", kMessageClass), nullptr);
+  ASSERT_TRUE(HasClass(kMessageCompanionClass));
+  EXPECT_EQ(InstrumentedMethod("serializer", kMessageCompanionClass), nullptr);
+}
+
+TEST(InstrumenterTest, SerializerOfCompanionObjectOfSealedClassIsNotReported) {
+  // Only the plugin gives the sealed class a companion object, whose
+  // serializer() returns get$cachedSerializer().
+  constexpr char kEventCompanionClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Event$Companion;";
+  ASSERT_TRUE(HasClass(kEventCompanionClass));
+  EXPECT_EQ(InstrumentedMethod("serializer", kEventCompanionClass), nullptr);
+}
+
+TEST(InstrumenterTest, SerializerOfObjectIsNotReported) {
+  constexpr char kPingClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Ping;";
+  // The other code of the object is instrumented.
+  ASSERT_NE(InstrumentedMethod("<clinit>", kPingClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("serializer", kPingClass), nullptr);
 }
 
 }  // namespace

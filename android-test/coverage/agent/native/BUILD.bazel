@@ -150,6 +150,7 @@ cc_test(
         "kotlin_inline_filter_test.cc",
         "kotlin_lateinit_filter_test.cc",
         "kotlin_safe_call_operator_filter_test.cc",
+        "kotlin_serializable_filter_test.cc",
         "kotlin_synthetic_accessors_filter_test.cc",
         "kotlin_when_filter_test.cc",
         "metadata_collector_test.cc",
@@ -198,17 +199,27 @@ kotlin_library(
     name = "instrumenter_test_kotlin_target",
     testonly = True,
     srcs = ["testdata/com/example/InstrumenterTestKotlinTarget.kt"],
+    kotlin_use_serialization = True,
     lint_enabled = False,
+    deps = ["@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core-jvm"],
 )
 
 # Compiles instrumenter_test_kotlin_target to dex, in a directory of its own
-# since d8 names its output classes.dex.
+# since d8 names its output classes.dex. The libraries are on the classpath so
+# that d8 can desugar the classes that implement their interfaces.
 genrule(
     name = "instrumenter_test_kotlin_target_dex",
     testonly = True,
-    srcs = [":instrumenter_test_kotlin_target"],
+    srcs = [
+        ":instrumenter_test_kotlin_target",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core-jvm",
+    ],
     outs = ["kotlin/classes.dex"],
-    cmd = "$(execpath //prebuilts/r8:d8) --output $(RULEDIR)/kotlin $(SRCS)",
+    cmd = "$(execpath //prebuilts/r8:d8) --output $(RULEDIR)/kotlin" +
+          " --classpath $(location @maven//:org.jetbrains.kotlin.kotlin-stdlib)" +
+          " --classpath $(location @maven//:org.jetbrains.kotlinx.kotlinx-serialization-core-jvm)" +
+          " $(location :instrumenter_test_kotlin_target)",
     tools = ["//prebuilts/r8:d8"],
 )
 
