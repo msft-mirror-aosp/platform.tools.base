@@ -86,7 +86,7 @@ object ParameterValidators {
   fun validateFontScale(value: String?): List<ValidationIssue> {
     if (value.isNullOrEmpty()) return emptyList()
     val floatValue =
-      value.toFloatOrNull()
+      value.toFloatOrNull()?.takeIf { it.isFinite() }
         ?: return listOf(
           ValidationIssue(
             message = "Parameter 'fontScale' must be a valid float number, got: '$value'",

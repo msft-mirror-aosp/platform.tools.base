@@ -92,9 +92,16 @@ class PreviewValidatorTest {
 
   @Test
   fun testInvalidFontScaleFormatsAndValues() {
-    val nonFloatResult = validator.validateParams(mapOf("fontScale" to "not_a_float"))
-    assertFalse(nonFloatResult.isValid)
-    assertEquals(1, nonFloatResult.errors.size)
+    for (invalidFormat in listOf("not_a_float", "NaN", "Infinity", "-Infinity")) {
+      val result = validator.validateParams(mapOf("fontScale" to invalidFormat))
+      assertFalse("fontScale '$invalidFormat' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("fontScale", error.target)
+      assertEquals(invalidFormat, error.value)
+      assertTrue(error.message.contains("must be a valid float number"))
+    }
 
     val zeroResult = validator.validateParams(mapOf("fontScale" to "0.0"))
     assertFalse(zeroResult.isValid)
