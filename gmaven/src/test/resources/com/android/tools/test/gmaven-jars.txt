@@ -597,7 +597,6 @@ com/android/tools/build/gradle
   META-INF/profgen.kotlin_module
   META-INF/services/
   META-INF/services/com.android.build.api.variant.BuiltArtifactsLoader
-  META-INF/shrinker.kotlin_module
   NOTICE
   app_bundle_dependencies_metadata.proto
   com/
@@ -754,7 +753,6 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/testsuites/backup/
   com/android/build/gradle/internal/testsuites/impl/
   com/android/build/gradle/internal/testsuites/screenshot/
-  com/android/build/gradle/internal/transforms/
   com/android/build/gradle/internal/utils/
   com/android/build/gradle/internal/variant/
   com/android/build/gradle/internal/workeractions/
@@ -764,11 +762,6 @@ com/android/tools/build/gradle
   com/android/build/gradle/proguard-optimizations.txt
   com/android/build/gradle/tasks/
   com/android/build/gradle/tasks/factory/
-  com/android/build/shrinker/
-  com/android/build/shrinker/gatherer/
-  com/android/build/shrinker/graph/
-  com/android/build/shrinker/obfuscation/
-  com/android/build/shrinker/usages/
   com/android/buildanalyzer/
   com/android/buildanalyzer/common/
   com/android/builder/

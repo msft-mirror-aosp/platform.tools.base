@@ -150,8 +150,6 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.tasks.mlkit.GenerateMlModelClass
 import com.android.build.gradle.internal.tasks.runResourceShrinking
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
-import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
-import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
@@ -1252,9 +1250,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // Produce better error messages when we have duplicated classes.
     maybeCreateCheckDuplicateClassesTask(creationConfig)
 
-    // Resource Shrinking
-    maybeCreateResourcesShrinkerTasks(creationConfig)
-
     // Code Shrinking
     // Since the shrinker (R8) also dexes the class files, if we have minifedEnabled we stop
     // the flow and don't set-up dexing.
@@ -1839,18 +1834,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
         artifactType,
         AndroidAttributes(AndroidArtifacts.MODULE_PATH to project.absoluteProjectPath(modulePath)),
       )
-    }
-  }
-
-  /** If resource shrinker is enabled, set-up and register the appropriate tasks. */
-  private fun maybeCreateResourcesShrinkerTasks(creationConfig: ApkCreationConfig) {
-    if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true && !creationConfig.runResourceShrinking()) {
-      // For the APK
-      taskFactory.register(ShrinkResourcesNewShrinkerTask.CreationAction(creationConfig))
-      taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(creationConfig))
-
-      // For the bundle
-      taskFactory.register(ShrinkAppBundleResourcesTask.CreationAction(creationConfig))
     }
   }
 

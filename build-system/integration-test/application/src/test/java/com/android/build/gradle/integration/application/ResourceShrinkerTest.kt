@@ -562,9 +562,6 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
   private fun GradleTestProject.getOriginalBundle() =
     getIntermediateFile("intermediary_bundle", "release", "packageReleaseBundle", "intermediary-bundle.aab")
 
-  private fun GradleTestProject.getShrunkBundle() =
-    getIntermediateFile("intermediary_bundle", "release", "shrinkBundleReleaseResources", "intermediary-bundle.aab")
-
   private fun GradleTestProject.getLinkedProtoResources(splitName: String? = null): File {
     val fileNameSuffix =
       if (splitName != null) {

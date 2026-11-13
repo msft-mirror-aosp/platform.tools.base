@@ -232,13 +232,6 @@ dependencies {
     testCompileOnly project(':base:profile')
     testCompileOnly project(':base:build-system:builder-r8')
 
-    includeInJar(project(':base:build-system:shrinker')) {
-        transitive = false
-    }
-    includeInJarSources(project(':base:build-system:shrinker')) {
-        transitive = false
-    }
-
     // mlkit-common
     includeInJar(project(':base:mlkit-common')) {
         transitive = false
@@ -266,9 +259,6 @@ dependencies {
     }
     versionPropertiesSource libs.com.android.tools.common
 
-    provided(project(':base:build-system:shrinker')) {
-        transitive = false
-    }
     provided(project(':base:build-system:builder-r8')) {
         transitive = false
     }
@@ -366,8 +356,7 @@ tasks.jar {
     manifest.attributes("Plugin-Version": version)
     manifest.attributes("Inception-Date": DateTimeFormatter.ISO_LOCAL_DATE.format(LocalDate.now()));
     // make sure we use the NOTICE coming from this module as some dependencies are repackaged inside
-    // the jar file with the "includeInJar" configuration. Such dependencies like 'shrinker' also
-    // have a NOTICE file.
+    // the jar file with the "includeInJar" configuration and may also have a NOTICE file.
     // We could use 'jar.duplicatesStrategy' = EXCLUDE but it will do this to all files which could
     // lead to other problems if we had '.class' duplicates and just picked up the first one.
     filesMatching("NOTICE", {
