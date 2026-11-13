@@ -181,13 +181,23 @@ java_library(
     srcs = ["testdata/com/example/InstrumenterTestTarget.java"],
 )
 
+# The Android library, in which d8 looks up the classes of the platform that the
+# test classes extend, such as Enum, when it desugars default and static
+# interface methods: the jar of //prebuilts/studio/sdk:platforms/latest_jar.
+_ANDROID_JAR = "@androidsdk//:platforms/android-34/android.jar"
+
 # Compiles instrumenter_test_target to dex. d8 names its output classes.dex.
 genrule(
     name = "instrumenter_test_target_dex",
     testonly = True,
-    srcs = [":instrumenter_test_target"],
+    srcs = [
+        ":instrumenter_test_target",
+        _ANDROID_JAR,
+    ],
     outs = ["classes.dex"],
-    cmd = "$(execpath //prebuilts/r8:d8) --output $(RULEDIR) $(SRCS)",
+    cmd = "$(execpath //prebuilts/r8:d8) --output $(RULEDIR)" +
+          " --lib $(location %s)" % _ANDROID_JAR +
+          " $(location :instrumenter_test_target)",
     tools = ["//prebuilts/r8:d8"],
 )
 
@@ -221,11 +231,13 @@ genrule(
     testonly = True,
     srcs = [
         ":instrumenter_test_kotlin_target",
+        _ANDROID_JAR,
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         "@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core-jvm",
     ],
     outs = ["kotlin/classes.dex"],
     cmd = "$(execpath //prebuilts/r8:d8) --output $(RULEDIR)/kotlin" +
+          " --lib $(location %s)" % _ANDROID_JAR +
           " --classpath $(location @maven//:org.jetbrains.kotlin.kotlin-stdlib)" +
           " --classpath $(location @maven//:org.jetbrains.kotlinx.kotlinx-serialization-core-jvm)" +
           " $(location :instrumenter_test_kotlin_target)",
