@@ -19,6 +19,7 @@ package com.android.tools.render.validation
 import com.android.ide.common.resources.configuration.LocaleQualifier
 import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.devices.Device
+import com.android.tools.configurations.UiModeState
 import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.MAX_DIMENSION_DP
 import com.android.tools.preview.MAX_FONT_SCALE
@@ -48,6 +49,12 @@ object ParameterValidators {
 
   /** Highest valid `wallpaper` index, corresponding to the last entry in [Wallpaper]. */
   val MAX_WALLPAPER = Wallpaper.entries.lastIndex
+
+  private const val UI_MODE_TYPE_MASK = UiModeState.UI_MODE_TYPE_MASK
+  /** Highest defined `Configuration.UI_MODE_TYPE_*` value (`UI_MODE_TYPE_VR_HEADSET`). */
+  private const val MAX_UI_MODE_TYPE = 0x07
+  private const val UI_MODE_NIGHT_MASK = UiModeState.UI_MODE_NIGHT_NO or UiModeState.UI_MODE_NIGHT_YES
+  private const val VALID_UI_MODE_BITS = UI_MODE_TYPE_MASK or UI_MODE_NIGHT_MASK
 
   /** Validates dimension parameters (`widthDp`, `heightDp`). */
   fun validateDimension(paramName: String, value: String?): List<ValidationIssue> {
@@ -187,6 +194,44 @@ object ParameterValidators {
   }
 
   /**
+   * Validates the `uiMode` parameter.
+   *
+   * The value must be `0` (unset) or a `Configuration.UI_MODE_*` bitmask combining a `UI_MODE_TYPE_*` value (`0..7`) with at most one of
+   * `UI_MODE_NIGHT_NO` (`0x10`) and `UI_MODE_NIGHT_YES` (`0x20`). `UiModeState.setUiModeFlagValue` ignores unknown upper bits and falls
+   * back to `NORMAL` / `NOTNIGHT` for unknown type values or conflicting night flags.
+   */
+  fun validateUiMode(value: String?): List<ValidationIssue> {
+    if (value.isNullOrEmpty()) return emptyList()
+    val uiMode =
+      value.toIntOrNull()
+        ?: return listOf(
+          ValidationIssue(
+            message = "Parameter 'uiMode' must be an integer, got: '$value'",
+            severity = ValidationSeverity.ERROR,
+            category = ValidationCategory.PARAMETER,
+            target = "uiMode",
+            value = value,
+          )
+        )
+
+    val isValidBitmask =
+      uiMode and VALID_UI_MODE_BITS.inv() == 0 &&
+        (uiMode and UI_MODE_TYPE_MASK) <= MAX_UI_MODE_TYPE &&
+        (uiMode and UI_MODE_NIGHT_MASK) != UI_MODE_NIGHT_MASK
+    if (isValidBitmask) return emptyList()
+
+    return listOf(
+      ValidationIssue(
+        message = "Parameter 'uiMode' must be a valid Configuration.UI_MODE_* bitmask, got: $uiMode",
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.PARAMETER,
+        target = "uiMode",
+        value = value,
+      )
+    )
+  }
+
+  /**
    * Validates the `backgroundColor` parameter, together with the `showBackground` parameter that controls whether it is applied.
    *
    * The value is the decimal representation of the Long declared in the annotation, which must be a 32-bit ARGB color (`4278255360` for
@@ -303,6 +348,7 @@ class PreviewValidator(devices: Collection<Device>? = null) : Validator<PreviewS
     issues.addAll(ParameterValidators.validateFontScale(previewParams["fontScale"]))
     issues.addAll(ParameterValidators.validateApiLevel(previewParams["apiLevel"]))
     issues.addAll(ParameterValidators.validateLocale(previewParams["locale"]))
+    issues.addAll(ParameterValidators.validateUiMode(previewParams["uiMode"]))
     issues.addAll(ParameterValidators.validateBackgroundColor(previewParams["backgroundColor"], previewParams["showBackground"]))
     issues.addAll(ParameterValidators.validateWallpaper(previewParams["wallpaper"]))
     issues.addAll(ParameterValidators.validateDevice(previewParams["device"], deviceCatalog))

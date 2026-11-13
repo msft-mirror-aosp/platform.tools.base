@@ -188,6 +188,43 @@ class PreviewValidatorTest {
   }
 
   @Test
+  fun testValidUiModesPassValidation() {
+    // 0 (unset), UI_MODE_TYPE_* 1..7, UI_MODE_NIGHT_NO (0x10) | 0..7, and UI_MODE_NIGHT_YES (0x20) | 0..7.
+    val validUiModes = (0..7) + (0x10..0x17) + (0x20..0x27)
+    for (uiMode in validUiModes) {
+      val result = validator.validateParams(mapOf("uiMode" to uiMode.toString()))
+      assertTrue("uiMode $uiMode should be valid but got: ${result.issues}", result.issues.isEmpty())
+    }
+    assertTrue(validator.validateParams(mapOf("uiMode" to "")).issues.isEmpty())
+  }
+
+  @Test
+  fun testInvalidUiModeFormatsAndBitmasksProduceError() {
+    for (nonInt in listOf("night", "0x20", " 32 ", "1.5")) {
+      val result = validator.validateParams(mapOf("uiMode" to nonInt))
+      assertFalse("uiMode '$nonInt' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("uiMode", error.target)
+      assertEquals(nonInt, error.value)
+      assertTrue(error.message.contains("must be an integer"))
+    }
+
+    // Negative values, unknown UI_MODE_TYPE_* (8..15), both night flags set (0x30/0x31), and unknown upper bits (0x40, 0xFFFF).
+    for (invalidMask in listOf(-1, -32, 8, 15, 0x18, 0x28, 0x30, 0x31, 0x40, 0xFFFF)) {
+      val result = validator.validateParams(mapOf("uiMode" to invalidMask.toString()))
+      assertFalse("uiMode $invalidMask should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("uiMode", error.target)
+      assertEquals(invalidMask.toString(), error.value)
+      assertTrue(error.message.contains("Configuration.UI_MODE_*"))
+    }
+  }
+
+  @Test
   fun testValidBackgroundColorsPassValidation() {
     // Bytecode discovery reports the Long constant in decimal: 0xFF00FF00 -> 4278255360, 0xFFFFFFFF -> 4294967295.
     for (color in listOf("0", "4278255360", "4294967295", "255")) {
