@@ -29,6 +29,7 @@ import com.android.tools.render.common.ResolvedScreenshotLayout
  *   as custom parameter display names (from `PreviewParameterProvider.getDisplayName`) alongside the XML layout strings.
  * @param showDecorations Whether to render device system decorations (status/navigation bars, device frame).
  * @param transparentBackground Whether to render without the window background.
+ * @param expandToContent Whether to expand the rendered canvas to fit the root view's bounds when decorations are disabled.
  */
 class RenderRequest(
   val configurationModifier: Configuration.() -> Unit,
@@ -36,6 +37,7 @@ class RenderRequest(
   val resolvedLayoutsProvider: (() -> Sequence<ResolvedScreenshotLayout>)? = null,
   val showDecorations: Boolean = false,
   val transparentBackground: Boolean = false,
+  val expandToContent: Boolean = false,
 ) {
   companion object {
     /**
@@ -47,6 +49,7 @@ class RenderRequest(
       resolvedLayoutsProvider: () -> Sequence<ResolvedScreenshotLayout>,
       showDecorations: Boolean = false,
       transparentBackground: Boolean = false,
+      expandToContent: Boolean = false,
     ): RenderRequest =
       RenderRequest(
         configurationModifier,
@@ -54,6 +57,7 @@ class RenderRequest(
         resolvedLayoutsProvider,
         showDecorations,
         transparentBackground,
+        expandToContent,
       )
   }
 }

@@ -16,9 +16,12 @@
 package com.android.tools.render.drawable
 
 import com.android.SdkConstants.ATTR_ADJUST_VIEW_BOUNDS
+import com.android.SdkConstants.ATTR_BACKGROUND
 import com.android.SdkConstants.ATTR_LAYOUT_HEIGHT
 import com.android.SdkConstants.ATTR_LAYOUT_WIDTH
+import com.android.SdkConstants.ATTR_SCALE_TYPE
 import com.android.SdkConstants.ATTR_SRC
+import com.android.SdkConstants.ATTR_THEME
 import com.android.SdkConstants.IMAGE_VIEW
 import com.android.SdkConstants.VALUE_TRUE
 import com.android.SdkConstants.VALUE_WRAP_CONTENT
@@ -27,19 +30,41 @@ import com.android.resources.ResourceType
 import com.android.tools.preview.PreviewConfiguration
 import com.android.tools.preview.PreviewDisplaySettings
 import com.android.tools.preview.PreviewXmlBuilder
+import com.android.tools.preview.UNDEFINED_API_LEVEL
+import com.android.tools.preview.UNDEFINED_DIMENSION
+import com.android.tools.preview.config.PARAMETER_API_LEVEL
+import com.android.tools.preview.config.PARAMETER_BACKGROUND_COLOR
+import com.android.tools.preview.config.PARAMETER_DEVICE
+import com.android.tools.preview.config.PARAMETER_HEIGHT_DP
+import com.android.tools.preview.config.PARAMETER_LOCALE
+import com.android.tools.preview.config.PARAMETER_UI_MODE
+import com.android.tools.preview.config.PARAMETER_WIDTH_DP
 import com.android.tools.render.StandaloneRenderModelModule
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.ResourceTarget
 import com.android.tools.render.common.ScreenshotPreviewElement
+import com.android.tools.render.common.toThemeReference
+import com.android.utils.XmlUtils.toXmlAttributeValue
 
 /** Resource types that can be previewed as a drawable. */
 val DRAWABLE_RESOURCE_TYPES = setOf(ResourceType.DRAWABLE, ResourceType.MIPMAP)
 
+/** Values of `android:scaleType`, which `scaleType` takes. */
+private val SCALE_TYPES = setOf("matrix", "fitXY", "fitStart", "fitCenter", "fitEnd", "center", "centerCrop", "centerInside")
+
 /**
  * Information required to render a screenshot of a drawable or mipmap resource, for example `R.drawable.ic_logo`.
  *
- * Like the drawable preview in Android Studio, the drawable is shown in an `ImageView` that wraps the drawable, so the image has the
- * drawable's intrinsic size on the preview device, and the background is transparent.
+ * Like the drawable preview in Android Studio, the drawable is shown in an `ImageView`. By default the view wraps the drawable, so the
+ * image has the drawable's intrinsic size on the preview device, and the background is transparent. Supported [previewParams]:
+ * - `device`, `locale`, `uiMode` and `apiLevel`: the configuration to render with, as in Compose's `@Preview`. They select resource
+ *   variants such as `drawable-night` or `drawable-xxhdpi`.
+ * - `theme`: the theme that resolves `?attr/` references in the drawable, for example `@style/Theme.MyApp`.
+ * - `widthDp` and `heightDp`: the size of the view, in dp, for example for shapes and nine-patches.
+ * - `backgroundColor` and `scaleType`: the view's background and scale type, like `tools:background` and `tools:scaleType` in drawable
+ *   files.
+ *
+ * Invalid parameters fail the screenshot with an error that names the parameter.
  */
 data class DrawableScreenshot(
   override val methodFQN: String,
@@ -62,6 +87,22 @@ data class DrawableScreenshot(
       }
     }
 
+    val widthDp = intParam(PARAMETER_WIDTH_DP)?.takeIf { it != UNDEFINED_DIMENSION }
+    val heightDp = intParam(PARAMETER_HEIGHT_DP)?.takeIf { it != UNDEFINED_DIMENSION }
+    val apiLevel = intParam(PARAMETER_API_LEVEL)?.takeIf { it != UNDEFINED_API_LEVEL }
+    val scaleType = param(ATTR_SCALE_TYPE)
+    require(scaleType == null || scaleType in SCALE_TYPES) {
+      "Invalid $ATTR_SCALE_TYPE '$scaleType': expected one of ${SCALE_TYPES.joinToString()}"
+    }
+
+    val configuration =
+      PreviewConfiguration.cleanAndGet(
+        apiLevel = apiLevel,
+        locale = param(PARAMETER_LOCALE),
+        uiMode = intParam(PARAMETER_UI_MODE),
+        device = param(PARAMETER_DEVICE),
+      )
+
     val displaySettings =
       PreviewDisplaySettings(
         name = target.name,
@@ -74,32 +115,43 @@ data class DrawableScreenshot(
         organizationName = target.name,
       )
 
-    val xmlLayout =
+    val xmlBuilder =
       PreviewXmlBuilder(IMAGE_VIEW)
-        .androidAttribute(ATTR_LAYOUT_WIDTH, VALUE_WRAP_CONTENT)
-        .androidAttribute(ATTR_LAYOUT_HEIGHT, VALUE_WRAP_CONTENT)
+        .androidAttribute(ATTR_LAYOUT_WIDTH, widthDp?.let { "${it}dp" } ?: VALUE_WRAP_CONTENT)
+        .androidAttribute(ATTR_LAYOUT_HEIGHT, heightDp?.let { "${it}dp" } ?: VALUE_WRAP_CONTENT)
         .androidAttribute(ATTR_SRC, resourceRef)
-        // Keep the drawable's aspect ratio when the ImageView is clamped to the device screen.
+        // Keep the drawable's aspect ratio when one of widthDp/heightDp is wrap_content, or when neither is set and the ImageView is
+        // clamped to the device screen.
         .androidAttribute(ATTR_ADJUST_VIEW_BOUNDS, VALUE_TRUE)
-        .buildString()
+    // XmlBuilder doesn't escape attribute values.
+    param(PARAMETER_BACKGROUND_COLOR)?.let { xmlBuilder.androidAttribute(ATTR_BACKGROUND, toXmlAttributeValue(it)) }
+    scaleType?.let { xmlBuilder.androidAttribute(ATTR_SCALE_TYPE, it) }
+    param(ATTR_THEME)?.let { xmlBuilder.androidAttribute(ATTR_THEME, toXmlAttributeValue(toThemeReference(it))) }
 
     return DrawableScreenshotPreviewElement(
       displaySettings = displaySettings,
-      configuration = PreviewConfiguration.cleanAndGet(),
-      xmlLayout = xmlLayout,
+      configuration = configuration,
+      xmlLayout = xmlBuilder.buildString(),
+      expandToContent = widthDp != null || heightDp != null,
     )
   }
+
+  private fun param(name: String): String? = previewParams[name]?.trim()?.takeIf { it.isNotEmpty() }
+
+  private fun intParam(name: String): Int? = param(name)?.toInt()
 }
 
 private data class DrawableScreenshotPreviewElement(
   override val displaySettings: PreviewDisplaySettings,
   override val configuration: PreviewConfiguration,
   private val xmlLayout: String,
+  override val expandToContent: Boolean = false,
   override val previewElementDefinition: Unit? = null,
   override val previewBody: Unit? = null,
   override val hasAnimations: Boolean = false,
 ) : ScreenshotPreviewElement {
 
+  // Areas the drawable does not cover stay transparent, unless backgroundColor sets the view's background.
   override val transparentBackground: Boolean = true
 
   override fun resolveXmlLayouts(): Sequence<String> = sequenceOf(xmlLayout)

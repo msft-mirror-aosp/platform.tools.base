@@ -17,6 +17,9 @@
 package com.android.tools.render.validation
 
 import com.android.ide.common.resources.configuration.LocaleQualifier
+import com.android.ide.common.resources.parseColor
+import com.android.resources.ResourceType
+import com.android.resources.ResourceUrl
 import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.devices.Device
 import com.android.tools.configurations.UiModeState
@@ -26,6 +29,8 @@ import com.android.tools.preview.MAX_FONT_SCALE
 import com.android.tools.preview.UNDEFINED_API_LEVEL
 import com.android.tools.preview.UNDEFINED_DIMENSION
 import com.android.tools.render.common.PreviewScreenshot
+import com.android.tools.render.drawable.DrawableScreenshot
+import java.util.HexFormat
 
 /** Validation rules and limits for individual preview annotation parameters. */
 object ParameterValidators {
@@ -232,14 +237,24 @@ object ParameterValidators {
   }
 
   /**
-   * Validates the `backgroundColor` parameter, together with the `showBackground` parameter that controls whether it is applied.
+   * Validates the `backgroundColor` parameter, together with the `showBackground` parameter that controls whether it is applied on
+   * annotation-based previews.
    *
-   * The value is the decimal representation of the Long declared in the annotation, which must be a 32-bit ARGB color (`4278255360` for
-   * `0xFF00FF00`). The renderer formats it as hexadecimal without any check, so a negative value produces a broken color and a value that
-   * is not a Long is silently ignored.
+   * When [usesStringBasedBackgroundColor] is `false` (the default, used for `@Preview` annotations), the value must be the decimal
+   * representation of a 32-bit ARGB `Long` (`4278255360` for `0xFF00FF00`) and warns when `showBackground` is not `true`.
+   *
+   * When [usesStringBasedBackgroundColor] is `true` (used for resource previews such as drawables and layouts), the value must be a
+   * string-based color (`#RGB`, `#ARGB`, `#RRGGBB` or `#AARRGGBB`), a color resource (`@color/name`, `@android:color/name`), or a theme
+   * attribute (`?attr/name`, `?android:attr/name`, `?name`). Private references such as `@*android:color/name` are rejected.
    */
-  fun validateBackgroundColor(value: String?, showBackground: String?): List<ValidationIssue> {
+  fun validateBackgroundColor(
+    value: String?,
+    showBackground: String?,
+    usesStringBasedBackgroundColor: Boolean = false,
+  ): List<ValidationIssue> {
     if (value.isNullOrEmpty()) return emptyList()
+    if (usesStringBasedBackgroundColor) return validateStringBasedBackgroundColor(value)
+
     val color =
       value.toLongOrNull()
         ?: return listOf(
@@ -322,10 +337,50 @@ object ParameterValidators {
   /** Like [validateDevice], with the device catalog already indexed, so that it is not indexed again for every preview. */
   internal fun validateDevice(value: String?, catalog: DeviceCatalog?): List<ValidationIssue> =
     DeviceParameterValidator.validate(value, catalog)
+
+  private fun validateStringBasedBackgroundColor(value: String): List<ValidationIssue> {
+    if (isValidHexColor(value) || isValidColorReference(value)) return emptyList()
+    return listOf(
+      ValidationIssue(
+        message =
+          "Parameter 'backgroundColor' must be #RGB, #ARGB, #RRGGBB, #AARRGGBB, @[<package>:]color/<name> or " +
+            "?[<package>:][attr/]<name>, got: '$value'",
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.PARAMETER,
+        target = "backgroundColor",
+        value = value,
+      )
+    )
+  }
+
+  private fun isValidHexColor(value: String): Boolean =
+    value.startsWith('#') && value.drop(1).all { HexFormat.isHexDigit(it.code) } && parseColor(value) != null
+
+  private fun isValidColorReference(value: String): Boolean {
+    val colon = value.indexOf(':')
+    val slash = value.indexOf('/')
+    if (colon >= 0 && slash in 0 until colon) return false
+    val url = ResourceUrl.parse(value) ?: return false
+    if (url.isPrivateAccessOverride || !url.hasValidName()) return false
+    val namespace = url.namespace
+    if (namespace != null && !isValidPackageName(namespace)) return false
+    return when (url.urlType) {
+      ResourceUrl.UrlType.NORMAL -> url.type == ResourceType.COLOR
+      ResourceUrl.UrlType.THEME -> url.type == ResourceType.ATTR
+      else -> false
+    }
+  }
+
+  private fun isValidPackageName(value: String): Boolean =
+    value.split('.').all { segment ->
+      segment.isNotEmpty() &&
+        Character.isJavaIdentifierStart(segment[0]) &&
+        (1 until segment.length).all { Character.isJavaIdentifierPart(segment[it]) }
+    }
 }
 
 /**
- * Main orchestrator for validating Compose preview.
+ * Main orchestrator for validating preview parameters.
  *
  * @param devices the device catalog the previews are rendered with, used to check that the devices they reference exist. When null, only
  *   the syntax of the `device` parameter is validated.
@@ -334,13 +389,26 @@ class PreviewValidator(devices: Collection<Device>? = null) : Validator<PreviewS
 
   private val deviceCatalog: DeviceCatalog? = devices?.let(::DeviceCatalog)
 
-  /** Validates a [PreviewScreenshot]. */
+  /**
+   * Validates a [PreviewScreenshot]. [DrawableScreenshot]s use string-based `backgroundColor` values (`#RRGGBB`, `@color/name`,
+   * `?attr/name`) and trim their parameter values, whereas annotation-based previews take `backgroundColor` as the decimal ARGB `Long`
+   * value of `@Preview`.
+   */
   override fun validate(target: PreviewScreenshot): ValidationResult {
+    if (target is DrawableScreenshot) {
+      return validateParams(
+        target.previewParams.mapValues { it.value.trim() },
+        usesStringBasedBackgroundColor = true,
+      )
+    }
     return validateParams(target.previewParams)
   }
 
-  /** Validates raw preview parameters map. */
-  fun validateParams(previewParams: Map<String, String>): ValidationResult {
+  /**
+   * Validates raw preview parameters map. When [usesStringBasedBackgroundColor] is `true`, `backgroundColor` is validated as a string-based
+   * color or color/attribute reference rather than a `@Preview` decimal ARGB `Long`.
+   */
+  fun validateParams(previewParams: Map<String, String>, usesStringBasedBackgroundColor: Boolean = false): ValidationResult {
     val issues = mutableListOf<ValidationIssue>()
 
     issues.addAll(ParameterValidators.validateDimension("widthDp", previewParams["widthDp"]))
@@ -349,7 +417,13 @@ class PreviewValidator(devices: Collection<Device>? = null) : Validator<PreviewS
     issues.addAll(ParameterValidators.validateApiLevel(previewParams["apiLevel"]))
     issues.addAll(ParameterValidators.validateLocale(previewParams["locale"]))
     issues.addAll(ParameterValidators.validateUiMode(previewParams["uiMode"]))
-    issues.addAll(ParameterValidators.validateBackgroundColor(previewParams["backgroundColor"], previewParams["showBackground"]))
+    issues.addAll(
+      ParameterValidators.validateBackgroundColor(
+        previewParams["backgroundColor"],
+        previewParams["showBackground"],
+        usesStringBasedBackgroundColor = usesStringBasedBackgroundColor,
+      )
+    )
     issues.addAll(ParameterValidators.validateWallpaper(previewParams["wallpaper"]))
     issues.addAll(ParameterValidators.validateDevice(previewParams["device"], deviceCatalog))
 

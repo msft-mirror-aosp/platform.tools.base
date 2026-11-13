@@ -31,6 +31,13 @@ interface ScreenshotPreviewElement : ConfigurablePreviewElement<Unit> {
     get() = false
 
   /**
+   * Whether to expand the rendered canvas to fit the root view's bounds when decorations are disabled, rather than clamping it to the
+   * device screen.
+   */
+  val expandToContent: Boolean
+    get() = false
+
+  /**
    * This method returns a sequence of XML layouts for each preview.
    *
    * By default, extracts [ResolvedScreenshotLayout.xmlLayout] from [resolveLayouts].

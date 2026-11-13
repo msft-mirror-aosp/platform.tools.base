@@ -17,6 +17,8 @@
 package com.android.tools.render.validation
 
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.drawable.DrawableScreenshot
+import com.android.tools.render.wear.WearTileScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -56,6 +58,54 @@ class PreviewValidatorTest {
     val result = validator.validate(preview)
     assertTrue(result.isValid)
     assertEquals(0, result.issues.size)
+  }
+
+  @Test
+  fun testDrawableScreenshotUsesStringBasedBackgroundColorAndTrimsParameters() {
+    val drawable =
+      DrawableScreenshot(
+        methodFQN = "R.drawable.ic_logo",
+        previewParams =
+          mapOf("widthDp" to " 300 ", "heightDp" to "   ", "locale" to " fr-rCA ", "uiMode" to " 32 ", "backgroundColor" to " @color/bg "),
+        previewId = "ic_logo",
+      )
+    val drawableResult = validator.validate(drawable)
+    assertTrue(drawableResult.isValid)
+    assertTrue(drawableResult.issues.isEmpty())
+
+    val invalidDrawable =
+      DrawableScreenshot(
+        methodFQN = "R.drawable.ic_logo",
+        previewParams = mapOf("backgroundColor" to "@*android:color/white"),
+        previewId = "ic_logo",
+      )
+    assertFalse(validator.validate(invalidDrawable).isValid)
+
+    val composeWithHexColor =
+      ComposeScreenshot(
+        methodFQN = "com.example.MyPreviewKt.Preview",
+        previewId = "prev_1",
+        previewParams = mapOf("backgroundColor" to "#FF00FF00", "showBackground" to "true"),
+        methodParams = emptyList(),
+      )
+    assertFalse(validator.validate(composeWithHexColor).isValid)
+
+    val composeWithPaddedWidth =
+      ComposeScreenshot(
+        methodFQN = "com.example.MyPreviewKt.Preview",
+        previewId = "prev_1",
+        previewParams = mapOf("widthDp" to " 300 "),
+        methodParams = emptyList(),
+      )
+    assertFalse(validator.validate(composeWithPaddedWidth).isValid)
+
+    val wearTileWithPaddedLocale =
+      WearTileScreenshot(
+        methodFQN = "com.example.MyTilePreviewKt.TilePreview",
+        previewId = "tile_1",
+        previewParams = mapOf("locale" to " fr "),
+      )
+    assertFalse(validator.validate(wearTileWithPaddedLocale).isValid)
   }
 
   @Test
@@ -311,6 +361,89 @@ class PreviewValidatorTest {
       assertEquals("wallpaper", error.target)
       assertEquals(outOfRange.toString(), error.value)
       assertTrue(error.message.contains("between 0 and ${ParameterValidators.MAX_WALLPAPER}"))
+    }
+  }
+
+  @Test
+  fun testValidStringBasedBackgroundColorsPassValidationWithoutShowBackgroundWarning() {
+    for (color in
+      listOf(
+        "",
+        "#F00",
+        "#8F00",
+        "#00ff00",
+        "#800000FF",
+        "@color/accent",
+        "@android:color/white",
+        "@com.example.app:color/surface.tint",
+        "?attr/colorPrimary",
+        "?android:attr/colorBackground",
+        "?colorPrimary",
+        "?android:colorBackground",
+      )) {
+      val result = validator.validateParams(mapOf("backgroundColor" to color), usesStringBasedBackgroundColor = true)
+      assertTrue("String-based color '$color' should be valid but got: ${result.issues}", result.issues.isEmpty())
+    }
+  }
+
+  @Test
+  fun testInvalidStringBasedBackgroundColorsProduceError() {
+    for (invalid in
+      listOf(
+        " ",
+        " #F00 ",
+        "4278255360",
+        "red",
+        "0xFF0000FF",
+        "#",
+        "#12",
+        "#12345",
+        "#1234567",
+        "#123456789",
+        "#-12",
+        "#+12",
+        "#-1234567",
+        "#GGG",
+        "#FF0000FF ; x",
+        "@",
+        "?",
+        "@null",
+        "@color/",
+        "?attr/",
+        "@:color/white",
+        "?:attr/colorAccent",
+        "?:colorAccent",
+        "?android:",
+        "@+color/accent",
+        "@*android:color/white",
+        "?*android:attr/colorAccent",
+        "?*colorAccent",
+        "@drawable/bg",
+        "@style/Theme.App",
+        "?color/accent",
+        "?style/Theme.App",
+        "color/accent",
+        "android:color/white",
+        "attr/colorPrimary",
+        "@color/foo:bar",
+        "?attr/foo:bar",
+        "@123:color/white",
+        "@..:color/white",
+        "@com..example:color/white",
+        "@com.example.:color/white",
+        "@color/123",
+        "@color/.accent",
+        "@color/foo bar",
+        "@color/a/b",
+      )) {
+      val result = validator.validateParams(mapOf("backgroundColor" to invalid), usesStringBasedBackgroundColor = true)
+      assertFalse("String-based color '$invalid' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("backgroundColor", error.target)
+      assertEquals(invalid, error.value)
+      assertTrue(error.message.contains("@[<package>:]color/<name>"))
     }
   }
 

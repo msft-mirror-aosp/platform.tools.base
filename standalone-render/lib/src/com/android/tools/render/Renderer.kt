@@ -16,6 +16,7 @@
 
 package com.android.tools.render
 
+import com.android.ide.common.rendering.HardwareConfigHelper
 import com.android.ide.common.rendering.api.Result
 import com.android.ide.common.rendering.api.SessionParams
 import com.android.resources.ResourceFolderType
@@ -24,7 +25,10 @@ import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
 import com.android.tools.render.animation.AnimationRenderOptions
 import com.android.tools.render.animation.PreviewAnimationResult
+import com.android.tools.render.common.ComponentBounds
 import com.android.tools.render.common.ComponentTreeExtractor
+import com.android.tools.render.common.ComponentTreeNode
+import com.android.tools.render.common.PreviewComponentTree
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.render.common.ResolvedScreenshotLayout
@@ -70,6 +74,7 @@ import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
 import javax.imageio.stream.MemoryCacheImageOutputStream
+import kotlin.math.roundToInt
 
 /**
  * A renderer that can handle [RenderRequest].
@@ -454,6 +459,7 @@ class Renderer(
         resolvedLayoutsProvider = { resolvedLayouts.asSequence() },
         showDecorations = showDecorations,
         transparentBackground = previewElement.transparentBackground,
+        expandToContent = previewElement.expandToContent,
       )
 
     return renderResolvedLayouts(renderRequest, configuration.renderImage, idAllocator.basePreviewName)
@@ -466,7 +472,7 @@ class Renderer(
           val viewInfos = renderResult.rootViews.flatMap { parseViewInfo(it) }
           val imageRendered =
             if (configuration.renderImage) {
-              val image = postProcessRenderedImage(config, renderResult)
+              val image = postProcessRenderedImage(config, renderResult, renderRequest.expandToContent, renderRequest.showDecorations)
               if (image != null) {
                 saveImage(image, outputFolderPath, relativeImagePath)
               }
@@ -489,7 +495,8 @@ class Renderer(
                   renderResult = renderResult,
                   viewInfos = viewInfos,
                   detectAnimations = configuration.detectAnimations,
-                  showSystemUi = showDecorations,
+                  showSystemUi = renderRequest.showDecorations,
+                  expandToContent = renderRequest.expandToContent,
                 )
             ) {
               relativeComponentTreePath
@@ -537,6 +544,7 @@ class Renderer(
     viewInfos: List<ComposeViewInfo> = emptyList(),
     detectAnimations: Boolean = false,
     showSystemUi: Boolean = false,
+    expandToContent: Boolean = false,
   ): Boolean {
     return try {
       val rootDir = Paths.get(outputFolderPath).toAbsolutePath().normalize()
@@ -545,17 +553,24 @@ class Renderer(
         logger.log(Level.SEVERE, "Refusing to write component tree outside output folder: $treePath")
         return false
       }
+      val (offsetX, offsetY) =
+        if (!showSystemUi && expandToContent && renderResult != null) {
+          expandedRootViewsOrigin(config, renderResult)
+        } else {
+          0 to 0
+        }
       val tree =
         ComponentTreeExtractor.extract(
-          previewId = previewId,
-          methodFQN = methodFQN,
-          displayName = displayName,
-          config = config,
-          renderResult = renderResult,
-          viewInfos = viewInfos,
-          detectAnimations = detectAnimations,
-          showSystemUi = showSystemUi,
-        )
+            previewId = previewId,
+            methodFQN = methodFQN,
+            displayName = displayName,
+            config = config,
+            renderResult = renderResult,
+            viewInfos = viewInfos,
+            detectAnimations = detectAnimations,
+            showSystemUi = showSystemUi,
+          )
+          .offsetBy(offsetX, offsetY)
       treePath.parent?.let { Files.createDirectories(it) }
       Files.newBufferedWriter(treePath, StandardCharsets.UTF_8).use { writer ->
         writeComponentTreeToJson(writer, tree)
@@ -631,6 +646,7 @@ class Renderer(
           renderImage,
           allowShowDecorations = request.showDecorations,
           transparentBackground = request.transparentBackground,
+          expandToContent = request.expandToContent,
         )
     }
   }
@@ -678,6 +694,7 @@ class Renderer(
           previewName = layoutPreviewName,
           allowShowDecorations = request.showDecorations,
           transparentBackground = request.transparentBackground,
+          expandToContent = request.expandToContent,
         ),
         it,
       )
@@ -696,6 +713,7 @@ class Renderer(
     previewName: String? = null,
     allowShowDecorations: Boolean = false,
     transparentBackground: Boolean = false,
+    expandToContent: Boolean = false,
   ): RenderResult {
     awaitOutstandingDisposals()
     val disposable = Disposer.newCheckedDisposable()
@@ -730,6 +748,8 @@ class Renderer(
       if (allowShowDecorations) {
         renderTask.setDecorations(true)
         renderTask.setRenderingMode(SessionParams.RenderingMode.NORMAL)
+      } else if (expandToContent) {
+        renderTask.setRenderingMode(SessionParams.RenderingMode.FULL_EXPAND)
       }
 
       // b/469819154: Release render and dispose Compose views after use to avoid accumulating heap memory usage
@@ -900,13 +920,88 @@ class Renderer(
       logger,
     )
 
-  internal fun postProcessRenderedImage(config: Configuration, renderResult: RenderResult): BufferedImage? {
+  internal fun postProcessRenderedImage(
+    config: Configuration,
+    renderResult: RenderResult,
+    expandToContent: Boolean = false,
+    showDecorations: Boolean = false,
+  ): BufferedImage? {
     val imageCopy = renderResult.renderedImage.copy
     if (imageCopy == null && renderResult.renderResult.status != Result.Status.SUCCESS) return null
 
-    val image = imageCopy ?: BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
+    val rawImage = imageCopy ?: BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
+    val image =
+      if (!showDecorations && expandToContent) {
+        cropExpandedImageToRootViews(config, renderResult, rawImage)
+      } else {
+        rawImage
+      }
     val screenShape = config.device?.screenShape(0.0, 0.0, Dimension(image.width, image.height)) ?: return image
     return resizeImage(image, screenShape)
+  }
+
+  private fun expandedRootViewsOrigin(config: Configuration, renderResult: RenderResult): Pair<Int, Int> {
+    val rootDims = renderResult.rootViewDimensions
+    if (rootDims.width <= 0 || rootDims.height <= 0 || config.device == null) return 0 to 0
+    val minLeft = renderResult.rootViews.minOfOrNull { it.left }?.coerceAtLeast(0) ?: 0
+    val minTop = renderResult.rootViews.minOfOrNull { it.top }?.coerceAtLeast(0) ?: 0
+    return minLeft to minTop
+  }
+
+  private fun PreviewComponentTree.offsetBy(offsetX: Int, offsetY: Int): PreviewComponentTree =
+    if (offsetX == 0 && offsetY == 0) {
+      this
+    } else {
+      copy(components = components.map { it.offsetBy(offsetX, offsetY) })
+    }
+
+  private fun ComponentTreeNode.offsetBy(offsetX: Int, offsetY: Int): ComponentTreeNode =
+    copy(
+      bounds =
+        ComponentBounds(
+          left = bounds.left - offsetX,
+          top = bounds.top - offsetY,
+          right = bounds.right - offsetX,
+          bottom = bounds.bottom - offsetY,
+        ),
+      children = children?.map { it.offsetBy(offsetX, offsetY) },
+    )
+
+  /**
+   * Layoutlib's [SessionParams.RenderingMode.FULL_EXPAND] grows the canvas past the device screen without shrinking axes whose root view is
+   * smaller than the screen (`max(screenSize, rootViewSize)`), and may over-expand `wrap_content` axes across multiple measure passes.
+   * Crops the rendered image to [RenderResult.getRootViewDimensions], preserving any uniform downscaling applied to fit [RenderTask]'s max
+   * image size.
+   */
+  private fun cropExpandedImageToRootViews(config: Configuration, renderResult: RenderResult, image: BufferedImage): BufferedImage {
+    val rootDims = renderResult.rootViewDimensions
+    if (rootDims.width <= 0 || rootDims.height <= 0) return image
+    val device = config.device ?: return image
+    val (minLeft, minTop) = expandedRootViewsOrigin(config, renderResult)
+    val hardwareConfig =
+      HardwareConfigHelper(device).apply { config.fullConfig.screenOrientationQualifier?.value?.let(::setOrientation) }.config
+    val measuredWidth = maxOf(1, hardwareConfig.screenWidth, minLeft + rootDims.width)
+    val measuredHeight = maxOf(1, hardwareConfig.screenHeight, minTop + rootDims.height)
+    val scale =
+      minOf(
+        image.width.toDouble() / measuredWidth,
+        image.height.toDouble() / measuredHeight,
+        1.0,
+      )
+    val targetWidth = (rootDims.width * scale).roundToInt().coerceIn(1, image.width)
+    val targetHeight = (rootDims.height * scale).roundToInt().coerceIn(1, image.height)
+    val srcX = (minLeft * scale).roundToInt().coerceIn(0, image.width - targetWidth)
+    val srcY = (minTop * scale).roundToInt().coerceIn(0, image.height - targetHeight)
+    if (srcX == 0 && srcY == 0 && targetWidth == image.width && targetHeight == image.height) return image
+    val cropped = BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB)
+    val g = cropped.createGraphics()
+    try {
+      g.composite = AlphaComposite.Src
+      g.drawImage(image, 0, 0, targetWidth, targetHeight, srcX, srcY, srcX + targetWidth, srcY + targetHeight, null)
+    } finally {
+      g.dispose()
+    }
+    return cropped
   }
 
   private fun resizeImage(image: BufferedImage, shape: Shape): BufferedImage {

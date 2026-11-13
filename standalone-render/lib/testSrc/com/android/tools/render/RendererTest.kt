@@ -23,6 +23,7 @@ import com.android.resources.ResourceType
 import com.android.testutils.TestUtils
 import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.ConfigurablePreviewElement
+import com.android.tools.render.common.ComponentBounds
 import com.android.tools.render.common.ComponentTreeExtractor
 import com.android.tools.render.common.PreviewComponentTree
 import com.android.tools.render.common.PreviewScreenshot
@@ -3185,6 +3186,7 @@ class RendererTest {
       RenderEnvironmentBootstrapper(
         fontsPath = null,
         resourceApkPath = null,
+        manifest = StandaloneRenderModelManifest(isRtlSupported = true),
         resourceDirs = listOf(resFolder.absolutePath),
         namespace = "com.example.app",
         classPath = emptyList(),
@@ -3247,6 +3249,110 @@ class RendererTest {
 
       val missing = renderer.render(DrawableScreenshot(methodFQN = "R.drawable.missing", previewId = "missing"), outputDir.absolutePath)
       assertTrue(missing[0].error?.message?.contains("Drawable resource '@drawable/missing' not found") == true)
+    }
+  }
+
+  @Test
+  fun testRenderDrawableScreenshot_appliesSizeThemeAndBackground() {
+    withDrawableRenderer({ resFolder ->
+      val drawableFolder = File(resFolder, "drawable").apply { mkdirs() }
+      writeVectorDrawable(drawableFolder, "ic_square", "#FFFF0000")
+      writeVectorDrawable(drawableFolder, "ic_accent", "?android:attr/colorAccent")
+      writeVectorDrawable(drawableFolder, "ic_left_half", "#FFFF0000", pathData = "M0,0h12v24h-12z")
+      writeVectorDrawable(File(resFolder, "drawable-w250dp").apply { mkdirs() }, "ic_square", "#FF0000FF")
+      File(resFolder, "values")
+        .apply { mkdirs() }
+        .resolve("themes.xml")
+        .writeText(
+          """
+          <resources>
+              <style name="GreenAccent" parent="android:Theme.Material.Light">
+                  <item name="android:colorAccent">#FF00FF00</item>
+              </style>
+          </resources>
+          """
+            .trimIndent()
+        )
+    }) { renderer, outputDir ->
+      val device = "spec:width=400px,height=400px,dpi=320"
+      fun renderDrawable(target: String, params: Map<String, String> = emptyMap(), previewId: String = target): BufferedImage {
+        val result =
+          renderer
+            .render(
+              DrawableScreenshot(methodFQN = target, previewParams = mapOf("device" to device) + params, previewId = previewId),
+              outputDir.absolutePath,
+            )
+            .single()
+        assertNull(result.error)
+        return ImageIO.read(outputDir.resolve(result.imagePath!!))
+      }
+
+      // 24dp on a 320 dpi device renders at 48x48px; widthDp/heightDp resize the ImageView.
+      val defaultSize = renderDrawable("R.drawable.ic_square")
+      assertEquals(48, defaultSize.width)
+      assertEquals(48, defaultSize.height)
+      val resized = renderDrawable("@drawable/ic_square", mapOf("widthDp" to "100", "heightDp" to "100"), "ic_square_large")
+      assertEquals(200, resized.width)
+      assertEquals(200, resized.height)
+      assertEquals(0xFFFF0000.toInt(), resized.getRGB(100, 100))
+
+      // In RTL with supportsRtl="true", FULL_EXPAND aligns the narrower ImageView to the right of the 400px canvas; cropping and
+      // component tree bounds both offset by left.
+      val rtlResult =
+        renderer
+          .render(
+            DrawableScreenshot(
+              methodFQN = "@drawable/ic_square",
+              previewParams = mapOf("device" to device, "locale" to "ar", "widthDp" to "100", "heightDp" to "100"),
+              previewId = "ic_square_rtl",
+            ),
+            outputDir.absolutePath,
+            RenderConfiguration(includeComponentTree = true),
+          )
+          .single()
+      assertNull(rtlResult.error)
+      val rtlResized = ImageIO.read(outputDir.resolve(rtlResult.imagePath!!))
+      assertEquals(200, rtlResized.width)
+      assertEquals(200, rtlResized.height)
+      assertEquals(0xFFFF0000.toInt(), rtlResized.getRGB(100, 100))
+      val rtlTree = outputDir.resolve(rtlResult.componentTreePath!!).bufferedReader().use { readComponentTreeFromJson(it) }
+      assertEquals(200, rtlTree.width)
+      assertEquals(200, rtlTree.height)
+      assertEquals(ComponentBounds(0, 0, 200, 200), rtlTree.components.single().bounds)
+
+      // Explicit widthDp/heightDp larger than the 200x200dp screen expand via FULL_EXPAND without changing device qualifiers.
+      val expanded =
+        renderDrawable(
+          "R.drawable.ic_square",
+          mapOf("widthDp" to "300", "heightDp" to "250", "scaleType" to "fitXY"),
+          "ic_square_expanded",
+        )
+      assertEquals(600, expanded.width)
+      assertEquals(500, expanded.height)
+      assertEquals(0xFFFF0000.toInt(), expanded.getRGB(300, 250))
+
+      // Single-axis widthDp or heightDp larger than the screen preserves aspect ratio on the wrap_content axis without trailing blank area.
+      val expandedWidth = renderDrawable("R.drawable.ic_square", mapOf("widthDp" to "300"), "ic_square_expanded_width")
+      assertEquals(600, expandedWidth.width)
+      assertEquals(600, expandedWidth.height)
+      assertEquals(0xFFFF0000.toInt(), expandedWidth.getRGB(300, 599))
+      val expandedHeight = renderDrawable("R.drawable.ic_square", mapOf("heightDp" to "250"), "ic_square_expanded_height")
+      assertEquals(500, expandedHeight.width)
+      assertEquals(500, expandedHeight.height)
+      assertEquals(0xFFFF0000.toInt(), expandedHeight.getRGB(499, 250))
+
+      // RenderTask scales down images over 8 MiB pixels: 1500x1500dp at 320 dpi is 3000x3000px (9M pixels), scaled to 2896x2896px.
+      val downscaled =
+        renderDrawable("R.drawable.ic_left_half", mapOf("widthDp" to "1500", "heightDp" to "1500"), "ic_left_half_downscaled")
+      assertEquals(2896, downscaled.width)
+      assertEquals(2896, downscaled.height)
+
+      // backgroundColor fills areas the drawable does not cover, and theme resolves ?attr/ references.
+      assertEquals(
+        0xFF0000FF.toInt(),
+        renderDrawable("R.drawable.ic_left_half", mapOf("backgroundColor" to "#FF0000FF"), "ic_left_half_bg").getRGB(36, 24),
+      )
+      assertEquals(0xFF00FF00.toInt(), renderDrawable("R.drawable.ic_accent", mapOf("theme" to "GreenAccent")).getRGB(24, 24))
     }
   }
 
