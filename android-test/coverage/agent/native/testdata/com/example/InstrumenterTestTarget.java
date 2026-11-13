@@ -120,4 +120,26 @@ class InstrumenterTestTarget {
                 return 0;
         }
     }
+
+    // javac compiles the body of the lambda into the synthetic method
+    // lambda$userAction$0.
+    static Runnable userAction() {
+        return () -> user();
+    }
+
+    // D8 moves the code of the default methods to the companion class
+    // Command$-CC when it desugars them, with the body of the lambda of later()
+    // as $private$lambda$later$0, and gives DefaultCommand synthetic methods
+    // that call them.
+    interface Command {
+        default void invoke() {
+            user();
+        }
+
+        default Runnable later() {
+            return () -> invoke();
+        }
+    }
+
+    static final class DefaultCommand implements Command {}
 }

@@ -169,6 +169,7 @@ cc_test(
         "private_empty_no_arg_constructor_filter_test.cc",
         "synchronized_filter_test.cc",
         "synthetic_class_filter_test.cc",
+        "synthetic_method_filter_test.cc",
     ],
     linkstatic = 1,
     deps = [

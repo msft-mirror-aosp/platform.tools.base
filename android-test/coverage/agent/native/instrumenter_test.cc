@@ -628,5 +628,29 @@ TEST(InstrumenterTest, MethodOfJavaSyntheticClassIsNotReported) {
   EXPECT_EQ(InstrumentedMethod("<clinit>", kSwitchMapClass), nullptr);
 }
 
+TEST(InstrumenterTest, SyntheticMethodOfJavaClassIsNotReported) {
+  constexpr char kCompanionClass[] =
+      "Lcom/example/InstrumenterTestTarget$Command$-CC;";
+  constexpr char kDefaultCommandClass[] =
+      "Lcom/example/InstrumenterTestTarget$DefaultCommand;";
+  // The code of the default method is instrumented in the companion class,
+  // but not the method that D8 adds to DefaultCommand to call it, although the
+  // agent instruments synthetic methods whose names contain invoke.
+  ASSERT_NE(InstrumentedMethod("$default$invoke", kCompanionClass), nullptr);
+  ASSERT_TRUE(HasClass(kDefaultCommandClass));
+  EXPECT_EQ(InstrumentedMethod("invoke", kDefaultCommandClass), nullptr);
+}
+
+TEST(InstrumenterTest, BodiesOfJavaLambdasAreInstrumented) {
+  constexpr char kCompanionClass[] =
+      "Lcom/example/InstrumenterTestTarget$Command$-CC;";
+  // The body of a lambda is a synthetic method of its class. D8 renames the
+  // body of the lambda of a default method when it moves it to the companion
+  // class.
+  EXPECT_NE(InstrumentedMethod("lambda$userAction$0"), nullptr);
+  EXPECT_NE(InstrumentedMethod("$private$lambda$later$0", kCompanionClass),
+            nullptr);
+}
+
 }  // namespace
 }  // namespace coverage
