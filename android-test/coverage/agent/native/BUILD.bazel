@@ -26,6 +26,7 @@ cc_library(
     srcs = [
         "bridge_filter.cc",
         "constructor_analyzer.cc",
+        "enum_empty_constructor_filter.cc",
         "hits_extractor.cc",
         "instrumenter.cc",
         "kotlin_compose_filter.cc",
@@ -49,6 +50,7 @@ cc_library(
     hdrs = [
         "bridge_filter.h",
         "constructor_analyzer.h",
+        "enum_empty_constructor_filter.h",
         "filter_interface.h",
         "hits_extractor.h",
         "instrumenter.h",
