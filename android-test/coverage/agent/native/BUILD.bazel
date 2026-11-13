@@ -48,6 +48,7 @@ cc_library(
         "synchronized_filter.cc",
         "synthetic_class_filter.cc",
         "synthetic_filter.cc",
+        "synthetic_method_filter.cc",
         "tagging_manager.cc",
     ],
     hdrs = [
@@ -76,6 +77,7 @@ cc_library(
         "synchronized_filter.h",
         "synthetic_class_filter.h",
         "synthetic_filter.h",
+        "synthetic_method_filter.h",
         "tagging_manager.h",
     ],
     copts = ANDROID_COPTS,
