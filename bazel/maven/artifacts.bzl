@@ -104,7 +104,7 @@ ARTIFACTS = [
     "com.google.truth:truth:0.42",
     "com.googlecode.juniversalchardet:juniversalchardet:1.0.3",
     "com.networknt:json-schema-validator:1.4.3",
-    "com.squareup:javapoet:1.10.0",
+    "com.squareup:javapoet:1.13.0",
     "com.squareup.okhttp:okhttp:2.5.0",
     "com.squareup.okhttp3:mockwebserver:4.12.0",
     "com.squareup.okhttp3:okhttp:4.12.0",
