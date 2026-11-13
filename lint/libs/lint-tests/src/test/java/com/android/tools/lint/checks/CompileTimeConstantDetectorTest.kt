@@ -208,6 +208,221 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testGuavaImmutableSet() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import com.google.common.collect.ImmutableSet;
+            import com.google.errorprone.annotations.CompileTimeConstant;
+
+            public class Test {
+                public void ctcSet(@CompileTimeConstant ImmutableSet<String> args) {}
+
+                public void test(String s, @CompileTimeConstant String constStr) {
+                    ctcSet(ImmutableSet.of("foo", "bar", constStr)); // OK
+                    ctcSet(ImmutableSet.of("foo", s, "bar")); // ERROR
+                }
+            }
+            """
+          )
+          .indented(),
+        ctcAnnotationStub,
+        java(
+            """
+            package com.google.common.collect;
+            public class ImmutableSet<E> {
+                public static <E> ImmutableSet<E> of(E... elements) { return null; }
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:11: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+                ctcSet(ImmutableSet.of("foo", s, "bar")); // ERROR
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testGuavaImmutableMap() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import com.google.common.collect.ImmutableMap;
+            import com.google.errorprone.annotations.CompileTimeConstant;
+
+            public class Test {
+                public void ctcMap(@CompileTimeConstant ImmutableMap<String, String> args) {}
+
+                public void test(String s, @CompileTimeConstant String constStr) {
+                    ctcMap(ImmutableMap.of("foo", "bar", "baz", constStr)); // OK
+                    ctcMap(ImmutableMap.of("foo", s, "bar", "baz")); // ERROR
+                }
+            }
+            """
+          )
+          .indented(),
+        ctcAnnotationStub,
+        java(
+            """
+            package com.google.common.collect;
+            public class ImmutableMap<K, V> {
+                public static <K, V> ImmutableMap<K, V> of(K k1, V v1, K k2, V v2) { return null; }
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:11: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+                ctcMap(ImmutableMap.of("foo", s, "bar", "baz")); // ERROR
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testGuavaImmutableMultiset() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import com.google.common.collect.ImmutableMultiset;
+            import com.google.errorprone.annotations.CompileTimeConstant;
+
+            public class Test {
+                public void ctcMultiset(@CompileTimeConstant ImmutableMultiset<String> args) {}
+
+                public void test(String s, @CompileTimeConstant String constStr) {
+                    ctcMultiset(ImmutableMultiset.of("foo", "bar", constStr)); // OK
+                    ctcMultiset(ImmutableMultiset.of("foo", s, "bar")); // ERROR
+                }
+            }
+            """
+          )
+          .indented(),
+        ctcAnnotationStub,
+        java(
+            """
+            package com.google.common.collect;
+            public class ImmutableMultiset<E> {
+                public static <E> ImmutableMultiset<E> of(E... elements) { return null; }
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:11: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+                ctcMultiset(ImmutableMultiset.of("foo", s, "bar")); // ERROR
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testGuavaImmutableSortedSet() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import com.google.common.collect.ImmutableSortedSet;
+            import com.google.errorprone.annotations.CompileTimeConstant;
+
+            public class Test {
+                public void ctcSortedSet(@CompileTimeConstant ImmutableSortedSet<String> args) {}
+
+                public void test(String s, @CompileTimeConstant String constStr) {
+                    ctcSortedSet(ImmutableSortedSet.of("foo", "bar", constStr)); // OK
+                    ctcSortedSet(ImmutableSortedSet.of("foo", s, "bar")); // ERROR
+                }
+            }
+            """
+          )
+          .indented(),
+        ctcAnnotationStub,
+        java(
+            """
+            package com.google.common.collect;
+            public class ImmutableSortedSet<E> {
+                public static <E> ImmutableSortedSet<E> of(E... elements) { return null; }
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:11: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+                ctcSortedSet(ImmutableSortedSet.of("foo", s, "bar")); // ERROR
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testGuavaImmutableSortedMap() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import com.google.common.collect.ImmutableSortedMap;
+            import com.google.errorprone.annotations.CompileTimeConstant;
+
+            public class Test {
+                public void ctcSortedMap(@CompileTimeConstant ImmutableSortedMap<String, String> args) {}
+
+                public void test(String s, @CompileTimeConstant String constStr) {
+                    ctcSortedMap(ImmutableSortedMap.of("foo", "bar", "baz", constStr)); // OK
+                    ctcSortedMap(ImmutableSortedMap.of("foo", s, "bar", "baz")); // ERROR
+                }
+            }
+            """
+          )
+          .indented(),
+        ctcAnnotationStub,
+        java(
+            """
+            package com.google.common.collect;
+            public class ImmutableSortedMap<K, V> {
+                public static <K, V> ImmutableSortedMap<K, V> of(K k1, V v1, K k2, V v2) { return null; }
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:11: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+                ctcSortedMap(ImmutableSortedMap.of("foo", s, "bar", "baz")); // ERROR
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
   fun testKotlinJvmField() {
     lint()
       .files(
@@ -474,18 +689,22 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
             package test.pkg;
 
             import java.util.List;
+            import java.util.Map;
             import java.util.Set;
             import com.google.errorprone.annotations.CompileTimeConstant;
 
             public class Test {
                 public void ctcList(@CompileTimeConstant List<String> args) {}
                 public void ctcSet(@CompileTimeConstant Set<String> args) {}
+                public void ctcMap(@CompileTimeConstant Map<String, String> args) {}
 
                 public void test(String s, @CompileTimeConstant String constStr) {
                     ctcList(List.of("foo", "bar", constStr)); // OK
                     ctcList(List.of("foo", s, "bar")); // ERROR
                     ctcSet(Set.of("foo", "bar", constStr)); // OK
                     ctcSet(Set.of("foo", s, "bar")); // ERROR
+                    ctcMap(Map.of("foo", "bar", "baz", constStr)); // OK
+                    ctcMap(Map.of("foo", s, "bar", "baz")); // ERROR
                 }
             }
             """
@@ -496,13 +715,16 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/Test.java:13: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+        src/test/pkg/Test.java:15: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
                 ctcList(List.of("foo", s, "bar")); // ERROR
                         ~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/Test.java:15: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+        src/test/pkg/Test.java:17: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
                 ctcSet(Set.of("foo", s, "bar")); // ERROR
                        ~~~~~~~~~~~~~~~~~~~~~~~
-        2 errors, 0 warnings
+        src/test/pkg/Test.java:19: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+                ctcMap(Map.of("foo", s, "bar", "baz")); // ERROR
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        3 errors, 0 warnings
         """
       )
   }

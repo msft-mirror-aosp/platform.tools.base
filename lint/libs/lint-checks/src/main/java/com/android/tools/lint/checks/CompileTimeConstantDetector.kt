@@ -449,8 +449,13 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
       setOf(
         "com.google.common.collect.ImmutableList",
         "com.google.common.collect.ImmutableSet",
+        "com.google.common.collect.ImmutableMap",
+        "com.google.common.collect.ImmutableMultiset",
+        "com.google.common.collect.ImmutableSortedSet",
+        "com.google.common.collect.ImmutableSortedMap",
         "java.util.List",
         "java.util.Set",
+        "java.util.Map",
       )
 
     private fun isConstantMethodReturn(method: PsiMethod?): Boolean {
