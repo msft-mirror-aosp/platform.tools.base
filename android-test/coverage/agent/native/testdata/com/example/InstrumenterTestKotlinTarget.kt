@@ -158,4 +158,13 @@ class InstrumenterTestKotlinTarget {
   // The handler of the synchronized block exits the monitor and throws the
   // exception again.
   fun synchronizedBlock(lock: Any): Int = synchronized(lock) { count }
+
+  // Kotlin compiles the code of a value class into static methods, such as
+  // toString-impl(), and calls them directly. The getter of `value` and the
+  // toString() that calls toString-impl() are instance methods for Java code
+  // and boxed values.
+  @JvmInline
+  value class Meters(val value: Int) {
+    override fun toString(): String = "$value m"
+  }
 }

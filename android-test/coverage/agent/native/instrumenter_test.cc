@@ -602,5 +602,14 @@ TEST(InstrumenterTest, HandlerOfKotlinSynchronizedBlockIsNotReported) {
   EXPECT_EQ(instructions, 4u);
 }
 
+TEST(InstrumenterTest, InstanceMethodsOfValueClassAreNotReported) {
+  constexpr char kMetersClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Meters;";
+  // The static version of toString() is instrumented.
+  ASSERT_NE(InstrumentedMethod("toString-impl", kMetersClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("getValue", kMetersClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("toString", kMetersClass), nullptr);
+}
+
 }  // namespace
 }  // namespace coverage

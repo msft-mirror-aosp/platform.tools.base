@@ -154,6 +154,7 @@ cc_test(
         "kotlin_default_arguments_filter_test.cc",
         "kotlin_default_methods_filter_test.cc",
         "kotlin_generated_filter_test.cc",
+        "kotlin_inline_class_filter_test.cc",
         "kotlin_inline_filter_test.cc",
         "kotlin_lateinit_filter_test.cc",
         "kotlin_safe_call_operator_filter_test.cc",
