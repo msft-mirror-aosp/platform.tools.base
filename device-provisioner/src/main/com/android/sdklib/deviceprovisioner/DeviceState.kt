@@ -125,8 +125,25 @@ inline fun <R> DeviceState.ifOnline(block: (ConnectedDevice) -> R): R? = connect
   }
 }
 
-suspend fun DeviceHandle.awaitReady(): DeviceState.Connected =
-  stateFlow.first { it is DeviceState.Connected && it.isReady } as DeviceState.Connected
+/**
+ * Suspends until the device is [DeviceState.Connected] and [ready][DeviceState.isReady].
+ *
+ * @throws DeviceActionException if the device is disconnected and not transitioning
+ */
+suspend fun DeviceHandle.awaitReady(): DeviceState.Connected {
+  var wasActive = false
+  return stateFlow.first { state ->
+    when {
+      state is DeviceState.Connected && state.isReady -> true
+      state.isTransitioning || state is DeviceState.Connected -> {
+        wasActive = true
+        false
+      }
+      wasActive -> throw DeviceActionException("Device did not come online")
+      else -> false
+    }
+  } as DeviceState.Connected
+}
 
 class TimeoutTracker(private val duration: Duration) {
   private val stopwatch = Stopwatch.createStarted()
