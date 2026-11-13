@@ -91,17 +91,6 @@ com/android/tools/adblib/adblib
   com/android/server/adb/
   com/android/server/adb/protos/
 
-com/android/tools/adblib/adblib-ddmlibcompatibility
-  LICENSE
-  META-INF/
-  META-INF/MANIFEST.MF
-  META-INF/unnamed.kotlin_module
-  com/
-  com/android/
-  com/android/adblib/
-  com/android/adblib/ddmlibcompatibility/
-  com/android/adblib/ddmlibcompatibility/debugging/
-
 com/android/tools/adblib/adblib-tools
   LICENSE
   META-INF/

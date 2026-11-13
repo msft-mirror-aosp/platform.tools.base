@@ -251,19 +251,6 @@ com.android.tools.adblib:adblib:$BUILD_VERSION
     com.google.protobuf:protobuf-java:3.25.9 (runtime)
     at.yawk.lz4:lz4-java:1.11.4 (runtime)
 
-com.android.tools.adblib:adblib-ddmlibcompatibility:$BUILD_VERSION
-  pomName=com.android.tools.adblib.adblib-ddmlibcompatibility
-  description=Compatibility library between ddmlib and adblib
-  dependencies:
-    com.android.tools.adblib:adblib:$BUILD_VERSION (runtime)
-    com.android.tools.adblib:adblib-tools:$BUILD_VERSION (runtime)
-    com.android.tools:annotations:$BASE_VERSION (runtime)
-    com.android.tools:common:$BASE_VERSION (runtime)
-    com.android.tools.ddms:ddmlib:$BASE_VERSION (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.10.2 (runtime)
-
 com.android.tools.adblib:adblib-tools:$BUILD_VERSION
   pomName=com.android.tools.adblib.adblib-tools
   description=Tooling for the library used to communicate with Android devices

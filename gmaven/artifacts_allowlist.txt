@@ -19,7 +19,6 @@
   com/android/settings:com.android.settings.gradle.plugin
   com/android/test:com.android.test.gradle.plugin
   com/android/tools/adblib:adblib
-  com/android/tools/adblib:adblib-ddmlibcompatibility
   com/android/tools/adblib:adblib-tools
   com/android/tools/analytics-library:crash
   com/android/tools/analytics-library:inspector
