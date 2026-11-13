@@ -466,8 +466,6 @@ com.android.tools.build:apkzlib:$BUILD_VERSION
     com.android.tools.build:apksig:$BUILD_VERSION (runtime)
     com.google.code.findbugs:jsr305:3.0.2 (runtime)
     com.google.guava:guava:33.7.2-jre (runtime)
-    org.bouncycastle:bcpkix-jdk18on:1.86 (runtime)
-    org.bouncycastle:bcprov-jdk18on:1.86 (runtime)
 
 com.android.tools.build:builder:$BUILD_VERSION
   pomName=com.android.tools.build.builder
