@@ -568,6 +568,15 @@ TEST(InstrumenterTest, EmptyConstructorOfJavaEnumIsNotReported) {
   EXPECT_EQ(InstrumentedMethod("<init>", kColorClass), nullptr);
 }
 
+TEST(InstrumenterTest, GeneratedMethodsOfJavaEnumAreNotReported) {
+  // javac gives Color values() and valueOf(String) on the line of the enum. Its
+  // static initializer, which also has code on that line, is instrumented.
+  constexpr char kColorClass[] = "Lcom/example/InstrumenterTestTarget$Color;";
+  ASSERT_NE(InstrumentedMethod("<clinit>", kColorClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("values", kColorClass), nullptr);
+  EXPECT_EQ(InstrumentedMethod("valueOf", kColorClass), nullptr);
+}
+
 TEST(InstrumenterTest, HandlerOfSynchronizedBlockIsNotReported) {
   // javac puts the handler on the closing brace of the block, which then only
   // reports the monitor exit of the normal path.
