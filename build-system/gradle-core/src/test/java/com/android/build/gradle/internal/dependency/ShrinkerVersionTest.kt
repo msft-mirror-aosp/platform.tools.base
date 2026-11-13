@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dependency
 
+import com.android.builder.dexing.R8Version
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -33,5 +34,10 @@ class ShrinkerVersionTest {
         "main (build 1234567)" to "9999.0.0-dev", // Special value representing R8 "main" version (b/374032642)
       )
       .onEach { (input, output) -> assertThat(ShrinkerVersion.parse(input).asString()).isEqualTo(output) }
+  }
+
+  @Test
+  fun testDefaultR8Version() {
+    assertThat(ShrinkerVersion.R8).isEqualTo(ShrinkerVersion.parse(R8Version.VERSION_AGP_WAS_SHIPPED_WITH))
   }
 }

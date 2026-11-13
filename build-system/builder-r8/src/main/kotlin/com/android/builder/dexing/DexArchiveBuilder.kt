@@ -45,13 +45,4 @@ abstract class DexArchiveBuilder {
     globalSyntheticsOutput: Path?,
     desugarGraphUpdater: DependencyGraphUpdater<File>? = null,
   )
-
-  companion object {
-
-    /** Creates an instance that is using d8 to convert class files to dex files. */
-    @JvmStatic
-    fun createD8DexBuilder(dexParams: DexParameters): DexArchiveBuilder {
-      return D8DexArchiveBuilder(dexParams)
-    }
-  }
 }

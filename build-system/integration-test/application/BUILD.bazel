@@ -2,7 +2,7 @@ load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/bazel:repo_map.bzl", "repo_map_properties")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_1_8_10", "KGP_1_9_22", "KGP_VERSION_FOR_TESTS")
-load("//tools/base/build-system/integration-test:integration-test.bzl", "gradle_integration_test", "single_gradle_integration_test", "single_gradle_integration_test_per_source")
+load("//tools/base/build-system/integration-test:integration-test.bzl", "gradle_integration_test", "single_gradle_integration_test_per_source")
 load("//tools/base/build-system/integration-test/connected:connected-test.bzl", "gradle_connected_test")
 
 #keep sorted
@@ -277,7 +277,6 @@ single_gradle_integration_test_per_source(
             "src/test/java/com/android/build/gradle/integration/application/JavaCompileWithToolChainTest.kt",
             "src/test/java/com/android/build/gradle/integration/application/ComposeHelloWorldTest.kt",
             "src/test/java/com/android/build/gradle/integration/compose/**",
-            "src/test/java/com/android/build/gradle/integration/api/R8VersionCheckTest.kt",
         ],
     ),
     data = AUTOMATIC_TEST_DATA,
@@ -1216,40 +1215,11 @@ gradle_integration_test(
     ],
 )
 
-single_gradle_integration_test(
-    name = "R8VersionCheckTest",
-    timeout = "long",
-    srcs = "src/test/java/com/android/build/gradle/integration/api/",
-    data = TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:android_gradle_plugin",
-    ],
-    maven_repos = [
-        "//tools/base/build-system:gradle-runtime-maven",
-        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
-        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
-        "//tools/base/build-system/integration-test:support_library_latest",
-        "//tools/base/build-system/integration-test/application:prebuilts",
-        "//tools/base/build-system/integration-test/application:older_version_of_r8",
-    ],
-    resources = glob(["src/test/resources/**"]),
-    deps = TEST_DEPS,
-)
-
 # The R8 version AGP was built with, for tests that set android.r8.versionOverride, which must not be older than that version.
 maven_repository(
     name = "r8_for_version_override",
     artifacts = [
         "@maven//:com.android.tools.r8",
-    ],
-    visibility = ["__subpackages__"],
-)
-
-maven_repository(
-    name = "older_version_of_r8",
-    # keep sorted
-    artifacts = [
-        "@maven//:com.android.tools.r8_8.2.47",
     ],
     visibility = ["__subpackages__"],
 )

@@ -19,7 +19,5 @@ package com.android.builder.dexing
 import com.android.tools.r8.Version
 
 object R8Version {
-  fun getVersionString(): String = Version.getVersionString()
-
   const val VERSION_AGP_WAS_SHIPPED_WITH = Version.LABEL
 }

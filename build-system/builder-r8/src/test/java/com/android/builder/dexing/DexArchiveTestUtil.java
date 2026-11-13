@@ -83,7 +83,7 @@ public final class DexArchiveTestUtil {
             }
 
             dexArchiveBuilder =
-                    DexArchiveBuilder.createD8DexBuilder(
+                    new D8DexArchiveBuilder(
                             new DexParameters(
                                     minSdkVersion, // minSdkVersion
                                     isDebuggable, // debuggable
@@ -219,7 +219,7 @@ public final class DexArchiveTestUtil {
                 "Library files must be set if and only if legacy multidex is enabled.");
 
         DexArchiveMerger merger =
-                DexArchiveMerger.createD8DexMerger(
+                new D8DexArchiveMerger(
                         new NoOpMessageReceiver(),
                         dexingType,
                         1,

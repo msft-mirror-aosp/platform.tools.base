@@ -28,7 +28,7 @@ data class ShrinkerVersion(private val version: Version) : Serializable, Compara
 
   companion object {
 
-    val R8 by lazy { parse(R8Version.getVersionString()) }
+    val R8 by lazy { parse(R8Version.VERSION_AGP_WAS_SHIPPED_WITH) }
 
     // Special value representing R8 "main" version (b/374032642)
     private const val R8_MAIN_VERSION = "9999.0.0-dev"

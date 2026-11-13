@@ -18,7 +18,6 @@ com.android.build.gradle.integration.api.GetRuntimeSymbolListTest
 com.android.build.gradle.integration.api.LibraryAllClassesAccessTest
 com.android.build.gradle.integration.api.ListenToApiTest
 com.android.build.gradle.integration.api.ModuleClassesAccessTest
-com.android.build.gradle.integration.api.R8VersionCheckTest
 com.android.build.gradle.integration.api.SdkComponentsTest
 com.android.build.gradle.integration.api.TransformApplicationAssetsTest
 com.android.build.gradle.integration.api.TransformMergedManifestTest

@@ -25,8 +25,8 @@ import java.util.concurrent.ExecutorService
 /**
  * Entry points into R8 that AGP can call across the isolated R8 ClassLoader boundary.
  *
- * This interface is loaded by AGP's own ClassLoader (see `R8ClassloaderBuildService`), while its implementation may be loaded next to a
- * different R8 version in the isolated ClassLoader. It must therefore only use types that come from AGP's ClassLoader: JDK types,
+ * This interface is loaded by AGP's own ClassLoader (see `R8ClassloaderBuildService`), while its implementation is loaded next to the
+ * Maven-resolved R8 in the isolated ClassLoader. It must therefore only use types that come from AGP's ClassLoader: JDK types,
  * [MessageReceiver], and the R8-free config types such as [ToolConfig]. It must not reference `com.android.tools.r8.*`.
  */
 interface R8Tools {
@@ -114,7 +114,7 @@ interface R8Tools {
     useNoOpGlobalSyntheticsConsumer: Boolean,
   ): DexArchiveBuilder
 
-  /** Creates a D8 [DexArchiveMerger]. Same parameters as DexArchiveMerger.createD8DexMerger. */
+  /** Creates a D8 [DexArchiveMerger]. */
   fun createD8DexMerger(
     messageReceiver: MessageReceiver,
     dexingType: DexingType,

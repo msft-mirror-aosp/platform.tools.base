@@ -27,8 +27,8 @@ import java.util.concurrent.ExecutorService
 /**
  * [R8Tools] implementation that calls R8 directly.
  *
- * It runs whichever R8 its ClassLoader sees: the R8 bundled with AGP when loaded by AGP's ClassLoader, or a Maven-resolved R8 when loaded
- * child-first by the isolated R8 ClassLoader. It is created reflectively by name, so it needs a public no-arg constructor.
+ * It is loaded child-first by the isolated R8 ClassLoader so that it links against the Maven-resolved R8 in that ClassLoader. It is created
+ * reflectively by name, so it needs a public no-arg constructor.
  */
 class R8ToolsImpl : R8Tools {
   override fun runR8(
@@ -151,8 +151,6 @@ class R8ToolsImpl : R8Tools {
     messageReceiver: MessageReceiver,
     useNoOpGlobalSyntheticsConsumer: Boolean,
   ): DexArchiveBuilder =
-    // Not DexArchiveBuilder.createD8DexBuilder: DexArchiveBuilder is loaded by AGP's ClassLoader, so its factory would create AGP's own
-    // D8DexArchiveBuilder, which can't take the DexParameters from this ClassLoader.
     D8DexArchiveBuilder(
       DexParameters(
         minSdkVersion = minSdkVersion,
@@ -174,10 +172,7 @@ class R8ToolsImpl : R8Tools {
     minSdkVersion: Int,
     isDebuggable: Boolean,
     d8ExecutorService: ExecutorService,
-  ): DexArchiveMerger =
-    // Not DexArchiveMerger.createD8DexMerger: DexArchiveMerger is loaded by AGP's ClassLoader, so its factory would create AGP's own
-    // D8DexArchiveMerger, which runs the R8 bundled with AGP.
-    D8DexArchiveMerger(messageReceiver, dexingType, minSdkVersion, isDebuggable, d8ExecutorService)
+  ): DexArchiveMerger = D8DexArchiveMerger(messageReceiver, dexingType, minSdkVersion, isDebuggable, d8ExecutorService)
 
   override fun generateMainDexList(
     mainDexRules: List<String>,

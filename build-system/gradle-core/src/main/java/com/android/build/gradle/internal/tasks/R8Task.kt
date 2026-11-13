@@ -21,7 +21,6 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.build.gradle.internal.dexing.withR8ClassLoader
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -246,16 +245,6 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
         }
       }
     }
-
-    val logger = LoggerWrapper.getLogger(R8Task::class.java)
-    logger.info(
-      """
-                |R8 is a new Android code shrinker. If you experience any issues, please file a bug at
-                |https://issuetracker.google.com, using 'Shrinker (R8)' as component name.
-                |Current version is: ${ShrinkerVersion.R8.asString()}.
-                |"""
-        .trimMargin()
-    )
 
     // If inputArtProfile exists but artProfileRewriting is false, we need to copy it over
     // to outputArtProfile.

@@ -69,8 +69,6 @@ class R8ClassloaderBuildServiceTest {
       // The D8 dex builder and the types AGP passes to it or catches from it.
       assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveBuilder"))
         .isSameInstanceAs(com.android.builder.dexing.DexArchiveBuilder::class.java)
-      assertThat(classLoader.loadClass("com.android.builder.dexing.DexArchiveBuilder\$Companion"))
-        .isSameInstanceAs(com.android.builder.dexing.DexArchiveBuilder.Companion::class.java)
       assertThat(classLoader.loadClass("com.android.builder.dexing.ClassFileEntry"))
         .isSameInstanceAs(com.android.builder.dexing.ClassFileEntry::class.java)
       assertThat(classLoader.loadClass("com.android.builder.dexing.ClassFileInput"))

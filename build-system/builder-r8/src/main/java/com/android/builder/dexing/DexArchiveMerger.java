@@ -2,31 +2,17 @@ package com.android.builder.dexing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.blame.MessageReceiver;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 /**
  * A dex archive merger that can merge dex files from multiple dex archives into one or more dex
  * files.
  */
 public interface DexArchiveMerger {
-
-    /** Creates an instance of dex archive merger that is using d8 to merge dex files. */
-    @NonNull
-    static DexArchiveMerger createD8DexMerger(
-            @NonNull MessageReceiver messageReceiver,
-            @NonNull DexingType dexingType,
-            int minSdkVersion,
-            boolean isDebuggable,
-            @NonNull ExecutorService d8ExecutorService) {
-        return new D8DexArchiveMerger(
-                messageReceiver, dexingType, minSdkVersion, isDebuggable, d8ExecutorService);
-    }
 
     /**
      * Merges the specified dex archive entries into one or more dex files under the specified

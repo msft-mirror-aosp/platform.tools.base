@@ -128,7 +128,6 @@ import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
-import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
 import com.android.build.gradle.internal.tasks.creationconfig.GenerateResValuesCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.createDexMergingCreationConfig
@@ -1267,7 +1266,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     if (creationConfig.componentType.isDynamicFeature) {
       taskFactory.register(FeatureDexMergeTask.CreationAction(creationConfig))
     }
-    checkIfR8VersionMatches(creationConfig.services.issueReporter, creationConfig.services.r8FromMaven.version)
     createDexTasks(creationConfig, creationConfig.dexing.dexingType)
   }
 
