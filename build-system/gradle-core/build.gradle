@@ -182,8 +182,8 @@ dependencies {
             reject("(,${libs.versions.kotlin.get()})")
         }
         because("AGP requires Kotlin Gradle plugin ${libs.versions.kotlin.get()} or newer. "
-                + "Run './gradlew buildEnvironment' to find the plugin that requests an older version, "
-                + "then upgrade that plugin or declare a newer Kotlin Gradle plugin version.")
+                + "Check the other 'Dependency path' and 'Constraint path' lines in this error to find what requests an older version, "
+                + "then upgrade it or declare a newer Kotlin Gradle plugin version.")
     }
     implementation libs.protobuf
     implementation libs.protobuf.util

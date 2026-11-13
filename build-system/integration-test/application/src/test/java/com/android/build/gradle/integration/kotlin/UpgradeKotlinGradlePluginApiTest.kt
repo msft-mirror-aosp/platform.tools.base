@@ -150,6 +150,11 @@ class UpgradeKotlinGradlePluginApiTest {
 
     val result = build.executor.expectFailure().run(":app:assembleDebug")
     result.assertErrorContains("AGP requires Kotlin Gradle plugin $MINIMUM_BUILT_IN_KOTLIN_VERSION or newer.")
-    result.assertErrorContains("Run './gradlew buildEnvironment' to find the plugin that requests an older version")
+    result.assertErrorContains(
+      "Check the other 'Dependency path' and 'Constraint path' lines in this error to find what requests an older version, " +
+        "then upgrade it or declare a newer Kotlin Gradle plugin version."
+    )
+    result.assertErrorContains("Dependency path:")
+    result.assertErrorContains("Constraint path:")
   }
 }

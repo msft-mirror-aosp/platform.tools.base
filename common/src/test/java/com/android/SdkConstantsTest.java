@@ -27,6 +27,8 @@ import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -60,6 +62,8 @@ public class SdkConstantsTest {
         String buildToolsMinimum = property.getProperty("build_tools_minimum");
         String ndkDefault = property.getProperty("ndk_default");
         String maxSupportedAndroidVersion = property.getProperty("max_supported_android_version");
+        String kgpMinimum = property.getProperty("kgp_minimum");
+        String kgpDefault = property.getProperty("kgp_default");
 
         Path propertyFilePath = dir.resolve("supported-versions.properties");
 
@@ -92,6 +96,17 @@ public class SdkConstantsTest {
                     property.get("max_supported_android_version"),
                     propertyFilePath);
         }
+        assertVersionConsistency(
+                kgpMinimum,
+                TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION,
+                "kgp_minimum",
+                propertyFilePath);
+        assertVersionConsistency(
+                kgpDefault, TestUtils.BUILT_IN_KOTLIN_VERSION, "kgp_default", propertyFilePath);
+        Truth.assertThat(property.getProperty("kgp_name")).isEqualTo("Kotlin Gradle plugin (KGP)");
+        Truth.assertThat(property.getProperty("kgp_notes")).isNotEmpty();
+        Truth.assertThat(Files.readString(propertyFilePath, StandardCharsets.ISO_8859_1))
+                .doesNotContain("\\");
     }
 
     private void assertVersionConsistency(
