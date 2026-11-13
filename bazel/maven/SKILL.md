@@ -68,8 +68,10 @@ bazel run //tools/base/bazel:local_maven_repository_generator
 ```
 
 > [!WARNING]
-> **Cleaning up unused dependencies (`maven_clean.sh`)**: As noted in [`README.md`](file:///usr/local/google/home/hmehmed/studio-main/tools/base/bazel/README.md), if you remove or modify artifact lists, you may run `tools/base/bazel/maven/maven_clean.sh` before `maven_fetch.sh` to clean up orphaned prebuilts.
-> **Important**: If you run `maven_clean.sh`, you **must** follow it up with `maven_fetch.sh`. This is crucial because `maven_clean.sh` can be overly aggressive and remove an entire dependency if it considers the JAR artifact to be orphaned, even when the associated `sources` artifact is still explicitly required in `DATA` or `ARTIFACTS`.
+> **Cleaning up unused dependencies (`maven_clean.sh`)**: As noted in [`README.md`](file:///usr/local/google/home/hmehmed/studio-main/tools/base/bazel/README.md), if you remove or modify artifact lists, you may run `tools/base/bazel/maven/maven_clean.sh [--dry-run]` before `maven_fetch.sh` to clean up orphaned prebuilts (while preserving ancestor `LICENSE`, `NOTICE`, and `OWNERS` files).
+> - To also prune unreferenced entries and align shadowed pins in `artifacts.bzl` and `data.bzl` (respecting Bazel `@maven` reachability, `//prebuilts/tools/common/m2:BUILD`, Bzlmod modules, Gradle `libs.versions.toml`/build scripts, Lume, Studio lint plugin, and ASwB test projects), regenerate `BUILD.maven`, and remove newly orphaned prebuilts, run:
+>   `tools/base/bazel/maven/maven_clean.sh --prune-bzl [--dry-run]`
+> - **Important**: If you run `maven_clean.sh`, you **must** follow it up with `maven_fetch.sh` (pass `<<< "n"` if running non-interactively so its `BUILD.maven` diff prompt does not read EOF). This is crucial because `maven_clean.sh` can be overly aggressive and remove an entire dependency if it considers the JAR artifact to be orphaned, even when the associated `sources` artifact is still explicitly required in `DATA` or `ARTIFACTS`.
 
 What `local_maven_repository_generator` does:
 - Resolves all coordinates listed in `artifacts.bzl` (`ARTIFACTS`) plus test data fixtures (`DATA`).
