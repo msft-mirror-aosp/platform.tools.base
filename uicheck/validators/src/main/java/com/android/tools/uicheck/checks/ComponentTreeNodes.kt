@@ -68,3 +68,22 @@ private fun ComponentTreeNode.isViewTextField(): Boolean = simpleComponentName()
 
 /** Returns true if this Composable node represents a text field or exposes a `SetText` semantic action. */
 private fun ComponentTreeNode.isComposeTextField(): Boolean = simpleComponentName() in COMPOSE_TEXT_FIELD_NAMES || hasAction("SetText")
+
+/** Returns true if this node is a text component in either a classic Android `View` (XML) or Compose hierarchy. */
+internal fun ComponentTreeNode.isTextComponent(): Boolean = if (isViewNode()) isViewText() else isComposeText()
+
+/**
+ * Returns true if this classic Android `View` node is a `TextView` or a leaf view displaying non-empty text (excluding buttons and text
+ * fields).
+ */
+private fun ComponentTreeNode.isViewText(): Boolean =
+  simpleComponentName() in VIEW_TEXT_NAMES ||
+    (children.isNullOrEmpty() && !semantics?.get("text").isNullOrEmpty() && !isTextFieldComponent() && !isButtonComponent())
+
+/**
+ * Returns true if this Composable node is an explicit `Text` widget or a leaf node displaying non-empty text (excluding buttons, text
+ * fields, and merged parent containers such as `Card` or `ListItem` whose `semantics["text"]` comes from child text nodes).
+ */
+private fun ComponentTreeNode.isComposeText(): Boolean =
+  simpleComponentName() in COMPOSE_TEXT_NAMES ||
+    (children.isNullOrEmpty() && !semantics?.get("text").isNullOrEmpty() && !isTextFieldComponent() && !isButtonComponent())

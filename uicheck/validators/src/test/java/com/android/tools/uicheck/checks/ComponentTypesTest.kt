@@ -22,7 +22,7 @@ import org.junit.Test
 
 class ComponentTypesTest {
 
-  /** Verifies Compose and View button, text field, and container constant sets and non-wide button exclusions. */
+  /** Verifies Compose and View button, text field, text, and container constant sets and non-wide button exclusions. */
   @Test
   fun verifiesComponentTypeConstants() {
     assertTrue("Button" in COMPOSE_BUTTON_NAMES)
@@ -34,6 +34,8 @@ class ComponentTypesTest {
     assertTrue("SecureTextField" in COMPOSE_TEXT_FIELD_NAMES)
     assertTrue("BasicSecureTextField" in COMPOSE_TEXT_FIELD_NAMES)
     assertTrue("TextInputEditText" in VIEW_TEXT_FIELD_NAMES)
+    assertTrue("Text" in COMPOSE_TEXT_NAMES)
+    assertTrue("TextView" in VIEW_TEXT_NAMES)
     assertTrue("Box" in COMPOSE_CONTAINER_NAMES)
     assertFalse("Button" in COMPOSE_NON_WIDE_BUTTON_NAMES)
   }

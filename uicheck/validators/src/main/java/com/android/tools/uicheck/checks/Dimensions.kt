@@ -29,3 +29,6 @@ internal fun Int.pxToDp(densityDpi: Int): Int {
   val dpi = densityDpi.coerceAtLeast(1)
   return (this * MDPI_DENSITY_DPI.toFloat() / dpi).roundToInt()
 }
+
+/** Converts this fractional density-independent pixel value to unrounded pixels at [densityDpi]. */
+internal fun Float.dpToPx(densityDpi: Int): Float = this * (densityDpi.coerceAtLeast(1).toFloat() / MDPI_DENSITY_DPI)

@@ -21,9 +21,9 @@ import org.junit.Test
 
 class DimensionsTest {
 
-  /** Verifies nearest-integer rounding and non-positive density guards in [pxToDp]. */
+  /** Verifies nearest-integer rounding in [pxToDp], fractional conversion in [dpToPx], and non-positive density guards. */
   @Test
-  fun convertsPxToDpWithRoundingAndSafeDensity() {
+  fun convertsBetweenPxAndDpWithSafeDensity() {
     // 125px at 420dpi is 47.619dp and rounds to 48dp rather than truncating to 47dp.
     assertEquals(48, 125.pxToDp(420))
     assertEquals(48, 126.pxToDp(420))
@@ -31,5 +31,7 @@ class DimensionsTest {
     assertEquals(321, 481.pxToDp(240))
     assertEquals(601, 1201.pxToDp(320))
     assertEquals(160, 1.pxToDp(0))
+    assertEquals(30.0f, 20.0f.dpToPx(240), 0.001f)
+    assertEquals(0.125f, 20.0f.dpToPx(0), 0.001f)
   }
 }

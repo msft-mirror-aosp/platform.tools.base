@@ -30,6 +30,7 @@ object UiCheckAnalyzer {
       TextFieldSizeCheck,
       BottomNavCheck,
       BottomAppBarCheck,
+      LongTextCheck,
     )
 
   /**

@@ -44,4 +44,24 @@ class ComponentTreeNodesTest {
     assertEquals("Text (label)", node("Text", bounds(0, 0, 100, 20), semantics = mapOf("id" to "label")).nameWithId())
     assertEquals("Button (submit_btn)", node("Button", bounds(0, 0, 100, 48), parameters = mapOf("id" to "submit_btn")).nameWithId())
   }
+
+  /** Verifies text component classification across Compose, classic Views, and semantic text leaves. */
+  @Test
+  fun classifiesTextComponents() {
+    assertTrue(node("Text", bounds(0, 0, 100, 20)).isTextComponent())
+    assertTrue(node("android.widget.TextView", bounds(0, 0, 100, 20)).isTextComponent())
+    assertTrue(node("CustomText", bounds(0, 0, 100, 20), semantics = mapOf("text" to "Hello")).isTextComponent())
+    assertFalse(node("Button", bounds(0, 0, 100, 20), semantics = mapOf("text" to "Click")).isTextComponent())
+    assertFalse(
+      node(
+          "Card",
+          bounds(0, 0, 100, 40),
+          semantics = mapOf("text" to "Hello"),
+          children = listOf(node("Text", bounds(0, 0, 100, 20))),
+        )
+        .isTextComponent()
+    )
+    assertFalse(node("TextField", bounds(0, 0, 200, 56), semantics = mapOf("text" to "Input")).isTextComponent())
+    assertFalse(node("android.widget.EditText", bounds(0, 0, 200, 56), semantics = mapOf("text" to "Input")).isTextComponent())
+  }
 }

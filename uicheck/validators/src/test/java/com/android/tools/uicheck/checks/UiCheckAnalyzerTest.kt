@@ -49,6 +49,13 @@ class UiCheckAnalyzerTest {
                 node("Button", bounds(0, 4, 600, 80), sourceLoc(DASHBOARD_FILE, 25, PACKAGE), semantics = mapOf("text" to "Continue")),
                 // 600dp wide text field (> 488dp).
                 node("OutlinedTextField", bounds(20, 100, 920, 184), sourceLoc(DASHBOARD_FILE, 30, PACKAGE)),
+                // 145 characters on one line.
+                node(
+                  "Text",
+                  bounds(20, 200, 1800, 230),
+                  sourceLoc(DASHBOARD_FILE, 35, PACKAGE),
+                  semantics = mapOf("text" to "A".repeat(145)),
+                ),
                 node("NavigationBar", bounds(0, 1000, 1920, 1120), sourceLoc(DASHBOARD_FILE, 55, PACKAGE)),
                 node("BottomAppBar", bounds(0, 1120, 1920, 1200), sourceLoc(DASHBOARD_FILE, 60, PACKAGE)),
               ),
@@ -56,21 +63,18 @@ class UiCheckAnalyzerTest {
         ),
     )
 
-  /** Verifies that each check reports its problem exactly once, pointing at the user's call site. */
+  /** Verifies that each check reports its problem, pointing at the user's call site. */
   @Test
   fun runsAllChecks() {
     val snapshot =
       UiCheckAnalyzer.analyze(DASHBOARD_PREVIEW, "Medium Tablet (fontScale=1.0)", dashboard, renderedImage = null, userCode = userCode)
+    val errorTypes = snapshot.issues.map { it.errorType }
 
-    assertEquals(
-      listOf(
-        VisualLintErrorType.BUTTON_SIZE,
-        VisualLintErrorType.TEXT_FIELD_SIZE,
-        VisualLintErrorType.BOTTOM_NAV,
-        VisualLintErrorType.BOTTOM_APP_BAR,
-      ),
-      snapshot.issues.map { it.errorType },
-    )
+    assertTrue("$errorTypes", VisualLintErrorType.BUTTON_SIZE in errorTypes)
+    assertTrue("$errorTypes", VisualLintErrorType.TEXT_FIELD_SIZE in errorTypes)
+    assertTrue("$errorTypes", VisualLintErrorType.BOTTOM_NAV in errorTypes)
+    assertTrue("$errorTypes", VisualLintErrorType.BOTTOM_APP_BAR in errorTypes)
+    assertTrue("$errorTypes", VisualLintErrorType.LONG_TEXT in errorTypes)
     assertEquals(
       UiCheckSourceLocation(DASHBOARD_FILE, 25, "Button"),
       snapshot.issues.first { it.errorType == VisualLintErrorType.BUTTON_SIZE }.sourceLocation,

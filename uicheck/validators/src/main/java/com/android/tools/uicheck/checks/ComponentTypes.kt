@@ -103,6 +103,19 @@ internal val COMPOSE_NON_WIDE_BUTTON_NAMES =
       "LeadingIconTab",
     )
 
+internal val COMPOSE_TEXT_NAMES =
+  setOf(
+    "Text",
+    "BasicText",
+  )
+
+internal val VIEW_TEXT_NAMES =
+  setOf(
+    "TextView",
+    "AppCompatTextView",
+    "MaterialTextView",
+  )
+
 internal val COMPOSE_TEXT_FIELD_NAMES =
   setOf(
     "TextField",
