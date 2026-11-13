@@ -611,5 +611,22 @@ TEST(InstrumenterTest, InstanceMethodsOfValueClassAreNotReported) {
   EXPECT_EQ(InstrumentedMethod("toString", kMetersClass), nullptr);
 }
 
+TEST(InstrumenterTest, MethodOfSyntheticClassIsNotReported) {
+  // Kotlin compiles the reference to a property into a synthetic class, whose
+  // get() calls the getter of the property.
+  constexpr char kReferenceClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$nameOf$1;";
+  ASSERT_TRUE(HasClass(kReferenceClass));
+  EXPECT_EQ(InstrumentedMethod("get", kReferenceClass), nullptr);
+}
+
+TEST(InstrumenterTest, MethodOfJavaSyntheticClassIsNotReported) {
+  // javac fills the table of the switch on TimeUnit in the static initializer
+  // of a synthetic class.
+  constexpr char kSwitchMapClass[] = "Lcom/example/InstrumenterTestTarget$1;";
+  ASSERT_TRUE(HasClass(kSwitchMapClass));
+  EXPECT_EQ(InstrumentedMethod("<clinit>", kSwitchMapClass), nullptr);
+}
+
 }  // namespace
 }  // namespace coverage

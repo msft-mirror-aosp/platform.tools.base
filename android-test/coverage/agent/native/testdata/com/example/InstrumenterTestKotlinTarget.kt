@@ -167,4 +167,8 @@ class InstrumenterTestKotlinTarget {
   value class Meters(val value: Int) {
     override fun toString(): String = "$value m"
   }
+
+  // Kotlin compiles the reference to the property into a synthetic class whose
+  // get() reads the property.
+  val nameOf: (Node) -> String? = Node::name
 }

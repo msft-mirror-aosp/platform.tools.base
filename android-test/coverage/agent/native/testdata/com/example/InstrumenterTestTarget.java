@@ -107,4 +107,17 @@ class InstrumenterTestTarget {
     static synchronized void synchronizedMethod() {
         user();
     }
+
+    // For an enum that another compilation unit declares, such as TimeUnit,
+    // javac puts the table that maps its constants to the cases of the switch
+    // into the synthetic class InstrumenterTestTarget$1, whose static
+    // initializer fills it on the line of the switch.
+    static int unitCode(java.util.concurrent.TimeUnit unit) {
+        switch (unit) {
+            case SECONDS:
+                return 1;
+            default:
+                return 0;
+        }
+    }
 }
