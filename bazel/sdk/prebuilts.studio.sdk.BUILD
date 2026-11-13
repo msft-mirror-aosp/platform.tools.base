@@ -11,7 +11,15 @@ filegroup(
 
 filegroup(
     name = "build-tools/latest",
-    srcs = [":build-tools/36.0.0"],
+    srcs = [":build-tools/37.0.0"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "build-tools/37.0.0",
+    srcs = glob(
+        include = ["*/build-tools/37.0.0/**"],
+    ),
     visibility = ["//visibility:public"],
 )
 

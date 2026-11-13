@@ -157,7 +157,7 @@ class CustomAndroidSdkRule : ExternalResource() {
    * available versions for download (and therefore require the underlying bazel rules to change what target is available).
    */
   private fun setupTopLevelRepository() {
-    val repositoryXml = File(customSdkRepo, "repository2-3.xml")
+    val repositoryXml = File(customSdkRepo, "repository2-4.xml")
     val repositoryXmlContents =
       """
       <?xml version="1.0" ?>

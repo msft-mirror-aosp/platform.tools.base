@@ -183,6 +183,7 @@ kotlin_test(
         ":runtime_test_dependencies",
         "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//prebuilts/studio/sdk:add-ons/addon-google_apis-google-latest",
+        "//prebuilts/studio/sdk:build-tools/37.0.0",
         "//prebuilts/studio/sdk:build-tools/latest",
         "//prebuilts/studio/sdk:platform-tools",
         "//prebuilts/studio/sdk:platforms/android-24",

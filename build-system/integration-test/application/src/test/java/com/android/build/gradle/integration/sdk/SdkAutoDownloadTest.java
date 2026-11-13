@@ -148,7 +148,7 @@ public class SdkAutoDownloadTest {
                                 + "<common:site-list xmlns:common=\"http://schemas.android.com/repository/android/sites-common/1\" xmlns:sdk=\"http://schemas.android.com/sdk/android/addons-list/5\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                                 + "\t<site xsi:type=\"sdk:addonSiteType\">\n"
                                 + "\t\t<displayName>Google Inc.</displayName>\n"
-                                + "\t\t<url>addon2-3.xml</url>\n"
+                                + "\t\t<url>addon2-4.xml</url>\n"
                                 + "\t</site>\n"
                                 + "</common:site-list>")
                         .getBytes(StandardCharsets.UTF_8));
