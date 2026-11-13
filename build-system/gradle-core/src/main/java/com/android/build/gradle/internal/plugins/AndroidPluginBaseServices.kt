@@ -114,7 +114,7 @@ abstract class AndroidPluginBaseServices(
         project.extensions.extraProperties,
         { name: String -> project.tasks.register(name) },
         project.pluginManager,
-        r8FromMaven = R8FromMaven.create(project, projectOptions::get),
+        r8FromMaven = R8FromMaven.create(project, projectOptions::get, settingsExtension?.r8?.version),
       )
     }
   }

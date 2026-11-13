@@ -16,15 +16,17 @@
 
 package com.android.build.gradle.integration.r8
 
+import com.android.build.gradle.integration.common.fixture.LoggingLevel
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.StringOption
 import com.android.builder.dexing.R8Version
 import com.android.testutils.ZipContents
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -40,53 +42,10 @@ class R8FromMavenIntegrationTest {
       androidApplication {}
     }
 
-  @Before
-  fun setUp() {
-    val build = rule.build
-    build.androidApplication().files.update("build.gradle.kts") {
-      append(
-        """
-
-        abstract class VerifyR8Task : DefaultTask() {
-            @get:InputFiles
-            abstract val r8Classpath: Property<FileCollection>
-
-            @get:Input
-            abstract val expectedVersion: Property<String>
-
-            @TaskAction
-            fun execute() {
-                val files = r8Classpath.get().files
-                if (files.isEmpty()) {
-                    throw GradleException("R8 classpath resolved no files")
-                }
-                val version = expectedVersion.get()
-                val r8Jar = files.find { it.name.startsWith("r8") && it.name.endsWith(".jar") }
-                    ?: throw GradleException("R8 jar not found in resolved files: " + files.map { it.name })
-
-                if (!r8Jar.name.contains(version) && r8Jar.name != "r8.jar") {
-                    throw GradleException("Resolved jar '" + r8Jar.name + "' does not match expected version '" + version + "'")
-                }
-            }
-        }
-
-        val r8FromMaven = com.android.build.gradle.internal.r8.R8FromMaven.create(project) { option ->
-            providers.gradleProperty(option.propertyName).orNull
-        }
-
-        tasks.register<VerifyR8Task>("verifyR8Resolution") {
-            this.r8Classpath.set(r8FromMaven.r8Classpath)
-            this.expectedVersion.set(r8FromMaven.version)
-        }
-        """
-          .trimIndent()
-      )
-    }
-  }
-
   @Test
   fun testR8VersionOverrideResolution() {
     val build = rule.build
+    build.addVerifyR8ResolutionTask()
     val overrideVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
 
     val result = build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run("verifyR8Resolution")
@@ -97,6 +56,7 @@ class R8FromMavenIntegrationTest {
   @Test
   fun testInvalidR8VersionFailsResolution() {
     val build = rule.build
+    build.addVerifyR8ResolutionTask()
     val nonExistentVersion = "999.999.0-nonexistent"
 
     val result = build.executor.expectFailure().with(StringOption.R8_VERSION_OVERRIDE, nonExistentVersion).run("verifyR8Resolution")
@@ -112,8 +72,8 @@ class R8FromMavenIntegrationTest {
     val result = build.executor.expectFailure().with(StringOption.R8_VERSION_OVERRIDE, "8.2.47").run("help")
 
     result.assertErrorContains(
-      "android.r8.versionOverride=8.2.47 is older than R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}, the minimum R8 version supported by " +
-        "this version of the Android Gradle Plugin."
+      "Gradle property android.r8.versionOverride=8.2.47 is older than R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}, the minimum R8 " +
+        "version supported by this version of the Android Gradle Plugin."
     )
   }
 
@@ -139,9 +99,115 @@ class R8FromMavenIntegrationTest {
       )
     }
 
-    val result = build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":app:minifyReleaseWithR8")
+    val result =
+      build.executor
+        .withLoggingLevel(LoggingLevel.INFO)
+        .with(StringOption.R8_VERSION_OVERRIDE, overrideVersion)
+        .run(":app:minifyReleaseWithR8")
 
     assertThat(result.didWorkTasks).contains(":app:minifyReleaseWithR8")
+    result.assertOutputContains("Using custom R8 version $overrideVersion")
+  }
+
+  @Test
+  fun testR8OptimizationWithSettingsDslVersionOverride() {
+    val build = rule.build
+    val overrideVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
+
+    build.reconfigureSettings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { r8 { version = overrideVersion } }
+    }
+
+    build.androidApplication().files.update("build.gradle.kts") {
+      append(
+        """
+
+        android {
+            buildTypes {
+                release {
+                    isMinifyEnabled = true
+                    proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                }
+            }
+        }
+
+        tasks.withType<com.android.build.gradle.internal.tasks.R8Task>().configureEach {
+            val r8Files = r8Classpath
+            doFirst {
+                println("${'$'}name r8Classpath: " + r8Files.files.map { it.name })
+            }
+        }
+        """
+          .trimIndent()
+      )
+    }
+
+    val result = build.executor.withLoggingLevel(LoggingLevel.INFO).run(":app:minifyReleaseWithR8")
+
+    assertThat(result.didWorkTasks).contains(":app:minifyReleaseWithR8")
+    result.assertOutputContains("Using custom R8 version $overrideVersion")
+    result.assertOutputContains("minifyReleaseWithR8 r8Classpath: [r8-$overrideVersion.jar")
+
+    val mappingFile = build.androidApplication().buildDir.resolve("outputs/mapping/release/mapping.txt")
+    assertThat(mappingFile).exists()
+    val mappingContent = mappingFile.toFile().readText()
+    assertThat(mappingContent).contains("# compiler: R8")
+    assertThat(mappingContent).contains("# compiler_version: $overrideVersion")
+  }
+
+  @Test
+  fun testSettingsDslVersionTakesPrecedenceOverGradleProperty() {
+    val build = rule.build
+    val settingsVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
+    val propertyVersion = "999.999.0-nonexistent"
+
+    build.reconfigureSettings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { r8 { version = settingsVersion } }
+    }
+
+    // dexBuilderDebug runs D8 from the resolved R8, so it would fail to resolve propertyVersion if the Gradle property were used.
+    val result =
+      build.executor.withLoggingLevel(LoggingLevel.INFO).with(StringOption.R8_VERSION_OVERRIDE, propertyVersion).run(":app:dexBuilderDebug")
+
+    assertThat(result.didWorkTasks).contains(":app:dexBuilderDebug")
+    result.assertOutputContains("Using custom R8 version $settingsVersion")
+    result.assertOutputDoesNotContain("Using custom R8 version $propertyVersion")
+  }
+
+  @Test
+  fun testR8SettingsDslVersionOverrideFromGroovySettings() {
+    val overrideVersion = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
+    // A Groovy settings file calls the Action overload of r8 { }, unlike the Kotlin DSL used by the other tests.
+    val build = rule.build {
+      buildFileType = BuildFileType.GROOVY
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android { r8 { version = overrideVersion } }
+      }
+    }
+
+    val result = build.executor.withLoggingLevel(LoggingLevel.INFO).run("help")
+
+    result.assertOutputContains("Using custom R8 version $overrideVersion")
+  }
+
+  @Test
+  fun testR8SettingsDslVersionOverrideOlderThanMinimumFails() {
+    val build = rule.build
+
+    build.reconfigureSettings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { r8 { version = "8.2.47" } }
+    }
+
+    val result = build.executor.expectFailure().run("help")
+
+    result.assertErrorContains(
+      "android { r8 { version = \"8.2.47\" } } in settings.gradle is older than R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}, the " +
+        "minimum R8 version supported by this version of the Android Gradle Plugin."
+    )
   }
 
   @Test
@@ -252,5 +318,48 @@ class R8FromMavenIntegrationTest {
     // only resolves the FILTERED_PROGUARD_RULES artifact view (which uses the version string) and never runs R8.
     val overrideResult = build.executor.with(StringOption.R8_VERSION_OVERRIDE, "99.0.0").run(":app:printFilteredShrinkerRules")
     overrideResult.assertOutputContains("filtered shrinker rules: [from-99.pro]")
+  }
+
+  /** Adds a `verifyR8Resolution` task to `:app` that resolves R8 with [StringOption.R8_VERSION_OVERRIDE]. */
+  private fun GradleBuild.addVerifyR8ResolutionTask() {
+    androidApplication().files.update("build.gradle.kts") {
+      append(
+        """
+
+        abstract class VerifyR8Task : DefaultTask() {
+            @get:InputFiles
+            abstract val r8Classpath: Property<FileCollection>
+
+            @get:Input
+            abstract val expectedVersion: Property<String>
+
+            @TaskAction
+            fun execute() {
+                val files = r8Classpath.get().files
+                if (files.isEmpty()) {
+                    throw GradleException("R8 classpath resolved no files")
+                }
+                val version = expectedVersion.get()
+                val r8Jar = files.find { it.name.startsWith("r8") && it.name.endsWith(".jar") }
+                    ?: throw GradleException("R8 jar not found in resolved files: " + files.map { it.name })
+
+                if (!r8Jar.name.contains(version) && r8Jar.name != "r8.jar") {
+                    throw GradleException("Resolved jar '" + r8Jar.name + "' does not match expected version '" + version + "'")
+                }
+            }
+        }
+
+        val r8FromMaven = com.android.build.gradle.internal.r8.R8FromMaven.create(project) { option ->
+            providers.gradleProperty(option.propertyName).orNull
+        }
+
+        tasks.register<VerifyR8Task>("verifyR8Resolution") {
+            this.r8Classpath.set(r8FromMaven.r8Classpath)
+            this.expectedVersion.set(r8FromMaven.version)
+        }
+        """
+          .trimIndent()
+      )
+    }
   }
 }

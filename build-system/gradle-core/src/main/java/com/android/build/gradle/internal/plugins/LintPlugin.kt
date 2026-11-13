@@ -818,7 +818,8 @@ abstract class LintPlugin : Plugin<Project> {
         extraProperties = project.extensions.extraProperties,
         emptyTaskCreator = { name -> project.tasks.register(name) },
         project.pluginManager,
-        r8FromMaven = R8FromMaven.create(project, projectOptions::get),
+        // Standalone lint doesn't run R8.
+        r8FromMaven = R8FromMaven.withDefaultVersion(project),
       )
     projectOptions.allOptions.forEach { (option: Option<*>, value: Any) ->
       projectServices.deprecationReporter.reportOptionIssuesIfAny(option, value)

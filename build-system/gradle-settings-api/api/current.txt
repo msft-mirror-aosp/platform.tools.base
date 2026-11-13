@@ -34,10 +34,12 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public String? getMinSdkPreview();
     method @InaccessibleFromKotlin public String? getNdkPath();
     method @InaccessibleFromKotlin public String getNdkVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.SettingsR8 getR8();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public Integer? getTargetSdk();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getTargetSdkPreview();
     method public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
     method public void minSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void r8(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.SettingsR8,kotlin.Unit> action);
     method @InaccessibleFromKotlin public void setBuildToolsVersion(String);
     method @InaccessibleFromKotlin public void setCompileSdk(Integer?);
     method @InaccessibleFromKotlin public void setCompileSdkExtension(Integer?);
@@ -64,8 +66,15 @@ package com.android.build.api.dsl {
     property public abstract String? minSdkPreview;
     property public abstract String? ndkPath;
     property public abstract String ndkVersion;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.SettingsR8 r8;
     property @org.gradle.api.Incubating public abstract Integer? targetSdk;
     property @org.gradle.api.Incubating public abstract String? targetSdkPreview;
+  }
+
+  @org.gradle.api.Incubating public interface SettingsR8 {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setVersion(String?);
+    property @org.gradle.api.Incubating public abstract String? version;
   }
 
   public interface ToolOptions {

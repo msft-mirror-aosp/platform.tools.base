@@ -23,6 +23,7 @@ import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.dsl.SettingsExtension
+import com.android.build.api.dsl.SettingsR8
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
 import javax.inject.Inject
@@ -189,6 +190,16 @@ internal open class SettingsExtensionImpl @Inject constructor(private val object
 
   override fun lint(action: Lint.() -> Unit) {
     action.invoke(lint)
+  }
+
+  override val r8: SettingsR8 = objectFactory.newInstance(SettingsR8Impl::class.java)
+
+  fun r8(action: Action<SettingsR8>) {
+    action.execute(r8)
+  }
+
+  override fun r8(action: SettingsR8.() -> Unit) {
+    action.invoke(r8)
   }
 
   override var ndkVersion: String = SdkConstants.NDK_VERSION

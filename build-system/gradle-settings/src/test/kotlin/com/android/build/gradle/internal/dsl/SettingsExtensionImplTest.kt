@@ -20,6 +20,7 @@ import com.android.build.api.dsl.CompileSdkVersion
 import com.google.common.truth.ComparableSubject
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.gradle.api.Action
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -365,6 +366,24 @@ internal class SettingsExtensionImplTest {
         assertThat(first.compareTo(second) == 0).isEqualTo(first == second)
       }
     }
+  }
+
+  @Test
+  fun r8() {
+    assertThat(settings.r8.version).isNull()
+
+    settings.r8 { version = "8.5.35" }
+    assertThat(settings.r8.version).isEqualTo("8.5.35")
+
+    settings.r8.version = null
+    assertThat(settings.r8.version).isNull()
+
+    // The Action overload is the one Groovy build scripts call.
+    settings.r8(Action { it.version = "8.6.17" })
+    assertThat(settings.r8.version).isEqualTo("8.6.17")
+
+    settings.r8(Action { it.version = null })
+    assertThat(settings.r8.version).isNull()
   }
 
   private fun testCompileValues(

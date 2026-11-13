@@ -169,4 +169,10 @@ interface SettingsExtension {
    * logs a warning if a project ends up using another version, for example because `buildSrc` depends on it.
    */
   @get:Incubating @set:Incubating var kotlinGradlePluginVersion: String?
+
+  /** R8 options. */
+  @get:Incubating val r8: SettingsR8
+
+  /** Set R8 options. */
+  @Incubating fun r8(action: SettingsR8.() -> Unit)
 }

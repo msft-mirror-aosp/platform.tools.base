@@ -110,7 +110,8 @@ abstract class AssetPackBundlePlugin : Plugin<Project> {
         project.extensions.extraProperties,
         { name -> project.tasks.register(name) },
         project.pluginManager,
-        R8FromMaven.create(project, projectOptions::get),
+        // Asset pack bundles don't run R8.
+        R8FromMaven.withDefaultVersion(project),
       )
     registerServices(project, projectOptions)
 

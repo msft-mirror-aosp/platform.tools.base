@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.build.gradle.internal.dependency.configDirMatchesVersion
 import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.fixtures.ProjectFactory
+import com.android.build.gradle.internal.services.RunOnceBuildServiceImpl
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.StringOption
 import com.android.builder.dexing.R8Version
@@ -27,6 +28,7 @@ import com.google.common.truth.Truth.assertThat
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
@@ -100,17 +102,91 @@ class R8FromMavenTest {
   @Test
   fun testVersionOverrideOlderThanMinimumFails() {
     val olderVersion = "8.2.47"
-    val exception =
+    val optionException =
       assertThrows(InvalidUserDataException::class.java) {
         R8FromMaven.create(project) { option -> if (option == StringOption.R8_VERSION_OVERRIDE) olderVersion else null }
       }
-    assertThat(exception)
+    assertThat(optionException)
       .hasMessageThat()
       .isEqualTo(
-        "android.r8.versionOverride=8.2.47 is older than R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}, the minimum R8 version supported " +
-          "by this version of the Android Gradle Plugin. Remove the override or use version " +
+        "Gradle property android.r8.versionOverride=8.2.47 is older than R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}, the minimum R8 " +
+          "version supported by this version of the Android Gradle Plugin. Remove the override or use version " +
           "${R8Version.VERSION_AGP_WAS_SHIPPED_WITH} or newer."
       )
+
+    val settingsDslException = assertThrows(InvalidUserDataException::class.java) { R8FromMaven.create(project, { null }, olderVersion) }
+    assertThat(settingsDslException)
+      .hasMessageThat()
+      .isEqualTo(
+        "android { r8 { version = \"8.2.47\" } } in settings.gradle is older than R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}, the " +
+          "minimum R8 version supported by this version of the Android Gradle Plugin. Remove the override or use version " +
+          "${R8Version.VERSION_AGP_WAS_SHIPPED_WITH} or newer."
+      )
+  }
+
+  @Test
+  fun testSettingsVersionTakesPrecedenceOverGradleProperty() {
+    val settingsVersion = "10.4.0-settings"
+    val propertyVersion = "10.0.1-override"
+
+    val r8FromMaven =
+      R8FromMaven.create(project, { option -> if (option == StringOption.R8_VERSION_OVERRIDE) propertyVersion else null }, settingsVersion)
+
+    assertThat(r8FromMaven.version).isEqualTo(settingsVersion)
+    val configuration = r8FromMaven.r8Classpath as Configuration
+    assertThat(configuration.dependencies.single().version).isEqualTo(settingsVersion)
+  }
+
+  @Test
+  fun testWithDefaultVersion() {
+    val r8FromMaven = R8FromMaven.withDefaultVersion(project)
+
+    assertThat(r8FromMaven.version).isEqualTo(R8Version.VERSION_AGP_WAS_SHIPPED_WITH)
+    val configuration = r8FromMaven.r8Classpath as Configuration
+    assertThat(configuration.dependencies.single().version).isEqualTo(R8Version.VERSION_AGP_WAS_SHIPPED_WITH)
+  }
+
+  @Test
+  fun testBlankSettingsVersionIsNotSet() {
+    val propertyVersion = "10.0.1-override"
+
+    assertThat(R8FromMaven.create(project, { null }, " ").version).isEqualTo(R8Version.VERSION_AGP_WAS_SHIPPED_WITH)
+    assertThat(
+        R8FromMaven.create(project, { option -> if (option == StringOption.R8_VERSION_OVERRIDE) propertyVersion else null }, "").version
+      )
+      .isEqualTo(propertyVersion)
+    // Surrounding whitespace isn't part of the version.
+    assertThat(R8FromMaven.create(project, { null }, " 10.4.0-settings ").version).isEqualTo("10.4.0-settings")
+  }
+
+  @Test
+  fun testOnlyTheVersionInUseIsCheckedWhenBothAreSet() {
+    val olderVersion = "8.2.47"
+    val newerVersion = "99.0.0"
+
+    // An old Gradle property doesn't matter when settings.gradle sets a supported version.
+    R8FromMaven.create(project, { option -> if (option == StringOption.R8_VERSION_OVERRIDE) olderVersion else null }, newerVersion)
+
+    // An old settings.gradle version fails, and the message names settings.gradle rather than the Gradle property.
+    val exception =
+      assertThrows(InvalidUserDataException::class.java) {
+        R8FromMaven.create(project, { option -> if (option == StringOption.R8_VERSION_OVERRIDE) newerVersion else null }, olderVersion)
+      }
+    assertThat(exception).hasMessageThat().startsWith("android { r8 { version = \"8.2.47\" } } in settings.gradle is older than R8 ")
+  }
+
+  @Test
+  fun testOnlyCustomVersionIsLoggedOncePerBuild() {
+    // A new project, so that no other test has logged a version in its build.
+    val project = ProjectBuilder.builder().build()
+
+    R8FromMaven.create(project) { null }
+    R8FromMaven.create(project) { option -> if (option == StringOption.R8_VERSION_OVERRIDE) "99.0.0" else null }
+
+    // Logging marks the version as done in the build-wide RunOnceBuildService, so other projects in the build don't log it again.
+    val runOnce = RunOnceBuildServiceImpl.RegistrationAction(project).execute().get()
+    assertThat(runOnce.getOrSetActionPerformed("99.0.0", R8FromMaven::class.java.name)).isTrue()
+    assertThat(runOnce.getOrSetActionPerformed(R8Version.VERSION_AGP_WAS_SHIPPED_WITH, R8FromMaven::class.java.name)).isFalse()
   }
 
   @Test
