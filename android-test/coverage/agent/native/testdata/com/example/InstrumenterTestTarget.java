@@ -93,4 +93,18 @@ class InstrumenterTestTarget {
         RED,
         GREEN
     }
+
+    // The handler of the synchronized block exits the monitor and throws the
+    // exception again.
+    static void synchronizedBlock(Object lock) {
+        synchronized (lock) {
+            user();
+        }
+    }
+
+    // D8 exits the monitor of a synchronized method itself, with the same
+    // handler.
+    static synchronized void synchronizedMethod() {
+        user();
+    }
 }

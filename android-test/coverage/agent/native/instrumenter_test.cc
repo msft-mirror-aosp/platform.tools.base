@@ -54,6 +54,10 @@ constexpr int kReplacedBranchesIfLine = 50;
 constexpr int kReplacedBranchesThenLine = 51;
 constexpr int kReplacedBranchesElseLine = 53;
 constexpr int kReplacedBranchesNextLine = 55;
+// The closing brace of the synchronized block of synchronizedBlock(), and the
+// declaration of synchronizedMethod().
+constexpr int kSynchronizedBlockEndLine = 102;
+constexpr int kSynchronizedMethodLine = 107;
 
 // Returns the calls in `code_ir` to the static method named `name`.
 std::vector<lir::Instruction*> CallsTo(const lir::CodeIr& code_ir,
@@ -286,6 +290,19 @@ std::set<int32_t> ReportedLines(const proto::MethodMetadata& method,
     }
   }
   return lines;
+}
+
+// Returns the number of instructions that `method` reports on `line`.
+uint32_t InstructionsOnLine(const proto::MethodMetadata& method, int32_t line) {
+  uint32_t instructions = 0;
+  for (const auto& block : method.blocks()) {
+    for (const auto& block_line : block.lines()) {
+      if (block_line.line_number() == line) {
+        instructions += block_line.instruction_count();
+      }
+    }
+  }
+  return instructions;
 }
 
 TEST(InstrumenterTest, InlinedCodeIsNotReported) {
@@ -549,6 +566,40 @@ TEST(InstrumenterTest, EmptyConstructorOfJavaEnumIsNotReported) {
   constexpr char kColorClass[] = "Lcom/example/InstrumenterTestTarget$Color;";
   ASSERT_NE(InstrumentedMethod("<clinit>", kColorClass), nullptr);
   EXPECT_EQ(InstrumentedMethod("<init>", kColorClass), nullptr);
+}
+
+TEST(InstrumenterTest, HandlerOfSynchronizedBlockIsNotReported) {
+  // javac puts the handler on the closing brace of the block, which then only
+  // reports the monitor exit of the normal path.
+  const proto::MethodMetadata* method = InstrumentedMethod("synchronizedBlock");
+  ASSERT_NE(method, nullptr);
+  EXPECT_EQ(InstructionsOnLine(*method, kSynchronizedBlockEndLine), 1u);
+}
+
+TEST(InstrumenterTest, HandlerOfSynchronizedMethodIsNotReported) {
+  // D8 puts the handler of a synchronized method on the line before its first
+  // statement, here its declaration, which has no other code.
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("synchronizedMethod");
+  ASSERT_NE(method, nullptr);
+  uint32_t instructions = 0;
+  std::set<int32_t> lines = ReportedLines(*method, &instructions);
+  EXPECT_FALSE(lines.empty());
+  EXPECT_EQ(lines.count(kSynchronizedMethodLine), 0u);
+}
+
+TEST(InstrumenterTest, HandlerOfKotlinSynchronizedBlockIsNotReported) {
+  // Kotlin puts the handler on the line of the call to synchronized(), which
+  // then reports the monitor enter, the read of `count`, the monitor exit and
+  // the return. The check of the parameter comes before the first line, and
+  // the marker of the inlined block is on a line after the end of the file,
+  // so other filters ignore them.
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("synchronizedBlock", kKotlinTargetClass);
+  ASSERT_NE(method, nullptr);
+  uint32_t instructions = 0;
+  EXPECT_EQ(ReportedLines(*method, &instructions).size(), 1u);
+  EXPECT_EQ(instructions, 4u);
 }
 
 }  // namespace

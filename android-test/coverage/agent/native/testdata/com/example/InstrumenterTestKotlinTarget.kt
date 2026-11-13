@@ -154,4 +154,8 @@ class InstrumenterTestKotlinTarget {
     SMALL,
     LARGE,
   }
+
+  // The handler of the synchronized block exits the monitor and throws the
+  // exception again.
+  fun synchronizedBlock(lock: Any): Int = synchronized(lock) { count }
 }
