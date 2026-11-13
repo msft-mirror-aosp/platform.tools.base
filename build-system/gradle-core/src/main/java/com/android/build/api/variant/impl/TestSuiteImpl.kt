@@ -29,9 +29,8 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
+import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
-import com.android.build.gradle.internal.core.dsl.impl.getDefaultInstrumentationTestRunner
 import com.android.build.gradle.internal.core.dsl.impl.getInstrumentationRunner
 import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl
@@ -142,12 +141,9 @@ internal constructor(
     val dslInfo = testedVariantComponent.variantDslInfo
     val variant = testedVariantComponent.variant
     val manifestDataProv = manifestDataProviderBuilder(source.manifestFile)
-    val fallbackRunner =
-      if (dslInfo is ApplicationVariantDslInfo && variant is ApplicationCreationConfig) {
-        getInstrumentationRunner(dslInfo.productFlavorList, defaultConfig, manifestDataProv, variant.dexing.dexingType, variantServices)
-      } else {
-        getDefaultInstrumentationTestRunner(variantServices, DexingType.MONO_DEX)
-      }
+    val productFlavors = (dslInfo as? MultiVariantComponentDslInfo)?.productFlavorList.orEmpty()
+    val dexingType = (variant as? ApplicationCreationConfig)?.dexing?.dexingType ?: DexingType.MONO_DEX
+    val fallbackRunner = getInstrumentationRunner(productFlavors, defaultConfig, manifestDataProv, dexingType, variantServices)
     return manifestDataProv.manifestData
       .map { it.instrumentationRunner.orEmpty() }
       .filter { it.isNotBlank() }

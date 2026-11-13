@@ -19,6 +19,7 @@ package com.android.build.api.variant.impl
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.DefaultConfig
+import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.variant.Component
@@ -28,8 +29,10 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
 import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
+import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
@@ -260,6 +263,75 @@ class TestSuiteImplTest {
 
     val runnerProvider = testSuiteImpl.instrumentationRunner(testApkSource)
     assertThat(runnerProvider.get()).isEqualTo("androidx.test.backup.BackupRestoreTestRunner")
+  }
+
+  private fun libraryInstrumentationRunner(defaultRunner: String?, flavorRunners: List<String?> = emptyList()): String {
+    val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+    val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
+    val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+    `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
+    `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
+    `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+
+    val variantServices = createVariantPropertiesApiServices()
+    val mapProp = variantServices.mapPropertyOf(String::class.java, String::class.java, emptyMap())
+    `when`(junitEngineSpec.inputProperties).thenReturn(mapProp)
+
+    val libraryDslInfo = mock(LibraryVariantDslInfo::class.java)
+    val flavors = flavorRunners.map { runner ->
+      mock(ProductFlavor::class.java).also { `when`(it.testInstrumentationRunner).thenReturn(runner) }
+    }
+    `when`(libraryDslInfo.productFlavorList).thenReturn(flavors)
+
+    val libraryVariant = mock(LibraryCreationConfig::class.java)
+    val testedVariantComponent =
+      mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+    `when`(testedVariantComponent.variantDslInfo).thenReturn(libraryDslInfo)
+    `when`(testedVariantComponent.variant).thenReturn(libraryVariant)
+
+    val defaultConfig = mock(DefaultConfig::class.java)
+    `when`(defaultConfig.testInstrumentationRunner).thenReturn(defaultRunner)
+
+    val manifestDataProvider = mock(ManifestDataProvider::class.java)
+    `when`(manifestDataProvider.manifestData).thenReturn(variantServices.provider { ManifestData(instrumentationRunner = null) })
+
+    val testSuiteImpl =
+      TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = mock(GlobalTaskCreationConfig::class.java),
+        variantServices = variantServices,
+        services = mock(TaskCreationServices::class.java),
+        artifacts = mock(ArtifactsImpl::class.java),
+        defaultConfig = defaultConfig,
+        manifestDataProviderBuilder = { manifestDataProvider },
+      )
+
+    val testApkSource = mock(TestSuiteSourceSet.TestApk::class.java)
+    `when`(testApkSource.manifestFile).thenReturn(File("fake/path/AndroidManifest.xml"))
+    return testSuiteImpl.instrumentationRunner(testApkSource).get()
+  }
+
+  @Test
+  fun testInstrumentationRunnerFromLibraryDefaultConfig() {
+    assertThat(libraryInstrumentationRunner(defaultRunner = "com.example.lib.CustomRunner")).isEqualTo("com.example.lib.CustomRunner")
+  }
+
+  @Test
+  fun testInstrumentationRunnerFromLibraryFlavorOverridesDefaultConfig() {
+    assertThat(
+        libraryInstrumentationRunner(
+          defaultRunner = "com.example.lib.DefaultRunner",
+          flavorRunners = listOf("com.example.lib.FlavorRunner"),
+        )
+      )
+      .isEqualTo("com.example.lib.FlavorRunner")
+  }
+
+  @Test
+  fun testInstrumentationRunnerDefaultForLibraryWhenUnconfigured() {
+    assertThat(libraryInstrumentationRunner(defaultRunner = null)).isEqualTo("androidx.test.runner.AndroidJUnitRunner")
   }
 
   @Test

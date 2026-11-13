@@ -308,6 +308,55 @@ class TestSuiteApkIntegrationTest {
   }
 
   @Test
+  fun testLibraryDefaultConfigRunnerSynchronizedBetweenMergedManifestAndEngineInputs() {
+    val build = rule.build {
+      androidLibrary(":lib") {
+        android {
+          defaultConfig { testInstrumentationRunner = "com.example.CustomRunner" }
+          testOptions.customSuites.create("customTest") {
+            it.useJunitEngine.apply {
+              includeEngines.add("[engine:toy-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:toy-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.testApk {}
+            it.targetVariants.add("debug")
+            it.targets.apply { create("t1") {} }
+          }
+        }
+        files {
+          add(
+            "src/customTest/java/com/example/lib/LibSuiteTest.java",
+            """
+            package com.example.lib;
+            public class LibSuiteTest {}
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+
+    build.executor.run(":lib:packageDebugCustomTest", ":lib:testDebugCustomTestT1TestSuite")
+
+    val libBuildDir = build.androidLibrary(":lib").buildDir.toFile()
+    val libTestApk =
+      checkNotNull(
+        libBuildDir.walkTopDown().firstOrNull {
+          it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true)
+        }
+      ) {
+        "No customTest APK found under $libBuildDir"
+      }
+    ApkSubject.assertThat(libTestApk) { manifest().contains("android:name=\"com.example.CustomRunner\"") }
+    val inputsFile = File(libBuildDir, "intermediates/debug/testDebugCustomTestT1TestSuite/junit_inputs.txt")
+    val inputs = Properties().also { props -> inputsFile.reader(Charsets.UTF_8).use { props.load(it) } }
+    assertThat(inputs.getProperty("android-test.instrumentation-runner-class")).isEqualTo("com.example.CustomRunner")
+  }
+
+  @Test
   fun testOfflineJacocoTransformsAppWhenDeviceSuiteEnablesCoverage() {
     val build = rule.build {
       androidApplication(":app") { android { testOptions.customSuites.named("customTest") { it.codeCoverage = true } } }
