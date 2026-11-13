@@ -244,6 +244,40 @@ class PreviewValidatorTest {
   }
 
   @Test
+  fun testValidWallpapersPassValidation() {
+    for (wallpaper in ParameterValidators.NO_WALLPAPER..ParameterValidators.MAX_WALLPAPER) {
+      val result = validator.validateParams(mapOf("wallpaper" to wallpaper.toString()))
+      assertTrue("wallpaper $wallpaper should be valid but got: ${result.issues}", result.issues.isEmpty())
+    }
+    assertTrue(validator.validateParams(mapOf("wallpaper" to "")).issues.isEmpty())
+  }
+
+  @Test
+  fun testInvalidWallpapersProduceError() {
+    for (nonInt in listOf("red", "NONE", " 0 ", "1.5")) {
+      val result = validator.validateParams(mapOf("wallpaper" to nonInt))
+      assertFalse("wallpaper '$nonInt' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("wallpaper", error.target)
+      assertEquals(nonInt, error.value)
+      assertTrue(error.message.contains("must be an integer"))
+    }
+
+    for (outOfRange in listOf(-2, -10, ParameterValidators.MAX_WALLPAPER + 1, 99)) {
+      val result = validator.validateParams(mapOf("wallpaper" to outOfRange.toString()))
+      assertFalse("wallpaper $outOfRange should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals(ValidationSeverity.ERROR, error.severity)
+      assertEquals(ValidationCategory.PARAMETER, error.category)
+      assertEquals("wallpaper", error.target)
+      assertEquals(outOfRange.toString(), error.value)
+      assertTrue(error.message.contains("between 0 and ${ParameterValidators.MAX_WALLPAPER}"))
+    }
+  }
+
+  @Test
   fun testValidationResultAggregationAndComposition() {
     val r1 = ValidationResult.error("Error 1", ValidationCategory.PARAMETER, target = "widthDp")
     val r2 = ValidationResult.warning("Warning 1", ValidationCategory.METHOD, target = "myMethod")

@@ -18,6 +18,7 @@ package com.android.tools.render.validation
 
 import com.android.ide.common.resources.configuration.LocaleQualifier
 import com.android.sdklib.SdkVersionInfo
+import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.MAX_DIMENSION_DP
 import com.android.tools.preview.MAX_FONT_SCALE
 import com.android.tools.preview.UNDEFINED_API_LEVEL
@@ -40,6 +41,12 @@ object ParameterValidators {
 
   /** Highest `apiLevel` accepted for a preview, the highest API level supported by the tools. */
   const val MAX_API_LEVEL = SdkVersionInfo.HIGHEST_SUPPORTED_API
+
+  /** Value for `wallpaper` when dynamic color is disabled (`Wallpapers.NONE`). */
+  const val NO_WALLPAPER = -1
+
+  /** Highest valid `wallpaper` index, corresponding to the last entry in [Wallpaper]. */
+  val MAX_WALLPAPER = Wallpaper.entries.lastIndex
 
   /** Validates dimension parameters (`widthDp`, `heightDp`). */
   fun validateDimension(paramName: String, value: String?): List<ValidationIssue> {
@@ -227,6 +234,38 @@ object ParameterValidators {
   }
 
   /**
+   * Validates the `wallpaper` parameter.
+   *
+   * Accepted values are [NO_WALLPAPER] (`-1`, dynamic color disabled) or a [Wallpaper] ordinal (`0..`[MAX_WALLPAPER]).
+   * `PreviewConfiguration.applyTo` resolves the index with `Wallpaper.values().getOrNull`, which silently drops out-of-range values.
+   */
+  fun validateWallpaper(value: String?): List<ValidationIssue> {
+    if (value.isNullOrEmpty()) return emptyList()
+    val wallpaper =
+      value.toIntOrNull()
+        ?: return listOf(
+          ValidationIssue(
+            message = "Parameter 'wallpaper' must be an integer, got: '$value'",
+            severity = ValidationSeverity.ERROR,
+            category = ValidationCategory.PARAMETER,
+            target = "wallpaper",
+            value = value,
+          )
+        )
+
+    if (wallpaper == NO_WALLPAPER || wallpaper in 0..MAX_WALLPAPER) return emptyList()
+    return listOf(
+      ValidationIssue(
+        message = "Parameter 'wallpaper' must be $NO_WALLPAPER (none) or between 0 and $MAX_WALLPAPER, got: $wallpaper",
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.PARAMETER,
+        target = "wallpaper",
+        value = value,
+      )
+    )
+  }
+
+  /**
    * Validates the syntax of the `device` parameter.
    *
    * @see DeviceParameterValidator
@@ -252,6 +291,7 @@ class PreviewValidator : Validator<PreviewScreenshot> {
     issues.addAll(ParameterValidators.validateApiLevel(previewParams["apiLevel"]))
     issues.addAll(ParameterValidators.validateLocale(previewParams["locale"]))
     issues.addAll(ParameterValidators.validateBackgroundColor(previewParams["backgroundColor"], previewParams["showBackground"]))
+    issues.addAll(ParameterValidators.validateWallpaper(previewParams["wallpaper"]))
     issues.addAll(ParameterValidators.validateDevice(previewParams["device"]))
 
     return ValidationResult(issues)
