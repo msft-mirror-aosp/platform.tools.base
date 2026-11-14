@@ -17,20 +17,14 @@ package com.android.adblib.ddmlibcompatibility.testutils
 
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.Client
-import com.android.ddmlib.FileListingService
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.InstallReceiver
-import com.android.ddmlib.RawImage
-import com.android.ddmlib.ScreenRecorderOptions
 import com.android.ddmlib.ServiceInfo
-import com.android.ddmlib.SyncService
-import com.android.ddmlib.log.LogReceiver
 import com.android.sdklib.AndroidVersion
 import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import java.io.InputStream
-import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 @Suppress("OVERRIDE_DEPRECATION")
@@ -103,14 +97,6 @@ internal class FakeIDevice(private val serialNumber: String) : IDevice {
     TODO("Not yet implemented")
   }
 
-  override fun getPropertySync(name: String?): String {
-    TODO("Not yet implemented")
-  }
-
-  override fun getPropertyCacheOrSync(name: String?): String {
-    TODO("Not yet implemented")
-  }
-
   override fun supportsFeature(feature: IDevice.Feature): Boolean {
     TODO("Not yet implemented")
   }
@@ -120,10 +106,6 @@ internal class FakeIDevice(private val serialNumber: String) : IDevice {
   }
 
   override fun services(): MutableMap<String, ServiceInfo>? {
-    TODO("Not yet implemented")
-  }
-
-  override fun getMountPoint(name: String): String? {
     TODO("Not yet implemented")
   }
 
@@ -143,43 +125,11 @@ internal class FakeIDevice(private val serialNumber: String) : IDevice {
     TODO("Not yet implemented")
   }
 
-  override fun hasClients(): Boolean {
-    TODO("Not yet implemented")
-  }
-
   override fun getClients(): Array<Client> {
     TODO("Not yet implemented")
   }
 
   override fun getClient(processName: String?): Client {
-    TODO("Not yet implemented")
-  }
-
-  override fun getSyncService(): SyncService? {
-    TODO("Not yet implemented")
-  }
-
-  override fun getFileListingService(): FileListingService {
-    TODO("Not yet implemented")
-  }
-
-  override fun getScreenshot(): RawImage {
-    TODO("Not yet implemented")
-  }
-
-  override fun getScreenshot(timeout: Long, unit: TimeUnit?): RawImage {
-    TODO("Not yet implemented")
-  }
-
-  override fun startScreenRecorder(remoteFilePath: String, options: ScreenRecorderOptions, receiver: IShellOutputReceiver) {
-    TODO("Not yet implemented")
-  }
-
-  override fun runEventLogService(receiver: LogReceiver?) {
-    TODO("Not yet implemented")
-  }
-
-  override fun runLogService(logname: String?, receiver: LogReceiver?) {
     TODO("Not yet implemented")
   }
 
@@ -269,10 +219,6 @@ internal class FakeIDevice(private val serialNumber: String) : IDevice {
     TODO("Not yet implemented")
   }
 
-  override fun reboot(into: String?) {
-    TODO("Not yet implemented")
-  }
-
   override fun root(): Boolean {
     TODO("Not yet implemented")
   }
@@ -281,35 +227,11 @@ internal class FakeIDevice(private val serialNumber: String) : IDevice {
     TODO("Not yet implemented")
   }
 
-  override fun getBatteryLevel(): Int {
-    TODO("Not yet implemented")
-  }
-
-  override fun getBatteryLevel(freshnessMs: Long): Int {
-    TODO("Not yet implemented")
-  }
-
-  override fun getBattery(): Future<Int> {
-    TODO("Not yet implemented")
-  }
-
-  override fun getBattery(freshnessTime: Long, timeUnit: TimeUnit): Future<Int> {
-    TODO("Not yet implemented")
-  }
-
   override fun getAbis(): MutableList<String> {
     TODO("Not yet implemented")
   }
 
   override fun getDensity(): Int {
-    TODO("Not yet implemented")
-  }
-
-  override fun getLanguage(): String? {
-    TODO("Not yet implemented")
-  }
-
-  override fun getRegion(): String? {
     TODO("Not yet implemented")
   }
 

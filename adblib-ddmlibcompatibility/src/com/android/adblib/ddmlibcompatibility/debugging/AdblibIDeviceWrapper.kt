@@ -48,7 +48,6 @@ import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.AvdData
 import com.android.ddmlib.Client
-import com.android.ddmlib.FileListingService
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.DeviceState
 import com.android.ddmlib.IDevice.RE_EMULATOR_SN
@@ -61,15 +60,12 @@ import com.android.ddmlib.InstallMetrics
 import com.android.ddmlib.InstallReceiver
 import com.android.ddmlib.Log
 import com.android.ddmlib.ProfileableClient
-import com.android.ddmlib.RawImage
-import com.android.ddmlib.ScreenRecorderOptions
 import com.android.ddmlib.ServiceInfo
 import com.android.ddmlib.SimpleConnectedSocket
 import com.android.ddmlib.SyncException
 import com.android.ddmlib.SyncService
 import com.android.ddmlib.idevicemanager.IDeviceManagerListener
 import com.android.ddmlib.internal.UserDataMapImpl
-import com.android.ddmlib.log.LogReceiver
 import com.android.sdklib.AndroidVersion
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -77,12 +73,10 @@ import com.google.common.util.concurrent.SettableFuture
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
-import java.nio.channels.SocketChannel
 import java.nio.file.Files
 import java.time.Duration
 import java.util.ArrayList
 import java.util.concurrent.ExecutionException
-import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
@@ -302,16 +296,6 @@ internal class AdblibIDeviceWrapper(
 
   override fun arePropertiesSet(): Boolean = logUsage(IDeviceUsageTracker.Method.ARE_PROPERTIES_SET) { propertiesMapRef.get() != null }
 
-  @Deprecated("")
-  override fun getPropertySync(name: String?): String {
-    unsupportedMethod()
-  }
-
-  @Deprecated("")
-  override fun getPropertyCacheOrSync(name: String?): String {
-    unsupportedMethod()
-  }
-
   private fun prefetchProperties() {
     triggerAllPropertiesFetch()
   }
@@ -388,10 +372,6 @@ internal class AdblibIDeviceWrapper(
 
   override fun services(): MutableMap<String, ServiceInfo> = logUsage(IDeviceUsageTracker.Method.SERVICES) { iDeviceSharedImpl.services() }
 
-  override fun getMountPoint(name: String): String? {
-    unsupportedMethod()
-  }
-
   override fun toString(): String {
     return serialNumber
   }
@@ -411,10 +391,6 @@ internal class AdblibIDeviceWrapper(
     return deviceState() == com.android.adblib.DeviceState.BOOTLOADER
   }
 
-  override fun hasClients(): Boolean {
-    unsupportedMethod()
-  }
-
   override fun getClients(): Array<Client> {
     return deviceClientManager.clients.toTypedArray()
   }
@@ -426,34 +402,6 @@ internal class AdblibIDeviceWrapper(
 
   override fun getProfileableClients(): Array<ProfileableClient> {
     return deviceClientManager.profileableClients.toTypedArray()
-  }
-
-  override fun getSyncService(): SyncService {
-    unsupportedMethod()
-  }
-
-  override fun getFileListingService(): FileListingService {
-    unsupportedMethod()
-  }
-
-  override fun getScreenshot(): RawImage {
-    unsupportedMethod()
-  }
-
-  override fun getScreenshot(timeout: Long, unit: TimeUnit?): RawImage {
-    unsupportedMethod()
-  }
-
-  override fun startScreenRecorder(remoteFilePath: String, options: ScreenRecorderOptions, receiver: IShellOutputReceiver) {
-    unsupportedMethod()
-  }
-
-  override fun runEventLogService(receiver: LogReceiver?) {
-    unsupportedMethod()
-  }
-
-  override fun runLogService(logname: String?, receiver: LogReceiver?) {
-    unsupportedMethod()
   }
 
   override fun createForward(localPort: Int, remotePort: Int) {
@@ -682,10 +630,6 @@ internal class AdblibIDeviceWrapper(
   override fun uninstallApp(applicationID: String, vararg extraArgs: String): String? =
     logUsage(IDeviceUsageTracker.Method.UNINSTALL_APP) { iDeviceSharedImpl.uninstallApp(applicationID, *extraArgs) }
 
-  override fun reboot(into: String?) {
-    unsupportedMethod()
-  }
-
   override fun root(): Boolean =
     logUsage(IDeviceUsageTracker.Method.ROOT) {
       runBlockingLegacy(timeout = INFINITE_DURATION) {
@@ -699,44 +643,14 @@ internal class AdblibIDeviceWrapper(
     logUsage(IDeviceUsageTracker.Method.FORCE_STOP) { iDeviceSharedImpl.forceStop(applicationName) }
   }
 
-  override fun kill(applicationName: String?) {
-    unsupportedMethod()
-  }
-
   override fun isRoot(): Boolean =
     logUsage(IDeviceUsageTracker.Method.IS_ROOT) {
       runBlockingLegacy(timeout = Duration.ofMillis(QUERY_IS_ROOT_TIMEOUT_MS)) { connectedDevice.isRoot() }
     }
 
-  @Deprecated("")
-  override fun getBatteryLevel(): Int {
-    unsupportedMethod()
-  }
-
-  @Deprecated("")
-  override fun getBatteryLevel(freshnessMs: Long): Int {
-    unsupportedMethod()
-  }
-
-  override fun getBattery(): Future<Int> {
-    unsupportedMethod()
-  }
-
-  override fun getBattery(freshnessTime: Long, timeUnit: TimeUnit): Future<Int> {
-    unsupportedMethod()
-  }
-
   override fun getAbis(): MutableList<String> = logUsage(IDeviceUsageTracker.Method.GET_ABIS) { iDeviceSharedImpl.abis }
 
   override fun getDensity(): Int = logUsage(IDeviceUsageTracker.Method.GET_DENSITY) { iDeviceSharedImpl.density }
-
-  override fun getLanguage(): String? {
-    unsupportedMethod()
-  }
-
-  override fun getRegion(): String? {
-    unsupportedMethod()
-  }
 
   override fun getVersion(): AndroidVersion {
     return iDeviceSharedImpl.version
@@ -867,10 +781,6 @@ internal class AdblibIDeviceWrapper(
     } else {
       executeShellCommand("cmd " + parameters.joinToString(" "), receiver, maxTimeToOutputResponse, maxTimeUnits, inputStream)
     }
-  }
-
-  override fun rawExec(executable: String, parameters: Array<out String>): SocketChannel {
-    unsupportedMethod()
   }
 
   override fun rawExec2(executable: String, parameters: Array<out String>): SimpleConnectedSocket =

@@ -18,8 +18,6 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Slow;
-import com.android.ddmlib.clientmanager.DeviceClientManager;
-import com.android.ddmlib.log.LogReceiver;
 import com.android.sdklib.AndroidVersion;
 
 import com.google.common.base.Splitter;
@@ -29,13 +27,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -59,8 +54,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
     String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
     String PROP_DEVICE_DENSITY = "ro.sf.lcd_density";
     String PROP_DEVICE_EMULATOR_DENSITY = "qemu.sf.lcd_density";
-    String PROP_DEVICE_LANGUAGE = "persist.sys.language";
-    String PROP_DEVICE_REGION = "persist.sys.country";
 
     String PROP_DEBUGGABLE = "ro.debuggable";
     /**
@@ -121,10 +114,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
 
     /** @deprecated Use {@link #PROP_BUILD_API_LEVEL}. */
     @Deprecated String PROP_BUILD_VERSION_NUMBER = PROP_BUILD_API_LEVEL;
-
-    String MNT_EXTERNAL_STORAGE = "EXTERNAL_STORAGE"; //$NON-NLS-1$
-    String MNT_ROOT = "ANDROID_ROOT"; //$NON-NLS-1$
-    String MNT_DATA = "ANDROID_DATA"; //$NON-NLS-1$
 
     /** The state of a device. */
     enum DeviceState {
@@ -267,44 +256,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
     /** Returns <code>true</code> if properties have been cached */
     boolean arePropertiesSet();
 
-    /**
-     * A variant of {@link #getProperty(String)} that will attempt to retrieve the given property
-     * from device directly, without using cache. This method should (only) be used for any volatile
-     * properties.
-     *
-     * @param name the name of the value to return.
-     * @return the value or <code>null</code> if the property does not exist
-     * @throws TimeoutException in case of timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException in case the shell command doesn't send output for a
-     *     given time.
-     * @throws IOException in case of I/O error on the connection.
-     * @deprecated use {@link #getSystemProperty(String)}
-     */
-    @Deprecated
-    String getPropertySync(String name)
-            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-                    IOException;
-
-    /**
-     * A combination of {@link #getProperty(String)} and {@link #getPropertySync(String)} that will
-     * attempt to retrieve the property from cache. If not found, will synchronously attempt to
-     * query device directly and repopulate the cache if successful.
-     *
-     * @param name the name of the value to return.
-     * @return the value or <code>null</code> if the property does not exist
-     * @throws TimeoutException in case of timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException in case the shell command doesn't send output for a
-     *     given time.
-     * @throws IOException in case of I/O error on the connection.
-     * @deprecated use {@link #getSystemProperty(String)} instead
-     */
-    @Deprecated
-    String getPropertyCacheOrSync(String name)
-            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-                    IOException;
-
     /** Returns whether this device supports the given software feature. */
     boolean supportsFeature(@NonNull Feature feature);
 
@@ -315,17 +266,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
     default Map<String, ServiceInfo> services() {
         throw new UnsupportedOperationException();
     }
-
-    /**
-     * Returns a mount point.
-     *
-     * @param name the name of the mount point to return
-     * @see #MNT_EXTERNAL_STORAGE
-     * @see #MNT_ROOT
-     * @see #MNT_DATA
-     */
-    @Nullable
-    String getMountPoint(@NonNull String name);
 
     /**
      * Returns if the device is ready.
@@ -351,9 +291,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
      */
     boolean isBootLoader();
 
-    /** Returns whether the {@link IDevice} has {@link Client}s. */
-    boolean hasClients();
-
     /** Returns the array of clients. */
     Client[] getClients();
 
@@ -370,13 +307,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
         return new ProfileableClient[0]; // Returns an empty array by default
     }
 
-    @NonNull
-    default DeviceClientManager getClientManager() {
-        String message =
-                String.format("%s is not supported", DeviceClientManager.class.getSimpleName());
-        throw new UnsupportedOperationException(message);
-    }
-
     /**
      * Force stop an application by its application name. This removes all pending alarms and queued
      * computation.
@@ -384,55 +314,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
      * @param applicationName the name of the application
      */
     default void forceStop(String applicationName) {}
-
-    /**
-     * Kills an application by its application name. This only destroy the activities, leaving its
-     * state in the Android system alone.
-     *
-     * @param applicationName the name of the application
-     */
-    default void kill(String applicationName) {}
-
-    /**
-     * Returns a {@link SyncService} object to push / pull files to and from the device.
-     *
-     * @return <code>null</code> if the SyncService couldn't be created. This can happen if adb
-     *     refuse to open the connection because the {@link IDevice} is invalid (or got
-     *     disconnected).
-     * @throws TimeoutException in case of timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws IOException if the connection with adb failed.
-     */
-    @Nullable
-    SyncService getSyncService() throws TimeoutException, AdbCommandRejectedException, IOException;
-
-    /** Returns a {@link FileListingService} for this device. */
-    FileListingService getFileListingService();
-
-    /**
-     * Takes a screen shot of the device and returns it as a {@link RawImage}.
-     *
-     * @return the screenshot as a <code>RawImage</code> or <code>null</code> if something went
-     *     wrong.
-     * @throws TimeoutException in case of timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws IOException in case of I/O error on the connection.
-     */
-    RawImage getScreenshot() throws TimeoutException, AdbCommandRejectedException, IOException;
-
-    RawImage getScreenshot(long timeout, TimeUnit unit)
-            throws TimeoutException, AdbCommandRejectedException, IOException;
-
-    /**
-     * Initiates screen recording on the device if the device supports {@link
-     * Feature#SCREEN_RECORD}.
-     */
-    void startScreenRecorder(
-            @NonNull String remoteFilePath,
-            @NonNull ScreenRecorderOptions options,
-            @NonNull IShellOutputReceiver receiver)
-            throws TimeoutException, AdbCommandRejectedException, IOException,
-                    ShellCommandUnresponsiveException;
 
     /**
      * @deprecated Use {@link #executeShellCommand(String, IShellOutputReceiver, long, TimeUnit)}.
@@ -503,37 +384,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
                     IOException {
         throw new UnsupportedOperationException();
     }
-
-    /**
-     * Runs the event log service and outputs the event log to the {@link LogReceiver}.
-     *
-     * <p>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
-     *
-     * @param receiver the receiver to receive the event log entries.
-     * @throws TimeoutException in case of timeout on the connection. This can only be thrown if the
-     *     timeout happens during setup. Once logs start being received, no timeout will occur as
-     *     it's not possible to detect a difference between no log and timeout.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws IOException in case of I/O error on the connection.
-     */
-    void runEventLogService(LogReceiver receiver)
-            throws TimeoutException, AdbCommandRejectedException, IOException;
-
-    /**
-     * Runs the log service for the given log and outputs the log to the {@link LogReceiver}.
-     *
-     * <p>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
-     *
-     * @param logname the logname of the log to read from.
-     * @param receiver the receiver to receive the event log entries.
-     * @throws TimeoutException in case of timeout on the connection. This can only be thrown if the
-     *     timeout happens during setup. Once logs start being received, no timeout will occur as
-     *     it's not possible to detect a difference between no log and timeout.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws IOException in case of I/O error on the connection.
-     */
-    void runLogService(String logname, LogReceiver receiver)
-            throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
      * Creates a port forwarding between a local and a remote port.
@@ -621,21 +471,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
      * @param pid the pid of the client.
      */
     String getClientName(int pid);
-
-    /**
-     * Pushes several files or directories.
-     *
-     * @param local the local files to push
-     * @param remote the remote path representing a directory
-     * @throws IOException in case of I/O error on the connection
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws TimeoutException in case of a timeout reading responses from the device
-     * @throws SyncException if some files could not be pushed
-     */
-    default void push(@NonNull String[] local, @NonNull String remote)
-            throws IOException, AdbCommandRejectedException, TimeoutException, SyncException {
-        throw new UnsupportedOperationException();
-    }
 
     /**
      * Pushes a single file.
@@ -924,16 +759,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
     String uninstallApp(String applicationID, String... extraArgs) throws InstallException;
 
     /**
-     * Reboot the device.
-     *
-     * @param into the bootloader name to reboot into, or null to just reboot the device.
-     * @throws TimeoutException in case of timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws IOException
-     */
-    void reboot(String into) throws TimeoutException, AdbCommandRejectedException, IOException;
-
-    /**
      * Ask the adb daemon to become root on the device. This may silently fail, and can only succeed
      * on developer builds. See "adb root" for more information.
      *
@@ -959,62 +784,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
                     ShellCommandUnresponsiveException;
 
     /**
-     * Return the device's battery level, from 0 to 100 percent.
-     *
-     * <p>The battery level may be cached. Only queries the device for its battery level if 5
-     * minutes have expired since the last successful query.
-     *
-     * @return the battery level or <code>null</code> if it could not be retrieved
-     * @deprecated use {@link #getBattery()}
-     */
-    @Deprecated
-    Integer getBatteryLevel()
-            throws TimeoutException, AdbCommandRejectedException, IOException,
-                    ShellCommandUnresponsiveException;
-
-    /**
-     * Return the device's battery level, from 0 to 100 percent.
-     *
-     * <p>The battery level may be cached. Only queries the device for its battery level if <code>
-     * freshnessMs</code> ms have expired since the last successful query.
-     *
-     * @param freshnessMs
-     * @return the battery level or <code>null</code> if it could not be retrieved
-     * @throws ShellCommandUnresponsiveException
-     * @deprecated use {@link #getBattery(long, TimeUnit)}
-     */
-    @Deprecated
-    Integer getBatteryLevel(long freshnessMs)
-            throws TimeoutException, AdbCommandRejectedException, IOException,
-                    ShellCommandUnresponsiveException;
-
-    /**
-     * Return the device's battery level, from 0 to 100 percent.
-     *
-     * <p>The battery level may be cached. Only queries the device for its battery level if 5
-     * minutes have expired since the last successful query.
-     *
-     * @return a {@link Future} that can be used to query the battery level. The Future will return
-     *     a {@link ExecutionException} if battery level could not be retrieved.
-     */
-    @NonNull
-    Future<Integer> getBattery();
-
-    /**
-     * Return the device's battery level, from 0 to 100 percent.
-     *
-     * <p>The battery level may be cached. Only queries the device for its battery level if <code>
-     * freshnessTime</code> has expired since the last successful query.
-     *
-     * @param freshnessTime the desired recency of battery level
-     * @param timeUnit the {@link TimeUnit} of freshnessTime
-     * @return a {@link Future} that can be used to query the battery level. The Future will return
-     *     a {@link ExecutionException} if battery level could not be retrieved.
-     */
-    @NonNull
-    Future<Integer> getBattery(long freshnessTime, @NonNull TimeUnit timeUnit);
-
-    /**
      * Returns the ABIs supported by this device. The ABIs are sorted in preferred order, with the
      * first ABI being the most preferred.
      *
@@ -1030,22 +799,6 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
      * @return the density, or -1 if it cannot be determined.
      */
     int getDensity();
-
-    /**
-     * Returns the user's language.
-     *
-     * @return the user's language, or null if it's unknown
-     */
-    @Nullable
-    String getLanguage();
-
-    /**
-     * Returns the user's region.
-     *
-     * @return the user's region, or null if it's unknown
-     */
-    @Nullable
-    String getRegion();
 
     /**
      * Returns the API level of the device.
@@ -1187,38 +940,7 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * Invoke the host:exec service on a remote device. Return a socket channel that is connected to
-     * the executing process. Note that exec service does not differentiate stdout and stderr so
-     * whatever is read from the socket can come from either output and be interleaved.
-     *
-     * <p>Ownership of the SocketChannel is relinquished to the caller, it must be explicitly closed
-     * after usage.
-     *
-     * @return A SocketChannel connected to the executing process on the device. after use.
-     */
-    default SocketChannel rawExec(String executable, String[] parameters)
-            throws AdbCommandRejectedException, TimeoutException, IOException {
-        throw new UnsupportedOperationException();
-    }
-
     default SimpleConnectedSocket rawExec2(String executable, String[] parameters)
-            throws AdbCommandRejectedException, TimeoutException, IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Invoke the Android Binder Bridge service on a remote device. Return a socket channel that is
-     * connected to the device binder command.
-     *
-     * <p>Ownership of the SocketChannel is relinquished to the caller, it must be explicitly closed
-     * after usage.
-     *
-     * @param service the name of the Android service to connect to
-     * @param parameters the parameters of the binder command
-     * @return A SocketChannel connected to the executing process on the device. after use.
-     */
-    default SocketChannel rawBinder(String service, String[] parameters)
             throws AdbCommandRejectedException, TimeoutException, IOException {
         throw new UnsupportedOperationException();
     }
