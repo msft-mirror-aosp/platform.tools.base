@@ -26,8 +26,9 @@ import org.gradle.api.file.FileSystemLocation;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,10 @@ public abstract class MockableJarTransform
         Property<Boolean> getReturnDefaultValues();
     }
 
-    @Classpath
+    // The input is a single android.jar. Fingerprinting it by its file content is much cheaper
+    // than classpath normalization, which hashes each of its entries, and still captures every
+    // change that affects the generated mockable jar.
+    @PathSensitive(PathSensitivity.NAME_ONLY)
     @InputArtifact
     public abstract Provider<FileSystemLocation> getInputArtifact();
 
