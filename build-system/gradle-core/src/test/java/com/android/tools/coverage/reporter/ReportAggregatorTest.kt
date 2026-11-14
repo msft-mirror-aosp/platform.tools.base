@@ -722,4 +722,52 @@ class ReportAggregatorTest {
     assertThat(report.packages["com/example"]!!.classes.keys)
       .containsExactly("com/example/Api\$-CC", "com/example/DaggerApp_HiltComponents_SingletonC")
   }
+
+  @Test
+  fun testGeneratedCodeIsLeftOut() {
+    fun method(name: String, blockId: Int, line: Int) =
+      MethodMetadata.newBuilder()
+        .setName(name)
+        .setSignature("()V")
+        .addBlocks(
+          BlockMetadata.newBuilder().setBlockId(blockId).addLines(LineMetadata.newBuilder().setLineNumber(line).setInstructionCount(2))
+        )
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/Foo_Factory")
+            .setSourceFile("Foo_Factory.java")
+            .addMethods(method("get", 0, 10))
+        )
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/Foo")
+            .setSourceFile("Foo.kt")
+            .addMethods(method("generated", 1, 20))
+            .addMethods(method("written", 2, 21))
+        )
+        .build()
+    val hits = BitSet().apply { set(0, 3) }
+
+    val report =
+      ReportAggregator()
+        .aggregate(
+          CoverageData(metadata, hits),
+          "test",
+          generatedCode = GeneratedCode(classes = setOf("com/example/Foo_Factory"), methods = setOf("com/example/Foo.generated()V")),
+        )
+
+    val pkg = report.packages["com/example"]!!
+    // The class whose code is generated stays in the report, without methods, so it doesn't count as a class.
+    val factory = pkg.classes["com/example/Foo_Factory"]!!
+    assertThat(factory.methods).isEmpty()
+    assertThat(factory.classesCounter).isEqualTo(Counter(covered = 0, missed = 0))
+    assertThat(pkg.sourceFiles["Foo_Factory.java"]!!.lineMap).isEmpty()
+    assertThat(pkg.classes["com/example/Foo"]!!.methods.map { it.name }).containsExactly("written")
+    assertThat(pkg.sourceFiles["Foo.kt"]!!.lineMap.keys).containsExactly(21)
+    assertThat(report.instructions).isEqualTo(Counter(covered = 2, missed = 0))
+    assertThat(report.methodsCounter).isEqualTo(Counter(covered = 1, missed = 0))
+    assertThat(report.classesCounter).isEqualTo(Counter(covered = 1, missed = 0))
+  }
 }

@@ -19,7 +19,9 @@ package com.android.build.gradle.internal.coverage
 import com.android.build.gradle.internal.coverage.report.ReportType
 import com.android.build.gradle.internal.coverage.report.createHtmlReportVisitor
 import com.android.build.gradle.internal.coverage.report.createXmlReportVisitor
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.tools.coverage.reporter.CoverageXmlGenerator
+import com.android.tools.coverage.reporter.GeneratedCode
 import com.android.tools.coverage.reporter.isROrManifest
 import com.google.common.io.Closeables
 import java.io.File
@@ -36,6 +38,10 @@ import org.jacoco.report.FileMultiReportOutput
 import org.jacoco.report.IReportVisitor
 import org.jacoco.report.MultiReportVisitor
 import org.jacoco.report.MultiSourceFileLocator
+import org.objectweb.asm.AnnotationVisitor
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.MethodVisitor
 
 /** Generates an on-the-fly coverage XML report. */
 @Throws(IOException::class)
@@ -62,6 +68,7 @@ internal fun generateOnTheFlyXml(
       exclusions = exclusions,
       sourceFolders = sourceFolders,
       projectClasses = findProjectClasses(classFolders),
+      generatedCode = findGeneratedCode(classFolders),
     )
 }
 
@@ -71,15 +78,97 @@ internal fun generateOnTheFlyXml(
  */
 internal fun findProjectClasses(classFolders: Collection<File>): Set<String> {
   val classes = mutableSetOf<String>()
+  forEachReportedClassFile(classFolders) { name, _ -> classes.add(name) }
+  return classes
+}
+
+/**
+ * Returns the code in the class files of [findProjectClasses] that an annotation marks as generated, as the build-time report does: the
+ * classes and the methods annotated with an annotation whose simple name contains `Generated`, such as Dagger's `@DaggerGenerated`. The
+ * annotation needs to be in the class file, so it has class or runtime retention. The dex in the APK drops class retention annotations, so
+ * only the class files have them.
+ */
+internal fun findGeneratedCode(classFolders: Collection<File>): GeneratedCode {
+  val classes = mutableSetOf<String>()
+  val methods = mutableSetOf<String>()
+  forEachReportedClassFile(classFolders) { _, file ->
+    val visitor = GeneratedAnnotationsVisitor()
+    try {
+      ClassReader(file.readBytes()).accept(visitor, ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES)
+    } catch (e: IllegalArgumentException) {
+      // A class file of a version that ASM doesn't support yet, or an invalid one: its code stays in the report.
+      return@forEachReportedClassFile
+    } catch (e: IndexOutOfBoundsException) {
+      // Not a valid class file, such as one cut short: its code stays in the report.
+      return@forEachReportedClassFile
+    }
+    if (visitor.classIsGenerated) {
+      classes.add(visitor.className)
+    }
+    methods.addAll(visitor.generatedMethods)
+  }
+  return GeneratedCode(classes, methods)
+}
+
+/** Records which of a class and its methods have an annotation that [isGeneratedAnnotation] accepts. */
+private class GeneratedAnnotationsVisitor : ClassVisitor(ASM_API_VERSION) {
+  var className = ""
+    private set
+
+  var classIsGenerated = false
+    private set
+
+  private val methods = mutableListOf<String>()
+
+  /** The methods with such an annotation, such as `com/example/Foo.get()V`. */
+  val generatedMethods: List<String> = methods
+
+  override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String?, interfaces: Array<out String>?) {
+    className = name
+  }
+
+  override fun visitAnnotation(descriptor: String, visible: Boolean): AnnotationVisitor? {
+    if (isGeneratedAnnotation(descriptor)) {
+      classIsGenerated = true
+    }
+    return null
+  }
+
+  override fun visitMethod(
+    access: Int,
+    name: String,
+    descriptor: String,
+    signature: String?,
+    exceptions: Array<out String>?,
+  ): MethodVisitor =
+    object : MethodVisitor(ASM_API_VERSION) {
+      override fun visitAnnotation(annotationDescriptor: String, visible: Boolean): AnnotationVisitor? {
+        if (isGeneratedAnnotation(annotationDescriptor)) {
+          methods.add("$className.$name$descriptor")
+        }
+        return null
+      }
+    }
+}
+
+/**
+ * Whether an annotation with the [descriptor], such as `Ldagger/internal/DaggerGenerated;`, has a simple name that contains `Generated`.
+ */
+private fun isGeneratedAnnotation(descriptor: String): Boolean =
+  descriptor.substring(maxOf(descriptor.lastIndexOf('/'), descriptor.lastIndexOf('$')) + 1).contains("Generated")
+
+/**
+ * Calls [action] with the internal name and the file of each class in the folders among [classFolders], without the R and Manifest classes.
+ */
+private fun forEachReportedClassFile(classFolders: Collection<File>, action: (name: String, file: File) -> Unit) {
   for (folder in classFolders.filter { it.isDirectory }) {
     folder
       .walkTopDown()
       // A class folder inside another one gets its own walk, which names its classes relative to it.
       .onEnter { it.path == folder.path || it !in classFolders }
       .filter { it.isFile && isReportedClassFile(it.name) }
-      .forEach { classes.add(it.relativeTo(folder).invariantSeparatorsPath.removeSuffix(".class")) }
+      .forEach { action(it.relativeTo(folder).invariantSeparatorsPath.removeSuffix(".class"), it) }
   }
-  return classes
 }
 
 /** The files the on-device coverage agent writes in one test run. */

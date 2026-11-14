@@ -28,6 +28,7 @@ class ReportAggregator {
    * @param exclusions Optional set of internal class names or package prefixes to exclude.
    * @param projectClasses Internal names of the classes that the project compiles. They are reported even when their source file isn't in
    *   [sourceFolders], such as the components that Hilt generates.
+   * @param generatedCode The code that annotations mark as generated, whose methods are left out. Their classes stay in the report.
    */
   fun aggregate(
     data: CoverageData,
@@ -36,6 +37,7 @@ class ReportAggregator {
     exclusions: Set<String> = emptySet(),
     sourceFolders: Collection<java.io.File> = emptyList(),
     projectClasses: Set<String> = emptySet(),
+    generatedCode: GeneratedCode = GeneratedCode(),
   ): ReportModel {
     val report = ReportModel(reportName)
     val testPackagePrefix = testPackageId?.replace('.', '/')?.let { if (it.endsWith('/')) it else "$it/" }
@@ -89,6 +91,10 @@ class ReportAggregator {
       val srcFile = pkg.sourceFiles.getOrPut(sourceFilename) { SourceFileModel(sourceFilename) }
 
       for (methodMeta in classMeta.methodsList) {
+        if (generatedCode.contains(className, methodMeta.name, methodMeta.signature)) {
+          continue
+        }
+
         // Determine method start line
         val methodStartLine =
           methodMeta.blocksList.flatMap { it.linesList }.map { smapResolver.resolve(it.lineNumber, sourceFilename).first }.minOrNull() ?: 0
