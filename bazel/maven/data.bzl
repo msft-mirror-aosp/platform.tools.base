@@ -895,8 +895,8 @@ _CLASS_JARS = [
     "com.beust:jcommander:1.82",
     "com.charleskorn.kaml:kaml-jvm:0.61.0",
     "com.crashlytics.sdk.android:crashlytics:2.6.8",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.2",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.2",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.4",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.4",
     "com.flurry.android:analytics:13.0.0",  # Used by SdkIndexIssuesSyncListenerTest
     "com.github.ajalt.colormath:colormath-jvm:3.5.0",
     "com.github.ajalt.mordant:mordant-jvm:2.7.2",
@@ -1582,9 +1582,10 @@ _CLASS_JARS = [
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.11.0-M2",
     "org.junit:junit-bom:pom:5.11.4",  # imported by com.google.auth:google-auth-library-parent:1.42.1
+    "org.junit:junit-bom:pom:5.12.2",  # imported by org.xerial:sqlite-jdbc:3.54.1.0
     "org.junit:junit-bom:pom:5.14.1",  # imported by org.codehaus.mojo:mojo-parent:95
     "org.junit:junit-bom:pom:5.14.2",  # imported by org.apache.commons:commons-parent:98
-    "org.junit:junit-bom:pom:5.14.3",  # imported by com.fasterxml.jackson:jackson-base:2.22.2
+    "org.junit:junit-bom:pom:5.14.3",  # imported by com.fasterxml.jackson:jackson-base:2.22.4
     "org.junit:junit-bom:pom:5.14.4",  # imported by org.apache.commons:commons-parent:105
     "org.junit:junit-bom:pom:5.9.2",
     "org.junit:junit-bom:pom:5.9.3",
@@ -1629,7 +1630,6 @@ _CLASS_JARS = [
     "org.tensorflow:tensorflow-lite-support:0.2.0",
     "org.threeten:threetenbp:1.3.3",
     "org.tukaani:xz:1.9",
-    "org.xerial:sqlite-jdbc:3.51.1.0",
 ]
 
 _SOURCE_JARS = [
@@ -1671,6 +1671,7 @@ _SOURCE_JARS = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:jar:sources:1.10.2",
     "org.robolectric:plugins-maven-dependency-resolver:jar:sources:4.8.2",
     "org.robolectric:robolectric:jar:sources:4.8.2",
+    "org.xerial:sqlite-jdbc:jar:sources:3.54.1.0",
 ]
 
 DATA = _CLASS_JARS + _SOURCE_JARS

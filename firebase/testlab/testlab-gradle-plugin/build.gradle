@@ -54,6 +54,7 @@ dependencies {
     testImplementation project(':base:gradle-api')
     testImplementation libs.kotlin.gradle.plugin.api
     constraints {
+        implementation(libs.guava)
         testImplementation(libs.kotlin.gradle.plugin)
     }
     testImplementation project(':base:builder-test-api')
