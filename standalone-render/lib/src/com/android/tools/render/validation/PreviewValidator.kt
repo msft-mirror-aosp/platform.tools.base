@@ -18,6 +18,7 @@ package com.android.tools.render.validation
 
 import com.android.ide.common.resources.configuration.LocaleQualifier
 import com.android.sdklib.SdkVersionInfo
+import com.android.sdklib.devices.Device
 import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.MAX_DIMENSION_DP
 import com.android.tools.preview.MAX_FONT_SCALE
@@ -266,15 +267,27 @@ object ParameterValidators {
   }
 
   /**
-   * Validates the syntax of the `device` parameter.
+   * Validates the `device` parameter: its syntax and, when the device catalog [devices] is given, that the referenced devices exist.
    *
    * @see DeviceParameterValidator
    */
-  fun validateDevice(value: String?): List<ValidationIssue> = DeviceParameterValidator.validate(value)
+  fun validateDevice(value: String?, devices: Collection<Device>? = null): List<ValidationIssue> =
+    validateDevice(value, devices?.let(::DeviceCatalog))
+
+  /** Like [validateDevice], with the device catalog already indexed, so that it is not indexed again for every preview. */
+  internal fun validateDevice(value: String?, catalog: DeviceCatalog?): List<ValidationIssue> =
+    DeviceParameterValidator.validate(value, catalog)
 }
 
-/** Main orchestrator for validating Compose preview. */
-class PreviewValidator : Validator<PreviewScreenshot> {
+/**
+ * Main orchestrator for validating Compose preview.
+ *
+ * @param devices the device catalog the previews are rendered with, used to check that the devices they reference exist. When null, only
+ *   the syntax of the `device` parameter is validated.
+ */
+class PreviewValidator(devices: Collection<Device>? = null) : Validator<PreviewScreenshot> {
+
+  private val deviceCatalog: DeviceCatalog? = devices?.let(::DeviceCatalog)
 
   /** Validates a [PreviewScreenshot]. */
   override fun validate(target: PreviewScreenshot): ValidationResult {
@@ -292,7 +305,7 @@ class PreviewValidator : Validator<PreviewScreenshot> {
     issues.addAll(ParameterValidators.validateLocale(previewParams["locale"]))
     issues.addAll(ParameterValidators.validateBackgroundColor(previewParams["backgroundColor"], previewParams["showBackground"]))
     issues.addAll(ParameterValidators.validateWallpaper(previewParams["wallpaper"]))
-    issues.addAll(ParameterValidators.validateDevice(previewParams["device"]))
+    issues.addAll(ParameterValidators.validateDevice(previewParams["device"], deviceCatalog))
 
     return ValidationResult(issues)
   }

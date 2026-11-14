@@ -90,7 +90,8 @@ class Renderer(
 ) : Closeable {
   private val logger = Logger.getLogger(Renderer::class.java.name)
   internal val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
-  internal val previewValidator = PreviewValidator()
+  // The renderer resolves `device` references in the device catalog of the base configuration, so validate them against the same catalog.
+  internal val previewValidator by lazy { PreviewValidator(baseConfiguration.settings.devices) }
   internal val callbackRunner = StaticPreviewCallbackRunner()
   private val animationRenderer = PreviewAnimationRenderer(this)
   private val pendingDisposeTasks = ConcurrentLinkedQueue<() -> Future<*>>()

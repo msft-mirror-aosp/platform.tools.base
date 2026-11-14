@@ -127,6 +127,43 @@ class ScreenshotEdgeCaseTestSuiteTest {
   }
 
   @Test
+  fun runPreviewScreenshotTestWithUnknownDevice() {
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/screenshotTest/java/com/UnknownDeviceTest.kt",
+            """
+            package pkg.name
+
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.tooling.preview.Preview
+            import com.android.tools.screenshot.PreviewTest
+
+            @PreviewTest
+            @Preview(device = "id:tv_1080")
+            @Composable
+            fun unknownDeviceTest() {}
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+    val appProject = build.androidApplication()
+
+    // Without the device check, the preview would silently be rendered on the default phone.
+    val updateResult = build.updateReferenceImageWithTestSuite(expectFailure = true)
+    updateResult.assertErrorContains("references an unknown device id, got: 'id:tv_1080' (did you mean 'id:tv_1080p'?)")
+    assertThat(getTestSuiteReferenceDir(appProject, "pkg.name.UnknownDeviceTestKt")).doesNotExist()
+
+    build.validateScreenshotTestWithTestSuite(expectFailure = true)
+    val xmlReport = getTestSuiteXmlReportFile(appProject, testClassFqcn = "pkg.name.UnknownDeviceTestKt")
+    assertThat(xmlReport).exists()
+    assertThat(xmlReport.readText()).contains("references an unknown device id")
+  }
+
+  @Test
   fun runPreviewScreenshotTestsWithMissingUiToolingDep() {
     val uiToolingDep = "androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}"
     val build = rule.build {

@@ -16,6 +16,8 @@
 
 package com.android.tools.render.validation
 
+import com.android.sdklib.devices.Device
+import com.android.tools.preview.config.DEVICE_BY_ID_PREFIX
 import com.android.tools.preview.config.DEVICE_BY_SPEC_PREFIX
 import com.android.tools.preview.config.DeviceConfig
 import com.android.tools.preview.config.Preview.DeviceSpec
@@ -28,19 +30,26 @@ import com.android.tools.preview.config.Preview.DeviceSpec
  * - a custom device: `spec:width=<dimension>,height=<dimension>[,dpi=<int>,...]`, or
  * - an existing device with overrides: `spec:parent=<device id>[,orientation=<orientation>,...]`.
  *
- * The accepted parameters and values are defined in [DeviceSpecParameters]. Whether the device referenced by `parent` exists is not
- * checked, see [DeviceParameterValidator].
+ * The accepted parameters and values are defined in [DeviceSpecParameters]. Whether the device referenced by `parent` exists is only
+ * checked when the device catalog is given, see [DeviceParameterValidator].
  */
 internal object DeviceSpecValidator {
 
-  /** Returns the problems found in [spec], a `device` value starting with `spec:`, or an empty list when the renderer can parse it. */
-  fun validate(spec: String): List<String> = DeviceSpecValidation(spec).findProblems()
+  /**
+   * Returns the problems found in [spec], a `device` value starting with `spec:`, or an empty list when the renderer can parse it.
+   *
+   * @param devices the device catalog used by the renderer to resolve `parent`, or null to only validate the syntax.
+   */
+  fun validate(spec: String, devices: Collection<Device>? = null): List<String> = validate(spec, devices?.let(::DeviceCatalog))
+
+  /** Returns the problems found in [spec], a `device` value starting with `spec:`, against the pre-indexed [catalog]. */
+  fun validate(spec: String, catalog: DeviceCatalog?): List<String> = DeviceSpecValidation(spec, catalog).findProblems()
 }
 
 private const val SPEC_EXAMPLE = "spec:width=411dp,height=891dp"
 
 /** The validation of a single device [spec]: splits it into parameters, then checks them against the DeviceSpec language. */
-private class DeviceSpecValidation(private val spec: String) {
+private class DeviceSpecValidation(private val spec: String, private val catalog: DeviceCatalog?) {
 
   private val problems = mutableListOf<String>()
 
@@ -56,7 +65,9 @@ private class DeviceSpecValidation(private val spec: String) {
   fun findProblems(): List<String> {
     splitParameters()
     checkParameterValues()
-    if (!isParentBased) {
+    if (isParentBased) {
+      checkParentExists()
+    } else {
       checkRequiredParameters()
       checkDimensionUnits()
       checkRendererCanParse()
@@ -114,6 +125,20 @@ private class DeviceSpecValidation(private val spec: String) {
         report("Unknown device spec parameter '$name'$hint", help = "Supported parameters: $supportedNames")
       }
     }
+  }
+
+  /** The renderer resolves `parent` by device id and falls back to the default device when the id is not in the catalog. */
+  private fun checkParentExists() {
+    val ids = catalog?.ids ?: return
+    val parentId = parameters[DeviceSpec.PARAMETER_PARENT]?.takeIf { it.isNotEmpty() } ?: return
+    if (parentId in ids) return
+    val hint = didYouMeanDeviceHint(parentId, ids)
+    report(
+      "Device spec parameter '${DeviceSpec.PARAMETER_PARENT}' references an unknown device id '$parentId'$hint",
+      help =
+        "It must be the id of a built-in device definition, as accepted by '$DEVICE_BY_ID_PREFIX' (not a device defined in " +
+          "Android Studio's Device Manager), otherwise the preview is rendered on the default device",
+    )
   }
 
   /** A custom device spec must declare `width` and `height`. */
