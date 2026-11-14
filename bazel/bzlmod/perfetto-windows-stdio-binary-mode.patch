@@ -1,0 +1,41 @@
+diff --git a/src/trace_processor/rpc/stdiod.h b/src/trace_processor/rpc/stdiod.h
+index d07f06d..4813d0e 100644
+--- a/src/trace_processor/rpc/stdiod.h
++++ b/src/trace_processor/rpc/stdiod.h
+@@ -26,6 +26,7 @@ class TraceProcessor;
+ 
+ // Starts a RPC server that handles requests using protobuf-over-stdio.
+ // Returns when the server completes.
++// On Windows, the caller must put stdin and stdout in binary mode first.
+ base::Status RunStdioRpcServer(Rpc& rpc);
+ 
+ }  // namespace perfetto::trace_processor
+diff --git a/src/trace_processor/shell/server_subcommand.cc b/src/trace_processor/shell/server_subcommand.cc
+index 9a2697b..713932f 100644
+--- a/src/trace_processor/shell/server_subcommand.cc
++++ b/src/trace_processor/shell/server_subcommand.cc
+@@ -68,6 +68,11 @@
+ #include <csignal>
+ #endif
+ 
++#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
++#include <fcntl.h>
++#include <io.h>
++#endif
++
+ namespace perfetto::trace_processor::shell {
+ 
+ const char* ServerSubcommand::name() const {
+@@ -271,6 +276,12 @@ base::Status ServerSubcommand::Run(const SubcommandContext& ctx) {
+     signal(SIGINT, [](int) {
+       g_rpc_for_signal_handler->trace_processor()->InterruptQuery();
+     });
++#endif
++#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
++    // The RPC stream is binary, but the CRT defaults to text mode, which
++    // rewrites \n as \r\n on output and treats Ctrl-Z as EOF on input.
++    _setmode(_fileno(stdin), _O_BINARY);
++    _setmode(_fileno(stdout), _O_BINARY);
+ #endif
+     return RunStdioRpcServer(rpc);
+   }

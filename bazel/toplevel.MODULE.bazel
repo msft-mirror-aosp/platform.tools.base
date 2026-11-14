@@ -379,6 +379,10 @@ archive_override(
         "//tools/base/bazel/bzlmod:perfetto-mac-fork-fix.patch",
         # b/415841192: Exports the .proto sources, which Studio generates code from with its own rules.
         "//tools/base/bazel/bzlmod:perfetto-export-protos.patch",
+        # b/585926797: Puts stdin/stdout in binary mode for `trace_processor_shell server stdio` on Windows.
+        # TODO: Remove after upgrading to a Perfetto release that includes
+        # https://github.com/google/perfetto/pull/8645.
+        "//tools/base/bazel/bzlmod:perfetto-windows-stdio-binary-mode.patch",
     ],
     strip_prefix = "perfetto-58.2",
     urls = ["https://github.com/google/perfetto/archive/refs/tags/v58.2.tar.gz"],
