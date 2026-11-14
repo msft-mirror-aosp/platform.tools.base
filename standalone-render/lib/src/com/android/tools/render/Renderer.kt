@@ -273,6 +273,33 @@ class Renderer(
     private const val DISPOSAL_DRAIN_TIMEOUT_SECONDS = 5L
     internal val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>| ]+""".toRegex()
     private val invalidPathCharsRegex = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()
+
+    /** Returns the directory, relative to the output folder, of the images of the previews of the method [methodFqn]. */
+    fun sanitizePackagePath(methodFqn: String): String =
+      methodFqn
+        .substringBeforeLast(".")
+        .split('.')
+        .map { it.replace(invalidPathCharsRegex, "_") }
+        .filter { it.isNotEmpty() && it != "." && it != ".." }
+        .joinToString(File.separator)
+
+    /**
+     * Returns the base of the image file names of the preview [previewId] of the method [methodFqn].
+     *
+     * The images are written to the directory of the method's class (see [sanitizePackagePath]), so the class prefix is removed from
+     * [previewId], for example `pkg.MyTestKt.myPreview_Devices.TV_1080p_68b37a47` becomes `myPreview_Devices.TV_1080p_68b37a47`. Only the
+     * class prefix is removed: a preview name that contains `.` must not cut off the method name, otherwise the same `@Preview` on two
+     * methods of a class would write the same file. A [previewId] that doesn't start with the class prefix, such as a resource name, keeps
+     * only its last `.`-separated segment.
+     */
+    fun sanitizeBaseResultId(previewId: String, methodFqn: String): String {
+      val classPrefix = methodFqn.substringBeforeLast(".", missingDelimiterValue = "")
+      val relativePreviewId =
+        if (classPrefix.isNotEmpty() && previewId.startsWith("$classPrefix.")) previewId.removePrefix("$classPrefix.")
+        else previewId.substringAfterLast(".")
+      val sanitized = relativePreviewId.replace(invalidPathCharsRegex, "_")
+      return if (sanitized.isEmpty() || sanitized == "." || sanitized == "..") "preview" else sanitized
+    }
   }
 
   /**
@@ -305,7 +332,7 @@ class Renderer(
     }
 
     val packagePath = sanitizePackagePath(screenshot.methodFQN)
-    val baseResultId = sanitizeBaseResultId(screenshot.previewId)
+    val baseResultId = sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
     var imageCounter = 0
 
     return discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).flatMap { method ->
@@ -372,7 +399,7 @@ class Renderer(
     val previewTarget =
       if (screenshot.previewId == screenshot.methodFQN) resourceTarget
       else ResourceTarget.parse(screenshot.previewId) as? ResourceTarget.Valid
-    val baseResultId = sanitizeBaseResultId(previewTarget?.name ?: screenshot.previewId)
+    val baseResultId = sanitizeBaseResultId(previewTarget?.name ?: screenshot.previewId, screenshot.methodFQN)
     val validationResult = previewValidator.validate(screenshot)
     return if (validationResult.hasErrors) {
       val defaultRelativeImagePath = if (configuration.renderImage) packagePath + File.separator + "${baseResultId}_0.png" else ""
@@ -573,19 +600,6 @@ class Renderer(
     } catch (e: IOException) {
       logger.log(Level.SEVERE, "Failed to write image to $relativeImagePath", e)
     }
-  }
-
-  internal fun sanitizePackagePath(methodFqn: String): String =
-    methodFqn
-      .substringBeforeLast(".")
-      .split('.')
-      .map { it.replace(invalidPathCharsRegex, "_") }
-      .filter { it.isNotEmpty() && it != "." && it != ".." }
-      .joinToString(File.separator)
-
-  internal fun sanitizeBaseResultId(previewId: String): String {
-    val sanitized = previewId.substringAfterLast(".").replace(invalidPathCharsRegex, "_")
-    return if (sanitized.isEmpty() || sanitized == "." || sanitized == "..") "preview" else sanitized
   }
 
   /**

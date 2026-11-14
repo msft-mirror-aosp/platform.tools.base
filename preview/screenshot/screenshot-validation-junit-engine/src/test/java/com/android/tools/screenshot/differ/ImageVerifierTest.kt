@@ -71,6 +71,69 @@ class ImageVerifierTest {
   }
 
   @Test
+  fun verify_missingReferenceImageWithLegacyName_throwsWithRenameHint() {
+    val imageVerifier = ImageVerifier(PixelPerfect())
+    val newImagePath = createImageFile("circle", newDir)
+    File(createImageFile("circle", refDir)).renameTo(File(refDir, "TV_1080p_68b37a47_0.png"))
+    val error =
+      assertThrows(ScreenshotImageNotFoundException::class.java) {
+        imageVerifier.verify(
+          File(newImagePath),
+          File(refDir, "myPreview_Devices.TV_1080p_68b37a47_0.png"),
+          File(diffDir, "diff.png"),
+          tempDir.root,
+        )
+      }
+    val referencePath = File("ref", "myPreview_Devices.TV_1080p_68b37a47_0.png").path
+    val legacyReferencePath = File("ref", "TV_1080p_68b37a47_0.png").path
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Reference image file does not exist ($referencePath). A reference image with the file name used " +
+          "by earlier versions exists ($legacyReferencePath): preview names that contain '.' are now included in full in the " +
+          "file name. Rename it to myPreview_Devices.TV_1080p_68b37a47_0.png or, if several previews used that file, run the update task " +
+          "to record the reference images again and then delete the old file."
+      )
+  }
+
+  @Test
+  fun verify_missingReferenceImageWithoutLegacyFile_throwsWithoutRenameHint() {
+    val imageVerifier = ImageVerifier(PixelPerfect())
+    val newImagePath = createImageFile("circle", newDir)
+    val error =
+      assertThrows(ScreenshotImageNotFoundException::class.java) {
+        imageVerifier.verify(
+          File(newImagePath),
+          File(refDir, "myPreview_Devices.TV_1080p_68b37a47_0.png"),
+          File(diffDir, "diff.png"),
+          tempDir.root,
+        )
+      }
+    val referencePath = File("ref", "myPreview_Devices.TV_1080p_68b37a47_0.png").path
+    assertThat(error).hasMessageThat().isEqualTo("Reference image file does not exist ($referencePath).")
+  }
+
+  @Test
+  fun verify_missingReferenceImageWithoutDotInName_throwsWithoutRenameHint() {
+    val imageVerifier = ImageVerifier(PixelPerfect())
+    val newImagePath = createImageFile("circle", newDir)
+    // Earlier versions used the same name when the preview name has no '.', so other files in the directory are never suggested.
+    File(createImageFile("circle", refDir)).renameTo(File(refDir, "Phone_68b37a47_0.png"))
+    File(createImageFile("circle", refDir)).renameTo(File(refDir, "68b37a47_0.png"))
+    val error =
+      assertThrows(ScreenshotImageNotFoundException::class.java) {
+        imageVerifier.verify(
+          File(newImagePath),
+          File(refDir, "myPreview_Phone_68b37a47_0.png"),
+          File(diffDir, "diff.png"),
+          tempDir.root,
+        )
+      }
+    val referencePath = File("ref", "myPreview_Phone_68b37a47_0.png").path
+    assertThat(error).hasMessageThat().isEqualTo("Reference image file does not exist ($referencePath).")
+  }
+
+  @Test
   fun verify_identicalImages_returnsSimilar() {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")

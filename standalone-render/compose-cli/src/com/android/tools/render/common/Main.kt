@@ -147,8 +147,6 @@ private class RealManagedRenderer(private val delegate: Renderer) : ManagedRende
   }
 }
 
-private val INVALID_PATH_CHARS_REGEX = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()
-
 private val RESULT_COMPARATOR: Comparator<PreviewScreenshotResult> =
   compareBy(
     { it.imagePath.ifEmpty { null } ?: it.componentTreePath.orEmpty() },
@@ -157,17 +155,11 @@ private val RESULT_COMPARATOR: Comparator<PreviewScreenshotResult> =
     { it.displayName.orEmpty() },
   )
 
+/** The image path that [Renderer] would have used for the first image of [screenshot], for results of screenshots that threw. */
 private fun defaultErrorImagePath(screenshot: PreviewScreenshot, renderImage: Boolean): String {
   if (!renderImage) return ""
-  val packagePath =
-    screenshot.methodFQN
-      .substringBeforeLast(".")
-      .split('.')
-      .map { it.replace(INVALID_PATH_CHARS_REGEX, "_") }
-      .filter { it.isNotEmpty() && it != "." && it != ".." }
-      .joinToString(File.separator)
-  val sanitizedId = screenshot.previewId.substringAfterLast(".").replace(INVALID_PATH_CHARS_REGEX, "_")
-  val baseResultId = if (sanitizedId.isEmpty() || sanitizedId == "." || sanitizedId == "..") "preview" else sanitizedId
+  val packagePath = Renderer.sanitizePackagePath(screenshot.methodFQN)
+  val baseResultId = Renderer.sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
   return if (packagePath.isEmpty()) "${baseResultId}_0.png" else packagePath + File.separator + "${baseResultId}_0.png"
 }
 

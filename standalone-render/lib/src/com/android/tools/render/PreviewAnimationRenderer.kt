@@ -62,8 +62,8 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
     outputFolderPath: String,
     options: AnimationRenderOptions = AnimationRenderOptions(),
   ): List<PreviewAnimationResult> {
-    val packagePath = renderer.sanitizePackagePath(screenshot.methodFQN)
-    val baseResultId = renderer.sanitizeBaseResultId(screenshot.previewId)
+    val packagePath = Renderer.sanitizePackagePath(screenshot.methodFQN)
+    val baseResultId = Renderer.sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
     var previewCounter = 0
 
     if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {

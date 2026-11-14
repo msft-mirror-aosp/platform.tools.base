@@ -23,6 +23,8 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 import kotlin.io.path.readText
 import org.junit.Rule
 import org.junit.Test
@@ -161,6 +163,58 @@ class ScreenshotEdgeCaseTestSuiteTest {
     val xmlReport = getTestSuiteXmlReportFile(appProject, testClassFqcn = "pkg.name.UnknownDeviceTestKt")
     assertThat(xmlReport).exists()
     assertThat(xmlReport.readText()).contains("references an unknown device id")
+  }
+
+  @Test
+  fun runPreviewScreenshotTestWithSamePreviewNameContainingDotsOnTwoMethods() {
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/screenshotTest/java/com/DottedPreviewNameTest.kt",
+            """
+            package pkg.name
+
+            import androidx.compose.foundation.background
+            import androidx.compose.foundation.layout.Box
+            import androidx.compose.foundation.layout.size
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.graphics.Color
+            import androidx.compose.ui.tooling.preview.Preview
+            import androidx.compose.ui.unit.dp
+            import com.android.tools.screenshot.PreviewTest
+
+            @PreviewTest
+            @Preview(name = "Devices.PHONE", widthDp = 40, heightDp = 40)
+            @Composable
+            fun redBox() {
+                Box(Modifier.size(40.dp).background(Color.Red))
+            }
+
+            @PreviewTest
+            @Preview(name = "Devices.PHONE", widthDp = 40, heightDp = 40)
+            @Composable
+            fun blueBox() {
+                Box(Modifier.size(40.dp).background(Color.Blue))
+            }
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
+    val appProject = build.androidApplication()
+
+    build.updateReferenceImageWithTestSuite()
+
+    // Both previews have the same annotation, so they only differ by method name, which must not be cut off at the '.' of the name.
+    val referenceDir = getTestSuiteReferenceDir(appProject, "pkg.name.DottedPreviewNameTestKt")
+    val referenceNames = referenceDir.listDirectoryEntries("*.png").map { it.name }.sorted()
+    assertThat(referenceNames).hasSize(2)
+    assertThat(referenceNames[0]).startsWith("blueBox_Devices.PHONE_")
+    assertThat(referenceNames[1]).startsWith("redBox_Devices.PHONE_")
+    build.validateScreenshotTestWithTestSuite()
   }
 
   @Test

@@ -41,7 +41,17 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
     }
 
     if (!referenceImageFile.exists()) {
-      throw ScreenshotImageNotFoundException("Reference image file does not exist (${referenceImageFile.relativeTo(projectRoot).path}).")
+      val legacyNameHint =
+        legacyReferenceImageFile(referenceImageFile)
+          ?.takeIf { it.exists() }
+          ?.let { legacyFile ->
+            " A reference image with the file name used by earlier versions exists (${legacyFile.relativeTo(projectRoot).path}):" +
+              " preview names that contain '.' are now included in full in the file name. Rename it to ${referenceImageFile.name} or," +
+              " if several previews used that file, run the update task to record the reference images again and then delete the old file."
+          } ?: ""
+      throw ScreenshotImageNotFoundException(
+        "Reference image file does not exist (${referenceImageFile.relativeTo(projectRoot).path}).$legacyNameHint"
+      )
     }
 
     val actual = ImageFileReader.read(newImageFile, ImageFileReader.PREVIEW_IMAGE, projectRoot)
@@ -67,4 +77,16 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
     val diffPercentValue: Double? = diff.percentDiff
     return VerificationResult(diff, diffPercentValue)
   }
+}
+
+/**
+ * Returns the file that earlier versions wrote for the reference image [referenceImageFile], or null when they used the same name.
+ *
+ * Earlier versions kept only the part of the image name after its last `.`, which drops the method name, and part of the preview name, when
+ * the preview name contains `.`: `myPreview_Devices.TV_1080p_68b37a47_0.png` was written as `TV_1080p_68b37a47_0.png`.
+ */
+private fun legacyReferenceImageFile(referenceImageFile: File): File? {
+  val baseName = referenceImageFile.name.removeSuffix(".png")
+  if ('.' !in baseName) return null
+  return File(referenceImageFile.parentFile, baseName.substringAfterLast('.') + ".png")
 }

@@ -393,6 +393,29 @@ class StandalonePreviewRendererCacheTest {
   }
 
   @Test
+  fun resultOfAScreenshotThatThrowsUsesTheRendererImagePath() {
+    val resApk = tempFolder.newFile("res.apk").apply { writeText("apk") }
+    val factory: (RendererBootstrapRequest) -> ManagedRenderer = {
+      FakeManagedRenderer(onRender = { _, _ -> throw IllegalArgumentException("bad bytecode") })
+    }
+    val outDir = tempFolder.newFolder("out_error_paths").absolutePath
+    val first =
+      ComposeScreenshot("com.example.PreviewKt.first", emptyList(), emptyMap(), "com.example.PreviewKt.first_Devices.TV_1080p_68b37a47")
+    val second =
+      ComposeScreenshot("com.example.PreviewKt.second", emptyList(), emptyMap(), "com.example.PreviewKt.second_Devices.TV_1080p_68b37a47")
+
+    val result = newFakeRenderer(resApk, factory).render(listOf(first, second), outDir)
+
+    // A preview name that contains '.' must not cut off the method name, see Renderer.sanitizeBaseResultId.
+    assertThat(result.screenshotResults.map { it.imagePath })
+      .containsExactly(
+        "com/example/PreviewKt/first_Devices.TV_1080p_68b37a47_0.png".replace('/', File.separatorChar),
+        "com/example/PreviewKt/second_Devices.TV_1080p_68b37a47_0.png".replace('/', File.separatorChar),
+      )
+    assertThat(result.screenshotResults.map { it.error?.message }).containsExactly("bad bytecode", "bad bytecode")
+  }
+
+  @Test
   fun isolatesPerScreenshotExceptionsPropagatesCancellationAndEvictsWarmRendererOnLinkageError() {
     val resApk = tempFolder.newFile("res.apk").apply { writeText("apk") }
     var throwMode: String? = null
