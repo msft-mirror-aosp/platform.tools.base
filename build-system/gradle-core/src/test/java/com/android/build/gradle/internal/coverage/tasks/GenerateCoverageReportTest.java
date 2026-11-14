@@ -109,14 +109,16 @@ public class GenerateCoverageReportTest {
                         Charsets.UTF_8.name(),
                         indexHtml.getParentFile().toURI().toString());
 
-        Elements totals = document.select("td:contains(48 of 53)");
+        // BuildConfig counts too, with its 7 instructions missed: the coverage file has no data
+        // for it, as the build didn't instrument it then.
+        Elements totals = document.select("td:contains(55 of 60)");
         expect.that(totals).named("Total coverage table cell").hasSize(1);
 
         document =
                 navigateTo(
                         getLinkWithText(document, "com.android.tools.build.tests.myapplication"));
         getLinkWithText(document, "MainActivity.new View.OnClickListener() {...}");
-        expect.that(document.text()).doesNotContain("BuildConfig");
+        getLinkWithText(document, "BuildConfig");
         document = navigateTo(getLinkWithText(document, "MainActivity"));
         document = navigateTo(getLinkWithText(document, "doA()"));
         File reportXml = new File(reportDir, "report.xml");

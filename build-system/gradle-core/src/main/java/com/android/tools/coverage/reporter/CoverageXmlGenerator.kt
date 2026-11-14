@@ -34,6 +34,7 @@ class CoverageXmlGenerator {
    * @param reportName Human-readable name for the report (e.g., "debug")
    * @param testPackageId Optional package ID of the test app to filter out from the report
    * @param exclusions Optional set of class names or package prefixes to exclude
+   * @param projectClasses Internal names of the classes that the project compiles, reported even without a source in [sourceFolders]
    */
   fun generate(
     metadataFile: File,
@@ -43,10 +44,11 @@ class CoverageXmlGenerator {
     testPackageId: String? = null,
     exclusions: Set<String> = emptySet(),
     sourceFolders: Collection<File> = emptyList(),
+    projectClasses: Set<String> = emptySet(),
   ) {
     val coverageData = decoder.decode(metadataFile, hitsFile)
 
-    val reportModel = aggregator.aggregate(coverageData, reportName, testPackageId, exclusions, sourceFolders)
+    val reportModel = aggregator.aggregate(coverageData, reportName, testPackageId, exclusions, sourceFolders, projectClasses)
 
     writer.write(reportModel, outputFile)
   }

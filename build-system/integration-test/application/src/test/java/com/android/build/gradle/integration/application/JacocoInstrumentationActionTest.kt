@@ -33,7 +33,7 @@ class JacocoInstrumentationActionTest {
         "com/example/Manifest.class" to JacocoTask.Action.COPY,
         "com/example/Manifest\$details.class" to JacocoTask.Action.COPY,
         "com/example/ManifestDetails.class" to JacocoTask.Action.INSTRUMENT,
-        "com/example/BuildConfig.class" to JacocoTask.Action.COPY,
+        "com/example/BuildConfig.class" to JacocoTask.Action.INSTRUMENT,
         "com/example/APiratesFavouriteLetterIsR.class" to JacocoTask.Action.INSTRUMENT,
         "SomeClass.class" to JacocoTask.Action.INSTRUMENT,
         "com/example/AnotherClass.class" to JacocoTask.Action.INSTRUMENT,

@@ -399,8 +399,9 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
                     reportName = reportName,
                     testPackageId = null,
                     exclusions = emptySet(),
-                    // Only classes with a source in the tested variant are reported, which leaves out the test classes.
+                    // Only classes that the tested variant compiles or has a source for are reported, which leaves out the test classes.
                     sourceFolders = parameters.sourceFolders.files,
+                    classFolders = parameters.classFolders.files,
                   )
                 }
             } catch (e: Exception) {

@@ -310,6 +310,7 @@ abstract class JacocoReportTask : NonIncrementalTask() {
               parameters.testPackageId.orNull,
               parameters.exclusions.get(),
               parameters.sourceFolders.files,
+              parameters.classFolders.files,
             )
           } else if (jacocoFiles.isNotEmpty()) {
             generateReport(

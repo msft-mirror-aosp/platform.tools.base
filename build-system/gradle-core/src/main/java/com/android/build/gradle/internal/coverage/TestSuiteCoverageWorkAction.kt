@@ -106,7 +106,16 @@ abstract class TestSuiteCoverageWorkAction : WorkAction<TestSuiteCoverageWorkPar
     val sourceFolders = parameters.sourceFolders.files
     if (jacocoFiles.isEmpty() && onDeviceRuns.size == 1) {
       val run = onDeviceRuns.single()
-      generateOnTheFlyXml(run.metadata, run.hits, xmlFile, reportName, testPackageId = null, exclusions = emptySet(), sourceFolders)
+      generateOnTheFlyXml(
+        run.metadata,
+        run.hits,
+        xmlFile,
+        reportName,
+        testPackageId = null,
+        exclusions = emptySet(),
+        sourceFolders,
+        classFolders = parameters.classFolders.files,
+      )
       return
     }
     val reportsDir = Files.createTempDirectory("coverage").toFile()
@@ -128,7 +137,16 @@ abstract class TestSuiteCoverageWorkAction : WorkAction<TestSuiteCoverageWorkPar
       }
       onDeviceRuns.forEachIndexed { index, run ->
         val report = File(reportsDir, "on-device-$index.xml")
-        generateOnTheFlyXml(run.metadata, run.hits, report, reportName, testPackageId = null, exclusions = emptySet(), sourceFolders)
+        generateOnTheFlyXml(
+          run.metadata,
+          run.hits,
+          report,
+          reportName,
+          testPackageId = null,
+          exclusions = emptySet(),
+          sourceFolders,
+          classFolders = parameters.classFolders.files,
+        )
         reports += report
       }
       CoverageXmlMerger().merge(reports, reportName, xmlFile)

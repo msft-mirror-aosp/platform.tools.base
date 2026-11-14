@@ -22,10 +22,15 @@ import com.android.tools.coverage.proto.CoverageMetadataProto.CoverageMetadata
 import com.android.tools.coverage.proto.CoverageMetadataProto.LineMetadata
 import com.android.tools.coverage.proto.CoverageMetadataProto.MethodMetadata
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import java.util.BitSet
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class ReportAggregatorTest {
+
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
   @Test
   fun testHierarchicalAggregation() {
@@ -82,6 +87,52 @@ class ReportAggregatorTest {
     val report = ReportAggregator().aggregate(data, "test")
 
     assertThat(report.packages).isEmpty()
+  }
+
+  @Test
+  fun testRAndManifestClassesAreLeftOutWithASource() {
+    // BuildConfig stays: a module with build config fields generates its source in a folder among the source folders, and the fields can
+    // run code.
+    val sourceFolder = temporaryFolder.newFolder("src")
+    for (name in listOf("BuildConfig.java", "R.java", "Manifest.java", "ManifestReader.kt")) {
+      File(sourceFolder, "com/example/$name").apply { parentFile.mkdirs() }.writeText("package com.example")
+    }
+    fun classMetadata(className: String, sourceFile: String) =
+      ClassMetadata.newBuilder().setClassName(className).setSourceFile(sourceFile).addMethods(MethodMetadata.newBuilder().setName("<init>"))
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(classMetadata("com/example/BuildConfig", "BuildConfig.java"))
+        .addClasses(classMetadata("com/example/R", "R.java"))
+        .addClasses(classMetadata("com/example/R\$string", "R.java"))
+        .addClasses(classMetadata("com/example/Manifest", "Manifest.java"))
+        .addClasses(classMetadata("com/example/Manifest\$permission", "Manifest.java"))
+        // Only the names themselves count.
+        .addClasses(classMetadata("com/example/ManifestReader", "ManifestReader.kt"))
+        .build()
+
+    val report = ReportAggregator().aggregate(CoverageData(metadata, BitSet()), "test", sourceFolders = listOf(sourceFolder))
+
+    assertThat(report.packages["com/example"]!!.classes.keys).containsExactly("com/example/BuildConfig", "com/example/ManifestReader")
+  }
+
+  @Test
+  fun testManifestClassesAreLeftOutWithoutASource() {
+    // As they are when they come compiled from a jar, without a source file. BuildConfig stays, as any other class does.
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder().setClassName("com/example/BuildConfig").addMethods(MethodMetadata.newBuilder().setName("<init>"))
+        )
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/Manifest\$permission")
+            .addMethods(MethodMetadata.newBuilder().setName("<init>"))
+        )
+        .build()
+
+    val report = ReportAggregator().aggregate(CoverageData(metadata, BitSet()), "test")
+
+    assertThat(report.packages["com/example"]!!.classes.keys).containsExactly("com/example/BuildConfig")
   }
 
   @Test
@@ -639,5 +690,36 @@ class ReportAggregatorTest {
     assertThat(pkg.sourceFiles["MyClass.kt"]!!.classesCounter).isEqualTo(Counter(covered = 1, missed = 0))
     assertThat(pkg.classesCounter).isEqualTo(Counter(covered = 1, missed = 0))
     assertThat(report.classesCounter).isEqualTo(Counter(covered = 1, missed = 0))
+  }
+
+  @Test
+  fun testClassesThatTheProjectCompilesAreReportedWithoutASource() {
+    val sourceFolder = temporaryFolder.newFolder("src")
+    File(sourceFolder, "com/example/Api.kt").apply { parentFile.mkdirs() }.writeText("package com.example")
+    val metadata =
+      CoverageMetadata.newBuilder()
+        // D8 adds this companion class for the interface in Api.kt: the project doesn't compile it, but its source is in the source folder.
+        .addClasses(ClassMetadata.newBuilder().setClassName("com/example/Api\$-CC").setSourceFile("Api.kt"))
+        // The project compiles this class from a source generated outside the source folders, as Hilt does for its components.
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/DaggerApp_HiltComponents_SingletonC")
+            .setSourceFile("DaggerApp_HiltComponents_SingletonC.java")
+        )
+        // A class of a library: the project doesn't compile it and has no source for it.
+        .addClasses(ClassMetadata.newBuilder().setClassName("com/example/Library").setSourceFile("Library.kt"))
+        .build()
+
+    val report =
+      ReportAggregator()
+        .aggregate(
+          CoverageData(metadata, BitSet()),
+          "test",
+          sourceFolders = listOf(sourceFolder),
+          projectClasses = setOf("com/example/DaggerApp_HiltComponents_SingletonC"),
+        )
+
+    assertThat(report.packages["com/example"]!!.classes.keys)
+      .containsExactly("com/example/Api\$-CC", "com/example/DaggerApp_HiltComponents_SingletonC")
   }
 }

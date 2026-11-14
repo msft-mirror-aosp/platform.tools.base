@@ -366,8 +366,37 @@ class TestResultsCollectionTaskTest {
     assertThat(xmlReport.readText()).contains("<class name=\"com/example/app/Foo\"")
   }
 
-  /** Writes the files of one on-device coverage run: `Foo.bar()` and the test method calling it were both hit. */
-  private fun writeOnDeviceCoverage(runDir: File) {
+  @Test
+  fun testCodeCoverageCollectionWorkerAction_reportsClassesThatTheTestedVariantCompilesWithoutASource() {
+    val reportOutputDir = temporaryFolder.newFolder("coverage_output_dir")
+    val connectedDir = temporaryFolder.newFolder("connected")
+    val component = "com/example/app/DaggerApp_HiltComponents_SingletonC"
+    writeOnDeviceCoverage(
+      File(connectedDir, "device-1/coverage_data"),
+      onDeviceClass(
+        className = "L$component;",
+        sourceFile = "DaggerApp_HiltComponents_SingletonC.java",
+        methodName = "builder",
+        blockId = 2,
+        line = 5,
+      ),
+    )
+    // The tested variant compiles it from a source that Hilt generates outside the source folders.
+    val classFolder = temporaryFolder.newFolder("classes")
+    File(classFolder, "$component.class").apply { parentFile.mkdirs() }.writeText("")
+
+    coverageWorker(reportOutputDir, connectedTestCoverageDirectory = connectedDir, classFolders = listOf(classFolder)).execute()
+
+    val xmlReport = File(reportOutputDir, "debugAppAndroidTestXmlReport.xml").readText()
+    assertThat(xmlReport).contains("<class name=\"$component\"")
+    assertThat(xmlReport).doesNotContain("FooTest")
+  }
+
+  /**
+   * Writes the files of one on-device coverage run: `Foo.bar()` and the test method calling it were both hit, and the blocks of
+   * [otherClasses] weren't.
+   */
+  private fun writeOnDeviceCoverage(runDir: File, vararg otherClasses: ClassMetadata) {
     runDir.mkdirs()
     val metadata =
       CoverageMetadata.newBuilder()
@@ -376,6 +405,7 @@ class TestResultsCollectionTaskTest {
         .addClasses(
           onDeviceClass(className = "Lcom/example/app/FooTest;", sourceFile = "FooTest.kt", methodName = "testBar", blockId = 1, line = 7)
         )
+        .addAllClasses(otherClasses.asList())
         .build()
     File(runDir, "coverage_metadata.pb").outputStream().use { metadata.writeTo(it) }
     val hitBlocks = BitSet().apply { set(0, 2) }
@@ -400,12 +430,16 @@ class TestResultsCollectionTaskTest {
       )
       .build()
 
-  /** Returns a worker for the given coverage inputs, where only `com/example/app/Foo.kt` has a source in the tested variant. */
+  /**
+   * Returns a worker for the given coverage inputs, where only `com/example/app/Foo.kt` has a source in the tested variant, which compiles
+   * the classes in [classFolders].
+   */
   private fun coverageWorker(
     reportOutputDir: File,
     unitTestCoverageFile: File? = null,
     connectedTestCoverageDirectory: File? = null,
     testSuiteCoverageData: File? = null,
+    classFolders: List<File> = emptyList(),
   ): CodeCoverageCollectionWorkerAction {
     val sourceFolder = File(temporaryFolder.root, "src/main/kotlin")
     File(sourceFolder, "com/example/app/Foo.kt").apply { parentFile.mkdirs() }.writeText("package com.example.app")
@@ -416,7 +450,7 @@ class TestResultsCollectionTaskTest {
           override val unitTestCoverageFile = project.files(listOfNotNull(unitTestCoverageFile))
           override val connectedTestCoverageDirectory = project.files(listOfNotNull(connectedTestCoverageDirectory))
           override val testSuiteCoverageData = project.files(listOfNotNull(testSuiteCoverageData))
-          override val classFolders = project.files()
+          override val classFolders = project.files(classFolders)
           override val sourceFolders = project.files(sourceFolder)
           override val dependantModulesReports = project.files()
           override val variantName = project.objects.property(String::class.java).apply { set("debug") }

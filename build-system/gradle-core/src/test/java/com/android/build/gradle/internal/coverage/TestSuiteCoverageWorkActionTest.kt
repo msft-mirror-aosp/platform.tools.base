@@ -71,8 +71,38 @@ class TestSuiteCoverageWorkActionTest {
     assertThat(File(reportDir, "index.html")).exists()
   }
 
-  /** Writes the files of one on-device coverage run, in which `Foo.bar()` was hit. */
-  private fun writeOnDeviceCoverage(runDir: File) {
+  @Test
+  fun reportIncludesClassesThatTheTestedVariantCompilesWithoutASource() {
+    val coverageDir = temporaryFolder.newFolder("coverage")
+    writeOnDeviceCoverage(File(coverageDir, "coverage_data"), COMPONENT)
+    val reportDir = temporaryFolder.newFolder("report")
+
+    coverageWorker(coverageDir.walk().filter { it.isFile }.toList(), reportDir, classFolders = listOf(componentClassFolder())).execute()
+
+    assertThat(File(reportDir, "report.xml").readText()).contains("<class name=\"$COMPONENT\"")
+  }
+
+  @Test
+  fun reportOfSeveralOnDeviceRunsIncludesClassesThatTheTestedVariantCompilesWithoutASource() {
+    val coverageDir = temporaryFolder.newFolder("coverage")
+    writeOnDeviceCoverage(File(coverageDir, "device-1/coverage_data"), COMPONENT)
+    writeOnDeviceCoverage(File(coverageDir, "device-2/coverage_data"), COMPONENT)
+    val reportDir = temporaryFolder.newFolder("report")
+
+    coverageWorker(coverageDir.walk().filter { it.isFile }.toList(), reportDir, classFolders = listOf(componentClassFolder())).execute()
+
+    assertThat(File(reportDir, "report.xml").readText()).contains("<class name=\"$COMPONENT\"")
+  }
+
+  /** Returns a class folder with the class file of [COMPONENT], which Hilt generates the source of outside the source folders. */
+  private fun componentClassFolder(): File {
+    val classFolder = temporaryFolder.newFolder("classes")
+    File(classFolder, "$COMPONENT.class").apply { parentFile.mkdirs() }.writeText("")
+    return classFolder
+  }
+
+  /** Writes the files of one on-device coverage run, in which `Foo.bar()` was hit and the `builder()` methods of [otherClasses] weren't. */
+  private fun writeOnDeviceCoverage(runDir: File, vararg otherClasses: String) {
     runDir.mkdirs()
     val metadata =
       CoverageMetadata.newBuilder()
@@ -93,13 +123,36 @@ class TestSuiteCoverageWorkActionTest {
                 )
             )
         )
+        .addAllClasses(
+          otherClasses.mapIndexed { index, name ->
+            ClassMetadata.newBuilder()
+              .setClassName("L$name;")
+              .setSourceFile(name.substringAfterLast('/') + ".java")
+              .addMethods(
+                MethodMetadata.newBuilder()
+                  .setName("builder")
+                  .setSignature("()V")
+                  .addBlocks(
+                    BlockMetadata.newBuilder()
+                      .setBlockId(index + 1)
+                      .setBranchCount(1)
+                      .addLines(LineMetadata.newBuilder().setLineNumber(5).setInstructionCount(2))
+                  )
+              )
+              .build()
+          }
+        )
         .build()
     File(runDir, ON_DEVICE_COVERAGE_METADATA_FILE).outputStream().use { metadata.writeTo(it) }
     val hits = CoverageHits.newBuilder().setVersion(1).setHitMask(ByteString.copyFrom(BitSet().apply { set(0) }.toByteArray())).build()
     File(runDir, ON_DEVICE_COVERAGE_HITS_FILE).outputStream().use { hits.writeTo(it) }
   }
 
-  private fun coverageWorker(coverageFiles: List<File>, reportDir: File): TestSuiteCoverageWorkAction {
+  private fun coverageWorker(
+    coverageFiles: List<File>,
+    reportDir: File,
+    classFolders: List<File> = emptyList(),
+  ): TestSuiteCoverageWorkAction {
     val sourceFolder = File(temporaryFolder.root, "src/main/kotlin")
     File(sourceFolder, "com/example/app/Foo.kt")
       .apply { parentFile.mkdirs() }
@@ -109,7 +162,7 @@ class TestSuiteCoverageWorkActionTest {
         return object : TestSuiteCoverageWorkParameters {
           override val coverageFiles = project.files(coverageFiles)
           override val reportDir = project.objects.directoryProperty().apply { set(reportDir) }
-          override val classFolders = project.files()
+          override val classFolders = project.files(classFolders)
           override val sourceFolders = project.files(sourceFolder)
           override val reportName = project.objects.property(String::class.java).apply { set("debug") }
           override val projectName = project.objects.property(String::class.java).apply { set(":app") }
@@ -120,5 +173,10 @@ class TestSuiteCoverageWorkActionTest {
         }
       }
     }
+  }
+
+  private companion object {
+    /** A class that Hilt generates the source of. */
+    const val COMPONENT = "com/example/app/DaggerApp_HiltComponents_SingletonC"
   }
 }

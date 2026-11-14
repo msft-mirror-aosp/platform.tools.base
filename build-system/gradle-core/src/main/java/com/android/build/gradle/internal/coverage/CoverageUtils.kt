@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.coverage.report.ReportType
 import com.android.build.gradle.internal.coverage.report.createHtmlReportVisitor
 import com.android.build.gradle.internal.coverage.report.createXmlReportVisitor
 import com.android.tools.coverage.reporter.CoverageXmlGenerator
+import com.android.tools.coverage.reporter.isROrManifest
 import com.google.common.io.Closeables
 import java.io.File
 import java.io.FileInputStream
@@ -46,6 +47,7 @@ internal fun generateOnTheFlyXml(
   testPackageId: String?,
   exclusions: Set<String>,
   sourceFolders: Collection<File>,
+  classFolders: Collection<File>,
 ) {
   if (metadataFile == null || hitsFile == null) {
     throw IOException("On-the-fly coverage is enabled but required .pb files were not found.")
@@ -59,7 +61,25 @@ internal fun generateOnTheFlyXml(
       testPackageId = testPackageId,
       exclusions = exclusions,
       sourceFolders = sourceFolders,
+      projectClasses = findProjectClasses(classFolders),
     )
+}
+
+/**
+ * Returns the internal names, such as `com/example/Foo`, of the classes in the folders among [classFolders], without the R and Manifest
+ * classes, which the reports leave out. Other entries, such as jars, are skipped.
+ */
+internal fun findProjectClasses(classFolders: Collection<File>): Set<String> {
+  val classes = mutableSetOf<String>()
+  for (folder in classFolders.filter { it.isDirectory }) {
+    folder
+      .walkTopDown()
+      // A class folder inside another one gets its own walk, which names its classes relative to it.
+      .onEnter { it.path == folder.path || it !in classFolders }
+      .filter { it.isFile && isReportedClassFile(it.name) }
+      .forEach { classes.add(it.relativeTo(folder).invariantSeparatorsPath.removeSuffix(".class")) }
+  }
+  return classes
 }
 
 /** The files the on-device coverage agent writes in one test run. */
@@ -190,15 +210,7 @@ private fun analyze(analyzer: Analyzer, file: File, originalClassFolders: Collec
       }
     }
   } else {
-    val name = file.name
-    if (
-      !name.endsWith(".class") ||
-        name == "R.class" ||
-        name.startsWith("R$") ||
-        name == "Manifest.class" ||
-        name.startsWith("Manifest$") ||
-        name == "BuildConfig.class"
-    ) {
+    if (!isReportedClassFile(file.name)) {
       return
     }
     val `in`: InputStream = FileInputStream(file)
@@ -209,3 +221,6 @@ private fun analyze(analyzer: Analyzer, file: File, originalClassFolders: Collec
     }
   }
 }
+
+/** Whether a file named [name] is a class file that the reports cover: R and Manifest classes are left out. */
+private fun isReportedClassFile(name: String): Boolean = name.endsWith(".class") && !isROrManifest(name.removeSuffix(".class"))

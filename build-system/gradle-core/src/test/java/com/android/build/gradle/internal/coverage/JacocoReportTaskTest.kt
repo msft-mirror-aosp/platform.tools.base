@@ -16,6 +16,12 @@
 
 package com.android.build.gradle.internal.coverage
 
+import com.android.tools.coverage.proto.CoverageMetadataProto.BlockMetadata
+import com.android.tools.coverage.proto.CoverageMetadataProto.ClassMetadata
+import com.android.tools.coverage.proto.CoverageMetadataProto.CoverageHits
+import com.android.tools.coverage.proto.CoverageMetadataProto.CoverageMetadata
+import com.android.tools.coverage.proto.CoverageMetadataProto.LineMetadata
+import com.android.tools.coverage.proto.CoverageMetadataProto.MethodMetadata
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.io.IOException
@@ -129,6 +135,7 @@ class JacocoReportTaskTest {
     `when`(params.testPackageId).thenReturn(project.objects.property(String::class.java).value("com.example"))
     `when`(params.exclusions).thenReturn(project.objects.setProperty(String::class.java).value(emptySet()))
     `when`(params.sourceFolders).thenReturn(project.files())
+    `when`(params.classFolders).thenReturn(project.files())
 
     val worker =
       object : JacocoReportTask.JacocoReportWorkerAction() {
@@ -140,6 +147,60 @@ class JacocoReportTaskTest {
     } catch (e: Exception) {
       assertThat(e.cause?.message).contains("On-the-fly coverage is enabled but required .pb files were not found.")
     }
+  }
+
+  @Test
+  fun testWorkerReportsClassesThatTheTestedVariantCompilesWithoutASourceInOnTheFlyMode() {
+    val component = "com/example/app/DaggerApp_HiltComponents_SingletonC"
+    val coverageDir = temporaryFolder.newFolder("on_the_fly_coverage")
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .setVersion(1)
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("L$component;")
+            .setSourceFile("DaggerApp_HiltComponents_SingletonC.java")
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("builder")
+                .setSignature("()V")
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(0)
+                    .setBranchCount(1)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(5).setInstructionCount(2))
+                )
+            )
+        )
+        .build()
+    File(coverageDir, ON_DEVICE_COVERAGE_METADATA_FILE).outputStream().use { metadata.writeTo(it) }
+    File(coverageDir, ON_DEVICE_COVERAGE_HITS_FILE).outputStream().use { CoverageHits.newBuilder().setVersion(1).build().writeTo(it) }
+    // The tested variant compiles it from a source that Hilt generates outside the source folders.
+    val classFolder = temporaryFolder.newFolder("tested_classes")
+    File(classFolder, "$component.class").apply { parentFile.mkdirs() }.writeText("")
+    val reportDir = temporaryFolder.newFolder("on_the_fly_report")
+    val params = mock(JacocoReportTask.JacocoWorkParameters::class.java)
+    `when`(params.coverageFiles).thenReturn(project.files(coverageDir))
+    `when`(params.reportDir).thenReturn(project.objects.directoryProperty().fileValue(reportDir))
+    `when`(params.reportAggregation).thenReturn(project.objects.property(Boolean::class.java).value(true))
+    `when`(params.onTheFlyCoverageEnabled).thenReturn(project.objects.property(Boolean::class.java).value(true))
+    `when`(params.reportName).thenReturn(project.objects.property(String::class.java).value("debug"))
+    `when`(params.testPackageId).thenReturn(project.objects.property(String::class.java))
+    `when`(params.exclusions).thenReturn(project.objects.setProperty(String::class.java).value(emptySet()))
+    `when`(params.sourceFolders).thenReturn(project.files(temporaryFolder.newFolder("src")))
+    `when`(params.classFolders).thenReturn(project.files(classFolder))
+    `when`(params.rootProjectDir).thenReturn(project.objects.property(File::class.java).value(temporaryFolder.root))
+    `when`(params.rootProjectName).thenReturn(project.objects.property(String::class.java).value("project"))
+    `when`(params.modulePath).thenReturn(project.objects.property(String::class.java).value(":app"))
+    `when`(params.testedVariantName).thenReturn(project.objects.property(String::class.java).value("debug"))
+    `when`(params.testSuiteName).thenReturn(project.objects.property(String::class.java).value("androidTest"))
+
+    object : JacocoReportTask.JacocoReportWorkerAction() {
+        override fun getParameters(): JacocoReportTask.JacocoWorkParameters = params
+      }
+      .execute()
+
+    assertThat(File(reportDir, "report.xml").readText()).contains("<class name=\"$component\"")
   }
 
   @Test

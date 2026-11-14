@@ -26,6 +26,8 @@ class ReportAggregator {
    * @param reportName The name of the report.
    * @param testPackageId Optional package ID of the test app to filter out.
    * @param exclusions Optional set of internal class names or package prefixes to exclude.
+   * @param projectClasses Internal names of the classes that the project compiles. They are reported even when their source file isn't in
+   *   [sourceFolders], such as the components that Hilt generates.
    */
   fun aggregate(
     data: CoverageData,
@@ -33,6 +35,7 @@ class ReportAggregator {
     testPackageId: String? = null,
     exclusions: Set<String> = emptySet(),
     sourceFolders: Collection<java.io.File> = emptyList(),
+    projectClasses: Set<String> = emptySet(),
   ): ReportModel {
     val report = ReportModel(reportName)
     val testPackagePrefix = testPackageId?.replace('.', '/')?.let { if (it.endsWith('/')) it else "$it/" }
@@ -62,14 +65,15 @@ class ReportAggregator {
 
       val sourceFilename = classMeta.sourceFile
 
-      // Filter 3: Generated Android R classes (Safe R filter)
-      if ((className.endsWith("/R") || className.contains("/R$")) && sourceFilename.isBlank()) {
+      // Filter 3: The R and Manifest classes, which the build-time report leaves out too, whether or not they have a source file.
+      if (isROrManifest(className)) {
         continue
       }
 
       // Filter 4: Check if the physical source file exists in any of our source folders.
       // If it doesn't, this class belongs to an external compiled library, and we exclude it!
-      if (sourceFolders.isNotEmpty() && !sourceFilename.isBlank()) {
+      // A class that the project compiles is kept even so: its source may be generated outside the source folders.
+      if (sourceFolders.isNotEmpty() && !sourceFilename.isBlank() && className !in projectClasses) {
         val pkgPath = className.substringBeforeLast('/', "")
         val relativeSourcePath = if (pkgPath.isEmpty()) sourceFilename else "$pkgPath/$sourceFilename"
         val exists = sourceFolders.any { folder -> java.io.File(folder, relativeSourcePath).exists() }
@@ -259,4 +263,14 @@ class ReportAggregator {
 
     return report
   }
+}
+
+/**
+ * Whether the class with the internal name [className], such as `com/example/R$string`, is an R or Manifest class, or a class nested in
+ * one. The coverage reports leave these classes out. They keep the BuildConfig classes: a build config field can have any expression as its
+ * value, so BuildConfig can have code.
+ */
+internal fun isROrManifest(className: String): Boolean {
+  val simpleName = className.substringAfterLast('/')
+  return simpleName == "R" || simpleName.startsWith("R$") || simpleName == "Manifest" || simpleName.startsWith("Manifest$")
 }

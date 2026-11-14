@@ -162,7 +162,6 @@ abstract class JacocoTask : NewIncrementalTask() {
       KOTLIN_MODULE_PATTERN,
       R_CLASS_PATTERN,
       MANIFEST_CLASS_PATTERN,
-      BUILD_CONFIG_CLASS_PATTERN,
 
       // Avoid instrumenting files from these directories as they can cause issues such as
       // recursive instrumentation.
@@ -307,7 +306,6 @@ abstract class JacocoTask : NewIncrementalTask() {
     private val JUNIT_RUNLISTENER_PATTERN = Pattern.compile("^org/junit/runner/notification/RunListener.*")
     private val R_CLASS_PATTERN = Pattern.compile(".+?/R(?:\\$.+)?\\.class$")
     private val MANIFEST_CLASS_PATTERN = Pattern.compile(".+?/Manifest(?:\\$.+)?\\.class$")
-    private val BUILD_CONFIG_CLASS_PATTERN = Pattern.compile(".+?/BuildConfig.class$")
 
     // META-INF/*.kotlin_module files need to be copied to output so they show up
     // in the intermediate classes jar.
