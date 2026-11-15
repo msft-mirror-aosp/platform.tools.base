@@ -1,0 +1,17 @@
+diff --git a/bazel/rules.bzl b/bazel/rules.bzl
+index 958e9bc..603ff9e 100644
+--- a/bazel/rules.bzl
++++ b/bazel/rules.bzl
+@@ -26,7 +26,11 @@ def default_cc_args():
+         "deps": PERFETTO_CONFIG.deps.build_config,
+         "copts": [
+             "-Wno-pragma-system-header-outside-header",
+-        ] + PERFETTO_CONFIG.default_copts,
++        ] + PERFETTO_CONFIG.default_copts + select({
++            # As in the GN build: otherwise <windows.h> pulls in <winsock.h>, which clashes with <winsock2.h>.
++            "@perfetto//bazel:os_windows": ["-DWIN32_LEAN_AND_MEAN", "-DNOMINMAX"],
++            "//conditions:default": [],
++        }),
+         "cxxopts": PERFETTO_CONFIG.default_cxxopts,
+         "includes": ["include"],
+         "linkopts": select({
