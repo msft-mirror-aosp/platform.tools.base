@@ -771,5 +771,35 @@ TEST(InstrumenterTest, GeneratedMethodsOfRecordAreNotReported) {
   }
 }
 
+TEST(InstrumenterTest, HandlerOfRecordPatternIsNotReported) {
+  // describe() reports the line of its pattern first. That line reports the
+  // instance-of, its check, and the calls to the two accessors with their
+  // move-results, but not the handler that javac gives the calls, on the same
+  // line.
+  const proto::MethodMetadata* method = InstrumentedMethod("describe");
+  ASSERT_NE(method, nullptr);
+  uint32_t instructions = 0;
+  const std::set<int32_t> lines = ReportedLines(*method, &instructions);
+  ASSERT_FALSE(lines.empty());
+  EXPECT_EQ(InstructionsOnLine(*method, *lines.begin()), 6u);
+}
+
+TEST(InstrumenterTest, HandlerOfRecordPatternsSplitByGotoIsNotReported) {
+  // describeBoth() reports, in order, the lines of `long sum = 0;`, of the
+  // first pattern, of its body, of the second pattern, of its body and of the
+  // return. javac puts the handler of both patterns on the line of the second
+  // one, where D8 jumps from its move-exception to the rest of it, after the
+  // code of the second pattern.
+  const proto::MethodMetadata* method = InstrumentedMethod("describeBoth");
+  ASSERT_NE(method, nullptr);
+  uint32_t instructions = 0;
+  const std::set<int32_t> reported = ReportedLines(*method, &instructions);
+  const std::vector<int32_t> lines(reported.begin(), reported.end());
+  ASSERT_EQ(lines.size(), 6u);
+  // Each pattern reports its 6 instructions, like the one of describe().
+  EXPECT_EQ(InstructionsOnLine(*method, lines[1]), 6u);
+  EXPECT_EQ(InstructionsOnLine(*method, lines[3]), 6u);
+}
+
 }  // namespace
 }  // namespace coverage

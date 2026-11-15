@@ -180,4 +180,27 @@ class InstrumenterTestTarget {
     // D8 compiles hashCode() of a record without components into a return of
     // 0.
     record Empty() {}
+
+    // javac calls the accessors of a record pattern in a try block whose
+    // handler throws MatchException with what they throw, which D8 replaces
+    // with RuntimeException, on the line of the pattern.
+    static long describe(Object o) {
+        if (o instanceof Named(String name, long id)) {
+            return name.length() + id;
+        }
+        return 0;
+    }
+
+    // javac gives the calls of both patterns one handler, on the line of the
+    // second one, which D8 splits with a goto.
+    static long describeBoth(Object first, Object second) {
+        long sum = 0;
+        if (first instanceof Named(String name, long id)) {
+            sum += name.length() + id;
+        }
+        if (second instanceof Named(String name, long id)) {
+            sum += name.length() + id;
+        }
+        return sum;
+    }
 }
