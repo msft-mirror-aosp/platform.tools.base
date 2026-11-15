@@ -661,5 +661,35 @@ TEST(InstrumenterTest, BodiesOfJavaLambdasAreInstrumented) {
             nullptr);
 }
 
+TEST(InstrumenterTest, ComparisonsOfKotlinWhenOnStringAreNotReported) {
+  // The line of the `when` in sizeCode() of InstrumenterTestKotlinTarget.kt,
+  // followed by the lines of its five branches.
+  constexpr int kWhenLine = 180;
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("sizeCode", kKotlinTargetClass);
+  ASSERT_NE(method, nullptr);
+  // Only the check for null reports the line of the `when`, with one branch to
+  // each branch of the `when`: the call to hashCode(), the switch on the hash
+  // code and the comparisons with the strings aren't reported.
+  std::vector<const proto::BlockMetadata*> blocks;
+  for (const auto& block : method->blocks()) {
+    for (const auto& line : block.lines()) {
+      if (line.line_number() == kWhenLine) {
+        blocks.push_back(&block);
+      }
+    }
+  }
+  ASSERT_EQ(blocks.size(), 1u);
+  EXPECT_EQ(InstructionsOnLine(*method, kWhenLine), 1u);
+  EXPECT_EQ(blocks[0]->branch_count(), 5u);
+  std::set<uint32_t> branches;
+  for (int line = kWhenLine + 1; line <= kWhenLine + 5; ++line) {
+    const proto::BlockMetadata* branch = BlockAt(*method, line);
+    ASSERT_NE(branch, nullptr) << "line " << line;
+    branches.insert(branch->block_id());
+  }
+  EXPECT_EQ(Successors(*blocks[0]), branches);
+}
+
 }  // namespace
 }  // namespace coverage

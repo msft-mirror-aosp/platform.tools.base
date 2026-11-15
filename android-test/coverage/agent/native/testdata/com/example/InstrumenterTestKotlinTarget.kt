@@ -171,4 +171,17 @@ class InstrumenterTestKotlinTarget {
   // Kotlin compiles the reference to the property into a synthetic class whose
   // get() reads the property.
   val nameOf: (Node) -> String? = Node::name
+
+  // Kotlin compiles a `when` on a String with enough branches into a switch on
+  // the hash code of the String, whose cases compare the String with the
+  // strings that have that hash code. It checks a nullable String for null
+  // first.
+  fun sizeCode(name: String?): Int =
+    when (name) {
+      "small" -> 1
+      "medium" -> 2
+      "large" -> 3
+      null -> 4
+      else -> 0
+    }
 }
