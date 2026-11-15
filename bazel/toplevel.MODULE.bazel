@@ -383,6 +383,9 @@ archive_override(
         # TODO: Remove after upgrading to a Perfetto release that includes
         # https://github.com/google/perfetto/pull/8645.
         "//tools/base/bazel/bzlmod:perfetto-windows-stdio-binary-mode.patch",
+        # b/585926797: Builds trace_processor_shell on Windows by leaving out linenoise, which needs the POSIX termios.h, as Perfetto's
+        # GN build does. TODO: Remove after upgrading to a Perfetto release whose Bazel build does this.
+        "//tools/base/bazel/bzlmod:perfetto-bazel-windows-no-linenoise.patch",
     ],
     strip_prefix = "perfetto-58.2",
     urls = ["https://github.com/google/perfetto/archive/refs/tags/v58.2.tar.gz"],

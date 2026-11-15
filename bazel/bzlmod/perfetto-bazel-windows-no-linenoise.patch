@@ -1,0 +1,30 @@
+diff --git a/bazel/standalone/perfetto_cfg.bzl b/bazel/standalone/perfetto_cfg.bzl
+index d9c9689..efff3bc 100644
+--- a/bazel/standalone/perfetto_cfg.bzl
++++ b/bazel/standalone/perfetto_cfg.bzl
+@@ -48,7 +48,11 @@ PERFETTO_CONFIG = struct(
+         zstd = ["@zstd//:zstd"],
+         re2 = ["@re2//:re2"],
+         expat = ["@perfetto_dep_expat//:expat"],
+-        linenoise = ["@perfetto_dep_linenoise//:linenoise"],
++        # linenoise is POSIX-only (it needs termios.h), like in the GN build.
++        linenoise = select({
++            "@platforms//os:windows": [],
++            "//conditions:default": ["@perfetto_dep_linenoise//:linenoise"],
++        }),
+         sqlite = ["@perfetto_dep_sqlite//:sqlite"],
+         sqlite_ext_percentile = ["@perfetto_dep_sqlite_src//:percentile_ext"],
+         protoc = ["@com_google_protobuf//:protoc"],
+diff --git a/include/perfetto/base/build_configs/bazel/perfetto_build_flags.h b/include/perfetto/base/build_configs/bazel/perfetto_build_flags.h
+index a5519e4..87660a5 100644
+--- a/include/perfetto/base/build_configs/bazel/perfetto_build_flags.h
++++ b/include/perfetto/base/build_configs/bazel/perfetto_build_flags.h
+@@ -39,7 +39,7 @@
+ #define PERFETTO_BUILDFLAG_DEFINE_PERFETTO_VERBOSE_LOGS() (1)
+ #define PERFETTO_BUILDFLAG_DEFINE_PERFETTO_VERSION_GEN() (1)
+ #define PERFETTO_BUILDFLAG_DEFINE_PERFETTO_TP_PERCENTILE() (1)
+-#define PERFETTO_BUILDFLAG_DEFINE_PERFETTO_TP_LINENOISE() (1)
++#define PERFETTO_BUILDFLAG_DEFINE_PERFETTO_TP_LINENOISE() (!PERFETTO_BUILDFLAG_DEFINE_PERFETTO_OS_WIN())
+ #define PERFETTO_BUILDFLAG_DEFINE_PERFETTO_TP_HTTPD() (1)
+ #define PERFETTO_BUILDFLAG_DEFINE_PERFETTO_TP_INSTRUMENTS() (0)
+ #define PERFETTO_BUILDFLAG_DEFINE_PERFETTO_LOCAL_SYMBOLIZER() (PERFETTO_BUILDFLAG_DEFINE_PERFETTO_OS_LINUX() || PERFETTO_BUILDFLAG_DEFINE_PERFETTO_OS_FREEBSD() || PERFETTO_BUILDFLAG_DEFINE_PERFETTO_OS_MAC() ||PERFETTO_BUILDFLAG_DEFINE_PERFETTO_OS_WIN())
