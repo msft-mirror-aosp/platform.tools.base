@@ -691,5 +691,38 @@ TEST(InstrumenterTest, ComparisonsOfKotlinWhenOnStringAreNotReported) {
   EXPECT_EQ(Successors(*blocks[0]), branches);
 }
 
+TEST(InstrumenterTest, FirstSwitchOfJavaSwitchOnStringIsNotReported) {
+  // The line of the switch in sizeCode() of InstrumenterTestTarget.java, and
+  // the lines of the returns of its cases and of its default code.
+  constexpr int kSwitchLine = 151;
+  constexpr int kReturnLines[] = {153, 155, 157};
+  const proto::MethodMetadata* method = InstrumentedMethod("sizeCode");
+  ASSERT_NE(method, nullptr);
+  // The line of the switch reports the call to hashCode(), its move-result,
+  // the two constants that D8 loads before the first switch and the second
+  // switch. The first switch, the comparisons with the strings and the loads
+  // of the index aren't reported.
+  EXPECT_EQ(InstructionsOnLine(*method, kSwitchLine), 5u);
+  // Only the second switch has branches, one to each case and one to the
+  // default code.
+  std::vector<const proto::BlockMetadata*> branching;
+  for (const auto& block : method->blocks()) {
+    for (const auto& line : block.lines()) {
+      if (line.line_number() == kSwitchLine && block.branch_count() > 1) {
+        branching.push_back(&block);
+      }
+    }
+  }
+  ASSERT_EQ(branching.size(), 1u);
+  EXPECT_EQ(branching[0]->branch_count(), 3u);
+  std::set<uint32_t> branches;
+  for (int line : kReturnLines) {
+    const proto::BlockMetadata* branch = BlockAt(*method, line);
+    ASSERT_NE(branch, nullptr) << "line " << line;
+    branches.insert(branch->block_id());
+  }
+  EXPECT_EQ(Successors(*branching[0]), branches);
+}
+
 }  // namespace
 }  // namespace coverage

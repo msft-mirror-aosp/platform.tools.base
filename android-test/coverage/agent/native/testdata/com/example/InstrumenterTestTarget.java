@@ -142,4 +142,19 @@ class InstrumenterTestTarget {
     }
 
     static final class DefaultCommand implements Command {}
+
+    // javac compiles a switch on a String into a switch on the hash code of
+    // the String, whose cases compare the String with the strings and load the
+    // index of the one that matches, followed by a second switch on that
+    // index, all on the line of the switch.
+    static int sizeCode(String name) {
+        switch (name) {
+            case "small":
+                return 1;
+            case "medium":
+                return 2;
+            default:
+                return 0;
+        }
+    }
 }
