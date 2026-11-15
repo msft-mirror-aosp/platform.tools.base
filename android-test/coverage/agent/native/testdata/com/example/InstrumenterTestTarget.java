@@ -157,4 +157,14 @@ class InstrumenterTestTarget {
                 return 0;
         }
     }
+
+    // javac adds a default case that throws MatchException to a switch
+    // expression that covers every constant of an enum, which D8 replaces
+    // with RuntimeException, on the line of the switch.
+    static int colorCode(Color color) {
+        return switch (color) {
+            case RED -> 1;
+            case GREEN -> 2;
+        };
+    }
 }

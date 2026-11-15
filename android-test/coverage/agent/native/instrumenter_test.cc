@@ -724,5 +724,36 @@ TEST(InstrumenterTest, FirstSwitchOfJavaSwitchOnStringIsNotReported) {
   EXPECT_EQ(Successors(*branching[0]), branches);
 }
 
+TEST(InstrumenterTest, DefaultOfExhaustiveSwitchIsNotReported) {
+  // The line of the switch in colorCode() of InstrumenterTestTarget.java, and
+  // the lines of its two cases.
+  constexpr int kSwitchLine = 165;
+  constexpr int kCaseLines[] = {166, 167};
+  const proto::MethodMetadata* method = InstrumentedMethod("colorCode");
+  ASSERT_NE(method, nullptr);
+  // The line of the switch reports the call to ordinal(), its move-result, the
+  // switch and the return, but not the code that throws when no case
+  // matches.
+  EXPECT_EQ(InstructionsOnLine(*method, kSwitchLine), 4u);
+  // The switch has one branch to each case, and none to that code.
+  std::vector<const proto::BlockMetadata*> branching;
+  for (const auto& block : method->blocks()) {
+    for (const auto& line : block.lines()) {
+      if (line.line_number() == kSwitchLine && block.branch_count() > 1) {
+        branching.push_back(&block);
+      }
+    }
+  }
+  ASSERT_EQ(branching.size(), 1u);
+  EXPECT_EQ(branching[0]->branch_count(), 2u);
+  std::set<uint32_t> branches;
+  for (int line : kCaseLines) {
+    const proto::BlockMetadata* branch = BlockAt(*method, line);
+    ASSERT_NE(branch, nullptr) << "line " << line;
+    branches.insert(branch->block_id());
+  }
+  EXPECT_EQ(Successors(*branching[0]), branches);
+}
+
 }  // namespace
 }  // namespace coverage
