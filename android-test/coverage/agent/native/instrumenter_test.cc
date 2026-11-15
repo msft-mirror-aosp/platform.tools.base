@@ -755,5 +755,21 @@ TEST(InstrumenterTest, DefaultOfExhaustiveSwitchIsNotReported) {
   EXPECT_EQ(Successors(*branching[0]), branches);
 }
 
+TEST(InstrumenterTest, GeneratedMethodsOfRecordAreNotReported) {
+  constexpr char kNamedClass[] = "Lcom/example/InstrumenterTestTarget$Named;";
+  constexpr char kEmptyClass[] = "Lcom/example/InstrumenterTestTarget$Empty;";
+  // The constructors, and the method that Named declares, are instrumented.
+  ASSERT_NE(InstrumentedMethod("<init>", kNamedClass), nullptr);
+  ASSERT_NE(InstrumentedMethod("label", kNamedClass), nullptr);
+  ASSERT_NE(InstrumentedMethod("<init>", kEmptyClass), nullptr);
+  // The filters see the generated methods after the agent grew their frames.
+  for (const char* name : {"toString", "hashCode", "equals", "name", "id"}) {
+    EXPECT_EQ(InstrumentedMethod(name, kNamedClass), nullptr) << name;
+  }
+  for (const char* name : {"toString", "hashCode", "equals"}) {
+    EXPECT_EQ(InstrumentedMethod(name, kEmptyClass), nullptr) << name;
+  }
+}
+
 }  // namespace
 }  // namespace coverage

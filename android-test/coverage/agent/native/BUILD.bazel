@@ -184,6 +184,7 @@ cc_test(
         "kotlin_when_filter_test.cc",
         "metadata_collector_test.cc",
         "private_empty_no_arg_constructor_filter_test.cc",
+        "records_filter_test.cc",
         "string_switch_filter_test.cc",
         "string_switch_javac_filter_test.cc",
         "synchronized_filter_test.cc",

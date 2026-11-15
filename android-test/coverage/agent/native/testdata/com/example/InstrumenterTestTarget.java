@@ -167,4 +167,17 @@ class InstrumenterTestTarget {
             case GREEN -> 2;
         };
     }
+
+    // javac gives a record toString(), hashCode(), equals(Object) and an
+    // accessor for each component, which D8 rewrites. The registers of each of
+    // them are all in use, so the agent grows their frames.
+    record Named(String name, long id) {
+        String label() {
+            return name + id;
+        }
+    }
+
+    // D8 compiles hashCode() of a record without components into a return of
+    // 0.
+    record Empty() {}
 }
