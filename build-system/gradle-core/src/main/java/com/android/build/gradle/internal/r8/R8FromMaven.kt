@@ -36,26 +36,12 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
 
     @JvmStatic
     fun create(project: Project, projectOptions: ProjectOptions): R8FromMaven {
-      return create(project, projectOptions::get, null)
-    }
-
-    @JvmStatic
-    fun create(
-      project: Project,
-      projectOptions: ProjectOptions,
-      versionOverrideProvider: (() -> String?)?,
-    ): R8FromMaven {
-      return create(project, projectOptions::get, versionOverrideProvider)
-    }
-
-    @JvmStatic
-    fun create(project: Project, stringOption: (option: StringOption) -> String?): R8FromMaven {
-      return create(project, stringOption, null)
+      return create(project, projectOptions::get)
     }
 
     /**
-     * Resolves the R8 compiler JARs, prioritizing an explicit [versionOverrideProvider] (e.g., from module experimental properties) over
-     * [StringOption.R8_VERSION_OVERRIDE], falling back to [R8Version.VERSION_AGP_WAS_SHIPPED_WITH].
+     * Resolves the R8 compiler JARs, using [StringOption.R8_VERSION_OVERRIDE] if set, falling back to
+     * [R8Version.VERSION_AGP_WAS_SHIPPED_WITH].
      *
      * An override must not be older than [R8Version.VERSION_AGP_WAS_SHIPPED_WITH], the minimum R8 version this version of AGP supports,
      * because AGP calls R8 APIs that older versions lack. An older override fails with an [InvalidUserDataException]. Overrides that cannot
@@ -64,14 +50,8 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
      * @throws InvalidUserDataException if the override is older than [R8Version.VERSION_AGP_WAS_SHIPPED_WITH]
      */
     @JvmStatic
-    fun create(
-      project: Project,
-      stringOption: (option: StringOption) -> String?,
-      versionOverrideProvider: (() -> String?)?,
-    ): R8FromMaven {
-      val explicitOverride = versionOverrideProvider?.invoke()?.trim()
-      val optionOverride = stringOption(StringOption.R8_VERSION_OVERRIDE)?.trim()
-      val versionOverride = if (!explicitOverride.isNullOrEmpty()) explicitOverride else optionOverride
+    fun create(project: Project, stringOption: (option: StringOption) -> String?): R8FromMaven {
+      val versionOverride = stringOption(StringOption.R8_VERSION_OVERRIDE)?.trim()
       val version =
         if (!versionOverride.isNullOrEmpty()) {
           checkMinimumR8Version(versionOverride)
