@@ -10,6 +10,7 @@ of a `(maven|kotlin|java)_library` rule, otherwise use DATA.
 """
 
 load("//tools/base/bazel:maven/r8-version.bzl", "R8_VERSION")
+load("//tools/base/common:kotlin_version.bzl", "MINIMUM_BUILT_IN_KOTLIN_VERSION")
 
 # keep sorted
 ARTIFACTS = [
@@ -104,7 +105,7 @@ ARTIFACTS = [
     "com.google.testing.compile:compile-testing:0.16",
     "com.google.truth.extensions:truth-java8-extension:0.42",
     "com.google.truth.extensions:truth-proto-extension:0.42",  # Sherlock dependency
-    "com.google.truth:truth:0.42",
+    "com.google.truth:truth:0.44",
     "com.googlecode.juniversalchardet:juniversalchardet:1.0.3",
     "com.networknt:json-schema-validator:1.5.9",
     "com.squareup:javapoet:1.13.0",
@@ -224,15 +225,19 @@ ARTIFACTS = [
     "org.jetbrains.jewel:jewel-foundation:0.31.0-252.27409",
     "org.jetbrains.jewel:jewel-int-ui-standalone:0.31.0-252.27409",
     "org.jetbrains.jewel:jewel-ui:0.31.0-252.27409",
-    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-compiler:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-reflect:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-stdlib:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-test:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-test-junit:2.2.10",  # AGP dependencies
+    # AGP compiles against and ships Kotlin artifacts at MINIMUM_BUILT_IN_KOTLIN_VERSION;
+    # newer KGP versions (DEFAULT_BUILT_IN_KOTLIN_VERSION, KOTLIN_VERSION_FOR_AGP_BUILD) live in data.bzl.
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-compiler:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-idea:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-reflect:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-stdlib:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-test:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    "org.jetbrains.kotlin:kotlin-test-junit:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
     "org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2",
@@ -251,6 +256,7 @@ ARTIFACTS = [
     "org.jspecify:jspecify:0.2.0",
     "org.junit.jupiter:junit-jupiter-api:5.12.0",
     "org.junit.jupiter:junit-jupiter-engine:5.12.0",
+    "org.junit.platform:junit-platform-commons:1.13.3",
     "org.junit.platform:junit-platform-engine:1.13.3",
     "org.junit.platform:junit-platform-launcher:1.13.3",
     "org.junit.platform:junit-platform-reporting:1.13.3",

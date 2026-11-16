@@ -218,7 +218,6 @@ dependencies {
     testImplementation libs.equalsverifier
     testImplementation project(':base:project-test-lib')
     testImplementation libs.com.android.tools.testutils
-    testImplementation libs.intellij.annotations
     testImplementation libs.jsoup
     testImplementation libs.jacoco.core
     testImplementation libs.jacoco.report

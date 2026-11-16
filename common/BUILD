@@ -8,7 +8,8 @@ filegroup(
     name = "agp_gradle_build_files",
     srcs = [
         # As the Gradle builds need to be able to run outside of Bazel,
-        # they read the version file directly
+        # they read the version files directly
+        "kotlin_version.bzl",
         "release_version.bzl",
     ],
     visibility = [
@@ -17,6 +18,7 @@ filegroup(
         "//tools/base/journeys:__subpackages__",
         "//tools/base/preview/screenshot/screenshot-test-gradle-plugin:__pkg__",
         "//tools/base/utp:__pkg__",
+        "//tools/buildSrc/base:__pkg__",
         "//tools/data-binding:__pkg__",
     ],
 )

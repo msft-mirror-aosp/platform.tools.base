@@ -5,10 +5,10 @@ dependencies {
     implementation project(':base:builder-model')
     implementation libs.com.android.tools.common
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation libs.junit
 
     // Need an SLF4J implementation at runtime
-    testRuntimeOnly 'org.slf4j:slf4j-simple:1.7.2'
+    testRuntimeOnly libs.slf4j.simple
     implementation libs.gradle.tooling.api
 
 }

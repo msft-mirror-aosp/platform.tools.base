@@ -7,9 +7,9 @@ dependencies {
     implementation libs.com.android.tools.common
 
     // Need an SLF4J implementation at runtime
-    runtimeOnly 'org.slf4j:slf4j-simple:1.7.2'
+    runtimeOnly libs.slf4j.simple
 
-    implementation 'junit:junit:4.12'
+    implementation libs.junit
 }
 
 // this is needed by the app plugin but not used at runtime

@@ -19158,7 +19158,7 @@ maven_import(
     jars = [
         "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10/kotlin-gradle-plugin-idea-2.2.10.jar"
     ],
-    deps = [
+    exports = [
         "org.jetbrains.kotlin.kotlin-tooling-core",
         "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations",
     ],
@@ -19265,9 +19265,9 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
         "org.jetbrains.kotlin.kotlin-gradle-plugin-model",
         "org.jetbrains.kotlin.fus-statistics-gradle-plugin",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
     ],
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
         "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto",
         "org.jetbrains.kotlin.kotlin-klib-commonizer-api",
         "org.jetbrains.kotlin.kotlin-build-statistics",

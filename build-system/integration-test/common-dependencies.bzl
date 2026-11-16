@@ -3,15 +3,21 @@ This module contains maven deps which are common between integration tests
 and can be combined together
 """
 
+load(
+    "//tools/base/common:kotlin_version.bzl",
+    "DEFAULT_BUILT_IN_KOTLIN_VERSION",
+    _MINIMUM_BUILT_IN_KOTLIN_VERSION = "MINIMUM_BUILT_IN_KOTLIN_VERSION",
+)
+
 # KGP version used in AGP tests
 # when editing this consider making a copy below so that our recipe tests can use any versions of Kotlin
 KGP_VERSION_FOR_TESTS = "2.5.0-Beta2"
 
 # Minimum Kotlin Gradle plugin version that AGP supports and compiles against
-MINIMUM_BUILT_IN_KOTLIN_VERSION = "2.2.10"
+MINIMUM_BUILT_IN_KOTLIN_VERSION = _MINIMUM_BUILT_IN_KOTLIN_VERSION
 
 # Default Kotlin Gradle plugin version that AGP recommends using
-BUILT_IN_KOTLIN_VERSION = "2.4.20"
+BUILT_IN_KOTLIN_VERSION = DEFAULT_BUILT_IN_KOTLIN_VERSION
 
 # KSP version used in AGP tests
 KSP_VERSION_FOR_TESTS = "2.3.10"
