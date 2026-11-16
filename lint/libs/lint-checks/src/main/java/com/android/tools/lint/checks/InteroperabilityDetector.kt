@@ -30,6 +30,7 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.isKotlin
+import com.android.tools.lint.detector.api.isKotlinHardKeyword
 import com.android.tools.lint.detector.api.nameFromSource
 import com.android.tools.lint.detector.api.typeFromPsi
 import com.android.utils.usLocaleCapitalize
@@ -177,43 +178,6 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         enabledByDefault = false,
         implementation = IMPLEMENTATION,
       )
-
-    private fun isKotlinHardKeyword(keyword: String): Boolean {
-      // From
-      // https://github.com/JetBrains/kotlin/blob/master/core/compiler.common/src/org/jetbrains/kotlin/renderer/KeywordStringsGenerated.java
-      when (keyword) {
-        "as",
-        "break",
-        "class",
-        "continue",
-        "do",
-        "else",
-        "false",
-        "for",
-        "fun",
-        "if",
-        "in",
-        "interface",
-        "is",
-        "null",
-        "object",
-        "package",
-        "return",
-        "super",
-        "this",
-        "throw",
-        "true",
-        "try",
-        "typealias",
-        "typeof",
-        "val",
-        "var",
-        "when",
-        "while" -> return true
-      }
-
-      return false
-    }
 
     private fun isNullableAnnotation(qualifiedName: String): Boolean {
       return qualifiedName.endsWith("Nullable")
