@@ -60,6 +60,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.StandardFileSystems;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileSystem;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiClass;
@@ -72,6 +73,7 @@ import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiParameterList;
+import com.intellij.psi.PsiArrayType;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiVariable;
 import com.intellij.psi.javadoc.PsiDocComment;
@@ -584,17 +586,21 @@ public class Extractor {
 
     private void addAnnotations(@Nullable UAnnotated annotated, @NonNull Item item) {
         if (annotated != null) {
-            for (UAnnotation annotation : annotated.getUAnnotations()) {
-                if (isRelevantAnnotation(annotation)) {
-                    String fqn = getFqn(annotation);
-                    if (SUPPORT_KEEP.equals(fqn)) {
-                        // Put keep rules in a different place; we don't want to write
-                        // these out into the external annotations database, they go
-                        // into a special proguard file
-                        keepItems.add(item);
-                    } else {
-                        addAnnotation(annotation, fqn, item.annotations);
-                    }
+            addAnnotations(annotated.getUAnnotations(), item);
+        }
+    }
+
+    private void addAnnotations(@NonNull List<UAnnotation> annotations, @NonNull Item item) {
+        for (UAnnotation annotation : annotations) {
+            if (isRelevantAnnotation(annotation)) {
+                String fqn = getFqn(annotation);
+                if (SUPPORT_KEEP.equals(fqn)) {
+                    // Put keep rules in a different place; we don't want to write
+                    // these out into the external annotations database, they go
+                    // into a special proguard file
+                    keepItems.add(item);
+                } else {
+                    addAnnotation(annotation, fqn, item.annotations);
                 }
             }
         }
@@ -679,15 +685,92 @@ public class Extractor {
     }
 
     private boolean hasRelevantAnnotations(@Nullable UAnnotated annotated) {
-        if (annotated != null) {
-            for (UAnnotation annotation : annotated.getUAnnotations()) {
-                if (isRelevantAnnotation(annotation)) {
-                    return true;
-                }
+        return annotated != null && hasRelevantAnnotations(annotated.getUAnnotations());
+    }
+
+    private boolean hasRelevantAnnotations(@NonNull List<UAnnotation> annotations) {
+        for (UAnnotation annotation : annotations) {
+            if (isRelevantAnnotation(annotation)) {
+                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Returns the annotations of the given method, including {@code TYPE_USE} annotations on its
+     * return type.
+     */
+    // The extractor reads the annotations in the source, not external annotations.
+    @SuppressWarnings("ExternalAnnotations")
+    @NonNull
+    private List<UAnnotation> getMethodAnnotations(@NonNull UMethod method) {
+        PsiMethod psiMethod = method.getJavaPsi();
+        List<UAnnotation> annotations;
+        // (Record accessors are Java methods without a source PsiMethod.)
+        if (method.getLang() == JavaLanguage.INSTANCE) {
+            // For Java methods, UMethod#getUAnnotations() omits annotations in the modifier list
+            // which do not target METHOD, such as a typedef which only targets TYPE_USE (as in
+            // `@MyTypeDef int getFoo()`). (Fields and parameters do not have this filtering.)
+            // The PSI modifier list still contains them, so read the annotations from there.
+            annotations = new ArrayList<>();
+            for (PsiAnnotation psiAnnotation : psiMethod.getAnnotations()) {
+                UAnnotation annotation = UastContextKt.toUElement(psiAnnotation, UAnnotation.class);
+                if (annotation != null) {
+                    annotations.add(annotation);
+                }
+            }
+        } else {
+            annotations = new ArrayList<>(method.getUAnnotations());
+        }
+
+        // Some annotations are only present on the return type: for Kotlin, a typedef on the
+        // return type (`fun getFoo(): @MyTypeDef Int`); for Java, an annotation inside a qualified
+        // type (`java.lang.@MyTypeDef String getFoo()`).
+        PsiType returnType = psiMethod.getReturnType();
+        if (returnType == null) {
+            return annotations;
+        }
+        addTypeAnnotations(annotations, returnType.getAnnotations(), false);
+        if (returnType instanceof PsiArrayType) {
+            // A typedef on the element type of an array (`java.lang.@MyTypeDef String[] getFoo()`,
+            // `fun getFoo(): Array<@MyTypeDef Int>`) applies to the method like one on a
+            // non-array type. Other annotations there, such as nullness, are about the elements.
+            PsiType componentType = ((PsiArrayType) returnType).getDeepComponentType();
+            addTypeAnnotations(annotations, componentType.getAnnotations(), true);
+        }
+        return annotations;
+    }
+
+    /**
+     * Adds the given annotations of a type to {@code annotations}, skipping those whose qualified
+     * name is already present: an annotation in the modifier list which targets TYPE_USE is on the
+     * return type as well.
+     */
+    private void addTypeAnnotations(
+            @NonNull List<UAnnotation> annotations,
+            @NonNull PsiAnnotation[] typeAnnotations,
+            boolean typedefsOnly) {
+        if (typeAnnotations.length == 0) {
+            return;
+        }
+        Set<String> names = new HashSet<>();
+        for (UAnnotation annotation : annotations) {
+            names.add(annotation.getQualifiedName());
+        }
+        for (PsiAnnotation psiAnnotation : typeAnnotations) {
+            String name = psiAnnotation.getQualifiedName();
+            if (names.contains(name)) {
+                continue;
+            }
+            UAnnotation annotation = UastContextKt.toUElement(psiAnnotation, UAnnotation.class);
+            if (annotation == null
+                    || (typedefsOnly && (name == null || !isMagicConstant(annotation, name)))) {
+                continue;
+            }
+            annotations.add(annotation);
+        }
     }
 
     private boolean isRelevantAnnotation(@NonNull UAnnotation annotation) {
@@ -2755,7 +2838,8 @@ public class Extractor {
             PsiClass containingClass = psiMethod.getContainingClass();
 
             // Not calling super: don't recurse inside methods
-            if (hasRelevantAnnotations(method)) {
+            List<UAnnotation> annotations = getMethodAnnotations(method);
+            if (hasRelevantAnnotations(annotations)) {
                 String fqn = getFqn(containingClass);
                 MethodItem item = MethodItem.create(containingClass, fqn, psiMethod);
                 if (item != null) {
@@ -2777,7 +2861,7 @@ public class Extractor {
                     }
 
                     if (!skipReturnAnnotations) {
-                        addAnnotations(method, item);
+                        addAnnotations(annotations, item);
                     }
                 }
             }

@@ -294,6 +294,203 @@ public class ExtractAnnotationsDriverTest {
     }
 
     @Test
+    public void testTypeUseReturnType() throws Exception {
+        Path androidJar = TestUtils.resolvePlatformPath("android.jar");
+
+        File project = createProject(typeUseTest, androidxIntDefStub);
+
+        File output = temporaryFolder.newFile("annotations.zip");
+
+        List<String> list =
+                java.util.Arrays.asList(
+                        "--sources",
+                        new File(project, "src").getPath(),
+                        "--classpath",
+                        androidJar.toString(),
+                        "--quiet",
+                        "--skip-class-retention",
+                        "--output",
+                        output.getPath());
+        String[] args = list.toArray(new String[0]);
+        assertNotNull(args);
+
+        assertEquals(0, new ExtractAnnotationsDriver().run(args));
+
+        // getMode() is only annotated through its return type (@Mode only targets TYPE_USE),
+        // and getKind() must only list its typedef once (@Kind targets METHOD and TYPE_USE).
+        // For getModes(), @Mode annotates the array's component type int rather than int[].
+        // For getBoxedMode(), @Mode is inside the qualified type, not in the modifier list.
+        // For getBoxedModes(), it is inside the qualified component type of the array.
+        // The accessors of the record Rec have no source method.
+        checkPackageXml(
+                "test.pkg",
+                output,
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                        + "<root>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest int getKind()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.KIND_A,"
+                        + " test.pkg.TypeUseTest.KIND_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest int getMode()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest int[] getModes()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest java.lang.Integer getBoxedMode()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest java.lang.Integer[] getBoxedModes()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest void setMode(int) 0\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest.Kind\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.KIND_A,"
+                        + " test.pkg.TypeUseTest.KIND_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest.Mode\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest.Rec Rec(int, int[]) 0\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest.Rec Rec(int, int[]) 1\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest.Rec int mode()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest.Rec int[] modes()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest.Rec mode\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.TypeUseTest.Rec modes\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.TypeUseTest.MODE_A,"
+                        + " test.pkg.TypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "</root>\n"
+                        + "\n");
+
+        UastEnvironment.disposeApplicationEnvironment();
+        PathUtils.deleteRecursivelyIfExists(project.toPath());
+    }
+
+    @Test
+    public void testTypeUseReturnTypeKotlin() throws Exception {
+        Path androidJar = TestUtils.resolvePlatformPath("android.jar");
+
+        File project = createProject(kotlinTypeUseTest, androidxIntDefStub);
+
+        File output = temporaryFolder.newFile("annotations.zip");
+
+        List<String> list =
+                java.util.Arrays.asList(
+                        "--sources",
+                        new File(project, "src").getPath(),
+                        "--classpath",
+                        androidJar.toString(),
+                        "--quiet",
+                        "--skip-class-retention",
+                        "--output",
+                        output.getPath());
+        String[] args = list.toArray(new String[0]);
+        assertNotNull(args);
+
+        assertEquals(0, new ExtractAnnotationsDriver().run(args));
+
+        // getMode() is only annotated through its return type (fun getMode(): @Mode Int)
+        checkPackageXml(
+                "test.pkg",
+                output,
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                        + "<root>\n"
+                        + "  <item name=\"test.pkg.KotlinTypeUseTest int getKind()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.KotlinTypeUseTest.KIND_A,"
+                        + " test.pkg.KotlinTypeUseTest.KIND_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.KotlinTypeUseTest int getMode()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.KotlinTypeUseTest.MODE_A,"
+                        + " test.pkg.KotlinTypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.KotlinTypeUseTest java.lang.Integer[] getModeArray()\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.KotlinTypeUseTest.MODE_A,"
+                        + " test.pkg.KotlinTypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.KotlinTypeUseTest void setMode(int) 0\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.KotlinTypeUseTest.MODE_A,"
+                        + " test.pkg.KotlinTypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.KotlinTypeUseTest.Kind\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.KotlinTypeUseTest.KIND_A,"
+                        + " test.pkg.KotlinTypeUseTest.KIND_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "  <item name=\"test.pkg.KotlinTypeUseTest.Mode\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntDef\">\n"
+                        + "      <val name=\"value\" val=\"{test.pkg.KotlinTypeUseTest.MODE_A,"
+                        + " test.pkg.KotlinTypeUseTest.MODE_B}\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "</root>\n"
+                        + "\n");
+
+        UastEnvironment.disposeApplicationEnvironment();
+        PathUtils.deleteRecursivelyIfExists(project.toPath());
+    }
+
+    @Test
     public void testWithExplicitSourceRoots() throws Exception {
         Path androidJar = TestUtils.resolvePlatformPath("android.jar");
 
@@ -627,6 +824,102 @@ public class ExtractAnnotationsDriverTest {
                             + "public @interface IntDef {\n"
                             + "    int[] value() default {};\n"
                             + "    boolean flag() default false;\n"
+                            + "}\n");
+
+    private final TestFile typeUseTest =
+            TestFiles.java(
+                    ""
+                            + "package test.pkg;\n"
+                            + "\n"
+                            + "import androidx.annotation.IntDef;\n"
+                            + "\n"
+                            + "import java.lang.annotation.ElementType;\n"
+                            + "import java.lang.annotation.Retention;\n"
+                            + "import java.lang.annotation.RetentionPolicy;\n"
+                            + "import java.lang.annotation.Target;\n"
+                            + "\n"
+                            + "/** @noinspection ClassNameDiffersFromFileName*/ @SuppressWarnings(\"UnusedDeclaration\")\n"
+                            + "public class TypeUseTest {\n"
+                            + "    @IntDef({MODE_A, MODE_B})\n"
+                            + "    @Retention(RetentionPolicy.SOURCE)\n"
+                            + "    @Target(ElementType.TYPE_USE)\n"
+                            + "    public @interface Mode {}\n"
+                            + "\n"
+                            + "    @IntDef({KIND_A, KIND_B})\n"
+                            + "    @Retention(RetentionPolicy.SOURCE)\n"
+                            + "    @Target({ElementType.METHOD, ElementType.TYPE_USE})\n"
+                            + "    public @interface Kind {}\n"
+                            + "\n"
+                            + "    public static final int MODE_A = 0;\n"
+                            + "    public static final int MODE_B = 1;\n"
+                            + "    public static final int KIND_A = 0;\n"
+                            + "    public static final int KIND_B = 1;\n"
+                            + "\n"
+                            + "    public @Mode int getMode() {\n"
+                            + "        return MODE_A;\n"
+                            + "    }\n"
+                            + "\n"
+                            + "    @Kind\n"
+                            + "    public int getKind() {\n"
+                            + "        return KIND_A;\n"
+                            + "    }\n"
+                            + "\n"
+                            + "    public void setMode(@Mode int mode) {}\n"
+                            + "\n"
+                            + "    public @Mode int[] getModes() {\n"
+                            + "        return new int[] {MODE_A};\n"
+                            + "    }\n"
+                            + "\n"
+                            + "    public record Rec(@Mode int mode, @Mode int[] modes) {}\n"
+                            + "\n"
+                            + "    public java.lang.@Mode Integer[] getBoxedModes() {\n"
+                            + "        return null;\n"
+                            + "    }\n"
+                            + "\n"
+                            + "    public java.lang.@Mode Integer getBoxedMode() {\n"
+                            + "        return MODE_A;\n"
+                            + "    }\n"
+                            + "\n"
+                            + "    public int getUnannotated() {\n"
+                            + "        return 0;\n"
+                            + "    }\n"
+                            + "}\n");
+
+    private final TestFile kotlinTypeUseTest =
+            TestFiles.kotlin(
+                    ""
+                            + "package test.pkg\n"
+                            + "\n"
+                            + "import androidx.annotation.IntDef\n"
+                            + "\n"
+                            + "class KotlinTypeUseTest {\n"
+                            + "    @IntDef(MODE_A, MODE_B)\n"
+                            + "    @Retention(AnnotationRetention.SOURCE)\n"
+                            + "    @Target(AnnotationTarget.TYPE, AnnotationTarget.VALUE_PARAMETER)\n"
+                            + "    annotation class Mode\n"
+                            + "\n"
+                            + "    @IntDef(KIND_A, KIND_B)\n"
+                            + "    @Retention(AnnotationRetention.SOURCE)\n"
+                            + "    @Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)\n"
+                            + "    annotation class Kind\n"
+                            + "\n"
+                            + "    fun getMode(): @Mode Int = MODE_A\n"
+                            + "\n"
+                            + "    fun getModeArray(): Array<@Mode Int> = arrayOf(MODE_A)\n"
+                            + "\n"
+                            + "    @Kind\n"
+                            + "    fun getKind(): Int = KIND_A\n"
+                            + "\n"
+                            + "    fun setMode(@Mode mode: Int) {}\n"
+                            + "\n"
+                            + "    fun getUnannotated(): Int = 0\n"
+                            + "\n"
+                            + "    companion object {\n"
+                            + "        const val MODE_A = 0\n"
+                            + "        const val MODE_B = 1\n"
+                            + "        const val KIND_A = 0\n"
+                            + "        const val KIND_B = 1\n"
+                            + "    }\n"
                             + "}\n");
 
     private final TestFile longDefTest =
