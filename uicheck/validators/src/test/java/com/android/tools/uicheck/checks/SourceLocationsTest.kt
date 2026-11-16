@@ -66,6 +66,48 @@ class SourceLocationsTest {
     )
   }
 
+  /** Verifies that same-named files in different packages each get their own path, and a file with two paths gets just its file name. */
+  @Test
+  fun disambiguatesDuplicateFileNamesByPackageHashAndFallsBackOnSamePackageTie() {
+    val files =
+      listOf(
+        ProjectSourceFile("Screen.kt", "com.example.alpha", "/app/src/main/kotlin/com/example/alpha/Screen.kt"),
+        ProjectSourceFile("Screen.kt", "com.example.beta", "/app/src/main/kotlin/com/example/beta/Screen.kt"),
+        ProjectSourceFile("Tied.kt", "com.example.tied", "/app/src/main/kotlin/com/example/tied/Tied.kt"),
+        ProjectSourceFile("Tied.kt", "com.example.tied", "/app/src/debug/kotlin/com/example/tied/Tied.kt"),
+        // Listed once without a path and once with it: the path is kept.
+        ProjectSourceFile("Mixed.kt", "com.example.mixed"),
+        ProjectSourceFile("Mixed.kt", "com.example.mixed", "/app/src/main/kotlin/com/example/mixed/Mixed.kt"),
+      )
+    val filter = UserCodeFilter(files)
+    val betaNode = node("BetaCard", bounds(0, 0, 100, 100), sourceLoc("Screen.kt", 14, "com.example.beta"))
+    val tiedNode = node("TiedCard", bounds(0, 0, 100, 100), sourceLoc("Tied.kt", 20, "com.example.tied"))
+
+    assertEquals(
+      UiCheckSourceLocation("/app/src/main/kotlin/com/example/beta/Screen.kt", 14, "BetaCard"),
+      SourceLocations.resolve(listOf(betaNode), filter)[betaNode],
+    )
+    assertEquals(
+      UiCheckSourceLocation("Tied.kt", 20, "TiedCard"),
+      SourceLocations.resolve(listOf(tiedNode), filter)[tiedNode],
+    )
+    val mixedNode = node("MixedCard", bounds(0, 0, 100, 100), sourceLoc("Mixed.kt", 7, "com.example.mixed"))
+    assertEquals(
+      UiCheckSourceLocation("/app/src/main/kotlin/com/example/mixed/Mixed.kt", 7, "MixedCard"),
+      SourceLocations.resolve(listOf(mixedNode), filter)[mixedNode],
+    )
+  }
+
+  /** Verifies that a file in the preview's own package gets its path from the project files. */
+  @Test
+  fun usesProjectFilePathForFileInPreviewPackage() {
+    val path = "/app/src/main/kotlin/com/example/LoginScreen.kt"
+    val filter = UserCodeFilter(listOf(ProjectSourceFile("LoginScreen.kt", "com.example", path)), "com.example.LoginScreenKt.LoginPreview")
+    val button = node("Button", bounds(0, 100, 1080, 220), sourceLoc("LoginScreen.kt", 42, "com.example"))
+
+    assertEquals(UiCheckSourceLocation(path, 42, "Button"), SourceLocations.resolve(listOf(button), filter)[button])
+  }
+
   /** Verifies package-hash disambiguation when user code shares a file name with a library file. */
   @Test
   fun userFileWithSameNameAsLibraryFileIsUserCode() {

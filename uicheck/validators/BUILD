@@ -7,6 +7,7 @@ kotlin_library(
     deps = [
         "//tools/base/uicheck/common:tools.uicheck.common",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.ow2.asm.asm",
     ],
 )
 
@@ -21,5 +22,6 @@ kotlin_test(
         "//tools/base/testutils:tools.testutils",
         "//tools/base/uicheck/common:tools.uicheck.common",
         "@maven//:junit.junit",
+        "@maven//:org.ow2.asm.asm",
     ],
 )

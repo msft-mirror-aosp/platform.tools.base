@@ -25,6 +25,8 @@ import kotlin.math.absoluteValue
  *
  * A file name alone is ambiguous (the user's `Button.kt` vs. Material's `Button.kt`), so a call site's package hash must also match the
  * package of the user's file (or the preview's own package). Android Studio uses the same hash to navigate from a preview to its source.
+ *
+ * For user code, [userFilePath] also gives the path of the file.
  */
 class UserCodeFilter(
   projectFiles: Collection<ProjectSourceFile>,
@@ -45,8 +47,24 @@ class UserCodeFilter(
   // preview's own source file.
   private val previewPackageHash: Int? = previewPackageName(previewMethodFqn)?.let(::packageNameHash)
 
+  // Where each project file is on disk, by file name and package hash. The value is just the file name when the path is unknown or
+  // the same file was found in several places. Only used after isUserCode has accepted the location.
+  private val filePaths: Map<Pair<String, Int>, String> =
+    projectFiles.groupBy({ it.fileName to packageNameHash(it.packageName) }, { it.filePath }).mapValues { (key, paths) ->
+      (paths.toSet() - key.first).singleOrNull() ?: key.first
+    }
+
+  /**
+   * Returns the path of the user's file that [location] is in, or `null` when [location] is not in user code. The path is just the file
+   * name when it is unknown.
+   */
+  internal fun userFilePath(location: ComponentSourceLocation): String? {
+    if (!isUserCode(location)) return null
+    return location.packageHash?.let { filePaths[location.fileName to it] } ?: location.fileName
+  }
+
   /** Returns true if [location] belongs to user code in the project or the preview's package. */
-  fun isUserCode(location: ComponentSourceLocation): Boolean {
+  private fun isUserCode(location: ComponentSourceLocation): Boolean {
     // Reject missing file names or invalid line numbers.
     if (location.fileName.isBlank() || location.lineNumber < 0) return false
 

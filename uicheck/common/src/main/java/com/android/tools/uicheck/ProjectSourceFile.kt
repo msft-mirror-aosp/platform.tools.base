@@ -16,5 +16,9 @@
 
 package com.android.tools.uicheck
 
-/** A source file in the user's project, for example `LoginScreen.kt` in package `com.example.ui`. */
-data class ProjectSourceFile(val fileName: String, val packageName: String)
+/**
+ * A source file in the user's project, for example `LoginScreen.kt` in package `com.example.ui`.
+ *
+ * [filePath] is where the file is on disk. When that is unknown, it is just the [fileName].
+ */
+data class ProjectSourceFile(val fileName: String, val packageName: String, val filePath: String = fileName)

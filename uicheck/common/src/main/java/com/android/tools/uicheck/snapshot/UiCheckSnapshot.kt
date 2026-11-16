@@ -50,7 +50,7 @@ data class UiCheckBounds(
 /**
  * Source file, line, and Composable name of the call that a finding points to.
  *
- * @property filePath Source file path or simple file name recorded in the component tree.
+ * @property filePath Absolute path of the source file when it was found on disk, or just its file name otherwise.
  * @property lineNumber 1-based line number in [filePath] (matching Compose source information), or `-1` when unknown.
  * @property functionName Simple name of the Composable or view at the call site, if known.
  */

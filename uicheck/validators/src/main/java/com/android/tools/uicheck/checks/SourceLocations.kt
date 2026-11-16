@@ -84,12 +84,11 @@ private constructor(
       currentFallback: UiCheckSourceLocation?,
     ): TraversalResult {
       val own =
-        node.sourceLocation?.takeIf(userCode::isUserCode)?.let {
-          UiCheckSourceLocation(
-            filePath = it.fileName,
-            lineNumber = it.lineNumber,
-            functionName = node.simpleComponentName(),
-          )
+        node.sourceLocation?.let { location ->
+          // `null` for a call site in a library. The node then takes the location of its nearest ancestor in user code, below.
+          userCode.userFilePath(location)?.let { filePath ->
+            UiCheckSourceLocation(filePath, location.lineNumber, functionName = node.simpleComponentName())
+          }
         }
       var updatedFallback = currentFallback ?: own
       val resolved = own ?: inherited
