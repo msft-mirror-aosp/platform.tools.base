@@ -184,4 +184,14 @@ class InstrumenterTestKotlinTarget {
       null -> 4
       else -> 0
     }
+
+  // Kotlin gives Registry a static method for each @JvmStatic function of its
+  // companion object, which loads the companion object and calls the function.
+  class Registry {
+    companion object {
+      @JvmStatic fun empty(): Registry = Registry()
+
+      @JvmStatic fun named(name: String): Registry = Registry().also { println(name) }
+    }
+  }
 }

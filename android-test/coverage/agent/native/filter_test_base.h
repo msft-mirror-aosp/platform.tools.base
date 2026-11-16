@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 #include "slicer/code_ir.h"
 #include "slicer/dex_bytecode.h"
+#include "slicer/dex_format.h"
 #include "slicer/dex_ir.h"
 #include "slicer/dex_ir_builder.h"
 #include "tools/base/android-test/coverage/agent/native/filter_interface.h"
@@ -100,6 +101,14 @@ class TestMethod {
   lir::Field* FieldRef(const char* owner, const char* name, const char* type);
   lir::Method* MethodRef(const char* owner, const char* name,
                          const char* signature);
+
+  // Annotates `method`, by default the method under test, with an annotation
+  // of the type `descriptor`, such as "Lkotlin/jvm/JvmStatic;", with the
+  // visibility `visibility`. The annotations of the class are in the order of
+  // the calls.
+  void AddAnnotation(const char* descriptor,
+                     dex::u1 visibility = dex::kVisibilityRuntime,
+                     ir::MethodDecl* method = nullptr);
 
   ir::EncodedMethod* ir_method() const { return ir_method_; }
   lir::CodeIr& code_ir() const { return *code_ir_; }

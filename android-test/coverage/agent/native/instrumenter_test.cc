@@ -962,5 +962,21 @@ TEST(InstrumenterTest, ClosingCodeOfCopiedResourceIsNotReported) {
   }
 }
 
+TEST(InstrumenterTest,
+     StaticMethodsForJvmStaticFunctionsAreReportedOnlyWithParameters) {
+  constexpr char kRegistryClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Registry;";
+  constexpr char kCompanionClass[] =
+      "Lcom/example/InstrumenterTestKotlinTarget$Registry$Companion;";
+  // The @JvmStatic functions of the companion object are instrumented.
+  ASSERT_NE(InstrumentedMethod("empty", kCompanionClass), nullptr);
+  ASSERT_NE(InstrumentedMethod("named", kCompanionClass), nullptr);
+  // Registry gets a static method for each, which only calls it. The one
+  // without parameters isn't instrumented, and the one with a parameter is,
+  // as in the build-time report.
+  EXPECT_EQ(InstrumentedMethod("empty", kRegistryClass), nullptr);
+  EXPECT_NE(InstrumentedMethod("named", kRegistryClass), nullptr);
+}
+
 }  // namespace
 }  // namespace coverage

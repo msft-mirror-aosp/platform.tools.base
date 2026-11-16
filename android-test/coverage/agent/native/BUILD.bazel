@@ -186,6 +186,7 @@ cc_test(
         "kotlin_inline_class_filter_test.cc",
         "kotlin_inline_filter_test.cc",
         "kotlin_jvm_overloads_filter_test.cc",
+        "kotlin_jvm_static_filter_test.cc",
         "kotlin_lateinit_filter_test.cc",
         "kotlin_safe_call_operator_filter_test.cc",
         "kotlin_serializable_filter_test.cc",

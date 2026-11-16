@@ -199,6 +199,39 @@ lir::Method* TestMethod::MethodRef(const char* owner, const char* name,
   return code_ir_->Alloc<lir::Method>(method, method->orig_index);
 }
 
+void TestMethod::AddAnnotation(const char* descriptor, dex::u1 visibility,
+                               ir::MethodDecl* method) {
+  if (method == nullptr) {
+    method = ir_method_->decl;
+  }
+  ir::Type* type = ir_method_->decl->parent;
+  if (type->class_def == nullptr) {
+    type->class_def = dex_ir_->Alloc<ir::Class>();
+    type->class_def->type = type;
+  }
+  ir::Class* ir_class = type->class_def;
+  if (ir_class->annotations == nullptr) {
+    ir_class->annotations = dex_ir_->Alloc<ir::AnnotationsDirectory>();
+  }
+  ir::MethodAnnotation* method_annotation = nullptr;
+  for (auto* existing : ir_class->annotations->method_annotations) {
+    if (existing->method_decl == method) {
+      method_annotation = existing;
+      break;
+    }
+  }
+  if (method_annotation == nullptr) {
+    method_annotation = dex_ir_->Alloc<ir::MethodAnnotation>();
+    method_annotation->method_decl = method;
+    method_annotation->annotations = dex_ir_->Alloc<ir::AnnotationSet>();
+    ir_class->annotations->method_annotations.push_back(method_annotation);
+  }
+  auto* annotation = dex_ir_->Alloc<ir::Annotation>();
+  annotation->type = builder_.GetType(descriptor);
+  annotation->visibility = visibility;
+  method_annotation->annotations->annotations.push_back(annotation);
+}
+
 ir::Proto* TestMethod::GetProto(const std::string& signature) {
   // "(" + the descriptors of the parameter types + ")" + the return type.
   std::vector<ir::Type*> param_types;
