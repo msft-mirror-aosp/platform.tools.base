@@ -39,7 +39,7 @@ abstract class R8D8ThreadPoolBuildService : BuildService<R8D8ThreadPoolBuildServ
     abstract val threadPoolSize: Property<Int>
   }
 
-  /** Shared thread pool used by R8 and D8 tasks. */
+  /** Shared thread pool used by R8, D8 and L8 tasks. */
   val threadPool: ExecutorService by lazy {
     threadPoolCreated = true
     newThreadPool(parameters.threadPoolSize.get())

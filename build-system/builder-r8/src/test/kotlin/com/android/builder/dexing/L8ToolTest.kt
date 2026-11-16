@@ -21,8 +21,15 @@ import com.android.testutils.TestUtils
 import com.android.testutils.truth.DexSubject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.MoreExecutors
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipFile
 import org.junit.Rule
 import org.junit.Test
@@ -209,6 +216,84 @@ class L8ToolTest {
       // Check that it contains multiple partitions (R8 + L8)
       assertThat(names.size).isGreaterThan(1)
     }
+  }
+
+  @Test
+  fun testCustomExecutorServiceIsUsed() {
+    val directOutput = tmp.newFolder("direct").toPath()
+    val poolOutput = tmp.newFolder("pool").toPath()
+    val keepRulesFile = tmp.newFile("executor_rules.pro").toPath()
+    Files.write(keepRulesFile, listOf("-keep class j$.util.stream.Stream { *; }", "-keep class j$.util.Optional { *; }"))
+    val keepRules = KeepRulesConfig(listOf(keepRulesFile), emptyList())
+
+    runL8(
+      inputClasses = desugarJar,
+      output = directOutput,
+      libConfiguration = desugarConfig,
+      libraries = bootClasspath,
+      minSdkVersion = 20,
+      keepRules = keepRules,
+      isDebuggable = false,
+      outputMode = L8OutputMode.DexIndexed,
+      l8ExecutorService = MoreExecutors.newDirectExecutorService(),
+    )
+
+    val submittedTasks = AtomicInteger()
+    val workerThreads = ConcurrentHashMap.newKeySet<Thread>()
+    val callerThread = Thread.currentThread()
+    val executor =
+      object :
+        ThreadPoolExecutor(
+          4,
+          4,
+          0L,
+          TimeUnit.MILLISECONDS,
+          LinkedBlockingQueue(),
+          ThreadFactory { runnable ->
+            Thread(
+              {
+                workerThreads.add(Thread.currentThread())
+                runnable.run()
+              },
+              "l8-test-worker",
+            )
+          },
+        ) {
+        override fun execute(command: Runnable) {
+          submittedTasks.incrementAndGet()
+          super.execute(command)
+        }
+      }
+    try {
+      runL8(
+        inputClasses = desugarJar,
+        output = poolOutput,
+        libConfiguration = desugarConfig,
+        libraries = bootClasspath,
+        minSdkVersion = 20,
+        keepRules = keepRules,
+        isDebuggable = false,
+        outputMode = L8OutputMode.DexIndexed,
+        l8ExecutorService = executor,
+      )
+      // L8.run calls shutdown() internally; runL8 must keep caller-owned shared pools alive.
+      assertThat(executor.isShutdown).isFalse()
+    } finally {
+      executor.shutdownNow()
+    }
+
+    assertThat(submittedTasks.get()).isGreaterThan(0)
+    assertThat(workerThreads).isNotEmpty()
+    assertThat(workerThreads).doesNotContain(callerThread)
+
+    val directDex = directOutput.resolve("classes1000.dex")
+    val poolDex = poolOutput.resolve("classes1000.dex")
+    assertThat(directDex).exists()
+    assertThat(poolDex).exists()
+    DexSubject.assertThatDex(poolDex.toFile()).containsClass("Lj$/util/stream/Stream;")
+    DexSubject.assertThatDex(poolDex.toFile()).containsClass("Lj$/util/Optional;")
+    DexSubject.assertThatDex(poolDex.toFile()).doesNotContainClasses("Lj$/time/LocalTime;")
+    assertThat(Files.readAllBytes(poolDex)).isEqualTo(Files.readAllBytes(directDex))
   }
 
   private fun getDexFileCount(dir: Path): Long = Files.list(dir).filter { it.toString().endsWith(".dex") }.count()

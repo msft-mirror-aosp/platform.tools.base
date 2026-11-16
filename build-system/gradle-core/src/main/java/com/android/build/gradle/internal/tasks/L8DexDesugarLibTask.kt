@@ -28,12 +28,14 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.R8ClassloaderBuildService
+import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationActionImpl
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
 import com.android.build.gradle.internal.utils.getDesugarLibJarFromMaven
 import com.android.build.gradle.internal.utils.getDesugaredDesugarLib
+import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.KeepRulesConfig
 import com.android.builder.dexing.L8OutputMode
@@ -43,6 +45,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
@@ -99,6 +102,8 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask(), IsolatedR8TaskInputs 
   /** Merged partitioned mapping file combining R8's and L8's partitions. */
   @get:OutputFile @get:Optional abstract val outputPartitionMappingFile: RegularFileProperty
 
+  @get:ServiceReference abstract val r8D8ThreadPoolBuildService: Property<R8D8ThreadPoolBuildService>
+
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(L8DexWorkAction::class.java) {
       it.initializeFromBaseTask(this)
@@ -121,6 +126,7 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask(), IsolatedR8TaskInputs 
       it.tempDir.set(temporaryDir)
       it.r8Classpath.from(r8Classpath)
       it.r8ClassloaderBuildService.set(r8ClassloaderBuildService)
+      it.r8D8ThreadPoolBuildService.set(r8D8ThreadPoolBuildService)
     }
   }
 
@@ -161,6 +167,9 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask(), IsolatedR8TaskInputs 
       task.minSdkVersion.set(dexingCreationConfig.minSdkVersionForDexing)
       task.debuggable.set(creationConfig.debuggable)
       task.fullBootClasspath.from(creationConfig.global.fullBootClasspath)
+      task.r8D8ThreadPoolBuildService.setDisallowChanges(
+        R8D8ThreadPoolBuildService.RegistrationAction(task.project, creationConfig.services.projectOptions).execute()
+      )
       task.configureIsolatedR8(task.project, creationConfig.services)
 
       if (dexingCreationConfig.needsShrinkDesugarLibrary && creationConfig.optimizationCreationConfig.minifiedEnabled) {
@@ -220,6 +229,7 @@ abstract class L8DexWorkAction : ProfileAwareWorkAction<L8DexWorkAction.Params>(
     abstract val tempDir: DirectoryProperty
     abstract val r8Classpath: ConfigurableFileCollection
     abstract val r8ClassloaderBuildService: Property<R8ClassloaderBuildService>
+    abstract val r8D8ThreadPoolBuildService: Property<R8D8ThreadPoolBuildService>
   }
 
   override fun run() {
@@ -256,6 +266,7 @@ abstract class L8DexWorkAction : ProfileAwareWorkAction<L8DexWorkAction.Params>(
           parameters.inputPartitionMappingFile.orNull?.asFile?.toPath(),
           parameters.outputPartitionMappingFile.orNull?.asFile?.toPath(),
           parameters.tempDir.orNull?.asFile?.toPath(),
+          parameters.r8D8ThreadPoolBuildService.get().threadPool,
         )
       }
     }

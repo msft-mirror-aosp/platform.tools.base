@@ -46,6 +46,13 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 import org.junit.Assert.assertThrows
@@ -173,6 +180,7 @@ class CreateR8ToolsTest {
         inputPartitionMappingFile = null,
         outputPartitionMappingFile = null,
         tempDir = null,
+        l8ExecutorService = MoreExecutors.newDirectExecutorService(),
       )
 
       r8Tools.runTraceReferenceTool(
@@ -200,6 +208,7 @@ class CreateR8ToolsTest {
         inputPartitionMappingFile = null,
         outputPartitionMappingFile = null,
         tempDir = null,
+        l8ExecutorService = MoreExecutors.newDirectExecutorService(),
       )
     }
 
@@ -207,6 +216,103 @@ class CreateR8ToolsTest {
     assertThatDex(l8Dex.toFile()).containsClass("Lj$/util/Optional;")
     // Shrunk with the generated keep rules: desugar library classes the app doesn't use are removed.
     assertThatDex(l8Dex.toFile()).doesNotContainClasses("Lj$/time/LocalTime;")
+  }
+
+  @Test
+  fun runL8_throughIsolatedClassLoader_usesProvidedExecutorService() {
+    val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
+    val desugarLibJar = TestUtils.getDesugarLibJar()
+    val desugarLibConfig = TestUtils.getDesugarLibConfigContent()
+    val keepRules = temporaryFolder.root.toPath().resolve("keep_rules.txt")
+    Files.writeString(keepRules, "-keep class j$.util.Optional { *; }")
+    val directDexDir = temporaryFolder.newFolder("direct_l8_dex").toPath()
+    val poolDexDir = temporaryFolder.newFolder("pool_l8_dex").toPath()
+
+    val submittedTasks = AtomicInteger()
+    val workerThreads: MutableSet<Thread> = Collections.newSetFromMap(ConcurrentHashMap())
+    val callerThread = Thread.currentThread()
+    val executor =
+      object :
+        ThreadPoolExecutor(
+          4,
+          4,
+          0L,
+          TimeUnit.MILLISECONDS,
+          LinkedBlockingQueue(),
+          ThreadFactory { runnable ->
+            Thread(
+              {
+                workerThreads.add(Thread.currentThread())
+                runnable.run()
+              },
+              "isolated-l8-worker",
+            )
+          },
+        ) {
+        override fun execute(command: Runnable) {
+          submittedTasks.incrementAndGet()
+          super.execute(command)
+        }
+      }
+
+    try {
+      R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
+        val r8Tools = createR8Tools(isolatedLoader)
+        assertThat(r8Tools.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
+
+        r8Tools.runL8(
+          inputClasses = listOf(desugarLibJar),
+          output = directDexDir,
+          libConfiguration = desugarLibConfig,
+          libraries = listOf(androidJar),
+          minSdkVersion = 21,
+          keepRules = KeepRulesConfig(listOf(keepRules), emptyList()),
+          isDebuggable = false,
+          outputMode = L8OutputMode.DexIndexed,
+          inputArtProfile = null,
+          outputArtProfile = null,
+          inputMappingFile = null,
+          outputMappingFile = null,
+          inputPartitionMappingFile = null,
+          outputPartitionMappingFile = null,
+          tempDir = null,
+          l8ExecutorService = MoreExecutors.newDirectExecutorService(),
+        )
+
+        r8Tools.runL8(
+          inputClasses = listOf(desugarLibJar),
+          output = poolDexDir,
+          libConfiguration = desugarLibConfig,
+          libraries = listOf(androidJar),
+          minSdkVersion = 21,
+          keepRules = KeepRulesConfig(listOf(keepRules), emptyList()),
+          isDebuggable = false,
+          outputMode = L8OutputMode.DexIndexed,
+          inputArtProfile = null,
+          outputArtProfile = null,
+          inputMappingFile = null,
+          outputMappingFile = null,
+          inputPartitionMappingFile = null,
+          outputPartitionMappingFile = null,
+          tempDir = null,
+          l8ExecutorService = executor,
+        )
+        // Caller-owned thread pools (such as R8D8ThreadPoolBuildService) must remain open after runL8.
+        assertThat(executor.isShutdown).isFalse()
+      }
+    } finally {
+      executor.shutdownNow()
+    }
+
+    assertThat(submittedTasks.get()).isGreaterThan(0)
+    assertThat(workerThreads).isNotEmpty()
+    assertThat(workerThreads).doesNotContain(callerThread)
+
+    val directDex = directDexDir.resolve("classes1000.dex")
+    val poolDex = poolDexDir.resolve("classes1000.dex")
+    assertThatDex(poolDex.toFile()).containsClass("Lj$/util/Optional;")
+    assertThatDex(poolDex.toFile()).doesNotContainClasses("Lj$/time/LocalTime;")
+    assertThat(Files.readAllBytes(poolDex)).isEqualTo(Files.readAllBytes(directDex))
   }
 
   @Test

@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.utils.DesugarConfigJson.Companion.combi
 import com.android.build.gradle.internal.utils.getDesugarLibConfigFiles
 import com.android.builder.dexing.KeepRulesConfig
 import com.android.builder.dexing.L8OutputMode
+import com.google.common.util.concurrent.MoreExecutors
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
@@ -100,6 +101,11 @@ abstract class L8DesugarLibTransform : TransformAction<L8DesugarLibTransform.Par
           inputPartitionMappingFile = null,
           outputPartitionMappingFile = null,
           tempDir = null,
+          // Run on the transform worker thread (like D8DexArchiveBuilder in DexingTransform):
+          // Gradle schedules artifact transforms across its worker pool, and transforms cannot use
+          // @ServiceReference to lazily register R8D8ThreadPoolBuildService when no R8/D8/L8 task
+          // is realized (e.g., under Isolated Projects or standalone profile-expansion tasks).
+          l8ExecutorService = MoreExecutors.newDirectExecutorService(),
         )
       }
     }

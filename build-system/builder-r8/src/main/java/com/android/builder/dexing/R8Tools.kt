@@ -87,6 +87,7 @@ interface R8Tools {
     inputPartitionMappingFile: Path?,
     outputPartitionMappingFile: Path?,
     tempDir: Path?,
+    l8ExecutorService: ExecutorService,
   )
 
   /** Same parameters as D8DesugaredMethodsGenerator.generate, so the implementation just forwards them. */

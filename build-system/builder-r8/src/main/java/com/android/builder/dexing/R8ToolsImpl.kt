@@ -116,6 +116,7 @@ class R8ToolsImpl : R8Tools {
     inputPartitionMappingFile: Path?,
     outputPartitionMappingFile: Path?,
     tempDir: Path?,
+    l8ExecutorService: ExecutorService,
   ) {
     // Fully qualified for the same reason as runR8 above.
     com.android.builder.dexing.runL8(
@@ -134,6 +135,7 @@ class R8ToolsImpl : R8Tools {
       inputPartitionMappingFile,
       outputPartitionMappingFile,
       tempDir,
+      l8ExecutorService,
     )
   }
 

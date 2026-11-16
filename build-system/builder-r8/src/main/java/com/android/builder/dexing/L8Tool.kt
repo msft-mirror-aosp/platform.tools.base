@@ -40,6 +40,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.zip.ZipEntry
@@ -76,6 +78,10 @@ enum class L8OutputMode {
  * @param outputArtProfile the output art profile path (optional)
  * @param inputMappingFile the existing mapping file (e.g. from R8) to be merged with L8's mapping (optional)
  * @param outputMappingFile the path where the final merged mapping file should be written (optional)
+ * @param inputPartitionMappingFile the existing partition mapping file (e.g. from R8) to be merged with L8's partition mapping (optional)
+ * @param outputPartitionMappingFile the path where the final merged partition mapping file should be written (optional)
+ * @param tempDir temporary directory for intermediate L8 mapping files (optional)
+ * @param l8ExecutorService the [ExecutorService] L8 runs its work on. It is never shut down by this function; the caller owns its lifecycle
  */
 fun runL8(
   inputClasses: Collection<Path>,
@@ -93,6 +99,7 @@ fun runL8(
   inputPartitionMappingFile: Path? = null,
   outputPartitionMappingFile: Path? = null,
   tempDir: Path? = null,
+  l8ExecutorService: ExecutorService = MoreExecutors.newDirectExecutorService(),
 ) {
   val logger: Logger = Logger.getLogger("L8")
   if (logger.isLoggable(Level.FINE)) {
@@ -181,9 +188,12 @@ fun runL8(
   }
 
   try {
-    // Multi-threading is managed at the Gradle task level, so here we run L8 directly in the
-    // current thread
-    L8.run(l8CommandBuilder.build(), MoreExecutors.newDirectExecutorService())
+    // Threading is controlled by the caller (e.g., R8D8ThreadPoolBuildService for tasks, or a
+    // direct executor for artifact transforms and unit tests). Wrap the caller-owned executor
+    // because L8.run(L8Command, ExecutorService) unconditionally calls ExecutorService.shutdown()
+    // before returning, which would shut down a shared build-service thread pool and cause
+    // RejectedExecutionException in subsequent D8/R8/L8 work in the same build.
+    L8.run(l8CommandBuilder.build(), NonShuttingDownExecutorService(l8ExecutorService))
 
     if (outputMappingFile != null) {
       // Initialize Output with R8's mapping
@@ -254,6 +264,33 @@ private fun extractMapId(mappingFile: Path): String? {
 }
 
 data class KeepRulesConfig(val keepRulesFiles: List<Path>, val keepRulesConfigurations: List<String>)
+
+/**
+ * A view of a caller-owned [delegate] that forwards task submissions but never shuts the delegate down, because `L8.run(L8Command,
+ * ExecutorService)` calls [shutdown] on the executor it is given before returning.
+ *
+ * [shutdown] and [shutdownNow] only mark this view as shut down, and [isShutdown], [isTerminated] and [awaitTermination] then report it as
+ * terminated, so callers that wait for termination (including the default `ExecutorService.close()` on JDK 19+) return immediately instead
+ * of waiting for the still-running [delegate].
+ */
+internal class NonShuttingDownExecutorService(private val delegate: ExecutorService) : ExecutorService by delegate {
+  @Volatile private var shutdownRequested = false
+
+  override fun shutdown() {
+    shutdownRequested = true
+  }
+
+  override fun shutdownNow(): List<Runnable> {
+    shutdownRequested = true
+    return emptyList()
+  }
+
+  override fun isShutdown(): Boolean = shutdownRequested || delegate.isShutdown
+
+  override fun isTerminated(): Boolean = shutdownRequested || delegate.isTerminated
+
+  override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean = shutdownRequested || delegate.awaitTermination(timeout, unit)
+}
 
 /**
  * Merges R8's minified app partition mappings with L8's desugared library partition mappings. If both inputs are valid and an R8 map ID is
