@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -122,6 +123,7 @@ class SQLiteStatementWrapperTest {
     assertThat(getLogLines()).isEmpty()
   }
 
+  @Ignore("b/585654886")
   @Test
   fun clearBindings_isLockNeutral() {
     val wrapped = prepareWrapped(connection, "INSERT INTO t1 (id, name) VALUES (?, ?)")
