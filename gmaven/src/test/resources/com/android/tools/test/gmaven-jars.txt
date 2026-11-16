@@ -484,14 +484,11 @@ com/android/tools/build/apkzlib
   com/android/tools/build/apkzlib/zip/utils/
 
 com/android/tools/build/builder
-  LICENSE
   META-INF/
   META-INF/MANIFEST.MF
   META-INF/builder-r8.kotlin_module
   META-INF/builder.kotlin_module
   META-INF/profile.kotlin_module
-  META-INF/services/
-  META-INF/services/com.android.tools.r8
   NOTICE
   com/
   com/android/
@@ -524,14 +521,6 @@ com/android/tools/build/builder
   com/android/builder/symbols/
   com/android/builder/tasks/
   com/android/builder/utils/
-  com/android/tools/
-  com/android/tools/r8/
-  r8-version.properties
-  resources/
-  resources/api_database.ser
-  resources/hidden.api.txt
-  resources/hidden.jar.txt
-  resources/missing.api.txt
 
 com/android/tools/build/builder-model
   META-INF/

@@ -231,6 +231,7 @@ dependencies {
     apiTestImplementation rootProject.ext.externalTestFixtures.apkanalyzer
     testCompileOnly project(':base:profile')
     testCompileOnly project(':base:build-system:builder-r8')
+    testRuntimeOnly r8.r8
 
     // mlkit-common
     includeInJar(project(':base:mlkit-common')) {

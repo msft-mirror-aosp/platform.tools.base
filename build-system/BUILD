@@ -658,6 +658,7 @@ maven_repository(
         "@maven//:com.android.tools.build.bundletool",
         "@maven//:com.android.tools.build.jetifier.jetifier-processor",
         "@maven//:com.android.tools.build.transform-api",
+        "@maven//:com.android.tools.r8",
         "@maven//:com.github.javaparser.javaparser-core",
         "@maven//:com.google.api-client.google-api-client",
         "@maven//:com.google.apis.google-api-services-storage",

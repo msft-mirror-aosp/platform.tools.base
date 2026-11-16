@@ -29,8 +29,8 @@ import org.gradle.api.services.BuildServiceParameters
 /**
  * Build service used to instantiate and cache isolated [URLClassLoader] instances for the R8 compiler.
  *
- * To ensure isolation from AGP runtime R8 classes while retaining access to shared build service and JDK classes, the created ClassLoader
- * loads R8 and builder-r8 classes child-first.
+ * R8 is not on AGP's own ClassLoader; the created ClassLoader loads the Maven-resolved R8 alongside `builder-r8` child-first, while
+ * delegating shared AGP and JDK classes to AGP's ClassLoader.
  */
 @ThreadSafe
 abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.None>, AutoCloseable {
@@ -59,10 +59,11 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
   companion object {
     /**
      * Types that appear in `R8Tools` signatures (e.g. `runR8`, or the D8 dex builder and merger and the entries they read), directly or
-     * inside another type, and that don't touch com.android.tools.r8.*. If one did reference R8, the parent copy would link to the bundled
-     * R8 instead of the downloaded one. Anything that touches R8 must be loaded by the child, so it links against the maven downloaded R8.
-     * The isolated loader takes these from the parent (AGP's) loader, so AGP can pass its own objects to the child-loaded `builder-r8`
-     * code. Nested classes (e.g. `KeepRuleFile$MavenOrigin`) are matched by their outer class.
+     * inside another type, and that don't touch com.android.tools.r8.*. If one did reference R8, the parent copy would fail to link because
+     * R8 is not on AGP's ClassLoader (or would link against a buildscript-classpath R8 instead of the isolated one). Anything that touches
+     * R8 must be loaded by the child, so it links against the Maven-resolved R8 in this ClassLoader. The isolated loader takes these from
+     * the parent (AGP's) loader, so AGP can pass its own objects to the child-loaded `builder-r8` code. Nested classes (e.g.
+     * `KeepRuleFile$MavenOrigin`) are matched by their outer class.
      */
     private val PARENT_DELEGATED_DEXING_CLASSES =
       setOf(
