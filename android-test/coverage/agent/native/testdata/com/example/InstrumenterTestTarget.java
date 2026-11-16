@@ -203,4 +203,17 @@ class InstrumenterTestTarget {
         }
         return sum;
     }
+
+    // javac closes the resource of a try-with-resources statement when its
+    // block ends, and in a handler on the line of the statement when the block
+    // throws.
+    static int firstChar(String text) throws java.io.IOException {
+        try (java.io.Reader reader = reader(text)) {
+            return reader.read();
+        }
+    }
+
+    static java.io.Reader reader(String text) {
+        return text.isEmpty() ? null : new java.io.StringReader(text);
+    }
 }

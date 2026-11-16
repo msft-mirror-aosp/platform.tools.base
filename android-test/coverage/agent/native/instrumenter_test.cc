@@ -36,12 +36,19 @@ extern "C" const long long instrumenter_test_target_dex_len;
 extern "C" const unsigned char instrumenter_test_kotlin_target_dex[];
 extern "C" const long long instrumenter_test_kotlin_target_dex_len;
 
+// testdata/com/example/InstrumenterTestApi21Target.java, compiled to dex for
+// API 21.
+extern "C" const unsigned char instrumenter_test_api21_target_dex[];
+extern "C" const long long instrumenter_test_api21_target_dex_len;
+
 namespace coverage {
 namespace {
 
 constexpr char kTargetClass[] = "Lcom/example/InstrumenterTestTarget;";
 constexpr char kKotlinTargetClass[] =
     "Lcom/example/InstrumenterTestKotlinTarget;";
+constexpr char kApi21TargetClass[] =
+    "Lcom/example/InstrumenterTestApi21Target;";
 
 // Lines of InstrumenterTestTarget.java.
 constexpr int kIgnoredCallGeneratedLine = 31;
@@ -58,6 +65,17 @@ constexpr int kReplacedBranchesNextLine = 55;
 // declaration of synchronizedMethod().
 constexpr int kSynchronizedBlockEndLine = 102;
 constexpr int kSynchronizedMethodLine = 107;
+// The try-with-resources statement of firstChar(), followed by the read.
+constexpr int kTryWithResourcesLine = 211;
+constexpr int kTryWithResourcesReadLine = 212;
+// Lines of InstrumenterTestApi21Target.java: the try-with-resources statement
+// of firstChar() and the line after it, and the statement of sum(), the read
+// and the closing brace of the block.
+constexpr int kApi21TryWithResourcesLine = 29;
+constexpr int kApi21TryWithResourcesReturnLine = 30;
+constexpr int kApi21CopiedResourceLine = 56;
+constexpr int kApi21CopiedResourceReadLine = 57;
+constexpr int kApi21CopiedResourceCloseLine = 58;
 
 // Returns the calls in `code_ir` to the static method named `name`.
 std::vector<lir::Instruction*> CallsTo(const lir::CodeIr& code_ir,
@@ -124,6 +142,90 @@ class TestFilter : public IFilter {
 
 REGISTER_NON_KOTLIN_FILTER(TestFilter)
 
+// What d8 generated in InstrumenterTestApi21Target, which the tests of that
+// class rely on.
+struct Api21Shapes {
+  // firstChar() closes its resource through a static m(Ljava/lang/Object;)V.
+  bool dispatched_close = false;
+  // sum() closes another register than the one that its call of reader()
+  // writes.
+  bool copied_resource = false;
+};
+
+Api21Shapes& Shapes() {
+  static Api21Shapes shapes;
+  return shapes;
+}
+
+// Returns the method that `bytecode` calls, or nullptr.
+const ir::MethodDecl* CalleeOf(const lir::Bytecode* bytecode) {
+  for (auto* operand : bytecode->operands) {
+    if (auto* method = dynamic_cast<lir::Method*>(operand)) {
+      return method->ir_method;
+    }
+  }
+  return nullptr;
+}
+
+// Returns the first register of `bytecode`, or -1.
+int FirstRegister(const lir::Bytecode* bytecode) {
+  if (bytecode->operands.empty()) {
+    return -1;
+  }
+  lir::Operand* operand = bytecode->operands[0];
+  if (auto* reg = dynamic_cast<lir::VReg*>(operand)) {
+    return static_cast<int>(reg->reg);
+  }
+  if (auto* list = dynamic_cast<lir::VRegList*>(operand)) {
+    return list->registers.empty() ? -1 : static_cast<int>(list->registers[0]);
+  }
+  if (auto* range = dynamic_cast<lir::VRegRange*>(operand)) {
+    return static_cast<int>(range->base_reg);
+  }
+  return -1;
+}
+
+// Records the Api21Shapes of InstrumenterTestApi21Target, and filters nothing.
+class Api21ShapeRecorder : public IFilter {
+ public:
+  void Filter(const FilterContext& context, ir::EncodedMethod* ir_method,
+              lir::CodeIr& code_ir, FilterOutput& output) override {
+    if (context.class_name != kApi21TargetClass) {
+      return;
+    }
+    std::string_view name = ir_method->decl->name->c_str();
+    const ir::MethodDecl* previous_callee = nullptr;
+    int opened = -1;
+    for (auto* instr : code_ir.instructions) {
+      auto* bytecode = dynamic_cast<lir::Bytecode*>(instr);
+      if (bytecode == nullptr) {
+        continue;
+      }
+      const ir::MethodDecl* callee = CalleeOf(bytecode);
+      std::string_view callee_name =
+          callee == nullptr ? "" : callee->name->c_str();
+      if (name == "firstChar" && bytecode->opcode == dex::OP_INVOKE_STATIC &&
+          callee_name == "m" &&
+          callee->prototype->Signature() == "(Ljava/lang/Object;)V") {
+        Shapes().dispatched_close = true;
+      }
+      if (name == "sum") {
+        if (bytecode->opcode == dex::OP_MOVE_RESULT_OBJECT &&
+            previous_callee != nullptr &&
+            std::string_view(previous_callee->name->c_str()) == "reader") {
+          opened = FirstRegister(bytecode);
+        } else if (callee_name == "close" && opened >= 0 &&
+                   FirstRegister(bytecode) != opened) {
+          Shapes().copied_resource = true;
+        }
+      }
+      previous_callee = callee;
+    }
+  }
+};
+
+REGISTER_NON_KOTLIN_FILTER(Api21ShapeRecorder)
+
 // Instruments the target classes once and returns their metadata.
 const proto::CoverageMetadata& Metadata() {
   static const proto::CoverageMetadata* const metadata = [] {
@@ -132,6 +234,8 @@ const proto::CoverageMetadata& Metadata() {
                                     instrumenter_test_target_dex_len);
     instrumenter.AddUnloadedClasses(instrumenter_test_kotlin_target_dex,
                                     instrumenter_test_kotlin_target_dex_len);
+    instrumenter.AddUnloadedClasses(instrumenter_test_api21_target_dex,
+                                    instrumenter_test_api21_target_dex_len);
     return new proto::CoverageMetadata(
         MetadataCollector::Instance().BuildMetadata());
   }();
@@ -799,6 +903,63 @@ TEST(InstrumenterTest, HandlerOfRecordPatternsSplitByGotoIsNotReported) {
   // Each pattern reports its 6 instructions, like the one of describe().
   EXPECT_EQ(InstructionsOnLine(*method, lines[1]), 6u);
   EXPECT_EQ(InstructionsOnLine(*method, lines[3]), 6u);
+}
+
+TEST(InstrumenterTest, ClosingCodeOfTryWithResourcesIsNotReported) {
+  // firstChar() reports the line of its statement with the call that opens the
+  // resource and its move-result, and the line of the read. Neither the close
+  // on the closing brace of the block nor the handler, on the line of the
+  // statement, is reported, and so neither check of the resource for null has
+  // branches. D8 calls its backport of addSuppressed() in the handler.
+  const proto::MethodMetadata* method = InstrumentedMethod("firstChar");
+  ASSERT_NE(method, nullptr);
+  uint32_t instructions = 0;
+  EXPECT_EQ(
+      ReportedLines(*method, &instructions),
+      (std::set<int32_t>{kTryWithResourcesLine, kTryWithResourcesReadLine}));
+  EXPECT_EQ(InstructionsOnLine(*method, kTryWithResourcesLine), 2u);
+  for (const auto& block : method->blocks()) {
+    EXPECT_LE(block.branch_count(), 1u);
+  }
+}
+
+TEST(InstrumenterTest, ClosingCodeThroughDispatcherOfD8IsNotReported) {
+  // For API 21, D8 closes the AutoCloseable of firstChar() through a static
+  // method of a class that it generates. Neither that close nor the handler is
+  // reported, as for a close().
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("firstChar", kApi21TargetClass);
+  ASSERT_NE(method, nullptr);
+  ASSERT_TRUE(Shapes().dispatched_close)
+      << "d8 doesn't close the resource through its static method anymore";
+  uint32_t instructions = 0;
+  EXPECT_EQ(ReportedLines(*method, &instructions),
+            (std::set<int32_t>{kApi21TryWithResourcesLine,
+                               kApi21TryWithResourcesReturnLine}));
+  EXPECT_EQ(InstructionsOnLine(*method, kApi21TryWithResourcesLine), 2u);
+  for (const auto& block : method->blocks()) {
+    EXPECT_LE(block.branch_count(), 1u);
+  }
+}
+
+TEST(InstrumenterTest, ClosingCodeOfCopiedResourceIsNotReported) {
+  // sum() keeps 14 values across its statement, so D8 copies the resource to a
+  // high register before its close, to make the long from the read in the low
+  // ones. The close of the copy on the closing brace isn't reported.
+  const proto::MethodMetadata* method =
+      InstrumentedMethod("sum", kApi21TargetClass);
+  ASSERT_NE(method, nullptr);
+  ASSERT_TRUE(Shapes().copied_resource)
+      << "d8 doesn't copy the resource of sum() before its close anymore";
+  uint32_t instructions = 0;
+  std::set<int32_t> lines = ReportedLines(*method, &instructions);
+  EXPECT_EQ(lines.count(kApi21CopiedResourceLine), 1u);
+  EXPECT_EQ(lines.count(kApi21CopiedResourceReadLine), 1u);
+  EXPECT_EQ(lines.count(kApi21CopiedResourceCloseLine), 0u);
+  EXPECT_EQ(InstructionsOnLine(*method, kApi21CopiedResourceLine), 2u);
+  for (const auto& block : method->blocks()) {
+    EXPECT_LE(block.branch_count(), 1u);
+  }
 }
 
 }  // namespace

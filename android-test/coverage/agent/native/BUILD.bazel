@@ -195,6 +195,7 @@ cc_test(
         "synchronized_filter_test.cc",
         "synthetic_class_filter_test.cc",
         "synthetic_method_filter_test.cc",
+        "try_with_resources_filter_test.cc",
     ],
     linkstatic = 1,
     deps = [
@@ -240,6 +241,42 @@ genrule(
     outs = ["instrumenter_test_target_dex.cc"],
     cmd = "$(execpath //tools/base/bazel:bin2c) -lang=cxx" +
           " -variable=instrumenter_test_target_dex -output=$@ $(SRCS)",
+    tools = ["//tools/base/bazel:bin2c"],
+)
+
+# The class that instrumenter_test instruments after d8 compiled it for API 21,
+# where d8 changes more of the code, as it does in apps.
+java_library(
+    name = "instrumenter_test_api21_target",
+    testonly = True,
+    srcs = ["testdata/com/example/InstrumenterTestApi21Target.java"],
+)
+
+# Compiles instrumenter_test_api21_target to dex for API 21, in a directory of
+# its own since d8 names its output classes.dex.
+genrule(
+    name = "instrumenter_test_api21_target_dex",
+    testonly = True,
+    srcs = [
+        ":instrumenter_test_api21_target",
+        _ANDROID_JAR,
+    ],
+    outs = ["api21/classes.dex"],
+    cmd = "$(execpath //prebuilts/r8:d8) --min-api 21" +
+          " --output $(RULEDIR)/api21" +
+          " --lib $(location %s)" % _ANDROID_JAR +
+          " $(location :instrumenter_test_api21_target)",
+    tools = ["//prebuilts/r8:d8"],
+)
+
+# Converts the dex file to an array in a CC source file.
+genrule(
+    name = "instrumenter_test_api21_target_dex_cc",
+    testonly = True,
+    srcs = [":instrumenter_test_api21_target_dex"],
+    outs = ["instrumenter_test_api21_target_dex.cc"],
+    cmd = "$(execpath //tools/base/bazel:bin2c) -lang=cxx" +
+          " -variable=instrumenter_test_api21_target_dex -output=$@ $(SRCS)",
     tools = ["//tools/base/bazel:bin2c"],
 )
 
@@ -291,6 +328,7 @@ cc_test(
     size = "small",
     srcs = [
         "instrumenter_test.cc",
+        ":instrumenter_test_api21_target_dex_cc",
         ":instrumenter_test_kotlin_target_dex_cc",
         ":instrumenter_test_target_dex_cc",
     ],
