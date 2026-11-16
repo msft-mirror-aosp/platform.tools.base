@@ -1,0 +1,630 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "tools/base/android-test/coverage/agent/native/try_with_resources_filter.h"
+
+#include <cstddef>
+#include <cstring>
+#include <initializer_list>
+#include <iterator>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+#include "slicer/code_ir.h"
+#include "slicer/dex_bytecode.h"
+#include "slicer/dex_format.h"
+#include "slicer/dex_ir.h"
+#include "tools/base/android-test/coverage/agent/native/filter_interface.h"
+
+namespace coverage {
+
+namespace {
+
+constexpr char kThrowable[] = "Ljava/lang/Throwable;";
+constexpr char kOneThrowable[] = "(Ljava/lang/Throwable;)V";
+constexpr char kTwoThrowables[] =
+    "(Ljava/lang/Throwable;Ljava/lang/Throwable;)V";
+
+// What a register holds in a handler: the value that a register had before
+// the handler (that register, 0 or more), or one of these. None of them is -1,
+// which Register() returns for an operand that isn't a register.
+constexpr int kCaught = -2;      // The exception that the handler caught.
+constexpr int kSuppressed = -3;  // The exception that the close threw.
+constexpr int kOtherValue = -4;  // Anything else.
+
+// Returns the first bytecode at or after `instr`, skipping labels, debug
+// annotations and other non-bytecode nodes, or nullptr.
+lir::Bytecode* SkipNonBytecodes(lir::Instruction* instr) {
+  for (auto* node = instr; node != nullptr; node = node->next) {
+    if (auto* bytecode = dynamic_cast<lir::Bytecode*>(node)) {
+      return bytecode;
+    }
+  }
+  return nullptr;
+}
+
+// Returns the first bytecode after `instr`, or nullptr.
+lir::Bytecode* NextBytecode(lir::Instruction* instr) {
+  return SkipNonBytecodes(instr->next);
+}
+
+// Returns the target of a branch instruction, or nullptr.
+lir::Label* BranchTarget(const lir::Bytecode* bytecode) {
+  for (auto* operand : bytecode->operands) {
+    if (auto* code_location = dynamic_cast<lir::CodeLocation*>(operand)) {
+      return code_location->label;
+    }
+  }
+  return nullptr;
+}
+
+bool IsGoto(dex::Opcode opcode) {
+  return opcode == dex::OP_GOTO || opcode == dex::OP_GOTO_16 ||
+         opcode == dex::OP_GOTO_32;
+}
+
+// Returns true if `opcode` copies a value from one register to another.
+bool IsMove(dex::Opcode opcode) {
+  return opcode >= dex::OP_MOVE && opcode <= dex::OP_MOVE_OBJECT_16;
+}
+
+// Returns true if `opcode` only reads the register of its first operand.
+bool OnlyReadsFirstOperand(dex::Opcode opcode) {
+  return (opcode >= dex::OP_RETURN && opcode <= dex::OP_RETURN_OBJECT) ||
+         opcode == dex::OP_MONITOR_ENTER || opcode == dex::OP_MONITOR_EXIT ||
+         opcode == dex::OP_CHECK_CAST || opcode == dex::OP_FILL_ARRAY_DATA ||
+         opcode == dex::OP_THROW || opcode == dex::OP_PACKED_SWITCH ||
+         opcode == dex::OP_SPARSE_SWITCH ||
+         (opcode >= dex::OP_IF_EQ && opcode <= dex::OP_IF_LEZ) ||
+         (opcode >= dex::OP_APUT && opcode <= dex::OP_APUT_SHORT) ||
+         (opcode >= dex::OP_IPUT && opcode <= dex::OP_IPUT_SHORT) ||
+         (opcode >= dex::OP_SPUT && opcode <= dex::OP_SPUT_SHORT);
+}
+
+// Returns true if `bytecode` writes register `reg` with its first operand, a
+// register or a pair of registers.
+bool Writes(const lir::Bytecode* bytecode, int reg) {
+  if (bytecode->operands.empty() || OnlyReadsFirstOperand(bytecode->opcode)) {
+    return false;
+  }
+  if (auto* vreg = dynamic_cast<const lir::VReg*>(bytecode->operands[0])) {
+    return static_cast<int>(vreg->reg) == reg;
+  }
+  if (auto* pair = dynamic_cast<const lir::VRegPair*>(bytecode->operands[0])) {
+    return static_cast<int>(pair->base_reg) == reg ||
+           static_cast<int>(pair->base_reg) + 1 == reg;
+  }
+  return false;
+}
+
+// Returns the register of operand `index` of `bytecode`, or -1.
+int Register(const lir::Bytecode* bytecode, size_t index) {
+  if (index >= bytecode->operands.size()) {
+    return -1;
+  }
+  auto* reg = dynamic_cast<const lir::VReg*>(bytecode->operands[index]);
+  return reg == nullptr ? -1 : static_cast<int>(reg->reg);
+}
+
+// Returns the registers that the invoke `bytecode` passes to its method.
+std::vector<int> Arguments(const lir::Bytecode* bytecode) {
+  std::vector<int> registers;
+  if (bytecode->operands.empty()) {
+    return registers;
+  }
+  if (auto* list = dynamic_cast<const lir::VRegList*>(bytecode->operands[0])) {
+    for (auto reg : list->registers) {
+      registers.push_back(static_cast<int>(reg));
+    }
+  } else if (auto* range =
+                 dynamic_cast<const lir::VRegRange*>(bytecode->operands[0])) {
+    for (int i = 0; i < range->count; ++i) {
+      registers.push_back(static_cast<int>(range->base_reg) + i);
+    }
+  }
+  return registers;
+}
+
+// Returns the method that the invoke `bytecode` calls, or nullptr.
+const ir::MethodDecl* Callee(const lir::Bytecode* bytecode) {
+  for (auto* operand : bytecode->operands) {
+    if (auto* method = dynamic_cast<const lir::Method*>(operand)) {
+      const ir::MethodDecl* decl = method->ir_method;
+      if (decl != nullptr && decl->parent != nullptr &&
+          decl->parent->descriptor != nullptr && decl->name != nullptr &&
+          decl->prototype != nullptr) {
+        return decl;
+      }
+      return nullptr;
+    }
+  }
+  return nullptr;
+}
+
+// Returns true if `method` has the name `name` and the JNI signature
+// `signature`.
+bool HasNameAndSignature(const ir::MethodDecl* method, const char* name,
+                         const char* signature) {
+  return strcmp(method->name->c_str(), name) == 0 &&
+         method->prototype->Signature() == signature;
+}
+
+// Returns true if `signature` takes one parameter of a class type and returns
+// nothing.
+bool TakesOneObject(const std::string& signature) {
+  return signature.size() > 5 && signature.compare(0, 2, "(L") == 0 &&
+         signature.find(';') == signature.size() - 3 &&
+         signature.compare(signature.size() - 3, 3, ";)V") == 0;
+}
+
+// If `bytecode` closes a resource, returns the method that it calls and sets
+// `reg` to the register of the resource. javac calls close() through a class
+// or an interface. Instead, D8 can call the method that the class of the
+// resource had before it became AutoCloseable, such as recycle() of TypedArray
+// or release() of ContentProviderClient, or a static method that it generates
+// and that takes the resource, such as the one that closes resources only
+// known as AutoCloseable from API 19 on.
+const ir::MethodDecl* CloseOf(const lir::Bytecode* bytecode, int* reg) {
+  bool is_static = false;
+  switch (bytecode->opcode) {
+    case dex::OP_INVOKE_VIRTUAL:
+    case dex::OP_INVOKE_VIRTUAL_RANGE:
+    case dex::OP_INVOKE_INTERFACE:
+    case dex::OP_INVOKE_INTERFACE_RANGE:
+      break;
+    case dex::OP_INVOKE_STATIC:
+    case dex::OP_INVOKE_STATIC_RANGE:
+      is_static = true;
+      break;
+    default:
+      return nullptr;
+  }
+  const ir::MethodDecl* method = Callee(bytecode);
+  if (method == nullptr) {
+    return nullptr;
+  }
+  const char* name = method->name->c_str();
+  if (!is_static && strcmp(name, "close") != 0 &&
+      strcmp(name, "recycle") != 0 && strcmp(name, "release") != 0) {
+    return nullptr;
+  }
+  const std::vector<int> arguments = Arguments(bytecode);
+  if (arguments.size() != 1) {
+    return nullptr;
+  }
+  const std::string signature = method->prototype->Signature();
+  if (is_static ? !TakesOneObject(signature)
+                : signature.compare(0, 2, "()") != 0) {
+    return nullptr;
+  }
+  *reg = arguments[0];
+  return method;
+}
+
+// Returns true if `a` and `b` are the same method.
+bool SameMethod(const ir::MethodDecl* a, const ir::MethodDecl* b) {
+  return strcmp(a->parent->descriptor->c_str(),
+                b->parent->descriptor->c_str()) == 0 &&
+         strcmp(a->name->c_str(), b->name->c_str()) == 0 &&
+         a->prototype->Signature() == b->prototype->Signature();
+}
+
+// What the registers hold in a handler.
+class Values {
+ public:
+  int Of(int reg) const {
+    auto it = values_.find(reg);
+    return it == values_.end() ? reg : it->second;
+  }
+
+  void Set(int reg, int value) { values_[reg] = value; }
+
+  // Updates the values for `move`, which copies the value of a register to
+  // another one, or the values of a pair of registers.
+  void Move(const lir::Bytecode* move) {
+    if (move->operands.empty()) {
+      return;
+    }
+    if (auto* pair = dynamic_cast<const lir::VRegPair*>(move->operands[0])) {
+      Set(static_cast<int>(pair->base_reg), kOtherValue);
+      Set(static_cast<int>(pair->base_reg) + 1, kOtherValue);
+      return;
+    }
+    const int destination = Register(move, 0);
+    const int source = Register(move, 1);
+    if (destination >= 0) {
+      Set(destination, source < 0 ? kOtherValue : Of(source));
+    }
+  }
+
+ private:
+  std::unordered_map<int, int> values_;
+};
+
+// One path through a handler: it follows the gotos with which D8 splits the
+// handler and skips the moves with which it shuffles registers, adding them all
+// to `code`.
+class Path {
+ public:
+  Path(Values values, std::vector<lir::Bytecode*>* code)
+      : values_(std::move(values)), code_(code) {}
+
+  // Returns the first bytecode at or after `bytecode` that isn't a goto or a
+  // move, or nullptr at the end of the code or if the path loops.
+  lir::Bytecode* From(lir::Bytecode* bytecode) {
+    while (bytecode != nullptr && visited_.insert(bytecode).second) {
+      code_->push_back(bytecode);
+      if (IsGoto(bytecode->opcode)) {
+        bytecode = SkipNonBytecodes(BranchTarget(bytecode));
+      } else if (IsMove(bytecode->opcode)) {
+        values_.Move(bytecode);
+        bytecode = NextBytecode(bytecode);
+      } else {
+        return bytecode;
+      }
+    }
+    return nullptr;
+  }
+
+  // Returns the first bytecode after `bytecode` that From() stops at.
+  lir::Bytecode* After(lir::Bytecode* bytecode) {
+    return From(NextBytecode(bytecode));
+  }
+
+  const Values& values() const { return values_; }
+
+ private:
+  Values values_;
+  std::vector<lir::Bytecode*>* code_;
+  std::unordered_set<const lir::Bytecode*> visited_;
+};
+
+// Returns true if `bytecode` throws the caught exception.
+bool ThrowsCaught(const lir::Bytecode* bytecode, const Values& values) {
+  return bytecode != nullptr && bytecode->opcode == dex::OP_THROW &&
+         values.Of(Register(bytecode, 0)) == kCaught;
+}
+
+// Returns true if `bytecode` adds the exception of the close to the caught
+// exception as a suppressed one, by calling addSuppressed() or, below API 19,
+// the static backport of D8.
+bool Suppresses(const lir::Bytecode* bytecode, const Values& values) {
+  const ir::MethodDecl* method = Callee(bytecode);
+  const std::vector<int> arguments = Arguments(bytecode);
+  if (method == nullptr || arguments.size() != 2 ||
+      values.Of(arguments[0]) != kCaught ||
+      values.Of(arguments[1]) != kSuppressed) {
+    return false;
+  }
+  switch (bytecode->opcode) {
+    case dex::OP_INVOKE_VIRTUAL:
+    case dex::OP_INVOKE_VIRTUAL_RANGE:
+      return strcmp(method->parent->descriptor->c_str(), kThrowable) == 0 &&
+             HasNameAndSignature(method, "addSuppressed", kOneThrowable);
+    case dex::OP_INVOKE_STATIC:
+    case dex::OP_INVOKE_STATIC_RANGE:
+      return method->prototype->Signature() == kTwoThrowables;
+    default:
+      return false;
+  }
+}
+
+// The facts about a method that the filter needs.
+struct MethodInfo {
+  // The line of each bytecode, or -1.
+  std::unordered_map<const lir::Bytecode*, int> lines;
+  // The handler of the try block of each bytecode in one, if it catches any
+  // exception or Throwable.
+  std::unordered_map<const lir::Bytecode*, lir::Label*> handlers;
+  // The first bytecode in code order that each of those handlers protects.
+  std::unordered_map<const lir::Label*, lir::Bytecode*> first_protected;
+};
+
+int LineOf(const MethodInfo& info, const lir::Bytecode* bytecode) {
+  auto it = info.lines.find(bytecode);
+  return it == info.lines.end() ? -1 : it->second;
+}
+
+// What the handler of a try-with-resources statement matched.
+struct Handler {
+  // Its bytecodes.
+  std::vector<lir::Bytecode*> code;
+  // The register of the resource before the handler.
+  int resource = kOtherValue;
+  // The close() that it calls.
+  const ir::MethodDecl* close = nullptr;
+  // Whether it checks the resource for null.
+  bool checks_null = false;
+};
+
+// Matches the handler of the close in a handler, at `label`: it catches the
+// exception of the close, adds it to the caught one and throws that one.
+// `values` are those at the close. Sets the call and the throw.
+bool MatchSuppression(lir::Label* label, Values values,
+                      std::vector<lir::Bytecode*>* code, lir::Bytecode** call,
+                      lir::Bytecode** rethrown) {
+  lir::Bytecode* suppressed = SkipNonBytecodes(label);
+  if (suppressed == nullptr || suppressed->opcode != dex::OP_MOVE_EXCEPTION) {
+    return false;
+  }
+  code->push_back(suppressed);
+  values.Set(Register(suppressed, 0), kSuppressed);
+  Path path(std::move(values), code);
+  *call = path.After(suppressed);
+  if (*call == nullptr || !Suppresses(*call, path.values())) {
+    return false;
+  }
+  *rethrown = path.After(*call);
+  return ThrowsCaught(*rethrown, path.values());
+}
+
+// Matches the handler of a try-with-resources statement at `label`. Returns
+// false if it isn't one.
+bool MatchHandler(lir::Label* label, const MethodInfo& info, Handler* handler) {
+  lir::Bytecode* caught = SkipNonBytecodes(label);
+  if (caught == nullptr || caught->opcode != dex::OP_MOVE_EXCEPTION) {
+    return false;
+  }
+  std::vector<lir::Bytecode*>& code = handler->code;
+  code.push_back(caught);
+  Values values;
+  values.Set(Register(caught, 0), kCaught);
+  Path main(std::move(values), &code);
+  lir::Bytecode* close = main.After(caught);
+  // The check for null, with the values at that point.
+  lir::Bytecode* check = nullptr;
+  Values at_check;
+  if (close != nullptr && close->opcode == dex::OP_IF_EQZ) {
+    check = close;
+    at_check = main.values();
+    close = main.After(check);
+  }
+  int closed = -1;
+  handler->close = close == nullptr ? nullptr : CloseOf(close, &closed);
+  if (handler->close == nullptr) {
+    return false;
+  }
+  handler->resource = main.values().Of(closed);
+  handler->checks_null = check != nullptr;
+  if (check != nullptr &&
+      at_check.Of(Register(check, 0)) != handler->resource) {
+    return false;
+  }
+  auto inner = info.handlers.find(close);
+  if (inner == info.handlers.end()) {
+    return false;
+  }
+  const Values at_close = main.values();
+  lir::Bytecode* thrown = main.After(close);
+  if (!ThrowsCaught(thrown, main.values())) {
+    return false;
+  }
+  lir::Bytecode* call = nullptr;
+  lir::Bytecode* rethrown = nullptr;
+  if (!MatchSuppression(inner->second, at_close, &code, &call, &rethrown)) {
+    return false;
+  }
+  // A null resource goes straight to a throw of the caught exception.
+  lir::Bytecode* skipped = nullptr;
+  if (check != nullptr) {
+    Path null_resource(std::move(at_check), &code);
+    skipped = null_resource.From(SkipNonBytecodes(BranchTarget(check)));
+    if (!ThrowsCaught(skipped, null_resource.values())) {
+      return false;
+    }
+  }
+  // javac gives the whole handler the line of the try statement. These
+  // bytecodes can throw, so D8 keeps their lines in release mode too.
+  for (const lir::Bytecode* other : {call, thrown, rethrown, skipped}) {
+    if (other != nullptr && LineOf(info, other) != LineOf(info, close)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Returns the bytecode before `instr`, or nullptr.
+lir::Bytecode* PreviousBytecode(lir::Instruction* instr) {
+  for (auto* node = instr->prev; node != nullptr; node = node->prev) {
+    if (auto* bytecode = dynamic_cast<lir::Bytecode*>(node)) {
+      return bytecode;
+    }
+  }
+  return nullptr;
+}
+
+// Returns true if `bytecode` is in a try block whose handler is at `label`.
+bool ProtectedBy(const MethodInfo& info, const lir::Bytecode* bytecode,
+                 const lir::Label* label) {
+  auto it = info.handlers.find(bytecode);
+  return it != info.handlers.end() && it->second == label;
+}
+
+// Updates `copies`, the registers that hold the resource, for `bytecode`: a
+// move of one of them adds its destination, and any other write removes the
+// register that it writes.
+void UpdateCopies(const lir::Bytecode* bytecode,
+                  std::unordered_set<int>* copies) {
+  const int destination = Register(bytecode, 0);
+  if (IsMove(bytecode->opcode) && destination >= 0) {
+    const int source = Register(bytecode, 1);
+    if (source >= 0 && copies->count(source) > 0) {
+      copies->insert(destination);
+    } else {
+      copies->erase(destination);
+    }
+    return;
+  }
+  for (auto it = copies->begin(); it != copies->end();) {
+    it = Writes(bytecode, *it) ? copies->erase(it) : std::next(it);
+  }
+}
+
+// Finds the close of the resource of `handler` when the block of its statement
+// ends, and adds its bytecodes to `code`: the check for null if the handler has
+// one, the close, and a goto right after it. The close comes after the first
+// bytecode of the block, outside the block, and before the handler and the
+// next writes of the registers that hold the resource, outside the handler: D8
+// puts the handlers after all the code that follows the statement, it can copy
+// the resource to another register before the close, and once the statement
+// ends, it can reuse those registers. The last of these closes counts. Returns
+// false if there is none.
+bool MatchClose(lir::Label* label, const Handler& handler,
+                const MethodInfo& info, std::vector<lir::Bytecode*>* code) {
+  auto first = info.first_protected.find(label);
+  if (first == info.first_protected.end()) {
+    return false;
+  }
+  std::unordered_set<const lir::Bytecode*> in_handler(handler.code.begin(),
+                                                      handler.code.end());
+  std::unordered_set<int> copies = {handler.resource};
+  lir::Bytecode* check = nullptr;
+  lir::Bytecode* close = nullptr;
+  lir::Instruction* node = first->second;
+  for (; node != nullptr && node != label && !copies.empty();
+       node = node->next) {
+    auto* bytecode = dynamic_cast<lir::Bytecode*>(node);
+    if (bytecode == nullptr || in_handler.count(bytecode) > 0) {
+      continue;
+    }
+    int closed = -1;
+    const ir::MethodDecl* method = CloseOf(bytecode, &closed);
+    // A close in the block, which the handler protects, doesn't count.
+    if (method != nullptr && copies.count(closed) > 0 &&
+        SameMethod(method, handler.close) &&
+        !ProtectedBy(info, bytecode, label)) {
+      lir::Bytecode* previous = PreviousBytecode(bytecode);
+      if (!handler.checks_null) {
+        check = nullptr;
+        close = bytecode;
+      } else if (previous != nullptr && in_handler.count(previous) == 0 &&
+                 previous->opcode == dex::OP_IF_EQZ &&
+                 Register(previous, 0) == closed) {
+        check = previous;
+        close = bytecode;
+      }
+    }
+    UpdateCopies(bytecode, &copies);
+  }
+  // The code that can hold the close ends at the handler, or where nothing
+  // holds the resource anymore.
+  if (close == nullptr || (node == nullptr && !copies.empty())) {
+    return false;
+  }
+  if (check != nullptr) {
+    code->push_back(check);
+  }
+  code->push_back(close);
+  lir::Bytecode* next = NextBytecode(close);
+  if (next != nullptr && IsGoto(next->opcode)) {
+    code->push_back(next);
+  }
+  return true;
+}
+
+}  // namespace
+
+void TryWithResourcesFilter::Filter(const FilterContext& context,
+                                    ir::EncodedMethod* ir_method,
+                                    lir::CodeIr& code_ir,
+                                    FilterOutput& output) {
+  // The handlers that catch any exception or Throwable, each once, and the
+  // handler of each try block.
+  std::vector<lir::Label*> labels;
+  std::unordered_set<const lir::Label*> seen;
+  std::unordered_map<const lir::TryBlockBegin*, lir::Label*> handler_of_try;
+  for (auto* instr : code_ir.instructions) {
+    auto* end = dynamic_cast<lir::TryBlockEnd*>(instr);
+    if (end == nullptr) {
+      continue;
+    }
+    // A catch of Throwable gets every exception that no earlier handler of the
+    // try block catches, so the catch of any exception never runs.
+    lir::Label* handler = nullptr;
+    for (const lir::CatchHandler& typed : end->handlers) {
+      if (typed.ir_type != nullptr && typed.ir_type->descriptor != nullptr &&
+          strcmp(typed.ir_type->descriptor->c_str(), kThrowable) == 0) {
+        handler = typed.label;
+        break;
+      }
+    }
+    if (handler == nullptr) {
+      handler = end->catch_all;
+    }
+    if (handler == nullptr) {
+      continue;
+    }
+    handler_of_try[end->try_begin] = handler;
+    if (seen.insert(handler).second) {
+      labels.push_back(handler);
+    }
+  }
+  if (labels.empty()) {
+    return;
+  }
+  MethodInfo info;
+  int line = -1;
+  lir::Label* current = nullptr;
+  for (auto* instr : code_ir.instructions) {
+    if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
+      info.lines[bytecode] = line;
+      if (current != nullptr) {
+        info.handlers[bytecode] = current;
+        info.first_protected.emplace(current, bytecode);
+      }
+    } else if (auto* annotation =
+                   dynamic_cast<const lir::DbgInfoAnnotation*>(instr)) {
+      if (annotation->dbg_opcode == dex::DBG_ADVANCE_LINE &&
+          !annotation->operands.empty()) {
+        if (auto* number =
+                dynamic_cast<const lir::LineNumber*>(annotation->operands[0])) {
+          line = number->line;
+        }
+      }
+    } else if (auto* begin = dynamic_cast<const lir::TryBlockBegin*>(instr)) {
+      auto it = handler_of_try.find(begin);
+      current = it == handler_of_try.end() ? nullptr : it->second;
+    } else if (dynamic_cast<const lir::TryBlockEnd*>(instr) != nullptr) {
+      current = nullptr;
+    }
+  }
+  for (lir::Label* label : labels) {
+    Handler handler;
+    std::vector<lir::Bytecode*> close;
+    if (!MatchHandler(label, info, &handler) ||
+        !MatchClose(label, handler, info, &close)) {
+      continue;
+    }
+    // Each bytecode is ignored on its own, in code order, since D8 can lay out
+    // the handler in pieces.
+    std::unordered_set<const lir::Bytecode*> ignored(close.begin(),
+                                                     close.end());
+    ignored.insert(handler.code.begin(), handler.code.end());
+    for (auto* instr : code_ir.instructions) {
+      auto* bytecode = dynamic_cast<lir::Bytecode*>(instr);
+      if (bytecode != nullptr && ignored.count(bytecode) > 0) {
+        output.Ignore(bytecode, bytecode);
+      }
+    }
+  }
+}
+
+REGISTER_NON_KOTLIN_FILTER(TryWithResourcesFilter)
+
+}  // namespace coverage

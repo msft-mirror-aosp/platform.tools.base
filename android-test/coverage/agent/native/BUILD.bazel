@@ -58,6 +58,7 @@ cc_library(
         "synthetic_filter.cc",
         "synthetic_method_filter.cc",
         "tagging_manager.cc",
+        "try_with_resources_filter.cc",
     ],
     hdrs = [
         "bridge_filter.h",
@@ -95,6 +96,7 @@ cc_library(
         "synthetic_filter.h",
         "synthetic_method_filter.h",
         "tagging_manager.h",
+        "try_with_resources_filter.h",
     ],
     copts = ANDROID_COPTS,
     deps = [
