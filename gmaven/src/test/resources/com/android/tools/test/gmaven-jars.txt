@@ -141,6 +141,7 @@ com/android/tools/analytics-library/protos
   NOTICE
   analytics_enums.proto
   analytics_settings.proto
+  android_cli_stats.proto
   com/
   com/android/
   com/android/tools/
