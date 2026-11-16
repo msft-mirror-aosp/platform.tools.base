@@ -83,6 +83,7 @@ object NavGraphExpander {
     if (navGraphs.isEmpty()) {
       return
     }
+    val rejectedNavGraphs = mutableSetOf<XmlElement>()
     // expand each navGraph
     for (navGraph in navGraphs) {
       val graphValue: String? = navGraph.getAttributeValue(ANDROID_URI, SdkConstants.ATTR_VALUE)
@@ -93,21 +94,23 @@ object NavGraphExpander {
         val nsUriPrefix = navGraph.lookupNamespacePrefix(ANDROID_URI, false)
         val graphName = nsUriPrefix + XmlUtils.NS_SEPARATOR + SdkConstants.ATTR_VALUE
         mergingReportBuilder.addMessage(
-          SourceFilePosition(xmlElement.document.sourceFile, xmlElement.position),
+          navGraph.sourceFilePosition,
           MergingReport.Record.Severity.ERROR,
           "Missing or malformed attribute in <nav-graph> element. " +
             "Android manifest <nav-graph> element must contain a $graphName " +
             "attribute with a value beginning " +
             "with \"${SdkConstants.NAVIGATION_PREFIX}\".",
         )
-        return
+        rejectedNavGraphs.add(navGraph)
+        continue
       }
       expandNavGraph(xmlElement, navigationXmlId, loadedNavigationMap, mergingReportBuilder)
     }
     // then remove each navGraph
     for (navGraph in navGraphs) {
       xmlElement.removeChild(navGraph)
-      mergingReportBuilder.actionRecorder.recordNodeAction(navGraph, Actions.ActionType.CONVERTED)
+      val actionType = if (navGraph in rejectedNavGraphs) Actions.ActionType.REJECTED else Actions.ActionType.CONVERTED
+      mergingReportBuilder.actionRecorder.recordNodeAction(navGraph, actionType)
     }
   }
 

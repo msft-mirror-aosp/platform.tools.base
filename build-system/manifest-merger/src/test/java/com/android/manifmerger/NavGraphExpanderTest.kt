@@ -16,6 +16,7 @@
 
 package com.android.manifmerger
 
+import com.android.SdkConstants
 import com.android.ide.common.blame.SourceFile.UNKNOWN
 import com.android.ide.common.blame.SourceFilePosition
 import com.android.ide.common.blame.SourcePosition
@@ -30,6 +31,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 /** Tests for [NavGraphExpander] */
@@ -786,6 +788,168 @@ class NavGraphExpanderTest {
         eq(MergingReport.Record.Severity.ERROR),
         eq("Referenced navigation file with navigationXmlId = nav3 not found"),
       )
+  }
+
+  @Test
+  fun testMalformedNavGraphDoesNotSkipValidSiblings() {
+    val validNavigationString1 =
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<navigation
+      |    xmlns:android="http://schemas.android.com/apk/res/android"
+      |    xmlns:app="http://schemas.android.com/apk/res-auto">
+      |    <deepLink app:uri="https://www.example.com/first" />
+      |</navigation>
+      """
+        .trimMargin()
+    val validNavigationString2 =
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<navigation
+      |    xmlns:android="http://schemas.android.com/apk/res/android"
+      |    xmlns:app="http://schemas.android.com/apk/res-auto">
+      |    <deepLink app:uri="https://www.example.com/second" />
+      |</navigation>
+      """
+        .trimMargin()
+
+    val inputManifestString =
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<manifest
+      |    xmlns:android="http://schemas.android.com/apk/res/android"
+      |    package="com.example.app1">
+      |    <application android:name="TheApp">
+      |        <activity android:name=".MainActivity">
+      |            <nav-graph android:value="@navigation/nav1" />
+      |            <nav-graph />
+      |            <nav-graph android:value="malformed" />
+      |            <nav-graph android:value="@navigation/nav2" />
+      |        </activity>
+      |    </application>
+      |</manifest>
+      """
+        .trimMargin()
+
+    val expectedOutputManifestString =
+      """
+      |<?xml version="1.0" encoding="utf-8"?>
+      |<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      |    package="com.example.app1" >
+      |    <application android:name="com.example.app1.TheApp" >
+      |        <activity android:name="com.example.app1.MainActivity" >
+      |            <intent-filter>
+      |                <action android:name="android.intent.action.VIEW" />
+      |                <category android:name="android.intent.category.DEFAULT" />
+      |                <category android:name="android.intent.category.BROWSABLE" />
+      |                <data android:scheme="https" />
+      |                <data android:host="www.example.com" />
+      |                <data android:path="/first" />
+      |            </intent-filter>
+      |            <intent-filter>
+      |                <action android:name="android.intent.action.VIEW" />
+      |                <category android:name="android.intent.category.DEFAULT" />
+      |                <category android:name="android.intent.category.BROWSABLE" />
+      |                <data android:scheme="https" />
+      |                <data android:host="www.example.com" />
+      |                <data android:path="/second" />
+      |            </intent-filter>
+      |        </activity>
+      |    </application>
+      |</manifest>
+      """
+        .trimMargin()
+
+    val xmlDocument = TestUtils.xmlDocumentFromString(UNKNOWN, inputManifestString, model)
+    val loadedNavigationMap =
+      mapOf(
+        "nav1" to NavigationXmlLoader.load(UNKNOWN, validNavigationString1),
+        "nav2" to NavigationXmlLoader.load(UNKNOWN, validNavigationString2),
+      )
+
+    val expandedXmlDocument = expandNavGraphs(xmlDocument, loadedNavigationMap, mergingReportBuilder)
+
+    val expectedXmlDocument = TestUtils.xmlDocumentFromString(UNKNOWN, expectedOutputManifestString, model)
+    assertThat(expandedXmlDocument.prettyPrint()).isEqualTo(expectedXmlDocument.prettyPrint())
+
+    val expectedErrorMessage =
+      "Missing or malformed attribute in <nav-graph> element. " +
+        "Android manifest <nav-graph> element must contain a android:${SdkConstants.ATTR_VALUE} " +
+        "attribute with a value beginning with \"${SdkConstants.NAVIGATION_PREFIX}\"."
+    val errorPositionCaptor = argumentCaptor<SourceFilePosition>()
+    verify(mergingReportBuilder, times(2))
+      .addMessage(
+        errorPositionCaptor.capture(),
+        eq(MergingReport.Record.Severity.ERROR),
+        eq(expectedErrorMessage),
+      )
+    assertThat(errorPositionCaptor.allValues.map { it.position.startLine }).containsExactly(7, 8).inOrder()
+
+    verify(actionRecorder, times(2)).recordNodeAction(any(), eq(Actions.ActionType.CONVERTED))
+    verify(actionRecorder, times(2)).recordNodeAction(any(), eq(Actions.ActionType.REJECTED))
+  }
+
+  @Test
+  fun testMalformedNavGraphIsRemovedFromOutput() {
+    val inputManifestString =
+      """
+      |<?xml version="1.0" encoding="UTF-8"?>
+      |<manifest
+      |    xmlns:android="http://schemas.android.com/apk/res/android"
+      |    package="com.example.app1">
+      |    <application android:name="TheApp">
+      |        <activity android:name=".MainActivity">
+      |            <nav-graph />
+      |            <nav-graph android:value="malformed" />
+      |        </activity>
+      |    </application>
+      |</manifest>
+      """
+        .trimMargin()
+
+    val expectedOutputManifestString =
+      """
+      |<?xml version="1.0" encoding="utf-8"?>
+      |<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      |    package="com.example.app1" >
+      |    <application android:name="com.example.app1.TheApp" >
+      |        <activity android:name="com.example.app1.MainActivity" >
+      |        </activity>
+      |    </application>
+      |</manifest>
+      """
+        .trimMargin()
+
+    val xmlDocument = TestUtils.xmlDocumentFromString(UNKNOWN, inputManifestString, model)
+
+    val expandedXmlDocument = expandNavGraphs(xmlDocument, emptyMap(), mergingReportBuilder)
+
+    val expectedXmlDocument = TestUtils.xmlDocumentFromString(UNKNOWN, expectedOutputManifestString, model)
+    assertThat(expandedXmlDocument.prettyPrint()).isEqualTo(expectedXmlDocument.prettyPrint())
+    val activity =
+      expandedXmlDocument.rootNode
+        .getAllNodesByType(ManifestModel.NodeTypes.APPLICATION)
+        .single()
+        .getAllNodesByType(ManifestModel.NodeTypes.ACTIVITY)
+        .single()
+    assertThat(activity.getAllNodesByType(ManifestModel.NodeTypes.NAV_GRAPH)).isEmpty()
+    assertThat(activity.getAllNodesByType(ManifestModel.NodeTypes.INTENT_FILTER)).isEmpty()
+
+    val expectedErrorMessage =
+      "Missing or malformed attribute in <nav-graph> element. " +
+        "Android manifest <nav-graph> element must contain a android:${SdkConstants.ATTR_VALUE} " +
+        "attribute with a value beginning with \"${SdkConstants.NAVIGATION_PREFIX}\"."
+    val errorPositionCaptor = argumentCaptor<SourceFilePosition>()
+    verify(mergingReportBuilder, times(2))
+      .addMessage(
+        errorPositionCaptor.capture(),
+        eq(MergingReport.Record.Severity.ERROR),
+        eq(expectedErrorMessage),
+      )
+    assertThat(errorPositionCaptor.allValues.map { it.position.startLine }).containsExactly(6, 7).inOrder()
+
+    verify(actionRecorder, never()).recordNodeAction(any(), eq(Actions.ActionType.CONVERTED))
+    verify(actionRecorder, times(2)).recordNodeAction(any(), eq(Actions.ActionType.REJECTED))
   }
 
   private fun validateDeepLinksGoToOneIntentFilter(expectedOutputManifestString: String, vararg navigationStrings: String) {
