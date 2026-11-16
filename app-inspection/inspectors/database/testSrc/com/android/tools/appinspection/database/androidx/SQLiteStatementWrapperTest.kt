@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,7 +51,6 @@ class SQLiteStatementWrapperTest {
 
   private val executor = Executors.newSingleThreadExecutor()
   private val connection = BundledSQLiteDriver().open(":memory:")
-  private val connectionLocking = ConnectionLocking(50.milliseconds)
 
   @Before
   fun setUp() {
@@ -70,33 +68,33 @@ class SQLiteStatementWrapperTest {
     var invalidations = 0
     val statement = prepareWrapped(connection, "INSERT INTO t1 (id, name) VALUES (1, 'a')") { invalidations++ }
 
-    assertConnectionLockedByCurrentThread()
+    statement.assertConnectionLockedByCurrentThread()
 
     statement.step()
     assertThat(invalidations).isEqualTo(1)
-    assertConnectionLockedByCurrentThread()
+    statement.assertConnectionLockedByCurrentThread()
 
     statement.close()
-    assertConnectionUnlocked()
+    statement.assertConnectionUnlocked()
     assertThat(getLogLines()).isEmpty()
   }
 
   @Test
   fun cachedStatement_unlocksOnResetAndRelocksOnReuse() {
     var invalidations = 0
-    val wrapped = prepareWrapped(connection, "INSERT INTO t1 (id, name) VALUES (?, ?)") { invalidations++ }
+    val statement = prepareWrapped(connection, "INSERT INTO t1 (id, name) VALUES (?, ?)") { invalidations++ }
 
     // Simulate Room's CachedStatement wrapper where close() calls reset() and clearBindings()
     val cachedStatement =
-      object : SQLiteStatement by wrapped {
+      object : SQLiteStatement by statement {
         override fun close() {
-          wrapped.reset()
-          wrapped.clearBindings()
+          statement.reset()
+          statement.clearBindings()
         }
       }
 
     // 1. First execution (Cache Miss)
-    assertConnectionLockedByCurrentThread()
+    statement.assertConnectionLockedByCurrentThread()
     cachedStatement.use {
       it.bindInt(1, 1)
       it.bindText(2, "first")
@@ -105,50 +103,51 @@ class SQLiteStatementWrapperTest {
     assertThat(invalidations).isEqualTo(1)
 
     // After CachedStatement.close() (which called reset() + clearBindings()), lock must be released
-    assertConnectionUnlocked()
+    statement.assertConnectionUnlocked()
 
     // 2. Second execution (Cache Hit - prepare() is not called again)
     cachedStatement.use {
       it.bindInt(1, 2)
-      assertConnectionLockedByCurrentThread()
+      statement.assertConnectionLockedByCurrentThread()
       it.bindText(2, "second")
       it.step()
     }
     assertThat(invalidations).isEqualTo(2)
-    assertConnectionUnlocked()
+    statement.assertConnectionUnlocked()
 
     // 3. Eviction from cache calls wrapped.close() while already unlocked
-    wrapped.close()
-    assertConnectionUnlocked()
+    statement.close()
+    statement.assertConnectionUnlocked()
     assertThat(getLogLines()).isEmpty()
   }
 
-  @Ignore("b/585654886")
   @Test
   fun clearBindings_isLockNeutral() {
-    val wrapped = prepareWrapped(connection, "INSERT INTO t1 (id, name) VALUES (?, ?)")
+    val statement = prepareWrapped(connection, "INSERT INTO t1 (id, name) VALUES (?, ?)")
 
     // When locked, clearBindings() keeps the statement locked
-    assertConnectionLockedByCurrentThread()
-    wrapped.bindInt(1, 1)
-    wrapped.clearBindings()
-    assertConnectionLockedByCurrentThread()
+    statement.assertConnectionLockedByCurrentThread()
+    statement.bindInt(1, 1)
+    statement.clearBindings()
+    statement.assertConnectionLockedByCurrentThread()
 
     // When unlocked (after reset()), clearBindings() keeps the statement unlocked
-    wrapped.reset()
-    assertConnectionUnlocked()
-    wrapped.clearBindings()
-    assertConnectionUnlocked()
+    statement.reset()
+    statement.assertConnectionUnlocked()
+    statement.clearBindings()
+    statement.assertConnectionUnlocked()
 
-    wrapped.close()
+    statement.close()
     assertThat(getLogLines()).isEmpty()
   }
 
   @Test
   fun timedOutLock_skipsRepeatedRetriesAndReleasesCleanlyWithoutCrash() {
-    val wrapped = prepareWrapped(connection, "INSERT INTO t1 (id, name) VALUES (?, ?)")
-    wrapped.reset()
-    assertConnectionUnlocked()
+    val connectionLocking = ConnectionLocking(500.milliseconds)
+
+    val statement = prepareWrapped(connection, "INSERT INTO t1 (id, name) VALUES (?, ?)", connectionLocking)
+    statement.reset()
+    statement.assertConnectionUnlocked()
 
     // Simulate two nested leaked statements on another thread (holdCount = 2)
     executor
@@ -156,37 +155,37 @@ class SQLiteStatementWrapperTest {
         connectionLocking.acquireLock(connection)
         connectionLocking.acquireLock(connection)
       }
-      .get(1, SECONDS)
+      .get(3, SECONDS)
 
     val startMs = System.currentTimeMillis()
 
     // First operation on cached statement times out (unlocking 1 of the 2 leaked holds -> holdCount
     // = 1)
-    wrapped.bindInt(1, 1)
+    statement.bindInt(1, 1)
     assertThat(getLogLines()).containsExactly("ERROR: SqliteInspector: Failed to acquire a lock on the database connection. (Exception)")
     ShadowLog.reset()
 
-    // Subsequent operations in the same cycle should NOT retry acquireLock (no extra 50ms timeouts)
-    wrapped.bindText(2, "timed_out_cycle")
-    wrapped.step()
+    // Subsequent operations in the same cycle should NOT retry acquireLock (no extra 500ms timeouts)
+    statement.bindText(2, "timed_out_cycle")
+    statement.step()
     val elapsedMs = System.currentTimeMillis() - startMs
-    assertThat(elapsedMs).isLessThan(120)
+    assertThat(elapsedMs).isLessThan(1200)
 
     // reset() should NOT call releaseLock when lockState is TIMED_OUT, and resets state to UNLOCKED
-    wrapped.reset()
+    statement.reset()
 
     // Release the remaining leaked hold on the other thread
-    executor.submit { connectionLocking.releaseLock(connection) }.get(1, SECONDS)
+    executor.submit { connectionLocking.releaseLock(connection) }.get(3, SECONDS)
 
     // Next reuse of the cached statement should acquire and release the lock normally
-    wrapped.bindInt(1, 2)
-    assertConnectionLockedByCurrentThread()
-    wrapped.bindText(2, "recovered_cycle")
-    wrapped.step()
-    wrapped.reset()
-    assertConnectionUnlocked()
+    statement.bindInt(1, 2)
+    statement.assertConnectionLockedByCurrentThread()
+    statement.bindText(2, "recovered_cycle")
+    statement.step()
+    statement.reset()
+    statement.assertConnectionUnlocked()
     assertThat(getLogLines()).isEmpty()
-    wrapped.close()
+    statement.close()
   }
 
   @Test
@@ -259,6 +258,7 @@ class SQLiteStatementWrapperTest {
   private fun prepareWrapped(
     connection: SQLiteConnection,
     sql: String,
+    connectionLocking: ConnectionLocking = ConnectionLocking(),
     onInvalidate: () -> Unit = {},
   ): SQLiteStatementWrapper {
     val isLocked = connectionLocking.acquireLock(connection)
@@ -271,7 +271,7 @@ class SQLiteStatementWrapperTest {
     )
   }
 
-  private fun assertConnectionUnlocked() {
+  private fun SQLiteStatementWrapper.assertConnectionUnlocked() {
     val acquiredOnOtherThread = AtomicInteger(0)
     executor
       .submit {
@@ -283,7 +283,7 @@ class SQLiteStatementWrapperTest {
     assertThat(acquiredOnOtherThread.get()).isEqualTo(1)
   }
 
-  private fun assertConnectionLockedByCurrentThread() {
+  private fun SQLiteStatementWrapper.assertConnectionLockedByCurrentThread() {
     val entered = CountDownLatch(1)
     val finished = AtomicBoolean(false)
     val future = executor.submit {

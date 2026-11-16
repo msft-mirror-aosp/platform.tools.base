@@ -16,6 +16,7 @@
 package com.android.tools.appinspection.database.androidx
 
 import androidx.annotation.GuardedBy
+import androidx.annotation.VisibleForTesting
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
 
@@ -28,7 +29,7 @@ import androidx.sqlite.SQLiteStatement
  *   and reused.
  */
 internal class SQLiteStatementWrapper(
-  private val connectionLocking: ConnectionLocking,
+  @get:VisibleForTesting val connectionLocking: ConnectionLocking,
   private val connection: SQLiteConnection,
   private val delegate: SQLiteStatement,
   isLocked: Boolean = true,
