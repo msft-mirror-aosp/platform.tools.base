@@ -129,7 +129,7 @@ private val PERFORMANCE_WARNING =
     data = null,
     message =
       """
-      The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+      The property android.dependency.useConstraints imposes a large penalty to project import performance for very large projects. It should be disabled to improve performance.
       To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
       Add android.sync.suppressAgpWarnings=LIBRARY_CONSTRAINTS_SHOULD_BE_DISABLED to the gradle.properties file to suppress this warning.
       """

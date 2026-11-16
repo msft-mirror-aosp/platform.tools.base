@@ -732,10 +732,10 @@ public class VariantDependenciesBuilder {
         issueReporter.reportWarning(
                 IssueReporter.Type.LIBRARY_CONSTRAINTS_SHOULD_BE_DISABLED,
                 "The property "
-                        + BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS
+                        + BooleanOption.USE_DEPENDENCY_CONSTRAINTS
                                 .getPropertyName()
-                        + " improves project import performance for very large projects. It should"
-                        + " be enabled to improve performance.\n"
+                        + " imposes a large penalty to project import performance for very large"
+                        + " projects. It should be disabled to improve performance.\n"
                         + "To suppress this warning, add "
                         + BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED
                                 .getPropertyName()
