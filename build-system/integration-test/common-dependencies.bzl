@@ -5,8 +5,8 @@ and can be combined together
 
 load(
     "//tools/base/common:kotlin_version.bzl",
-    "DEFAULT_BUILT_IN_KOTLIN_VERSION",
-    _MINIMUM_BUILT_IN_KOTLIN_VERSION = "MINIMUM_BUILT_IN_KOTLIN_VERSION",
+    "KOTLIN_VERSION_AGP_COMPILES_AGAINST",
+    "KOTLIN_VERSION_AGP_DEFAULTS_TO",
 )
 
 # KGP version used in AGP tests
@@ -14,10 +14,10 @@ load(
 KGP_VERSION_FOR_TESTS = "2.5.0-Beta2"
 
 # Minimum Kotlin Gradle plugin version that AGP supports and compiles against
-MINIMUM_BUILT_IN_KOTLIN_VERSION = _MINIMUM_BUILT_IN_KOTLIN_VERSION
+MINIMUM_BUILT_IN_KOTLIN_VERSION = KOTLIN_VERSION_AGP_COMPILES_AGAINST
 
 # Default Kotlin Gradle plugin version that AGP recommends using
-BUILT_IN_KOTLIN_VERSION = DEFAULT_BUILT_IN_KOTLIN_VERSION
+BUILT_IN_KOTLIN_VERSION = KOTLIN_VERSION_AGP_DEFAULTS_TO
 
 # KSP version used in AGP tests
 KSP_VERSION_FOR_TESTS = "2.3.10"

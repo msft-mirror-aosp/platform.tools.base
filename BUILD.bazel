@@ -1,6 +1,6 @@
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
-load("//tools/base/common:kotlin_version.bzl", "KOTLIN_VERSION_FOR_AGP_BUILD", "MINIMUM_BUILT_IN_KOTLIN_VERSION")
+load("//tools/base/common:kotlin_version.bzl", "KGP_VERSION_USED_TO_COMPILE_AGP", "KOTLIN_VERSION_AGP_COMPILES_AGAINST")
 
 # This Maven repository contains artifacts that are built by Bazel, but also needed by
 # AGP build. The AGP build uses this repo so that it does not have to rebuild the same
@@ -69,16 +69,16 @@ maven_repository(
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.dokka.dokka-core",
         "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin",
-        "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_" + KOTLIN_VERSION_FOR_AGP_BUILD,
-        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_" + KOTLIN_VERSION_FOR_AGP_BUILD,
+        "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_" + KGP_VERSION_USED_TO_COMPILE_AGP,
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_" + KGP_VERSION_USED_TO_COMPILE_AGP,
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_" + KOTLIN_VERSION_FOR_AGP_BUILD,
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_" + KGP_VERSION_USED_TO_COMPILE_AGP,
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
-        "@maven//:org.jetbrains.kotlin.kotlin-compiler_" + KOTLIN_VERSION_FOR_AGP_BUILD,
+        "@maven//:org.jetbrains.kotlin.kotlin-compiler_" + KGP_VERSION_USED_TO_COMPILE_AGP,
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_" + KOTLIN_VERSION_FOR_AGP_BUILD,
-        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_" + KOTLIN_VERSION_FOR_AGP_BUILD,
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_" + KGP_VERSION_USED_TO_COMPILE_AGP,
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_" + KGP_VERSION_USED_TO_COMPILE_AGP,
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlin.kotlin-test-junit",

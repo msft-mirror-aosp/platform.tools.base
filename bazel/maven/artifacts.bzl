@@ -10,7 +10,7 @@ of a `(maven|kotlin|java)_library` rule, otherwise use DATA.
 """
 
 load("//tools/base/bazel:maven/r8-version.bzl", "R8_VERSION")
-load("//tools/base/common:kotlin_version.bzl", "MINIMUM_BUILT_IN_KOTLIN_VERSION")
+load("//tools/base/common:kotlin_version.bzl", "KOTLIN_VERSION_AGP_COMPILES_AGAINST")
 
 # keep sorted
 ARTIFACTS = [
@@ -225,19 +225,19 @@ ARTIFACTS = [
     "org.jetbrains.jewel:jewel-foundation:0.31.0-252.27409",
     "org.jetbrains.jewel:jewel-int-ui-standalone:0.31.0-252.27409",
     "org.jetbrains.jewel:jewel-ui:0.31.0-252.27409",
-    # AGP compiles against and ships Kotlin artifacts at MINIMUM_BUILT_IN_KOTLIN_VERSION;
-    # newer KGP versions (DEFAULT_BUILT_IN_KOTLIN_VERSION, KOTLIN_VERSION_FOR_AGP_BUILD) live in data.bzl.
-    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-compiler:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-gradle-plugin:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-gradle-plugin-idea:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-reflect:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-stdlib:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-test:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
-    "org.jetbrains.kotlin:kotlin-test-junit:" + MINIMUM_BUILT_IN_KOTLIN_VERSION,
+    # tools/base & AGP compile against and ship Kotlin artifacts at KOTLIN_VERSION_AGP_COMPILES_AGAINST;
+    # newer KGP versions (KOTLIN_VERSION_AGP_DEFAULTS_TO, KGP_VERSION_USED_TO_COMPILE_AGP) live in data.bzl.
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-compiler:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-idea:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-reflect:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-stdlib:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-test:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
+    "org.jetbrains.kotlin:kotlin-test-junit:" + KOTLIN_VERSION_AGP_COMPILES_AGAINST,
     "org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2",
