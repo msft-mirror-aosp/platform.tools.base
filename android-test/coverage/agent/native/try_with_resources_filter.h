@@ -70,6 +70,11 @@ namespace coverage {
  * javac 9 and 10 can instead close the resource through a static method that
  * they generate, $closeResource(Throwable, AutoCloseable), which takes the
  * first exception, or null when the block ends, and has no handler around it.
+ * javac 7 to 10 also close the resource at each early exit of the block, such
+ * as a continue, as a finally block does, on the line of the end of the block,
+ * and with line numbers, all these closes are filtered.
+ * D8 can merge such a close with another one when it is the same code: the
+ * early exit then checks the resource for null and goes to the other close.
  *
  * ECJ catches any exception in one handler for all the resources of the
  * statement, on the line of the end of its block, which closes them one after

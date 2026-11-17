@@ -443,6 +443,11 @@ struct Handler {
   // For ECJ, the handlers of the try block of the close when the block ends:
   // the suppression of the resource and the other entries into it.
   std::unordered_set<const lir::Label*> entries;
+  // For javac 7 to 10, which close the resource at each exit of the block as a
+  // finally block does: whether all these closes count, not just the last one.
+  // javac gives them the line of the close of the handler, `line`.
+  bool every_close = false;
+  int line = -1;
 };
 
 // Matches the handler of the close in a handler, at `label`: it catches the
@@ -508,6 +513,7 @@ bool MatchHandler(lir::Label* label, const MethodInfo& info, Values entry,
     return false;
   }
   handler->resource = main.values().Of(closed);
+  handler->line = LineOf(info, close);
   handler->checks_null = check != nullptr;
   if (check != nullptr &&
       at_check.Of(Register(check, 0)) != handler->resource) {
@@ -625,66 +631,14 @@ void UpdateCopies(const lir::Bytecode* bytecode,
   }
 }
 
-// Finds the close of the resource of `handler` when the block of its statement
-// ends, and adds its bytecodes to `code`: the check for null if the handler has
-// one, the close, and a goto right after it on the same line. A close through
-// $closeResource passes null as the primary exception, which D8 loads on the
-// same line before the check or the call; that load is added too. The close
-// comes after `first`, the first bytecode of the block, outside the block, and
-// before the handler at `label` and the next writes of the registers that hold
-// the resource, outside the handler: D8 puts the handlers after all the code
-// that follows the statement, it can copy the resource to another register
-// before the close, and once the statement ends, it can reuse those registers.
-// For ECJ, the close is in a try block that goes to one of `handler.entries`.
-// The last of these closes counts. Returns it, or nullptr if there is none.
-lir::Bytecode* MatchClose(lir::Label* label, lir::Bytecode* first,
-                          const Handler& handler, const MethodInfo& info,
-                          std::vector<lir::Bytecode*>* code) {
-  std::unordered_set<const lir::Bytecode*> in_handler(handler.code.begin(),
-                                                      handler.code.end());
-  std::unordered_set<int> copies = {handler.resource};
-  lir::Bytecode* check = nullptr;
-  lir::Bytecode* close = nullptr;
-  lir::Instruction* node = first;
-  for (; node != nullptr && node != label && !copies.empty();
-       node = node->next) {
-    auto* bytecode = dynamic_cast<lir::Bytecode*>(node);
-    if (bytecode == nullptr || in_handler.count(bytecode) > 0) {
-      continue;
-    }
-    int closed = -1;
-    int passed = -1;
-    const ir::MethodDecl* method =
-        handler.close_resource ? CloseResourceOf(bytecode, &closed, &passed)
-                               : CloseOf(bytecode, &closed);
-    // A close in the block, which the handler protects, doesn't count.
-    if (method != nullptr && copies.count(closed) > 0 &&
-        SameMethod(method, handler.close) &&
-        !ProtectedBy(info, bytecode, label) &&
-        (handler.entries.empty() ||
-         ProtectedByOneOf(info, bytecode, handler.entries))) {
-      lir::Bytecode* previous = PreviousBytecode(bytecode);
-      if (handler.close_resource && previous != nullptr &&
-          LoadsZero(previous, passed)) {
-        previous = PreviousBytecode(previous);
-      }
-      if (!handler.checks_null) {
-        check = nullptr;
-        close = bytecode;
-      } else if (previous != nullptr && in_handler.count(previous) == 0 &&
-                 previous->opcode == dex::OP_IF_EQZ &&
-                 Register(previous, 0) == closed) {
-        check = previous;
-        close = bytecode;
-      }
-    }
-    UpdateCopies(bytecode, &copies);
-  }
-  // The code that can hold the close ends at the handler, or where nothing
-  // holds the resource anymore.
-  if (close == nullptr || (node == nullptr && !copies.empty())) {
-    return nullptr;
-  }
+// Adds the bytecodes of `close`, a close of the resource of `handler` when the
+// block ends, to `code`: its check for null `check`, if any, the close, and a
+// goto right after it on the same line. A close through $closeResource passes
+// null as the primary exception, which D8 loads on the same line before the
+// check or the call; that load is added too.
+void AddClose(lir::Bytecode* check, lir::Bytecode* close,
+              const Handler& handler, const MethodInfo& info,
+              std::vector<lir::Bytecode*>* code) {
   if (check != nullptr) {
     code->push_back(check);
   }
@@ -709,7 +663,115 @@ lir::Bytecode* MatchClose(lir::Label* label, lir::Bytecode* first,
       LineOf(info, next) == LineOf(info, close)) {
     code->push_back(next);
   }
-  return close;
+}
+
+// D8 can merge the close at an early exit of the block, such as a continue,
+// with the close `close` when it is the same code: the early exit then checks
+// the resource for null like `check`, if any, and goes to that close, on its
+// line. Adds those bytecodes to `code`.
+void AddMergedExits(lir::Bytecode* check, lir::Bytecode* close,
+                    const MethodInfo& info, std::vector<lir::Bytecode*>* code) {
+  for (lir::Bytecode* bytecode : info.bytecodes) {
+    if (!IsGoto(bytecode->opcode) ||
+        SkipNonBytecodes(BranchTarget(bytecode)) != close ||
+        LineOf(info, bytecode) != LineOf(info, close)) {
+      continue;
+    }
+    if (check != nullptr) {
+      lir::Bytecode* exit_check = PreviousBytecode(bytecode);
+      if (exit_check == nullptr || exit_check->opcode != dex::OP_IF_EQZ ||
+          Register(exit_check, 0) != Register(check, 0) ||
+          SkipNonBytecodes(BranchTarget(exit_check)) !=
+              SkipNonBytecodes(BranchTarget(check)) ||
+          LineOf(info, exit_check) != LineOf(info, close)) {
+        continue;
+      }
+      code->push_back(exit_check);
+    }
+    code->push_back(bytecode);
+  }
+}
+
+// Finds the close of the resource of `handler` when the block of its statement
+// ends, and adds its bytecodes to `code` (see AddClose()). The close comes
+// after `first`, the first bytecode of the block, outside the block, and
+// before the handler at `label` and the next writes of the registers that hold
+// the resource, outside the handler: D8 puts the handlers after all the code
+// that follows the statement, it can copy the resource to another register
+// before the close, and once the statement ends, it can reuse those registers.
+// For ECJ, the close is in a try block that goes to one of `handler.entries`.
+// The last of these closes counts, or for javac 7 to 10 all of them on the
+// line of the close of the handler, and the early exits merged with them.
+// Returns the last one, or nullptr if there is none.
+lir::Bytecode* MatchClose(lir::Label* label, lir::Bytecode* first,
+                          const Handler& handler, const MethodInfo& info,
+                          std::vector<lir::Bytecode*>* code) {
+  std::unordered_set<const lir::Bytecode*> in_handler(handler.code.begin(),
+                                                      handler.code.end());
+  std::unordered_set<int> copies = {handler.resource};
+  // The closes, each with its check for null or nullptr.
+  std::vector<std::pair<lir::Bytecode*, lir::Bytecode*>> closes;
+  lir::Instruction* node = first;
+  for (; node != nullptr && node != label && !copies.empty();
+       node = node->next) {
+    auto* bytecode = dynamic_cast<lir::Bytecode*>(node);
+    if (bytecode == nullptr || in_handler.count(bytecode) > 0) {
+      continue;
+    }
+    int closed = -1;
+    int passed = -1;
+    const ir::MethodDecl* method =
+        handler.close_resource ? CloseResourceOf(bytecode, &closed, &passed)
+                               : CloseOf(bytecode, &closed);
+    // A close in the block, which the handler protects, doesn't count.
+    if (method != nullptr && copies.count(closed) > 0 &&
+        SameMethod(method, handler.close) &&
+        !ProtectedBy(info, bytecode, label) &&
+        (!handler.every_close || LineOf(info, bytecode) == handler.line) &&
+        (handler.entries.empty() ||
+         ProtectedByOneOf(info, bytecode, handler.entries))) {
+      lir::Bytecode* previous = PreviousBytecode(bytecode);
+      if (handler.close_resource && previous != nullptr &&
+          LoadsZero(previous, passed)) {
+        previous = PreviousBytecode(previous);
+      }
+      const bool checked =
+          previous != nullptr && in_handler.count(previous) == 0 &&
+          previous->opcode == dex::OP_IF_EQZ && Register(previous, 0) == closed;
+      if (!handler.checks_null || checked) {
+        if (!handler.every_close) {
+          closes.clear();
+        }
+        closes.emplace_back(handler.checks_null ? previous : nullptr, bytecode);
+      }
+    }
+    UpdateCopies(bytecode, &copies);
+  }
+  // The code that can hold the close ends at the handler, or where nothing
+  // holds the resource anymore.
+  if (closes.empty() || (node == nullptr && !copies.empty())) {
+    return nullptr;
+  }
+  for (const auto& [check, close] : closes) {
+    AddClose(check, close, handler, info, code);
+    if (handler.every_close) {
+      AddMergedExits(check, close, info, code);
+    }
+  }
+  return closes.back().second;
+}
+
+// Returns the bytecode after the last write of register `reg` before
+// `bytecode`, or the first bytecode of the method if there is none.
+lir::Bytecode* AfterLastWrite(lir::Bytecode* bytecode, int reg) {
+  for (lir::Bytecode* previous = PreviousBytecode(bytecode);
+       previous != nullptr; previous = PreviousBytecode(previous)) {
+    if (Writes(previous, reg)) {
+      return NextBytecode(previous);
+    }
+    bytecode = previous;
+  }
+  return bytecode;
 }
 
 // Matches a try-with-resources statement of javac whose handler, or first
@@ -729,8 +791,19 @@ bool MatchJavac(lir::Label* label, const MethodInfo& info,
       return false;
     }
   }
-  if (MatchClose(label, FirstProtected(info, label), handler, info, code) ==
-      nullptr) {
+  lir::Bytecode* first = FirstProtected(info, label);
+  // javac 7 to 10 close the resource at each exit of the block, as a finally
+  // block does, and the build-time report filters all these closes. An early
+  // exit can come before the first bytecode that the handler protects, so look
+  // from where the resource is stored on, or from the start of the method for a
+  // parameter, which the code before the statement can close on its own line.
+  // Without line numbers, the closes of early exits look like a close of a
+  // parameter before the statement, so only the one when the block ends counts.
+  if (!primary.empty() && first != nullptr && handler.line != -1) {
+    handler.every_close = true;
+    first = AfterLastWrite(first, handler.resource);
+  }
+  if (MatchClose(label, first, handler, info, code) == nullptr) {
     return false;
   }
   code->insert(code->end(), handler.code.begin(), handler.code.end());
