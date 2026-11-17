@@ -41,8 +41,6 @@ import com.android.tools.lint.detector.api.UastLintUtils.Companion.getAnnotation
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.getAnnotationValue
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.isMinusOne
 import com.intellij.psi.PsiArrayType
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
@@ -53,18 +51,12 @@ import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.impl.PsiJavaParserFacadeImpl
-import com.intellij.psi.util.parentsOfType
 import com.intellij.util.containers.sequenceOfNotNull
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
-import org.jetbrains.kotlin.asJava.classes.KtLightClass
-import org.jetbrains.kotlin.name.ClassId
-import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBinaryExpression
@@ -662,114 +654,6 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       }
     )
     return isChecked
-  }
-
-  /**
-   * Returns a sequence containing [this] plus other PsiFields that are the same as [this] (if there are any), or emptySequence() if [this]
-   * is null.
-   *
-   * A constant in a companion object in an interface results in multiple PsiFields. For example:
-   * ```kt
-   * // Also works for annotation class, which is essentially an interface.
-   * interface MyInterface {
-   *   companion object {
-   *     const val CONST_1 = 1
-   *   }
-   * }
-   * ```
-   *
-   * At the JVM level, the constant ends up duplicated: as a field within the companion class, and as a field within MyInterface, both
-   * initialized to 1.
-   *
-   * It is possible to refer to both fields in Java. Even in a Kotlin-only codebase, annotations can be recovered from compiled modules via
-   * annotations.zip (not just from the Android SDK); these are parsed as Java, and typically will resolve to the field in the interface,
-   * while most other references will resolve to the field within the companion class.
-   *
-   * Thus, we must consider both fields as allowed values.
-   */
-  private fun PsiElement?.asSeqWithDuplicatedConstants(useSiteElement: PsiElement?): Sequence<PsiElement> {
-
-    // TODO(b/535598134): this is a copy of org.jetbrains.kotlin.idea.base.psi.classIdIfNonLocal which can be removed
-    //  once both Lint IDE and Lint CLI are running on IntelliJ 2026.2+.
-    fun PsiClass.classIdIfNonLocal(): ClassId? {
-      if (this is KtLightClass) {
-        return this.kotlinOrigin?.getClassId()
-      }
-      val packageName = (containingFile as? PsiClassOwner)?.packageName ?: return null
-      val packageFqName = FqName(packageName)
-
-      val classesNames = parentsOfType<PsiClass>().map { it.name }.toList().asReversed()
-      if (classesNames.any { it == null }) return null
-      return ClassId(packageFqName, FqName(classesNames.joinToString(separator = ".")), false)
-    }
-
-    fun PsiClass.isCompanion(useSiteElement: PsiElement): Boolean {
-      return analyzeFromPsi(useSiteElement) {
-        val classId = classIdIfNonLocal() ?: return false
-        val namedClass = findClass(classId) as? KaNamedClassSymbol ?: return false
-        namedClass.classKind == KaClassKind.COMPANION_OBJECT
-      }
-    }
-
-    fun PsiClass.mightBeCompanion(): Boolean {
-      if (!this.hasModifierProperty(PsiModifier.STATIC)) return false
-      if (!this.hasModifierProperty(PsiModifier.FINAL)) return false
-      if (this.isInterface) return false
-      if (this.isAnnotationType) return false
-      if (this.isEnum) return false
-      return true
-    }
-
-    fun PsiField.getSimilarConstFieldFrom(psiClass: PsiClass): PsiField? {
-      val similarField = psiClass.findFieldByName(this.name, false) ?: return null
-      if (similarField.type != this.type) return null
-      if (!similarField.hasModifierProperty(PsiModifier.STATIC)) return null
-      if (!similarField.hasModifierProperty(PsiModifier.FINAL)) return null
-      return similarField
-    }
-
-    fun PsiField.getOuterDuplicate(useSiteElement: PsiElement): PsiField? {
-      val innerClass = this.containingClass ?: return null
-      val outerClass = innerClass.containingClass ?: return null
-      if (!outerClass.isInterface) return null
-      if (!innerClass.mightBeCompanion()) return null
-      val field = this.getSimilarConstFieldFrom(outerClass) ?: return null
-      // We assume this is somewhat expensive, so we do it last.
-      if (!innerClass.isCompanion(useSiteElement)) return null
-      return field
-    }
-
-    fun PsiField.getInnerDuplicate(useSiteElement: PsiElement): PsiField? {
-      val outerClass = this.containingClass ?: return null
-      if (!outerClass.isInterface) return null
-      for (innerClass in outerClass.innerClasses) {
-        if (!innerClass.mightBeCompanion()) continue
-        val innerField = this.getSimilarConstFieldFrom(innerClass) ?: continue
-        // We assume this is somewhat expensive, so we do it last.
-        if (!innerClass.isCompanion(useSiteElement)) continue
-        return innerField
-      }
-      return null
-    }
-
-    fun PsiField.mightBeDuplicatedInBytecode(): Boolean {
-      // If we are dealing with Kotlin source then we don't need to worry about this
-      // because the light classes use the Kotlin origin when checking equality.
-      if (this !is PsiCompiledElement) return false
-      // Constants will have these modifiers.
-      if (!this.hasModifierProperty(PsiModifier.STATIC)) return false
-      if (!this.hasModifierProperty(PsiModifier.FINAL)) return false
-      val containingClass = this.containingClass ?: return false
-      // Compiled Kotlin will have the Metadata annotation.
-      return containingClass.hasAnnotation("kotlin.Metadata")
-    }
-
-    if (this == null) return emptySequence()
-    val field = this as? PsiField ?: return sequenceOf(this)
-    if (useSiteElement == null || !field.mightBeDuplicatedInBytecode()) return sequenceOf(this)
-    // We don't know if this is the field in the companion object or the containing interface,
-    // so we try both.
-    return sequenceOf(this, field.getOuterDuplicate(useSiteElement), field.getInnerDuplicate(useSiteElement)).filterNotNull()
   }
 
   /** Returns PsiFields or constant values (ints or Strings) */
