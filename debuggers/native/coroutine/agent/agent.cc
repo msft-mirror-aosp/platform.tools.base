@@ -1,5 +1,8 @@
+#include <algorithm>
 #include <atomic>
 #include <cstdlib>
+#include <string_view>
+#include <vector>
 
 #include "tools/base/debuggers/native/coroutine/agent/jni_utils.h"
 #include "tools/base/transport/native/jvmti/jvmti_helper.h"
@@ -13,19 +16,21 @@
 /**
  * This agent works as follow:
  * 1. Register a ClassFileLoadHook.
- * 2. Monitor to find kotlin/coroutines/jvm/internal/DebugProbesKt.
- * 3. Check that coroutine lib version is supported (version must be higher
+ * 1. Monitor to find kotlin/coroutines/jvm/internal/DebugProbesKt.
+ * 1. Check that coroutine lib version is supported (version must be higher
  * than 1.6.0)
- * 4. Set AgentInstallationType#isInstalledStatically to true. This tells
+ * 1. Set AgentInstallationType#isInstalledStatically to true. This tells
  *    the coroutine lib that DebugProbesKt should not be replaced
  *    lazily when DebugProbesImpl#install is called.
  *    The lazy replacement uses ByteBuddy and Java instrumentation
  *    apis, that are not supported on Android.
- * 5. Call `install` on DebugProbesImpl.
- * 6. On found, instrument methods in
+ * 1. Set DebugProbesImpl#enableCreationStackTraces to true if option
+ *    --enable-creation-stack-traces is set, false otherwise.
+ * 1. Call `install` on DebugProbesImpl.
+ * 1. On found, instrument methods in
  * kotlin/coroutines/jvm/internal/DebugProbesK to call methods in
  * kotlinx/coroutines/debug/internal/DebugProbesKt.
- * 7. Unregister ClassFileLoadHook.
+ * 1. Unregister ClassFileLoadHook.
  */
 
 struct SemanticVersion {
@@ -49,10 +54,12 @@ const std::string kCoroutines_debugKt = "Lkotlinx/coroutines/DebugKt;";
 const std::string kMeta_inf_version_path =
     "META-INF/kotlinx_coroutines_core.version";
 
-const std::string kInstall_method_name = "install$kotlinx_coroutines_core";
-
 const SemanticVersion kCoroutines_min_supported_version = {
     .major = 1, .minor = 6, .patch = 0};
+
+static constexpr const char* TAG = profiler::Log::Tag::COROUTINE_DEBUGGER;
+
+static std::atomic<bool> enableCreationStackTraces = false;
 
 // Class required by dex::Writer to allocate and free space for new instrumented
 // class
@@ -65,8 +72,7 @@ class JvmtiAllocator : public dex::Writer::Allocator {
     jvmtiError err_num = jvmti_env_->Allocate(size, &alloc);
 
     if (err_num != JVMTI_ERROR_NONE) {
-      profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER,
-                       "JVMTI error: %d", err_num);
+      profiler::Log::E(TAG, "JVMTI error: %d", err_num);
     }
 
     return (void*)alloc;
@@ -80,8 +86,7 @@ class JvmtiAllocator : public dex::Writer::Allocator {
     jvmtiError err_num = jvmti_env_->Deallocate((unsigned char*)ptr);
 
     if (err_num != JVMTI_ERROR_NONE) {
-      profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER,
-                       "JVMTI error: %d", err_num);
+      profiler::Log::E(TAG, "JVMTI error: %d", err_num);
     }
   }
 
@@ -97,27 +102,23 @@ void printStackTrace(JNIEnv* jni) {
     return;
   }
   std::string stringStackTrace = jniutils::stackTraceToString(move(stackTrace));
-  profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER, "%s",
-                   stringStackTrace.c_str());
+  profiler::Log::E(TAG, "%s", stringStackTrace.c_str());
 }
 
 // Check if DebugProbesImpl exists, then calls
 // DebugProbesImpl#install.
-bool installDebugProbes(JNIEnv* jni, std::string* error_msg) {
-  const std::string debug_probes_impl_class_name =
-      "kotlinx/coroutines/debug/internal/DebugProbesImpl";
-  jniutils::ScopedLocalRef<jclass> klass(
-      jni, jni->FindClass(debug_probes_impl_class_name.c_str()));
+bool installDebugProbes(JNIEnv* jni) {
+  const char* class_name = "kotlinx/coroutines/debug/internal/DebugProbesImpl";
+  jniutils::ScopedLocalRef<jclass> klass(jni, jni->FindClass(class_name));
   if (klass.get() == nullptr) {
-    *error_msg = "Class " + debug_probes_impl_class_name + " not found";
+    profiler::Log::E(TAG, "Class %s not found", class_name);
     return false;
   }
 
   // get DebugProbesImpl constructor
   jmethodID constructor = jni->GetMethodID(klass.get(), "<init>", "()V");
   if (constructor == nullptr) {
-    *error_msg =
-        "Constructor of " + debug_probes_impl_class_name + " not found";
+    profiler::Log::E(TAG, "Constructor of %s not found", class_name);
     return false;
   }
 
@@ -125,35 +126,57 @@ bool installDebugProbes(JNIEnv* jni, std::string* error_msg) {
   jniutils::ScopedLocalRef<jobject> debug_probes_impl_obj(
       jni, jni->NewObject(klass.get(), constructor));
   if (jni->ExceptionOccurred()) {
-    *error_msg = "Constructor of " + debug_probes_impl_class_name +
-                 " threw an exception";
+    profiler::Log::E(TAG, "Constructor of %s threw an exception", class_name);
     return false;
+  }
+
+  // Always set enableCreationStackTraces explicitly, since its default value
+  // in DebugProbesImpl is true in some versions of kotlinx-coroutines.
+  // Do not fail on any issues, just log
+  {
+    const bool enable = enableCreationStackTraces;
+    jfieldID field =
+        jni->GetStaticFieldID(klass.get(), "enableCreationStackTraces", "Z");
+    if (field == nullptr) {
+      profiler::Log::E(TAG, "%s#enableCreationStackTraces not found",
+                       class_name);
+    } else {
+      jni->SetStaticBooleanField(klass.get(), field,
+                                 enable ? JNI_TRUE : JNI_FALSE);
+      if (jni->ExceptionCheck()) {
+        profiler::Log::E(TAG, "Failed to set %s#enableCreationStackTraces",
+                         class_name);
+      } else {
+        profiler::Log::D(TAG, "Set enableCreationStackTraces to %s",
+                         enable ? "true" : "false");
+      }
+    }
+    jni->ExceptionClear();
   }
 
   // get install method id
   jmethodID install =
       jni->GetMethodID(klass.get(), "install$kotlinx_coroutines_core", "()V");
   if (install == nullptr) {
-    profiler::Log::W(profiler::Log::Tag::COROUTINE_DEBUGGER,
+    profiler::Log::W(TAG,
                      "Method 'install$kotlinx_coroutines_core' not found. "
                      "Reverting to old method name: 'install'");
     jni->ExceptionClear();
     install = jni->GetMethodID(klass.get(), "install", "()V");
-  }
-  if (install == nullptr) {
-    *error_msg = "Method " + debug_probes_impl_class_name + "#" +
-                 kInstall_method_name + "()V not found";
-    return false;
+    if (install == nullptr) {
+      profiler::Log::E(TAG, "Method %s#install not found", class_name);
+      return false;
+    }
   }
 
   // invoke install method
   jni->CallVoidMethod(debug_probes_impl_obj.get(), install);
 
   if (jni->ExceptionOccurred()) {
-    *error_msg = "Method " + debug_probes_impl_class_name +
-                 "#install threw an exception";
+    profiler::Log::E(TAG, "Method %s#install threw an exception", class_name);
     return false;
   }
+
   return true;
 }
 
@@ -621,8 +644,7 @@ bool isUsingSupportedCoroutinesVersion(JNIEnv* jni, jobject class_loader_object,
 void classFileLoadHook_CleanUp(jvmtiEnv* jvmti, JNIEnv* jni,
                                std::string error_msg) {
   if (!error_msg.empty()) {
-    profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER, "%s",
-                     error_msg.c_str());
+    profiler::Log::E(TAG, "%s", error_msg.c_str());
   }
 
   if (jni->ExceptionCheck()) {
@@ -640,8 +662,7 @@ static InstrumentedClass HandleDebugKtClass(jvmtiEnv* jvmti, const char* name,
   InstrumentedClass instrumentedClass =
       instrumentDebugKtClass(jvmti, class_data, class_data_len, &error_msg);
   if (!instrumentedClass.success) {
-    profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER,
-                     "Instrumentation of %s failed: %s", name,
+    profiler::Log::E(TAG, "Instrumentation of %s failed: %s", name,
                      error_msg.c_str());
   }
   return instrumentedClass;
@@ -666,9 +687,10 @@ static InstrumentedClass HandleDebugProbesClass(
   }
 
   // call DebugProbesImpl#install
-  bool installed = installDebugProbes(jni, &error_msg);
+  bool installed = installDebugProbes(jni);
   if (!installed) {
-    classFileLoadHook_CleanUp(jvmti, jni, error_msg);
+    // Errors logged in installDebugProbes
+    classFileLoadHook_CleanUp(jvmti, jni, "");
     return InstrumentedClass{.success = false};
   }
 
@@ -723,8 +745,7 @@ ClassFileLoadHook(jvmtiEnv* jvmti, JNIEnv* jni,
     debugProbesClassHandled = true;
   }
   if (instrumentedClass.success) {
-    profiler::Log::I(profiler::Log::Tag::COROUTINE_DEBUGGER,
-                     "Instrumentation of %s succeeded", name);
+    profiler::Log::I(TAG, "Instrumentation of %s succeeded", name);
     *new_class_data_len = instrumentedClass.new_class_data_len;
     *new_class_data = instrumentedClass.new_class_data;
   }
@@ -735,6 +756,27 @@ ClassFileLoadHook(jvmtiEnv* jvmti, JNIEnv* jni,
   }
 }
 
+static std::vector<std::string_view> parseArgs(std::string_view str) {
+  std::vector<std::string_view> args;
+  size_t pos = 0;
+  while (pos < str.size()) {
+    // Skip leading spaces/whitespace
+    size_t start = str.find_first_not_of(" \t\n\r", pos);
+    if (start == std::string_view::npos) {
+      break;
+    }
+    // Find the end of the current token
+    size_t end = str.find_first_of(" \t\n\r", start);
+    if (end == std::string_view::npos) {
+      args.push_back(str.substr(start));
+      break;
+    }
+    args.push_back(str.substr(start, end - start));
+    pos = end;
+  }
+  return args;
+}
+
 extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
                                                  void* reserved) {
   // This will attach the current thread to the vm, otherwise CreateJvmtiEnv(vm)
@@ -743,8 +785,7 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
 
   jvmtiEnv* jvmti = profiler::CreateJvmtiEnv(vm);
   if (jvmti == nullptr) {
-    profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER,
-                     "Failed to initialize JVMTI env.");
+    profiler::Log::E(TAG, "Failed to initialize JVMTI env.");
     return -1;
   }
 
@@ -753,12 +794,17 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   bool hasError =
       profiler::CheckJvmtiError(jvmti, jvmti->GetPotentialCapabilities(&capa));
   if (hasError) {
-    profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER,
-                     "JVMTI GetPotentialCapabilities error.");
+    profiler::Log::E(TAG, "JVMTI GetPotentialCapabilities error.");
     return -1;
   }
   profiler::SetAllCapabilities(jvmti);
 
+  if (options != nullptr) {
+    auto args = parseArgs(options);
+    enableCreationStackTraces =
+        std::find(args.begin(), args.end(), "--enable-creation-stack-traces") !=
+        args.end();
+  }
   // set JVMTI callbacks
   jvmtiEventCallbacks callbacks;
   memset(&callbacks, 0, sizeof(callbacks));
@@ -767,8 +813,7 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   hasError = profiler::CheckJvmtiError(
       jvmti, jvmti->SetEventCallbacks(&callbacks, (jint)sizeof(callbacks)));
   if (hasError) {
-    profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER,
-                     "JVMTI SetEventCallbacks error");
+    profiler::Log::E(TAG, "JVMTI SetEventCallbacks error");
     return -1;
   }
 
