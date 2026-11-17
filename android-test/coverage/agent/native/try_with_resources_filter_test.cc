@@ -1015,6 +1015,68 @@ TEST_F(TryWithResourcesFilterTest, ShouldKeepEarlierCloseOfReturn) {
   EXPECT_NE(early_close, close);
 }
 
+// javac 11 and later close the resource at an early exit with code of their
+// own, which the build-time report keeps, also when D8 merges it with the close
+// of the block.
+TEST_F(TryWithResourcesFilterTest, ShouldKeepMergedEarlyExit) {
+  TestMethod m("next", "(Ljava/lang/String;Z)I");
+  lir::Label* read = m.NewLabel();
+  lir::Label* block_close = m.NewLabel();
+  lir::Label* after = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  m.AddLine(69);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+  m.AddLine(70);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(4), m.Target(read)});
+  m.AddLine(74);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
+  m.Add(dex::OP_GOTO, {m.Target(block_close)});
+  m.Place(read);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(73);
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({0}), m.MethodRef(kInputStream, "read", "()I")});
+  m.Add(dex::OP_MOVE_RESULT, {m.Reg(1)});
+  m.AddTryBlockEnd(block, handler);
+  m.AddLine(74);
+  lir::Instruction* check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
+  m.Place(block_close);
+  lir::Instruction* close =
+      m.Add(dex::OP_INVOKE_VIRTUAL,
+            {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+  m.Place(after);
+  m.AddLine(73);
+  m.Add(dex::OP_RETURN, {m.Reg(1)});
+  m.Place(handler);
+  m.AddLine(69);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close =
+      m.Add(dex::OP_INVOKE_VIRTUAL,
+            {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({1, 2}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(1)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Each({check, close, caught, handler_check, handler_close,
+                         to_throw, suppressed, suppression, thrown}));
+}
+
 // D8 can jump from the backport through two gotos to the throw, which it puts
 // between them.
 TEST_F(TryWithResourcesFilterTest, ShouldFilterHandlerSplitByGotos) {
@@ -2073,10 +2135,32 @@ struct OldShape {
   dex::u4 primary_used = 2;
   // The line of the throw of the second handler.
   int throw_line = 22;
+  // An early exit of the block before it, such as a continue: none, one with
+  // a close of its own, or one that D8 merges with the close of the block.
+  enum class Exit { kNone, kCopy, kMerged };
+  Exit early_exit = Exit::kNone;
+  // The register that the check of the early exit tests, whether it skips the
+  // close like the check of the block, and its line, and for a merged early
+  // exit, whether its goto goes to the close of the block, and its line.
+  dex::u4 exit_checked = 0;
+  bool exit_check_skips_close = true;
+  int exit_check_line = 22;
+  bool exit_to_close = true;
+  int exit_goto_line = 22;
+  // Whether the resource is a parameter, as with try (in) of javac 9 and 10,
+  // rather than created on line 20, whether the method checks it for null and
+  // closes it on line 19 before the statement, and whether the method has line
+  // numbers.
+  bool parameter = false;
+  bool closed_before = false;
+  bool has_lines = true;
 };
 
 // The bytecodes of a statement of javac 7 to 10 that the filter ignores.
 struct OldStatement {
+  lir::Instruction* exit_check = nullptr;
+  lir::Instruction* exit_close = nullptr;
+  lir::Instruction* exit_goto = nullptr;
   lir::Instruction* null_load = nullptr;
   lir::Instruction* check = nullptr;
   lir::Instruction* close = nullptr;
@@ -2098,9 +2182,10 @@ class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
                                     const OldStatement& s) {
     std::vector<lir::Instruction*> instrs;
     for (lir::Instruction* instr :
-         {s.null_load, s.check, s.close, s.primary, s.primary_throw, s.caught,
-          s.handler_check, s.handler_close, s.to_throw, s.suppressed,
-          s.suppression, s.rethrow}) {
+         {s.exit_check, s.exit_close, s.exit_goto, s.null_load, s.check,
+          s.close, s.primary, s.primary_throw, s.caught, s.handler_check,
+          s.handler_close, s.to_throw, s.suppressed, s.suppression,
+          s.rethrow}) {
       if (instr != nullptr) {
         instrs.push_back(instr);
       }
@@ -2168,8 +2253,22 @@ class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
     auto load_null = [&]() {
       return m.Add(dex::OP_CONST_4, {m.Reg(4), m.Literal(shape.null_value)});
     };
-    m.AddLine(20);
-    if (shape.checks_null) {
+    auto add_line = [&](int line) {
+      if (shape.has_lines) {
+        m.AddLine(line);
+      }
+    };
+    if (shape.closed_before) {
+      lir::Label* skip = m.NewLabel();
+      add_line(19);
+      m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(skip)});
+      close();
+      m.Place(skip);
+    }
+    add_line(20);
+    if (shape.parameter) {
+      // The method doesn't write the resource.
+    } else if (shape.checks_null) {
       m.Add(dex::OP_INVOKE_STATIC,
             {m.Regs({5}), m.MethodRef(kTestClassName, "open", kOpen)});
       m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
@@ -2185,13 +2284,37 @@ class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
          shape.null == OldShape::Null::kOtherRegister)) {
       load_null();
     }
+    lir::Label* block_close = m.NewLabel();
+    if (shape.early_exit != OldShape::Exit::kNone) {
+      lir::Label* body = m.NewLabel();
+      add_line(21);
+      m.Add(dex::OP_IF_EQZ, {m.Reg(6), m.Target(body)});
+      add_line(shape.exit_check_line);
+      if (shape.checks_null) {
+        s.exit_check =
+            m.Add(dex::OP_IF_EQZ,
+                  {m.Reg(shape.exit_checked),
+                   m.Target(shape.exit_check_skips_close ? after : body)});
+      }
+      add_line(shape.exit_goto_line);
+      if (shape.early_exit == OldShape::Exit::kCopy) {
+        s.exit_close = close();
+        s.exit_goto = m.Add(dex::OP_GOTO, {m.Target(after)});
+      } else {
+        s.exit_goto =
+            m.Add(dex::OP_GOTO,
+                  {m.Target(shape.exit_to_close ? block_close : after)});
+      }
+      add_line(22);
+      m.Place(body);
+    }
     lir::TryBlockBegin* block = m.AddTryBlockBegin();
-    m.AddLine(21);
+    add_line(21);
     m.Add(dex::OP_INVOKE_VIRTUAL,
           {m.Regs({0}), m.MethodRef(kInputStream, "read", "()I")});
     m.Add(dex::OP_MOVE_RESULT, {m.Reg(1)});
     m.AddTryBlockEnd(block, primary);
-    m.AddLine(22);
+    add_line(22);
     if (shape.close_resource && shape.null == OldShape::Null::kBeforeCheck) {
       s.null_load = load_null();
     } else if (shape.close_resource &&
@@ -2210,13 +2333,14 @@ class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
       }
       s.close = close_resource(4);
     } else {
+      m.Place(block_close);
       s.close = close();
     }
     m.Place(after);
-    m.AddLine(21);
+    add_line(21);
     m.Add(dex::OP_RETURN, {m.Reg(1)});
     m.Place(primary);
-    m.AddLine(20);
+    add_line(20);
     s.primary = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
     lir::TryBlockBegin* rethrown =
         shape.primary_in_try_block ? m.AddTryBlockBegin() : nullptr;
@@ -2227,7 +2351,7 @@ class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
       m.AddTryBlockEnd(rethrown, handler);
     }
     m.Place(handler);
-    m.AddLine(22);
+    add_line(22);
     s.caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(3)});
     if (shape.checks_null) {
       s.handler_check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
@@ -2247,7 +2371,7 @@ class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
                                          "(Ljava/lang/Throwable;)V")});
     }
     m.Place(rethrow);
-    m.AddLine(shape.throw_line);
+    add_line(shape.throw_line);
     s.rethrow = m.Add(dex::OP_THROW, {m.Reg(3)});
     return s;
   }
@@ -2360,6 +2484,86 @@ TEST_F(TryWithResourcesFilterOldJavacTest, ShouldKeepLoadOfOtherValue) {
   filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
 
   ExpectIgnored(m, Ignored(m, s));
+}
+
+// for (...) { try (InputStream in = open(path)) { if (stop) continue; ... } }:
+// javac 7 to 10 close the resource at the continue too, as a finally block
+// does, and D8 can merge that close with the one when the block ends.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldFilterEarlyExits) {
+  for (OldShape::Exit exit : {OldShape::Exit::kCopy, OldShape::Exit::kMerged}) {
+    for (bool checks_null : {true, false}) {
+      SCOPED_TRACE(exit == OldShape::Exit::kCopy ? "copy" : "merged");
+      SCOPED_TRACE(checks_null ? "checks null" : "created with new");
+      output_ = Output();
+      OldShape shape;
+      shape.early_exit = exit;
+      shape.checks_null = checks_null;
+      TestMethod m("read", "(Ljava/lang/String;)I");
+      OldStatement s = AddOldStatement(m, shape);
+
+      filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+      ExpectIgnored(m, Ignored(m, s));
+    }
+  }
+}
+
+// void read(InputStream in) { if (in != null) in.close(); try (in) { ... } }
+// with javac 9 or 10: the closes of the statement can come from the start of
+// the method on, since nothing writes the parameter, but the close before the
+// statement has a line of its own, and without line numbers only closes from
+// the block on count.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldKeepCloseBeforeStatement) {
+  for (bool has_lines : {true, false}) {
+    SCOPED_TRACE(has_lines ? "with lines" : "without lines");
+    output_ = Output();
+    OldShape shape;
+    shape.parameter = true;
+    shape.closed_before = true;
+    shape.has_lines = has_lines;
+    TestMethod m("read", "(Ljava/io/InputStream;)I");
+    OldStatement s = AddOldStatement(m, shape);
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    ExpectIgnored(m, Ignored(m, s));
+  }
+}
+
+// An early exit that only looks merged is kept, with the rest of the
+// statement filtered.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldKeepOtherEarlyExits) {
+  struct Variant {
+    const char* name;
+    void (*change)(OldShape&);
+  };
+  const Variant variants[] = {
+      {"goto to another bytecode",
+       [](OldShape& shape) { shape.exit_to_close = false; }},
+      {"goto on another line",
+       [](OldShape& shape) { shape.exit_goto_line = 30; }},
+      {"check of another register",
+       [](OldShape& shape) { shape.exit_checked = 3; }},
+      {"check that doesn't skip the close",
+       [](OldShape& shape) { shape.exit_check_skips_close = false; }},
+      {"check on another line",
+       [](OldShape& shape) { shape.exit_check_line = 30; }},
+  };
+  for (const Variant& variant : variants) {
+    SCOPED_TRACE(variant.name);
+    output_ = Output();
+    OldShape shape;
+    shape.early_exit = OldShape::Exit::kMerged;
+    variant.change(shape);
+    TestMethod m("read", "(Ljava/lang/String;)I");
+    OldStatement s = AddOldStatement(m, shape);
+    s.exit_check = nullptr;
+    s.exit_goto = nullptr;
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    ExpectIgnored(m, Ignored(m, s));
+  }
 }
 
 TEST_F(TryWithResourcesFilterOldJavacTest, ShouldNotFilterOtherShapes) {
