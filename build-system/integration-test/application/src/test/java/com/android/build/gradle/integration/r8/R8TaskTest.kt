@@ -69,6 +69,37 @@ class R8TaskTest {
     buildResult.assertOutputContains("[R8] Classpath classes: [$appClasses]")
   }
 
+  /**
+   * Regression test for b/548701041: enabling test fixtures puts the app's test fixtures (same project component as the app itself) on the
+   * androidTest runtime classpath, which used to drop the app's own classes from the androidTest R8 classpath.
+   */
+  @Test
+  fun testTestedClassesPassedAsClasspathToR8WithTestFixtures() {
+    val build = rule.build {
+      androidApplication {
+        android { testFixtures.enable = true }
+        files.add(
+          "src/androidTest/java/pkg/name/app/HelloWorldTest.java",
+          // language=java
+          """
+          package pkg.name.app;
+
+          public class HelloWorldTest {
+              public void test() { new HelloWorld(); }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+    }
+    val app = build.androidApplication()
+
+    val buildResult = build.executor.withLoggingLevel(LoggingLevel.DEBUG).run(":app:assembleReleaseAndroidTest")
+    val appClasses =
+      app.resolve(InternalArtifactType.COMPILE_APP_CLASSES_JAR).resolve("release/bundleReleaseClassesToCompileJar/classes.jar")
+    buildResult.assertOutputContains("[R8] Classpath classes: [$appClasses]")
+  }
+
   @Test
   fun testMissingKeepRules() {
     val build = rule.build {
