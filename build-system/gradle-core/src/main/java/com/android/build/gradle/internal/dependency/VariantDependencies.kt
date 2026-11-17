@@ -169,6 +169,11 @@ internal constructor(
       .artifactView { view ->
         view.isLenient = true
         view.withVariantReselection()
+        // Only external module dependencies publish sources/javadoc documentation variants
+        // (project dependencies are linked to their modules in the IDE, and local file
+        // dependencies have no module metadata). Filtering to ModuleComponentIdentifier avoids
+        // expensive variant reselection for project and local-file nodes.
+        view.componentFilter { it is ModuleComponentIdentifier }
         val objects = project.objects
 
         view.attributes.apply {
