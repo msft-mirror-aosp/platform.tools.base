@@ -1156,14 +1156,15 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
               // the ECJ fields do, which is tied to the ECJ binding hash code.)
               // So instead, manually check for equals. These lists tend to
               // be very short anyway.
-              var found = removeFieldFromList(fields, resolved)
+              val useSiteElement = caseValue.sourcePsi
+              var found = removeFieldFromList(fields, resolved, useSiteElement)
               if (!found) {
                 // Look for local alias
                 val initializer = UastFacade.getInitializerBody(resolved)?.skipParenthesizedExprDown()
                 if (initializer is UReferenceExpression) {
                   resolved = initializer.resolve()
                   if (resolved is PsiField) {
-                    found = removeFieldFromList(fields, resolved)
+                    found = removeFieldFromList(fields, resolved, useSiteElement)
                   }
                 }
               }
@@ -1174,7 +1175,11 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
                 }
               } else {
                 // Sanity check in case the default statement does not appear last
-                if (resolved != null && allowedValues.any { resolved.isEquivalentTo(it.tryResolve()) }) {
+                if (
+                  resolved.asSeqWithDuplicatedConstants(useSiteElement).any { candidate ->
+                    allowedValues.any { candidate.isEquivalentTo(it.tryResolve()) }
+                  }
+                ) {
                   return true
                 }
 
@@ -1335,21 +1340,22 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
    */
   private fun getAnnotationScope(node: UAnnotation): UElement = node.getParentOfType(UAnnotation::class.java, true) ?: node
 
-  private fun removeFieldFromList(fields: List<Any>, resolvedField: PsiField): Boolean {
-    for (field in fields) {
-      // We can't just call .equals here because the annotation
-      // we are comparing against may be either a PsiFieldImpl
-      // (for a local annotation) or a ClsFieldImpl (for an annotation
-      // read from storage) or maybe even other PSI internal classes.
-      // So compare by name and class instead.
-      if (field !is PsiField) {
-        continue
-      }
-      if (field.isEquivalentTo(resolvedField)) {
-        return true
-      }
+  private fun removeFieldFromList(fields: List<Any>, resolvedField: PsiField, useSiteElement: PsiElement?): Boolean {
+    // We can't just call .equals here because the annotation
+    // we are comparing against may be either a PsiFieldImpl
+    // (for a local annotation) or a ClsFieldImpl (for an annotation
+    // read from storage) or maybe even other PSI internal classes.
+    // So compare by name and class instead.
+    //
+    // Also, a `const val` in the companion object of a compiled Kotlin interface or annotation
+    // class is present twice in bytecode: in the companion class and in the outer class. Kotlin
+    // references resolve to the former, while Java references (including typedefs read from
+    // an annotations.zip, which are parsed as Java) resolve to the latter, so consider both
+    // fields to be the same constant. See b/585534512. The sequence yields [resolvedField]
+    // first and only looks up its duplicate if that doesn't match.
+    return resolvedField.asSeqWithDuplicatedConstants(useSiteElement).any { candidate ->
+      fields.any { it is PsiField && it.isEquivalentTo(candidate) }
     }
-    return false
   }
 
   companion object {

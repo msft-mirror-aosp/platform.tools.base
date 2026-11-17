@@ -784,6 +784,194 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testSwitchConstantsFromBinaryAnnotationCompanion() {
+    // Regression test for https://issuetracker.google.com/585534512
+    // K2: SwitchIntDef "Unexpected constant" false positive when the @IntDef constants
+    // are declared in the companion object of the annotation class itself, and that
+    // annotation comes from a binary dependency.
+    //
+    // androidx.annotation.IntDef has SOURCE retention, so for a binary dependency the
+    // typedef is only available through the AAR's external annotations (annotations.zip),
+    // where AGP's annotation extractor records each constant as <containing class>.<field>.
+    // For companion constants of an annotation class, kotlinc emits the static field on
+    // both lib/Mode and lib/Mode$Companion, so both spellings are covered below.
+    lint()
+      .files(
+        kotlin(
+            """
+                package test.pkg
+
+                import lib.Api
+                import lib.Mode
+
+                fun testOuter(api: Api) {
+                    when (api.getMode()) {
+                        Mode.A -> println("a") // OK
+                        Mode.B -> println("b") // OK
+                        Mode.C -> println("c") // OK
+                    }
+                }
+
+                fun testCompanion(api: Api) {
+                    when (api.getModeCompanion()) {
+                        Mode.A -> println("a") // OK
+                        Mode.B -> println("b") // OK
+                        Mode.C -> println("c") // OK
+                    }
+                }
+
+                fun testMissing(api: Api) {
+                    when (api.getMode()) { // ERROR: missing Mode.C (sanity check that the typedef is found)
+                        Mode.A -> println("a") // OK
+                        Mode.B -> println("b") // OK
+                    }
+                }
+                """
+          )
+          .indented(),
+        java(
+            """
+                package test.pkg;
+
+                import lib.Api;
+                import lib.Mode;
+
+                public class JavaTest {
+                    public void testOuter(Api api) {
+                        switch (api.getMode()) {
+                            case Mode.A: // OK
+                            case Mode.B: // OK
+                            case Mode.C: // OK
+                                break;
+                        }
+                    }
+
+                    public void testCompanion(Api api) {
+                        switch (api.getModeCompanion()) {
+                            case Mode.A: // OK
+                            case Mode.B: // OK
+                            case Mode.C: // OK
+                                break;
+                        }
+                    }
+
+                    public void testCompanionDefaultFirst(Api api) {
+                        switch (api.getModeCompanion()) {
+                            default:
+                                throw new IllegalArgumentException();
+                            case Mode.A: // OK
+                            case Mode.B: // OK
+                            case Mode.C: // OK
+                                break;
+                        }
+                    }
+                }
+                """
+          )
+          .indented(),
+        bytecode(
+          "libs/lib.jar",
+          kotlin(
+              """
+                package lib
+
+                import androidx.annotation.IntDef
+
+                @Retention(AnnotationRetention.BINARY)
+                @IntDef(Mode.A, Mode.B, Mode.C)
+                annotation class Mode {
+                    companion object {
+                        const val A = 0
+                        const val B = 1
+                        const val C = 2
+                    }
+                }
+
+                class Api {
+                    @Mode fun getMode(): Int = Mode.A
+                    @Mode fun getModeCompanion(): Int = Mode.A
+                }
+                """
+            )
+            .indented(),
+          0xd24a3313,
+          "META-INF/main.kotlin_module:" + "H4sIAAAAAAAA/2NgYGBmYGBgYoDQYMAlxMVRklpcoleQnS7EFgJkeZcoMWgx" + "AABwHd9NLAAAAA==",
+          "lib/Api.class:" +
+            "H4sIAAAAAAAA/41Qz08TQRT+ZqbdXQak24JawN9elBC2EG4SI5IY1xRNlPTS" +
+            "07Td4NDtLOlOG479Wzx78UTCgTQc+aOMb5Y9GD3oHN775nvf+/Leu/l5eQVg" +
+            "D88Z/FT3ooMz7YMxhKdqqqJUmZPoU+806VsfgsHb10bb1wzixcvOEqrwJCrw" +
+            "GSr2q84ZFtqlxyuyO0nsUTZICnHMIIuaY6gYlsXDbHSmjM4MQ709zGyqTXSU" +
+            "WDVQVpGMj6aCxuMuCBfAwIYO0Ij8XDvUIjTYYdifzxqSN7nk4XwmeSAIBHI+" +
+            "a85nu7zF3vrX37xKwEPxIQgr67xVfe8T8m6R89hlzt53Y20PLe10WExfa2uT" +
+            "fJyMesn4WPVSYhrtrK/Sjhpr9y/Jjc8TY/Uoic1U55qoA2MyqyztRoeRX7LJ" +
+            "uJ+80066Vko7fwmxA04HdU/QLHRfig/pF7nFKVc3LxD8cCfBI4peQdbwmOLS" +
+            "rQALkJTrWCSGF81bZTMX3//oDH/r5GXnk7J6p3BZ/g+X+j9cOJ4W8QGeUX5D" +
+            "bI3mDLsQMeoxGjFWsBrjLu7FuI9mFyzHGta78HPIHBs5qjm8HIsFXv4F5NZo" +
+            "KLQCAAA=",
+          "lib/Mode\$Companion.class:" +
+            "H4sIAAAAAAAA/2VR3W7TMBg9dtIkzbot67qtHf9QYBuIdhN3TEhdBFKkrkhb" +
+            "VYF65bYRy5o6qE4nLnu1B+ENJi4mgYSqXvJQiM8BpolFsn3O8efPJ8c/f337" +
+            "AeAlnjMU46hXO0wGYdVPRp+EjBJpgzF4p+JM1GIhP9be9U7DfmrDYLD2Ixml" +
+            "rxmMre1OATlYLkzYDGZ6EimGUvNmu1cMzn4/zg664LrarVaD1nG70fLfFLAI" +
+            "N0/yEgNr0AgMsgYCBxqQE+ZrwBlWmsMkpT61wzAVA5EK6sxHZ3qXrLEhsc+R" +
+            "ZnVCg12Gk9m05PIyd7k3m7rcMQg4tHJnfm6UZ9M9XmcHeYfPv1imwz3jaMkz" +
+            "N3k9935+3iaNu7MpSdZNyf5P0vftMe3a+ff/Nh4w5K9CYLC1+mKYMiz6iVSp" +
+            "kGlHxJOQsvNph2G5GcmwNRn1wnFb9GJSis2kL+KOGEea/xULgZTh2I+FUiEl" +
+            "7h4nk3E/fBvpvcrRRKbRKOxEKqLihpRJKlK6XmGXIjYpG9Mr68QJVeBhhSw/" +
+            "1umiSHz1Gi8RX7vG12lw/eCkPCGlpp+I1tzOJZyLrOQpzVYmOtiiufCnAPns" +
+            "OgcLV4c3qFp/C9/BP1yi8BXLF5lgYJtml8o4HuIRedjJWlfxjFaf9A1qWO7C" +
+            "CLAeoBKQ782AzN4KcBt3umAKd3GvC0fBVbivkFOwFLwMryqs/QYKUV6i/AIA" +
+            "AA==",
+          "lib/Mode.class:" +
+            "H4sIAAAAAAAA/4VRXW8SURA9sxQWVir0QwWxllqkrR9dij5ZYwIbTbahaMCQ" +
+            "mD5d4KZZWHYNeyH6xpu/R33zwRAf/VHGWWqBpE3c5N45M3Nm9syd339+/ATw" +
+            "HM8Icddpm6d+V+ogQronxsJ0hXduvm33ZEfpiBC2F1Hheb4SyvE9szKHOqLc" +
+            "6GXHdTxHvSJE9g9ahPXLzgXLH3wU3oyYIBiFgl1vvq/UrdeEzdpV1nESN5BM" +
+            "wMAqITEPJ5EKoxrShN2aPzw3e1K1h8LxgiVZgVn3VX3kuscEqvCxIzwqGFRD" +
+            "wDOSFQKNsFXr+4o1Lw/VkEp6IeLy6Fi4I0nYu4a3GH65Ila165XGB0K+du2T" +
+            "LXOL/6G8812n8zmUYdUqzSZh7VLGqVSiK5TgnDYYh8PwjqjP3icn9EqMukeE" +
+            "nenEMLSMZmjpnDGdxH990TLTSV4rayV6QVp1OgmJZd7IfAnckp9KD+FhXxFy" +
+            "jRGLGUjbGzuB03blYu6AsGqxUcJTrYuHWrG4jpC0PU8OLVcEgWSW0fRHw458" +
+            "47icy/5r2LrSrshisMJ/j/GdDXfN+CmPE2O7zjaLDWwyPgy3h1vs317y77Cf" +
+            "WfKzjOLQ+RBMjmywDT/9G25+x9rXmRNBiW+DUwaXpLjoaFb8BGW2J5y/y7mc" +
+            "xD1s4f4F3EYeO4jiwRkiNrI2dm0WU7BZwUMbReydgQLs44DzAR4FeBwg9Rfw" +
+            "26MPcgMAAA==",
+        ),
+        jar(
+          "annotations.zip",
+          xml(
+              "lib/annotations.xml",
+              """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <root>
+                  <item name="lib.Api int getMode()">
+                    <annotation name="androidx.annotation.IntDef">
+                      <val name="value" val="{lib.Mode.A, lib.Mode.B, lib.Mode.C}" />
+                    </annotation>
+                  </item>
+                  <item name="lib.Api int getModeCompanion()">
+                    <annotation name="androidx.annotation.IntDef">
+                      <val name="value" val="{lib.Mode.Companion.A, lib.Mode.Companion.B, lib.Mode.Companion.C}" />
+                    </annotation>
+                  </item>
+                </root>
+                """,
+            )
+            .indented(),
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:23: Warning: Switch statement on an int with known associated constant missing case Mode.C [SwitchIntDef]
+            when (api.getMode()) { // ERROR: missing Mode.C (sanity check that the typedef is found)
+            ~~~~
+        0 errors, 1 warnings
+        """
+      )
+  }
+
   fun testMissingSwitchConstantsWithElse() {
     // Regression test for
     // 117854168: Wrong lint warning used for PlaybackStateCompat.STATE_* constants
