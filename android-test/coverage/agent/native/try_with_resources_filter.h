@@ -22,10 +22,10 @@
 namespace coverage {
 
 /**
- * Filters the code that javac generates for a try-with-resources statement:
- * the close of the resource when the block ends, and the handler that closes
- * it when the block throws. javac catches Throwable, which D8 turns into a
- * catch of any exception:
+ * Filters the code that javac and ECJ generate for a try-with-resources
+ * statement: the close of the resource when the block ends, and the handler
+ * that closes it when the block throws. javac 11 and later catch Throwable,
+ * which D8 turns into a catch of any exception:
  *     if-eqz vR, :next  (left out when the resource is created with new)
  *     invoke-virtual {vR}, LFoo;->close()V  (or invoke-interface)
  *   :next
@@ -55,9 +55,10 @@ namespace coverage {
  * hold the resource. A return in the block keeps its own close, and nothing is
  * filtered without a close, as when the block always throws, or when the block
  * can't throw and D8 removes the handler. The close, the suppression and the
- * throws of the handler must share a line, the line of the try statement: D8
- * lays out the same code written by hand in the same order, and only the lines
- * tell them apart, so code without line numbers isn't told apart.
+ * throws of the handler must share a line, the line of the try statement for
+ * javac 11 and later: D8 lays out the same code written by hand in the same
+ * order, and only the lines tell them apart, so code without line numbers
+ * isn't told apart.
  *
  * javac 7 to 10 first catch Throwable in a handler that only throws the
  * exception again, to a handler of any exception like the one above, on the
@@ -69,6 +70,36 @@ namespace coverage {
  * javac 9 and 10 can instead close the resource through a static method that
  * they generate, $closeResource(Throwable, AutoCloseable), which takes the
  * first exception, or null when the block ends, and has no handler around it.
+ *
+ * ECJ catches any exception in one handler for all the resources of the
+ * statement, on the line of the end of its block, which closes them one after
+ * the other and throws the exception. The try block of each close goes to a
+ * handler that also protects the creation of the resource and its close when
+ * the block ends. That handler makes the exception of the close the exception
+ * to throw if there is none yet, or else adds it to that exception, unless it
+ * is that exception: the try block also holds the throw that follows the
+ * close:
+ *   :handler
+ *     move-exception vP
+ *     if-eqz vR, :throw  (left out when the resource is created with new)
+ *     invoke-interface {vR}, LFoo;->close()V  (its try block goes to :suppress)
+ *   :throw
+ *     throw vP
+ *   :suppress
+ *     move-exception vT
+ *     if-eqz vP, :replace
+ *     if-eq vP, vT, :next
+ *     invoke-virtual {vP, vT},
+ *         Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V
+ *     goto :next
+ *   :replace
+ *     move-object vP, vT
+ *   :next
+ *     ...  (the close of the next resource as above, or throw vP)
+ * D8 can swap the branches, move the exception to throw to other registers on
+ * each path, and give the creation of a resource and its close when the block
+ * ends a handler of their own, which loads null as the exception to throw and
+ * goes on with the suppression.
  *
  * Kotlin has no try-with-resources statement, so the filter only runs on other
  * classes.

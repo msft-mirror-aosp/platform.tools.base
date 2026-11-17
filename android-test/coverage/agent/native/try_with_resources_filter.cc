@@ -292,6 +292,42 @@ class Values {
     }
   }
 
+  // One of the paths that meet at a bytecode: its values, and the value of the
+  // exception that it throws.
+  struct Branch {
+    const Values* values;
+    int thrown;
+  };
+
+  // Returns the values where `paths` meet: a register holds kCaught if it
+  // holds the exception that each path throws on all of them, keeps a value
+  // from before the handler if it has it on all of them, and holds kOtherValue
+  // otherwise.
+  static Values Meet(std::initializer_list<Branch> paths) {
+    std::unordered_set<int> registers;
+    for (const Branch& path : paths) {
+      for (const auto& entry : path.values->values_) {
+        registers.insert(entry.first);
+      }
+    }
+    Values meet;
+    for (int reg : registers) {
+      const int first = paths.begin()->values->Of(reg);
+      bool thrown = true;
+      bool same = true;
+      for (const Branch& path : paths) {
+        thrown = thrown && path.values->Of(reg) == path.thrown;
+        same = same && path.values->Of(reg) == first;
+      }
+      if (thrown) {
+        meet.Set(reg, kCaught);
+      } else {
+        meet.Set(reg, same && first >= 0 ? first : kOtherValue);
+      }
+    }
+    return meet;
+  }
+
  private:
   std::unordered_map<int, int> values_;
 };
@@ -367,6 +403,10 @@ bool Suppresses(const lir::Bytecode* bytecode, const Values& values,
 
 // The facts about a method that the filter needs.
 struct MethodInfo {
+  // The handlers that catch any exception or Throwable, each once.
+  std::vector<lir::Label*> labels;
+  // The bytecodes, in code order.
+  std::vector<lir::Bytecode*> bytecodes;
   // The line of each bytecode, or -1.
   std::unordered_map<const lir::Bytecode*, int> lines;
   // The handler of the try block of each bytecode in one, if it catches any
@@ -381,6 +421,13 @@ int LineOf(const MethodInfo& info, const lir::Bytecode* bytecode) {
   return it == info.lines.end() ? -1 : it->second;
 }
 
+// Returns the first bytecode in code order that the handler at `label`
+// protects, or nullptr.
+lir::Bytecode* FirstProtected(const MethodInfo& info, const lir::Label* label) {
+  auto it = info.first_protected.find(label);
+  return it == info.first_protected.end() ? nullptr : it->second;
+}
+
 // What the handler of a try-with-resources statement matched.
 struct Handler {
   // Its bytecodes.
@@ -393,6 +440,9 @@ struct Handler {
   bool checks_null = false;
   // Whether it closes the resource through $closeResource.
   bool close_resource = false;
+  // For ECJ, the handlers of the try block of the close when the block ends:
+  // the suppression of the resource and the other entries into it.
+  std::unordered_set<const lir::Label*> entries;
 };
 
 // Matches the handler of the close in a handler, at `label`: it catches the
@@ -547,6 +597,14 @@ bool ProtectedBy(const MethodInfo& info, const lir::Bytecode* bytecode,
   return it != info.handlers.end() && it->second == label;
 }
 
+// Returns true if `bytecode` is in a try block whose handler is one of
+// `labels`.
+bool ProtectedByOneOf(const MethodInfo& info, const lir::Bytecode* bytecode,
+                      const std::unordered_set<const lir::Label*>& labels) {
+  auto it = info.handlers.find(bytecode);
+  return it != info.handlers.end() && labels.count(it->second) > 0;
+}
+
 // Updates `copies`, the registers that hold the resource, for `bytecode`: a
 // move of one of them adds its destination, and any other write removes the
 // register that it writes.
@@ -572,24 +630,22 @@ void UpdateCopies(const lir::Bytecode* bytecode,
 // one, the close, and a goto right after it on the same line. A close through
 // $closeResource passes null as the primary exception, which D8 loads on the
 // same line before the check or the call; that load is added too. The close
-// comes after the first bytecode of the block, outside the block, and before
-// the handler and the next writes of the registers that hold the resource,
-// outside the handler: D8 puts the handlers after all the code that follows the
-// statement, it can copy the resource to another register before the close,
-// and once the statement ends, it can reuse those registers. The last of these
-// closes counts. Returns false if there is none.
-bool MatchClose(lir::Label* label, const Handler& handler,
-                const MethodInfo& info, std::vector<lir::Bytecode*>* code) {
-  auto first = info.first_protected.find(label);
-  if (first == info.first_protected.end()) {
-    return false;
-  }
+// comes after `first`, the first bytecode of the block, outside the block, and
+// before the handler at `label` and the next writes of the registers that hold
+// the resource, outside the handler: D8 puts the handlers after all the code
+// that follows the statement, it can copy the resource to another register
+// before the close, and once the statement ends, it can reuse those registers.
+// For ECJ, the close is in a try block that goes to one of `handler.entries`.
+// The last of these closes counts. Returns it, or nullptr if there is none.
+lir::Bytecode* MatchClose(lir::Label* label, lir::Bytecode* first,
+                          const Handler& handler, const MethodInfo& info,
+                          std::vector<lir::Bytecode*>* code) {
   std::unordered_set<const lir::Bytecode*> in_handler(handler.code.begin(),
                                                       handler.code.end());
   std::unordered_set<int> copies = {handler.resource};
   lir::Bytecode* check = nullptr;
   lir::Bytecode* close = nullptr;
-  lir::Instruction* node = first->second;
+  lir::Instruction* node = first;
   for (; node != nullptr && node != label && !copies.empty();
        node = node->next) {
     auto* bytecode = dynamic_cast<lir::Bytecode*>(node);
@@ -604,7 +660,9 @@ bool MatchClose(lir::Label* label, const Handler& handler,
     // A close in the block, which the handler protects, doesn't count.
     if (method != nullptr && copies.count(closed) > 0 &&
         SameMethod(method, handler.close) &&
-        !ProtectedBy(info, bytecode, label)) {
+        !ProtectedBy(info, bytecode, label) &&
+        (handler.entries.empty() ||
+         ProtectedByOneOf(info, bytecode, handler.entries))) {
       lir::Bytecode* previous = PreviousBytecode(bytecode);
       if (handler.close_resource && previous != nullptr &&
           LoadsZero(previous, passed)) {
@@ -625,7 +683,7 @@ bool MatchClose(lir::Label* label, const Handler& handler,
   // The code that can hold the close ends at the handler, or where nothing
   // holds the resource anymore.
   if (close == nullptr || (node == nullptr && !copies.empty())) {
-    return false;
+    return nullptr;
   }
   if (check != nullptr) {
     code->push_back(check);
@@ -651,6 +709,324 @@ bool MatchClose(lir::Label* label, const Handler& handler,
       LineOf(info, next) == LineOf(info, close)) {
     code->push_back(next);
   }
+  return close;
+}
+
+// Matches a try-with-resources statement of javac whose handler, or first
+// handler for javac 7 to 10, is at `label`, and adds its bytecodes to `code`.
+bool MatchJavac(lir::Label* label, const MethodInfo& info,
+                std::vector<lir::Bytecode*>* code) {
+  Handler handler;
+  // javac 7 to 10 first catch Throwable and throw it again, to the handler
+  // that closes the resource.
+  std::vector<lir::Bytecode*> primary;
+  if (!MatchHandler(label, info, Values(), kCaught, &handler)) {
+    handler = Handler();
+    Values values;
+    lir::Label* next = MatchPrimary(label, info, &primary, &values);
+    if (next == nullptr ||
+        !MatchHandler(next, info, std::move(values), kPrimary, &handler)) {
+      return false;
+    }
+  }
+  if (MatchClose(label, FirstProtected(info, label), handler, info, code) ==
+      nullptr) {
+    return false;
+  }
+  code->insert(code->end(), handler.code.begin(), handler.code.end());
+  code->insert(code->end(), primary.begin(), primary.end());
+  return true;
+}
+
+// What a suppression of ECJ matched.
+struct EcjSuppression {
+  // Its check of the exception to throw for null, and the call that adds the
+  // exception of the close to it.
+  lir::Bytecode* test = nullptr;
+  lir::Bytecode* call = nullptr;
+  // Where its paths meet, and the values there.
+  lir::Bytecode* next = nullptr;
+  Values values;
+};
+
+// Matches the suppression of ECJ at `label`, the handler of the close of a
+// resource in the handler of a try-with-resources statement. It catches the
+// exception of the close and makes it the exception to throw if there is none
+// yet, or else adds it to that exception, unless it is that exception, which
+// it also catches when the handler throws it:
+//     move-exception vT
+//     if-eqz vP, :replace  (or if-nez vP, with the branches swapped)
+//     if-eq vP, vT, :next  (or if-ne vP, vT, with the branches swapped)
+//     invoke-virtual {vP, vT},
+//         Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V
+//     goto :next
+//   :replace
+//     move-object vP, vT
+//   :next
+// D8 can also move the exception to throw to another register on each path.
+// `values` are those at the close, where the exception to throw has the value
+// kCaught. Adds the bytecodes to `code` and sets `suppression`. Returns false
+// if it isn't one.
+bool MatchEcjSuppression(lir::Label* label, Values values,
+                         std::vector<lir::Bytecode*>* code,
+                         EcjSuppression* suppression) {
+  lir::Bytecode* suppressed = SkipNonBytecodes(label);
+  if (suppressed == nullptr || suppressed->opcode != dex::OP_MOVE_EXCEPTION) {
+    return false;
+  }
+  code->push_back(suppressed);
+  values.Set(Register(suppressed, 0), kSuppressed);
+  Path start(std::move(values), code);
+  lir::Bytecode* test = start.After(suppressed);
+  if (test == nullptr ||
+      (test->opcode != dex::OP_IF_EQZ && test->opcode != dex::OP_IF_NEZ) ||
+      start.values().Of(Register(test, 0)) != kCaught) {
+    return false;
+  }
+  lir::Bytecode* if_null = SkipNonBytecodes(BranchTarget(test));
+  lir::Bytecode* if_not_null = NextBytecode(test);
+  if (test->opcode == dex::OP_IF_NEZ) {
+    std::swap(if_null, if_not_null);
+  }
+  Path replace(start.values(), code);
+  lir::Bytecode* replaced = replace.From(if_null);
+  Path other(start.values(), code);
+  lir::Bytecode* same = other.From(if_not_null);
+  if (same == nullptr ||
+      (same->opcode != dex::OP_IF_EQ && same->opcode != dex::OP_IF_NE)) {
+    return false;
+  }
+  const int first = other.values().Of(Register(same, 0));
+  const int second = other.values().Of(Register(same, 1));
+  if (!(first == kCaught && second == kSuppressed) &&
+      !(first == kSuppressed && second == kCaught)) {
+    return false;
+  }
+  lir::Bytecode* if_same = SkipNonBytecodes(BranchTarget(same));
+  lir::Bytecode* if_other = NextBytecode(same);
+  if (same->opcode == dex::OP_IF_NE) {
+    std::swap(if_same, if_other);
+  }
+  Path keep(other.values(), code);
+  lir::Bytecode* kept = keep.From(if_same);
+  Path add(other.values(), code);
+  lir::Bytecode* call = add.From(if_other);
+  if (call == nullptr || !Suppresses(call, add.values(), kCaught)) {
+    return false;
+  }
+  lir::Bytecode* added = add.After(call);
+  if (replaced == nullptr || replaced != kept || replaced != added) {
+    return false;
+  }
+  suppression->test = test;
+  suppression->call = call;
+  suppression->next = replaced;
+  // Where the exception of the close replaced it, it is the one to throw.
+  suppression->values = Values::Meet({{&replace.values(), kSuppressed},
+                                      {&keep.values(), kCaught},
+                                      {&add.values(), kCaught}});
+  return true;
+}
+
+// A resource that the handler of a try-with-resources statement of ECJ closes.
+struct EcjResource {
+  // The resource, the close() that the handler calls and whether it checks the
+  // resource for null.
+  Handler handler;
+  // The check of the exception to throw for null of the suppression around the
+  // close.
+  lir::Bytecode* test = nullptr;
+};
+
+// Matches the handler of a try-with-resources statement of ECJ at `label`: it
+// catches any exception, which becomes the exception to throw, then closes
+// each resource, the last one declared first, in a try block that goes to a
+// suppression like the one above, and throws the exception to throw:
+//   :handler
+//     move-exception vP
+//     if-eqz vR, :throw  (left out when the resource is created with new)
+//     invoke-interface {vR}, LFoo;->close()V  (its try block goes to :suppress)
+//   :throw
+//     throw vP
+//   :suppress
+//     ... (the suppression, then the same for the next resource, or throw vP)
+// ECJ gives the whole handler the line of the end of the block. Adds the
+// bytecodes to `code` and the resources to `resources`, in the order of the
+// closes. Returns false if it isn't one.
+bool MatchEcjHandler(lir::Label* label, const MethodInfo& info,
+                     std::vector<lir::Bytecode*>* code,
+                     std::vector<EcjResource>* resources) {
+  lir::Bytecode* caught = SkipNonBytecodes(label);
+  if (caught == nullptr || caught->opcode != dex::OP_MOVE_EXCEPTION) {
+    return false;
+  }
+  code->push_back(caught);
+  Values values;
+  values.Set(Register(caught, 0), kCaught);
+  lir::Bytecode* next = NextBytecode(caught);
+  // The bytecodes that can throw, whose lines D8 keeps in release mode too.
+  std::vector<const lir::Bytecode*> throwing;
+  std::unordered_set<const lir::Label*> suppressions;
+  for (;;) {
+    Path main(values, code);
+    lir::Bytecode* close = main.From(next);
+    if (!resources->empty() && ThrowsCaught(close, main.values())) {
+      throwing.push_back(close);
+      break;
+    }
+    // The check for null, with the values at that point.
+    lir::Bytecode* check = nullptr;
+    Values at_check;
+    if (close != nullptr && close->opcode == dex::OP_IF_EQZ) {
+      check = close;
+      at_check = main.values();
+      close = main.After(check);
+    }
+    EcjResource resource;
+    Handler& closing = resource.handler;
+    int closed = -1;
+    closing.close = close == nullptr ? nullptr : CloseOf(close, &closed);
+    if (closing.close == nullptr) {
+      return false;
+    }
+    closing.resource = main.values().Of(closed);
+    closing.checks_null = check != nullptr;
+    if (check != nullptr &&
+        at_check.Of(Register(check, 0)) != closing.resource) {
+      return false;
+    }
+    auto suppression = info.handlers.find(close);
+    if (suppression == info.handlers.end() ||
+        !suppressions.insert(suppression->second).second) {
+      return false;
+    }
+    const Values at_close = main.values();
+    lir::Bytecode* thrown = main.After(close);
+    if (!ThrowsCaught(thrown, main.values())) {
+      return false;
+    }
+    throwing.push_back(close);
+    throwing.push_back(thrown);
+    // A null resource goes straight to a throw of the exception to throw.
+    if (check != nullptr) {
+      Path null_resource(std::move(at_check), code);
+      lir::Bytecode* skipped =
+          null_resource.From(SkipNonBytecodes(BranchTarget(check)));
+      if (!ThrowsCaught(skipped, null_resource.values())) {
+        return false;
+      }
+      throwing.push_back(skipped);
+    }
+    EcjSuppression matched;
+    if (!MatchEcjSuppression(suppression->second, at_close, code, &matched)) {
+      return false;
+    }
+    throwing.push_back(matched.call);
+    resource.test = matched.test;
+    resources->push_back(std::move(resource));
+    values = std::move(matched.values);
+    next = matched.next;
+  }
+  for (const lir::Bytecode* bytecode : throwing) {
+    if (LineOf(info, bytecode) != LineOf(info, throwing.front())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Returns the handlers that go on with the suppression of a resource of ECJ
+// at its check `test`: the suppression, and the other entries into it that D8
+// can give the creation of the resource and its close when the block ends.
+// They catch the exception and can load null or move values first. Adds their
+// bytecodes to `code`.
+std::unordered_set<const lir::Label*> Entries(
+    const lir::Bytecode* test, const MethodInfo& info,
+    std::vector<lir::Bytecode*>* code) {
+  std::unordered_set<const lir::Label*> entries;
+  for (lir::Label* label : info.labels) {
+    lir::Bytecode* caught = SkipNonBytecodes(label);
+    if (caught == nullptr || caught->opcode != dex::OP_MOVE_EXCEPTION) {
+      continue;
+    }
+    std::vector<lir::Bytecode*> entry = {caught};
+    Path path(Values(), &entry);
+    lir::Bytecode* bytecode = path.After(caught);
+    while (bytecode != nullptr && bytecode != test &&
+           LoadsZero(bytecode, Register(bytecode, 0))) {
+      bytecode = path.After(bytecode);
+    }
+    if (bytecode == test) {
+      entries.insert(label);
+      code->insert(code->end(), entry.begin(), entry.end());
+    }
+  }
+  return entries;
+}
+
+// The creation of a resource of ECJ is in the first try block that goes to
+// one of its `entries`. Returns the bytecode after the last write of the
+// register of `resource` in that try block, or in the moves right after it,
+// with which D8 can copy the resource to its register when many registers are
+// in use. Returns the first bytecode of the try block if none writes the
+// register, as for a resource that comes from a parameter, or nullptr.
+lir::Bytecode* AfterCreation(
+    const std::unordered_set<const lir::Label*>& entries, int resource,
+    const MethodInfo& info) {
+  const std::vector<lir::Bytecode*>& bytecodes = info.bytecodes;
+  size_t first = 0;
+  while (first < bytecodes.size() &&
+         !ProtectedByOneOf(info, bytecodes[first], entries)) {
+    ++first;
+  }
+  if (first == bytecodes.size()) {
+    return nullptr;
+  }
+  const lir::Label* entry = info.handlers.find(bytecodes[first])->second;
+  lir::Bytecode* start = bytecodes[first];
+  size_t i = first;
+  for (; i + 1 < bytecodes.size() && ProtectedBy(info, bytecodes[i], entry);
+       ++i) {
+    if (Writes(bytecodes[i], resource)) {
+      start = bytecodes[i + 1];
+    }
+  }
+  for (; i + 1 < bytecodes.size() && IsMove(bytecodes[i]->opcode); ++i) {
+    if (Writes(bytecodes[i], resource)) {
+      start = bytecodes[i + 1];
+    }
+  }
+  return start;
+}
+
+// Matches a try-with-resources statement of ECJ whose handler is at `label`,
+// and adds its bytecodes to `code`. The block closes the resources too, each
+// in a try block that goes to its suppression or another entry into it.
+bool MatchEcj(lir::Label* label, const MethodInfo& info,
+              std::vector<lir::Bytecode*>* code) {
+  std::vector<lir::Bytecode*> handler_code;
+  std::vector<EcjResource> resources;
+  if (!MatchEcjHandler(label, info, &handler_code, &resources)) {
+    return false;
+  }
+  std::vector<lir::Bytecode*> closes;
+  for (EcjResource& resource : resources) {
+    Handler& handler = resource.handler;
+    handler.entries = Entries(resource.test, info, &handler_code);
+    handler.code = handler_code;
+    // When the block starts with another statement, the handlers of that
+    // statement protect its start, so the first bytecode that `label` protects
+    // can come after the close: look from the creation of the resource on.
+    if (MatchClose(label, FirstProtected(info, label), handler, info,
+                   &closes) == nullptr &&
+        MatchClose(label,
+                   AfterCreation(handler.entries, handler.resource, info),
+                   handler, info, &closes) == nullptr) {
+      return false;
+    }
+  }
+  code->insert(code->end(), closes.begin(), closes.end());
+  code->insert(code->end(), handler_code.begin(), handler_code.end());
   return true;
 }
 
@@ -662,7 +1038,8 @@ void TryWithResourcesFilter::Filter(const FilterContext& context,
                                     FilterOutput& output) {
   // The handlers that catch any exception or Throwable, each once, and the
   // handler of each try block.
-  std::vector<lir::Label*> labels;
+  MethodInfo info;
+  std::vector<lir::Label*>& labels = info.labels;
   std::unordered_set<const lir::Label*> seen;
   std::unordered_map<const lir::TryBlockBegin*, lir::Label*> handler_of_try;
   for (auto* instr : code_ir.instructions) {
@@ -694,11 +1071,11 @@ void TryWithResourcesFilter::Filter(const FilterContext& context,
   if (labels.empty()) {
     return;
   }
-  MethodInfo info;
   int line = -1;
   lir::Label* current = nullptr;
   for (auto* instr : code_ir.instructions) {
     if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
+      info.bytecodes.push_back(bytecode);
       info.lines[bytecode] = line;
       if (current != nullptr) {
         info.handlers[bytecode] = current;
@@ -721,29 +1098,13 @@ void TryWithResourcesFilter::Filter(const FilterContext& context,
     }
   }
   for (lir::Label* label : labels) {
-    Handler handler;
-    // javac 7 to 10 first catch Throwable and throw it again, to the handler
-    // that closes the resource.
-    std::vector<lir::Bytecode*> primary;
-    if (!MatchHandler(label, info, Values(), kCaught, &handler)) {
-      handler = Handler();
-      Values values;
-      lir::Label* next = MatchPrimary(label, info, &primary, &values);
-      if (next == nullptr ||
-          !MatchHandler(next, info, std::move(values), kPrimary, &handler)) {
-        continue;
-      }
-    }
-    std::vector<lir::Bytecode*> close;
-    if (!MatchClose(label, handler, info, &close)) {
+    std::vector<lir::Bytecode*> code;
+    if (!MatchJavac(label, info, &code) && !MatchEcj(label, info, &code)) {
       continue;
     }
     // Each bytecode is ignored on its own, in code order, since D8 can lay out
     // the handler in pieces.
-    std::unordered_set<const lir::Bytecode*> ignored(close.begin(),
-                                                     close.end());
-    ignored.insert(handler.code.begin(), handler.code.end());
-    ignored.insert(primary.begin(), primary.end());
+    std::unordered_set<const lir::Bytecode*> ignored(code.begin(), code.end());
     for (auto* instr : code_ir.instructions) {
       auto* bytecode = dynamic_cast<lir::Bytecode*>(instr);
       if (bytecode != nullptr && ignored.count(bytecode) > 0) {
