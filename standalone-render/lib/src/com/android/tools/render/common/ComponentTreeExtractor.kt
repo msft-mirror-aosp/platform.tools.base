@@ -17,6 +17,8 @@
 package com.android.tools.render.common
 
 import com.android.ide.common.rendering.api.ViewInfo
+import com.android.resources.UiMode
+import com.android.sdklib.devices.Device
 import com.android.tools.configurations.Configuration
 import com.android.tools.render.animation.AnimationPreviewRunner
 import com.android.tools.render.common.ComposeParameterExtractor.ParamLookup
@@ -103,6 +105,8 @@ object ComponentTreeExtractor {
       uiMode = config.uiModeFlagValue,
       deviceId = config.device?.id,
       showSystemUi = showSystemUi,
+      isWearDevice = isWearDevice(config),
+      isScreenRound = config.device?.isScreenRound == true,
       // Only with detectAnimations, so that the trees are unchanged without it; with it, static previews say so explicitly.
       hasAnimations = hasAnimationsFlag.takeIf { detectAnimations },
       animationCount = detectedAnimations.size.takeIf { detectAnimations },
@@ -110,6 +114,13 @@ object ComponentTreeExtractor {
       components = components,
     )
   }
+
+  /**
+   * Returns whether [config] renders a Wear OS preview: the device has the Wear tag, or the preview sets a watch `uiMode`. The `uiMode`
+   * check mirrors Studio's `PreviewConfiguration.applyTo`, which re-tags the resolved device as Wear in that case, a step standalone
+   * rendering skips when no device is given.
+   */
+  private fun isWearDevice(config: Configuration): Boolean = Device.isWear(config.device) || config.uiMode == UiMode.WATCH
 
   private fun findComposeViewAdapter(rootViews: List<ViewInfo>): Any? {
     val queue = ArrayDeque<ViewInfo>(rootViews)

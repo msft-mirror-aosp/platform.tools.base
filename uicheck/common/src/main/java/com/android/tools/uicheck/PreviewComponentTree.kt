@@ -34,6 +34,8 @@ data class PreviewComponentTree(
   val uiMode: Int? = null,
   val deviceId: String? = null,
   val showSystemUi: Boolean = false,
+  val isWearDevice: Boolean = false,
+  val isScreenRound: Boolean = false,
   val components: List<ComponentTreeNode>,
 )
 

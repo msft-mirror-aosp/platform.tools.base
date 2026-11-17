@@ -34,6 +34,8 @@ data class PreviewComponentTree(
   val uiMode: Int? = null,
   val deviceId: String? = null,
   val showSystemUi: Boolean = false,
+  val isWearDevice: Boolean = false,
+  val isScreenRound: Boolean = false,
   val hasAnimations: Boolean? = null,
   val animationCount: Int? = null,
   val detectedAnimations: List<DetectedAnimationSummary>? = null,

@@ -74,6 +74,8 @@ class PreviewComponentTreeTest {
     assertEquals(0, deserialized.uiMode)
     assertEquals("spec:width=411dp,height=891dp", deserialized.deviceId)
     assertFalse(deserialized.showSystemUi)
+    assertFalse(deserialized.isWearDevice)
+    assertFalse(deserialized.isScreenRound)
 
     val root = deserialized.components.single()
     assertEquals("Column", root.name)
@@ -138,23 +140,27 @@ class PreviewComponentTreeTest {
     assertEquals("com.example.AppKt.Preview", parsed.methodFqn)
   }
 
-  /** Verifies that `showSystemUi` is parsed when present in the JSON payload. */
+  /** Verifies that `showSystemUi`, `isWearDevice`, and `isScreenRound` are parsed when present in the JSON payload. */
   @Test
-  fun parsesSystemUiFlag() {
+  fun parsesSystemUiAndWearFlags() {
     val json =
       """
       {
         "previewId": "p0",
-        "methodFQN": "com.example.AppKt.PhonePreview",
-        "width": 1080,
-        "height": 2400,
+        "methodFQN": "com.example.WearKt.WatchPreview",
+        "width": 454,
+        "height": 454,
         "showSystemUi": true,
+        "isWearDevice": true,
+        "isScreenRound": true,
         "components": []
       }
       """
         .trimIndent()
     val parsed = PreviewComponentTreeParser.parse(StringReader(json))
     assertTrue(parsed.showSystemUi)
+    assertTrue(parsed.isWearDevice)
+    assertTrue(parsed.isScreenRound)
   }
 
   /** Verifies rejection of empty or null JSON inputs. */

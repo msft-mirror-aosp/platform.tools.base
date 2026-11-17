@@ -231,13 +231,15 @@ class ComponentTreeExtractorTest {
     val deserialized = readComponentTreeFromJson(StringReader(jsonString))
     assertEquals(originalTree, deserialized)
     assertFalse(deserialized.showSystemUi)
+    assertFalse(deserialized.isWearDevice)
+    assertFalse(deserialized.isScreenRound)
     assertTrue("Leaf node should omit children in serialized JSON", !jsonString.contains("\"children\": []"))
     assertTrue("Leaf node should omit null children in serialized JSON", !jsonString.contains("\"children\": null"))
     assertTrue("Non-leaf node should have children array", jsonString.contains("\"children\": ["))
 
-    val systemUiTree = originalTree.copy(showSystemUi = true)
-    val systemUiJson = StringWriter().also { writeComponentTreeToJson(it, systemUiTree) }.toString()
-    assertEquals(systemUiTree, readComponentTreeFromJson(StringReader(systemUiJson)))
+    val wearTree = originalTree.copy(showSystemUi = true, isWearDevice = true, isScreenRound = true)
+    val wearJson = StringWriter().also { writeComponentTreeToJson(it, wearTree) }.toString()
+    assertEquals(wearTree, readComponentTreeFromJson(StringReader(wearJson)))
   }
 
   @Test

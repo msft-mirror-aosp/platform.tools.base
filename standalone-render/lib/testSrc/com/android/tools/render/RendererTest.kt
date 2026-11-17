@@ -21,6 +21,7 @@ import com.android.ide.common.rendering.api.Result
 import com.android.ide.common.resources.Locale
 import com.android.resources.ResourceType
 import com.android.testutils.TestUtils
+import com.android.tools.configurations.UiModeState.Companion.UI_MODE_TYPE_WATCH
 import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.ConfigurablePreviewElement
 import com.android.tools.render.common.ComponentBounds
@@ -2054,6 +2055,58 @@ class RendererTest {
     Files.newBufferedReader(Paths.get(outputDir.absolutePath, result.componentTreePath!!), StandardCharsets.UTF_8).use {
       readComponentTreeFromJson(it)
     }
+
+  /** Verifies that the component tree takes `isWearDevice` and `isScreenRound` from the rendered device profile and watch uiMode. */
+  @Test
+  fun testComponentTreeRecordsWearAndScreenRoundFromDevice() {
+    // language=xml
+    val xmlLayout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent" />
+      """
+        .trimIndent()
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_wear_flags")
+    val config = RenderConfiguration(includeComponentTree = true)
+    val roundWatch =
+      xmlPreviewScreenshot("com.example.WearPreviewKt.Round", xmlLayout, previewParams = mapOf("device" to "id:wearos_small_round"))
+    val squareWatch =
+      xmlPreviewScreenshot("com.example.WearPreviewKt.Square", xmlLayout, previewParams = mapOf("device" to "id:wearos_square"))
+    val phone = xmlPreviewScreenshot("com.example.WearPreviewKt.Phone", xmlLayout)
+    val watchUiModeNoDevice =
+      xmlPreviewScreenshot("com.example.WearPreviewKt.WatchUiMode", xmlLayout, previewParams = mapOf("uiMode" to "$UI_MODE_TYPE_WATCH"))
+
+    bootstrapper.bootstrap().use { renderer ->
+      val roundTree = readComponentTree(outputDir, renderer.render(roundWatch, outputDir.absolutePath, config).single())
+      assertThat(roundTree.isWearDevice).isTrue()
+      assertThat(roundTree.isScreenRound).isTrue()
+
+      val squareTree = readComponentTree(outputDir, renderer.render(squareWatch, outputDir.absolutePath, config).single())
+      assertThat(squareTree.isWearDevice).isTrue()
+      assertThat(squareTree.isScreenRound).isFalse()
+
+      val phoneTree = readComponentTree(outputDir, renderer.render(phone, outputDir.absolutePath, config).single())
+      assertThat(phoneTree.isWearDevice).isFalse()
+      assertThat(phoneTree.isScreenRound).isFalse()
+
+      // Matches Studio, which treats a watch uiMode as Wear even without an explicit device.
+      val watchUiModeTree = readComponentTree(outputDir, renderer.render(watchUiModeNoDevice, outputDir.absolutePath, config).single())
+      assertThat(watchUiModeTree.isWearDevice).isTrue()
+      assertThat(watchUiModeTree.isScreenRound).isFalse()
+    }
+  }
 
   private fun xmlPreviewScreenshot(
     fqn: String,
