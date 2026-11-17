@@ -24,6 +24,7 @@ genrule(
 cc_library(
     name = "agent_lib",
     srcs = [
+        "assert_filter.cc",
         "bridge_filter.cc",
         "constructor_analyzer.cc",
         "enum_empty_constructor_filter.cc",
@@ -63,6 +64,7 @@ cc_library(
         "try_with_resources_filter.cc",
     ],
     hdrs = [
+        "assert_filter.h",
         "bridge_filter.h",
         "constructor_analyzer.h",
         "enum_empty_constructor_filter.h",
