@@ -69,4 +69,16 @@ class ComposeScreenshotPreviewElementTest {
 
     assertThat(element.resolveLayouts().single().expandSettings).isEqualTo(ExpandSettings(ExpandAxis.horizontal))
   }
+
+  @Test
+  fun testScrollToIsForwardedWithoutExpanding() {
+    val device = "spec:parent=pixel_7,scrollTo=end"
+    val element = ComposeScreenshotPreviewElement(previewElement(device))
+
+    val resolvedLayout = element.resolveLayouts().single()
+
+    assertThat(resolvedLayout.expandSettings).isNull()
+    assertThat(resolvedLayout.deviceSpec).isEqualTo(device)
+    assertThat(resolvedLayout.xmlLayout).contains("tools:device=\"$device\"")
+  }
 }

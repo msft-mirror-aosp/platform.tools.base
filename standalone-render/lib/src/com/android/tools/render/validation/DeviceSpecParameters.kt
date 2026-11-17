@@ -25,6 +25,7 @@ import com.android.tools.preview.config.Navigation
 import com.android.tools.preview.config.Orientation
 import com.android.tools.preview.config.PointerPrecision
 import com.android.tools.preview.config.Preview.DeviceSpec
+import com.android.tools.preview.config.ScrollTarget
 import com.android.tools.preview.config.ViewingDistance
 import com.android.tools.preview.config.WindowPosture
 import java.util.Locale
@@ -84,6 +85,7 @@ internal object DeviceSpecParameters {
       expandParameter(DeviceSpec.PARAMETER_EXPAND),
       maxSizeParameter(DeviceSpec.PARAMETER_MAX_HEIGHT),
       maxSizeParameter(DeviceSpec.PARAMETER_MAX_WIDTH),
+      scrollToParameter(DeviceSpec.PARAMETER_SCROLL_TO),
     )
 
   /**
@@ -142,5 +144,12 @@ internal object DeviceSpecParameters {
       val dimension = DeviceSpecDimension.parse(text, ignoreCase = true)
       dimension != null && dimension.value.isFinite() && dimension.value.roundToInt() >= 1
     }
+  }
+
+  /** The renderer parses `scrollTo` case-insensitively with [ScrollTarget.fromSpecValue]. */
+  private fun scrollToParameter(name: String): DeviceSpecParameter {
+    val values = ScrollTarget.keywordTargets.map { "'${it.specValue}'" }
+    val expected = if (values.size == 1) values.single() else "one of " + values.joinToString(", ")
+    return DeviceSpecParameter(name, expected) { ScrollTarget.fromSpecValue(it) != null }
   }
 }

@@ -18,12 +18,16 @@ package com.android.tools.render
 
 import com.android.SdkConstants
 import com.android.ide.common.rendering.api.Result
+import com.android.ide.common.rendering.api.SessionParams.RenderingMode
 import com.android.ide.common.resources.Locale
 import com.android.resources.ResourceType
 import com.android.testutils.TestUtils
 import com.android.tools.configurations.UiModeState.Companion.UI_MODE_TYPE_WATCH
 import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.ConfigurablePreviewElement
+import com.android.tools.preview.PreviewConfiguration
+import com.android.tools.preview.SingleComposePreviewElementInstance
+import com.android.tools.preview.applyTo
 import com.android.tools.render.common.ComponentBounds
 import com.android.tools.render.common.ComponentTreeExtractor
 import com.android.tools.render.common.PreviewComponentTree
@@ -71,6 +75,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -90,6 +96,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
 
 class RendererTest {
   @JvmField @Rule val tmpFolder = TemporaryFolder()
@@ -2176,7 +2184,13 @@ class RendererTest {
           override fun resolveXmlLayouts(): Sequence<String> = sequenceOf(xmlLayout)
 
           override fun resolveLayouts(): Sequence<ResolvedScreenshotLayout> =
-            sequenceOf(ResolvedScreenshotLayout(xmlLayout, displayName = displayName))
+            sequenceOf(
+              ResolvedScreenshotLayout(
+                xmlLayout,
+                displayName = displayName,
+                deviceSpec = delegate.configuration.deviceSpec.takeIf { it.isNotEmpty() },
+              )
+            )
         }
       }
     }
@@ -3840,6 +3854,159 @@ class RendererTest {
     assertEquals("menu${File.separator}main_0.png", result.imagePath)
     assertNotNull(result.error)
     assertTrue(result.error?.message?.contains("Previews of menu resources are not supported") == true)
+  }
+
+  private fun createUiToolingJar(supportedParameters: String): File {
+    val writer = ClassWriter(0)
+    writer.visit(
+      Opcodes.V17,
+      Opcodes.ACC_PUBLIC or Opcodes.ACC_FINAL or Opcodes.ACC_SUPER,
+      "androidx/compose/ui/tooling/PreviewDeviceSpec",
+      null,
+      "java/lang/Object",
+      null,
+    )
+    writer
+      .visitField(
+        Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC or Opcodes.ACC_FINAL,
+        "SUPPORTED_PARAMETERS",
+        "Ljava/lang/String;",
+        null,
+        supportedParameters,
+      )
+      .visitEnd()
+    writer.visitEnd()
+    val jar = tmpFolder.newFile()
+    JarOutputStream(jar.outputStream()).use { out ->
+      out.putNextEntry(JarEntry("androidx/compose/ui/tooling/PreviewDeviceSpec.class"))
+      out.write(writer.toByteArray())
+      out.closeEntry()
+    }
+    return jar
+  }
+
+  @Test
+  fun testRenderWithScrollToDeviceSpec() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib").absolutePathString()
+    val outputDir = tmpFolder.newFolder("output_scroll_to")
+    // language=xml
+    val tallLayout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:orientation="vertical">
+          <View
+              android:layout_width="200dp"
+              android:layout_height="600dp"
+              android:background="#FFFF0000" />
+      </LinearLayout>
+      """
+        .trimIndent()
+
+    fun bootstrapper(uiToolingJar: File) =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = listOf(uiToolingJar.absolutePath),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath,
+      )
+
+    val supportedUiTooling = createUiToolingJar("windowPosture,expand,maxHeight,maxWidth,scrollTo")
+    bootstrapper(supportedUiTooling).bootstrap().use { renderer ->
+      val parentSpec = "spec:parent=pixel_7,scrollTo=end"
+      val validCompose =
+        ComposeScreenshot(
+          previewId = "valid_scroll_to",
+          methodFQN = "com.example.ScrollToPreviewKt.ValidScrollTo",
+          previewParams = mapOf("device" to parentSpec),
+          methodParams = emptyList(),
+        )
+      val resolved = validCompose.toPreviewElement(renderer.module).resolveLayouts().single()
+      assertThat(resolved.deviceSpec).isEqualTo(parentSpec)
+      assertThat(resolved.expandSettings).isNull()
+      assertThat(resolved.xmlLayout).contains("tools:device=\"$parentSpec\"")
+
+      // Validation must accept scrollTo=end and reject invalid scrollTo values.
+      val validResult = renderer.render(validCompose, outputDir.absolutePath).single()
+      assertThat(validResult.error?.status).isNotEqualTo("VALIDATION_ERROR")
+
+      val invalidCompose =
+        ComposeScreenshot(
+          previewId = "invalid_scroll_to",
+          methodFQN = "com.example.ScrollToPreviewKt.InvalidScrollTo",
+          previewParams = mapOf("device" to "spec:parent=pixel_7,scrollTo=middle"),
+          methodParams = emptyList(),
+        )
+      val invalidResult = renderer.render(invalidCompose, outputDir.absolutePath).single()
+      assertThat(invalidResult.error?.status).isEqualTo("VALIDATION_ERROR")
+      assertThat(invalidResult.error?.message).contains("'scrollTo' must be 'end'")
+
+      // scrollTo renders at the fixed device size (not expanded) and succeeds end-to-end.
+      val customSpec = "spec:width=200dp,height=200dp,dpi=160,scrollTo=end"
+      val preview =
+        xmlPreviewScreenshot(
+          fqn = "com.example.ScrollToPreviewKt.ScrollToXml",
+          xmlLayout = tallLayout,
+          previewParams = mapOf("device" to customSpec, "showSystemUi" to "true"),
+        )
+      val xmlResult = renderer.render(preview, outputDir.absolutePath, RenderConfiguration(allowShowDecorations = true)).single()
+      assertThat(xmlResult.error).isNull()
+      val image = ImageIO.read(File(outputDir, xmlResult.imagePath))
+      assertThat(image.width).isEqualTo(200)
+      assertThat(image.height).isEqualTo(200)
+
+      val element =
+        SingleComposePreviewElementInstance.forTesting<Unit>(
+          "com.example.ScrollToPreviewKt.ScrollToResolved",
+          configuration = PreviewConfiguration.cleanAndGet(device = customSpec),
+        )
+      val request =
+        RenderRequest.withResolvedLayouts(
+          configurationModifier = element::applyTo,
+          resolvedLayoutsProvider = { sequenceOf(ResolvedScreenshotLayout(tallLayout, deviceSpec = customSpec)) },
+        )
+      val (_, renderResult, layout) = renderer.renderResolvedLayouts(request).single()
+      try {
+        assertThat(renderResult.renderResult.status).isEqualTo(Result.Status.SUCCESS)
+        assertThat(renderResult.renderingMode).isNotEqualTo(RenderingMode.V_SCROLL)
+        assertThat(renderResult.renderingMode).isNotEqualTo(RenderingMode.H_SCROLL)
+        assertThat(renderResult.renderedImage.height).isAtMost(200)
+        assertThat(layout.expandSettings).isNull()
+        assertThat(renderResult.logger.messages).isEmpty()
+      } finally {
+        Disposer.dispose(renderResult)
+      }
+    }
+
+    // Older ui-tooling without scrollTo still renders at device size and logs the unsupported-parameter warning.
+    val olderUiTooling = createUiToolingJar("windowPosture,expand,maxHeight,maxWidth")
+    bootstrapper(olderUiTooling).bootstrap().use { renderer ->
+      val customSpec = "spec:width=200dp,height=200dp,dpi=160,scrollTo=end"
+      val element =
+        SingleComposePreviewElementInstance.forTesting<Unit>(
+          "com.example.ScrollToPreviewKt.ScrollToUnsupported",
+          configuration = PreviewConfiguration.cleanAndGet(device = customSpec),
+        )
+      val request =
+        RenderRequest.withResolvedLayouts(
+          configurationModifier = element::applyTo,
+          resolvedLayoutsProvider = { sequenceOf(ResolvedScreenshotLayout(tallLayout, deviceSpec = customSpec)) },
+        )
+      val (_, renderResult, layout) = renderer.renderResolvedLayouts(request).single()
+      try {
+        assertThat(renderResult.renderResult.status).isEqualTo(Result.Status.SUCCESS)
+        assertThat(renderResult.renderedImage.height).isAtMost(200)
+        assertThat(layout.expandSettings).isNull()
+        assertThat(renderResult.logger.messages.map { it.html })
+          .contains("scrollTo in the device spec requires a newer version of androidx.compose.ui:ui-tooling and will be ignored.")
+      } finally {
+        Disposer.dispose(renderResult)
+      }
+    }
   }
 }
 

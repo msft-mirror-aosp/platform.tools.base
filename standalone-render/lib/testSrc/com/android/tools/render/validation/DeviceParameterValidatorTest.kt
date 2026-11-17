@@ -105,6 +105,9 @@ class DeviceParameterValidatorTest {
     assertValid("spec:width=411dp,height=891dp,expand=vertical,maxHeight=2000dp,maxWidth=1000dp")
     assertValid("spec:width=1080px,height=2400px,expand=HORIZONTAL,maxHeight=5000PX,maxWidth=3000px")
     assertValid("spec:width=411dp,height=891dp,expand=Vertical,maxHeight=0.5dp")
+    assertValid("spec:width=411dp,height=891dp,scrollTo=end")
+    assertValid("spec:width=411dp,height=891dp,scrollTo=END")
+    assertValid("spec:width=411dp,height=891dp,expand=vertical,maxHeight=2000dp,scrollTo=end")
     assertValid("spec:id=my_device,width=900px,height=1900px")
     // Whitespace around names, values and separators is trimmed by the renderer, trailing separators are ignored.
     assertValid("spec: width = 411dp , height = 891dp ,")
@@ -118,6 +121,8 @@ class DeviceParameterValidatorTest {
     assertValid("spec:parent=pixel_5,hasCamera=true,hasMicrophone=false,keyboardKind=none,pointerPrecision=coarse,viewingDistance=near")
     assertValid("spec:parent=pixel_5,expand=vertical,maxHeight=2000dp")
     assertValid("spec:parent=pixel_5,expand=HORIZONTAL,maxWidth=3000PX,maxHeight=5000px")
+    assertValid("spec:parent=pixel_5,scrollTo=end")
+    assertValid("spec:parent=pixel_5,scrollTo=END")
   }
 
   @Test
@@ -226,6 +231,8 @@ class DeviceParameterValidatorTest {
     assertSingleError("spec:parent=pixel_5,viewingDistance=close", "'viewingDistance' must be one of 'near', 'medium', 'far'")
     assertSingleError("spec:width=411dp,height=891dp,expand=both", "'expand' must be one of 'vertical', 'horizontal'", "got: 'both'")
     assertSingleError("spec:parent=pixel_5,expand=none", "'expand' must be one of 'vertical', 'horizontal'", "got: 'none'")
+    assertSingleError("spec:width=411dp,height=891dp,scrollTo=middle", "'scrollTo' must be 'end'", "got: 'middle'")
+    assertSingleError("spec:parent=pixel_5,scrollTo=none", "'scrollTo' must be 'end'", "got: 'none'")
   }
 
   @Test
@@ -238,6 +245,7 @@ class DeviceParameterValidatorTest {
     // Parameter names are case-sensitive; a case-insensitive match is suggested.
     assertSingleError("spec:Width=411dp,height=891dp,width=411dp", "Unknown device spec parameter 'Width' (did you mean 'width'?)")
     assertSingleError("spec:parent=pixel_5,EXPAND=vertical", "Unknown device spec parameter 'EXPAND' (did you mean 'expand'?)")
+    assertSingleError("spec:parent=pixel_5,SCROLLTO=end", "Unknown device spec parameter 'SCROLLTO' (did you mean 'scrollTo'?)")
     assertSingleError("spec:parent=pixel_5,foo=bar", "Unknown device spec parameter 'foo'", "Supported parameters: 'parent', 'orientation'")
   }
 
@@ -267,12 +275,14 @@ class DeviceParameterValidatorTest {
     assertSingleError("spec:width=411dp,height=891dp,dpi=", "'dpi' has no value")
     assertSingleError("spec:width=,height=891dp", "'width' has no value")
     assertSingleError("spec:parent=", "'parent' has no value")
+    assertSingleError("spec:parent=pixel_5,scrollTo=", "'scrollTo' has no value")
   }
 
   @Test
   fun testRepeatedParametersProduceError() {
     assertSingleError("spec:width=411dp,height=891dp,width=500dp", "'width' is specified more than once")
     assertSingleError("spec:parent=pixel_5,parent=pixel_4", "'parent' is specified more than once")
+    assertSingleError("spec:parent=pixel_5,scrollTo=end,scrollTo=end", "'scrollTo' is specified more than once")
   }
 
   @Test
@@ -318,6 +328,7 @@ class DeviceParameterValidatorTest {
     assertTrue(DeviceParameterValidator.validate("spec:parent=tv_1080p", catalog).isEmpty())
     assertTrue(DeviceParameterValidator.validate("spec:parent=pixel_5,orientation=landscape", catalog).isEmpty())
     assertTrue(DeviceParameterValidator.validate("spec:parent=pixel_5,expand=vertical,maxHeight=2000dp", catalog).isEmpty())
+    assertTrue(DeviceParameterValidator.validate("spec:parent=pixel_5,scrollTo=end", catalog).isEmpty())
   }
 
   @Test
