@@ -569,15 +569,15 @@ void UpdateCopies(const lir::Bytecode* bytecode,
 
 // Finds the close of the resource of `handler` when the block of its statement
 // ends, and adds its bytecodes to `code`: the check for null if the handler has
-// one, the close, and a goto right after it. A close through $closeResource
-// passes null as the primary exception, which D8 loads on the same line before
-// the check or the call; that load is added too. The close comes after the
-// first bytecode of the block, outside the block, and before the handler and
-// the next writes of the registers that hold the resource, outside the handler:
-// D8 puts the handlers after all the code that follows the statement, it can
-// copy the resource to another register before the close, and once the
-// statement ends, it can reuse those registers. The last of these closes
-// counts. Returns false if there is none.
+// one, the close, and a goto right after it on the same line. A close through
+// $closeResource passes null as the primary exception, which D8 loads on the
+// same line before the check or the call; that load is added too. The close
+// comes after the first bytecode of the block, outside the block, and before
+// the handler and the next writes of the registers that hold the resource,
+// outside the handler: D8 puts the handlers after all the code that follows the
+// statement, it can copy the resource to another register before the close,
+// and once the statement ends, it can reuse those registers. The last of these
+// closes counts. Returns false if there is none.
 bool MatchClose(lir::Label* label, const Handler& handler,
                 const MethodInfo& info, std::vector<lir::Bytecode*>* code) {
   auto first = info.first_protected.find(label);
@@ -644,8 +644,11 @@ bool MatchClose(lir::Label* label, const Handler& handler,
       }
     }
   }
+  // D8 can merge the goto with which the block jumps over the handler with a
+  // goto on another line that follows it, which belongs to that line.
   lir::Bytecode* next = NextBytecode(close);
-  if (next != nullptr && IsGoto(next->opcode)) {
+  if (next != nullptr && IsGoto(next->opcode) &&
+      LineOf(info, next) == LineOf(info, close)) {
     code->push_back(next);
   }
   return true;

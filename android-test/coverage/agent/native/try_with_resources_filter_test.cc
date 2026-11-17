@@ -1182,6 +1182,61 @@ TEST_F(TryWithResourcesFilterTest, ShouldFilterGotoAfterCloseOfBlock) {
                to_throw, suppressed, suppression, thrown}));
 }
 
+// D8 can merge that goto with a goto on another line that follows it, as when
+// the statement has a catch. That goto is kept.
+TEST_F(TryWithResourcesFilterTest, ShouldKeepGotoAfterCloseOnOtherLine) {
+  TestMethod m("then", "(Ljava/lang/String;)V");
+  lir::Label* after = m.NewLabel();
+  lir::Label* next = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  m.AddLine(20);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(21);
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({0}), m.MethodRef(kInputStream, "read", "()I")});
+  m.AddTryBlockEnd(block, handler);
+  m.AddLine(22);
+  lir::Instruction* check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
+  lir::Instruction* close =
+      m.Add(dex::OP_INVOKE_VIRTUAL,
+            {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+  m.AddLine(24);
+  m.Add(dex::OP_GOTO, {m.Target(next)});
+  m.Place(handler);
+  m.AddLine(20);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close =
+      m.Add(dex::OP_INVOKE_VIRTUAL,
+            {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({1, 2}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(1)});
+  m.Place(after);
+  m.Place(next);
+  m.AddLine(25);
+  m.Add(dex::OP_RETURN_VOID);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Each({check, close, caught, handler_check, handler_close,
+                         to_throw, suppressed, suppression, thrown}));
+}
+
 // D8 can put the close of the handler before the handler and jump there. The
 // close of the handler isn't the one of the block, which comes before it.
 TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseOfHandlerForCloseOfBlock) {
