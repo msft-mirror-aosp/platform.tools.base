@@ -20,6 +20,7 @@ import com.android.ide.common.rendering.HardwareConfigHelper
 import com.android.ide.common.rendering.api.Result
 import com.android.ide.common.rendering.api.SessionParams
 import com.android.resources.ResourceFolderType
+import com.android.sdklib.devices.Device
 import com.android.sdklib.devices.screenShape
 import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
@@ -495,8 +496,10 @@ class Renderer(
                   renderResult = renderResult,
                   viewInfos = viewInfos,
                   detectAnimations = configuration.detectAnimations,
-                  showSystemUi = renderRequest.showDecorations,
-                  expandToContent = renderRequest.expandToContent,
+                  // RenderTask forces no decor on Wear, so system UI is never drawn.
+                  showSystemUi = renderRequest.showDecorations && !Device.isWear(config.device),
+                  // On Wear with showDecorations = true, showSystemUi is false while the image is not cropped.
+                  expandToContent = !renderRequest.showDecorations && renderRequest.expandToContent,
                 )
             ) {
               relativeComponentTreePath

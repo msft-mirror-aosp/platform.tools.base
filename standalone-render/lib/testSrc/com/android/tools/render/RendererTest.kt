@@ -2047,6 +2047,52 @@ class RendererTest {
       assertThat(sysUiImg.width).isEqualTo(1080)
       assertThat(sysUiImg.height).isEqualTo(2400)
       assertThat(readComponentTree(outputDir, sysUiResult).showSystemUi).isTrue()
+
+      // 4. Wear never renders system UI (RenderTask forces no decor), even when opted in.
+      val wearResult =
+        renderer
+          .render(
+            xmlPreviewScreenshot(
+              fqn = "com.example.DecorPreviewKt.WearWithSystemUi",
+              xmlLayout = xmlLayout,
+              previewParams = mapOf("showSystemUi" to "true", "device" to "id:wearos_small_round"),
+            ),
+            outputDir.absolutePath,
+            RenderConfiguration(allowShowDecorations = true, includeComponentTree = true),
+          )
+          .single()
+      assertNull(wearResult.error)
+      assertThat(readComponentTree(outputDir, wearResult).showSystemUi).isFalse()
+
+      // 5. Wear with showDecorations = true and expandToContent = true keeps uncropped bounds (no double-offset).
+      val offsetXmlLayout =
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical" />
+        """
+          .trimIndent()
+      val wearExpandedResult =
+        renderer
+          .render(
+            xmlPreviewScreenshot(
+              fqn = "com.example.DecorPreviewKt.WearExpandedWithSystemUi",
+              xmlLayout = offsetXmlLayout,
+              previewParams = mapOf("showSystemUi" to "true", "device" to "id:wearos_small_round"),
+              expandToContent = true,
+            ),
+            outputDir.absolutePath,
+            RenderConfiguration(allowShowDecorations = true, includeComponentTree = true),
+          )
+          .single()
+      assertNull(wearExpandedResult.error)
+      val wearExpandedTree = readComponentTree(outputDir, wearExpandedResult)
+      assertThat(wearExpandedTree.showSystemUi).isFalse()
+      assertThat(wearExpandedTree.components.single().bounds.left).isGreaterThan(0)
     }
   }
 
@@ -2114,6 +2160,7 @@ class RendererTest {
     previewId: String = "${fqn}_screenshot",
     displayName: String? = null,
     previewParams: Map<String, String> = emptyMap(),
+    expandToContent: Boolean = false,
   ): PreviewScreenshot =
     object : PreviewScreenshot {
       override val methodFQN = fqn
@@ -2124,6 +2171,8 @@ class RendererTest {
       override fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement {
         val delegate = ComposeScreenshot(methodFQN, emptyList(), previewParams, previewId).toPreviewElement(module)
         return object : ScreenshotPreviewElement, ConfigurablePreviewElement<Unit> by delegate {
+          override val expandToContent: Boolean = expandToContent
+
           override fun resolveXmlLayouts(): Sequence<String> = sequenceOf(xmlLayout)
 
           override fun resolveLayouts(): Sequence<ResolvedScreenshotLayout> =
