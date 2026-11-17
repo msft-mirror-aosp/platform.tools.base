@@ -57,9 +57,21 @@ namespace coverage {
  * can't throw and D8 removes the handler. The close, the suppression and the
  * throws of the handler must share a line, the line of the try statement: D8
  * lays out the same code written by hand in the same order, and only the lines
- * tell them apart, so code without line numbers isn't told apart. Older javac
- * versions generate other code, which isn't filtered. Kotlin has no
- * try-with-resources statement, so the filter only runs on other classes.
+ * tell them apart, so code without line numbers isn't told apart.
+ *
+ * javac 7 to 10 first catch Throwable in a handler that only throws the
+ * exception again, to a handler of any exception like the one above, on the
+ * line of the end of the block, which adds the exception of the close to the
+ * first one:
+ *   :primary
+ *     move-exception vF
+ *     throw vF  (its try block goes to :handler)
+ * javac 9 and 10 can instead close the resource through a static method that
+ * they generate, $closeResource(Throwable, AutoCloseable), which takes the
+ * first exception, or null when the block ends, and has no handler around it.
+ *
+ * Kotlin has no try-with-resources statement, so the filter only runs on other
+ * classes.
  */
 class TryWithResourcesFilter : public IFilter {
  public:

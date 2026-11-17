@@ -40,6 +40,10 @@ constexpr char kThrowable[] = "Ljava/lang/Throwable;";
 constexpr char kOneThrowable[] = "(Ljava/lang/Throwable;)V";
 constexpr char kTwoThrowables[] =
     "(Ljava/lang/Throwable;Ljava/lang/Throwable;)V";
+// The static method with which javac 9 and 10 can close a resource.
+constexpr char kCloseResource[] = "$closeResource";
+constexpr char kCloseResourceSignature[] =
+    "(Ljava/lang/Throwable;Ljava/lang/AutoCloseable;)V";
 
 // What a register holds in a handler: the value that a register had before
 // the handler (that register, 0 or more), or one of these. None of them is -1,
@@ -47,6 +51,9 @@ constexpr char kTwoThrowables[] =
 constexpr int kCaught = -2;      // The exception that the handler caught.
 constexpr int kSuppressed = -3;  // The exception that the close threw.
 constexpr int kOtherValue = -4;  // Anything else.
+// javac 7 to 10: the exception that the catch of Throwable caught and threw
+// again, to the handler that closes the resource.
+constexpr int kPrimary = -5;
 
 // Returns the first bytecode at or after `instr`, skipping labels, debug
 // annotations and other non-bytecode nodes, or nullptr.
@@ -217,6 +224,38 @@ const ir::MethodDecl* CloseOf(const lir::Bytecode* bytecode, int* reg) {
   return method;
 }
 
+// If `bytecode` closes a resource through $closeResource, returns that method
+// and sets `reg` to the register of the resource and `primary` to the register
+// of the exception that it passes.
+const ir::MethodDecl* CloseResourceOf(const lir::Bytecode* bytecode, int* reg,
+                                      int* primary) {
+  if (bytecode->opcode != dex::OP_INVOKE_STATIC &&
+      bytecode->opcode != dex::OP_INVOKE_STATIC_RANGE) {
+    return nullptr;
+  }
+  const ir::MethodDecl* method = Callee(bytecode);
+  const std::vector<int> arguments = Arguments(bytecode);
+  if (method == nullptr || arguments.size() != 2 ||
+      !HasNameAndSignature(method, kCloseResource, kCloseResourceSignature)) {
+    return nullptr;
+  }
+  *primary = arguments[0];
+  *reg = arguments[1];
+  return method;
+}
+
+// Returns true if `bytecode` loads 0, null, into register `reg`.
+bool LoadsZero(const lir::Bytecode* bytecode, int reg) {
+  if ((bytecode->opcode != dex::OP_CONST_4 &&
+       bytecode->opcode != dex::OP_CONST_16 &&
+       bytecode->opcode != dex::OP_CONST) ||
+      Register(bytecode, 0) != reg || bytecode->operands.size() < 2) {
+    return false;
+  }
+  auto* literal = dynamic_cast<const lir::Const32*>(bytecode->operands[1]);
+  return literal != nullptr && literal->u.u4_value == 0;
+}
+
 // Returns true if `a` and `b` are the same method.
 bool SameMethod(const ir::MethodDecl* a, const ir::MethodDecl* b) {
   return strcmp(a->parent->descriptor->c_str(),
@@ -301,14 +340,15 @@ bool ThrowsCaught(const lir::Bytecode* bytecode, const Values& values) {
          values.Of(Register(bytecode, 0)) == kCaught;
 }
 
-// Returns true if `bytecode` adds the exception of the close to the caught
-// exception as a suppressed one, by calling addSuppressed() or, below API 19,
-// the static backport of D8.
-bool Suppresses(const lir::Bytecode* bytecode, const Values& values) {
+// Returns true if `bytecode` adds the exception of the close to `primary`, the
+// value of the exception to keep, as a suppressed one, by calling
+// addSuppressed() or, below API 19, the static backport of D8.
+bool Suppresses(const lir::Bytecode* bytecode, const Values& values,
+                int primary) {
   const ir::MethodDecl* method = Callee(bytecode);
   const std::vector<int> arguments = Arguments(bytecode);
   if (method == nullptr || arguments.size() != 2 ||
-      values.Of(arguments[0]) != kCaught ||
+      values.Of(arguments[0]) != primary ||
       values.Of(arguments[1]) != kSuppressed) {
     return false;
   }
@@ -351,12 +391,15 @@ struct Handler {
   const ir::MethodDecl* close = nullptr;
   // Whether it checks the resource for null.
   bool checks_null = false;
+  // Whether it closes the resource through $closeResource.
+  bool close_resource = false;
 };
 
 // Matches the handler of the close in a handler, at `label`: it catches the
-// exception of the close, adds it to the caught one and throws that one.
-// `values` are those at the close. Sets the call and the throw.
-bool MatchSuppression(lir::Label* label, Values values,
+// exception of the close, adds it to the exception with the value `primary`
+// and throws the caught one. `values` are those at the close. Sets the call
+// and the throw.
+bool MatchSuppression(lir::Label* label, Values values, int primary,
                       std::vector<lir::Bytecode*>* code, lir::Bytecode** call,
                       lir::Bytecode** rethrown) {
   lir::Bytecode* suppressed = SkipNonBytecodes(label);
@@ -367,25 +410,28 @@ bool MatchSuppression(lir::Label* label, Values values,
   values.Set(Register(suppressed, 0), kSuppressed);
   Path path(std::move(values), code);
   *call = path.After(suppressed);
-  if (*call == nullptr || !Suppresses(*call, path.values())) {
+  if (*call == nullptr || !Suppresses(*call, path.values(), primary)) {
     return false;
   }
   *rethrown = path.After(*call);
   return ThrowsCaught(*rethrown, path.values());
 }
 
-// Matches the handler of a try-with-resources statement at `label`. Returns
-// false if it isn't one.
-bool MatchHandler(lir::Label* label, const MethodInfo& info, Handler* handler) {
+// Matches the handler of a try-with-resources statement at `label`, which
+// closes the resource. It adds the exception of the close to the exception
+// with the value `primary`: the exception that it caught or, for javac 7 to
+// 10, the one that the catch of Throwable caught. `entry` are the values when
+// it starts. Returns false if it isn't one.
+bool MatchHandler(lir::Label* label, const MethodInfo& info, Values entry,
+                  int primary, Handler* handler) {
   lir::Bytecode* caught = SkipNonBytecodes(label);
   if (caught == nullptr || caught->opcode != dex::OP_MOVE_EXCEPTION) {
     return false;
   }
   std::vector<lir::Bytecode*>& code = handler->code;
   code.push_back(caught);
-  Values values;
-  values.Set(Register(caught, 0), kCaught);
-  Path main(std::move(values), &code);
+  entry.Set(Register(caught, 0), kCaught);
+  Path main(std::move(entry), &code);
   lir::Bytecode* close = main.After(caught);
   // The check for null, with the values at that point.
   lir::Bytecode* check = nullptr;
@@ -395,8 +441,19 @@ bool MatchHandler(lir::Label* label, const MethodInfo& info, Handler* handler) {
     at_check = main.values();
     close = main.After(check);
   }
+  if (close == nullptr) {
+    return false;
+  }
   int closed = -1;
-  handler->close = close == nullptr ? nullptr : CloseOf(close, &closed);
+  int passed = -1;
+  // javac 9 and 10 can close the resource through $closeResource, which adds
+  // the exception of the close to the primary one itself, the one that the
+  // first handler caught.
+  handler->close = CloseResourceOf(close, &closed, &passed);
+  handler->close_resource = handler->close != nullptr;
+  if (!handler->close_resource) {
+    handler->close = CloseOf(close, &closed);
+  }
   if (handler->close == nullptr) {
     return false;
   }
@@ -406,8 +463,11 @@ bool MatchHandler(lir::Label* label, const MethodInfo& info, Handler* handler) {
       at_check.Of(Register(check, 0)) != handler->resource) {
     return false;
   }
+  if (handler->close_resource && main.values().Of(passed) != kPrimary) {
+    return false;
+  }
   auto inner = info.handlers.find(close);
-  if (inner == info.handlers.end()) {
+  if (!handler->close_resource && inner == info.handlers.end()) {
     return false;
   }
   const Values at_close = main.values();
@@ -417,7 +477,9 @@ bool MatchHandler(lir::Label* label, const MethodInfo& info, Handler* handler) {
   }
   lir::Bytecode* call = nullptr;
   lir::Bytecode* rethrown = nullptr;
-  if (!MatchSuppression(inner->second, at_close, &code, &call, &rethrown)) {
+  if (!handler->close_resource &&
+      !MatchSuppression(inner->second, at_close, primary, &code, &call,
+                        &rethrown)) {
     return false;
   }
   // A null resource goes straight to a throw of the caught exception.
@@ -429,14 +491,43 @@ bool MatchHandler(lir::Label* label, const MethodInfo& info, Handler* handler) {
       return false;
     }
   }
-  // javac gives the whole handler the line of the try statement. These
-  // bytecodes can throw, so D8 keeps their lines in release mode too.
+  // javac gives the whole handler the line of the try statement, or javac 7 to
+  // 10 the line of the end of its block. These bytecodes can throw, so D8
+  // keeps their lines in release mode too.
   for (const lir::Bytecode* other : {call, thrown, rethrown, skipped}) {
     if (other != nullptr && LineOf(info, other) != LineOf(info, close)) {
       return false;
     }
   }
   return true;
+}
+
+// Matches the first handler of a try-with-resources statement of javac 7 to
+// 10, at `label`: it catches Throwable and throws the exception again, to the
+// handler that closes the resource, keeping it as the primary exception.
+// Returns the label of that handler, or nullptr, adds the bytecodes to `code`
+// and sets `values` to the values at the throw.
+lir::Label* MatchPrimary(lir::Label* label, const MethodInfo& info,
+                         std::vector<lir::Bytecode*>* code, Values* values) {
+  lir::Bytecode* caught = SkipNonBytecodes(label);
+  if (caught == nullptr || caught->opcode != dex::OP_MOVE_EXCEPTION) {
+    return nullptr;
+  }
+  code->push_back(caught);
+  Values entry;
+  entry.Set(Register(caught, 0), kPrimary);
+  Path path(std::move(entry), code);
+  lir::Bytecode* thrown = path.After(caught);
+  if (thrown == nullptr || thrown->opcode != dex::OP_THROW ||
+      path.values().Of(Register(thrown, 0)) != kPrimary) {
+    return nullptr;
+  }
+  auto next = info.handlers.find(thrown);
+  if (next == info.handlers.end()) {
+    return nullptr;
+  }
+  *values = path.values();
+  return next->second;
 }
 
 // Returns the bytecode before `instr`, or nullptr.
@@ -478,13 +569,15 @@ void UpdateCopies(const lir::Bytecode* bytecode,
 
 // Finds the close of the resource of `handler` when the block of its statement
 // ends, and adds its bytecodes to `code`: the check for null if the handler has
-// one, the close, and a goto right after it. The close comes after the first
-// bytecode of the block, outside the block, and before the handler and the
-// next writes of the registers that hold the resource, outside the handler: D8
-// puts the handlers after all the code that follows the statement, it can copy
-// the resource to another register before the close, and once the statement
-// ends, it can reuse those registers. The last of these closes counts. Returns
-// false if there is none.
+// one, the close, and a goto right after it. A close through $closeResource
+// passes null as the primary exception, which D8 loads on the same line before
+// the check or the call; that load is added too. The close comes after the
+// first bytecode of the block, outside the block, and before the handler and
+// the next writes of the registers that hold the resource, outside the handler:
+// D8 puts the handlers after all the code that follows the statement, it can
+// copy the resource to another register before the close, and once the
+// statement ends, it can reuse those registers. The last of these closes
+// counts. Returns false if there is none.
 bool MatchClose(lir::Label* label, const Handler& handler,
                 const MethodInfo& info, std::vector<lir::Bytecode*>* code) {
   auto first = info.first_protected.find(label);
@@ -504,12 +597,19 @@ bool MatchClose(lir::Label* label, const Handler& handler,
       continue;
     }
     int closed = -1;
-    const ir::MethodDecl* method = CloseOf(bytecode, &closed);
+    int passed = -1;
+    const ir::MethodDecl* method =
+        handler.close_resource ? CloseResourceOf(bytecode, &closed, &passed)
+                               : CloseOf(bytecode, &closed);
     // A close in the block, which the handler protects, doesn't count.
     if (method != nullptr && copies.count(closed) > 0 &&
         SameMethod(method, handler.close) &&
         !ProtectedBy(info, bytecode, label)) {
       lir::Bytecode* previous = PreviousBytecode(bytecode);
+      if (handler.close_resource && previous != nullptr &&
+          LoadsZero(previous, passed)) {
+        previous = PreviousBytecode(previous);
+      }
       if (!handler.checks_null) {
         check = nullptr;
         close = bytecode;
@@ -531,6 +631,19 @@ bool MatchClose(lir::Label* label, const Handler& handler,
     code->push_back(check);
   }
   code->push_back(close);
+  if (handler.close_resource) {
+    const int passed = Arguments(close)[0];
+    for (lir::Bytecode* previous = PreviousBytecode(close);
+         previous != nullptr && LineOf(info, previous) == LineOf(info, close);
+         previous = PreviousBytecode(previous)) {
+      if (Writes(previous, passed)) {
+        if (LoadsZero(previous, passed)) {
+          code->push_back(previous);
+        }
+        break;
+      }
+    }
+  }
   lir::Bytecode* next = NextBytecode(close);
   if (next != nullptr && IsGoto(next->opcode)) {
     code->push_back(next);
@@ -606,9 +719,20 @@ void TryWithResourcesFilter::Filter(const FilterContext& context,
   }
   for (lir::Label* label : labels) {
     Handler handler;
+    // javac 7 to 10 first catch Throwable and throw it again, to the handler
+    // that closes the resource.
+    std::vector<lir::Bytecode*> primary;
+    if (!MatchHandler(label, info, Values(), kCaught, &handler)) {
+      handler = Handler();
+      Values values;
+      lir::Label* next = MatchPrimary(label, info, &primary, &values);
+      if (next == nullptr ||
+          !MatchHandler(next, info, std::move(values), kPrimary, &handler)) {
+        continue;
+      }
+    }
     std::vector<lir::Bytecode*> close;
-    if (!MatchHandler(label, info, &handler) ||
-        !MatchClose(label, handler, info, &close)) {
+    if (!MatchClose(label, handler, info, &close)) {
       continue;
     }
     // Each bytecode is ignored on its own, in code order, since D8 can lay out
@@ -616,6 +740,7 @@ void TryWithResourcesFilter::Filter(const FilterContext& context,
     std::unordered_set<const lir::Bytecode*> ignored(close.begin(),
                                                      close.end());
     ignored.insert(handler.code.begin(), handler.code.end());
+    ignored.insert(primary.begin(), primary.end());
     for (auto* instr : code_ir.instructions) {
       auto* bytecode = dynamic_cast<lir::Bytecode*>(instr);
       if (bytecode != nullptr && ignored.count(bytecode) > 0) {
