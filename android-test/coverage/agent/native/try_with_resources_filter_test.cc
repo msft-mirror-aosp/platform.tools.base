@@ -2447,5 +2447,878 @@ TEST_F(TryWithResourcesFilterOldJavacTest, ShouldNotFilterOtherShapes) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// ECJ.
+
+// The code of a try-with-resources statement of ECJ, as D8 lays it out, and
+// what to change in it.
+struct EcjShape {
+  // Whether the resource can be null: it comes from a call instead of new.
+  bool checks_null = true;
+  // Whether D8 creates the resource in v5 and moves it to v1 after the try
+  // block of the creation.
+  bool moved_after_creation = false;
+  // How D8 lays out the suppression: as ECJ does, with the branches of the
+  // check of the exception to throw for null swapped, or with an entry of its
+  // own for the creation of the resource and its close when the block ends.
+  // That layout throws the exception of the close from its own register when
+  // there is no exception to throw.
+  enum class Layout { kEcj, kSwapped, kSplit };
+  Layout layout = Layout::kEcj;
+  // Whether the other entry of the kSplit layout moves the null exception to
+  // throw from another register, rather than loading it, and the value that
+  // it loads.
+  bool other_entry_moves = false;
+  dex::u4 other_entry_value = 0;
+  // Whether D8 swaps the branches of the check that the exception of the
+  // close isn't the exception to throw.
+  bool swaps_same = false;
+  // The register that the handler checks for null, whether that check skips to
+  // the return of the block instead of the throw, the register that the
+  // handler throws, and the line of that throw.
+  dex::u4 handler_checked = 1;
+  bool check_skips_to_return = false;
+  dex::u4 thrown = 0;
+  int throw_line = 22;
+  // The line of a throw of its own for a null resource in the handler, if not
+  // 0, the register that it throws, and the line of the throw after the
+  // suppression.
+  int null_throw_line = 0;
+  dex::u4 null_thrown = 0;
+  int final_throw_line = 22;
+  // Whether the close of the handler has a try block that goes to the
+  // suppression.
+  bool close_in_try_block = true;
+  // The register that the suppression checks for null, the registers that it
+  // compares, those that it passes to the method that it calls and its name,
+  // and the line of that call.
+  dex::u4 tested = 0;
+  std::vector<dex::u4> compared = {0, 1};
+  std::vector<dex::u4> suppression_arguments = {0, 1};
+  const char* suppression_name = "addSuppressed";
+  int suppression_line = 22;
+  // Whether the suppression calls the static backport of addSuppressed that
+  // D8 generates below API 19 instead.
+  bool backport = false;
+  // Whether a value becomes the exception to throw when there is none, which
+  // register, and whether that path throws it on its own.
+  bool replaces = true;
+  dex::u4 replacement = 1;
+  bool replacement_throws = false;
+  // Whether the code after the suppression closes a value again, in a try
+  // block that goes to the same suppression.
+  bool closes_again = false;
+  // Whether the block closes the resource when it ends.
+  bool block_closes = true;
+};
+
+// The bytecodes of a statement of ECJ that the filter ignores: those of the
+// block, and the first one of the handler, which all the next ones follow,
+// including the other entry into the suppression of the kSplit layout.
+struct EcjStatement {
+  lir::Instruction* check = nullptr;
+  lir::Instruction* close = nullptr;
+  lir::Instruction* caught = nullptr;
+};
+
+class TryWithResourcesFilterEcjTest : public TryWithResourcesFilterTest {
+ protected:
+  // Returns one range for each of `instrs` that isn't null, and one for each
+  // bytecode of `m` from `first` on and before `end`, in this order.
+  static std::vector<Range> EachAndFrom(
+      const TestMethod& m, std::initializer_list<lir::Instruction*> instrs,
+      lir::Instruction* first, lir::Instruction* end = nullptr) {
+    std::vector<Range> ranges = Each(instrs);
+    bool from = false;
+    for (lir::Instruction* instr : m.code_ir().instructions) {
+      if (instr == end) {
+        break;
+      }
+      from = from || instr == first;
+      if (from && dynamic_cast<lir::Bytecode*>(instr) != nullptr) {
+        ranges.push_back(Range{instr, instr});
+      }
+    }
+    return ranges;
+  }
+
+  static std::vector<Range> Ignored(const TestMethod& m,
+                                    const EcjStatement& s) {
+    return EachAndFrom(m, {s.check, s.close}, s.caught);
+  }
+
+  // Adds the call of the suppression of `shape`.
+  static void AddSuppressionCall(TestMethod& m, const EcjShape& shape) {
+    if (shape.backport) {
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs(shape.suppression_arguments),
+             m.MethodRef("LFoo$0;", "m",
+                         "(Ljava/lang/Throwable;Ljava/lang/Throwable;)V")});
+    } else {
+      m.Add(dex::OP_INVOKE_VIRTUAL,
+            {m.Regs(shape.suppression_arguments),
+             m.MethodRef(kThrowable, shape.suppression_name,
+                         "(Ljava/lang/Throwable;)V")});
+    }
+  }
+
+  // Adds the code of a suppression of `shape` at `suppress`, with the
+  // exception to throw in v0 and the exception of the close in v1, for the
+  // kEcj and kSwapped layouts, and goes on at `next`.
+  static void AddSuppression(TestMethod& m, const EcjShape& shape,
+                             lir::Label* next) {
+    lir::Label* replace = m.NewLabel();
+    lir::Label* same = m.NewLabel();
+    auto add_suppression = [&]() {
+      m.AddLine(shape.suppression_line);
+      AddSuppressionCall(m, shape);
+      m.AddLine(22);
+    };
+    auto add_same = [&](lir::Label* if_same) {
+      if (shape.swaps_same) {
+        lir::Label* add = m.NewLabel();
+        m.Add(dex::OP_IF_NE, {m.Reg(shape.compared[0]),
+                              m.Reg(shape.compared[1]), m.Target(add)});
+        m.Add(dex::OP_GOTO, {m.Target(if_same)});
+        m.Place(add);
+      } else {
+        m.Add(dex::OP_IF_EQ, {m.Reg(shape.compared[0]),
+                              m.Reg(shape.compared[1]), m.Target(if_same)});
+      }
+      add_suppression();
+    };
+    // The path without an exception to throw comes last in the kEcj layout,
+    // right before `next`.
+    auto add_replacement = [&]() {
+      m.Add(dex::OP_MOVE_OBJECT, {m.Reg(0), m.Reg(shape.replacement)});
+      if (shape.replacement_throws) {
+        m.Add(dex::OP_THROW, {m.Reg(0)});
+      } else if (shape.layout == EcjShape::Layout::kSwapped) {
+        m.Add(dex::OP_GOTO, {m.Target(next)});
+      }
+    };
+    m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+    if (shape.layout == EcjShape::Layout::kSwapped) {
+      m.Add(dex::OP_IF_NEZ, {m.Reg(shape.tested), m.Target(same)});
+      add_replacement();
+      m.Place(same);
+      add_same(next);
+    } else {
+      m.Add(dex::OP_IF_EQZ,
+            {m.Reg(shape.tested), m.Target(shape.replaces ? replace : next)});
+      add_same(next);
+      m.Add(dex::OP_GOTO, {m.Target(next)});
+      if (shape.replaces) {
+        m.Place(replace);
+        add_replacement();
+      }
+    }
+  }
+
+  // Appends the code of `int read(String path)` with `try (InputStream in =
+  // open(path)) { return in.read(); }` as ECJ compiles it and D8 lays it out,
+  // changed as `shape` says. The exception to throw is in v0, the resource in
+  // v1, the result in v2, and the exception of the close in v1:
+  //     const/4 v0, 0  (line 20)
+  //     invoke-static {v4}, LFoo;->open(...)Ljava/io/InputStream;  (in a try
+  //         block that goes to :suppress)
+  //     move-result-object v1
+  //     invoke-virtual {v1}, Ljava/io/InputStream;->read()I  (line 21, in a
+  //         try block that goes to :handler)
+  //     move-result v2
+  //     if-eqz v1, :after  (line 22, the end of the block)
+  //     invoke-virtual {v1}, Ljava/io/InputStream;->close()V  (in a try
+  //         block that goes to :suppress)
+  //   :after
+  //     return v2  (line 21)
+  //   :handler
+  //     move-exception v0  (line 22)
+  //     if-eqz v1, :throw
+  //     invoke-virtual {v1}, Ljava/io/InputStream;->close()V  (in a try
+  //         block that goes to :suppress, with the throw)
+  //   :throw
+  //     throw v0
+  //   :suppress
+  //     move-exception v1
+  //     if-eqz v0, :replace
+  //     if-eq v0, v1, :next
+  //     invoke-virtual {v0, v1},
+  //         Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V
+  //     goto :next
+  //   :replace
+  //     move-object v0, v1
+  //   :next
+  //     throw v0
+  // With the kSplit layout, the creation and the close of the block go to
+  // :other instead, and the suppression continues with:
+  //     goto :test
+  //   :other
+  //     move-exception v1
+  //     const/4 v0, 0  (or move-object v0, v3)
+  //   :test
+  //     if-eqz v0, :next
+  //     if-eq v0, v1, :keep
+  //     invoke-virtual {v0, v1}, ...->addSuppressed(...)V
+  //   :keep
+  //     move-object v1, v0
+  //   :next
+  //     throw v1
+  static EcjStatement AddEcjStatement(TestMethod& m, const EcjShape& shape) {
+    EcjStatement s;
+    lir::Label* after = m.NewLabel();
+    lir::Label* handler = m.NewLabel();
+    lir::Label* rethrow = m.NewLabel();
+    lir::Label* suppress = m.NewLabel();
+    lir::Label* next = m.NewLabel();
+    lir::Label* null_throw =
+        shape.null_throw_line != 0 ? m.NewLabel() : rethrow;
+    const bool split = shape.layout == EcjShape::Layout::kSplit;
+    lir::Label* other = split ? m.NewLabel() : suppress;
+    auto close = [&]() {
+      return m.Add(dex::OP_INVOKE_VIRTUAL,
+                   {m.Regs({1}), m.MethodRef(kInputStream, "close", "()V")});
+    };
+    m.AddLine(20);
+    m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+    const dex::u4 created = shape.moved_after_creation ? 5 : 1;
+    lir::TryBlockBegin* creation = m.AddTryBlockBegin();
+    if (shape.checks_null) {
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs({4}), m.MethodRef(kTestClassName, "open", kOpen)});
+      m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(created)});
+    } else {
+      m.Add(dex::OP_NEW_INSTANCE,
+            {m.Reg(created), m.TypeRef("Ljava/io/FileInputStream;")});
+      m.Add(dex::OP_INVOKE_DIRECT,
+            {m.Regs({created, 4}),
+             m.MethodRef("Ljava/io/FileInputStream;", "<init>",
+                         "(Ljava/lang/String;)V")});
+    }
+    m.AddTryBlockEnd(creation, other);
+    if (shape.moved_after_creation) {
+      m.Add(dex::OP_MOVE_OBJECT, {m.Reg(1), m.Reg(created)});
+    }
+    lir::TryBlockBegin* block = m.AddTryBlockBegin();
+    m.AddLine(21);
+    m.Add(dex::OP_INVOKE_VIRTUAL,
+          {m.Regs({1}), m.MethodRef(kInputStream, "read", "()I")});
+    m.Add(dex::OP_MOVE_RESULT, {m.Reg(2)});
+    m.AddTryBlockEnd(block, handler);
+    m.AddLine(22);
+    if (shape.block_closes) {
+      if (shape.checks_null) {
+        s.check = m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(after)});
+      }
+      lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+      s.close = close();
+      m.AddTryBlockEnd(closing, other);
+    }
+    m.Place(after);
+    m.AddLine(21);
+    m.Add(dex::OP_RETURN, {m.Reg(2)});
+    m.Place(handler);
+    m.AddLine(22);
+    s.caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+    if (shape.checks_null) {
+      m.Add(dex::OP_IF_EQZ,
+            {m.Reg(shape.handler_checked),
+             m.Target(shape.check_skips_to_return ? after : null_throw)});
+    }
+    lir::TryBlockBegin* closing =
+        shape.close_in_try_block ? m.AddTryBlockBegin() : nullptr;
+    close();
+    m.Place(rethrow);
+    m.AddLine(shape.throw_line);
+    m.Add(dex::OP_THROW, {m.Reg(shape.thrown)});
+    if (closing != nullptr) {
+      m.AddTryBlockEnd(closing, suppress);
+    }
+    m.AddLine(22);
+    m.Place(suppress);
+    if (!split) {
+      AddSuppression(m, shape, next);
+      m.Place(next);
+      if (shape.closes_again) {
+        lir::TryBlockBegin* again = m.AddTryBlockBegin();
+        close();
+        m.AddTryBlockEnd(again, suppress);
+      }
+      m.AddLine(shape.final_throw_line);
+      m.Add(dex::OP_THROW, {m.Reg(0)});
+      if (shape.null_throw_line != 0) {
+        m.Place(null_throw);
+        m.AddLine(shape.null_throw_line);
+        m.Add(dex::OP_THROW, {m.Reg(shape.null_thrown)});
+      }
+      return s;
+    }
+    lir::Label* test = m.NewLabel();
+    lir::Label* keep = m.NewLabel();
+    m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+    m.Add(dex::OP_GOTO, {m.Target(test)});
+    m.Place(other);
+    m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+    if (shape.other_entry_moves) {
+      m.Add(dex::OP_MOVE_OBJECT, {m.Reg(0), m.Reg(3)});
+    } else {
+      m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(shape.other_entry_value)});
+    }
+    m.Place(test);
+    m.Add(dex::OP_IF_EQZ, {m.Reg(shape.tested), m.Target(next)});
+    m.Add(dex::OP_IF_EQ,
+          {m.Reg(shape.compared[0]), m.Reg(shape.compared[1]), m.Target(keep)});
+    m.AddLine(shape.suppression_line);
+    AddSuppressionCall(m, shape);
+    m.AddLine(22);
+    m.Place(keep);
+    m.Add(dex::OP_MOVE_OBJECT, {m.Reg(1), m.Reg(0)});
+    m.Place(next);
+    m.AddLine(shape.final_throw_line);
+    m.Add(dex::OP_THROW, {m.Reg(1)});
+    return s;
+  }
+
+  // The bytecodes of AddTwoResources() that the filter ignores: those of the
+  // block, and the first one of the handler, which all the next ones follow.
+  struct TwoResources {
+    lir::Instruction* check_b = nullptr;
+    lir::Instruction* close_b = nullptr;
+    lir::Instruction* check_a = nullptr;
+    lir::Instruction* close_a = nullptr;
+    lir::Instruction* caught = nullptr;
+  };
+
+  // Appends the code of `void use()` with `try (Closeable a = open(); Closeable
+  // b = open()) { use(a, b); }` as ECJ compiles it and D8 lays it out, with
+  // the branches of the first suppression swapped. The exception to throw is
+  // in v0, a in v1 and b in v2. If `moves`, the handler moves a to v3 before
+  // the close of b. The suppression of a adds v<suppressed_a>.
+  static TwoResources AddTwoResources(TestMethod& m, bool moves,
+                                      dex::u4 suppressed_a) {
+    TwoResources s;
+    lir::Label* after_b = m.NewLabel();
+    lir::Label* after_a = m.NewLabel();
+    lir::Label* handler = m.NewLabel();
+    lir::Label* throw_b = m.NewLabel();
+    lir::Label* suppress_b = m.NewLabel();
+    lir::Label* same_b = m.NewLabel();
+    lir::Label* next_b = m.NewLabel();
+    lir::Label* throw_a = m.NewLabel();
+    lir::Label* suppress_a = m.NewLabel();
+    lir::Label* replace_a = m.NewLabel();
+    lir::Label* next_a = m.NewLabel();
+    auto close = [&](dex::u4 reg) {
+      return m.Add(dex::OP_INVOKE_INTERFACE,
+                   {m.Regs({reg}), m.MethodRef(kCloseable, "close", "()V")});
+    };
+    auto suppression = [&](dex::u4 suppressed) {
+      m.Add(dex::OP_INVOKE_VIRTUAL,
+            {m.Regs({0, suppressed}), m.MethodRef(kThrowable, "addSuppressed",
+                                                  "(Ljava/lang/Throwable;)V")});
+    };
+    m.AddLine(20);
+    m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+    lir::TryBlockBegin* creation_a = m.AddTryBlockBegin();
+    m.Add(dex::OP_INVOKE_STATIC,
+          {m.Regs({}),
+           m.MethodRef(kTestClassName, "open", "()Ljava/io/Closeable;")});
+    m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(1)});
+    m.AddTryBlockEnd(creation_a, suppress_a);
+    m.AddLine(21);
+    lir::TryBlockBegin* creation_b = m.AddTryBlockBegin();
+    m.Add(dex::OP_INVOKE_STATIC,
+          {m.Regs({}),
+           m.MethodRef(kTestClassName, "open", "()Ljava/io/Closeable;")});
+    m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(2)});
+    m.AddTryBlockEnd(creation_b, suppress_b);
+    lir::TryBlockBegin* block = m.AddTryBlockBegin();
+    m.AddLine(22);
+    m.Add(dex::OP_INVOKE_STATIC,
+          {m.Regs({1, 2}),
+           m.MethodRef(kTestClassName, "use",
+                       "(Ljava/io/Closeable;Ljava/io/Closeable;)V")});
+    m.AddTryBlockEnd(block, handler);
+    m.AddLine(23);
+    s.check_b = m.Add(dex::OP_IF_EQZ, {m.Reg(2), m.Target(after_b)});
+    lir::TryBlockBegin* closing_b = m.AddTryBlockBegin();
+    s.close_b = close(2);
+    m.AddTryBlockEnd(closing_b, suppress_b);
+    m.Place(after_b);
+    s.check_a = m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(after_a)});
+    lir::TryBlockBegin* closing_a = m.AddTryBlockBegin();
+    s.close_a = close(1);
+    m.AddTryBlockEnd(closing_a, suppress_a);
+    m.Place(after_a);
+    m.AddLine(24);
+    m.Add(dex::OP_RETURN_VOID);
+    m.Place(handler);
+    m.AddLine(23);
+    s.caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+    const dex::u4 a = moves ? 3 : 1;
+    if (moves) {
+      m.Add(dex::OP_MOVE_OBJECT, {m.Reg(a), m.Reg(1)});
+    }
+    m.Add(dex::OP_IF_EQZ, {m.Reg(2), m.Target(throw_b)});
+    lir::TryBlockBegin* handler_b = m.AddTryBlockBegin();
+    close(2);
+    m.Place(throw_b);
+    m.Add(dex::OP_THROW, {m.Reg(0)});
+    m.AddTryBlockEnd(handler_b, suppress_b);
+    m.Place(suppress_b);
+    m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+    m.Add(dex::OP_IF_NEZ, {m.Reg(0), m.Target(same_b)});
+    m.Add(dex::OP_MOVE_OBJECT, {m.Reg(0), m.Reg(2)});
+    m.Add(dex::OP_GOTO, {m.Target(next_b)});
+    m.Place(same_b);
+    m.Add(dex::OP_IF_EQ, {m.Reg(0), m.Reg(2), m.Target(next_b)});
+    lir::TryBlockBegin* handler_a = m.AddTryBlockBegin();
+    suppression(2);
+    m.Place(next_b);
+    m.Add(dex::OP_IF_EQZ, {m.Reg(a), m.Target(throw_a)});
+    close(a);
+    m.Place(throw_a);
+    m.Add(dex::OP_THROW, {m.Reg(0)});
+    m.AddTryBlockEnd(handler_a, suppress_a);
+    m.Place(suppress_a);
+    m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+    m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(replace_a)});
+    m.Add(dex::OP_IF_EQ, {m.Reg(0), m.Reg(1), m.Target(next_a)});
+    suppression(suppressed_a);
+    m.Add(dex::OP_GOTO, {m.Target(next_a)});
+    m.Place(replace_a);
+    m.Add(dex::OP_MOVE_OBJECT, {m.Reg(0), m.Reg(1)});
+    m.Place(next_a);
+    m.Add(dex::OP_THROW, {m.Reg(0)});
+    return s;
+  }
+
+  // Runs the filter on a method with the statement of `shape` and expects it
+  // to ignore nothing.
+  void ExpectEcjNotFiltered(const EcjShape& shape) {
+    TestMethod m("read", "(Ljava/lang/String;)I");
+    AddEcjStatement(m, shape);
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    ExpectIgnored(m, {});
+  }
+};
+
+// try (InputStream in = open(path)) { return in.read(); } with ECJ: the
+// handler catches any exception, closes the resource in a try block that goes
+// to the suppression, and throws the exception. The suppression also protects
+// the creation of the resource and its close when the block ends.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterStatementOfEcj) {
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  EcjStatement s = AddEcjStatement(m, EcjShape());
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// try (InputStream in = new FileInputStream(path)) { ... }: D8 removes the
+// checks of the resource for null.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterResourceCreatedWithNew) {
+  EcjShape shape;
+  shape.checks_null = false;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  EcjStatement s = AddEcjStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterSwappedBranches) {
+  EcjShape shape;
+  shape.layout = EcjShape::Layout::kSwapped;
+  shape.swaps_same = true;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  EcjStatement s = AddEcjStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// D8 can move the resource to another register after the creation, so the
+// block, rather than the creation, starts the code that holds the resource.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterResourceMovedAfterCreation) {
+  EcjShape shape;
+  shape.moved_after_creation = true;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  EcjStatement s = AddEcjStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// D8 can give the handler a throw of its own for a null resource.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterThrowOfItsOwnForNull) {
+  EcjShape shape;
+  shape.null_throw_line = 22;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  EcjStatement s = AddEcjStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// D8 can give the creation of the resource and its close when the block ends
+// an entry of their own into the suppression, which loads null as the
+// exception to throw.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterOtherEntryOfSuppression) {
+  for (bool moves : {false, true}) {
+    SCOPED_TRACE(moves ? "null moved" : "null loaded");
+    output_ = Output();
+    EcjShape shape;
+    shape.layout = EcjShape::Layout::kSplit;
+    shape.other_entry_moves = moves;
+    TestMethod m("read", "(Ljava/lang/String;)I");
+    EcjStatement s = AddEcjStatement(m, shape);
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    ExpectIgnored(m, Ignored(m, s));
+  }
+}
+
+// try (Closeable a = open(); Closeable b = open()) { use(a, b); }: the
+// handler closes b, the last resource declared, and then a, each in a try
+// block that goes to its own suppression, and the block closes them in the
+// same order. D8 can also move a resource to another register in the handler,
+// before the suppression of an earlier one.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterTwoResources) {
+  for (bool moves : {false, true}) {
+    SCOPED_TRACE(moves ? "a moved in the handler" : "a in its register");
+    output_ = Output();
+    TestMethod m("use", "()V");
+    TwoResources s = AddTwoResources(m, moves, /*suppressed_a=*/1);
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    ExpectIgnored(
+        m,
+        EachAndFrom(m, {s.check_b, s.close_b, s.check_a, s.close_a}, s.caught));
+  }
+}
+
+// In the suppression of a, the exception of the close of b is just another
+// value.
+TEST_F(TryWithResourcesFilterEcjTest,
+       ShouldNotFilterSuppressionOfEarlierException) {
+  TestMethod m("use", "()V");
+  AddTwoResources(m, /*moves=*/false, /*suppressed_a=*/2);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, {});
+}
+
+// try (Closeable a = open()) { try (Closeable b = open()) { use(b); } }: the
+// handlers of the inner statement protect the start of the outer block, so
+// the close of a when the outer block ends comes after the creation of a. The
+// suppression of a, or another entry into it, protects that creation. A
+// resource that comes from a parameter has no creation there, and its close is
+// the first bytecode that its suppression protects. When many registers are in
+// use, D8 can create a in another register and move it to its own right after
+// the try block of the creation.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterNestedStatements) {
+  enum class Outer { kCreated, kWrapped, kParameter, kOtherEntry, kMoved };
+  for (Outer outer : {Outer::kCreated, Outer::kWrapped, Outer::kParameter,
+                      Outer::kOtherEntry, Outer::kMoved}) {
+    SCOPED_TRACE(static_cast<int>(outer));
+    output_ = Output();
+    TestMethod m("use", "()V");
+    lir::Label* after_b = m.NewLabel();
+    lir::Label* after_a = m.NewLabel();
+    lir::Label* handler_b = m.NewLabel();
+    lir::Label* throw_b = m.NewLabel();
+    lir::Label* suppress_b = m.NewLabel();
+    lir::Label* replace_b = m.NewLabel();
+    lir::Label* next_b = m.NewLabel();
+    lir::Label* handler_a = m.NewLabel();
+    lir::Label* throw_a = m.NewLabel();
+    lir::Label* suppress_a = m.NewLabel();
+    lir::Label* replace_a = m.NewLabel();
+    lir::Label* next_a = m.NewLabel();
+    lir::Label* other_a =
+        outer == Outer::kOtherEntry ? m.NewLabel() : suppress_a;
+    auto close = [&](dex::u4 reg) {
+      return m.Add(dex::OP_INVOKE_INTERFACE,
+                   {m.Regs({reg}), m.MethodRef(kCloseable, "close", "()V")});
+    };
+    // The creation of v<reg> in a try block that goes to `suppress`, which
+    // can pass it to wrap() and keep the result in the same register.
+    auto open = [&](dex::u4 reg, lir::Label* suppress, bool wraps) {
+      lir::TryBlockBegin* creation = m.AddTryBlockBegin();
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs({}),
+             m.MethodRef(kTestClassName, "open", "()Ljava/io/Closeable;")});
+      m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(reg)});
+      if (wraps) {
+        m.Add(dex::OP_INVOKE_STATIC,
+              {m.Regs({reg}),
+               m.MethodRef(kTestClassName, "wrap",
+                           "(Ljava/io/Closeable;)Ljava/io/Closeable;")});
+        m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(reg)});
+      }
+      m.AddTryBlockEnd(creation, suppress);
+    };
+    // The handler of the statement that closes v<reg> and throws to
+    // `suppress`, and the suppression at `suppress` with the exception of the
+    // close in v<reg>, whose code from the suppression on goes to `outer` if
+    // not null. `other`, if not `suppress`, is another entry into the
+    // suppression, which loads null as the exception to throw.
+    auto handler = [&](lir::Label* label, dex::u4 reg, lir::Label* rethrow,
+                       lir::Label* suppress, lir::Label* replace,
+                       lir::Label* next, lir::Label* outer, lir::Label* other) {
+      lir::Label* test = m.NewLabel();
+      m.Place(label);
+      lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+      m.Add(dex::OP_IF_EQZ, {m.Reg(reg), m.Target(rethrow)});
+      lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+      close(reg);
+      m.Place(rethrow);
+      m.Add(dex::OP_THROW, {m.Reg(0)});
+      m.AddTryBlockEnd(closing, suppress);
+      m.Place(suppress);
+      m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(reg)});
+      m.Place(test);
+      m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(replace)});
+      m.Add(dex::OP_IF_EQ, {m.Reg(0), m.Reg(reg), m.Target(next)});
+      lir::TryBlockBegin* rethrown =
+          outer != nullptr ? m.AddTryBlockBegin() : nullptr;
+      m.Add(dex::OP_INVOKE_VIRTUAL,
+            {m.Regs({0, reg}), m.MethodRef(kThrowable, "addSuppressed",
+                                           "(Ljava/lang/Throwable;)V")});
+      m.Add(dex::OP_GOTO, {m.Target(next)});
+      m.Place(replace);
+      m.Add(dex::OP_MOVE_OBJECT, {m.Reg(0), m.Reg(reg)});
+      m.Place(next);
+      m.Add(dex::OP_THROW, {m.Reg(0)});
+      if (rethrown != nullptr) {
+        m.AddTryBlockEnd(rethrown, outer);
+      }
+      if (other != suppress) {
+        m.Place(other);
+        m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(reg)});
+        m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+        m.Add(dex::OP_GOTO, {m.Target(test)});
+      }
+      return caught;
+    };
+    m.AddLine(20);
+    m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+    if (outer == Outer::kMoved) {
+      open(5, other_a, /*wraps=*/false);
+      m.Add(dex::OP_MOVE_OBJECT_FROM16, {m.Reg(1), m.Reg(5)});
+    } else if (outer != Outer::kParameter) {
+      open(1, other_a, /*wraps=*/outer == Outer::kWrapped);
+    }
+    m.AddLine(21);
+    open(2, suppress_b, /*wraps=*/false);
+    lir::TryBlockBegin* block = m.AddTryBlockBegin();
+    m.AddLine(22);
+    m.Add(dex::OP_INVOKE_STATIC,
+          {m.Regs({2}),
+           m.MethodRef(kTestClassName, "use", "(Ljava/io/Closeable;)V")});
+    m.AddTryBlockEnd(block, handler_b);
+    m.AddLine(23);
+    lir::Instruction* check_b =
+        m.Add(dex::OP_IF_EQZ, {m.Reg(2), m.Target(after_b)});
+    lir::TryBlockBegin* closing_b = m.AddTryBlockBegin();
+    lir::Instruction* close_b = close(2);
+    m.AddTryBlockEnd(closing_b, suppress_b);
+    m.Place(after_b);
+    m.AddLine(24);
+    lir::Instruction* check_a =
+        m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(after_a)});
+    lir::TryBlockBegin* closing_a = m.AddTryBlockBegin();
+    lir::Instruction* close_a = close(1);
+    m.AddTryBlockEnd(closing_a, other_a);
+    m.Place(after_a);
+    m.AddLine(25);
+    m.Add(dex::OP_RETURN_VOID);
+    m.AddLine(23);
+    lir::Instruction* caught =
+        handler(handler_b, 2, throw_b, suppress_b, replace_b, next_b, handler_a,
+                suppress_b);
+    m.AddLine(24);
+    lir::Instruction* caught_a = handler(handler_a, 1, throw_a, suppress_a,
+                                         replace_a, next_a, nullptr, other_a);
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    // The inner statement, then the outer one.
+    std::vector<Range> ignored =
+        EachAndFrom(m, {check_b, close_b}, caught, caught_a);
+    for (const Range& range : EachAndFrom(m, {check_a, close_a}, caught_a)) {
+      ignored.push_back(range);
+    }
+    ExpectIgnored(m, ignored);
+  }
+}
+
+// Below API 19, D8 calls a static backport of addSuppressed instead.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterBackportOfAddSuppressed) {
+  EcjShape shape;
+  shape.backport = true;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  EcjStatement s = AddEcjStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+TEST_F(TryWithResourcesFilterEcjTest, ShouldNotFilterOtherShapes) {
+  {
+    SCOPED_TRACE("handler throws another value");
+    EcjShape shape;
+    shape.thrown = 2;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("throw of the handler on another line");
+    output_ = Output();
+    EcjShape shape;
+    shape.throw_line = 30;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("close of the handler outside a try block");
+    output_ = Output();
+    EcjShape shape;
+    shape.close_in_try_block = false;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("suppression checks another value for null");
+    output_ = Output();
+    EcjShape shape;
+    shape.tested = 2;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("suppression compares other values");
+    output_ = Output();
+    EcjShape shape;
+    shape.compared = {0, 2};
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("suppression adds the exception to throw to the other one");
+    output_ = Output();
+    EcjShape shape;
+    shape.suppression_arguments = {1, 0};
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("suppression calls another method");
+    output_ = Output();
+    EcjShape shape;
+    shape.suppression_name = "initCause";
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("suppression on another line");
+    output_ = Output();
+    EcjShape shape;
+    shape.suppression_line = 30;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("other value replaces the exception to throw");
+    output_ = Output();
+    EcjShape shape;
+    shape.replacement = 2;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("paths of the suppression that don't meet");
+    output_ = Output();
+    EcjShape shape;
+    shape.replacement_throws = true;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("close of the block with a handler that is no entry");
+    output_ = Output();
+    EcjShape shape;
+    shape.layout = EcjShape::Layout::kSplit;
+    shape.other_entry_value = 1;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("block that doesn't close the resource");
+    output_ = Output();
+    EcjShape shape;
+    shape.block_closes = false;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("throw for a null resource on another line");
+    output_ = Output();
+    EcjShape shape;
+    shape.null_throw_line = 30;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("throw for a null resource of another value");
+    output_ = Output();
+    EcjShape shape;
+    shape.null_throw_line = 22;
+    shape.null_thrown = 2;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("handler without a check for null throws another value");
+    output_ = Output();
+    EcjShape shape;
+    shape.checks_null = false;
+    shape.thrown = 2;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("throw after the suppression on another line");
+    output_ = Output();
+    EcjShape shape;
+    shape.final_throw_line = 30;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("suppression that keeps a null exception to throw");
+    output_ = Output();
+    EcjShape shape;
+    shape.replaces = false;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("handler checks another value for null");
+    output_ = Output();
+    EcjShape shape;
+    shape.handler_checked = 2;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("check of the handler for null skips to the return");
+    output_ = Output();
+    EcjShape shape;
+    shape.check_skips_to_return = true;
+    ExpectEcjNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("close again in a try block that goes to the suppression");
+    output_ = Output();
+    EcjShape shape;
+    shape.closes_again = true;
+    ExpectEcjNotFiltered(shape);
+  }
+}
+
 }  // namespace
 }  // namespace coverage
