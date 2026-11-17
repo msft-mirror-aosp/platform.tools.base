@@ -19,7 +19,6 @@ import static com.android.tools.deployer.ApkTestUtils.*;
 
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
-import com.android.tools.deployer.model.DexClass;
 
 import com.google.common.collect.ImmutableList;
 

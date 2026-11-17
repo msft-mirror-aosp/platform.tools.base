@@ -17,7 +17,6 @@ package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.ApkEntry;
-import com.android.tools.deployer.model.DexClass;
 import com.android.tools.r8.ByteDataView;
 import com.android.tools.r8.D8;
 import com.android.tools.r8.D8Command;

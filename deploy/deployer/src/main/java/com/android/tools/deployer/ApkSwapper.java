@@ -20,7 +20,6 @@ import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.ApplicationDumper;
 import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.common.Installer;
-import com.android.tools.deployer.model.DexClass;
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.utils.ILogger;
 

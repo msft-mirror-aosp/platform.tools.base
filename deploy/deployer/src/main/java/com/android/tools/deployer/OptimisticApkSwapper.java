@@ -25,7 +25,6 @@ import com.android.tools.deployer.common.DeploymentCacheDatabase;
 import com.android.tools.deployer.common.Installer;
 import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.ApkEntry;
-import com.android.tools.deployer.model.DexClass;
 import com.android.tools.idea.protobuf.ByteString;
 
 import java.io.IOException;

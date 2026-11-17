@@ -100,7 +100,6 @@ kotlin_library(
     deps = [
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
-        "//tools/base/deploy/proto:deploy_java_proto",
         "//tools/base/manifest-parser:tools.manifest-parser",
         "//tools/base/tracer:tools.tracer",
         "@maven//:com.google.guava.guava",

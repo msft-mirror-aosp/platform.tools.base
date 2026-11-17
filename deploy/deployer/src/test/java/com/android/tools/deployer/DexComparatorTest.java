@@ -20,7 +20,6 @@ import static org.junit.Assert.*;
 import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
-import com.android.tools.deployer.model.DexClass;
 import com.android.tools.deployer.model.FileDiff;
 
 import com.google.common.collect.Lists;

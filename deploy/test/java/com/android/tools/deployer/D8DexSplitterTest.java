@@ -17,7 +17,6 @@ package com.android.tools.deployer;
 
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
-import com.android.tools.deployer.model.DexClass;
 import java.io.File;
 import java.util.Collection;
 import org.junit.Assert;

@@ -19,18 +19,6 @@ import org.junit.Assert;
 
 public class ApkTestUtils {
 
-    public static void assertDexClassEquals(
-            String apkChecksum,
-            String dexName,
-            long dexChecksum,
-            String name,
-            long checksum,
-            DexClass clazz) {
-        assertApkEntryEquals(apkChecksum, dexName, dexChecksum, clazz.dex);
-        Assert.assertEquals(name, clazz.name);
-        Assert.assertEquals(checksum, clazz.checksum);
-    }
-
     public static void assertApkEntryEquals(
             String apkChecksum, String fileName, long fileChecksum, ApkEntry file) {
         Assert.assertEquals(apkChecksum, file.getApk().checksum);

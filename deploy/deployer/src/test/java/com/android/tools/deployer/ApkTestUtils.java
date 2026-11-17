@@ -16,7 +16,6 @@
 package com.android.tools.deployer;
 
 import com.android.tools.deployer.model.ApkEntry;
-import com.android.tools.deployer.model.DexClass;
 import org.junit.Assert;
 
 public class ApkTestUtils {
