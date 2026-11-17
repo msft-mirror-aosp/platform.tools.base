@@ -33,6 +33,7 @@ data class PreviewComponentTree(
   val fontScale: Float? = null,
   val uiMode: Int? = null,
   val deviceId: String? = null,
+  val showSystemUi: Boolean = false,
   val hasAnimations: Boolean? = null,
   val animationCount: Int? = null,
   val detectedAnimations: List<DetectedAnimationSummary>? = null,

@@ -33,6 +33,7 @@ data class PreviewComponentTree(
   val fontScale: Float? = null,
   val uiMode: Int? = null,
   val deviceId: String? = null,
+  val showSystemUi: Boolean = false,
   val components: List<ComponentTreeNode>,
 )
 

@@ -43,6 +43,7 @@ import java.util.logging.Logger
 object ComponentTreeExtractor {
   private val logger = Logger.getLogger(ComponentTreeExtractor::class.java.name)
 
+  /** Extracts a [PreviewComponentTree] from [renderResult] and [config]. */
   fun extract(
     previewId: String,
     methodFQN: String,
@@ -52,6 +53,7 @@ object ComponentTreeExtractor {
     viewInfos: List<ComposeViewInfo> = emptyList(),
     /** Whether to report the Compose animations detected in the slot table: it walks the whole slot table, so only when requested. */
     detectAnimations: Boolean = false,
+    showSystemUi: Boolean = false,
   ): PreviewComponentTree {
     val rootViews = renderResult?.rootViews.orEmpty()
     val composeAdapter = findComposeViewAdapter(rootViews)
@@ -100,6 +102,7 @@ object ComponentTreeExtractor {
       fontScale = config.fontScale,
       uiMode = config.uiModeFlagValue,
       deviceId = config.device?.id,
+      showSystemUi = showSystemUi,
       // Only with detectAnimations, so that the trees are unchanged without it; with it, static previews say so explicitly.
       hasAnimations = hasAnimationsFlag.takeIf { detectAnimations },
       animationCount = detectedAnimations.size.takeIf { detectAnimations },

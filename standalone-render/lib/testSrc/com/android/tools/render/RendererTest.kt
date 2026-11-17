@@ -24,6 +24,7 @@ import com.android.testutils.TestUtils
 import com.android.tools.configurations.Wallpaper
 import com.android.tools.preview.ConfigurablePreviewElement
 import com.android.tools.render.common.ComponentTreeExtractor
+import com.android.tools.render.common.PreviewComponentTree
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.render.common.ResolvedScreenshotLayout
@@ -2008,27 +2009,49 @@ class RendererTest {
 
     bootstrapper.bootstrap().use { renderer ->
       // 1. Default (allowShowDecorations = false) ignores showSystemUi = true and renders shrink-wrapped content.
-      val defaultResult = renderer.render(previewWithSystemUi, outputDir.absolutePath).single()
+      val defaultResult =
+        renderer.render(previewWithSystemUi, outputDir.absolutePath, RenderConfiguration(includeComponentTree = true)).single()
       assertNull(defaultResult.error)
       val defaultImg = ImageIO.read(File(outputDir, defaultResult.imagePath))
       assertThat(defaultImg.height).isLessThan(300)
+      assertThat(readComponentTree(outputDir, defaultResult).showSystemUi).isFalse()
 
       // 2. Opting in (allowShowDecorations = true) does NOT add system UI when showSystemUi = false.
       val noSysUiResult =
-        renderer.render(previewWithoutSystemUi, outputDir.absolutePath, RenderConfiguration(allowShowDecorations = true)).single()
+        renderer
+          .render(
+            previewWithoutSystemUi,
+            outputDir.absolutePath,
+            RenderConfiguration(allowShowDecorations = true, includeComponentTree = true),
+          )
+          .single()
       assertNull(noSysUiResult.error)
       val noSysUiImg = ImageIO.read(File(outputDir, noSysUiResult.imagePath))
       assertThat(noSysUiImg.height).isLessThan(300)
+      assertThat(readComponentTree(outputDir, noSysUiResult).showSystemUi).isFalse()
 
       // 3. Opting in (allowShowDecorations = true) renders full device frame + decorations when showSystemUi = true.
       val sysUiResult =
-        renderer.render(previewWithSystemUi, outputDir.absolutePath, RenderConfiguration(allowShowDecorations = true)).single()
+        renderer
+          .render(
+            previewWithSystemUi,
+            outputDir.absolutePath,
+            RenderConfiguration(allowShowDecorations = true, includeComponentTree = true),
+          )
+          .single()
       assertNull(sysUiResult.error)
       val sysUiImg = ImageIO.read(File(outputDir, sysUiResult.imagePath))
       assertThat(sysUiImg.width).isEqualTo(1080)
       assertThat(sysUiImg.height).isEqualTo(2400)
+      assertThat(readComponentTree(outputDir, sysUiResult).showSystemUi).isTrue()
     }
   }
+
+  /** Reads the component tree JSON that [result] wrote under [outputDir]. */
+  private fun readComponentTree(outputDir: File, result: PreviewScreenshotResult): PreviewComponentTree =
+    Files.newBufferedReader(Paths.get(outputDir.absolutePath, result.componentTreePath!!), StandardCharsets.UTF_8).use {
+      readComponentTreeFromJson(it)
+    }
 
   private fun xmlPreviewScreenshot(
     fqn: String,

@@ -446,12 +446,13 @@ class Renderer(
         return listOf(PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, defaultRelativeImagePath, t.toScreenshotError()))
       }
     val idAllocator = LayoutResultIdAllocator(screenshot, resolvedLayouts, baseResultId)
+    val showDecorations = configuration.allowShowDecorations && previewElement.displaySettings.showDecoration
 
     val renderRequest =
       RenderRequest.withResolvedLayouts(
         configurationModifier = previewElement::applyTo,
         resolvedLayoutsProvider = { resolvedLayouts.asSequence() },
-        showDecorations = configuration.allowShowDecorations && previewElement.displaySettings.showDecoration,
+        showDecorations = showDecorations,
         transparentBackground = previewElement.transparentBackground,
       )
 
@@ -488,6 +489,7 @@ class Renderer(
                   renderResult = renderResult,
                   viewInfos = viewInfos,
                   detectAnimations = configuration.detectAnimations,
+                  showSystemUi = showDecorations,
                 )
             ) {
               relativeComponentTreePath
@@ -534,6 +536,7 @@ class Renderer(
     renderResult: RenderResult? = null,
     viewInfos: List<ComposeViewInfo> = emptyList(),
     detectAnimations: Boolean = false,
+    showSystemUi: Boolean = false,
   ): Boolean {
     return try {
       val rootDir = Paths.get(outputFolderPath).toAbsolutePath().normalize()
@@ -551,6 +554,7 @@ class Renderer(
           renderResult = renderResult,
           viewInfos = viewInfos,
           detectAnimations = detectAnimations,
+          showSystemUi = showSystemUi,
         )
       treePath.parent?.let { Files.createDirectories(it) }
       Files.newBufferedWriter(treePath, StandardCharsets.UTF_8).use { writer ->

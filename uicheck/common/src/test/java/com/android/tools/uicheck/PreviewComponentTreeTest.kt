@@ -18,8 +18,10 @@ package com.android.tools.uicheck
 
 import java.io.StringReader
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PreviewComponentTreeTest {
@@ -71,6 +73,7 @@ class PreviewComponentTreeTest {
     assertEquals(1.0f, deserialized.fontScale)
     assertEquals(0, deserialized.uiMode)
     assertEquals("spec:width=411dp,height=891dp", deserialized.deviceId)
+    assertFalse(deserialized.showSystemUi)
 
     val root = deserialized.components.single()
     assertEquals("Column", root.name)
@@ -133,6 +136,25 @@ class PreviewComponentTreeTest {
         .trimIndent()
     val parsed = PreviewComponentTreeParser.parse(StringReader(alternateJson))
     assertEquals("com.example.AppKt.Preview", parsed.methodFqn)
+  }
+
+  /** Verifies that `showSystemUi` is parsed when present in the JSON payload. */
+  @Test
+  fun parsesSystemUiFlag() {
+    val json =
+      """
+      {
+        "previewId": "p0",
+        "methodFQN": "com.example.AppKt.PhonePreview",
+        "width": 1080,
+        "height": 2400,
+        "showSystemUi": true,
+        "components": []
+      }
+      """
+        .trimIndent()
+    val parsed = PreviewComponentTreeParser.parse(StringReader(json))
+    assertTrue(parsed.showSystemUi)
   }
 
   /** Verifies rejection of empty or null JSON inputs. */
