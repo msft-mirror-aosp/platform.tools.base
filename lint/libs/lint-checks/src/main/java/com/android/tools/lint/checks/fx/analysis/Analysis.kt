@@ -1128,6 +1128,7 @@ internal open class Analysis<FX : Any>(
     when (method) {
       is Type.MethodRef -> {
         val method = knownMethodRef(method)
+        val argSubst = gc(args)
         when (val assumption = assumptions[method]) {
           null ->
             when (val methodDefn = module[method]) {
@@ -1152,12 +1153,14 @@ internal open class Analysis<FX : Any>(
                   // throw IllegalStateException("Applying abstract method $method")
                   }
                 val methodSubst = methodEffectResult.subst!!
-                substLattice.joinOf(this, methodSubst)!!.apply(rec, methodDefn.initEnvironment.types, methodDefn.domains, t, methodFx, args)
+                substLattice
+                  .joinOf(argSubst, methodSubst)!!
+                  .apply(rec, methodDefn.initEnvironment.types, methodDefn.domains, t, methodFx, args)
               }
             }
           else ->
             substLattice
-              .joinOf(this, assumption.subst)!!
+              .joinOf(argSubst, assumption.subst)!!
               .apply(rec, assumption.typeBounds, assumption.domains, assumption.range, assumption.effect, args)
         }
       }
@@ -1978,7 +1981,7 @@ private fun <FX> Type<FX>.mergedByShape(typeLattice: Lattice<Type<FX>>): Type<FX
  * This avoids (1) redundant representations of the type, and (2) needless overapproximation of the same variable due to lingering unrelated
  * substitutions.
  */
-private fun <FX> Subst<FX>.gc(vararg roots: Type<FX>): Subst<FX> {
+private fun <FX> Subst<FX>.gc(roots: Collection<Type<FX>>): Subst<FX> {
   if (isEmpty()) return emptySubst
   val seen = hashSetOf<Type.Sym.Name>()
   // We remove dead variables from the original substitution instead of rebuilding from live ones,
@@ -2024,3 +2027,5 @@ private fun <FX> Subst<FX>.gc(vararg roots: Type<FX>): Subst<FX> {
   for ((x, _) in dead) accFromThis.remove(x)
   return accFromThis.build()
 }
+
+private fun <FX> Subst<FX>.gc(vararg roots: Type<FX>): Subst<FX> = gc(roots.asList())

@@ -2463,6 +2463,34 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun `test nested calls to the same method keep their arguments apart`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+
+            interface Sink { fun accept(r: Runnable) }
+            object UiSink : Sink { @UiThread override fun accept(r: Runnable) { r.run() } }
+            object AnySink : Sink { @AnyThread override fun accept(r: Runnable) { r.run() } }
+            object UiJob : Runnable { @UiThread override fun run() {} }
+            object OkJob : Runnable { @AnyThread override fun run() {} }
+            fun feed(s: Sink, r: Runnable): Runnable { s.accept(r); return OkJob }
+            // `job` only goes to the inner call's `UiSink`, never to the outer call's `AnySink`.
+            fun test(job: Runnable) { feed(AnySink, feed(UiSink, job)) }
+            fun caller() { test(UiJob) }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
+
   // Test reduced from org.locationtech.jts.geom.Geometry.java
   fun testSymbolExplosion() {
     lint()
