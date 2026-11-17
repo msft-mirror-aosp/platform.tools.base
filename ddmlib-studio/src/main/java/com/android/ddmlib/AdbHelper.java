@@ -104,8 +104,4 @@ public final class AdbHelper {
             }
         }
     }
-
-    public static void setAbbExecAllowed(boolean allowed) {
-        SplitApkInstallerBase.setAbbExecAllowed(allowed);
-    }
 }

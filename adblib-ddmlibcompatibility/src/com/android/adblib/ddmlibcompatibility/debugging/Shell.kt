@@ -114,7 +114,7 @@ internal suspend fun executeAbbCommand(
 ) {
   val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
   // `IDevice.executeBinderCommand` joins arguments using '\u0000' before delegating to `executeRemoteCommand` with `ABB_EXEC`.
-  // However, other callers (e.g. `SplitApkInstaller`) pass space-separated strings directly to `executeRemoteCommand`.
+  // However, `executeRemoteCommand` can also be called directly with a space-separated command.
   // Check for '\u0000' to pick the appropriate delimiter.
   val delimiter = if (command.contains('\u0000')) "\u0000" else " "
   val abbCommand = connectedDevice.session.deviceServices.abbCommand(deviceSelector, command.split(delimiter))

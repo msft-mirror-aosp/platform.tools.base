@@ -52,12 +52,9 @@ import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.DeviceState
 import com.android.ddmlib.IDevice.RE_EMULATOR_SN
 import com.android.ddmlib.IDeviceSharedImpl
-import com.android.ddmlib.IDeviceSharedImpl.INSTALL_TIMEOUT_MINUTES
 import com.android.ddmlib.IDeviceUsageTracker
 import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.IUserDataMap
-import com.android.ddmlib.InstallMetrics
-import com.android.ddmlib.InstallReceiver
 import com.android.ddmlib.Log
 import com.android.ddmlib.ProfileableClient
 import com.android.ddmlib.ServiceInfo
@@ -531,105 +528,6 @@ internal class AdblibIDeviceWrapper(
       }
     }
 
-  override fun installPackage(packageFilePath: String, reinstall: Boolean, vararg extraArgs: String?) {
-    logUsage(IDeviceUsageTracker.Method.INSTALL_PACKAGE_1) {
-      // Use default basic installReceiver
-      installPackage(packageFilePath, reinstall, InstallReceiver(), *extraArgs)
-    }
-  }
-
-  override fun installPackage(packageFilePath: String, reinstall: Boolean, receiver: InstallReceiver, vararg extraArgs: String?) {
-    logUsage(IDeviceUsageTracker.Method.INSTALL_PACKAGE_2) {
-      // Use default values for some timeouts.
-      installPackage(packageFilePath, reinstall, receiver, 0L, INSTALL_TIMEOUT_MINUTES, TimeUnit.MINUTES, *extraArgs)
-    }
-  }
-
-  override fun installPackage(
-    packageFilePath: String,
-    reinstall: Boolean,
-    receiver: InstallReceiver,
-    maxTimeout: Long,
-    maxTimeToOutputResponse: Long,
-    maxTimeUnits: TimeUnit?,
-    vararg extraArgs: String?,
-  ) {
-    logUsage(IDeviceUsageTracker.Method.INSTALL_PACKAGE_3) {
-      iDeviceSharedImpl.installPackage(packageFilePath, reinstall, receiver, maxTimeout, maxTimeToOutputResponse, maxTimeUnits, *extraArgs)
-    }
-  }
-
-  override fun installPackages(apks: MutableList<File>, reinstall: Boolean, installOptions: MutableList<String>) {
-    logUsage(IDeviceUsageTracker.Method.INSTALL_PACKAGES_1) {
-      // Use the default single apk installer timeout.
-      installPackages(apks, reinstall, installOptions, INSTALL_TIMEOUT_MINUTES, TimeUnit.MINUTES)
-    }
-  }
-
-  override fun installPackages(
-    apks: MutableList<File>,
-    reinstall: Boolean,
-    installOptions: MutableList<String>,
-    timeout: Long,
-    timeoutUnit: TimeUnit,
-  ) {
-    logUsage(IDeviceUsageTracker.Method.INSTALL_PACKAGES_2) {
-      iDeviceSharedImpl.installPackages(apks, reinstall, installOptions, timeout, timeoutUnit)
-    }
-  }
-
-  override fun getLastInstallMetrics(): InstallMetrics? {
-    return iDeviceSharedImpl.lastInstallMetrics
-  }
-
-  override fun syncPackageToDevice(localFilePath: String): String =
-    logUsage(IDeviceUsageTracker.Method.SYNC_PACKAGE_TO_DEVICE) {
-      val packageFileName = File(localFilePath).getName()
-      val remoteFilePath = "/data/local/tmp/$packageFileName"
-      pushFile(localFilePath, remoteFilePath)
-      remoteFilePath
-    }
-
-  override fun installRemotePackage(remoteFilePath: String?, reinstall: Boolean, vararg extraArgs: String?) {
-    unsupportedMethod()
-  }
-
-  override fun installRemotePackage(remoteFilePath: String?, reinstall: Boolean, receiver: InstallReceiver?, vararg extraArgs: String?) {
-    unsupportedMethod()
-  }
-
-  override fun installRemotePackage(
-    remoteFilePath: String,
-    reinstall: Boolean,
-    receiver: InstallReceiver,
-    maxTimeout: Long,
-    maxTimeToOutputResponse: Long,
-    maxTimeUnits: TimeUnit,
-    vararg extraArgs: String?,
-  ) {
-    logUsage(IDeviceUsageTracker.Method.INSTALL_REMOTE_PACKAGE) {
-      iDeviceSharedImpl.installRemotePackage(
-        remoteFilePath,
-        reinstall,
-        receiver,
-        maxTimeout,
-        maxTimeToOutputResponse,
-        maxTimeUnits,
-        *extraArgs,
-      )
-    }
-  }
-
-  override fun removeRemotePackage(remoteFilePath: String?) {
-    logUsage(IDeviceUsageTracker.Method.REMOVE_REMOTE_PACKAGE) { iDeviceSharedImpl.removeRemotePackage(remoteFilePath) }
-  }
-
-  override fun uninstallPackage(packageName: String): String? =
-    logUsage(IDeviceUsageTracker.Method.UNINSTALL_PACKAGE) { uninstallApp(packageName) }
-
-  override fun uninstallApp(applicationID: String, vararg extraArgs: String): String? =
-    logUsage(IDeviceUsageTracker.Method.UNINSTALL_APP) { iDeviceSharedImpl.uninstallApp(applicationID, *extraArgs) }
-
   override fun root(): Boolean =
     logUsage(IDeviceUsageTracker.Method.ROOT) {
       runBlockingLegacy(timeout = INFINITE_DURATION) {
@@ -818,11 +716,6 @@ internal class AdblibIDeviceWrapper(
       iDeviceUsageTracker?.logUsage(method, true)
       throw t
     }
-  }
-
-  private fun unsupportedMethod(): Nothing {
-    iDeviceUsageTracker?.logUsage(IDeviceUsageTracker.Method.UNSUPPORTED_METHOD, false)
-    throw UnsupportedOperationException("This method is not used in Android Studio")
   }
 
   /**

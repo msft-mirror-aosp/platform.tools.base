@@ -19,11 +19,9 @@ import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.Client
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IShellOutputReceiver
-import com.android.ddmlib.InstallReceiver
 import com.android.ddmlib.ServiceInfo
 import com.android.sdklib.AndroidVersion
 import com.google.common.util.concurrent.ListenableFuture
-import java.io.File
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
@@ -150,72 +148,6 @@ internal class FakeIDevice(private val serialNumber: String) : IDevice {
   }
 
   override fun pullFile(remote: String?, local: String?) {
-    TODO("Not yet implemented")
-  }
-
-  override fun installPackage(packageFilePath: String?, reinstall: Boolean, vararg extraArgs: String?) {
-    TODO("Not yet implemented")
-  }
-
-  override fun installPackage(packageFilePath: String?, reinstall: Boolean, receiver: InstallReceiver?, vararg extraArgs: String?) {
-    TODO("Not yet implemented")
-  }
-
-  override fun installPackage(
-    packageFilePath: String?,
-    reinstall: Boolean,
-    receiver: InstallReceiver?,
-    maxTimeout: Long,
-    maxTimeToOutputResponse: Long,
-    maxTimeUnits: TimeUnit?,
-    vararg extraArgs: String?,
-  ) {
-    TODO("Not yet implemented")
-  }
-
-  override fun installPackages(
-    apks: MutableList<File>,
-    reinstall: Boolean,
-    installOptions: MutableList<String>,
-    timeout: Long,
-    timeoutUnit: TimeUnit,
-  ) {
-    TODO("Not yet implemented")
-  }
-
-  override fun syncPackageToDevice(localFilePath: String?): String {
-    TODO("Not yet implemented")
-  }
-
-  override fun installRemotePackage(remoteFilePath: String?, reinstall: Boolean, vararg extraArgs: String?) {
-    TODO("Not yet implemented")
-  }
-
-  override fun installRemotePackage(remoteFilePath: String?, reinstall: Boolean, receiver: InstallReceiver?, vararg extraArgs: String?) {
-    TODO("Not yet implemented")
-  }
-
-  override fun installRemotePackage(
-    remoteFilePath: String?,
-    reinstall: Boolean,
-    receiver: InstallReceiver?,
-    maxTimeout: Long,
-    maxTimeToOutputResponse: Long,
-    maxTimeUnits: TimeUnit?,
-    vararg extraArgs: String?,
-  ) {
-    TODO("Not yet implemented")
-  }
-
-  override fun removeRemotePackage(remoteFilePath: String?) {
-    TODO("Not yet implemented")
-  }
-
-  override fun uninstallPackage(packageName: String?): String {
-    TODO("Not yet implemented")
-  }
-
-  override fun uninstallApp(applicationID: String?, vararg extraArgs: String?): String {
     TODO("Not yet implemented")
   }
 

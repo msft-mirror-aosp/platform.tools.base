@@ -948,53 +948,6 @@ class AdblibIDeviceWrapperTest {
   }
 
   @Test
-  fun installLegacy() = runBlockingWithTimeout {
-    // Prepare
-    val (connectedDevice, deviceState) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
-    val apk = temporaryFolder.newFile("adblib-tools_test.apk").toPath()
-    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
-
-    // Act
-    adblibIDeviceWrapper.installPackage(apk.toAbsolutePath().toString(), false)
-
-    // Assert
-    assertEquals(1, deviceState.pmLogs.size)
-    assertEquals("install  \"/data/local/tmp/${apk.fileName}\"", deviceState.pmLogs[0])
-  }
-
-  @Test
-  fun install() = runBlockingWithTimeout {
-    // Prepare
-    val (connectedDevice, deviceState) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
-    val apk = temporaryFolder.newFile("adblib-tools_test.apk")
-    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
-
-    // Act
-    adblibIDeviceWrapper.installPackages(mutableListOf(apk), false, mutableListOf(), 0, TimeUnit.SECONDS)
-
-    // Assert
-    assertEquals(3, deviceState.abbLogs.size)
-    assertTrue(deviceState.abbLogs[0].matches(Regex("^package\u0000install-create.*")))
-    assertTrue(deviceState.abbLogs[1].matches(Regex("^package\u0000install-write\u0000.+adblib-tools_test.apk.*")))
-    assertTrue(deviceState.abbLogs[2].matches(Regex("^package\u0000install-commit\u0000.*")))
-  }
-
-  @Test
-  fun uninstall() = runBlockingWithTimeout {
-    // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
-    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
-
-    // Act
-    // Note that `com.android.fakeadbserver.services.PackageManager` that we rely on will
-    // consider this as an installed package and will successfully uninstall it.
-    val result = adblibIDeviceWrapper.uninstallPackage("somepackage.apk")
-
-    // Assert
-    assertNull(result)
-  }
-
-  @Test
   fun pullFile() = runBlockingWithTimeout {
     // Prepare
     val (connectedDevice, deviceState) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
