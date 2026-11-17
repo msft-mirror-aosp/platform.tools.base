@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <initializer_list>
 #include <vector>
 
@@ -1984,6 +1985,411 @@ TEST_F(TryWithResourcesFilterTest, ShouldNotLoopOnGotosOfHandler) {
   filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
 
   ExpectIgnored(m, {});
+}
+
+// ---------------------------------------------------------------------------
+// javac 7 to 10.
+
+// The code of a try-with-resources statement of javac 7 to 10, as D8 lays it
+// out, and what to change in it.
+struct OldShape {
+  // Whether the resource can be null: it comes from a call instead of new.
+  bool checks_null = true;
+  // Whether the statement closes the resource through $closeResource, and the
+  // name and the signature of the method that it calls.
+  bool close_resource = false;
+  const char* close_resource_name = "$closeResource";
+  const char* close_resource_signature =
+      "(Ljava/lang/Throwable;Ljava/lang/AutoCloseable;)V";
+  // Where the block loads the null that it passes to $closeResource, and the
+  // value that it loads. With kOtherRegister, it loads it on the line of the
+  // try statement and another null right before the call.
+  enum class Null { kBeforeCall, kBeforeCheck, kOtherLine, kOtherRegister };
+  Null null = Null::kBeforeCall;
+  dex::u4 null_value = 0;
+  // Whether the first handler throws its exception, rather than returning it,
+  // the register that it throws, and whether its throw has a try block that
+  // goes to the second handler.
+  bool primary_throws = true;
+  dex::u4 primary_thrown = 2;
+  bool primary_in_try_block = true;
+  // The exception that the second handler adds the exception of the close to,
+  // or passes to $closeResource.
+  dex::u4 primary_used = 2;
+  // The line of the throw of the second handler.
+  int throw_line = 22;
+};
+
+// The bytecodes of a statement of javac 7 to 10 that the filter ignores.
+struct OldStatement {
+  lir::Instruction* null_load = nullptr;
+  lir::Instruction* check = nullptr;
+  lir::Instruction* close = nullptr;
+  lir::Instruction* primary = nullptr;
+  lir::Instruction* primary_throw = nullptr;
+  lir::Instruction* caught = nullptr;
+  lir::Instruction* handler_check = nullptr;
+  lir::Instruction* handler_close = nullptr;
+  lir::Instruction* to_throw = nullptr;
+  lir::Instruction* suppressed = nullptr;
+  lir::Instruction* suppression = nullptr;
+  lir::Instruction* rethrow = nullptr;
+};
+
+class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
+ protected:
+  // Returns one range for each bytecode of `s` that isn't null, in code order.
+  static std::vector<Range> Ignored(const TestMethod& m,
+                                    const OldStatement& s) {
+    std::vector<lir::Instruction*> instrs;
+    for (lir::Instruction* instr :
+         {s.null_load, s.check, s.close, s.primary, s.primary_throw, s.caught,
+          s.handler_check, s.handler_close, s.to_throw, s.suppressed,
+          s.suppression, s.rethrow}) {
+      if (instr != nullptr) {
+        instrs.push_back(instr);
+      }
+    }
+    std::sort(instrs.begin(), instrs.end(),
+              [&](lir::Instruction* a, lir::Instruction* b) {
+                return m.IndexOf(a) < m.IndexOf(b);
+              });
+    std::vector<Range> ranges;
+    for (lir::Instruction* instr : instrs) {
+      ranges.push_back(Range{instr, instr});
+    }
+    return ranges;
+  }
+
+  // Appends the code of `int read(String path)` with `try (InputStream in =
+  // open(path)) { return in.read(); }` as javac 8 compiles it and D8 lays it
+  // out, changed as `shape` says. The resource is in v0, the result in v1, the
+  // exception of the first handler in v2, the one of the second handler in v3
+  // and the one of the close in v4:
+  //     invoke-static {v5}, LFoo;->open(...)Ljava/io/InputStream;  (line 20)
+  //     move-result-object v0
+  //     invoke-virtual {v0}, Ljava/io/InputStream;->read()I  (line 21, in a
+  //         try block that goes to :primary)
+  //     move-result v1
+  //     if-eqz v0, :after  (line 22, the end of the block)
+  //     invoke-virtual {v0}, Ljava/io/InputStream;->close()V
+  //   :after
+  //     return v1  (line 21)
+  //   :primary
+  //     move-exception v2  (line 20)
+  //     throw v2  (in a try block that goes to :handler)
+  //   :handler
+  //     move-exception v3  (line 22)
+  //     if-eqz v0, :throw
+  //     invoke-virtual {v0}, Ljava/io/InputStream;->close()V  (in a try
+  //         block that goes to :suppress)
+  //     goto :throw
+  //   :suppress
+  //     move-exception v4
+  //     invoke-virtual {v2, v4},
+  //         Ljava/lang/Throwable;->addSuppressed(Ljava/lang/Throwable;)V
+  //   :throw
+  //     throw v3
+  // With $closeResource, the block ends with const/4 v4, 0 and invoke-static
+  // {v4, v0}, LFoo;->$closeResource(...)V, and the second handler calls it
+  // with {v2, v0} and then throws v3.
+  static OldStatement AddOldStatement(TestMethod& m, const OldShape& shape) {
+    OldStatement s;
+    lir::Label* after = m.NewLabel();
+    lir::Label* primary = m.NewLabel();
+    lir::Label* handler = m.NewLabel();
+    lir::Label* suppress = m.NewLabel();
+    lir::Label* rethrow = m.NewLabel();
+    auto close = [&]() {
+      return m.Add(dex::OP_INVOKE_VIRTUAL,
+                   {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+    };
+    auto close_resource = [&](dex::u4 passed) {
+      return m.Add(dex::OP_INVOKE_STATIC,
+                   {m.Regs({passed, 0}),
+                    m.MethodRef(kTestClassName, shape.close_resource_name,
+                                shape.close_resource_signature)});
+    };
+    auto load_null = [&]() {
+      return m.Add(dex::OP_CONST_4, {m.Reg(4), m.Literal(shape.null_value)});
+    };
+    m.AddLine(20);
+    if (shape.checks_null) {
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs({5}), m.MethodRef(kTestClassName, "open", kOpen)});
+      m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+    } else {
+      m.Add(dex::OP_NEW_INSTANCE,
+            {m.Reg(0), m.TypeRef("Ljava/io/FileInputStream;")});
+      m.Add(dex::OP_INVOKE_DIRECT,
+            {m.Regs({0, 5}), m.MethodRef("Ljava/io/FileInputStream;", "<init>",
+                                         "(Ljava/lang/String;)V")});
+    }
+    if (shape.close_resource &&
+        (shape.null == OldShape::Null::kOtherLine ||
+         shape.null == OldShape::Null::kOtherRegister)) {
+      load_null();
+    }
+    lir::TryBlockBegin* block = m.AddTryBlockBegin();
+    m.AddLine(21);
+    m.Add(dex::OP_INVOKE_VIRTUAL,
+          {m.Regs({0}), m.MethodRef(kInputStream, "read", "()I")});
+    m.Add(dex::OP_MOVE_RESULT, {m.Reg(1)});
+    m.AddTryBlockEnd(block, primary);
+    m.AddLine(22);
+    if (shape.close_resource && shape.null == OldShape::Null::kBeforeCheck) {
+      s.null_load = load_null();
+    } else if (shape.close_resource &&
+               shape.null == OldShape::Null::kOtherLine) {
+      // A null in another register.
+      m.Add(dex::OP_CONST_4, {m.Reg(6), m.Literal(0)});
+    }
+    if (shape.checks_null) {
+      s.check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
+    }
+    if (shape.close_resource) {
+      if (shape.null == OldShape::Null::kBeforeCall) {
+        s.null_load = load_null();
+      } else if (shape.null == OldShape::Null::kOtherRegister) {
+        m.Add(dex::OP_CONST_4, {m.Reg(6), m.Literal(0)});
+      }
+      s.close = close_resource(4);
+    } else {
+      s.close = close();
+    }
+    m.Place(after);
+    m.AddLine(21);
+    m.Add(dex::OP_RETURN, {m.Reg(1)});
+    m.Place(primary);
+    m.AddLine(20);
+    s.primary = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+    lir::TryBlockBegin* rethrown =
+        shape.primary_in_try_block ? m.AddTryBlockBegin() : nullptr;
+    s.primary_throw =
+        m.Add(shape.primary_throws ? dex::OP_THROW : dex::OP_RETURN_OBJECT,
+              {m.Reg(shape.primary_thrown)});
+    if (rethrown != nullptr) {
+      m.AddTryBlockEnd(rethrown, handler);
+    }
+    m.Place(handler);
+    m.AddLine(22);
+    s.caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(3)});
+    if (shape.checks_null) {
+      s.handler_check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
+    }
+    if (shape.close_resource) {
+      s.handler_close = close_resource(shape.primary_used);
+    } else {
+      lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+      s.handler_close = close();
+      m.AddTryBlockEnd(closing, suppress);
+      s.to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+      m.Place(suppress);
+      s.suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(4)});
+      s.suppression = m.Add(dex::OP_INVOKE_VIRTUAL,
+                            {m.Regs({shape.primary_used, 4}),
+                             m.MethodRef(kThrowable, "addSuppressed",
+                                         "(Ljava/lang/Throwable;)V")});
+    }
+    m.Place(rethrow);
+    m.AddLine(shape.throw_line);
+    s.rethrow = m.Add(dex::OP_THROW, {m.Reg(3)});
+    return s;
+  }
+
+  // Runs the filter on a method with the statement of `shape` and expects it
+  // to ignore nothing.
+  void ExpectOldNotFiltered(const OldShape& shape) {
+    TestMethod m("read", "(Ljava/lang/String;)I");
+    AddOldStatement(m, shape);
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    ExpectIgnored(m, {});
+  }
+};
+
+// try (InputStream in = open(path)) { return in.read(); } with javac 8: the
+// first handler catches Throwable and throws it again to the handler of any
+// exception, which closes the resource and adds the exception of the close to
+// the first exception. D8 removes the checks of that exception for null.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldFilterStatementOfJavac8) {
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  OldStatement s = AddOldStatement(m, OldShape());
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// try (InputStream in = new FileInputStream(path)) { ... }: javac 9 and 10
+// leave out the checks of the resource for null, and D8 removes those of
+// javac 7 and 8.
+TEST_F(TryWithResourcesFilterOldJavacTest,
+       ShouldFilterStatementOfJavac8WithResourceCreatedWithNew) {
+  OldShape shape;
+  shape.checks_null = false;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  OldStatement s = AddOldStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// javac 9 and 10 can close the resource through $closeResource, which takes
+// the first exception, or null when the block ends.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldFilterCloseResource) {
+  OldShape shape;
+  shape.close_resource = true;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  OldStatement s = AddOldStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+TEST_F(TryWithResourcesFilterOldJavacTest,
+       ShouldFilterCloseResourceWithResourceCreatedWithNew) {
+  OldShape shape;
+  shape.close_resource = true;
+  shape.checks_null = false;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  OldStatement s = AddOldStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// D8 can load the null before the check, as when statements that end
+// together share it.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldFilterNullLoadedBeforeCheck) {
+  OldShape shape;
+  shape.close_resource = true;
+  shape.null = OldShape::Null::kBeforeCheck;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  OldStatement s = AddOldStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// A null loaded on another line is kept, and so is a null in another register
+// on the same line.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldKeepNullLoadedOnOtherLine) {
+  OldShape shape;
+  shape.close_resource = true;
+  shape.null = OldShape::Null::kOtherLine;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  OldStatement s = AddOldStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// The block passes $closeResource the null of the primary exception, which D8
+// loads for it. A load of another value is kept.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldKeepLoadOfOtherValue) {
+  OldShape shape;
+  shape.close_resource = true;
+  shape.checks_null = false;
+  shape.null_value = 1;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  OldStatement s = AddOldStatement(m, shape);
+  s.null_load = nullptr;
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldNotFilterOtherShapes) {
+  {
+    SCOPED_TRACE("first handler returns its exception");
+    OldShape shape;
+    shape.primary_throws = false;
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("first handler throws another value");
+    output_ = Output();
+    OldShape shape;
+    shape.primary_thrown = 1;
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("first handler throws outside a try block");
+    output_ = Output();
+    OldShape shape;
+    shape.primary_in_try_block = false;
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("suppressed by the exception of the second handler");
+    output_ = Output();
+    OldShape shape;
+    shape.primary_used = 3;
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("suppressed by another value");
+    output_ = Output();
+    OldShape shape;
+    shape.primary_used = 1;
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("throw of the second handler on another line");
+    output_ = Output();
+    OldShape shape;
+    shape.throw_line = 30;
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("method with another name than $closeResource");
+    output_ = Output();
+    OldShape shape;
+    shape.close_resource = true;
+    shape.close_resource_name = "closeResource";
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("$closeResource with another signature");
+    output_ = Output();
+    OldShape shape;
+    shape.close_resource = true;
+    shape.close_resource_signature =
+        "(Ljava/lang/Throwable;Ljava/io/Closeable;)V";
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("$closeResource passed the exception of the second handler");
+    output_ = Output();
+    OldShape shape;
+    shape.close_resource = true;
+    shape.primary_used = 3;
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("other value loaded between the check and $closeResource");
+    output_ = Output();
+    OldShape shape;
+    shape.close_resource = true;
+    shape.null_value = 1;
+    ExpectOldNotFiltered(shape);
+  }
+  {
+    SCOPED_TRACE("other register loaded between the check and $closeResource");
+    output_ = Output();
+    OldShape shape;
+    shape.close_resource = true;
+    shape.null = OldShape::Null::kOtherRegister;
+    ExpectOldNotFiltered(shape);
+  }
 }
 
 }  // namespace
