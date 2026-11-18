@@ -83,7 +83,7 @@ class OptimizeResourcesTest(private val enableResourceObfuscation: Boolean) {
         res/anim-v21/design_bottom_sheet_slide_out.xml -> res/20.xml
         res/anim/abc_fade_in.xml -> res/y4.xml
         res/anim/abc_fade_out.xml -> res/Bd.xml
-        res/anim/abc_grow_fade_in_from_bottom.xml -> res/aM1.xml
+        res/anim/abc_grow_fade_in_from_bottom.xml -> res/aM.xml
         res/anim/abc_popup_enter.xml -> res/k_.xml
         res/anim/abc_popup_exit.xml -> res/UX.xml
         res/anim/abc_shrink_fade_out_from_bottom.xml -> res/5T.xml
