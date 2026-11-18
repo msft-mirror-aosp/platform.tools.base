@@ -33,6 +33,7 @@ import com.android.SdkConstants.TAG_DATA
 import com.android.ide.common.blame.SourceFilePosition
 import com.android.manifmerger.NavGraphExpander.expandNavGraphs
 import com.android.utils.XmlUtils
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableList
 import java.util.TreeSet
 
@@ -41,6 +42,19 @@ import java.util.TreeSet
  * <intent-filter> elements
  */
 object NavGraphExpander {
+
+  /**
+   * State scoped to a single [expandNavGraphs] invocation (not thread-safe).
+   *
+   * [reportedNavigationIds] deduplicates per-document `<deepLink>` and `<include>` element errors across `<nav-graph>` expansions within
+   * one merge pass, whereas graph-traversal diagnostics (missing files, circular `<include>` chains, duplicate deep links, and
+   * multiple-include warnings) are reported per `<nav-graph>` traversal at the referencing `<activity>`.
+   */
+  private class ExpansionContext(
+    val loadedNavigationMap: Map<String, NavigationXmlDocument>,
+    val mergingReportBuilder: MergingReport.Builder,
+    val reportedNavigationIds: MutableSet<String> = mutableSetOf(),
+  )
 
   /**
    * Return an [XmlDocument] with the <nav-graph> elements converted into the corresponding <intent-filter> elements
@@ -59,7 +73,8 @@ object NavGraphExpander {
     loadedNavigationMap: Map<String, NavigationXmlDocument>,
     mergingReportBuilder: MergingReport.Builder,
   ): XmlDocument {
-    expandNavGraphs(xmlDocument.rootNode, loadedNavigationMap, mergingReportBuilder)
+    val context = ExpansionContext(loadedNavigationMap, mergingReportBuilder)
+    expandNavGraphs(xmlDocument.rootNode, context)
     return xmlDocument
   }
 
@@ -68,13 +83,9 @@ object NavGraphExpander {
    * if so, it calls the [expandNavGraph] helper method to generate the <intent-filter> elements, and then it finally removes the original
    * <nav-graph> elements.
    */
-  private fun expandNavGraphs(
-    xmlElement: XmlElement,
-    loadedNavigationMap: Map<String, NavigationXmlDocument>,
-    mergingReportBuilder: MergingReport.Builder,
-  ) {
+  private fun expandNavGraphs(xmlElement: XmlElement, context: ExpansionContext) {
     for (childElement in xmlElement.mergeableElements) {
-      expandNavGraphs(childElement, loadedNavigationMap, mergingReportBuilder)
+      expandNavGraphs(childElement, context)
     }
     if (xmlElement.tagName != SdkConstants.TAG_ACTIVITY) {
       return
@@ -93,7 +104,7 @@ object NavGraphExpander {
       if (navigationXmlId == null) {
         val nsUriPrefix = navGraph.lookupNamespacePrefix(ANDROID_URI, false)
         val graphName = nsUriPrefix + XmlUtils.NS_SEPARATOR + SdkConstants.ATTR_VALUE
-        mergingReportBuilder.addMessage(
+        context.mergingReportBuilder.addMessage(
           navGraph.sourceFilePosition,
           MergingReport.Record.Severity.ERROR,
           "Missing or malformed attribute in <nav-graph> element. " +
@@ -104,13 +115,13 @@ object NavGraphExpander {
         rejectedNavGraphs.add(navGraph)
         continue
       }
-      expandNavGraph(xmlElement, navigationXmlId, loadedNavigationMap, mergingReportBuilder)
+      expandNavGraph(xmlElement, navigationXmlId, context)
     }
     // then remove each navGraph
     for (navGraph in navGraphs) {
       xmlElement.removeChild(navGraph)
       val actionType = if (navGraph in rejectedNavGraphs) Actions.ActionType.REJECTED else Actions.ActionType.CONVERTED
-      mergingReportBuilder.actionRecorder.recordNodeAction(navGraph, actionType)
+      context.mergingReportBuilder.actionRecorder.recordNodeAction(navGraph, actionType)
     }
   }
 
@@ -121,19 +132,20 @@ object NavGraphExpander {
   private fun expandNavGraph(
     xmlElement: XmlElement,
     navigationXmlId: String,
-    loadedNavigationMap: Map<String, NavigationXmlDocument>,
-    mergingReportBuilder: MergingReport.Builder,
+    context: ExpansionContext,
   ) {
     val sourceFilePosition = SourceFilePosition(xmlElement.document.sourceFile, xmlElement.position)
+    // Defensive fallback: element and graph errors are normally reported via addMessage,
+    // but catch any unexpected navigation/deep-link exception rather than crashing the merge.
     val deepLinks =
       try {
-        findDeepLinks(navigationXmlId, loadedNavigationMap, mergingReportBuilder, sourceFilePosition)
+        findDeepLinks(navigationXmlId, context, sourceFilePosition)
       } catch (e: Exception) {
         when (e) {
           is NavGraphException,
           is DeepLink.DeepLinkException,
           is NavigationXmlDocument.NavigationXmlDocumentException -> {
-            mergingReportBuilder.addMessage(
+            context.mergingReportBuilder.addMessage(
               sourceFilePosition,
               MergingReport.Record.Severity.ERROR,
               e.message ?: "Error finding deep links.",
@@ -143,7 +155,7 @@ object NavGraphExpander {
           else -> throw e
         }
       }
-    val actionRecorder = mergingReportBuilder.actionRecorder
+    val actionRecorder = context.mergingReportBuilder.actionRecorder
     val deepLinkGroups = deepLinks.groupBy { getDeepLinkUriBody(it, includeQuery = false, includeFragment = false) }
     for (deepLinkGroup in deepLinkGroups.values) {
       val deepLink = deepLinkGroup.first()
@@ -188,15 +200,33 @@ object NavGraphExpander {
     }
   }
 
-  /** Find [DeepLink]s from referenced [NavigationXmlDocument]s and return a List of them. */
+  /**
+   * Finds valid [DeepLink]s from referenced [NavigationXmlDocument]s and records any invalid `<deepLink>`, `<include>`, or navigation graph
+   * traversal errors in [mergingReportBuilder] instead of throwing.
+   *
+   * Each call creates a fresh per-call navigation ID deduplication set, so invoking this method multiple times with the same
+   * [mergingReportBuilder] will report element errors on each call.
+   */
+  @VisibleForTesting
   fun findDeepLinks(
     navigationXmlId: String,
     loadedNavigationMap: Map<String, NavigationXmlDocument>,
     mergingReportBuilder: MergingReport.Builder,
     sourceFilePosition: SourceFilePosition,
+  ): List<DeepLink> =
+    findDeepLinks(
+      navigationXmlId,
+      ExpansionContext(loadedNavigationMap, mergingReportBuilder),
+      sourceFilePosition,
+    )
+
+  private fun findDeepLinks(
+    navigationXmlId: String,
+    context: ExpansionContext,
+    sourceFilePosition: SourceFilePosition,
   ): List<DeepLink> {
     val deepLinkList: MutableList<DeepLink> = mutableListOf()
-    findDeepLinks(navigationXmlId, loadedNavigationMap, deepLinkList, mergingReportBuilder, sourceFilePosition)
+    findDeepLinks(navigationXmlId, context, deepLinkList, sourceFilePosition)
     return ImmutableList.copyOf(deepLinkList)
   }
 
@@ -209,9 +239,8 @@ object NavGraphExpander {
   /** Find [DeepLink]s from referenced [NavigationXmlDocument]s and add them to the deepLinkList. */
   private fun findDeepLinks(
     navigationXmlId: String,
-    loadedNavigationMap: Map<String, NavigationXmlDocument>,
+    context: ExpansionContext,
     deepLinkList: MutableList<DeepLink>,
-    mergingReportBuilder: MergingReport.Builder,
     sourceFilePosition: SourceFilePosition,
     deepLinkComparisonObjects: MutableSet<DeepLinkComparisonObject> = mutableSetOf(),
     visitedNavigationFiles: MutableSet<String> = mutableSetOf(),
@@ -219,7 +248,7 @@ object NavGraphExpander {
   ) {
     // Check for an infinite loop caused by a circular reference among the navigation files.
     if (!navigationFileAncestors.add(navigationXmlId)) {
-      mergingReportBuilder.addMessage(
+      context.mergingReportBuilder.addMessage(
         sourceFilePosition,
         MergingReport.Record.Severity.ERROR,
         "Illegal circular reference among navigation files when traversing navigation " +
@@ -231,7 +260,7 @@ object NavGraphExpander {
     }
     // Warn if the same navigation file is added to the navigation graph multiple times.
     if (!visitedNavigationFiles.add(navigationXmlId)) {
-      mergingReportBuilder.addMessage(
+      context.mergingReportBuilder.addMessage(
         sourceFilePosition,
         MergingReport.Record.Severity.WARNING,
         "The navigation file with ID \"$navigationXmlId\" is included multiple times in " +
@@ -242,9 +271,9 @@ object NavGraphExpander {
       navigationFileAncestors.remove(navigationXmlId)
       return
     }
-    val navigationXmlDocument = loadedNavigationMap[navigationXmlId]
+    val navigationXmlDocument = context.loadedNavigationMap[navigationXmlId]
     if (navigationXmlDocument == null) {
-      mergingReportBuilder.addMessage(
+      context.mergingReportBuilder.addMessage(
         sourceFilePosition,
         MergingReport.Record.Severity.ERROR,
         "Referenced navigation file with navigationXmlId = $navigationXmlId not found",
@@ -252,7 +281,10 @@ object NavGraphExpander {
       navigationFileAncestors.remove(navigationXmlId)
       return
     }
-    for (deepLink in navigationXmlDocument.deepLinks) {
+    if (context.reportedNavigationIds.add(navigationXmlId)) {
+      navigationXmlDocument.appendElementErrorsTo(context.mergingReportBuilder)
+    }
+    for (deepLink in navigationXmlDocument.validDeepLinks) {
       for (deepLinkUri in getDeepLinkUris(deepLink)) {
         val deepLinkComparisonObject = DeepLinkComparisonObject(uri = deepLinkUri, action = deepLink.action, mimeType = deepLink.mimeType)
         if (deepLinkComparisonObjects.contains(deepLinkComparisonObject)) {
@@ -263,7 +295,7 @@ object NavGraphExpander {
           if (deepLink.mimeType != null) {
             comparisonString.append(", mimeType:${deepLink.mimeType}")
           }
-          mergingReportBuilder.addMessage(
+          context.mergingReportBuilder.addMessage(
             sourceFilePosition,
             MergingReport.Record.Severity.ERROR,
             "Multiple destinations found with a deep link containing $comparisonString.",
@@ -273,12 +305,11 @@ object NavGraphExpander {
       }
       deepLinkList.add(deepLink)
     }
-    for (otherNavigationXmlId in navigationXmlDocument.navigationXmlIds) {
+    for (otherNavigationXmlId in navigationXmlDocument.validNavigationXmlIds) {
       findDeepLinks(
         otherNavigationXmlId,
-        loadedNavigationMap,
+        context,
         deepLinkList,
-        mergingReportBuilder,
         sourceFilePosition,
         deepLinkComparisonObjects,
         visitedNavigationFiles,

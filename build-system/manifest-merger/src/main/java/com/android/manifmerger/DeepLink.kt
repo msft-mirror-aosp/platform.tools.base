@@ -126,6 +126,9 @@ data class DeepLink(
 
       /** factory method to generate DeepLinkUri from uri String */
       fun fromUri(uri: String): DeepLinkUri {
+        if (uri.isBlank()) {
+          throw DeepLinkException("DeepLink URI cannot be blank")
+        }
 
         // chooseEncoder() calls below cannot share any character input(s), or there could
         // be inaccurate decoding. Use completely new char1 and char2 characters if adding a
@@ -288,6 +291,8 @@ data class DeepLink(
 
     constructor(s: String) : super(s)
 
-    constructor(e: Exception) : super(e)
+    constructor(s: String, cause: Throwable?) : super(s, cause)
+
+    constructor(e: Exception) : super(e.message ?: e.toString(), e)
   }
 }

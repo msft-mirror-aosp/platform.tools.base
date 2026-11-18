@@ -19,6 +19,8 @@ package com.android.manifmerger
 import com.android.ide.common.blame.SourceFilePosition.UNKNOWN
 import com.android.manifmerger.DeepLink.DeepLinkException
 import com.google.common.truth.Truth.assertThat
+import java.net.URISyntaxException
+import org.junit.Assert.assertSame
 import org.junit.Assert.fail
 import org.junit.Test
 
@@ -213,6 +215,39 @@ class DeepLinkTest {
       fail("Expecting IllegalArgumentException")
     } catch (e: IllegalArgumentException) {
       // should throw IllegalArgumentException because char1 and char2 must be different
+    }
+  }
+
+  @Test
+  fun testExceptionMessagePreservesUnderlyingReasonWithoutClassPrefix() {
+    try {
+      DeepLink.fromUri("%http://www.example.com", UNKNOWN, false)
+      fail("Expecting DeepLinkException")
+    } catch (e: DeepLinkException) {
+      assertThat(e.cause).isInstanceOf(URISyntaxException::class.java)
+      assertThat(e.message).isEqualTo(e.cause!!.message)
+      assertThat(e.message).doesNotContain("java.net.URISyntaxException")
+    }
+  }
+
+  @Test
+  fun testExceptionWithNullMessageFallsBackToToString() {
+    val cause = Exception()
+    val exception = DeepLinkException(cause)
+    assertSame(cause, exception.cause)
+    assertThat(exception.message).isEqualTo(cause.toString())
+  }
+
+  @Test
+  fun testBlankUriThrowsDeepLinkException() {
+    for (blankUri in listOf("", "   ")) {
+      try {
+        DeepLink.fromUri(blankUri, UNKNOWN, false)
+        fail("Expecting DeepLinkException for blank URI '$blankUri'")
+      } catch (e: DeepLinkException) {
+        assertThat(e.message).isEqualTo("DeepLink URI cannot be blank")
+        assertThat(e.cause).isNull()
+      }
     }
   }
 }

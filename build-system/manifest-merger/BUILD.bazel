@@ -69,6 +69,7 @@ kotlin_test(
         "src/test/java/com/android/manifmerger/unit/*.kt",
         "src/test/java/com/android/manifmerger/*.kt",
     ]),
+    friends = [":tools.manifest-merger"],
     jvm_flags = ["-Dtest.suite.jar=tools.manifest-merger_tests.jar"],
     lint_baseline = "lint_baseline_tests.xml",
     resources = glob(["src/test/resources/**"]),

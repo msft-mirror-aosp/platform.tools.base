@@ -75,8 +75,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -2249,6 +2251,92 @@ public class ManifestMerger2SmallTest {
             assertTrue(nav1.delete());
             assertTrue(nav2.delete());
         }
+    }
+
+    @Test
+    public void testNavigationFiles_invalidElementsReportPerElementErrors() throws Exception {
+        MockLog mockLog = new MockLog();
+        String input =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + "    <application android:name=\".TheApp\">\n"
+                        + "        <activity android:name=\".MainActivity\">\n"
+                        + "            <nav-graph android:value=\"@navigation/nav1\" />\n"
+                        + "        </activity>\n"
+                        + "    </application>\n"
+                        + "</manifest>";
+        String navXml1 =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                        + "<navigation\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:app=\"http://schemas.android.com/apk/res-auto\">\n"
+                        + "    <deepLink />\n"
+                        + "    <include />\n"
+                        + "    <include app:graph=\"@navigation/nav2\" />\n"
+                        + "</navigation>";
+        String navXml2 =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                        + "<navigation\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:app=\"http://schemas.android.com/apk/res-auto\">\n"
+                        + "    <deepLink app:uri=\"https://www.example.com/from_nav2\" />\n"
+                        + "</navigation>";
+
+        File manifestFile = temporaryFolder.newFile("AndroidManifest.xml");
+        File navFile1 = temporaryFolder.newFile("nav1.xml");
+        File navFile2 = temporaryFolder.newFile("nav2.xml");
+        Files.writeString(manifestFile.toPath(), input, StandardCharsets.UTF_8);
+        Files.writeString(navFile1.toPath(), navXml1, StandardCharsets.UTF_8);
+        Files.writeString(navFile2.toPath(), navXml2, StandardCharsets.UTF_8);
+
+        // Default ManifestMerger2 mode (without KEEP_GOING_AFTER_ERRORS): merge fails with
+        // Result.ERROR and produces no merged output.
+        MergingReport defaultReport =
+                ManifestMerger2.newMerger(
+                                manifestFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .addNavigationFiles(Lists.newArrayList(navFile1, navFile2))
+                        .merge();
+        assertThat(defaultReport.getResult()).isEqualTo(MergingReport.Result.ERROR);
+        assertThat(defaultReport.getMergedDocument(MergedManifestKind.MERGED)).isNull();
+        List<MergingReport.Record> defaultErrors =
+                defaultReport.getLoggingRecords().stream()
+                        .filter(r -> r.getSeverity() == MergingReport.Record.Severity.ERROR)
+                        .collect(Collectors.toList());
+        assertThat(defaultErrors).hasSize(2);
+        assertThat(
+                        defaultErrors.stream()
+                                .map(r -> r.getSourceLocation().getFile().getSourceFile())
+                                .collect(Collectors.toList()))
+                .containsExactly(navFile1, navFile1);
+        // PositionXmlParser uses 0-based line indices (lines 4 and 5 in nav1.xml).
+        assertThat(defaultErrors.get(0).getSourceLocation().getPosition().getStartLine())
+                .isEqualTo(4);
+        assertThat(defaultErrors.get(1).getSourceLocation().getPosition().getStartLine())
+                .isEqualTo(5);
+
+        // IDE mode (KEEP_GOING_AFTER_ERRORS): merge still reports Result.ERROR while expanding
+        // valid sibling <include> deep links into <intent-filter> output.
+        MergingReport keepGoingReport =
+                ManifestMerger2.newMerger(
+                                manifestFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .addNavigationFiles(Lists.newArrayList(navFile1, navFile2))
+                        .withFeatures(Feature.KEEP_GOING_AFTER_ERRORS)
+                        .merge();
+        assertThat(keepGoingReport.getResult()).isEqualTo(MergingReport.Result.ERROR);
+        assertThat(keepGoingReport.getMergedDocument(MergedManifestKind.MERGED))
+                .contains("<data android:path=\"/from_nav2\" />");
+        List<MergingReport.Record> keepGoingErrors =
+                keepGoingReport.getLoggingRecords().stream()
+                        .filter(r -> r.getSeverity() == MergingReport.Record.Severity.ERROR)
+                        .collect(Collectors.toList());
+        assertThat(keepGoingErrors).hasSize(2);
+        assertThat(
+                        keepGoingErrors.stream()
+                                .map(r -> r.getSourceLocation().getFile().getSourceFile())
+                                .collect(Collectors.toList()))
+                .containsExactly(navFile1, navFile1);
     }
 
     @Test

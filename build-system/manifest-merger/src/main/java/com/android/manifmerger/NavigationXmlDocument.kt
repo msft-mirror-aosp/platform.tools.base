@@ -24,13 +24,16 @@ import com.android.manifmerger.DeepLink.DeepLinkException
 import com.android.utils.PositionXmlParser
 import com.android.utils.XmlUtils
 import com.google.common.collect.ImmutableList
+import java.net.URISyntaxException
 import org.w3c.dom.Element
 import org.w3c.dom.NamedNodeMap
 
 /**
  * Represents a loaded navigation xml document.
  *
- * Has a pointer to the root [Element] and provides services to get lists of the directly referenced navigation xml IDs and [DeepLink]s
+ * Has a pointer to the root [Element] and provides services to get lists of the directly referenced navigation xml IDs and [DeepLink]s.
+ *
+ * Note: Instances backed by a DOM [Element] are not safe for concurrent access while [getXml] is traversed or mutated.
  */
 class NavigationXmlDocument
 private constructor(
@@ -43,43 +46,138 @@ private constructor(
 
   constructor(sourceFile: SourceFile, rootElement: Element) : this(sourceFile, rootElement, null)
 
+  private val parseSourceFile: SourceFile
+    get() = checkNotNull(sourceFile)
+
+  private sealed class ElementError(
+    val sourceFilePosition: SourceFilePosition,
+    val message: String,
+  ) {
+    // Each access throws a fresh exception so callers get an accurate stack trace.
+    abstract fun createException(): RuntimeException
+
+    class IncludeError(sourceFilePosition: SourceFilePosition, message: String) : ElementError(sourceFilePosition, message) {
+      override fun createException(): RuntimeException = NavigationXmlDocumentException(message)
+    }
+
+    class DeepLinkError(sourceFilePosition: SourceFilePosition, message: String) : ElementError(sourceFilePosition, message) {
+      override fun createException(): RuntimeException = NavigationXmlDocumentException(message)
+    }
+
+    class InvalidDeepLinkUriError(
+      sourceFilePosition: SourceFilePosition,
+      message: String,
+      private val exceptionMessage: String,
+      private val cause: Throwable?,
+    ) : ElementError(sourceFilePosition, message) {
+      override fun createException(): RuntimeException = DeepLinkException(exceptionMessage, cause)
+    }
+  }
+
+  private class ParsedDocument(
+    val navigationXmlIds: List<String>,
+    val deepLinks: List<DeepLink>,
+    val errors: List<ElementError> = emptyList(),
+  ) {
+    val firstIncludeError: ElementError.IncludeError?
+      get() = errors.filterIsInstance<ElementError.IncludeError>().firstOrNull()
+
+    val firstDeepLinkError: ElementError?
+      get() = errors.firstOrNull { it !is ElementError.IncludeError }
+  }
+
+  private val parsedDocument: ParsedDocument by lazy {
+    precomputedData?.let {
+      return@lazy ParsedDocument(it.navigationXmlIds, it.deepLinks)
+    }
+    val navigationXmlIds = ArrayList<String>()
+    val deepLinks = ArrayList<DeepLink>()
+    val errors = ArrayList<ElementError>()
+    collectElements(checkNotNull(rootElement), navigationXmlIds, deepLinks, errors)
+    ParsedDocument(
+      navigationXmlIds = ImmutableList.copyOf(navigationXmlIds),
+      deepLinks = ImmutableList.copyOf(deepLinks),
+      errors = ImmutableList.copyOf(errors),
+    )
+  }
+
   fun convertToData(manifestPlaceHolders: Map<String, String>, useUnknownSourceFilePosition: Boolean) =
     NavigationXmlDocumentData(name!!, navigationXmlIds, processDeepLinks(deepLinks, manifestPlaceHolders, useUnknownSourceFilePosition))
 
   /**
    * The list of navigation xml IDs found in this document, including duplicates. navigation xml IDs are found in <include> elements as
    * "app:graph" attribute values, trimmed of their "@navigation/" prefix.
+   *
+   * Throws a fresh [NavigationXmlDocumentException] for the first `<include>` validation error in this document.
    */
-  val navigationXmlIds: List<String> by lazy {
-    precomputedData?.let {
-      return@lazy it.navigationXmlIds
+  val navigationXmlIds: List<String>
+    get() {
+      val parsed = parsedDocument
+      parsed.firstIncludeError?.let { throw it.createException() }
+      return parsed.navigationXmlIds
     }
-    val navigationXmlIds = ArrayList<String>()
-    getNavigationXmlIds(navigationXmlIds, rootElement!!)
-    ImmutableList.copyOf(navigationXmlIds)
-  }
-
-  /** The list of [DeepLink]s found in this document, including duplicates. [DeepLink]s are found in <deepLink> elements. */
-  val deepLinks: List<DeepLink> by lazy {
-    precomputedData?.let {
-      return@lazy it.deepLinks
-    }
-    val deepLinks = ArrayList<DeepLink>()
-    getDeepLinks(deepLinks, rootElement!!)
-    ImmutableList.copyOf(deepLinks)
-  }
-
-  val name: String? = precomputedData?.let { it.name } ?: sourceFile!!.description
 
   /**
-   * Recursive search for navigation xml IDs
+   * The list of [DeepLink]s found in this document, including duplicates. [DeepLink]s are found in <deepLink> elements.
    *
-   * @param navigationXmlIds The list of navigation xml IDs found in the previous recursive calls. Subsequent IDs will be added to this
-   *   list.
-   * @param element The element searched for navigation xml IDS. The search is recursive through element's descendants.
+   * Throws a fresh [NavigationXmlDocumentException] or [DeepLinkException] for the first `<deepLink>` validation error in this document
+   * (including a blank `app:mimeType` even when `app:uri` is valid).
    */
-  @Throws(NavigationXmlDocumentException::class)
-  private fun getNavigationXmlIds(navigationXmlIds: MutableList<String>, element: Element) {
+  val deepLinks: List<DeepLink>
+    get() {
+      val parsed = parsedDocument
+      parsed.firstDeepLinkError?.let { throw it.createException() }
+      return parsed.deepLinks
+    }
+
+  /**
+   * All valid navigation xml IDs found in `<include>` elements in this document, skipping any invalid `<include>` elements without
+   * throwing. Use [appendElementErrorsTo] to record validation errors into a [MergingReport.Builder].
+   */
+  internal val validNavigationXmlIds: List<String>
+    get() = parsedDocument.navigationXmlIds
+
+  /**
+   * All valid [DeepLink]s found in `<deepLink>` elements in this document, skipping any invalid `<deepLink>` elements without throwing. A
+   * `<deepLink>` with any validation error (including a blank `app:mimeType` alongside an otherwise valid `app:uri`) is excluded. Use
+   * [appendElementErrorsTo] to record validation errors into a [MergingReport.Builder].
+   */
+  internal val validDeepLinks: List<DeepLink>
+    get() = parsedDocument.deepLinks
+
+  /**
+   * Appends all `<deepLink>` and `<include>` element validation errors in this document to [mergingReportBuilder] in XML document order.
+   *
+   * This method is not idempotent: every invocation appends all element errors in this document, so callers such as [NavGraphExpander] must
+   * deduplicate per merge pass. Errors are recorded at each invalid element's position in this navigation XML file (including when reached
+   * through a nested `<include>`). If a single `<deepLink>` element has multiple independent attribute errors (such as both a blank
+   * `app:mimeType` and a missing or invalid `app:uri`), each error is recorded.
+   *
+   * @see deepLinks
+   * @see navigationXmlIds
+   */
+  internal fun appendElementErrorsTo(mergingReportBuilder: MergingReport.Builder) {
+    parsedDocument.errors.forEach {
+      mergingReportBuilder.addMessage(
+        it.sourceFilePosition,
+        MergingReport.Record.Severity.ERROR,
+        it.message,
+      )
+    }
+  }
+
+  val name: String? = precomputedData?.name ?: parseSourceFile.description
+
+  /**
+   * Single-pass recursive traversal collecting valid `<include>` navigation IDs, valid `<deepLink>` items, and all element-level validation
+   * errors in XML document order.
+   */
+  private fun collectElements(
+    element: Element,
+    navigationXmlIds: MutableList<String>,
+    deepLinks: MutableList<DeepLink>,
+    errors: MutableList<ElementError>,
+  ) {
     if (element.tagName == SdkConstants.TAG_INCLUDE) {
       val namedNodeMap: NamedNodeMap? = element.attributes
       val graphValue = namedNodeMap?.getNamedItemNS(SdkConstants.AUTO_URI, SdkConstants.ATTR_GRAPH)?.nodeValue
@@ -88,49 +186,54 @@ private constructor(
       } else {
         val nsUriPrefix = XmlUtils.lookupNamespacePrefix(element, SdkConstants.AUTO_URI, false)
         val graphName = nsUriPrefix + XmlUtils.NS_SEPARATOR + SdkConstants.ATTR_GRAPH
-        throw NavigationXmlDocumentException(
+        val sourceFilePosition = SourceFilePosition(parseSourceFile, PositionXmlParser.getPosition(element))
+        val message =
           "Navigation XML document <include> element must contain a $graphName " +
             "attribute, whose value begins " +
             "with ${SdkConstants.NAVIGATION_PREFIX}."
-        )
+        errors.add(ElementError.IncludeError(sourceFilePosition, message))
       }
-    }
-    for (childNode in XmlUtils.getSubTagsAsList(element)) {
-      getNavigationXmlIds(navigationXmlIds, childNode)
-    }
-  }
-
-  /**
-   * Recursive search for [DeepLink]s, which are found in <deepLink> elements
-   *
-   * @param deepLinks The list of [DeepLink]s found in the previous recursive calls. Subsequent [DeepLink]s will be added to this list.
-   * @param element The element searched for [DeepLink]s. The search is recursive through element's descendants.
-   */
-  @Throws(NavigationXmlDocumentException::class, DeepLinkException::class)
-  private fun getDeepLinks(deepLinks: MutableList<DeepLink>, element: Element) {
-    if (element.tagName == SdkConstants.TAG_DEEP_LINK) {
+    } else if (element.tagName == SdkConstants.TAG_DEEP_LINK) {
       val namedNodeMap: NamedNodeMap? = element.attributes
       val deepLinkUri = namedNodeMap?.getNamedItemNS(SdkConstants.AUTO_URI, SdkConstants.ATTR_URI)?.nodeValue
       val autoVerifyAttribute = namedNodeMap?.getNamedItemNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_AUTO_VERIFY)
       val action = namedNodeMap?.getNamedItemNS(SdkConstants.AUTO_URI, SdkConstants.ATTR_DEEPLINK_ACTION)?.nodeValue
       val mimeType = namedNodeMap?.getNamedItemNS(SdkConstants.AUTO_URI, SdkConstants.ATTR_DEEPLINK_MIMETYPE)?.nodeValue
+      val sourceFilePosition = SourceFilePosition(parseSourceFile, PositionXmlParser.getPosition(element))
+      var hasBlankMimeType = false
       if (mimeType != null && mimeType.isBlank()) {
-        throw NavigationXmlDocumentException(
-          "Navigation XML document <deepLink> element " + "${SdkConstants.ATTR_DEEPLINK_MIMETYPE} cannot be blank."
-        )
+        val message = "Navigation XML document <deepLink> element ${SdkConstants.ATTR_DEEPLINK_MIMETYPE} cannot be blank."
+        errors.add(ElementError.DeepLinkError(sourceFilePosition, message))
+        hasBlankMimeType = true
       }
       val autoVerify = autoVerifyAttribute?.nodeValue == "true"
-      val sourceFilePosition = SourceFilePosition(sourceFile!!, PositionXmlParser.getPosition(element))
+      val nsUriPrefix by lazy(LazyThreadSafetyMode.NONE) { XmlUtils.lookupNamespacePrefix(element, SdkConstants.AUTO_URI, false) }
+      // Still parse the URI when mimeType is blank so independent URI errors are reported too.
       if (deepLinkUri != null) {
-        deepLinks.add(DeepLink.fromUri(deepLinkUri, sourceFilePosition, autoVerify, action, mimeType))
+        try {
+          val deepLink = DeepLink.fromUri(deepLinkUri, sourceFilePosition, autoVerify, action, mimeType)
+          if (!hasBlankMimeType) {
+            deepLinks.add(deepLink)
+          }
+        } catch (e: DeepLinkException) {
+          val exceptionMessage = e.message ?: "Error reading navigation XML <deepLink> element."
+          val reportMessage =
+            if (e.cause is URISyntaxException) {
+              val uriName = nsUriPrefix + XmlUtils.NS_SEPARATOR + SdkConstants.ATTR_URI
+              "Navigation XML document <deepLink> element $uriName is invalid: $exceptionMessage"
+            } else {
+              exceptionMessage
+            }
+          errors.add(ElementError.InvalidDeepLinkUriError(sourceFilePosition, reportMessage, exceptionMessage, e.cause))
+        }
       } else {
-        val nsUriPrefix = XmlUtils.lookupNamespacePrefix(element, SdkConstants.AUTO_URI, false)
         val uriName = nsUriPrefix + XmlUtils.NS_SEPARATOR + SdkConstants.ATTR_URI
-        throw NavigationXmlDocumentException("Navigation XML document <deepLink> element must contain a $uriName " + "attribute.")
+        val message = "Navigation XML document <deepLink> element must contain a $uriName attribute."
+        errors.add(ElementError.DeepLinkError(sourceFilePosition, message))
       }
     }
     for (childNode in XmlUtils.getSubTagsAsList(element)) {
-      getDeepLinks(deepLinks, childNode)
+      collectElements(childNode, navigationXmlIds, deepLinks, errors)
     }
   }
 
