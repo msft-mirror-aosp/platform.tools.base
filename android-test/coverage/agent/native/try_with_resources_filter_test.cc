@@ -1015,6 +1015,1135 @@ TEST_F(TryWithResourcesFilterTest, ShouldKeepEarlierCloseOfReturn) {
   EXPECT_NE(early_close, close);
 }
 
+// try (InputStream in = open(path)) {
+//   switch (k) {
+//     case 0:
+//       return in.read();
+//     default:
+//       break;
+//   }
+//   return 0;
+// }
+// D8 can put the close of the block after the handler, past the close of the
+// early return, which the build-time report keeps. The code before the close
+// can be entered by a goto or by the case of a switch, branch on its own, or
+// jump backward after the handler, and an earlier return can reuse the
+// register of the resource.
+TEST_F(TryWithResourcesFilterTest, ShouldFilterCloseAfterHandler) {
+  enum class Tail { kGoto, kCase, kSparseCase, kBranches, kBackwardJump };
+  for (Tail shape : {Tail::kGoto, Tail::kCase, Tail::kSparseCase,
+                     Tail::kBranches, Tail::kBackwardJump}) {
+    SCOPED_TRACE(static_cast<int>(shape));
+    output_ = Output();
+    TestMethod m("pick", "(Ljava/lang/String;I)I");
+    lir::Label* zero = m.NewLabel();
+    lir::Label* returned = m.NewLabel();
+    lir::Label* tail = m.NewLabel();
+    lir::Label* other = m.NewLabel();
+    lir::Label* join = m.NewLabel();
+    lir::Label* after = m.NewLabel();
+    lir::Label* handler = m.NewLabel();
+    lir::Label* suppress = m.NewLabel();
+    lir::Label* rethrow = m.NewLabel();
+    lir::Label* payload = m.NewLabel();
+    auto close = [&]() {
+      return m.Add(dex::OP_INVOKE_VIRTUAL,
+                   {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+    };
+    auto call = [&](const char* name) {
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs({}), m.MethodRef(kTestClassName, name, "()V")});
+    };
+    m.AddLine(30);
+    m.Add(dex::OP_INVOKE_STATIC,
+          {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+    m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+    m.AddLine(31);
+    if (shape == Tail::kCase || shape == Tail::kSparseCase) {
+      // One case goes to the code before the close, and the other cases to
+      // the return.
+      m.Add(
+          shape == Tail::kCase ? dex::OP_PACKED_SWITCH : dex::OP_SPARSE_SWITCH,
+          {m.Reg(4), m.Target(payload)});
+    } else {
+      m.Add(dex::OP_IF_EQZ, {m.Reg(4), m.Target(zero)});
+      m.Add(dex::OP_GOTO, {m.Target(tail)});
+    }
+    m.Place(zero);
+    lir::TryBlockBegin* block = m.AddTryBlockBegin();
+    m.AddLine(33);
+    m.Add(dex::OP_INVOKE_VIRTUAL,
+          {m.Regs({0}), m.MethodRef(kInputStream, "read", "()I")});
+    m.Add(dex::OP_MOVE_RESULT, {m.Reg(1)});
+    m.AddTryBlockEnd(block, handler);
+    m.AddLine(39);
+    lir::Instruction* early_check =
+        m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(returned)});
+    lir::Instruction* early_close = close();
+    m.Place(returned);
+    m.AddLine(33);
+    if (shape == Tail::kBackwardJump) {
+      m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+    }
+    m.Add(dex::OP_RETURN, {m.Reg(1)});
+    m.Place(handler);
+    m.AddLine(30);
+    lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+    lir::Instruction* handler_check =
+        m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
+    lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+    lir::Instruction* handler_close = close();
+    m.AddTryBlockEnd(closing, suppress);
+    lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+    m.Place(suppress);
+    lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+    lir::Instruction* suppression = m.Add(
+        dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({1, 2}),
+         m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+    m.Place(rethrow);
+    lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(1)});
+    lir::Instruction* check = nullptr;
+    lir::Instruction* close_of_block = nullptr;
+    auto close_and_return = [&]() {
+      m.AddLine(39);
+      check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
+      close_of_block = close();
+      m.Place(after);
+      m.AddLine(38);
+      m.Add(dex::OP_CONST_4, {m.Reg(1), m.Literal(0)});
+      m.Add(dex::OP_RETURN, {m.Reg(1)});
+    };
+    if (shape == Tail::kBackwardJump) {
+      m.Place(join);
+      close_and_return();
+      m.Place(tail);
+      m.AddLine(37);
+      call("a");
+      m.Add(dex::OP_GOTO, {m.Target(join)});
+    } else {
+      m.Place(tail);
+      if (shape == Tail::kBranches) {
+        // if (flag) a(); else b(); before the end of the block.
+        m.AddLine(37);
+        m.Add(dex::OP_IF_EQZ, {m.Reg(5), m.Target(other)});
+        call("a");
+        m.Add(dex::OP_GOTO, {m.Target(join)});
+        m.Place(other);
+        call("b");
+        m.Place(join);
+      }
+      close_and_return();
+    }
+    if (shape == Tail::kCase) {
+      m.Place(payload);
+      m.AddPackedSwitchPayload(0, {zero, tail});
+    } else if (shape == Tail::kSparseCase) {
+      m.Place(payload);
+      m.AddSparseSwitchPayload({{0, zero}, {5, tail}});
+    }
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    ExpectIgnored(
+        m, Each({caught, handler_check, handler_close, to_throw, suppressed,
+                 suppression, thrown, check, close_of_block}));
+    EXPECT_NE(early_check, check);
+    EXPECT_NE(early_close, close_of_block);
+  }
+}
+
+// try (InputStream in = open(path)) {
+//   if (k != 0) {
+//     return 1;  // or return in.read();
+//   }
+//   use(in);  // or return in.read();
+// }
+// When an early return in the block has no throwing code, D8 can put its close
+// after the handler while the close of the block stays before the handler, and
+// an early return with throwing code could be laid out the same way. The close
+// of the block is still the one filtered, and the early return keeps its close.
+TEST_F(TryWithResourcesFilterTest, ShouldKeepEarlyReturnAfterHandler) {
+  for (bool block_returns : {false, true}) {
+    for (bool early_reads : {false, true}) {
+      SCOPED_TRACE(block_returns ? "block returns" : "block falls through");
+      SCOPED_TRACE(early_reads ? "early return reads" : "early return of 1");
+      output_ = Output();
+      TestMethod m("branch", "(Ljava/lang/String;I)I");
+      lir::Label* early = m.NewLabel();
+      lir::Label* returned = m.NewLabel();
+      lir::Label* after = m.NewLabel();
+      lir::Label* handler = m.NewLabel();
+      lir::Label* suppress = m.NewLabel();
+      lir::Label* rethrow = m.NewLabel();
+      auto close = [&]() {
+        return m.Add(dex::OP_INVOKE_VIRTUAL,
+                     {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+      };
+      auto read = [&]() {
+        lir::TryBlockBegin* reading = m.AddTryBlockBegin();
+        m.Add(dex::OP_INVOKE_VIRTUAL,
+              {m.Regs({0}), m.MethodRef(kInputStream, "read", "()I")});
+        m.Add(dex::OP_MOVE_RESULT, {m.Reg(1)});
+        m.AddTryBlockEnd(reading, handler);
+      };
+      m.AddLine(20);
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+      m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+      m.AddLine(21);
+      m.Add(dex::OP_IF_NEZ, {m.Reg(4), m.Target(early)});
+      m.AddLine(24);
+      if (block_returns) {
+        read();
+      } else {
+        lir::TryBlockBegin* block = m.AddTryBlockBegin();
+        m.Add(dex::OP_INVOKE_STATIC,
+              {m.Regs({0}),
+               m.MethodRef(kTestClassName, "use", "(Ljava/io/InputStream;)V")});
+        m.AddTryBlockEnd(block, handler);
+      }
+      m.AddLine(25);
+      lir::Instruction* check =
+          m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
+      lir::Instruction* close_of_block = close();
+      m.Place(after);
+      if (block_returns) {
+        m.AddLine(24);
+        m.Add(dex::OP_RETURN, {m.Reg(1)});
+      } else {
+        m.AddLine(26);
+        m.Add(dex::OP_CONST_4, {m.Reg(1), m.Literal(0)});
+        m.Add(dex::OP_RETURN, {m.Reg(1)});
+      }
+      m.Place(handler);
+      m.AddLine(20);
+      lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+      lir::Instruction* handler_check =
+          m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
+      lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+      lir::Instruction* handler_close = close();
+      m.AddTryBlockEnd(closing, suppress);
+      lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+      m.Place(suppress);
+      lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+      lir::Instruction* suppression =
+          m.Add(dex::OP_INVOKE_VIRTUAL,
+                {m.Regs({1, 2}), m.MethodRef(kThrowable, "addSuppressed",
+                                             "(Ljava/lang/Throwable;)V")});
+      m.Place(rethrow);
+      lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(1)});
+      m.Place(early);
+      m.AddLine(22);
+      if (early_reads) {
+        read();
+      }
+      m.AddLine(25);
+      lir::Instruction* early_check =
+          m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(returned)});
+      lir::Instruction* early_close = close();
+      m.Place(returned);
+      m.AddLine(22);
+      if (!early_reads) {
+        m.Add(dex::OP_CONST_4, {m.Reg(1), m.Literal(1)});
+      }
+      m.Add(dex::OP_RETURN, {m.Reg(1)});
+
+      filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+      ExpectIgnored(
+          m, Each({check, close_of_block, caught, handler_check, handler_close,
+                   to_throw, suppressed, suppression, thrown}));
+      EXPECT_NE(early_check, check);
+      EXPECT_NE(early_close, close_of_block);
+    }
+  }
+}
+
+// try (InputStream a = open(path)) {
+//   try (InputStream b = open(path)) {
+//     switch (k) {
+//       case 0:
+//         return b.read();
+//       default:
+//         break;
+//     }
+//   }
+//   return a.read();
+// }
+// D8 can put the end of the inner block, and the rest of the outer block, after
+// the handler of the inner statement, which the outer statement then has
+// before its close.
+TEST_F(TryWithResourcesFilterTest,
+       ShouldFilterCloseAfterHandlerOfInnerStatement) {
+  TestMethod m("nested", "(Ljava/lang/String;I)I");
+  lir::Label* tail_b = m.NewLabel();
+  lir::Label* returned_b = m.NewLabel();
+  lir::Label* returned_a = m.NewLabel();
+  lir::Label* closed_b = m.NewLabel();
+  lir::Label* closed_a = m.NewLabel();
+  lir::Label* handler_a = m.NewLabel();
+  lir::Label* handler_b = m.NewLabel();
+  auto open = [&](dex::u4 reg) {
+    m.Add(dex::OP_INVOKE_STATIC,
+          {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+    m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(reg)});
+  };
+  auto read = [&](dex::u4 reg, lir::Label* handler) {
+    lir::TryBlockBegin* block = m.AddTryBlockBegin();
+    m.Add(dex::OP_INVOKE_VIRTUAL,
+          {m.Regs({reg}), m.MethodRef(kInputStream, "read", "()I")});
+    m.Add(dex::OP_MOVE_RESULT, {m.Reg(2)});
+    m.AddTryBlockEnd(block, handler);
+  };
+  // The check and the close of v<reg>, in a try block that goes to `handler`
+  // if not null.
+  auto close = [&](dex::u4 reg, lir::Label* after, lir::Label* handler,
+                   lir::Instruction** check) -> lir::Instruction* {
+    lir::TryBlockBegin* block =
+        handler != nullptr ? m.AddTryBlockBegin() : nullptr;
+    *check = m.Add(dex::OP_IF_EQZ, {m.Reg(reg), m.Target(after)});
+    lir::Instruction* closed =
+        m.Add(dex::OP_INVOKE_VIRTUAL,
+              {m.Regs({reg}), m.MethodRef(kInputStream, "close", "()V")});
+    if (block != nullptr) {
+      m.AddTryBlockEnd(block, handler);
+    }
+    m.Place(after);
+    return closed;
+  };
+  // The handler at `label` of the statement of v<reg>, whose bytecodes it
+  // appends to `code`.
+  auto handler = [&](lir::Label* label, dex::u4 reg,
+                     std::vector<lir::Instruction*>* code) {
+    lir::Label* suppress = m.NewLabel();
+    lir::Label* rethrow = m.NewLabel();
+    m.Place(label);
+    code->push_back(m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(5)}));
+    code->push_back(m.Add(dex::OP_IF_EQZ, {m.Reg(reg), m.Target(rethrow)}));
+    lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+    code->push_back(
+        m.Add(dex::OP_INVOKE_VIRTUAL,
+              {m.Regs({reg}), m.MethodRef(kInputStream, "close", "()V")}));
+    m.AddTryBlockEnd(closing, suppress);
+    code->push_back(m.Add(dex::OP_GOTO, {m.Target(rethrow)}));
+    m.Place(suppress);
+    code->push_back(m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(6)}));
+    code->push_back(
+        m.Add(dex::OP_INVOKE_VIRTUAL,
+              {m.Regs({5, 6}), m.MethodRef(kThrowable, "addSuppressed",
+                                           "(Ljava/lang/Throwable;)V")}));
+    m.Place(rethrow);
+    code->push_back(m.Add(dex::OP_THROW, {m.Reg(5)}));
+  };
+  lir::Instruction* unused = nullptr;
+  m.AddLine(20);
+  open(0);
+  lir::TryBlockBegin* creation = m.AddTryBlockBegin();
+  m.AddLine(21);
+  open(1);
+  m.AddTryBlockEnd(creation, handler_a);
+  m.AddLine(22);
+  m.Add(dex::OP_IF_NEZ, {m.Reg(4), m.Target(tail_b)});
+  m.AddLine(24);
+  read(1, handler_b);
+  m.AddLine(30);
+  close(1, returned_b, handler_a, &unused);
+  m.AddLine(32);
+  close(0, returned_a, nullptr, &unused);
+  m.AddLine(24);
+  m.Add(dex::OP_RETURN, {m.Reg(2)});
+  std::vector<lir::Instruction*> code_b;
+  m.AddLine(21);
+  handler(handler_b, 1, &code_b);
+  m.Place(tail_b);
+  m.AddLine(30);
+  lir::Instruction* check_b = nullptr;
+  lir::Instruction* close_b = close(1, closed_b, handler_a, &check_b);
+  m.AddLine(31);
+  read(0, handler_a);
+  m.AddLine(32);
+  lir::Instruction* check_a = nullptr;
+  lir::Instruction* close_a = close(0, closed_a, nullptr, &check_a);
+  m.AddLine(31);
+  m.Add(dex::OP_RETURN, {m.Reg(2)});
+  std::vector<lir::Instruction*> code_a;
+  m.AddLine(20);
+  handler(handler_a, 0, &code_a);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  // The outer statement, whose try block ends first, then the inner one.
+  std::vector<Range> ignored = Each({check_a, close_a});
+  for (lir::Instruction* instr : code_a) {
+    ignored.push_back(Range{instr, instr});
+  }
+  for (lir::Instruction* instr : code_b) {
+    ignored.push_back(Range{instr, instr});
+  }
+  for (const Range& range : Each({check_b, close_b})) {
+    ignored.push_back(range);
+  }
+  ExpectIgnored(m, ignored);
+}
+
+// int read(InputStream in) {
+//   try {
+//     try (in) {
+//       use(in);
+//     }
+//   } catch (IllegalStateException e) {
+//     if (in != null) in.close();
+//   }
+//   return 0;
+// }
+// The handler of the catch comes after the handler of the statement, and its
+// close of the parameter is code of its own.
+TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseInLaterHandler) {
+  TestMethod m("read", "(Ljava/io/InputStream;)I");
+  lir::Label* done = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  lir::Label* caught_state = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({3}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(13);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({3}),
+         m.MethodRef(kTestClassName, "use", "(Ljava/io/InputStream;)V")});
+  m.AddTryBlockEnd(block, handler);
+  m.AddLine(14);
+  lir::Instruction* check = m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(done)});
+  lir::TryBlockBegin* outer = m.AddTryBlockBegin();
+  lir::Instruction* close_of_block = close();
+  m.AddTryBlockEnd(outer, caught_state, "Ljava/lang/IllegalStateException;");
+  m.AddLine(17);
+  m.Add(dex::OP_GOTO, {m.Target(done)});
+  m.Place(handler);
+  m.AddLine(12);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close = close();
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({0, 1}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(0)});
+  m.Place(caught_state);
+  m.AddLine(15);
+  m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  m.AddLine(16);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(done)});
+  close();
+  m.Place(done);
+  m.AddLine(18);
+  m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+  m.Add(dex::OP_RETURN, {m.Reg(0)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m, Each({check, close_of_block, caught, handler_check, handler_close,
+               to_throw, suppressed, suppression, thrown}));
+}
+
+// try (InputStream r = open(path)) {
+//   if (k == 0) {
+//     return r.read();
+//   }
+//   use(r);
+// }
+// try (InputStream q = open(path)) {
+//   use(q);
+// }
+// return 0;
+// In a release build, D8 can reuse the register of r for q, and put the early
+// return of r after the handler of q, where only r jumps to. That close of r
+// stays out of q, also when the close of q comes after its handler too.
+TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseOfOtherCodeAfterHandler) {
+  for (bool q_after_handler : {false, true}) {
+    SCOPED_TRACE(q_after_handler ? "close of q after its handler"
+                                 : "close of q before its handler");
+    output_ = Output();
+    TestMethod m("read", "(Ljava/lang/String;I)I");
+    lir::Label* early = m.NewLabel();
+    lir::Label* closed_r = m.NewLabel();
+    lir::Label* tail_q = m.NewLabel();
+    lir::Label* done = m.NewLabel();
+    lir::Label* returned = m.NewLabel();
+    lir::Label* handler_q = m.NewLabel();
+    lir::Label* handler_r = m.NewLabel();
+    auto open = [&]() {
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+      m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+    };
+    auto use = [&](lir::Label* handler) {
+      lir::TryBlockBegin* block = m.AddTryBlockBegin();
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs({0}),
+             m.MethodRef(kTestClassName, "use", "(Ljava/io/InputStream;)V")});
+      m.AddTryBlockEnd(block, handler);
+    };
+    auto close = [&]() {
+      return m.Add(dex::OP_INVOKE_VIRTUAL,
+                   {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+    };
+    // The handler at `label` of the statement whose resource is in v0, whose
+    // bytecodes it appends to `code`.
+    auto handler = [&](lir::Label* label,
+                       std::vector<lir::Instruction*>* code) {
+      lir::Label* suppress = m.NewLabel();
+      lir::Label* rethrow = m.NewLabel();
+      m.Place(label);
+      code->push_back(m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)}));
+      code->push_back(m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)}));
+      lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+      code->push_back(close());
+      m.AddTryBlockEnd(closing, suppress);
+      code->push_back(m.Add(dex::OP_GOTO, {m.Target(rethrow)}));
+      m.Place(suppress);
+      code->push_back(m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(5)}));
+      code->push_back(
+          m.Add(dex::OP_INVOKE_VIRTUAL,
+                {m.Regs({1, 5}), m.MethodRef(kThrowable, "addSuppressed",
+                                             "(Ljava/lang/Throwable;)V")}));
+      m.Place(rethrow);
+      code->push_back(m.Add(dex::OP_THROW, {m.Reg(1)}));
+    };
+    // The close of q when its block ends, and the return after it.
+    lir::Instruction* check_q = nullptr;
+    lir::Instruction* close_q = nullptr;
+    auto close_and_return = [&]() {
+      m.AddLine(28);
+      check_q = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(done)});
+      close_q = close();
+      m.Place(done);
+      m.AddLine(29);
+      m.Add(dex::OP_CONST_4, {m.Reg(2), m.Literal(0)});
+      m.Add(dex::OP_RETURN, {m.Reg(2)});
+    };
+    m.AddLine(20);
+    open();
+    m.AddLine(21);
+    m.Add(dex::OP_IF_EQZ, {m.Reg(4), m.Target(early)});
+    m.AddLine(24);
+    use(handler_r);
+    m.AddLine(25);
+    lir::Instruction* check_r =
+        m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(closed_r)});
+    lir::Instruction* close_r = close();
+    m.Place(closed_r);
+    m.AddLine(26);
+    open();
+    m.AddLine(27);
+    use(handler_q);
+    if (q_after_handler) {
+      m.Add(dex::OP_GOTO, {m.Target(tail_q)});
+    } else {
+      close_and_return();
+    }
+    std::vector<lir::Instruction*> code_q;
+    m.AddLine(26);
+    handler(handler_q, &code_q);
+    if (q_after_handler) {
+      m.Place(tail_q);
+      close_and_return();
+    }
+    m.Place(early);
+    m.AddLine(22);
+    lir::TryBlockBegin* reading = m.AddTryBlockBegin();
+    m.Add(dex::OP_INVOKE_VIRTUAL,
+          {m.Regs({0}), m.MethodRef(kInputStream, "read", "()I")});
+    m.Add(dex::OP_MOVE_RESULT, {m.Reg(2)});
+    m.AddTryBlockEnd(reading, handler_r);
+    m.AddLine(25);
+    m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(returned)});
+    close();
+    m.Place(returned);
+    m.AddLine(22);
+    m.Add(dex::OP_RETURN, {m.Reg(2)});
+    std::vector<lir::Instruction*> code_r;
+    m.AddLine(20);
+    handler(handler_r, &code_r);
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    // The statement of r, whose try block ends first, then the one of q, each
+    // in code order.
+    std::vector<Range> ignored = Each({check_r, close_r});
+    for (lir::Instruction* instr : code_r) {
+      ignored.push_back(Range{instr, instr});
+    }
+    std::vector<Range> closes_q = Each({check_q, close_q});
+    if (!q_after_handler) {
+      ignored.insert(ignored.end(), closes_q.begin(), closes_q.end());
+    }
+    for (lir::Instruction* instr : code_q) {
+      ignored.push_back(Range{instr, instr});
+    }
+    if (q_after_handler) {
+      ignored.insert(ignored.end(), closes_q.begin(), closes_q.end());
+    }
+    ExpectIgnored(m, ignored);
+  }
+}
+
+// if (pre) {
+//   try (in) {
+//     use(in);
+//   }
+//   if (in != null) in.close();
+// } else {
+//   if (in != null) in.close();
+// }
+// Neither a close after the statement nor an else branch reached from before
+// the statement (placed after the handler) counts as the close of the block,
+// whether `in` is a parameter or a local initialized before `if (pre)`, and
+// with or without line numbers.
+TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseBeforeOrAfterStatement) {
+  for (bool local_before_if : {false, true}) {
+    for (bool has_lines : {true, false}) {
+      SCOPED_TRACE(local_before_if ? "local before if" : "parameter");
+      SCOPED_TRACE(has_lines ? "with lines" : "without lines");
+      output_ = Output();
+      TestMethod m("read", "(Ljava/io/InputStream;Z)V");
+      lir::Label* after_try = m.NewLabel();
+      lir::Label* done = m.NewLabel();
+      lir::Label* else_branch = m.NewLabel();
+      lir::Label* handler = m.NewLabel();
+      lir::Label* suppress = m.NewLabel();
+      lir::Label* rethrow = m.NewLabel();
+      auto close = [&]() {
+        return m.Add(dex::OP_INVOKE_VIRTUAL,
+                     {m.Regs({3}), m.MethodRef(kInputStream, "close", "()V")});
+      };
+      auto add_line = [&](int line) {
+        if (has_lines) {
+          m.AddLine(line);
+        }
+      };
+      if (local_before_if) {
+        add_line(18);
+        m.Add(dex::OP_INVOKE_STATIC,
+              {m.Regs({3}), m.MethodRef(kTestClassName, "open",
+                                        "(Ljava/io/InputStream;)Ljava/io/"
+                                        "InputStream;")});
+        m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(3)});
+      }
+      add_line(19);
+      m.Add(dex::OP_IF_EQZ, {m.Reg(4), m.Target(else_branch)});
+      lir::TryBlockBegin* block = m.AddTryBlockBegin();
+      add_line(21);
+      m.Add(dex::OP_INVOKE_STATIC,
+            {m.Regs({3}),
+             m.MethodRef(kTestClassName, "use", "(Ljava/io/InputStream;)V")});
+      m.AddTryBlockEnd(block, handler);
+      add_line(22);
+      lir::Instruction* check =
+          m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(after_try)});
+      lir::Instruction* close_of_block = close();
+      m.Place(after_try);
+      add_line(23);
+      lir::Instruction* post_check =
+          m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(done)});
+      lir::Instruction* post_close = close();
+      m.Place(done);
+      add_line(27);
+      m.Add(dex::OP_RETURN_VOID);
+      m.Place(handler);
+      add_line(20);
+      lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+      lir::Instruction* handler_check =
+          m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(rethrow)});
+      lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+      lir::Instruction* handler_close = close();
+      m.AddTryBlockEnd(closing, suppress);
+      lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+      m.Place(suppress);
+      lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+      lir::Instruction* suppression =
+          m.Add(dex::OP_INVOKE_VIRTUAL,
+                {m.Regs({0, 1}), m.MethodRef(kThrowable, "addSuppressed",
+                                             "(Ljava/lang/Throwable;)V")});
+      m.Place(rethrow);
+      lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(0)});
+      m.Place(else_branch);
+      add_line(25);
+      lir::Instruction* else_check =
+          m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(done)});
+      lir::Instruction* else_close = close();
+      m.Add(dex::OP_GOTO, {m.Target(done)});
+
+      filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+      ExpectIgnored(
+          m, Each({check, close_of_block, caught, handler_check, handler_close,
+                   to_throw, suppressed, suppression, thrown}));
+      EXPECT_NE(post_check, check);
+      EXPECT_NE(post_close, close_of_block);
+      EXPECT_NE(else_check, check);
+      EXPECT_NE(else_close, close_of_block);
+    }
+  }
+}
+
+// switch (k) {
+//   case 0:
+//     try (in) {
+//       return in.read();
+//     }
+//   default:
+//     if (in != null) in.close();
+//     return -1;
+// }
+// D8 puts the default right after the switch, before the case: after the line
+// of the try statement and before the first bytecode that the handler
+// protects, with nothing that writes the parameter in between. The default
+// doesn't lead into the block, so its close isn't the close of the block.
+TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseOfOtherCaseBeforeBlock) {
+  TestMethod m("read", "(Ljava/io/InputStream;I)I");
+  lir::Label* zero = m.NewLabel();
+  lir::Label* returned = m.NewLabel();
+  lir::Label* other = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  lir::Label* payload = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({3}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  m.AddLine(21);
+  m.Add(dex::OP_PACKED_SWITCH, {m.Reg(4), m.Target(payload)});
+  m.AddLine(28);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(other)});
+  m.AddLine(29);
+  close();
+  m.Add(dex::OP_GOTO, {m.Target(other)});
+  m.Place(zero);
+  m.AddLine(24);
+  m.Add(dex::OP_NOP);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(25);
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({3}), m.MethodRef(kInputStream, "read", "()I")});
+  m.Add(dex::OP_MOVE_RESULT, {m.Reg(0)});
+  m.AddTryBlockEnd(block, handler);
+  m.AddLine(26);
+  lir::Instruction* check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(returned)});
+  lir::Instruction* close_of_block = close();
+  m.Place(returned);
+  m.AddLine(25);
+  m.Add(dex::OP_RETURN, {m.Reg(0)});
+  m.Place(handler);
+  m.AddLine(24);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close = close();
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({0, 1}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(0)});
+  m.Place(other);
+  m.AddLine(31);
+  m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+  m.Add(dex::OP_RETURN, {m.Reg(0)});
+  m.Place(payload);
+  m.AddPackedSwitchPayload(0, {zero});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m, Each({check, close_of_block, caught, handler_check, handler_close,
+               to_throw, suppressed, suppression, thrown}));
+}
+
+// if (run) {
+//   try (in) {
+//     throw new IOException();
+//   }
+// }
+// if (in != null) in.close();
+// The block always throws, so D8 puts the code after the if before it, after
+// the line of the try statement. That code doesn't lead into the block, which
+// has no close when it ends, so nothing is filtered.
+TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseAfterThrowingBlock) {
+  TestMethod m("run", "(Ljava/io/InputStream;Z)V");
+  lir::Label* then = m.NewLabel();
+  lir::Label* done = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({3}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  m.AddLine(39);
+  m.Add(dex::OP_IF_NEZ, {m.Reg(4), m.Target(then)});
+  m.AddLine(44);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(done)});
+  m.AddLine(45);
+  close();
+  m.Place(done);
+  m.AddLine(47);
+  m.Add(dex::OP_RETURN_VOID);
+  m.Place(then);
+  m.AddLine(40);
+  m.Add(dex::OP_NOP);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(41);
+  m.Add(dex::OP_NEW_INSTANCE, {m.Reg(0), m.TypeRef("Ljava/io/IOException;")});
+  m.Add(dex::OP_INVOKE_DIRECT,
+        {m.Regs({0}), m.MethodRef("Ljava/io/IOException;", "<init>", "()V")});
+  m.Add(dex::OP_THROW, {m.Reg(0)});
+  m.AddTryBlockEnd(block, handler);
+  m.Place(handler);
+  m.AddLine(40);
+  m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  close();
+  m.AddTryBlockEnd(closing, suppress);
+  m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({0, 1}),
+         m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  m.Add(dex::OP_THROW, {m.Reg(0)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, {});
+}
+
+// do {
+//   try (in) {
+//     in.read();
+//   }
+//   if (in != null) in.close();
+// } while (more());
+// The loop goes back to the start of the block from the code after the
+// statement, which closes the parameter again; that close isn't the close of
+// the block.
+TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseAfterStatementInLoop) {
+  TestMethod m("readAll", "(Ljava/io/InputStream;)V");
+  lir::Label* loop = m.NewLabel();
+  lir::Label* after_try = m.NewLabel();
+  lir::Label* condition = m.NewLabel();
+  lir::Label* again = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({3}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  m.Place(loop);
+  m.AddLine(113);
+  m.Add(dex::OP_NOP);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(114);
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({3}), m.MethodRef(kInputStream, "read", "()I")});
+  m.AddTryBlockEnd(block, handler);
+  m.AddLine(115);
+  lir::Instruction* check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(after_try)});
+  lir::Instruction* close_of_block = close();
+  m.Place(after_try);
+  m.AddLine(116);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(condition)});
+  m.AddLine(117);
+  close();
+  m.Place(condition);
+  m.AddLine(119);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({}), m.MethodRef(kTestClassName, "more", "()Z")});
+  m.Add(dex::OP_MOVE_RESULT, {m.Reg(0)});
+  m.Add(dex::OP_IF_NEZ, {m.Reg(0), m.Target(again)});
+  m.AddLine(120);
+  m.Add(dex::OP_RETURN_VOID);
+  m.Place(again);
+  m.AddLine(119);
+  m.Add(dex::OP_GOTO, {m.Target(loop)});
+  m.Place(handler);
+  m.AddLine(113);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close = close();
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({0, 1}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(0)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m, Each({check, close_of_block, caught, handler_check, handler_close,
+               to_throw, suppressed, suppression, thrown}));
+}
+
+// while (more()) {
+//   try (InputStream in = open(path)) {
+//     if (skip) {
+//       continue;
+//     }
+//     throw new IOException(path);
+//   }
+// }
+// The block only ends at the continue. D8 puts the close of the continue, and
+// the jump back to the loop, between the if and the code that throws, so only
+// the if leads to that close, which the build-time report filters.
+TEST_F(TryWithResourcesFilterTest, ShouldFilterCloseOfContinueBeforeBlock) {
+  TestMethod m("skipAll", "(Ljava/lang/String;Z)V");
+  lir::Label* loop = m.NewLabel();
+  lir::Label* next = m.NewLabel();
+  lir::Label* body = m.NewLabel();
+  lir::Label* done = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  m.Place(loop);
+  m.AddLine(60);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({}), m.MethodRef(kTestClassName, "more", "()Z")});
+  m.Add(dex::OP_MOVE_RESULT, {m.Reg(1)});
+  m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(done)});
+  m.AddLine(61);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+  m.AddLine(62);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(4), m.Target(body)});
+  m.AddLine(66);
+  lir::Instruction* check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(next)});
+  lir::Instruction* close_of_block = close();
+  m.Place(next);
+  m.AddLine(60);
+  m.Add(dex::OP_GOTO, {m.Target(loop)});
+  m.Place(body);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(65);
+  m.Add(dex::OP_NEW_INSTANCE, {m.Reg(1), m.TypeRef("Ljava/io/IOException;")});
+  m.Add(dex::OP_INVOKE_DIRECT,
+        {m.Regs({1, 3}), m.MethodRef("Ljava/io/IOException;", "<init>",
+                                     "(Ljava/lang/String;)V")});
+  m.Add(dex::OP_THROW, {m.Reg(1)});
+  m.AddTryBlockEnd(block, handler);
+  m.Place(handler);
+  m.AddLine(61);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close = close();
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({1, 2}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(1)});
+  m.Place(done);
+  m.AddLine(68);
+  m.Add(dex::OP_RETURN_VOID);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m, Each({check, close_of_block, caught, handler_check, handler_close,
+               to_throw, suppressed, suppression, thrown}));
+}
+
+// out: {
+//   try (in) {
+//     if (stop) break out;
+//     in.read();
+//   }
+// }
+// if (in != null) in.close();
+// The break and the end of the block go to the same code, so D8 merges the
+// close of the break with the close of the block: the break checks the
+// resource and goes to that close. Its check skips to the code after the
+// statement, whose close isn't the close of the block.
+TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseAfterMergedExit) {
+  TestMethod m("readOnce", "(Ljava/io/InputStream;Z)V");
+  lir::Label* read = m.NewLabel();
+  lir::Label* block_close = m.NewLabel();
+  lir::Label* after = m.NewLabel();
+  lir::Label* done = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({3}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  m.AddLine(20);
+  m.Add(dex::OP_NOP);
+  m.AddLine(21);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(4), m.Target(read)});
+  m.AddLine(25);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(after)});
+  m.Add(dex::OP_GOTO, {m.Target(block_close)});
+  m.Place(read);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(24);
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({3}), m.MethodRef(kInputStream, "read", "()I")});
+  m.AddTryBlockEnd(block, handler);
+  m.AddLine(25);
+  lir::Instruction* check = m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(after)});
+  m.Place(block_close);
+  lir::Instruction* close_of_block = close();
+  m.Place(after);
+  m.AddLine(27);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(done)});
+  m.AddLine(28);
+  close();
+  m.Place(done);
+  m.AddLine(30);
+  m.Add(dex::OP_RETURN_VOID);
+  m.Place(handler);
+  m.AddLine(20);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close = close();
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({0, 1}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(0)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m, Each({check, close_of_block, caught, handler_check, handler_close,
+               to_throw, suppressed, suppression, thrown}));
+}
+
+// try (in) {
+//   try {
+//     in.read();
+//     return 1;
+//   } catch (IOException e) {
+//   }
+// }
+// return 0;
+// Only the catch, whose code can't throw, leads to the close of the block, so
+// the walk starts there too; the close of the early return isn't the close of
+// the block.
+TEST_F(TryWithResourcesFilterTest, ShouldFilterCloseAfterInnerCatch) {
+  TestMethod m("readOne", "(Ljava/io/InputStream;)I");
+  lir::Label* returned = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  lir::Label* inner = m.NewLabel();
+  lir::Label* after = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({3}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  m.AddLine(52);
+  m.Add(dex::OP_NOP);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(54);
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({3}), m.MethodRef(kInputStream, "read", "()I")});
+  m.AddTryBlockEnd(block, handler);
+  // The try block also goes to the inner catch, before the catch of any
+  // exception.
+  ++inner->refCount;
+  static_cast<lir::TryBlockEnd*>(m.Last())->handlers.push_back(
+      {m.TypeRef("Ljava/io/IOException;")->ir_type, inner});
+  m.AddLine(59);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(returned)});
+  close();
+  m.Place(returned);
+  m.AddLine(55);
+  m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(1)});
+  m.Add(dex::OP_RETURN, {m.Reg(0)});
+  m.Place(handler);
+  m.AddLine(52);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close = close();
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({0, 1}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(0)});
+  m.Place(inner);
+  m.AddLine(56);
+  m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  m.AddLine(59);
+  lir::Instruction* check = m.Add(dex::OP_IF_EQZ, {m.Reg(3), m.Target(after)});
+  lir::Instruction* close_of_block = close();
+  m.Place(after);
+  m.AddLine(60);
+  m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+  m.Add(dex::OP_RETURN, {m.Reg(0)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m, Each({caught, handler_check, handler_close, to_throw, suppressed,
+               suppression, thrown, check, close_of_block}));
+}
+
 // javac 11 and later close the resource at an early exit with code of their
 // own, which the build-time report keeps, also when D8 merges it with the close
 // of the block.
@@ -2104,6 +3233,204 @@ TEST_F(TryWithResourcesFilterTest, ShouldNotLoopOnGotosOfHandler) {
   ExpectIgnored(m, {});
 }
 
+// A handler whose try block holds no bytecode of its own, as when an inner try
+// block covers it, has no block to close and is left alone.
+TEST_F(TryWithResourcesFilterTest, ShouldNotTakeCloseOfBreakAfterHandler) {
+  // while (more()) {
+  //   try (InputStream in = open(path)) {
+  //     if (flag) { use(in); } else { break; }
+  //   }
+  // }
+  // D8 puts the close of the break after the handler, next to the code after
+  // the loop, and keeps the close of the block before it.
+  TestMethod m("readAll", "(Ljava/lang/String;Z)V");
+  lir::Label* loop = m.NewLabel();
+  lir::Label* other = m.NewLabel();
+  lir::Label* next = m.NewLabel();
+  lir::Label* exit = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  m.Place(loop);
+  m.AddLine(196);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({}), m.MethodRef(kTestClassName, "more", "()Z")});
+  m.Add(dex::OP_MOVE_RESULT, {m.Reg(1)});
+  m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(exit)});
+  m.AddLine(197);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+  m.AddLine(198);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(4), m.Target(other)});
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(199);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({0}),
+         m.MethodRef(kTestClassName, "use", "(Ljava/io/InputStream;)V")});
+  m.AddTryBlockEnd(block, handler);
+  m.AddLine(203);
+  lir::Instruction* check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(next)});
+  lir::Instruction* close_of_block = close();
+  m.Place(next);
+  m.AddLine(197);
+  m.Add(dex::OP_GOTO, {m.Target(loop)});
+  m.Place(handler);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close = close();
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({1, 2}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(1)});
+  m.Place(other);
+  m.AddLine(203);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(exit)});
+  close();
+  m.Place(exit);
+  m.AddLine(205);
+  m.Add(dex::OP_RETURN_VOID);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m, Each({check, close_of_block, caught, handler_check, handler_close,
+               to_throw, suppressed, suppression, thrown}));
+}
+
+TEST_F(TryWithResourcesFilterTest, ShouldFilterCloseBetweenHandlerGotoAndCode) {
+  // block: {
+  //   try (InputStream in = open(path)) {
+  //     if (flag) break block;
+  //     a(in);
+  //   }
+  //   z();
+  // }
+  // w();
+  // D8 8 and 9.1 start the handler with a goto to the rest of its code, and
+  // put the close of the block between the two, after the close of the break.
+  TestMethod m("pick", "(Ljava/lang/String;Z)V");
+  lir::Label* inside = m.NewLabel();
+  lir::Label* end = m.NewLabel();
+  lir::Label* after_block = m.NewLabel();
+  lir::Label* after = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* handler_code = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  auto close = [&]() {
+    return m.Add(dex::OP_INVOKE_VIRTUAL,
+                 {m.Regs({0}), m.MethodRef(kInputStream, "close", "()V")});
+  };
+  auto call = [&](const char* name) {
+    m.Add(dex::OP_INVOKE_STATIC,
+          {m.Regs({}), m.MethodRef(kTestClassName, name, "()V")});
+  };
+  m.AddLine(291);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({3}), m.MethodRef(kTestClassName, "open", kOpen)});
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(0)});
+  m.AddLine(292);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(4), m.Target(inside)});
+  m.AddLine(300);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
+  close();
+  m.Add(dex::OP_GOTO, {m.Target(after)});
+  m.Place(inside);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(293);
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({0}),
+         m.MethodRef(kTestClassName, "a", "(Ljava/io/InputStream;)V")});
+  m.AddTryBlockEnd(block, handler);
+  m.Add(dex::OP_GOTO, {m.Target(end)});
+  m.Place(handler);
+  m.AddLine(291);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(1)});
+  lir::Instruction* to_code = m.Add(dex::OP_GOTO, {m.Target(handler_code)});
+  m.Place(end);
+  m.AddLine(300);
+  lir::Instruction* check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after_block)});
+  lir::Instruction* close_of_block = close();
+  m.Place(after_block);
+  m.AddLine(301);
+  call("z");
+  m.Place(after);
+  m.AddLine(303);
+  call("w");
+  m.Add(dex::OP_RETURN_VOID);
+  m.Place(handler_code);
+  m.AddLine(291);
+  lir::Instruction* handler_check =
+      m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  lir::Instruction* handler_close = close();
+  m.AddTryBlockEnd(closing, suppress);
+  lir::Instruction* to_throw = m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  lir::Instruction* suppressed = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+  lir::Instruction* suppression = m.Add(
+      dex::OP_INVOKE_VIRTUAL,
+      {m.Regs({1, 2}),
+       m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  lir::Instruction* thrown = m.Add(dex::OP_THROW, {m.Reg(1)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(
+      m, Each({caught, to_code, check, close_of_block, handler_check,
+               handler_close, to_throw, suppressed, suppression, thrown}));
+}
+
+TEST_F(TryWithResourcesFilterTest, ShouldNotFilterHandlerThatProtectsNothing) {
+  TestMethod m("empty", "(Ljava/io/InputStream;)V");
+  lir::Label* handler = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  lir::Label* after = m.NewLabel();
+  m.AddLine(20);
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddTryBlockEnd(block, handler);
+  m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(after)});
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({1}), m.MethodRef(kInputStream, "close", "()V")});
+  m.Place(after);
+  m.Add(dex::OP_RETURN_VOID);
+  m.Place(handler);
+  m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({1}), m.MethodRef(kInputStream, "close", "()V")});
+  m.AddTryBlockEnd(closing, suppress);
+  m.Add(dex::OP_GOTO, {m.Target(rethrow)});
+  m.Place(suppress);
+  m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({0, 2}),
+         m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Place(rethrow);
+  m.Add(dex::OP_THROW, {m.Reg(0)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, {});
+}
+
 // ---------------------------------------------------------------------------
 // javac 7 to 10.
 
@@ -2147,6 +3474,9 @@ struct OldShape {
   int exit_check_line = 22;
   bool exit_to_close = true;
   int exit_goto_line = 22;
+  // Whether D8 puts the close of the block, and the return after it, after the
+  // handlers.
+  bool close_after_handlers = false;
   // Whether the resource is a parameter, as with try (in) of javac 9 and 10,
   // rather than created on line 20, whether the method checks it for null and
   // closes it on line 19 before the statement, and whether the method has line
@@ -2314,31 +3644,40 @@ class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
           {m.Regs({0}), m.MethodRef(kInputStream, "read", "()I")});
     m.Add(dex::OP_MOVE_RESULT, {m.Reg(1)});
     m.AddTryBlockEnd(block, primary);
-    add_line(22);
-    if (shape.close_resource && shape.null == OldShape::Null::kBeforeCheck) {
-      s.null_load = load_null();
-    } else if (shape.close_resource &&
-               shape.null == OldShape::Null::kOtherLine) {
-      // A null in another register.
-      m.Add(dex::OP_CONST_4, {m.Reg(6), m.Literal(0)});
-    }
-    if (shape.checks_null) {
-      s.check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
-    }
-    if (shape.close_resource) {
-      if (shape.null == OldShape::Null::kBeforeCall) {
+    // The close of the block, and the return after it.
+    auto add_close = [&]() {
+      add_line(22);
+      if (shape.close_resource && shape.null == OldShape::Null::kBeforeCheck) {
         s.null_load = load_null();
-      } else if (shape.null == OldShape::Null::kOtherRegister) {
+      } else if (shape.close_resource &&
+                 shape.null == OldShape::Null::kOtherLine) {
+        // A null in another register.
         m.Add(dex::OP_CONST_4, {m.Reg(6), m.Literal(0)});
       }
-      s.close = close_resource(4);
+      if (shape.checks_null) {
+        s.check = m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(after)});
+      }
+      if (shape.close_resource) {
+        if (shape.null == OldShape::Null::kBeforeCall) {
+          s.null_load = load_null();
+        } else if (shape.null == OldShape::Null::kOtherRegister) {
+          m.Add(dex::OP_CONST_4, {m.Reg(6), m.Literal(0)});
+        }
+        s.close = close_resource(4);
+      } else {
+        m.Place(block_close);
+        s.close = close();
+      }
+      m.Place(after);
+      add_line(21);
+      m.Add(dex::OP_RETURN, {m.Reg(1)});
+    };
+    lir::Label* tail = m.NewLabel();
+    if (shape.close_after_handlers) {
+      m.Add(dex::OP_GOTO, {m.Target(tail)});
     } else {
-      m.Place(block_close);
-      s.close = close();
+      add_close();
     }
-    m.Place(after);
-    add_line(21);
-    m.Add(dex::OP_RETURN, {m.Reg(1)});
     m.Place(primary);
     add_line(20);
     s.primary = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(2)});
@@ -2373,6 +3712,10 @@ class TryWithResourcesFilterOldJavacTest : public TryWithResourcesFilterTest {
     m.Place(rethrow);
     add_line(shape.throw_line);
     s.rethrow = m.Add(dex::OP_THROW, {m.Reg(3)});
+    if (shape.close_after_handlers) {
+      m.Place(tail);
+      add_close();
+    }
     return s;
   }
 
@@ -2505,6 +3848,26 @@ TEST_F(TryWithResourcesFilterOldJavacTest, ShouldFilterEarlyExits) {
 
       ExpectIgnored(m, Ignored(m, s));
     }
+  }
+}
+
+// switch (k) { case 0: return in.read(); default: break; } in the block of
+// try (InputStream in = open(path)) with javac 8: D8 can put the close of the
+// block after the handlers, past the closes of the early exits.
+TEST_F(TryWithResourcesFilterOldJavacTest, ShouldFilterCloseAfterHandlers) {
+  for (OldShape::Exit exit : {OldShape::Exit::kNone, OldShape::Exit::kCopy,
+                              OldShape::Exit::kMerged}) {
+    SCOPED_TRACE(static_cast<int>(exit));
+    output_ = Output();
+    OldShape shape;
+    shape.close_after_handlers = true;
+    shape.early_exit = exit;
+    TestMethod m("read", "(Ljava/lang/String;)I");
+    OldStatement s = AddOldStatement(m, shape);
+
+    filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+    ExpectIgnored(m, Ignored(m, s));
   }
 }
 
@@ -3365,6 +4728,102 @@ TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterNestedStatements) {
     }
     ExpectIgnored(m, ignored);
   }
+}
+
+// try (InputStream in = open(path)) {
+//   switch (k) {
+//     case 0:
+//       return in.read();
+//     default:
+//       break;
+//   }
+//   return 7;
+// }
+// with ECJ: D8 can put the close of the block after the handler, reached only
+// from the switch before the first bytecode that the handler protects, which
+// is on a line of the block before the line of the handler.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterCloseAfterHandler) {
+  TestMethod m("pick", "(Ljava/lang/String;I)I");
+  lir::Label* tail = m.NewLabel();
+  lir::Label* returned = m.NewLabel();
+  lir::Label* after = m.NewLabel();
+  lir::Label* handler = m.NewLabel();
+  lir::Label* rethrow = m.NewLabel();
+  lir::Label* suppress = m.NewLabel();
+  lir::Label* replace = m.NewLabel();
+  lir::Label* next = m.NewLabel();
+  // The check and the close of the resource in v1, in a try block that goes
+  // to the suppression.
+  auto close = [&](lir::Label* skip, lir::Instruction** check) {
+    *check = m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(skip)});
+    lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+    lir::Instruction* closed =
+        m.Add(dex::OP_INVOKE_VIRTUAL,
+              {m.Regs({1}), m.MethodRef(kInputStream, "close", "()V")});
+    m.AddTryBlockEnd(closing, suppress);
+    return closed;
+  };
+  m.AddLine(20);
+  m.Add(dex::OP_CONST_4, {m.Reg(0), m.Literal(0)});
+  lir::TryBlockBegin* creation = m.AddTryBlockBegin();
+  m.Add(dex::OP_INVOKE_STATIC,
+        {m.Regs({4}), m.MethodRef(kTestClassName, "open", kOpen)});
+  m.Add(dex::OP_MOVE_RESULT_OBJECT, {m.Reg(1)});
+  m.AddTryBlockEnd(creation, suppress);
+  m.AddLine(21);
+  m.Add(dex::OP_IF_NEZ, {m.Reg(5), m.Target(tail)});
+  lir::TryBlockBegin* block = m.AddTryBlockBegin();
+  m.AddLine(23);
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({1}), m.MethodRef(kInputStream, "read", "()I")});
+  m.Add(dex::OP_MOVE_RESULT, {m.Reg(2)});
+  m.AddTryBlockEnd(block, handler);
+  m.AddLine(29);
+  lir::Instruction* early_check = nullptr;
+  lir::Instruction* early_close = close(returned, &early_check);
+  m.Place(returned);
+  m.AddLine(23);
+  m.Add(dex::OP_RETURN, {m.Reg(2)});
+  m.Place(handler);
+  m.AddLine(29);
+  lir::Instruction* caught = m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(0)});
+  m.Add(dex::OP_IF_EQZ, {m.Reg(1), m.Target(rethrow)});
+  lir::TryBlockBegin* closing = m.AddTryBlockBegin();
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({1}), m.MethodRef(kInputStream, "close", "()V")});
+  m.Place(rethrow);
+  m.Add(dex::OP_THROW, {m.Reg(0)});
+  m.AddTryBlockEnd(closing, suppress);
+  m.Place(suppress);
+  m.Add(dex::OP_MOVE_EXCEPTION, {m.Reg(3)});
+  m.Add(dex::OP_IF_EQZ, {m.Reg(0), m.Target(replace)});
+  m.Add(dex::OP_IF_EQ, {m.Reg(0), m.Reg(3), m.Target(next)});
+  m.Add(dex::OP_INVOKE_VIRTUAL,
+        {m.Regs({0, 3}),
+         m.MethodRef(kThrowable, "addSuppressed", "(Ljava/lang/Throwable;)V")});
+  m.Add(dex::OP_GOTO, {m.Target(next)});
+  m.Place(replace);
+  m.Add(dex::OP_MOVE_OBJECT, {m.Reg(0), m.Reg(3)});
+  m.Place(next);
+  m.Add(dex::OP_THROW, {m.Reg(0)});
+  m.Place(tail);
+  lir::Instruction* check = nullptr;
+  lir::Instruction* close_of_block = close(after, &check);
+  m.Place(after);
+  m.AddLine(28);
+  m.Add(dex::OP_CONST_4, {m.Reg(2), m.Literal(7)});
+  m.Add(dex::OP_RETURN, {m.Reg(2)});
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  // The handler and its suppression, then the close of the block after them.
+  std::vector<Range> ignored = EachAndFrom(m, {}, caught, check);
+  for (const Range& range : Each({check, close_of_block})) {
+    ignored.push_back(range);
+  }
+  ExpectIgnored(m, ignored);
+  EXPECT_NE(early_check, check);
+  EXPECT_NE(early_close, close_of_block);
 }
 
 // Below API 19, D8 calls a static backport of addSuppressed instead.

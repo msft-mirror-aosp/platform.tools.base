@@ -47,18 +47,20 @@ namespace coverage {
  * that it generates and that takes the resource, such as the one that closes
  * resources only known as AutoCloseable from API 19 on. D8 can split the
  * handler with gotos and move registers in it. D8 also puts the handlers after
- * all the code that follows the statement, it can copy the resource to another
- * register before the close, and it can reuse those registers once the
- * statement ends. So the close when the block ends is the last close of the
- * same resource with the same method that comes after the start of the block,
- * outside it, and before the handler and the next writes of the registers that
- * hold the resource. A return in the block keeps its own close, and nothing is
- * filtered without a close, as when the block always throws, or when the block
- * can't throw and D8 removes the handler. The close, the suppression and the
- * throws of the handler must share a line, the line of the try statement for
- * javac 11 and later: D8 lays out the same code written by hand in the same
- * order, and only the lines tell them apart, so code without line numbers
- * isn't told apart.
+ * the code that follows the statement, though it can put code of the block
+ * after the handler, it can copy the resource to another register before the
+ * close, and it can reuse those registers once the statement ends. So the close
+ * when the block ends is a close of the same resource with the same method
+ * reached from the block along paths outside the handler before those registers
+ * are written again: one not followed by a return from an earlier line of the
+ * block, if any, or the one whose return is on the last line. Thus an early
+ * return in the block keeps its own close, and nothing is filtered without a
+ * close, as when the block always throws, or when the block can't throw and D8
+ * removes the handler. The close,
+ * the suppression and the throws of the handler must share a line, the line of
+ * the try statement for javac 11 and later: D8 lays out the same code written
+ * by hand in the same order, and only the lines tell them apart, so code
+ * without line numbers isn't told apart.
  *
  * javac 7 to 10 first catch Throwable in a handler that only throws the
  * exception again, to a handler of any exception like the one above, on the

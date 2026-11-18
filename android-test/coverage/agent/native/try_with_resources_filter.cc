@@ -16,10 +16,12 @@
 
 #include "tools/base/android-test/coverage/agent/native/try_with_resources_filter.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <initializer_list>
 #include <iterator>
+#include <limits>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -79,6 +81,34 @@ lir::Label* BranchTarget(const lir::Bytecode* bytecode) {
     }
   }
   return nullptr;
+}
+
+// Returns the labels that `bytecode` jumps to: the target of a branch, or the
+// cases of a switch.
+std::vector<lir::Label*> JumpTargets(const lir::Bytecode* bytecode) {
+  const dex::OpcodeFlags flags = dex::GetFlagsFromOpcode(bytecode->opcode);
+  lir::Label* target = BranchTarget(bytecode);
+  if (target == nullptr || (flags & (dex::kBranch | dex::kSwitch)) == 0) {
+    return {};
+  }
+  if ((flags & dex::kBranch) != 0) {
+    return {target};
+  }
+  // A switch refers to the label of its payload.
+  std::vector<lir::Label*> cases;
+  const lir::Instruction* node = target->next;
+  while (dynamic_cast<const lir::DbgInfoAnnotation*>(node) != nullptr) {
+    node = node->next;
+  }
+  if (auto* packed = dynamic_cast<const lir::PackedSwitchPayload*>(node)) {
+    cases.assign(packed->targets.begin(), packed->targets.end());
+  } else if (auto* sparse =
+                 dynamic_cast<const lir::SparseSwitchPayload*>(node)) {
+    for (const auto& switch_case : sparse->switch_cases) {
+      cases.push_back(switch_case.target);
+    }
+  }
+  return cases;
 }
 
 bool IsGoto(dex::Opcode opcode) {
@@ -414,6 +444,10 @@ struct MethodInfo {
   std::unordered_map<const lir::Bytecode*, lir::Label*> handlers;
   // The first bytecode in code order that each of those handlers protects.
   std::unordered_map<const lir::Label*, lir::Bytecode*> first_protected;
+  // The typed handlers that come before each of those handlers in a try
+  // block: the catches of try statements inside the code that it protects.
+  std::unordered_map<const lir::Label*, std::vector<lir::Label*>>
+      inner_handlers;
 };
 
 int LineOf(const MethodInfo& info, const lir::Bytecode* bytecode) {
@@ -588,6 +622,9 @@ lir::Label* MatchPrimary(lir::Label* label, const MethodInfo& info,
 
 // Returns the bytecode before `instr`, or nullptr.
 lir::Bytecode* PreviousBytecode(lir::Instruction* instr) {
+  if (instr == nullptr) {
+    return nullptr;
+  }
   for (auto* node = instr->prev; node != nullptr; node = node->prev) {
     if (auto* bytecode = dynamic_cast<lir::Bytecode*>(node)) {
       return bytecode;
@@ -692,75 +729,6 @@ void AddMergedExits(lir::Bytecode* check, lir::Bytecode* close,
   }
 }
 
-// Finds the close of the resource of `handler` when the block of its statement
-// ends, and adds its bytecodes to `code` (see AddClose()). The close comes
-// after `first`, the first bytecode of the block, outside the block, and
-// before the handler at `label` and the next writes of the registers that hold
-// the resource, outside the handler: D8 puts the handlers after all the code
-// that follows the statement, it can copy the resource to another register
-// before the close, and once the statement ends, it can reuse those registers.
-// For ECJ, the close is in a try block that goes to one of `handler.entries`.
-// The last of these closes counts, or for javac 7 to 10 all of them on the
-// line of the close of the handler, and the early exits merged with them.
-// Returns the last one, or nullptr if there is none.
-lir::Bytecode* MatchClose(lir::Label* label, lir::Bytecode* first,
-                          const Handler& handler, const MethodInfo& info,
-                          std::vector<lir::Bytecode*>* code) {
-  std::unordered_set<const lir::Bytecode*> in_handler(handler.code.begin(),
-                                                      handler.code.end());
-  std::unordered_set<int> copies = {handler.resource};
-  // The closes, each with its check for null or nullptr.
-  std::vector<std::pair<lir::Bytecode*, lir::Bytecode*>> closes;
-  lir::Instruction* node = first;
-  for (; node != nullptr && node != label && !copies.empty();
-       node = node->next) {
-    auto* bytecode = dynamic_cast<lir::Bytecode*>(node);
-    if (bytecode == nullptr || in_handler.count(bytecode) > 0) {
-      continue;
-    }
-    int closed = -1;
-    int passed = -1;
-    const ir::MethodDecl* method =
-        handler.close_resource ? CloseResourceOf(bytecode, &closed, &passed)
-                               : CloseOf(bytecode, &closed);
-    // A close in the block, which the handler protects, doesn't count.
-    if (method != nullptr && copies.count(closed) > 0 &&
-        SameMethod(method, handler.close) &&
-        !ProtectedBy(info, bytecode, label) &&
-        (!handler.every_close || LineOf(info, bytecode) == handler.line) &&
-        (handler.entries.empty() ||
-         ProtectedByOneOf(info, bytecode, handler.entries))) {
-      lir::Bytecode* previous = PreviousBytecode(bytecode);
-      if (handler.close_resource && previous != nullptr &&
-          LoadsZero(previous, passed)) {
-        previous = PreviousBytecode(previous);
-      }
-      const bool checked =
-          previous != nullptr && in_handler.count(previous) == 0 &&
-          previous->opcode == dex::OP_IF_EQZ && Register(previous, 0) == closed;
-      if (!handler.checks_null || checked) {
-        if (!handler.every_close) {
-          closes.clear();
-        }
-        closes.emplace_back(handler.checks_null ? previous : nullptr, bytecode);
-      }
-    }
-    UpdateCopies(bytecode, &copies);
-  }
-  // The code that can hold the close ends at the handler, or where nothing
-  // holds the resource anymore.
-  if (closes.empty() || (node == nullptr && !copies.empty())) {
-    return nullptr;
-  }
-  for (const auto& [check, close] : closes) {
-    AddClose(check, close, handler, info, code);
-    if (handler.every_close) {
-      AddMergedExits(check, close, info, code);
-    }
-  }
-  return closes.back().second;
-}
-
 // Returns the bytecode after the last write of register `reg` before
 // `bytecode`, or the first bytecode of the method if there is none.
 lir::Bytecode* AfterLastWrite(lir::Bytecode* bytecode, int reg) {
@@ -772,6 +740,354 @@ lir::Bytecode* AfterLastWrite(lir::Bytecode* bytecode, int reg) {
     bytecode = previous;
   }
   return bytecode;
+}
+
+// Returns the bytecodes of the block of a statement of javac 11 or later that
+// lead to the bytecodes that the handler at `label` protects without being
+// protected themselves, such as a switch or a branch at the start of the
+// block. They come from the line of the try statement (`handler.line`) on,
+// after the resource is stored, and lead there through fallthroughs and
+// forward jumps. D8 can put the code of another branch before the block, such
+// as the default of a switch whose case holds the statement, but that code
+// doesn't lead into the block, and a jump back to the start of the block comes
+// from a loop, from the code after the statement. Without lines, there are
+// none.
+std::vector<lir::Bytecode*> BlockEntries(
+    lir::Label* label, const Handler& handler, const MethodInfo& info,
+    const std::unordered_set<const lir::Bytecode*>& in_handler) {
+  std::vector<lir::Bytecode*> entries;
+  if (handler.line == -1) {
+    return entries;
+  }
+  std::unordered_map<const lir::Bytecode*, size_t> position;
+  for (size_t i = 0; i < info.bytecodes.size(); ++i) {
+    position[info.bytecodes[i]] = i;
+  }
+  // The bytecodes that can be part of the block and that fall through or
+  // jump forward to each bytecode.
+  std::unordered_map<const lir::Bytecode*, std::vector<lir::Bytecode*>> sources;
+  for (size_t i = 0; i < info.bytecodes.size(); ++i) {
+    lir::Bytecode* bytecode = info.bytecodes[i];
+    if (in_handler.count(bytecode) > 0 || Writes(bytecode, handler.resource) ||
+        LineOf(info, bytecode) < handler.line) {
+      continue;
+    }
+    if ((dex::GetFlagsFromOpcode(bytecode->opcode) & dex::kContinue) != 0) {
+      lir::Bytecode* next = NextBytecode(bytecode);
+      if (next != nullptr) {
+        sources[next].push_back(bytecode);
+      }
+    }
+    for (lir::Label* target : JumpTargets(bytecode)) {
+      auto it = position.find(SkipNonBytecodes(target));
+      if (target != label && it != position.end() && it->second > i) {
+        sources[it->first].push_back(bytecode);
+      }
+    }
+  }
+  std::unordered_set<const lir::Bytecode*> reached;
+  std::vector<const lir::Bytecode*> worklist;
+  for (lir::Bytecode* bytecode : info.bytecodes) {
+    if (ProtectedBy(info, bytecode, label)) {
+      reached.insert(bytecode);
+      worklist.push_back(bytecode);
+    }
+  }
+  while (!worklist.empty()) {
+    auto it = sources.find(worklist.back());
+    worklist.pop_back();
+    if (it == sources.end()) {
+      continue;
+    }
+    for (lir::Bytecode* source : it->second) {
+      if (reached.insert(source).second) {
+        entries.push_back(source);
+        worklist.push_back(source);
+      }
+    }
+  }
+  return entries;
+}
+
+// For a close `close`, with its check for null `check`, returns the line of
+// the return statement inside the block that it closes the resource for, or
+// numeric_limits<int>::max() if it isn't one. Both javac and ECJ put a close
+// on the line of the end of the block, and an early return after it, past any
+// closes of outer statements, on an earlier line, the line of the return.
+int ExitLine(lir::Bytecode* check, lir::Bytecode* close,
+             const MethodInfo& info) {
+  constexpr int kBlockEnd = std::numeric_limits<int>::max();
+  const int close_line = LineOf(info, close);
+  if (close_line == -1) {
+    return kBlockEnd;
+  }
+  auto after_close = [&](lir::Bytecode* check_instr,
+                         lir::Bytecode* close_instr) -> lir::Bytecode* {
+    lir::Bytecode* next = NextBytecode(close_instr);
+    if (next != nullptr && IsGoto(next->opcode) &&
+        LineOf(info, next) == LineOf(info, close_instr)) {
+      next = SkipNonBytecodes(BranchTarget(next));
+    }
+    if (check_instr != nullptr &&
+        SkipNonBytecodes(BranchTarget(check_instr)) != next) {
+      return nullptr;
+    }
+    return next;
+  };
+  lir::Bytecode* after = after_close(check, close);
+  std::unordered_set<const lir::Bytecode*> visited;
+  while (after != nullptr && visited.insert(after).second) {
+    if (after->opcode == dex::OP_NOP || IsMove(after->opcode) ||
+        (after->opcode >= dex::OP_CONST_4 &&
+         after->opcode <= dex::OP_CONST_CLASS)) {
+      after = NextBytecode(after);
+      continue;
+    }
+    lir::Bytecode* outer_check = nullptr;
+    lir::Bytecode* outer = after;
+    if (outer->opcode == dex::OP_IF_EQZ) {
+      outer_check = outer;
+      outer = NextBytecode(outer);
+    }
+    int closed = -1;
+    int passed = -1;
+    if (outer != nullptr && LoadsZero(outer, Register(outer, 0))) {
+      outer = NextBytecode(outer);
+    }
+    if (outer != nullptr && LineOf(info, outer) >= close_line &&
+        (CloseOf(outer, &closed) != nullptr ||
+         CloseResourceOf(outer, &closed, &passed) != nullptr) &&
+        (outer_check == nullptr || Register(outer_check, 0) == closed)) {
+      after = after_close(outer_check, outer);
+      continue;
+    }
+    break;
+  }
+  if (after == nullptr || after->opcode < dex::OP_RETURN_VOID ||
+      after->opcode > dex::OP_RETURN_OBJECT) {
+    return kBlockEnd;
+  }
+  const int return_line = LineOf(info, after);
+  return return_line != -1 && return_line < close_line ? return_line
+                                                       : kBlockEnd;
+}
+
+// Finds the close of the resource of `handler` when the block of its statement
+// ends, and adds its bytecodes to `code` (see AddClose()). The close is
+// reached from the block along control-flow paths outside `handler` before the
+// registers that hold the resource are overwritten: D8 puts the handlers after
+// the code that follows the statement, though it can put code of the block
+// after the handler, it can copy the resource to another register before the
+// close, and once the statement ends, it can reuse those registers.
+// For ECJ, the close is in a try block that goes to one of `handler.entries`.
+// For javac 7 to 10, all closes on the line of the close of the handler count,
+// and the early exits merged with them; otherwise a close not followed by a
+// return from an earlier line of the block is preferred, or the one whose
+// return is on the last line, and of the tied closes, the last one before the
+// code of the handler counts, or else the last one after it.
+// Returns that close, or nullptr if there is none.
+lir::Bytecode* MatchClose(lir::Label* label, lir::Bytecode* first,
+                          const Handler& handler, const MethodInfo& info,
+                          std::vector<lir::Bytecode*>* code) {
+  if (first == nullptr) {
+    return nullptr;
+  }
+  // Without the handler after `first`, D8 didn't lay this out as a
+  // try-with-resources statement.
+  bool handler_follows = false;
+  for (const lir::Instruction* node = first; node != nullptr;
+       node = node->next) {
+    if (node == label) {
+      handler_follows = true;
+      break;
+    }
+  }
+  if (!handler_follows) {
+    return nullptr;
+  }
+  std::unordered_set<const lir::Bytecode*> in_handler(handler.code.begin(),
+                                                      handler.code.end());
+  // javac 7 to 10 close the resource at each exit of the block, as a finally
+  // block does, and the build-time report filters all these closes. An early
+  // exit can come before `first`, so look from where the resource is stored
+  // on, or from the start of the method for a parameter, which the code before
+  // the statement can close on its own line. Look from there for ECJ too: its
+  // handler has the line of the end of the block, but only the closes of the
+  // statement are in try blocks that go to `handler.entries`.
+  std::vector<lir::Bytecode*> starts =
+      handler.every_close || !handler.entries.empty()
+          ? std::vector<lir::Bytecode*>{AfterLastWrite(first, handler.resource)}
+          : BlockEntries(label, handler, info, in_handler);
+  // At each visited bytecode, the registers known to hold the resource on some
+  // path to it.
+  std::unordered_map<const lir::Bytecode*, std::unordered_set<int>> states;
+  std::vector<lir::Bytecode*> worklist;
+  auto enqueue = [&](lir::Bytecode* target,
+                     const std::unordered_set<int>& copies) {
+    if (target == nullptr || copies.empty() || in_handler.count(target) > 0) {
+      return;
+    }
+    std::unordered_set<int>& state = states[target];
+    const size_t before = state.size();
+    state.insert(copies.begin(), copies.end());
+    if (state.size() > before) {
+      worklist.push_back(target);
+    }
+  };
+  for (lir::Bytecode* start : starts) {
+    enqueue(start, {handler.resource});
+  }
+  // Every bytecode that the handler protects is also part of the block, even
+  // when entered through an inner handler.
+  for (lir::Bytecode* bytecode : info.bytecodes) {
+    if (ProtectedBy(info, bytecode, label)) {
+      enqueue(bytecode, {handler.resource});
+    }
+  }
+  // So is the code of a catch of a try statement inside the block, which only
+  // an exception leads to, even when it can't throw.
+  auto inner = info.inner_handlers.find(label);
+  if (inner != info.inner_handlers.end()) {
+    for (lir::Label* inner_handler : inner->second) {
+      enqueue(SkipNonBytecodes(inner_handler), {handler.resource});
+    }
+  }
+  auto matches_close = [&](lir::Bytecode* call,
+                           const std::unordered_set<int>& live,
+                           lir::Bytecode** out_check) -> bool {
+    if (call == nullptr || in_handler.count(call) > 0) {
+      return false;
+    }
+    int closed = -1;
+    int passed = -1;
+    const ir::MethodDecl* method = handler.close_resource
+                                       ? CloseResourceOf(call, &closed, &passed)
+                                       : CloseOf(call, &closed);
+    // A close in the block, which the handler protects, doesn't count.
+    if (method == nullptr || live.count(closed) == 0 ||
+        !SameMethod(method, handler.close) || ProtectedBy(info, call, label) ||
+        (handler.every_close && LineOf(info, call) != handler.line) ||
+        (!handler.entries.empty() &&
+         !ProtectedByOneOf(info, call, handler.entries))) {
+      return false;
+    }
+    lir::Bytecode* previous = PreviousBytecode(call);
+    if (handler.close_resource && previous != nullptr &&
+        LoadsZero(previous, passed)) {
+      previous = PreviousBytecode(previous);
+    }
+    const bool checked =
+        previous != nullptr && in_handler.count(previous) == 0 &&
+        previous->opcode == dex::OP_IF_EQZ && Register(previous, 0) == closed;
+    if (handler.checks_null && !checked) {
+      return false;
+    }
+    *out_check = handler.checks_null ? previous : nullptr;
+    return true;
+  };
+  std::unordered_map<const lir::Bytecode*, lir::Bytecode*> matched;
+  while (!worklist.empty()) {
+    lir::Bytecode* bytecode = worklist.back();
+    worklist.pop_back();
+    std::unordered_set<int> copies = states[bytecode];
+    lir::Bytecode* check = nullptr;
+    if (matches_close(bytecode, copies, &check)) {
+      matched.emplace(bytecode, check);
+      if (!handler.every_close) {
+        continue;
+      }
+    } else if (!handler.every_close && handler.checks_null &&
+               bytecode->opcode == dex::OP_IF_EQZ &&
+               in_handler.count(bytecode) == 0) {
+      lir::Bytecode* call = NextBytecode(bytecode);
+      if (handler.close_resource && call != nullptr &&
+          LoadsZero(call, Register(call, 0))) {
+        call = NextBytecode(call);
+      }
+      if (matches_close(call, copies, &check) && check == bytecode) {
+        matched.emplace(call, check);
+        // Don't walk past a close of the statement into later closes of the
+        // same parameter.
+        continue;
+      }
+      // Nor past an early exit that D8 merges with a close of the statement:
+      // it checks the resource like that close does and goes to it.
+      if (call != nullptr && IsGoto(call->opcode)) {
+        lir::Bytecode* close = SkipNonBytecodes(BranchTarget(call));
+        if (matches_close(close, copies, &check) && check != nullptr &&
+            Register(check, 0) == Register(bytecode, 0) &&
+            SkipNonBytecodes(BranchTarget(check)) ==
+                SkipNonBytecodes(BranchTarget(bytecode))) {
+          matched.emplace(close, check);
+          continue;
+        }
+      }
+    }
+    UpdateCopies(bytecode, &copies);
+    if (copies.empty()) {
+      continue;
+    }
+    if ((dex::GetFlagsFromOpcode(bytecode->opcode) & dex::kContinue) != 0) {
+      enqueue(NextBytecode(bytecode), copies);
+    }
+    for (lir::Label* target : JumpTargets(bytecode)) {
+      if (target != label) {
+        enqueue(SkipNonBytecodes(target), copies);
+      }
+    }
+  }
+  if (matched.empty()) {
+    return nullptr;
+  }
+  std::vector<std::pair<lir::Bytecode*, lir::Bytecode*>> closes;
+  // The number of closes before the code of the handler, in code order. D8
+  // can start the handler with a goto to the rest of its code, which it puts
+  // after other code of the block.
+  size_t before_handler = 0;
+  const lir::Bytecode* handler_start = SkipNonBytecodes(label);
+  if (handler_start != nullptr &&
+      handler_start->opcode == dex::OP_MOVE_EXCEPTION) {
+    lir::Bytecode* next = NextBytecode(SkipNonBytecodes(label));
+    if (next != nullptr && IsGoto(next->opcode) && in_handler.count(next) > 0) {
+      handler_start = SkipNonBytecodes(BranchTarget(next));
+    }
+  }
+  bool after_handler = false;
+  for (lir::Bytecode* bytecode : info.bytecodes) {
+    after_handler = after_handler || bytecode == handler_start;
+    auto it = matched.find(bytecode);
+    if (it != matched.end()) {
+      closes.emplace_back(it->second, bytecode);
+      if (!after_handler) {
+        ++before_handler;
+      }
+    }
+  }
+  if (!handler.every_close) {
+    // ExitLine() doesn't tell the close at the end of the block from the close
+    // of an early exit that isn't a return, such as a break: then the last
+    // close before the handler counts, where javac puts the close at the end of
+    // the block, or else the last one after it.
+    size_t chosen = 0;
+    int best_line = ExitLine(closes[0].first, closes[0].second, info);
+    for (size_t i = 1; i < closes.size(); ++i) {
+      const int line = ExitLine(closes[i].first, closes[i].second, info);
+      if (line > best_line ||
+          (line == best_line &&
+           (i < before_handler || chosen >= before_handler))) {
+        chosen = i;
+        best_line = line;
+      }
+    }
+    closes = {closes[chosen]};
+  }
+  for (const auto& [matched_check, close] : closes) {
+    AddClose(matched_check, close, handler, info, code);
+    if (handler.every_close) {
+      AddMergedExits(matched_check, close, info, code);
+    }
+  }
+  return closes.back().second;
 }
 
 // Matches a try-with-resources statement of javac whose handler, or first
@@ -791,19 +1107,13 @@ bool MatchJavac(lir::Label* label, const MethodInfo& info,
       return false;
     }
   }
-  lir::Bytecode* first = FirstProtected(info, label);
-  // javac 7 to 10 close the resource at each exit of the block, as a finally
-  // block does, and the build-time report filters all these closes. An early
-  // exit can come before the first bytecode that the handler protects, so look
-  // from where the resource is stored on, or from the start of the method for a
-  // parameter, which the code before the statement can close on its own line.
   // Without line numbers, the closes of early exits look like a close of a
   // parameter before the statement, so only the one when the block ends counts.
-  if (!primary.empty() && first != nullptr && handler.line != -1) {
+  if (!primary.empty() && handler.line != -1) {
     handler.every_close = true;
-    first = AfterLastWrite(first, handler.resource);
   }
-  if (MatchClose(label, first, handler, info, code) == nullptr) {
+  if (MatchClose(label, FirstProtected(info, label), handler, info, code) ==
+      nullptr) {
     return false;
   }
   code->insert(code->end(), handler.code.begin(), handler.code.end());
@@ -1123,12 +1433,14 @@ void TryWithResourcesFilter::Filter(const FilterContext& context,
     // A catch of Throwable gets every exception that no earlier handler of the
     // try block catches, so the catch of any exception never runs.
     lir::Label* handler = nullptr;
+    std::vector<lir::Label*> inner;
     for (const lir::CatchHandler& typed : end->handlers) {
       if (typed.ir_type != nullptr && typed.ir_type->descriptor != nullptr &&
           strcmp(typed.ir_type->descriptor->c_str(), kThrowable) == 0) {
         handler = typed.label;
         break;
       }
+      inner.push_back(typed.label);
     }
     if (handler == nullptr) {
       handler = end->catch_all;
@@ -1137,6 +1449,13 @@ void TryWithResourcesFilter::Filter(const FilterContext& context,
       continue;
     }
     handler_of_try[end->try_begin] = handler;
+    std::vector<lir::Label*>& inner_handlers = info.inner_handlers[handler];
+    for (lir::Label* inner_handler : inner) {
+      if (std::find(inner_handlers.begin(), inner_handlers.end(),
+                    inner_handler) == inner_handlers.end()) {
+        inner_handlers.push_back(inner_handler);
+      }
+    }
     if (seen.insert(handler).second) {
       labels.push_back(handler);
     }
