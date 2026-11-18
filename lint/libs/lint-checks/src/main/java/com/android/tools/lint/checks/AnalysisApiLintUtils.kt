@@ -151,7 +151,7 @@ internal fun KaSession.getImplicitReceiverValue(ktExpression: KtExpression): KaI
 
 /**
  * Returns a sequence containing [this] plus other PsiFields that are the same as [this] (if there are any), or emptySequence() if [this] is
- * null.
+ * null. [this] is always the first element, and the other PsiFields are only looked up once the sequence is iterated past it.
  *
  * A constant in a companion object in an interface results in multiple PsiFields. For example:
  * ```kt
@@ -256,6 +256,11 @@ internal fun PsiElement?.asSeqWithDuplicatedConstants(useSiteElement: PsiElement
   val field = this as? PsiField ?: return sequenceOf(this)
   if (useSiteElement == null || !field.mightBeDuplicatedInBytecode()) return sequenceOf(this)
   // We don't know if this is the field in the companion object or the containing interface,
-  // so we try both.
-  return sequenceOf(this, field.getOuterDuplicate(useSiteElement), field.getInnerDuplicate(useSiteElement)).filterNotNull()
+  // so we try both. The duplicates are computed lazily, only when the sequence is iterated
+  // past [this], since looking them up may require the Analysis API.
+  return sequence {
+    yield(field)
+    field.getOuterDuplicate(useSiteElement)?.let { yield(it) }
+    field.getInnerDuplicate(useSiteElement)?.let { yield(it) }
+  }
 }
