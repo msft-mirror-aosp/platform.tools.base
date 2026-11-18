@@ -17,5 +17,5 @@ Holds the release version information for the studio-leakcanary library.
 # limitations under the License.
 
 # This file is also loaded as a Java properties file from Gradle build files.
-STUDIO_LEAKCANARY_VERSION_RELEASE = "1.1.0-alpha01"
+STUDIO_LEAKCANARY_VERSION_RELEASE = "1.1.0"
 STUDIO_LEAKCANARY_VERSION_DEV = "1.1.0-dev"
