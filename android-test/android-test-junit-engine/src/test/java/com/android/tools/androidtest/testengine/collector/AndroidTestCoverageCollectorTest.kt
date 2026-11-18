@@ -200,6 +200,42 @@ class AndroidTestCoverageCollectorTest {
   }
 
   @Test
+  fun collect_removesClassListAfterPullingAgentData() {
+    agentCollector().collect()
+
+    val inOrder = inOrder(additionalOutputCollector, adbController)
+    inOrder.verify(additionalOutputCollector).pullDirectory(eq(AGENT_DIR), eq(coverageDirOnHost), eq(".pb"))
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(REMOVE_CLASS_LIST), anyOrNull())
+  }
+
+  @Test
+  fun collect_removesClassListWhenPullingFails() {
+    doThrow(RuntimeException("Pull failed")).`when`(additionalOutputCollector).pullDirectory(anyString(), anyOrNull(), anyOrNull())
+
+    agentCollector().collect()
+
+    verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(REMOVE_CLASS_LIST), anyOrNull())
+  }
+
+  @Test
+  fun collect_removesClassListWithoutHostDirectory() {
+    agentCollector(coverageDirOnHost = null).collect()
+
+    verify(additionalOutputCollector, never()).pullDirectory(anyString(), anyOrNull(), anyOrNull())
+    verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(REMOVE_CLASS_LIST), anyOrNull())
+  }
+
+  @Test
+  fun collect_ignoresFailureToRemoveClassList() {
+    doThrow(RuntimeException("adb failed")).`when`(adbController).runAdbShellCommand(eq(deviceSerial), eq(REMOVE_CLASS_LIST), anyOrNull())
+
+    // Should not throw
+    agentCollector().collect()
+
+    verify(additionalOutputCollector).pullDirectory(eq(AGENT_DIR), eq(coverageDirOnHost), eq(".pb"))
+  }
+
+  @Test
   fun prepare_cleansAgentDirectory_whenAgentIsPresent() {
     val agentDir = "/data/user/0/pkg/code_cache"
     val agentFilesystemInfo =
@@ -393,5 +429,28 @@ class AndroidTestCoverageCollectorTest {
     doReturn(AdbController.CommandResult(exitCode, output, ""))
       .`when`(adbController)
       .runAdbShellCommand(eq(deviceSerial), eq(args), anyOrNull())
+  }
+
+  /** Returns a collector for the agent, whose data directory is [AGENT_DIR]. */
+  private fun agentCollector(coverageDirOnHost: File? = this.coverageDirOnHost) =
+    AndroidTestCoverageCollector(
+      adbController,
+      deviceSerial,
+      coverageDirOnHost,
+      coverageFileOnDevice = null,
+      coverageDirOnDevice = null,
+      useTestStorageService = false,
+      additionalOutputCollector,
+      runAsPackageName = "pkg",
+      agentFilesystemInfo =
+        CoverageAgentFilesystemInfo().apply {
+          agentBinaryPathOnDevice = "$AGENT_DIR/coverage_agent.so"
+          dataDirectoryOnDevice = AGENT_DIR
+        },
+    )
+
+  private companion object {
+    const val AGENT_DIR = "/data/user/0/pkg/code_cache"
+    val REMOVE_CLASS_LIST = listOf("run-as", "pkg", "rm", "-f", "$AGENT_DIR/coverage_classes.txt")
   }
 }

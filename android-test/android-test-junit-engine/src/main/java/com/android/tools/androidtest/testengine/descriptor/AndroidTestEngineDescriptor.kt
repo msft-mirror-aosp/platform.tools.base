@@ -19,6 +19,7 @@ package com.android.tools.androidtest.testengine.descriptor
 import com.android.tools.androidtest.testengine.AndroidTestExecutionContext
 import com.android.tools.androidtest.testengine.adb.AdbController
 import com.android.tools.androidtest.testengine.collector.CoverageAgentExtractor
+import com.android.tools.androidtest.testengine.collector.CoverageClassListInstaller
 import com.android.tools.androidtest.testengine.config.AndroidTestConfiguration
 import com.android.tools.androidtest.testengine.util.PathSafety
 import org.junit.platform.engine.UniqueId
@@ -71,6 +72,7 @@ class AndroidTestEngineDescriptor(
         val deviceDisplayName = if (deviceId != defaultDisplayName) "$deviceId ($defaultDisplayName)" else defaultDisplayName
 
         val extractor = CoverageAgentExtractor(adbController, deviceSerial)
+        val classListInstaller = CoverageClassListInstaller(adbController, deviceSerial)
         val deviceDescriptor =
           deviceDescriptorFactory(
             deviceUniqueId,
@@ -79,7 +81,9 @@ class AndroidTestEngineDescriptor(
             deviceDisplayName,
           ) {
             if (config.coverageType == AndroidTestConfiguration.CoverageType.ON_THE_FLY) {
-              extractor.extractAgentIfNeeded(config.testPackageId, config.instrumentationTargetPackageId)
+              extractor.extractAgentIfNeeded(config.testPackageId, config.instrumentationTargetPackageId)?.also { (_, dataDir) ->
+                classListInstaller.install(config.coverageClassList, config.instrumentationTargetPackageId, dataDir)
+              }
             } else {
               null
             }

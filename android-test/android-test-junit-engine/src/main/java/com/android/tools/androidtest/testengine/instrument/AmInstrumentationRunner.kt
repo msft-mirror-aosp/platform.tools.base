@@ -17,6 +17,7 @@
 package com.android.tools.androidtest.testengine.instrument
 
 import com.android.tools.androidtest.testengine.collector.CoverageAgentFilesystemInfo
+import com.android.tools.androidtest.testengine.collector.CoverageClassListInstaller
 import java.io.File
 import java.util.logging.Logger
 
@@ -93,7 +94,8 @@ class AmInstrumentationRunner(
         .setDeviceSerial(deviceSerial)
         .setInstrumentationRunner(testPackageId, instrumentationRunnerClass)
         .setExecutionMode(executionMode)
-        .addInstrumentationArgs(instrumentationArgs)
+        // The class list path is a path on the host, for the engine only.
+        .addInstrumentationArgs(instrumentationArgs - CoverageClassListInstaller.INSTRUMENTATION_ARG)
         .setInstrumentInPcc(instrumentInPcc)
 
     val agentPath = agentFilesystemInfo.agentBinaryPathOnDevice

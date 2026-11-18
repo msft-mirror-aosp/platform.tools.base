@@ -267,12 +267,32 @@ class AndroidTestExecutionContextTest {
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
     whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
     whenever(configParams.get(AndroidTestConfigurationKeys.COVERAGE_TYPE)).thenReturn(Optional.of("ON_THE_FLY"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_ARGS))
+      .thenReturn(Optional.of("com.android.tools.coverage.classList=/path/to/coverage_classes.txt"))
 
     val request = mock<ExecutionRequest>()
     whenever(request.configurationParameters).thenReturn(configParams)
 
     val context = AndroidTestExecutionContext(request)
     assertThat(context.configuration.coverageType).isEqualTo(AndroidTestConfiguration.CoverageType.ON_THE_FLY)
+    assertThat(context.configuration.coverageClassList).isEqualTo(File("/path/to/coverage_classes.txt"))
+  }
+
+  @Test
+  fun `AndroidTestConfiguration has no coverage class list by default`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.coverageClassList).isNull()
   }
 
   @Test

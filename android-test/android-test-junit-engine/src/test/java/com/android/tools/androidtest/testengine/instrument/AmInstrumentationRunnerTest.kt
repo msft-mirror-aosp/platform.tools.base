@@ -395,6 +395,34 @@ class AmInstrumentationRunnerTest {
   }
 
   @Test
+  fun getAmInstrumentCmd_doesNotPassTheCoverageClassListToTheDevice() {
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = "serial",
+        instrumentationRunnerClass = "Runner",
+        testPackageId = "com.android.sample.app.test",
+        instrumentationTargetPackageId = "com.android.sample.app",
+        instrumentationArgs = mapOf("com.android.tools.coverage.classList" to "/host/coverage_classes.txt", "foo" to "bar"),
+        agentFilesystemInfo =
+          CoverageAgentFilesystemInfo().apply {
+            agentBinaryPathOnDevice = "/path/to/agent.so"
+            dataDirectoryOnDevice = "/path/to/data"
+          },
+      )
+
+    val command =
+      runner.javaClass.getDeclaredMethod("getAmInstrumentCmd").let {
+        it.isAccessible = true
+        it.invoke(runner) as List<String>
+      }
+
+    assertThat(command.joinToString(" ")).contains("foo")
+    assertThat(command.joinToString(" ")).doesNotContain("com.android.tools.coverage.classList")
+    assertThat(command.joinToString(" ")).doesNotContain("/host/coverage_classes.txt")
+  }
+
+  @Test
   fun runAmInstrumentCommand_withInstrumentInPcc() {
     val deviceSerial = "test-device-123"
     val runnerClass = "com.example.TestRunner"

@@ -16,6 +16,7 @@
 
 package com.android.tools.androidtest.testengine.config
 
+import com.android.tools.androidtest.testengine.collector.CoverageClassListInstaller
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.AAPT2_PATH
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.ADB_PATH
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE
@@ -238,6 +239,13 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
 
   val coverageFileOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_FILE_ON_DEVICE)
   val coverageDirOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_DIR_ON_DEVICE)
+
+  /**
+   * The file that lists the classes for the on-device coverage agent to instrument, if AGP passed one in the
+   * [CoverageClassListInstaller.INSTRUMENTATION_ARG] instrumentation argument, as it passes the agent's package prefix.
+   */
+  val coverageClassList: File? =
+    instrumentationArgs[CoverageClassListInstaller.INSTRUMENTATION_ARG]?.takeIf { it.isNotBlank() }?.let { File(it) }
 
   fun getTestedApks(deviceSerial: String? = null): List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS, deviceSerial))
 

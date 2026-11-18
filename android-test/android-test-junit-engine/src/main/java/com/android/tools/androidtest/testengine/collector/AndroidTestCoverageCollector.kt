@@ -120,8 +120,8 @@ class AndroidTestCoverageCollector(
   /** Collects code coverage data from the device after test execution. */
   fun collect() {
     logger.info("Collecting code coverage data.")
-    if (coverageDirOnHost == null) return
     try {
+      if (coverageDirOnHost == null) return
       val storageDir = AndroidAdditionalTestOutputCollector.TEST_STORAGE_SERVICE_INTERNAL_OUTPUT_DIR.removeSuffix("/")
 
       // On-the-fly coverage artifacts from the agent.
@@ -154,6 +154,18 @@ class AndroidTestCoverageCollector(
       }
     } catch (e: Exception) {
       logger.log(Level.WARNING, "Failed to retrieve code coverage data from device.", e)
+    } finally {
+      removeClassList()
+    }
+  }
+
+  /** Removes the class list, which is only for this run, from the agent's data directory. */
+  private fun removeClassList() {
+    val agentDataDir = agentFilesystemInfo.dataDirectoryOnDevice ?: return
+    try {
+      runShellCommandWithRunAs(listOf("rm", "-f", "$agentDataDir/${CoverageClassListInstaller.FILE_NAME}"))
+    } catch (e: Exception) {
+      logger.log(Level.WARNING, "Failed to remove the coverage class list from device.", e)
     }
   }
 
