@@ -20,9 +20,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <optional>
 #include <string>
+#include <utility>
 
 #include "tools/base/android-test/coverage/agent/native/hits_extractor.h"
+#include "tools/base/android-test/coverage/agent/native/inclusion_list.h"
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 #include "tools/base/android-test/coverage/agent/native/metadata_collector.h"
 #include "tools/base/android-test/coverage/agent/native/tagging_manager.h"
@@ -107,6 +110,25 @@ bool WriteAndLoadRuntimeJar(jvmtiEnv* jvmti, const std::string& data_dir) {
   return true;
 }
 
+// Reads the class list that the test runner put in the data directory. Without
+// a complete list, the agent instruments the classes with the inclusion prefix,
+// as it does for a test runner that doesn't provide one.
+std::optional<coverage::InclusionList> LoadInclusionList(
+    const std::string& data_dir) {
+  coverage::InclusionListOrError loaded = coverage::InclusionList::Load(
+      data_dir + "/" + coverage::InclusionList::kFileName);
+  if (!loaded.list.has_value()) {
+    if (loaded.file_found) {
+      coverage::Log::W("Ignoring the class list: %s. Using the prefix instead.",
+                       loaded.error.c_str());
+    } else {
+      coverage::Log::I("No class list. Using the prefix.");
+    }
+    return std::nullopt;
+  }
+  return std::move(loaded.list);
+}
+
 }  // namespace
 
 extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
@@ -179,7 +201,8 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
     coverage::HitsExtractor::Instance().Initialize(jni_env, data_dir);
 
     // c. Initialize instrumenter and register hooks
-    g_instrumenter = new coverage::Instrumenter(jvmti_env, inclusion_prefix);
+    g_instrumenter = new coverage::Instrumenter(jvmti_env, inclusion_prefix,
+                                                LoadInclusionList(data_dir));
 
     // d. Register JVMTI hooks centrally.
     jvmtiEventCallbacks callbacks = {};

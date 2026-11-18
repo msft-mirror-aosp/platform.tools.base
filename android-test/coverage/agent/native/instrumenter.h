@@ -22,8 +22,11 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
+
+#include "tools/base/android-test/coverage/agent/native/inclusion_list.h"
 
 namespace android {
 namespace tools {
@@ -47,7 +50,10 @@ struct FilterContext;
 
 class Instrumenter {
  public:
-  Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix);
+  // Instruments the classes of `inclusion_list` if there is one, and otherwise
+  // the classes with `inclusion_prefix`.
+  Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix,
+               std::optional<InclusionList> inclusion_list = std::nullopt);
 
   ~Instrumenter();
 
@@ -67,9 +73,16 @@ class Instrumenter {
   // Their instrumented code is discarded: nothing is handed to ART.
   void AddUnloadedClasses(const unsigned char* dex, size_t size);
 
-  // Returns true if the class name matches the inclusion filter: it has the
-  // inclusion prefix, and isn't compiler-generated or the coverage runtime.
+  // Returns true if the class name matches the inclusion filter. With a class
+  // list, the class is in it, or it is the companion class `Foo$-CC` that d8
+  // creates for an interface `Foo` in it. Otherwise, the class has the
+  // inclusion prefix and isn't compiler-generated. The coverage runtime never
+  // matches.
   bool MatchesInclusionFilter(std::string_view class_name) const;
+
+  // Returns true if some class can match the inclusion filter: there is a
+  // class list or an inclusion prefix.
+  bool HasInclusionFilter() const;
 
   // Returns true if the class is a compiler-generated synthetic class.
   static bool IsSyntheticOrCompilerGenerated(std::string_view class_name);
@@ -95,6 +108,7 @@ class Instrumenter {
 
   jvmtiEnv* jvmti_;
   std::string inclusion_prefix_;
+  std::optional<InclusionList> inclusion_list_;
 
   // Tag value used to mark classes as already instrumented.
   static constexpr jlong kInstrumentedTag = 0xCAFE1234;

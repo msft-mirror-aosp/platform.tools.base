@@ -26,9 +26,11 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "slicer/code_ir.h"
@@ -135,11 +137,21 @@ uint32_t SwitchBranchCount(const lir::Bytecode* switch_bytecode) {
 
 Instrumenter* Instrumenter::instance_ = nullptr;
 
-Instrumenter::Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix)
-    : jvmti_(jvmti), inclusion_prefix_(inclusion_prefix) {
+Instrumenter::Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix,
+                           std::optional<InclusionList> inclusion_list)
+    : jvmti_(jvmti),
+      inclusion_prefix_(inclusion_prefix),
+      inclusion_list_(std::move(inclusion_list)) {
   instance_ = this;
-  Log::I("Coverage agent instrumenter initialized for prefix: %s",
-         inclusion_prefix.c_str());
+  if (inclusion_list_.has_value()) {
+    Log::I(
+        "Coverage agent instrumenter initialized for the %zu classes of "
+        "the class list",
+        inclusion_list_->size());
+  } else {
+    Log::I("Coverage agent instrumenter initialized for prefix: %s",
+           inclusion_prefix.c_str());
+  }
 }
 
 Instrumenter::~Instrumenter() {
@@ -894,13 +906,33 @@ bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
 }
 
 bool Instrumenter::MatchesInclusionFilter(std::string_view class_name) const {
-  // Skip synthetic compiler-generated classes.
-  if (IsSyntheticOrCompilerGenerated(class_name)) {
+  // Explicitly skip our own runtime tracker to avoid infinite recursion.
+  if (class_name == "com/android/tools/coverage/CoverageTracker") {
     return false;
   }
 
-  // Explicitly skip our own runtime tracker to avoid infinite recursion.
-  if (class_name == "com/android/tools/coverage/CoverageTracker") {
+  // The class list has exactly the classes that the module compiles, so it
+  // needs no name rule: the classes that d8 creates, such as
+  // `Foo$$ExternalSyntheticLambda0`, are never in it. Below API 24, d8 moves
+  // the default, static and private methods of an interface `Foo` to the
+  // companion class `Foo$-CC`, which matches when `Foo` does, as it does with
+  // the prefix.
+  if (inclusion_list_.has_value()) {
+    if (inclusion_list_->Contains(class_name)) {
+      return true;
+    }
+    constexpr std::string_view kCompanionSuffix = "$-CC";
+    if (class_name.size() <= kCompanionSuffix.size() ||
+        class_name.substr(class_name.size() - kCompanionSuffix.size()) !=
+            kCompanionSuffix) {
+      return false;
+    }
+    class_name.remove_suffix(kCompanionSuffix.size());
+    return inclusion_list_->Contains(class_name);
+  }
+
+  // Skip synthetic compiler-generated classes.
+  if (IsSyntheticOrCompilerGenerated(class_name)) {
     return false;
   }
 
@@ -925,8 +957,12 @@ bool Instrumenter::MatchesInclusionFilter(std::string_view class_name) const {
   return prefix_match;
 }
 
+bool Instrumenter::HasInclusionFilter() const {
+  return inclusion_list_.has_value() || !inclusion_prefix_.empty();
+}
+
 void Instrumenter::RetransformLoadedClasses(JNIEnv* jni) {
-  if (inclusion_prefix_.empty()) {
+  if (!HasInclusionFilter()) {
     return;
   }
 

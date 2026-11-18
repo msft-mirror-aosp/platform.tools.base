@@ -31,6 +31,7 @@ cc_library(
         "enum_filter.cc",
         "exhaustive_switch_filter.cc",
         "hits_extractor.cc",
+        "inclusion_list.cc",
         "instrumenter.cc",
         "kotlin_compose_filter.cc",
         "kotlin_coroutine_filter.cc",
@@ -72,6 +73,7 @@ cc_library(
         "exhaustive_switch_filter.h",
         "filter_interface.h",
         "hits_extractor.h",
+        "inclusion_list.h",
         "instrumenter.h",
         "kotlin_compose_filter.h",
         "kotlin_coroutine_filter.h",
@@ -180,6 +182,7 @@ cc_test(
         "exhaustive_switch_filter_test.cc",
         "filter_result_test.cc",
         "hits_extractor_test.cc",
+        "inclusion_list_test.cc",
         "kotlin_compose_filter_test.cc",
         "kotlin_coroutine_filter_test.cc",
         "kotlin_default_arguments_filter_test.cc",
@@ -347,5 +350,23 @@ cc_test(
         "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@googletest//:gtest_main",
         "@slicer",
+    ],
+)
+
+# Instruments the test classes with a class list, in a process of its own so
+# that the metadata only has the classes it adds.
+cc_test(
+    name = "instrumenter_inclusion_list_test",
+    size = "small",
+    srcs = [
+        "instrumenter_inclusion_list_test.cc",
+        ":instrumenter_test_kotlin_target_dex_cc",
+        ":instrumenter_test_target_dex_cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":agent_lib",
+        "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
+        "@googletest//:gtest_main",
     ],
 )
