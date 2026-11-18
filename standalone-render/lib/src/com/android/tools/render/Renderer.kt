@@ -36,6 +36,7 @@ import com.android.tools.render.common.ResolvedScreenshotLayout
 import com.android.tools.render.common.ResourceTarget
 import com.android.tools.render.common.offsetBy
 import com.android.tools.render.common.toScreenshotError
+import com.android.tools.render.common.toScreenshotWarnings
 import com.android.tools.render.common.writeComponentTreeToJson
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.discovery.PreviewDiscoveryEngine
@@ -528,6 +529,7 @@ class Renderer(
             }
 
           val screenshotError = renderResult.toScreenshotError(imageRendered, expectImage = configuration.renderImage)
+          val screenshotWarnings = renderResult.toScreenshotWarnings()
           // Pass the raw unsanitized display name so downstream test descriptors can display it in reports.
           PreviewScreenshotResult(
             screenshot.previewId,
@@ -537,6 +539,7 @@ class Renderer(
             layout.displayName,
             viewInfos,
             savedComponentTreePath,
+            warnings = screenshotWarnings,
           )
         } catch (t: Throwable) {
           rethrowIfFatalOrCancelled(t)
@@ -548,6 +551,7 @@ class Renderer(
             layout.displayName,
             viewInfos = emptyList(),
             componentTreePath = null,
+            warnings = renderResult.toScreenshotWarnings(),
           )
         } finally {
           Disposer.dispose(renderResult)

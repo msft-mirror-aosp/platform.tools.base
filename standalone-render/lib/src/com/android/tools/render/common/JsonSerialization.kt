@@ -49,6 +49,7 @@ private const val IMAGE_PATH = "imagePath"
 private const val DISPLAY_NAME = "displayName"
 private const val COMPONENT_TREE_PATH = "componentTreePath"
 private const val SCREENSHOT_ERROR = "error"
+private const val WARNINGS = "warnings"
 private const val STATUS = "status"
 private const val MESSAGE = "message"
 private const val STACKTRACE = "stackTrace"
@@ -381,6 +382,38 @@ fun writePreviewScreenshotsToJson(jsonWriter: Writer, screenshots: List<PreviewS
   }
 }
 
+private fun readRenderProblems(reader: JsonReader): List<RenderProblem> {
+  val problems = mutableListOf<RenderProblem>()
+  reader.beginArray()
+  while (reader.hasNext()) {
+    reader.beginObject()
+    var html: String? = null
+    var problemStackTrace: String? = null
+    while (reader.hasNext()) {
+      when (reader.nextName()) {
+        HTML -> html = reader.nextString()
+        STACKTRACE -> problemStackTrace = reader.nextString()
+        else -> reader.skipValue()
+      }
+    }
+    problems.add(RenderProblem(html ?: throw IllegalArgumentException("HTML is missing"), problemStackTrace))
+    reader.endObject()
+  }
+  reader.endArray()
+  return problems
+}
+
+private fun writeRenderProblems(writer: JsonWriter, problems: List<RenderProblem>) {
+  writer.beginArray()
+  problems.forEach { problem ->
+    writer.beginObject()
+    writer.name(HTML).value(problem.html)
+    problem.stackTrace?.let { writer.name(STACKTRACE).value(it) }
+    writer.endObject()
+  }
+  writer.endArray()
+}
+
 private fun readScreenshotError(reader: JsonReader): ScreenshotError {
   var status: String? = null
   var message: String? = null
@@ -401,26 +434,7 @@ private fun readScreenshotError(reader: JsonReader): ScreenshotError {
         stackTrace = reader.nextString()
       }
       PROBLEMS -> {
-        reader.beginArray()
-        while (reader.hasNext()) {
-          reader.beginObject()
-          var html: String? = null
-          var problemStackTrace: String? = null
-          while (reader.hasNext()) {
-            when (reader.nextName()) {
-              HTML -> {
-                html = reader.nextString()
-              }
-              STACKTRACE -> {
-                problemStackTrace = reader.nextString()
-              }
-              else -> reader.skipValue()
-            }
-          }
-          reader.endObject()
-          problems.add(RenderProblem(html ?: throw IllegalArgumentException("HTML is missing"), problemStackTrace))
-        }
-        reader.endArray()
+        problems.addAll(readRenderProblems(reader))
       }
       BROKEN_CLASSES -> {
         reader.beginArray()
@@ -477,6 +491,7 @@ private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotRe
   var imagePath: String? = null
   var displayName: String? = null
   var componentTreePath: String? = null
+  val warnings = mutableListOf<RenderProblem>()
   reader.beginObject()
   while (reader.hasNext()) {
     when (reader.nextName()) {
@@ -498,6 +513,9 @@ private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotRe
       SCREENSHOT_ERROR -> {
         screenshotError = readScreenshotError(reader)
       }
+      WARNINGS -> {
+        warnings.addAll(readRenderProblems(reader))
+      }
       else -> reader.skipValue()
     }
   }
@@ -509,6 +527,7 @@ private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotRe
     error = screenshotError,
     displayName = displayName,
     componentTreePath = componentTreePath,
+    warnings = warnings,
   )
 }
 
@@ -555,14 +574,7 @@ private fun writePreviewScreenshotResultToJson(writer: JsonWriter, screenshotRes
     writer.name(MESSAGE).value(screenshotError.message)
     writer.name(STACKTRACE).value(screenshotError.stackTrace)
     writer.name(PROBLEMS)
-    writer.beginArray()
-    screenshotError.problems.forEach { problem ->
-      writer.beginObject()
-      writer.name(HTML).value(problem.html)
-      problem.stackTrace?.let { writer.name(STACKTRACE).value(it) }
-      writer.endObject()
-    }
-    writer.endArray()
+    writeRenderProblems(writer, screenshotError.problems)
     writer.name(BROKEN_CLASSES)
     writer.beginArray()
     screenshotError.brokenClasses.forEach {
@@ -577,6 +589,10 @@ private fun writePreviewScreenshotResultToJson(writer: JsonWriter, screenshotRes
     screenshotError.missingClasses.forEach { writer.value(it) }
     writer.endArray()
     writer.endObject()
+  }
+  if (screenshotResult.warnings.isNotEmpty()) {
+    writer.name(WARNINGS)
+    writeRenderProblems(writer, screenshotResult.warnings)
   }
   writer.endObject()
 }

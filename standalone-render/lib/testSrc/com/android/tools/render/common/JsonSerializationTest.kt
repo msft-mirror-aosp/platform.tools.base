@@ -22,6 +22,8 @@ import com.android.tools.render.layout.LayoutScreenshot
 import com.android.tools.render.wear.WearTileScreenshot
 import java.io.StringWriter
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class JsonSerializationTest {
@@ -532,6 +534,38 @@ class JsonSerializationTest {
 
     val restoredPreviewRenderingResult = readPreviewRenderingResultJson(stringWriter.toString().reader())
 
+    assertEquals(previewRenderingResult, restoredPreviewRenderingResult)
+  }
+
+  @Test
+  fun testPreviewRenderingResultWithWarningsToJsonAndBack() {
+    val withWarnings =
+      PreviewScreenshotResult(
+        previewId = "previewId1",
+        methodFQN = "methodFQN1",
+        imagePath = "pkg/class/image1.png",
+        error = null,
+        warnings = listOf(RenderProblem("<b>Unsupported</b> spec", null), RenderProblem("Layout warning", "Warn trace")),
+      )
+    val withoutWarnings =
+      PreviewScreenshotResult(
+        previewId = "previewId2",
+        methodFQN = "methodFQN2",
+        imagePath = "pkg/class/image2.png",
+        error = null,
+      )
+    val previewRenderingResult = PreviewRenderingResult(null, listOf(withWarnings, withoutWarnings))
+
+    val stringWriter = StringWriter()
+    writePreviewRenderingResult(stringWriter, previewRenderingResult)
+    val jsonText = stringWriter.toString()
+
+    // Empty warnings list is omitted from JSON, while non-empty warnings are preserved.
+    assertTrue(jsonText.contains("\"warnings\""))
+    val withoutWarningsBlock = jsonText.substringAfter("\"previewId2\"")
+    assertFalse(withoutWarningsBlock.contains("\"warnings\""))
+
+    val restoredPreviewRenderingResult = readPreviewRenderingResultJson(jsonText.reader())
     assertEquals(previewRenderingResult, restoredPreviewRenderingResult)
   }
 }

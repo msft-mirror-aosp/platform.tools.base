@@ -21,7 +21,9 @@ import com.android.ide.common.rendering.api.Result
 import com.android.testutils.TestUtils
 import com.android.tools.render.RenderEnvironmentBootstrapper
 import com.android.tools.render.StandaloneRenderModelModule
+import com.android.tools.rendering.ProblemSeverity
 import com.android.tools.rendering.RenderLogger
+import com.android.tools.rendering.RenderProblem as LayoutlibRenderProblem
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.RenderResultStats
 import com.android.tools.rendering.compose.ComposeRenderErrors
@@ -269,6 +271,77 @@ class ScreenshotErrorTest {
       assertThat(error).isNotNull()
       assertThat(error?.status).isEqualTo("ERROR_RENDER_TASK")
       assertThat(error?.stackTrace).startsWith("java.lang.IllegalStateException: Preview boom")
+    }
+  }
+
+  @Test
+  fun testRenderResultToScreenshotWarningsIncludesOnlyWarnings() {
+    withRenderModule { module ->
+      val logger = RenderLogger()
+      logger.addMessage(
+        LayoutlibRenderProblem.create(ProblemSeverity.WARNING).apply {
+          htmlBuilder.add("Warning with trace")
+          throwable(IllegalStateException("Warn trace"))
+        }
+      )
+      logger.error("TAG", "Error message", null, null)
+
+      val renderResult =
+        RenderResult(
+          { throw NotImplementedError() },
+          module.project,
+          module,
+          logger,
+          null,
+          false,
+          Result.Status.SUCCESS.createResult(),
+          ImmutableList.of(),
+          ImmutableList.of(),
+          RecyclableImage.NULL,
+          ImmutableMap.of(),
+          ImmutableMap.of(),
+          null,
+          Dimension(0, 0),
+          RenderResultStats.EMPTY,
+        )
+
+      val warnings = renderResult.toScreenshotWarnings()
+      assertThat(warnings).hasSize(1)
+      assertThat(warnings.single().html).contains("Warning with trace")
+      assertThat(warnings.single().stackTrace).contains("IllegalStateException: Warn trace")
+    }
+  }
+
+  @Test
+  fun testRenderResultWithWarningsOnlyProducesNullScreenshotError() {
+    withRenderModule { module ->
+      val logger = RenderLogger()
+      logger.warning("TAG", "Unsupported parameter warning", null, null)
+
+      val renderResult =
+        RenderResult(
+          { throw NotImplementedError() },
+          module.project,
+          module,
+          logger,
+          null,
+          false,
+          Result.Status.SUCCESS.createResult(),
+          ImmutableList.of(),
+          ImmutableList.of(),
+          RecyclableImage.NULL,
+          ImmutableMap.of(),
+          ImmutableMap.of(),
+          null,
+          Dimension(0, 0),
+          RenderResultStats.EMPTY,
+        )
+      val image = BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB)
+
+      assertThat(renderResult.toScreenshotError(image)).isNull()
+      val warnings = renderResult.toScreenshotWarnings()
+      assertThat(warnings.map { it.html }).containsExactly("Unsupported parameter warning")
+      assertThat(warnings.single().stackTrace).isNull()
     }
   }
 }

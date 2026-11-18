@@ -392,6 +392,28 @@ class ExpandSupportTest {
   }
 
   @Test
+  fun testRenderPopulatesWarningsWithoutErrorWhenUiToolingLacksExpand() {
+    val deviceSpec = "spec:width=200dp,height=200dp,dpi=160,expand=vertical,maxHeight=2000dp"
+    val olderUiTooling = createUiToolingJar("windowPosture")
+    val outputDir = temporaryFolder.newFolder("output_expand_warning")
+
+    withRenderer(listOf(olderUiTooling)) { renderer ->
+      val xmlPreview =
+        xmlPreviewScreenshot(
+          fqn = "com.example.ExpandPreviewKt.FallbackWithWarning",
+          xmlLayout = solidViewLayout(widthDp = 200, heightDp = 600),
+          previewParams = mapOf("device" to deviceSpec),
+        )
+      val xmlResult = renderer.render(xmlPreview, outputDir.absolutePath).single()
+      assertThat(xmlResult.error).isNull()
+      assertThat(xmlResult.warnings.map { it.html })
+        .contains(
+          "expand, maxHeight in the device spec require a newer version of androidx.compose.ui:ui-tooling; rendering at device size."
+        )
+    }
+  }
+
+  @Test
   fun testRenderValidatesExpandDeviceSpecAndWritesExpandedPng() {
     val uiTooling = createUiToolingJar("expand,maxHeight,maxWidth")
     val outputDir = temporaryFolder.newFolder("output_expand")

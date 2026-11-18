@@ -17,6 +17,7 @@
 package com.android.tools.render.common
 
 import com.android.ide.common.rendering.api.Result
+import com.android.tools.rendering.ProblemSeverity
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.compose.ComposeRenderErrors
 import java.awt.image.BufferedImage
@@ -79,11 +80,18 @@ fun RenderResult.toScreenshotError(imageRendered: BufferedImage?, expectImage: B
     status = renderResult.status.name,
     message = errorMessage,
     stackTrace = stackTrace,
-    problems = logger.messages.map { RenderProblem(it.html, it.throwable?.stackTraceToString()) },
+    problems = logger.messages.map { it.toRenderProblem() },
     brokenClasses = logger.brokenClasses.map { BrokenClass(it.key, it.value.stackTraceToString()) },
     missingClasses = logger.missingClasses.toList(),
   )
 }
+
+/** Extracts warning-level [RenderProblem] entries logged to this [RenderResult]'s [RenderLogger]. */
+fun RenderResult.toScreenshotWarnings(): List<RenderProblem> =
+  logger.messages.filter { it.severity == ProblemSeverity.WARNING }.map { it.toRenderProblem() }
+
+private fun com.android.tools.rendering.RenderProblem.toRenderProblem(): RenderProblem =
+  RenderProblem(html, throwable?.stackTraceToString())
 
 /**
  * Converts a [Throwable] into a [ScreenshotError], diagnosing known Compose preview issues.
