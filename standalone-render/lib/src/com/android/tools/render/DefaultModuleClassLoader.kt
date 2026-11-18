@@ -20,13 +20,15 @@ import com.android.tools.rendering.classloading.ClassTransform
 import com.android.tools.rendering.classloading.ModuleClassLoader
 import com.android.tools.rendering.classloading.ModuleClassLoaderDiagnosticsRead
 import com.android.tools.rendering.classloading.NopModuleClassLoadedDiagnostics
+import com.android.tools.rendering.classloading.loaders.MultiLoader
+import com.android.tools.rendering.classloading.loaders.RecyclerViewAdapterLoader
 import java.net.URL
 import java.util.Enumeration
 import java.util.concurrent.ConcurrentHashMap
 
 /** Default implementation of [ModuleClassLoader] for standalone rendering. */
 class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private val loader: DefaultLoader) :
-  ModuleClassLoader(parent, loader) {
+  ModuleClassLoader(parent, MultiLoader(loader, RecyclerViewAdapterLoader())) {
   internal constructor(
     warmDepsParent: WarmDepsClassLoader,
     projectClassPath: List<String>,
@@ -53,8 +55,7 @@ class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private
   override val isUserCodeUpToDate: Boolean = true
 
   override fun hasLoadedClass(fqcn: String): Boolean =
-    loadedClasses.contains(fqcn) ||
-      (parent as? WarmDepsClassLoader)?.hasLoadedOnDiskClass(fqcn) == true
+    loadedClasses.contains(fqcn) || (parent as? WarmDepsClassLoader)?.hasLoadedOnDiskClass(fqcn) == true
 
   internal fun hasLoadedOwnClass(fqcn: String): Boolean = loadedClasses.contains(fqcn)
 

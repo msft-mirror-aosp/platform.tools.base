@@ -4211,6 +4211,233 @@ class RendererTest {
       }
     }
   }
+
+  @Test
+  fun testRenderLayoutScreenshot_rendersRecyclerViewDefaultAndToolsItems() {
+    val standaloneLoader = DefaultModuleClassLoader(parent = null, classPath = emptyList(), projectClassPath = emptyList())
+    try {
+      for (fqcn in
+        listOf(
+          "com.android.layoutlib.bridge.android.androidx.Adapter",
+          "com.android.layoutlib.bridge.android.androidx.Adapter\$ViewHolder",
+          "com.android.layoutlib.bridge.android.androidx.Adapter\$MyTextView",
+          "com.android.layoutlib.bridge.android.support.Adapter",
+          "com.android.layoutlib.bridge.android.support.Adapter\$ViewHolder",
+          "com.android.layoutlib.bridge.android.support.Adapter\$MyTextView",
+        )) {
+        assertThat(standaloneLoader.loadClassBytes(fqcn)).isNotNull()
+      }
+      assertThrows(ClassNotFoundException::class.java) {
+        standaloneLoader.loadClassBytes("com.android.layoutlib.bridge.android.androidx.Unknown")
+      }
+    } finally {
+      standaloneLoader.dispose()
+    }
+
+    val resFolder = tmpFolder.newFolder("res_recyclerview")
+    File(resFolder, "layout")
+      .apply { mkdirs() }
+      .apply {
+        resolve("default_rv.xml")
+          .writeText(
+            """
+            <androidx.recyclerview.widget.RecyclerView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+            """
+              .trimIndent()
+          )
+        resolve("item_row.xml")
+          .writeText(
+            """
+            <View xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:background="#FF00FF00" />
+            """
+              .trimIndent()
+          )
+        resolve("tools_rv.xml")
+          .writeText(
+            """
+            <androidx.recyclerview.widget.RecyclerView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:itemCount="3"
+                tools:listitem="@layout/item_row" />
+            """
+              .trimIndent()
+          )
+      }
+
+    val aarSpecs =
+      listOf(
+        "androidx.recyclerview" to "androidx/recyclerview/recyclerview/1.3.2/recyclerview-1.3.2.aar",
+        "androidx.customview" to "androidx/customview/customview/1.1.0/customview-1.1.0.aar",
+        "androidx.customview.poolingcontainer" to
+          "androidx/customview/customview-poolingcontainer/1.0.0/customview-poolingcontainer-1.0.0.aar",
+        "androidx.core" to "androidx/core/core/1.15.0/core-1.15.0.aar",
+      )
+    val rSrcDir = tmpFolder.newFolder("rv_r_src")
+    val rJavaFiles = mutableListOf<String>()
+    val extractedAarJars = aarSpecs.mapIndexed { index, (pkg, mavenPath) ->
+      val aarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
+      assertWithMessage("Missing prebuilt AAR: $aarFile").that(aarFile.isFile).isTrue()
+      val outJar = File(tmpFolder.root, "rv_dep_$index.jar")
+      ZipFile(aarFile).use { zip ->
+        val entry = zip.getEntry("classes.jar")
+        assertWithMessage("Missing classes.jar in $aarFile").that(entry).isNotNull()
+        zip.getInputStream(entry).use { Files.copy(it, outJar.toPath()) }
+        zip.getEntry("res/values/values.xml")?.let { valuesEntry ->
+          val outValues = File(resFolder, "values/aar_${index}_values.xml").apply { parentFile.mkdirs() }
+          zip.getInputStream(valuesEntry).use { Files.copy(it, outValues.toPath()) }
+        }
+        zip.getEntry("R.txt")?.let { rTxtEntry ->
+          val fieldsByType = linkedMapOf<String, MutableList<String>>()
+          zip.getInputStream(rTxtEntry).bufferedReader().useLines { lines ->
+            for (line in lines) {
+              val trimmed = line.trim()
+              if (trimmed.isEmpty()) continue
+              val parts = trimmed.split(' ', limit = 4)
+              val fieldType = parts[0]
+              val resType = parts[1]
+              val name = parts[2]
+              val rhs = parts[3]
+              val decl =
+                if (fieldType == "int[]") {
+                  "public static int[] $name = new int[] $rhs;"
+                } else {
+                  "public static int $name = $rhs;"
+                }
+              fieldsByType.getOrPut(resType) { mutableListOf() }.add(decl)
+            }
+          }
+          val rJava =
+            File(rSrcDir, "${pkg.replace('.', '/')}/R.java")
+              .apply { parentFile.mkdirs() }
+              .also { file ->
+                file.writeText(
+                  buildString {
+                    appendLine("package $pkg;")
+                    appendLine("public final class R {")
+                    for ((resType, decls) in fieldsByType) {
+                      appendLine("  public static final class $resType {")
+                      decls.forEach { appendLine("    $it") }
+                      appendLine("  }")
+                    }
+                    appendLine("}")
+                  }
+                )
+              }
+          rJavaFiles.add(rJava.absolutePath)
+        }
+      }
+      outJar.absolutePath
+    }
+    val directJarPaths =
+      listOf(
+          "androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0.jar",
+          "org/jetbrains/kotlin/kotlin-stdlib/2.0.21/kotlin-stdlib-2.0.21.jar",
+        )
+        .map { mavenPath ->
+          val jarFile = TestUtils.getLocalMavenRepoFile(mavenPath).toFile()
+          assertWithMessage("Missing prebuilt JAR: $jarFile").that(jarFile.isFile).isTrue()
+          jarFile.absolutePath
+        }
+
+    val rOutDir = tmpFolder.newFolder("rv_r_classes")
+    val compiler = ToolProvider.getSystemJavaCompiler()
+    assertWithMessage("System Java compiler is required").that(compiler).isNotNull()
+    assertThat(compiler.run(null, null, null, *(listOf("-d", rOutDir.absolutePath) + rJavaFiles).toTypedArray())).isEqualTo(0)
+
+    val rJarFile = File(tmpFolder.root, "rv_r.jar")
+    ZipOutputStream(FileOutputStream(rJarFile)).use { zos ->
+      rOutDir
+        .walkTopDown()
+        .filter { it.isFile && it.extension == "class" }
+        .forEach { cls ->
+          val rel = rOutDir.toPath().relativize(cls.toPath()).toString().replace('\\', '/')
+          zos.putNextEntry(ZipEntry(rel))
+          Files.copy(cls.toPath(), zos)
+          zos.closeEntry()
+        }
+    }
+
+    val depsClassPath = extractedAarJars + directJarPaths + listOf(rJarFile.absolutePath)
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = layoutlibPath.resolve("data/fonts").absolutePathString(),
+        resourceApkPath = null,
+        resourceDirs = listOf(resFolder.absolutePath),
+        namespace = "com.example.app",
+        classPath = depsClassPath,
+        projectClassPath = emptyList(),
+        rClassJars = listOf(rJarFile.absolutePath),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_recyclerview")
+    val device = "spec:width=200px,height=400px,dpi=160"
+
+    bootstrapper.bootstrap().use { renderer ->
+      val defaultResult =
+        renderer
+          .render(
+            LayoutScreenshot(
+              methodFQN = "R.layout.default_rv",
+              previewParams = mapOf("device" to device, "backgroundColor" to "#FFFFFFFF"),
+              previewId = "default_rv",
+            ),
+            outputDir.absolutePath,
+            RenderConfiguration(includeComponentTree = true),
+          )
+          .single()
+      assertThat(defaultResult.error).isNull()
+      val defaultTree = outputDir.resolve(defaultResult.componentTreePath!!).bufferedReader().use { readComponentTreeFromJson(it) }
+      val defaultRvNode = defaultTree.components.single().children!!.single()
+      assertThat(defaultRvNode.name).isEqualTo("androidx.recyclerview.widget.RecyclerView")
+      assertThat(defaultRvNode.children).isNotEmpty()
+      assertThat(defaultRvNode.children!!.first().semantics?.get("text")).isEqualTo("Item 0")
+
+      val toolsResult =
+        renderer
+          .render(
+            LayoutScreenshot(
+              methodFQN = "R.layout.tools_rv",
+              previewParams = mapOf("device" to device, "theme" to "Theme.Material.Light", "backgroundColor" to "#FFFFFFFF"),
+              previewId = "tools_rv",
+            ),
+            outputDir.absolutePath,
+            RenderConfiguration(includeComponentTree = true),
+          )
+          .single()
+      assertThat(toolsResult.error).isNull()
+      val toolsTree = outputDir.resolve(toolsResult.componentTreePath!!).bufferedReader().use { readComponentTreeFromJson(it) }
+      val toolsRvNode = toolsTree.components.single().children!!.single()
+      assertThat(toolsRvNode.name).isEqualTo("androidx.recyclerview.widget.RecyclerView")
+      assertThat(toolsRvNode.children).hasSize(3)
+      assertThat(toolsRvNode.children!!.map { it.bounds })
+        .containsExactly(
+          ComponentBounds(0, 0, 200, 20),
+          ComponentBounds(0, 20, 200, 40),
+          ComponentBounds(0, 40, 200, 60),
+        )
+        .inOrder()
+      val toolsImg = ImageIO.read(outputDir.resolve(toolsResult.imagePath!!))
+      // 3 items x 20dp at 160dpi = 60px of green rows at y=0..59, and empty background below y=60.
+      for (y in listOf(10, 30, 50)) {
+        val px = toolsImg.getRGB(100, y)
+        assertThat((px ushr 16) and 0xFF).isEqualTo(0)
+        assertThat((px ushr 8) and 0xFF).isGreaterThan(0xF0)
+        assertThat(px and 0xFF).isEqualTo(0)
+      }
+      assertThat(toolsImg.getRGB(100, 100)).isEqualTo(toolsImg.getRGB(100, 350))
+      assertThat(toolsImg.getRGB(100, 100)).isNotEqualTo(toolsImg.getRGB(100, 10))
+    }
+  }
 }
 
 /** A [PreviewScreenshot] whose preview element cannot be created: [toPreviewElement] throws the result of [failure]. */
