@@ -60,9 +60,17 @@ import java.util.regex.Pattern;
  */
 public class ExtractAnnotationsDriver {
 
-    public static void main(String[] args) throws IOException {
-        int status = new ExtractAnnotationsDriver().run(args);
-        if (status != 0) {
+    public static void main(String[] args) {
+        int status = 1;
+        try {
+            status = new ExtractAnnotationsDriver().run(args);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        } finally {
+            // Exit explicitly, as lint's Main does: run() leaves the application environment in
+            // place, and its pooled threads can keep the JVM alive long after the work is done,
+            // also when run() threw. In a finally block, so that the exit still happens when
+            // printing the stack trace fails too (e.g. with another OutOfMemoryError).
             System.exit(status);
         }
     }
