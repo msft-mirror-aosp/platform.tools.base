@@ -27,8 +27,9 @@ import java.io.Serializable
  * screenshot image in the output directory (using OS-dependent file separators), or an empty string (`""`) when image rendering is disabled
  * (`renderImage = false`). When image rendering is enabled and succeeds, the image is created in the output folder at this path; otherwise,
  * it identifies the screenshot that failed. [error] contains info about issues encountered during rendering. Both an image and an error may
- * be present if rendering succeeded with fidelity warnings or problems. [componentTreePath] is the relative path of the serialized
- * component tree JSON file in the output directory if requested and extracted.
+ * be present if rendering succeeded with fidelity warnings or problems. [viewInfos] is the Compose hierarchy of the preview, read only when
+ * the component tree is requested (and empty otherwise). [componentTreePath] is the relative path of the serialized component tree JSON
+ * file in the output directory if requested and extracted.
  */
 data class PreviewScreenshotResult(
   val previewId: String,

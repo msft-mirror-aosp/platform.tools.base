@@ -65,6 +65,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Base64
+import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -2653,6 +2654,121 @@ class RendererTest {
       assertThat(results).hasSize(1)
       assertThat(results.single().error).isNull()
       renderer.disposeCompletedRenders()
+    }
+  }
+
+  @Test
+  fun testRenderReadsComposeViewInfosOnlyWithComponentTree() {
+    val viewInfoReadsKey = "RendererTest.composeViewInfoReads_${UUID.randomUUID()}"
+    // A ComposeViewAdapter whose hierarchy is a single "FakeNode" composable, which counts how many times the renderer reads it.
+    val classesDir =
+      compileCustomClasses(
+        Triple(
+          "androidx.compose.ui.tooling",
+          "ComposeViewAdapter",
+          """
+          package androidx.compose.ui.tooling;
+          import android.content.Context;
+          import android.util.AttributeSet;
+          import android.widget.TextView;
+          import java.util.Collections;
+          import java.util.List;
+          public class ComposeViewAdapter extends TextView {
+            public ComposeViewAdapter(Context context, AttributeSet attrs) {
+              super(context, attrs);
+              setText("Preview");
+            }
+            public void dispose() {}
+            public List<Object> getViewInfos() {
+              // Bridge read count across Layoutlib's isolated ModuleClassLoader so the test can assert whether getViewInfos() was invoked.
+              String key = "$viewInfoReadsKey";
+              System.setProperty(key, String.valueOf(Integer.getInteger(key, 0) + 1));
+              return Collections.singletonList(new FakeViewInfo());
+            }
+          }
+          """
+            .trimIndent(),
+        ),
+        Triple(
+          "androidx.compose.ui.tooling",
+          "FakeViewInfo",
+          """
+          package androidx.compose.ui.tooling;
+          import java.util.Collections;
+          import java.util.List;
+          public class FakeViewInfo {
+            public String getFileName() { return "Fake.kt"; }
+            public int getLineNumber() { return 7; }
+            public String getName() { return "FakeNode"; }
+            public FakeBounds getBounds() { return new FakeBounds(); }
+            public List<Object> getChildren() { return Collections.emptyList(); }
+          }
+          """
+            .trimIndent(),
+        ),
+        Triple(
+          "androidx.compose.ui.tooling",
+          "FakeBounds",
+          """
+          package androidx.compose.ui.tooling;
+          public class FakeBounds {
+            public int getLeft() { return 0; }
+            public int getTop() { return 0; }
+            public int getRight() { return 10; }
+            public int getBottom() { return 20; }
+          }
+          """
+            .trimIndent(),
+        ),
+      )
+    val classPath = listOf(classesDir.absolutePath)
+    val screenshot =
+      ComposeScreenshot(
+        previewId = "preview_view_infos",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview",
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example.myapplication",
+        classPath = classPath,
+        projectClassPath = classPath,
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    try {
+      bootstrapper.bootstrap().use { renderer ->
+        val withoutTree =
+          renderer
+            .render(
+              screenshot,
+              tmpFolder.newFolder("view_infos_without_tree").absolutePath,
+              RenderConfiguration(includeComponentTree = false),
+            )
+            .single()
+        assertThat(withoutTree.error).isNull()
+        assertThat(withoutTree.viewInfos).isEmpty()
+        assertThat(withoutTree.componentTreePath).isNull()
+        assertThat(Integer.getInteger(viewInfoReadsKey, 0)).isEqualTo(0)
+
+        val withTree =
+          renderer
+            .render(
+              screenshot,
+              tmpFolder.newFolder("view_infos_with_tree").absolutePath,
+              RenderConfiguration(includeComponentTree = true),
+            )
+            .single()
+        assertThat(withTree.error).isNull()
+        assertThat(withTree.viewInfos.map { it.name }).containsExactly("FakeNode")
+        assertThat(withTree.componentTreePath).isNotNull()
+        assertThat(Integer.getInteger(viewInfoReadsKey, 0)).isAtLeast(1)
+      }
+    } finally {
+      System.clearProperty(viewInfoReadsKey)
     }
   }
 

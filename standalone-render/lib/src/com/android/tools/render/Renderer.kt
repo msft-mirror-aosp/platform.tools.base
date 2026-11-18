@@ -484,7 +484,8 @@ class Renderer(
         val relativeImagePath = if (configuration.renderImage) packagePath + File.separator + imageName else ""
         val relativeComponentTreePath = packagePath + File.separator + "$resultId.json"
         try {
-          val viewInfos = renderResult.rootViews.flatMap { parseViewInfo(it) }
+          // Walking the View and Compose hierarchies is only needed for the component tree.
+          val viewInfos = if (configuration.includeComponentTree) renderResult.rootViews.flatMap { parseViewInfo(it) } else emptyList()
           val imageRendered =
             if (configuration.renderImage) {
               val image =
