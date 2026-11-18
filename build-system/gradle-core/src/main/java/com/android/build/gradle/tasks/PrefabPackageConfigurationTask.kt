@@ -17,15 +17,16 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.component.LibraryCreationConfig
-import com.android.build.gradle.internal.cxx.prefab.PREFAB_PUBLICATION_FILE
 import com.android.build.gradle.internal.cxx.prefab.PrefabPublication
 import com.android.build.gradle.internal.cxx.prefab.PrefabPublicationType.Configuration
+import com.android.build.gradle.internal.cxx.prefab.publicationFileFrom
 import com.android.build.gradle.internal.cxx.prefab.writePublicationFile
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
+import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputFile
@@ -39,11 +40,11 @@ abstract class PrefabPackageConfigurationTask : NonIncrementalTask() {
 
   @get:Nested
   lateinit var publication: PrefabPublication
-    private set
+    @VisibleForTesting internal set
 
   @get:OutputFile abstract val publicationFile: RegularFileProperty
 
-  override fun doTaskAction() = Configuration.writePublicationFile(publication)
+  override fun doTaskAction() = Configuration.writePublicationFile(publication, publicationFile.get().asFile)
 
   class CreationAction(
     private val publication: PrefabPublication,
@@ -58,9 +59,17 @@ abstract class PrefabPackageConfigurationTask : NonIncrementalTask() {
 
     override fun handleProvider(taskProvider: TaskProvider<PrefabPackageConfigurationTask>) {
       super.handleProvider(taskProvider)
+      // Consumers (see GeneratePrefabPackages) find this file through Configuration.publicationFileFrom(installationFolder), so declare
+      // exactly that file as the task output. Otherwise, Gradle doesn't track the file that is actually written and may consider the task
+      // UP-TO-DATE after it has been deleted, for example by 'clean' (b/551999754).
+      val file =
+        checkNotNull(Configuration.publicationFileFrom(publication.installationFolder)) {
+          "Unexpected Prefab installation folder ${publication.installationFolder}"
+        }
       creationConfig.artifacts
         .setInitialProvider(taskProvider, PrefabPackageConfigurationTask::publicationFile)
-        .withName(PREFAB_PUBLICATION_FILE)
+        .withName(file.name)
+        .atLocation(file.parent)
         .on(InternalArtifactType.PREFAB_PACKAGE_CONFIGURATION)
     }
 

@@ -24,9 +24,11 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion
+import com.android.build.gradle.internal.cxx.json.readJsonFile
 import com.android.build.gradle.internal.cxx.model.CxxAbiModel
 import com.android.build.gradle.internal.cxx.model.minSdkVersion
 import com.android.build.gradle.internal.cxx.model.name
+import com.android.build.gradle.internal.cxx.prefab.PrefabPublication
 import com.android.build.gradle.tasks.NativeBuildSystem
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
@@ -235,6 +237,34 @@ class PrefabPublishingTest(private val buildType: String, private val buildSyste
   @Test
   fun `Bundle local lint AAR has no dependency warnings `() {
     executor().run("bundle${buildType}LocalLintAar", "prefab${buildType}ConfigurePackage")
+  }
+
+  // Regression test for b/551999754. The configure package task wrote its publication to a location that wasn't its declared output, so it
+  // was UP-TO-DATE after 'clean' even though the publication was gone. Consumers then fell back to the header-only publication.
+  @Test
+  fun `configure package publication is recreated after clean`() {
+    val configurePackageTask = ":$gradleModuleName:prefab${buildType.replaceFirstChar { it.uppercase() }}ConfigurePackage"
+    val publicationFile =
+      project.getSubproject(gradleModuleName).getIntermediateFile("prefab_package_configuration", "prefab_publication.json", buildType)
+
+    executor().run(configurePackageTask).assertTask(configurePackageTask).didWork()
+    assertThat(publicationFile).isFile()
+
+    executor().run("clean")
+    assertThat(publicationFile).doesNotExist()
+
+    executor().run(configurePackageTask).assertTask(configurePackageTask).didWork()
+    assertThat(publicationFile).isFile()
+    val publication = readJsonFile<PrefabPublication>(publicationFile)
+    Truth.assertThat(publication.packageInfo.modules.map { it.moduleName }).containsExactly(gradleModuleName, "${gradleModuleName}_static")
+    for (module in publication.packageInfo.modules) {
+      Truth.assertThat(module.abis.map { it.abiName }).named(module.moduleName).containsExactlyElementsIn(expectedAbis.map { it.tag })
+      for (abi in module.abis) {
+        Truth.assertThat(abi.abiLibrary).named("${module.moduleName} ${abi.abiName}").isNotNull()
+      }
+    }
+
+    executor().run(configurePackageTask).assertTask(configurePackageTask).wasUpToDate()
   }
 
   @Test

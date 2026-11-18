@@ -68,9 +68,14 @@ fun PrefabPublicationType.readPublicationFileOrNull(installationFolder: File): P
   return readJsonFile<PrefabPublication>(file)
 }
 
-/** Write the [PrefabPublication] of this type to disk. */
-fun PrefabPublicationType.writePublicationFile(publication: PrefabPublication) {
-  val file = publicationFileFrom(publication.installationFolder)!!
+/**
+ * Write the [PrefabPublication] of this type to [file]. By default, [file] is the location given by [publicationFileFrom], which is where
+ * readers like [readPublicationFileOrNull] look for it.
+ */
+fun PrefabPublicationType.writePublicationFile(
+  publication: PrefabPublication,
+  file: File = publicationFileFrom(publication.installationFolder)!!,
+) {
   val patched =
     when (this) {
       Configuration -> publication.copyWithLibraryInformationAdded()
@@ -79,7 +84,11 @@ fun PrefabPublicationType.writePublicationFile(publication: PrefabPublication) {
   writeJsonFileIfDifferent(file, patched)
 }
 
-/** Get the name of the publication file of this type. */
+/**
+ * Get the name of the publication file of this type.
+ *
+ * For [Configuration], this is also the declared output of PrefabPackageConfigurationTask, published as PREFAB_PACKAGE_CONFIGURATION.
+ */
 fun PrefabPublicationType.publicationFileFrom(installationFolder: File): File? {
   val variantRoot = installationFolder.parentFile
   val variant = variantRoot.name

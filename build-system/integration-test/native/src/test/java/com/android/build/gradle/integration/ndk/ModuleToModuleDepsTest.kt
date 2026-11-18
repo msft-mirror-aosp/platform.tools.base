@@ -130,6 +130,33 @@ class ModuleToModuleDepsTest(
     testAppBuild("arm64-v8a")
   }
 
+  // Regression test for b/551999754. :lib:prefabDebugConfigurePackage didn't declare the publication file it wrote as its output. After
+  // that file was deleted (for example, by 'clean'), the task was UP-TO-DATE, and :app fell back to the header-only publication and failed
+  // to link.
+  @Test
+  fun `app build after lib publication is deleted`() {
+    Assume.assumeFalse(expectGradleConfigureError())
+    Assume.assumeFalse(expectGradleBuildError())
+    val executor = getTestProject().executor()
+    val buildTask = ":app:build${appBuildSystem.build}Debug[arm64-v8a]"
+    val configurePackageTask = ":lib:prefabDebugConfigurePackage"
+    val publicationFile = libOutputRoot.resolve("build/intermediates/prefab_package_configuration/prefab_publication.json/debug")
+
+    executor.run(buildTask).assertTask(configurePackageTask).didWork()
+    assertThat(publicationFile.isFile).named("$publicationFile exists").isTrue()
+
+    // Deleting only the publication file should cause it to be recreated.
+    publicationFile.delete()
+    executor.run(buildTask).assertTask(configurePackageTask).didWork()
+    assertThat(publicationFile.isFile).named("$publicationFile exists").isTrue()
+    executor.run(buildTask).assertTask(configurePackageTask).wasUpToDate()
+
+    // Same after 'clean'. Before the fix, linking :app failed here.
+    executor.run("clean")
+    executor.run(buildTask).assertTask(configurePackageTask).didWork()
+    assertThat(publicationFile.isFile).named("$publicationFile exists").isTrue()
+  }
+
   // Calculating task graph as configuration cache cannot be reused because the file system entry
   // 'out/lib/build/intermediates/prefab_package_header_only/prefab_publication.json' has been
   // created.
