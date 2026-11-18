@@ -363,15 +363,15 @@ class Values {
 };
 
 // One path through a handler: it follows the gotos with which D8 splits the
-// handler and skips the moves with which it shuffles registers, adding them all
-// to `code`.
+// handler and skips the moves with which it shuffles registers and the nops
+// that it adds for lines in debug builds, adding them all to `code`.
 class Path {
  public:
   Path(Values values, std::vector<lir::Bytecode*>* code)
       : values_(std::move(values)), code_(code) {}
 
-  // Returns the first bytecode at or after `bytecode` that isn't a goto or a
-  // move, or nullptr at the end of the code or if the path loops.
+  // Returns the first bytecode at or after `bytecode` that isn't a goto, a move
+  // or a nop, or nullptr at the end of the code or if the path loops.
   lir::Bytecode* From(lir::Bytecode* bytecode) {
     while (bytecode != nullptr && visited_.insert(bytecode).second) {
       code_->push_back(bytecode);
@@ -379,6 +379,8 @@ class Path {
         bytecode = SkipNonBytecodes(BranchTarget(bytecode));
       } else if (IsMove(bytecode->opcode)) {
         values_.Move(bytecode);
+        bytecode = NextBytecode(bytecode);
+      } else if (bytecode->opcode == dex::OP_NOP) {
         bytecode = NextBytecode(bytecode);
       } else {
         return bytecode;

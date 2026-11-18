@@ -4047,6 +4047,9 @@ struct EcjShape {
   bool check_skips_to_return = false;
   dex::u4 thrown = 0;
   int throw_line = 22;
+  // Whether D8 puts a nop for a line right before that throw, as in debug
+  // builds.
+  bool nop_before_throw = false;
   // The line of a throw of its own for a null resource in the handler, if not
   // 0, the register that it throws, and the line of the throw after the
   // suppression.
@@ -4296,6 +4299,9 @@ class TryWithResourcesFilterEcjTest : public TryWithResourcesFilterTest {
     close();
     m.Place(rethrow);
     m.AddLine(shape.throw_line);
+    if (shape.nop_before_throw) {
+      m.Add(dex::OP_NOP);
+    }
     m.Add(dex::OP_THROW, {m.Reg(shape.thrown)});
     if (closing != nullptr) {
       m.AddTryBlockEnd(closing, suppress);
@@ -4514,6 +4520,19 @@ TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterSwappedBranches) {
 TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterResourceMovedAfterCreation) {
   EcjShape shape;
   shape.moved_after_creation = true;
+  TestMethod m("read", "(Ljava/lang/String;)I");
+  EcjStatement s = AddEcjStatement(m, shape);
+
+  filter_.Filter(context_, m.ir_method(), m.code_ir(), output_);
+
+  ExpectIgnored(m, Ignored(m, s));
+}
+
+// try (in) { use(in); } with ECJ in a debug build: D8 puts a nop for a line
+// right before the throw of the handler, where the check for null goes too.
+TEST_F(TryWithResourcesFilterEcjTest, ShouldFilterNopBeforeThrow) {
+  EcjShape shape;
+  shape.nop_before_throw = true;
   TestMethod m("read", "(Ljava/lang/String;)I");
   EcjStatement s = AddEcjStatement(m, shape);
 
