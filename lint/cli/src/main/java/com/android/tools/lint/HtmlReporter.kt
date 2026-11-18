@@ -452,24 +452,7 @@ document.getElementById(id).style.display = 'none';
             "<code>&lt;option&gt;</code> block like the following:\n"
         )
 
-        val name = option.name
-        val defaultValue = option.defaultAsString()
-        val builder = HtmlBuilder()
-        val snippet =
-          "<lint>\n" +
-            "    <issue id=\"${issue.id}\">\n" +
-            "        <option name=\"$name\" value=\"${defaultValue ?: "some string"}\" />\n" +
-            "    </issue>\n" +
-            "</lint>\n"
-
-        val highlighter = LintSyntaxHighlighter("lint.xml", snippet)
-        highlighter.isPadCaretLine = true
-        highlighter.isDedent = true
-        val start = snippet.indexOf(name) - 1
-        val end = snippet.lastIndexOf(" />")
-        highlighter.generateHtml(builder, start, end, false)
-        val highlighted = builder.html
-        append(highlighted)
+        append(generateOptionSampleHtml(issue.id, option.name, option.defaultAsString()))
       }
 
       append("</div>") // options
@@ -1365,6 +1348,24 @@ $cssSyntaxColors.overview {
 
     private fun getExplanationId(issue: Issue): String {
       return "explanation" + issue.id
+    }
+
+    internal fun generateOptionSampleHtml(issueId: String, name: String, defaultValue: String?): String {
+      val builder = HtmlBuilder()
+      val snippet =
+        "<lint>\n" +
+          "    <issue id=\"$issueId\">\n" +
+          "        <option name=\"$name\" value=\"${defaultValue ?: "some string"}\" />\n" +
+          "    </issue>\n" +
+          "</lint>\n"
+
+      val highlighter = LintSyntaxHighlighter("lint.xml", snippet)
+      highlighter.isPadCaretLine = true
+      highlighter.isDedent = true
+      val start = snippet.indexOf(name) - 1
+      val end = snippet.lastIndexOf(" />")
+      highlighter.generateHtml(builder, start, end, false)
+      return builder.html
     }
 
     /** Returns the density for the given file, if known (e.g. in a density folder, such as drawable-mdpi. */
