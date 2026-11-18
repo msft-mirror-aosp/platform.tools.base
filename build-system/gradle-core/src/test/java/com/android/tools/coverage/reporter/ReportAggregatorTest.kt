@@ -724,6 +724,145 @@ class ReportAggregatorTest {
   }
 
   @Test
+  fun testClassesThatTheProjectCompilesAreReportedInThePackageOfTheTests() {
+    fun classMetadata(className: String) =
+      ClassMetadata.newBuilder()
+        .setClassName(className)
+        .setSourceFile("Fixture.kt")
+        .addMethods(MethodMetadata.newBuilder().setName("<init>"))
+    val metadata =
+      CoverageMetadata.newBuilder()
+        // The module compiles a class in the package of its test APK, as the build-time report covers it.
+        .addClasses(classMetadata("com/example/test/Fixture"))
+        // A test class and an excluded class, with the companion class of an excluded interface: the module doesn't compile them.
+        .addClasses(classMetadata("com/example/test/FixtureTest"))
+        .addClasses(classMetadata("com/example/Excluded"))
+        .addClasses(classMetadata("com/example/Excluded\$-CC"))
+        .build()
+
+    val report =
+      ReportAggregator()
+        .aggregate(
+          CoverageData(metadata, BitSet()),
+          "test",
+          testPackageId = "com.example.test",
+          exclusions = setOf("com/example/Excluded"),
+          projectClasses = setOf("com/example/test/Fixture"),
+        )
+
+    assertThat(report.packages.keys).containsExactly("com/example/test")
+    assertThat(report.packages["com/example/test"]!!.classes.keys).containsExactly("com/example/test/Fixture")
+  }
+
+  @Test
+  fun testCompanionClassesOfTheInterfacesThatTheProjectCompilesAreReportedAsTheInterfaces() {
+    fun companionClassMetadata(interfaceName: String, sourceFile: String) =
+      ClassMetadata.newBuilder()
+        .setClassName("$interfaceName\$-CC")
+        .setSourceFile(sourceFile)
+        .addMethods(MethodMetadata.newBuilder().setName("\$default\$run").setSignature("(L$interfaceName;)V"))
+    val metadata =
+      CoverageMetadata.newBuilder()
+        // Below API 24, d8 moves the default methods of these interfaces to companion classes, which the class files don't have. The module
+        // compiles an interface in the package of its test APK, one from a source generated outside the source folders, and one that an
+        // annotation marks as generated.
+        .addClasses(companionClassMetadata("com/example/test/FixtureApi", "FixtureApi.kt"))
+        .addClasses(companionClassMetadata("com/example/GeneratedApi", "GeneratedApi.java"))
+        .addClasses(companionClassMetadata("com/example/AnnotatedApi", "AnnotatedApi.java"))
+        // An interface of the tests: the module doesn't compile it.
+        .addClasses(companionClassMetadata("com/example/test/TestApi", "TestApi.kt"))
+        .build()
+
+    val report =
+      ReportAggregator()
+        .aggregate(
+          CoverageData(metadata, BitSet()),
+          "test",
+          testPackageId = "com.example.test",
+          sourceFolders = listOf(temporaryFolder.newFolder("src")),
+          projectClasses = setOf("com/example/test/FixtureApi", "com/example/GeneratedApi", "com/example/AnnotatedApi"),
+          generatedCode = GeneratedCode(classes = setOf("com/example/AnnotatedApi")),
+        )
+
+    assertThat(report.packages["com/example/test"]!!.classes.keys).containsExactly("com/example/test/FixtureApi\$-CC")
+    val classes = report.packages["com/example"]!!.classes
+    assertThat(classes.keys).containsExactly("com/example/GeneratedApi\$-CC", "com/example/AnnotatedApi\$-CC")
+    assertThat(classes["com/example/GeneratedApi\$-CC"]!!.methods.map { it.name }).containsExactly("\$default\$run")
+    // The code of the interface is generated, so its companion class has no methods.
+    assertThat(classes["com/example/AnnotatedApi\$-CC"]!!.methods).isEmpty()
+  }
+
+  @Test
+  fun testGeneratedMethodsOfAnInterfaceAreLeftOutOfItsCompanionClass() {
+    fun method(name: String, signature: String) = MethodMetadata.newBuilder().setName(name).setSignature(signature)
+    val metadata =
+      CoverageMetadata.newBuilder()
+        // Below API 24, d8 moves the default, private and static methods of the interface to its companion class. It adds the interface as
+        // the first parameter of the default and private instance methods, and prefixes their names.
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/Api\$-CC")
+            .setSourceFile("Api.java")
+            .addMethods(method("\$default\$generated", "(Lcom/example/Api;I)V"))
+            .addMethods(method("\$private\$generatedHelper", "(Lcom/example/Api;)V"))
+            .addMethods(method("generatedStatic", "()V"))
+            .addMethods(method("\$default\$written", "(Lcom/example/Api;)V"))
+        )
+        .build()
+
+    val report =
+      ReportAggregator()
+        .aggregate(
+          CoverageData(metadata, BitSet()),
+          "test",
+          generatedCode =
+            GeneratedCode(
+              methods = setOf("com/example/Api.generated(I)V", "com/example/Api.generatedHelper()V", "com/example/Api.generatedStatic()V")
+            ),
+        )
+
+    assertThat(report.packages["com/example"]!!.classes["com/example/Api\$-CC"]!!.methods.map { it.name })
+      .containsExactly("\$default\$written")
+  }
+
+  @Test
+  fun testDefaultMethodsOfAnInterfaceKeepTheirBranchesInItsCompanionClass() {
+    fun method(name: String, signature: String, firstBlockId: Int) =
+      MethodMetadata.newBuilder()
+        .setName(name)
+        .setSignature(signature)
+        .addBlocks(
+          BlockMetadata.newBuilder()
+            .setBlockId(firstBlockId)
+            .setBranchCount(2)
+            .addSuccessorBlockIds(firstBlockId + 1)
+            .addSuccessorBlockIds(firstBlockId + 2)
+            .addLines(LineMetadata.newBuilder().setLineNumber(10 + firstBlockId).setInstructionCount(2))
+        )
+        .addBlocks(BlockMetadata.newBuilder().setBlockId(firstBlockId + 1).setBranchCount(1))
+        .addBlocks(BlockMetadata.newBuilder().setBlockId(firstBlockId + 2).setBranchCount(1))
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/Api\$-CC")
+            .setSourceFile("Api.kt")
+            // A default method of the interface, which d8 moved to its companion class.
+            .addMethods(method("\$default\$run", "(Lcom/example/Api;)V", firstBlockId = 0))
+            // Kotlin's stub for the default arguments of a method of the interface: a static method, which d8 moves there too.
+            .addMethods(method("start\$default", "(Lcom/example/Api;IILjava/lang/Object;)V", firstBlockId = 3))
+        )
+        .build()
+    val hits = BitSet().apply { set(0, 2) }
+
+    val report = ReportAggregator().aggregate(CoverageData(metadata, hits), "test")
+
+    val methods = report.packages["com/example"]!!.classes["com/example/Api\$-CC"]!!.methods.associateBy { it.name }
+    assertThat(methods["\$default\$run"]!!.branches).isEqualTo(Counter(covered = 1, missed = 1))
+    assertThat(methods["start\$default"]!!.branches).isEqualTo(Counter(covered = 0, missed = 0))
+  }
+
+  @Test
   fun testGeneratedCodeIsLeftOut() {
     fun method(name: String, blockId: Int, line: Int) =
       MethodMetadata.newBuilder()
