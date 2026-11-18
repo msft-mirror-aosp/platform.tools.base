@@ -90,7 +90,7 @@ class TestSuiteOnDeviceCoverageInputsTest {
 
     val inputs = engineInputs()
     assertThat(inputs.getProperty(COVERAGE_TYPE)).isEqualTo("ON_THE_FLY")
-    assertThat(inputs.getProperty(INSTRUMENTATION_ARGS)).isEqualTo("com.android.tools.coverage.prefixes=com/example/app")
+    assertThat(inputs.getProperty(INSTRUMENTATION_ARGS)).matches("""$PREFIXES_ARG=com/example/app,$CLASS_LIST_ARG=[^,]+""")
   }
 
   @Test
@@ -103,7 +103,54 @@ class TestSuiteOnDeviceCoverageInputsTest {
 
     build.executor.run(":app:$TEST_TASK")
 
-    assertThat(engineInputs().getProperty(INSTRUMENTATION_ARGS)).isEqualTo("com.android.tools.coverage.prefixes=com/example/app,foo=bar")
+    assertThat(engineInputs().getProperty(INSTRUMENTATION_ARGS)).matches("""$PREFIXES_ARG=com/example/app,$CLASS_LIST_ARG=[^,]+,foo=bar""")
+  }
+
+  @Test
+  fun suiteWithCoveragePassesTheClassesOfTheTestedApp() {
+    val build = rule.build {
+      androidApplication(":app") {
+        files {
+          add("src/main/java/com/example/app/AppClass.java", "package com.example.app; public class AppClass {}")
+          // A class of the app outside its namespace, so outside the coverage prefix.
+          add("src/main/java/com/example/other/OtherPackageClass.java", "package com.example.other; public class OtherPackageClass {}")
+        }
+      }
+    }
+
+    build.executor.run(":app:$TEST_TASK")
+
+    val classList = File(engineInputs().getProperty(INSTRUMENTATION_ARGS).substringAfter("$CLASS_LIST_ARG=").substringBefore(","))
+    val lines = classList.readLines()
+    assertThat(lines.first()).isEqualTo("#coverage-classes v1 count=${lines.size - 2}")
+    assertThat(lines.last()).isEqualTo("#end")
+    assertThat(lines).containsAtLeast("com/example/app/AppClass", "com/example/other/OtherPackageClass")
+    assertThat(lines).doesNotContain("com/example/app/SuiteTestClass")
+  }
+
+  @Test
+  fun suiteWithItsOwnCoveragePrefixDoesNotPassTheClassList() {
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          testOptions.customSuites.named("deviceSuite") {
+            it.useJunitEngine.addInputProperty(INSTRUMENTATION_ARGS, "$PREFIXES_ARG=com/example")
+          }
+        }
+      }
+    }
+
+    build.executor.run(":app:$TEST_TASK")
+
+    // The engine keeps the last prefix, the suite's, and the agent instruments the classes under it.
+    assertThat(engineInputs().getProperty(INSTRUMENTATION_ARGS)).isEqualTo("$PREFIXES_ARG=com/example/app,$PREFIXES_ARG=com/example")
+  }
+
+  @Test
+  fun commandLineCoveragePrefixDisablesTheClassList() {
+    rule.build.executor.withArgument("-Pandroid.testInstrumentationRunnerArguments.$PREFIXES_ARG=com/example").run(":app:$TEST_TASK")
+
+    assertThat(engineInputs().getProperty(INSTRUMENTATION_ARGS)).isEqualTo("$PREFIXES_ARG=com/example/app,$PREFIXES_ARG=com/example")
   }
 
   @Test
@@ -183,5 +230,7 @@ class TestSuiteOnDeviceCoverageInputsTest {
     private const val TEST_TASK = "testDebugDeviceSuiteT1TestSuite"
     private const val COVERAGE_TYPE = "com.android.agp.test.COVERAGE_TYPE"
     private const val INSTRUMENTATION_ARGS = "android-test.instrumentation-args"
+    private const val PREFIXES_ARG = "com.android.tools.coverage.prefixes"
+    private const val CLASS_LIST_ARG = "com.android.tools.coverage.classList"
   }
 }

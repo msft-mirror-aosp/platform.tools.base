@@ -16,9 +16,11 @@
 
 package com.android.build.gradle.internal
 
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.api.variant.impl.capitalizeFirstChar
@@ -26,6 +28,7 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.coverage.CoverageClassListTask
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -66,6 +69,15 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     if (testSuite.codeCoverageEnabled) {
       handleJacocoDependencies(apkCreationConfig)
       handleOnTheFlyCoverageDependencies(apkCreationConfig)
+    }
+    // The suite's test task passes the list to the test engine, for the coverage agent to instrument the classes that the report covers.
+    if (CoverageClassListTask.isEnabled(apkCreationConfig.services, testSuite.codeCoverageEnabled)) {
+      taskFactory.register(
+        CoverageClassListTask.CreationAction(
+          apkCreationConfig,
+          testSuite.testedVariant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES),
+        )
+      )
     }
 
     val taskContainer = apkCreationConfig.taskContainer

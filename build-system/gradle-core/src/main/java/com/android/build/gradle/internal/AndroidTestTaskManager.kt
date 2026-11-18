@@ -16,11 +16,14 @@
 
 package com.android.build.gradle.internal
 
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
+import com.android.build.gradle.internal.coverage.CoverageClassListTask
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoReportTask
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
@@ -218,6 +221,16 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
   private fun createConnectedTestForVariant(androidTestProperties: DeviceTestCreationConfig) {
     val testedVariant = androidTestProperties.mainVariant
     val isLibrary = testedVariant.componentType.isAar
+
+    // The test data passes the list to the test engine, for the coverage agent to instrument the classes that the report covers.
+    if (CoverageClassListTask.isEnabled(androidTestProperties.services, androidTestProperties.codeCoverageEnabled)) {
+      taskFactory.register(
+        CoverageClassListTask.CreationAction(
+          androidTestProperties,
+          testedVariant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES),
+        )
+      )
+    }
 
     val testData: AbstractTestDataImpl =
       if (testedVariant.componentType.isDynamicFeature) {

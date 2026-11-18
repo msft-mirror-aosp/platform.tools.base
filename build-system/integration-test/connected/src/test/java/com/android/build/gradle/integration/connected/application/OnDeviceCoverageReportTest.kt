@@ -53,6 +53,9 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
     fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
 
     private const val DEVICE_SUITE = "deviceSuite"
+
+    /** Below 24, so that d8 moves the default methods of interfaces to companion classes, such as `Greeter$-CC`. */
+    private const val MIN_SDK = 21
   }
 
   @get:Rule
@@ -63,7 +66,7 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
           namespace = "com.example.app"
           compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
           defaultConfig {
-            minSdk { version = release(24) }
+            minSdk { version = release(MIN_SDK) }
             testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
           }
           buildTypes {
@@ -190,13 +193,88 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
           """
             .trimIndent(),
         )
+        // Classes that the app compiles outside its namespace. The tests never load OutsideNeverUsed.
+        files.add(
+          "src/main/java/com/example/other/Outside.kt",
+          """
+          package com.example.other
+
+          class Outside {
+              fun value() = 7
+          }
+          """
+            .trimIndent(),
+        )
+        files.add(
+          "src/main/java/com/example/other/OutsideNeverUsed.kt",
+          """
+          package com.example.other
+
+          class OutsideNeverUsed {
+              fun value() = 42
+          }
+          """
+            .trimIndent(),
+        )
+        // d8 moves the code of greet() to Greeter$-CC, and gives EnglishGreeter a method that calls it.
+        files.add(
+          "src/main/java/com/example/app/Greeter.java",
+          """
+          package com.example.app;
+
+          public interface Greeter {
+              default String greet(String name) {
+                  return "Hello, " + name;
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        files.add(
+          "src/main/java/com/example/app/EnglishGreeter.java",
+          """
+          package com.example.app;
+
+          public class EnglishGreeter implements Greeter {}
+          """
+            .trimIndent(),
+        )
+        for ((sourceSet, testClass) in
+          listOf("$DEVICE_SUITE/kotlin" to "ClassListTest", "androidTest/java" to "ClassListInstrumentedTest")) {
+          files.add(
+            "src/$sourceSet/com/example/app/$testClass.kt",
+            """
+            package com.example.app
+
+            import androidx.test.ext.junit.runners.AndroidJUnit4
+            import com.example.other.Outside
+            import org.junit.Assert.assertEquals
+            import org.junit.Test
+            import org.junit.runner.RunWith
+
+            @RunWith(AndroidJUnit4::class)
+            class $testClass {
+                @Test
+                fun outside() {
+                    assertEquals(7, Outside().value())
+                }
+
+                @Test
+                fun greet() {
+                    assertEquals("Hello, Ada", EnglishGreeter().greet("Ada"))
+                }
+            }
+            """
+              .trimIndent(),
+          )
+        }
       }
       androidLibrary(":lib") {
         android {
           namespace = "com.example.lib"
           compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
           defaultConfig {
-            minSdk { version = release(24) }
+            minSdk { version = release(MIN_SDK) }
             testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
           }
           buildTypes {
@@ -272,6 +350,24 @@ class OnDeviceCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(appBuildDir.resolve("reports/coverage/testSuites/$DEVICE_SUITE/debug/t1/index.html")).exists()
     if (runWithBuiltInPlatform) {
       assertThat(appBuildDir.resolve("reports/coverage/testSuites/$CONNECTED_TEST_TEST_SUITE_NAME/debug/connected/index.html")).exists()
+    }
+  }
+
+  @Test
+  fun testAllSuitesReportsTheClassesOfTheClassList() {
+    rule.build.executor.run(":app:testAllSuites")
+
+    val app = coverageReport(":app", "testAllSuites").modules.single { it.name == ":app" }
+    val classes = app.packages.flatMap { it.classes }
+    for (testSuite in listOf(DEVICE_SUITE, CONNECTED_TEST_TEST_SUITE_NAME)) {
+      // AGP passes the classes that the app compiles to the agent, which instruments them even outside the namespace of the app.
+      assertThat(classes.single { it.name == "Outside" }.instructions(testSuite).covered).isGreaterThan(0)
+      // The agent reports the classes of the list that never load, with no coverage.
+      val outsideNeverUsed = classes.single { it.name == "OutsideNeverUsed" }.instructions(testSuite)
+      assertThat(outsideNeverUsed.covered).isEqualTo(0)
+      assertThat(outsideNeverUsed.total).isGreaterThan(0)
+      // It instruments the companion class of a listed interface, which has the code of its default method, as it does with the prefix.
+      assertThat(classes.single { it.name == "Greeter\$-CC" }.instructions(testSuite).covered).isGreaterThan(0)
     }
   }
 

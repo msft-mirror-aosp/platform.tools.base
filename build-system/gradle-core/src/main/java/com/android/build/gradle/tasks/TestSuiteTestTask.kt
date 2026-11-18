@@ -30,6 +30,7 @@ import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BuildToolsExecutableInput
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -37,6 +38,7 @@ import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
+import com.android.build.gradle.internal.coverage.CoverageClassListTask
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.TestSuiteCoverageWorkAction
 import com.android.build.gradle.internal.coverage.getTestSuiteJacocoVersion
@@ -1222,15 +1224,44 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         )
 
         val suiteArgs = junitEngineSpec.inputProperties.getting(INSTRUMENTATION_ARGS_KEY).orElse("")
+        // The list of the tested classes, which the agent instruments instead of the classes under the prefix (see
+        // CoverageClassListTask). The task that writes it is registered with the test APK.
+        val testApkCreationConfig =
+          creationConfig.sourceContainers.firstOrNull { it.source is TestSuiteSourceSet.TestApk }?.creationConfig as? ApkCreationConfig
+        val classListPath =
+          if (
+            onDeviceCoverage &&
+              testApkCreationConfig != null &&
+              CoverageClassListTask.isEnabled(creationConfig.services, coverageEnabledForTask)
+          ) {
+            // The engine reads the list, so the list is an input of the task. The arguments only hold its location, without the task
+            // that writes it: the configuration cache computes them before that task runs.
+            task.inputs
+              .files(testApkCreationConfig.artifacts.get(InternalArtifactType.ON_DEVICE_COVERAGE_CLASS_LIST))
+              .withPropertyName("coverageClassList")
+              .withPathSensitivity(PathSensitivity.NONE)
+            testApkCreationConfig.artifacts.getArtifactContainer(InternalArtifactType.ON_DEVICE_COVERAGE_CLASS_LIST).locationOnly().map {
+              it.asFile.absolutePath
+            }
+          } else {
+            creationConfig.services.provider { "" }
+          }
+        val prefixesArg = "com.android.tools.coverage.prefixes"
         val mergedArgsProvider =
           testedVariant.namespace
             .zip(suiteArgs) { namespace, args -> namespace to args }
-            .zip(extraRunnerArgs) { (namespace, args), cliArgs ->
+            .zip(classListPath) { (namespace, args), classList -> Triple(namespace, args, classList) }
+            .zip(extraRunnerArgs) { (namespace, args, classList), cliArgs ->
               val parts = mutableListOf<String>()
               if (onDeviceCoverage) {
                 // The agent instruments the classes under the tested app's namespace, as for androidTest. Without this prefix, the engine
                 // falls back to the tested application id, which doesn't match when there is an applicationIdSuffix.
-                parts.add(formatInstrumentationArgs(mapOf("com.android.tools.coverage.prefixes" to namespace.replace('.', '/'))))
+                parts.add(formatInstrumentationArgs(mapOf(prefixesArg to namespace.replace('.', '/'))))
+                // A prefix that the suite or the command line sets keeps working: the class list would replace it.
+                val prefixIsSet = containsInstrumentationArgKey(args, prefixesArg) || prefixesArg in cliArgs
+                if (classList.isNotEmpty() && !prefixIsSet) {
+                  parts.add(formatInstrumentationArgs(mapOf(CoverageClassListTask.INSTRUMENTATION_ARG to classList)))
+                }
               }
               if (args.isNotBlank()) {
                 parts.add(args)

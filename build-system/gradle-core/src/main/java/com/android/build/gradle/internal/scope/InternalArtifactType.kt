@@ -203,6 +203,9 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   // The automatically generated jacoco config file
   object JACOCO_CONFIG_RESOURCES : InternalArtifactType<Directory>(DIRECTORY)
 
+  // The list of the classes of the tested variant for the on-device coverage agent to instrument
+  object ON_DEVICE_COVERAGE_CLASS_LIST : InternalArtifactType<RegularFile>(FILE)
+
   // The android test results report HTML whose data are merged from all devices.
   object MANAGED_DEVICE_ANDROID_TEST_MERGED_RESULTS_REPORT : InternalArtifactType<Directory>(DIRECTORY, Category.OUTPUTS)
 

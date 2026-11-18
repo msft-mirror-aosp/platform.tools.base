@@ -19,6 +19,9 @@ import com.android.SdkConstants
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
+import com.android.build.gradle.internal.component.NestedComponentCreationConfig
+import com.android.build.gradle.internal.coverage.CoverageClassListTask
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.databinding.DATA_BINDING_TRIGGER_CLASS
 import com.android.build.gradle.internal.test.BuiltArtifactsSplitOutputMatcher.computeBestOutput
 import com.android.build.gradle.internal.testing.StaticTestData
@@ -120,6 +123,18 @@ abstract class AbstractTestDataImpl(
           namespace.replace(".", "/")
         }
       instrumentationRunnerArguments.put("com.android.tools.coverage.prefixes", prefixProvider)
+
+      // The test engine puts the list of the tested classes next to the agent, which then instruments them instead of the classes under
+      // the prefix.
+      if (
+        creationConfig is NestedComponentCreationConfig &&
+          CoverageClassListTask.isEnabled(creationConfig.services, creationConfig.codeCoverageEnabled)
+      ) {
+        instrumentationRunnerArguments.put(
+          CoverageClassListTask.INSTRUMENTATION_ARG,
+          creationConfig.artifacts.get(InternalArtifactType.ON_DEVICE_COVERAGE_CLASS_LIST).map { it.asFile.absolutePath },
+        )
+      }
     }
     // memoize the value which makes it similar to `by lazy`
     instrumentationRunnerArguments.finalizeValueOnRead()
