@@ -41,7 +41,10 @@ import org.jacoco.report.MultiSourceFileLocator
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.Handle
+import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
 
 /** Generates an on-the-fly coverage XML report. */
 @Throws(IOException::class)
@@ -84,17 +87,19 @@ internal fun findProjectClasses(classFolders: Collection<File>): Set<String> {
 
 /**
  * Returns the code in the class files of [findProjectClasses] that an annotation marks as generated, as the build-time report does: the
- * classes and the methods annotated with an annotation whose simple name contains `Generated`, such as Dagger's `@DaggerGenerated`. The
- * annotation needs to be in the class file, so it has class or runtime retention. The dex in the APK drops class retention annotations, so
- * only the class files have them.
+ * classes and the methods annotated with an annotation whose simple name contains `Generated`, such as Dagger's `@DaggerGenerated`, and the
+ * boxed variants that the Kotlin compiler generates for `@JvmExposeBoxed` (see [findExposeBoxedVariants]). The annotation needs to be in
+ * the class file, so it has class or runtime retention. The dex in the APK drops class retention annotations, so only the class files have
+ * them.
  */
 internal fun findGeneratedCode(classFolders: Collection<File>): GeneratedCode {
   val classes = mutableSetOf<String>()
   val methods = mutableSetOf<String>()
   forEachReportedClassFile(classFolders) { _, file ->
+    val bytes = file.readBytes()
     val visitor = GeneratedAnnotationsVisitor()
     try {
-      ClassReader(file.readBytes()).accept(visitor, ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES)
+      ClassReader(bytes).accept(visitor, ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES)
     } catch (e: IllegalArgumentException) {
       // A class file of a version that ASM doesn't support yet, or an invalid one: its code stays in the report.
       return@forEachReportedClassFile
@@ -106,6 +111,9 @@ internal fun findGeneratedCode(classFolders: Collection<File>): GeneratedCode {
       classes.add(visitor.className)
     }
     methods.addAll(visitor.generatedMethods)
+    if (visitor.exposeBoxedMethods.isNotEmpty()) {
+      methods.addAll(findExposeBoxedVariants(bytes, visitor.exposeBoxedMethods))
+    }
   }
   return GeneratedCode(classes, methods)
 }
@@ -122,6 +130,11 @@ private class GeneratedAnnotationsVisitor : ClassVisitor(ASM_API_VERSION) {
 
   /** The methods with such an annotation, such as `com/example/Foo.get()V`. */
   val generatedMethods: List<String> = methods
+
+  private val exposeBoxed = mutableListOf<String>()
+
+  /** The methods with the class retention annotation `@JvmExposeBoxed`, in the same form. */
+  val exposeBoxedMethods: List<String> = exposeBoxed
 
   override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String?, interfaces: Array<out String>?) {
     className = name
@@ -146,9 +159,125 @@ private class GeneratedAnnotationsVisitor : ClassVisitor(ASM_API_VERSION) {
         if (isGeneratedAnnotation(annotationDescriptor)) {
           methods.add("$className.$name$descriptor")
         }
+        if (!visible && annotationDescriptor == "Lkotlin/jvm/JvmExposeBoxed;") {
+          exposeBoxed.add("$className.$name$descriptor")
+        }
         return null
       }
     }
+}
+
+/**
+ * Returns the methods among [candidates] in the class file [bytes] that the Kotlin compiler generates for `@JvmExposeBoxed`, as the
+ * build-time report finds them: the boxed variant of a function that takes or returns a value class, whose first call of `unbox-impl`
+ * unboxes a value that it just loaded from a local variable, or whose first call of `box-impl` boxes the value that it returns. The
+ * function itself takes and returns the underlying values and doesn't have the annotation, so it stays in the report.
+ */
+private fun findExposeBoxedVariants(bytes: ByteArray, candidates: List<String>): List<String> {
+  val variants = mutableListOf<String>()
+  val visitor =
+    object : ClassVisitor(ASM_API_VERSION) {
+      private var className = ""
+
+      override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String?, interfaces: Array<out String>?) {
+        className = name
+      }
+
+      override fun visitMethod(
+        access: Int,
+        name: String,
+        descriptor: String,
+        signature: String?,
+        exceptions: Array<out String>?,
+      ): MethodVisitor? {
+        val method = "$className.$name$descriptor"
+        return if (method in candidates) ExposeBoxedVariantVisitor { variants.add(method) } else null
+      }
+    }
+  try {
+    // Without skipping the labels, lines and frames, which the build-time report sees between the instructions too.
+    ClassReader(bytes).accept(visitor, 0)
+  } catch (e: IllegalArgumentException) {
+    return emptyList()
+  } catch (e: IndexOutOfBoundsException) {
+    return emptyList()
+  }
+  return variants
+}
+
+/**
+ * Calls [onVariant] if the method that it visits is a boxed variant of [findExposeBoxedVariants]. A label, a line or a frame counts as a
+ * node without an opcode between the instructions, as in the build-time report.
+ */
+private class ExposeBoxedVariantVisitor(private val onVariant: () -> Unit) : MethodVisitor(ASM_API_VERSION) {
+  private var previousOpcode = NO_OPCODE
+  private var afterBox = false
+  private var done = false
+
+  override fun visitMethodInsn(opcode: Int, owner: String, name: String, descriptor: String, isInterface: Boolean) {
+    val searching = !done && !afterBox
+    val previous = previousOpcode
+    visitNode(opcode)
+    if (searching && opcode == Opcodes.INVOKEVIRTUAL && name == "unbox-impl") {
+      done = true
+      if (previous == Opcodes.ALOAD) {
+        onVariant()
+      }
+    } else if (searching && opcode == Opcodes.INVOKESTATIC && name == "box-impl") {
+      afterBox = true
+    }
+  }
+
+  override fun visitInsn(opcode: Int) = visitNode(opcode)
+
+  override fun visitIntInsn(opcode: Int, operand: Int) = visitNode(opcode)
+
+  override fun visitVarInsn(opcode: Int, varIndex: Int) = visitNode(opcode)
+
+  override fun visitTypeInsn(opcode: Int, type: String) = visitNode(opcode)
+
+  override fun visitFieldInsn(opcode: Int, owner: String, name: String, descriptor: String) = visitNode(opcode)
+
+  override fun visitInvokeDynamicInsn(
+    name: String,
+    descriptor: String,
+    bootstrapMethodHandle: Handle,
+    vararg bootstrapMethodArguments: Any,
+  ) = visitNode(Opcodes.INVOKEDYNAMIC)
+
+  override fun visitJumpInsn(opcode: Int, label: Label) = visitNode(opcode)
+
+  override fun visitLdcInsn(value: Any) = visitNode(Opcodes.LDC)
+
+  override fun visitIincInsn(varIndex: Int, increment: Int) = visitNode(Opcodes.IINC)
+
+  override fun visitTableSwitchInsn(min: Int, max: Int, dflt: Label, vararg labels: Label) = visitNode(Opcodes.TABLESWITCH)
+
+  override fun visitLookupSwitchInsn(dflt: Label, keys: IntArray, labels: Array<out Label>) = visitNode(Opcodes.LOOKUPSWITCH)
+
+  override fun visitMultiANewArrayInsn(descriptor: String, numDimensions: Int) = visitNode(Opcodes.MULTIANEWARRAY)
+
+  override fun visitLabel(label: Label) = visitNode(NO_OPCODE)
+
+  override fun visitLineNumber(line: Int, start: Label) = visitNode(NO_OPCODE)
+
+  override fun visitFrame(type: Int, numLocal: Int, local: Array<out Any>?, numStack: Int, stack: Array<out Any>?) = visitNode(NO_OPCODE)
+
+  /** Visits a node: an instruction with the [opcode], or a label, a line or a frame with [NO_OPCODE]. */
+  private fun visitNode(opcode: Int) {
+    if (afterBox) {
+      afterBox = false
+      done = true
+      if (opcode == Opcodes.ARETURN) {
+        onVariant()
+      }
+    }
+    previousOpcode = opcode
+  }
+
+  private companion object {
+    const val NO_OPCODE = -1
+  }
 }
 
 /**
