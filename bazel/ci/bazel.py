@@ -127,7 +127,9 @@ def make_build_env(
     match = None
     with open(os.path.join(workspace_dir, "tools/base/common/release_version.bzl")) as f:
       for line in f:
-        match = re.match("IS_AGP_RELEASE_BRANCH *= *\"(true|false)\"", line)
+        m = re.match("IS_AGP_RELEASE_BRANCH *= *\"(true|false)\"", line)
+        if m:
+          match = m
     if not match:
       raise Exception("Unable to determine if is_studio_only_release. Expected IS_AGP_RELEASE_BRANCH = \"true\" (or \"false\") in tools/base/common/release_version.bzl")
     is_studio_only_release = match[1] == "false"

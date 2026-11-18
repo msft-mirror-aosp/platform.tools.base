@@ -6,29 +6,40 @@ load(
 )
 load(
     "//tools/base/common:version.bzl",
+    "DEV_AGP_MAJOR_MINOR",
     "DEV_BASE_VERSION",
     "DEV_BUILD_VERSION",
     "DEV_COMMANDLINE_TOOLS_VERSION",
     "RELEASE_BASE_VERSION",
     "RELEASE_BUILD_VERSION",
     "RELEASE_COMMANDLINE_TOOLS_VERSION",
+    "RESOLVED_AGP_COMPATIBLE_GRADLE_VERSIONS",
 )
+
+_AGP_COMPATIBLE_GRADLE_VERSIONS_PROPERTY = ",".join([
+    "%s=%s" % (k, v)
+    for k, v in RESOLVED_AGP_COMPATIBLE_GRADLE_VERSIONS.items()
+])
 
 expand_template(
     name = "versionProperties",
     out = "version.properties",
     substitutions = select({
         "//tools/base/bazel:release": {
+            "{AGP_COMPATIBLE_GRADLE_VERSIONS}": _AGP_COMPATIBLE_GRADLE_VERSIONS_PROPERTY,
             "{BASE_VERSION}": RELEASE_BASE_VERSION,
             "{BUILD_VERSION}": RELEASE_BUILD_VERSION,
             "{COMMANDLINE_TOOLS_VERSION}": RELEASE_COMMANDLINE_TOOLS_VERSION,
+            "{DEV_AGP_MAJOR_MINOR}": DEV_AGP_MAJOR_MINOR,
             "{IS_AGP_RELEASE_BRANCH}": IS_AGP_RELEASE_BRANCH,
             "{LAST_STABLE_BUILD_VERSION}": LAST_STABLE_BUILD_VERSION,
         },
         "//conditions:default": {
+            "{AGP_COMPATIBLE_GRADLE_VERSIONS}": _AGP_COMPATIBLE_GRADLE_VERSIONS_PROPERTY,
             "{BASE_VERSION}": DEV_BASE_VERSION,
             "{BUILD_VERSION}": DEV_BUILD_VERSION,
             "{COMMANDLINE_TOOLS_VERSION}": DEV_COMMANDLINE_TOOLS_VERSION,
+            "{DEV_AGP_MAJOR_MINOR}": DEV_AGP_MAJOR_MINOR,
             "{IS_AGP_RELEASE_BRANCH}": IS_AGP_RELEASE_BRANCH,
             "{LAST_STABLE_BUILD_VERSION}": LAST_STABLE_BUILD_VERSION,
         },

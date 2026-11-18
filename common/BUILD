@@ -25,7 +25,10 @@ filegroup(
 
 fileset(
     name = "TestData",
-    srcs = glob(["src/test/data/**"]) + ["//tools/base/build-system:supported_versions_properties_file"],
+    srcs = glob(["src/test/data/**"]) + [
+        "release_version.bzl",
+        "//tools/base/build-system:supported_versions_properties_file",
+    ],
 )
 
 # managed by go/iml_to_build

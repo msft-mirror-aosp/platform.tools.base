@@ -1,4 +1,4 @@
-# The source of truth for these values are in tools/buildSrc/base
+# The source of truth for these values is in tools/base/common/release_version.bzl
 # Consistency is maintained via tests
 
 baseVersion = {BASE_VERSION}
@@ -10,4 +10,7 @@ nativeApiVersion = 0
 lastStableBuildVersion = {LAST_STABLE_BUILD_VERSION}
 
 isAgpReleaseBranch = {IS_AGP_RELEASE_BRANCH}
+
+devAgpMajorMinor = {DEV_AGP_MAJOR_MINOR}
+agpCompatibleGradleVersions = {AGP_COMPATIBLE_GRADLE_VERSIONS}
 

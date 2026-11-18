@@ -4,7 +4,7 @@ load("@rules_python//python:defs.bzl", "py_binary")
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:maven.bzl", "maven_library", "maven_repository")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_FOR_TESTS", "KGP_VERSION_FOR_TESTS")
-load("//tools/base/common:version.bzl", "BUILD_VERSION", "IS_AGP_RELEASE_BRANCH")
+load("//tools/base/common:version.bzl", "BUILD_VERSION", "GRADLE_LATEST_VERSION", "IS_AGP_RELEASE_BRANCH")
 load("hybrid_build.bzl", "GRADLE_PROPERTIES")
 
 exports_files(["convert_problems.py"])  # Needed for other BUILD files to be able to use "gradle_build"
@@ -29,9 +29,9 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.8.2"
+GRADLE_VERSION = GRADLE_LATEST_VERSION
 
-GRADLE_BASE_VERSION = "9.8.2"
+GRADLE_BASE_VERSION = GRADLE_VERSION.split("-")[0]
 
 filegroup(
     name = "gradle-distrib",

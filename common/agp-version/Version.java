@@ -20,6 +20,9 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /** Version strings for Android Gradle plugin, Lint and related tools. */
@@ -31,6 +34,8 @@ public final class Version {
     public static final int BUILDER_NATIVE_MODEL_API_VERSION;
     public static final String LAST_STABLE_ANDROID_GRADLE_PLUGIN_VERSION;
     public static final Boolean IS_AGP_RELEASE_BRANCH;
+    public static final String DEV_AGP_MAJOR_MINOR;
+    public static final Map<String, String> AGP_COMPATIBLE_GRADLE_VERSIONS;
 
     static {
         Properties properties = new Properties();
@@ -54,6 +59,20 @@ public final class Version {
         BUILDER_NATIVE_MODEL_API_VERSION =
                 Integer.parseInt(properties.getProperty("nativeApiVersion"));
         IS_AGP_RELEASE_BRANCH = Boolean.valueOf(properties.getProperty("isAgpReleaseBranch"));
+        DEV_AGP_MAJOR_MINOR = properties.getProperty("devAgpMajorMinor");
+        Map<String, String> compatibleGradleVersions = new LinkedHashMap<>();
+        String rawCompatibleVersions = properties.getProperty("agpCompatibleGradleVersions");
+        if (rawCompatibleVersions != null && !rawCompatibleVersions.isEmpty()) {
+            for (String entry : rawCompatibleVersions.split(",")) {
+                int separator = entry.indexOf('=');
+                if (separator > 0) {
+                    compatibleGradleVersions.put(
+                            entry.substring(0, separator).trim(),
+                            entry.substring(separator + 1).trim());
+                }
+            }
+        }
+        AGP_COMPATIBLE_GRADLE_VERSIONS = Collections.unmodifiableMap(compatibleGradleVersions);
     }
 
     private Version() {}

@@ -51,4 +51,17 @@ public class VersionTest {
         String expected = "" + (agpMajor + 23) + agp.substring(agpMatcher.end(1));
         Assert.assertEquals(expected, base);
     }
+
+    @Test
+    public void testAgpCompatibleGradleVersions() {
+        Assert.assertNotNull(Version.DEV_AGP_MAJOR_MINOR);
+        Assert.assertFalse(Version.AGP_COMPATIBLE_GRADLE_VERSIONS.isEmpty());
+        Assert.assertTrue(
+                Version.ANDROID_GRADLE_PLUGIN_VERSION.startsWith(Version.DEV_AGP_MAJOR_MINOR + "."));
+        Assert.assertNotNull(
+                Version.AGP_COMPATIBLE_GRADLE_VERSIONS.get(Version.DEV_AGP_MAJOR_MINOR));
+        Assert.assertEquals("7.0.2", Version.AGP_COMPATIBLE_GRADLE_VERSIONS.get("7.0"));
+        Assert.assertEquals("8.0", Version.AGP_COMPATIBLE_GRADLE_VERSIONS.get("8.0"));
+        Assert.assertEquals("9.1.0", Version.AGP_COMPATIBLE_GRADLE_VERSIONS.get("9.0"));
+    }
 }

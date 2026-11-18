@@ -109,6 +109,37 @@ public class SdkConstantsTest {
                 .doesNotContain("\\");
     }
 
+    // Ensure tools/base/common/release_version.bzl remains parseable by java.util.Properties
+    // as required by tools/buildSrc/base/version.gradle and settings-real.gradle.
+    @Test
+    public void testReleaseVersionBzlPropertiesCompatibility() throws Exception {
+        Path releaseVersionBzl =
+                TestUtils.resolveWorkspacePath("tools/base/common/release_version.bzl");
+        Properties properties = new Properties();
+        try (FileInputStream inputStream = new FileInputStream(releaseVersionBzl.toFile())) {
+            properties.load(inputStream);
+        }
+        String rawBuildVersion = properties.getProperty("BUILD_VERSION");
+        Truth.assertThat(rawBuildVersion).isNotNull();
+        String buildVersion = rawBuildVersion.replace("\"", "");
+        String expectedDevMajorMinor =
+                buildVersion.split("-")[0].split("\\.")[0]
+                        + "."
+                        + buildVersion.split("-")[0].split("\\.")[1];
+        Truth.assertThat(SdkConstants.AGP_DEV_MAJOR_MINOR_VERSION).isEqualTo(expectedDevMajorMinor);
+        String rawGradleLatestVersion = properties.getProperty("GRADLE_LATEST_VERSION");
+        Truth.assertThat(rawGradleLatestVersion).isNotNull();
+        Truth.assertWithMessage(
+                        "SdkConstants.GRADLE_LATEST_VERSION must match GRADLE_LATEST_VERSION in"
+                                + " tools/base/common/release_version.bzl")
+                .that(SdkConstants.GRADLE_LATEST_VERSION)
+                .isEqualTo(rawGradleLatestVersion.replace("\"", ""));
+        Truth.assertThat(
+                        SdkConstants.AGP_COMPATIBLE_GRADLE_VERSIONS.get(
+                                SdkConstants.AGP_DEV_MAJOR_MINOR_VERSION))
+                .isEqualTo(SdkConstants.GRADLE_LATEST_VERSION);
+    }
+
     private void assertVersionConsistency(
             String actual, String expected, Object propertyName, Path propertiesFile) {
         String updatePropertiesMsg =

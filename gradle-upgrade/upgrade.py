@@ -39,10 +39,15 @@ if oldToolingArtifact.is_dir():
 print("\nUpdated prebuilts/tools")
 
 # Remaining tools/base changes
-with open("../build-system/BUILD", "r+") as f:
+with open("../common/release_version.bzl", "r+") as f:
     file = f.read()
-    oldVersion = r'GRADLE_VERSION = ".*?(?=")'
-    newVersion = 'GRADLE_VERSION = "' + gradleVersion
+    buildVersionMatch = re.search(r'BUILD_VERSION = "(\d+\.\d+)\.', file)
+    if not buildVersionMatch:
+        print("BUILD_VERSION not found in release_version.bzl.")
+        sys.exit(1)
+    devAgpMajorMinor = buildVersionMatch.group(1)
+    oldVersion = r'GRADLE_LATEST_VERSION = ".*?(?=")'
+    newVersion = 'GRADLE_LATEST_VERSION = "' + gradleVersion
     file = re.sub(oldVersion, newVersion, file)
     f.seek(0)
     f.write(file)
@@ -92,17 +97,21 @@ print("Updated tools/gradle")
 
 # tools/gradle-recipes changes
 versionMappingPath = "../../gradle-recipes/version_mappings.txt"
+updatedGradleRecipes = False
 with open(versionMappingPath, "r") as f:
     recipeLines = f.readlines()
 for i, line in enumerate(recipeLines):
     parts = line.split(";")
-    if len(parts) == 3 and parts[1] == oldGradleVersion:
+    if len(parts) == 3 and parts[0] == devAgpMajorMinor and parts[1] != gradleVersion:
         parts[1] = gradleVersion
-        updatedLine = ";".join(parts)
-        recipeLines[i] = updatedLine
-with open(versionMappingPath, 'w') as f:
-    f.writelines(recipeLines)
-print("Updated tools/gradle-recipes")
+        recipeLines[i] = ";".join(parts)
+        updatedGradleRecipes = True
+if updatedGradleRecipes:
+    with open(versionMappingPath, 'w') as f:
+        f.writelines(recipeLines)
+    print("Updated tools/gradle-recipes")
+else:
+    print("Skipped tools/gradle-recipes (no entry for AGP {0} needing update in version_mappings.txt)".format(devAgpMajorMinor))
 
 # tools/external/gradle changes
 with open("../../external/gradle/BUILD", 'r') as f:
@@ -139,9 +148,10 @@ repos = [
     studioDir / "tools/base",
     studioDir / "tools/buildSrc",
     studioDir / "tools/gradle",
-    studioDir / "tools/gradle-recipes",
     studioDir / "tools/external/gradle",
 ]
+if updatedGradleRecipes:
+    repos.insert(4, studioDir / "tools/gradle-recipes")
 commands = [
     "repo start upgrade",
     "git add .",
@@ -153,20 +163,10 @@ for repo in repos:
     for command in commands:
         subprocess.run([command], cwd=repo, shell=True)
 
-print(
-    """
-
-    Upload the following repos' changes to Gerrit:
-
-    prebuilts/tools
-    tools/base
-    tools/buildSrc
-    tools/gradle
-    tools/gradle-recipes
-    tools/external/gradle
-
-    """
-)
+print("\n    Upload the following repos' changes to Gerrit:\n")
+for repo in repos:
+    print("    " + os.path.relpath(repo, studioDir))
+print()
 
 print(
     "IMPORTANT: add the Gradle distribution from https://services.gradle.org/distributions/ to "

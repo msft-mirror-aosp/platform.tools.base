@@ -19,6 +19,7 @@ package com.android;
 import com.android.sdklib.AndroidVersion;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Constant definition class.<br>
@@ -2951,6 +2952,20 @@ public final class SdkConstants {
      * required, consider using `LatestKnownPluginVersionProvider` instead.
      */
     public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = Version.LAST_STABLE_ANDROID_GRADLE_PLUGIN_VERSION;
+
+    /**
+     * The major.minor version string (e.g., "9.6") of the Android Gradle Plugin currently under
+     * development, sourced from {@code tools/base/common/release_version.bzl}.
+     */
+    public static final String AGP_DEV_MAJOR_MINOR_VERSION = Version.DEV_AGP_MAJOR_MINOR;
+
+    /**
+     * Mapping of Android Gradle Plugin major.minor version strings (e.g., "7.0", "9.6") to their
+     * minimum compatible Gradle version strings, sourced from {@code
+     * tools/base/common/release_version.bzl}.
+     */
+    public static final Map<String, String> AGP_COMPATIBLE_GRADLE_VERSIONS =
+            Version.AGP_COMPATIBLE_GRADLE_VERSIONS;
 
     /**
      * The version of NDK to use as default. If no specific version of NDK is specified in
