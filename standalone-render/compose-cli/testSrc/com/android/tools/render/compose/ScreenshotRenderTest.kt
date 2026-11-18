@@ -244,20 +244,17 @@ class ScreenshotRenderTest {
 
     val stdout = runComposeCliRender(jsonSettings)
 
-    screenshots.forEach { screenshot ->
-      val imageName = "${screenshot.previewId.substringAfterLast(".")}_0.png"
-      val relativeImagePath = (screenshot.methodFQN.substringBeforeLast(".").replace(".", "/")) + "/" + imageName
-      val expectedAbsolutePath = File(outputFolder, relativeImagePath).absolutePath
-      assertTrue("Expected stdout to contain $expectedAbsolutePath, but was:\n$stdout", stdout.contains(expectedAbsolutePath))
-    }
-
     val result = readPreviewRenderingResultJson(resultsFile.bufferedReader())
     assertNull(result.globalError)
     result.screenshotResults.forEach { assertNull(it.error) }
     screenshots.forEach { screenshot ->
-      val imageName = "${screenshot.previewId.substringAfterLast(".")}_0.png"
-      val relativeImagePath = (screenshot.methodFQN.substringBeforeLast(".").replace(".", "/")) + "/" + imageName
-      val imageFile = Paths.get(outputFolder.absolutePath, relativeImagePath).toFile()
+      // A discovered preview is written with its own preview id, so its image is named after the method, followed by the name and the
+      // parameter hash of its @Preview, if any, in the directory of the class.
+      val imagePath = result.screenshotResults.single { it.methodFQN == screenshot.methodFQN }.imagePath
+      val imageFile = File(outputFolder, imagePath)
+      assertEquals(File(outputFolder, screenshot.methodFQN.substringBeforeLast(".").replace(".", "/")), imageFile.parentFile)
+      assertTrue(imagePath, imageFile.name.startsWith(screenshot.methodFQN.substringAfterLast(".")) && imageFile.name.endsWith("_0.png"))
+      assertTrue("Expected stdout to contain ${imageFile.absolutePath}, but was:\n$stdout", stdout.contains(imageFile.absolutePath))
       val img = ImageIO.read(imageFile)
       ImageDiffUtil.assertImageSimilar(
         TestUtils.resolveWorkspacePathUnchecked("tools/base/standalone-render/compose-cli/testData/goldens/$goldenName.png"),

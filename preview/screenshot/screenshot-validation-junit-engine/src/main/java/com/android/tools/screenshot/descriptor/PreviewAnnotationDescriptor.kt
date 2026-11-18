@@ -140,6 +140,7 @@ class PreviewAnnotationDescriptor(
             previewParams = convertMap(previewAnnotation.parameters),
             previewId = previewId,
             previewWrapperFqn = preview.method.previewWrapperFqn,
+            discoverPreviews = false,
           )
         }
         is WearTilePreviewMethod -> {

@@ -68,8 +68,11 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
    *
    * Supports single previews, repeatable multi-previews, custom MultiPreview class annotations, and parameter annotations such as
    * `@PreviewParameter` and `@PreviewWrapper`.
+   *
+   * Each preview gets its own id (see [previewId]), and `@Preview` annotations with the same parameters, for example the same MultiPreview
+   * reached through two other MultiPreviews, are collapsed into a single preview.
    */
-  fun discoverAllPreviews(methodFQN: String, previewId: String? = null): List<DiscoveredMethodPreviews> {
+  fun discoverAllPreviews(methodFQN: String): List<DiscoveredMethodPreviews> {
     val className = methodFQN.substringBeforeLast(".")
     val methodName = methodFQN.substringAfterLast(".")
 
@@ -89,7 +92,6 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     }
 
     val discoveryResults = mutableListOf<DiscoveredMethodPreviews>()
-    val resolvedPreviewId = previewId ?: methodName
     var methodFound = false
 
     val classReader = ClassReader(classBytes)
@@ -111,7 +113,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
           // MultiPreview annotation classes whose @PreviewWrapper has already been recorded. A class reachable through several paths
           // (e.g. a diamond of MultiPreviews) declares a single wrapper, so it is only counted once, as in Android Studio (AnnotationsGraph
           // skips annotation classes it has already visited). Unlike Studio, the @Preview annotations of such a class are still collected
-          // once per path.
+          // once per path, and then collapsed into one preview per distinct set of parameters.
           val annotationClassesWithRecordedWrapper = mutableSetOf<String>()
           val onWrapperFound: (String?, String) -> Unit = { declaringAnnotationClass, wrapperFqn ->
             if (declaringAnnotationClass == null || annotationClassesWithRecordedWrapper.add(declaringAnnotationClass)) {
@@ -164,13 +166,14 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
               val wrapperFqn = discoveryContext.previewWrapperFqns.singleOrNull()
 
               val methodPreviews =
-                discoveryContext.previewConfigurations.map { previewParams ->
+                discoveryContext.previewConfigurations.distinct().map { previewParams ->
                   ComposeScreenshot(
                     methodFQN = methodFQN,
                     methodParams = methodParams,
                     previewParams = previewParams,
-                    previewId = resolvedPreviewId,
+                    previewId = previewId(methodFQN, previewParams, methodParams),
                     previewWrapperFqn = wrapperFqn,
+                    discoverPreviews = false,
                   )
                 }
 

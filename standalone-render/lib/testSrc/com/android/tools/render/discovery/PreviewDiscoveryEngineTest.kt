@@ -220,6 +220,15 @@ class OverloadedMixedValidityTarget {
   @Preview(name = "Invalid Non-Composable Overload", widthDp = 200) fun OverloadedPreview(count: Int) {}
 }
 
+/** Sample class containing overloaded bare `@Preview` methods that share the same preview id. */
+class OverloadedCollidingPreviewTarget {
+  @Preview fun CollidingPreview(count: Int) {}
+
+  @Composable @Preview fun CollidingPreview() {}
+
+  @Composable @Preview fun CollidingPreview(title: String = "Default") {}
+}
+
 class PreviewDiscoveryEngineTest {
 
   private fun createDiscoveryEngine(block: (PreviewDiscoveryEngine) -> Unit) {
@@ -462,7 +471,8 @@ class PreviewDiscoveryEngineTest {
 
       val result = engine.discoverAllPreviews(methodFQN).single()
       val discovered = result.previews
-      assertEquals("Should discover all 4 previews from nested MultiPreview with duplicate descendants", 4, discovered.size)
+      // Base Theme Preview is reached through both branches, but its two identical @Preview annotations are collapsed into one preview.
+      assertEquals("Should discover the 3 distinct previews of a nested MultiPreview with duplicate descendants", 3, discovered.size)
 
       val names = discovered.map { it.previewParams["name"] }
       assertTrue("Should contain Branch A Preview", names.contains("Branch A Preview"))
@@ -478,10 +488,11 @@ class PreviewDiscoveryEngineTest {
 
       val result = engine.discoverAllPreviews(methodFQN).single()
       val discovered = result.previews
-      assertEquals("Should discover 3 previews from direct and nested shared MultiPreview", 3, discovered.size)
+      // Base Theme Preview is declared directly and through BranchThemePreviewA, and its identical @Preview annotations are collapsed.
+      assertEquals("Should discover the 2 distinct previews of a direct and nested shared MultiPreview", 2, discovered.size)
 
       val names = discovered.map { it.previewParams["name"] }
-      assertEquals(2, names.count { it == "Base Theme Preview" })
+      assertEquals(1, names.count { it == "Base Theme Preview" })
       assertEquals(1, names.count { it == "Branch A Preview" })
     }
   }
@@ -651,13 +662,36 @@ class PreviewDiscoveryEngineTest {
   }
 
   @Test
+  fun testEachDiscoveredPreviewHasItsOwnId() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleNestedMultiPreviewWithDuplicateDescendants"
+
+      val previews = engine.discoverAllPreviews(methodFQN).single().previews
+
+      assertEquals(previews.map { previewId(methodFQN, it.previewParams, it.methodParams) }, previews.map { it.previewId })
+      assertEquals("Distinct previews must have distinct ids", previews.size, previews.map { it.previewId }.toSet().size)
+      assertTrue(previews.any { it.previewId.startsWith("${methodFQN}_Base Theme Preview_") })
+      previews.forEach { assertFalse("Discovered preview must not re-trigger discovery", it.discoverPreviews) }
+
+      val bareMethodFQN = "${OverloadedCollidingPreviewTarget::class.java.name}.CollidingPreview"
+      val barePreviews = engine.discoverAllPreviews(bareMethodFQN).flatMap { it.previews }
+      assertEquals(2, barePreviews.size)
+      barePreviews.forEach {
+        assertEquals(bareMethodFQN, it.previewId)
+        assertFalse("Discovered bare @Preview must set discoverPreviews = false", it.discoverPreviews)
+      }
+    }
+  }
+
+  @Test
   fun testPreviewWrapperReachedThroughDiamondIsCountedOnce() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithWrapperReachedThroughDiamond"
       val result = engine.discoverAllPreviews(methodFQN).single()
       assertTrue("A wrapper declared once must not be reported as duplicated", result.methodValidationResult.isValid)
-      // WrappedThemePreviews' previews are still collected once per path (see testDiscoverNestedMultiPreviewWithDuplicateDescendants).
-      assertEquals(4, result.previews.size)
+      // WrappedThemePreviews' previews, reached through both paths, are collapsed (see
+      // testDiscoverNestedMultiPreviewWithDuplicateDescendants).
+      assertEquals(2, result.previews.size)
       result.previews.forEach { assertEquals(SampleThemeWrapper::class.java.name, it.previewWrapperFqn) }
     }
   }
@@ -668,7 +702,8 @@ class PreviewDiscoveryEngineTest {
       val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithWrapperReachedDirectlyAndThroughBranch"
       val result = engine.discoverAllPreviews(methodFQN).single()
       assertTrue("A wrapper declared once must not be reported as duplicated", result.methodValidationResult.isValid)
-      assertEquals(4, result.previews.size)
+      // WrappedThemePreviews' previews, reached directly and through WrappedBranchPreviewA, are collapsed.
+      assertEquals(2, result.previews.size)
       result.previews.forEach { assertEquals(SampleThemeWrapper::class.java.name, it.previewWrapperFqn) }
     }
   }

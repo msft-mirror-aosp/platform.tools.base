@@ -32,13 +32,22 @@ import com.android.tools.render.common.ScreenshotPreviewElement
 import com.android.tools.rendering.api.RenderModelModule
 import com.android.tools.rendering.classloading.ClassTransform
 
-/** Information required to render a screenshot of a compose preview. */
+/**
+ * Information required to render a screenshot of a compose preview.
+ *
+ * @param previewId Identifier for this preview. When [discoverPreviews] is `true` (and [previewParams] and [methodParams] are empty), this
+ *   value is ignored for discovered previews—each discovered `@Preview` gets its own id—and is only used to report method-level errors.
+ * @param discoverPreviews When `true` and both [previewParams] and [methodParams] are empty, [com.android.tools.render.Renderer] discovers
+ *   all `@Preview` annotations on [methodFQN] from bytecode. Set to `false` when the screenshot already represents a resolved bare
+ *   `@Preview` so sibling `@Preview` annotations on the same method are not re-discovered.
+ */
 data class ComposeScreenshot(
   override val methodFQN: String,
   val methodParams: List<Map<String, String>>,
   override val previewParams: Map<String, String>,
   override val previewId: String,
   override val previewWrapperFqn: String? = null,
+  val discoverPreviews: Boolean = previewParams.isEmpty() && methodParams.isEmpty(),
 ) : PreviewScreenshot {
 
   override fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement {

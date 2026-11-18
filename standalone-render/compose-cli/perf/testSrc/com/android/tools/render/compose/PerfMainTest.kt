@@ -24,6 +24,7 @@ import com.android.tools.render.common.readPreviewRenderingJson
 import com.android.tools.render.common.readPreviewRenderingResultJson
 import java.nio.file.Paths
 import javax.imageio.ImageIO
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -262,11 +263,10 @@ class PerfMainTest {
       metric.afterTest()
       val result = readPreviewRenderingResultJson(resultsFile.bufferedReader())
       assertNull(result.globalError)
+      assertEquals(screenshots.size, result.screenshotResults.size)
       result.screenshotResults.forEach { assertNull(it.error) }
-      screenshots.forEach { screenshot ->
-        val imageName = "${screenshot.previewId.substringAfterLast(".")}_0.png"
-        val relativeImagePath = (screenshot.methodFQN.substringBeforeLast(".").replace(".", "/")) + "/" + imageName
-        val imageFile = Paths.get(outputFolder.absolutePath, relativeImagePath).toFile()
+      result.screenshotResults.forEach { screenshotResult ->
+        val imageFile = Paths.get(outputFolder.absolutePath, screenshotResult.imagePath).toFile()
         val img = ImageIO.read(imageFile)
         ImageDiffUtil.assertImageSimilar(
           TestUtils.resolveWorkspacePathUnchecked("tools/base/standalone-render/compose-cli/testData/goldens/$goldenName.png"),

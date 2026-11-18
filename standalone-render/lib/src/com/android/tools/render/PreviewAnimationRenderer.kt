@@ -66,10 +66,13 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
     options: AnimationRenderOptions = AnimationRenderOptions(),
   ): List<PreviewAnimationResult> {
     val packagePath = Renderer.sanitizePackagePath(screenshot.methodFQN)
-    val baseResultId = Renderer.sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
-    var previewCounter = 0
 
-    if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {
+    if (
+      screenshot !is ComposeScreenshot ||
+        !screenshot.discoverPreviews ||
+        screenshot.previewParams.isNotEmpty() ||
+        screenshot.methodParams.isNotEmpty()
+    ) {
       val validationResult = renderer.previewValidator.validate(screenshot)
       if (validationResult.hasErrors) {
         return listOf(
@@ -82,12 +85,20 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
           )
         )
       }
+      val baseResultId = Renderer.sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
+      var previewCounter = 0
       return renderAnimatedScreenshotElement(screenshot, outputFolderPath, packagePath, baseResultId, options) { previewCounter++ }
     }
 
-    return renderer.discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).flatMap { method ->
+    // A method that can't be previewed has no preview id of its own, so its errors keep the requested one.
+    val methodBaseResultId = Renderer.sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
+    // Track indices per base result id so each distinct preview starts at 0, while colliding overloads keep distinct stems.
+    val nextAnimationIndexByBaseId = mutableMapOf<String, Int>()
+    fun nextAnimationIndex(baseId: String): Int = nextAnimationIndexByBaseId.merge(baseId, 1, Int::plus)!! - 1
+
+    return renderer.discoveryEngine.discoverAllPreviews(screenshot.methodFQN).flatMap { method ->
       if (method.methodValidationResult.hasErrors) {
-        previewCounter++
+        nextAnimationIndex(methodBaseResultId)
         listOf(
           PreviewAnimationResult(
             previewId = screenshot.previewId,
@@ -99,9 +110,11 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
         )
       } else {
         method.previews.flatMap { currentScreenshot ->
+          // Each discovered preview has its own id, so its animations are numbered from 0, like those of a resolved screenshot.
+          val previewBaseResultId = Renderer.sanitizeBaseResultId(currentScreenshot.previewId, currentScreenshot.methodFQN)
           val validationResult = renderer.previewValidator.validate(currentScreenshot)
           if (validationResult.hasErrors) {
-            previewCounter++
+            nextAnimationIndex(previewBaseResultId)
             listOf(
               PreviewAnimationResult(
                 previewId = currentScreenshot.previewId,
@@ -112,7 +125,9 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
               )
             )
           } else {
-            renderAnimatedScreenshotElement(currentScreenshot, outputFolderPath, packagePath, baseResultId, options) { previewCounter++ }
+            renderAnimatedScreenshotElement(currentScreenshot, outputFolderPath, packagePath, previewBaseResultId, options) {
+              nextAnimationIndex(previewBaseResultId)
+            }
           }
         }
       }

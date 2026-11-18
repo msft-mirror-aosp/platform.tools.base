@@ -325,7 +325,9 @@ class Renderer(
    * Renders a given [PreviewScreenshot] and saves the output as PNG files.
    *
    * Discovers all previews declared on the screenshot's method (including multi-previews), validates each preview's parameters, and renders
-   * them into PNG images according to [configuration].
+   * them into PNG images according to [configuration]. Each discovered preview is reported and written with its own preview id (see
+   * [PreviewDiscoveryEngine.discoverAllPreviews]) rather than the one of [screenshot], which only names the errors of a method that can't
+   * be previewed.
    *
    * @param screenshot The metadata of the Jetpack Compose `@Preview` to render.
    * @param outputFolderPath The root directory where the resulting PNG images and component trees will be saved.
@@ -340,9 +342,14 @@ class Renderer(
     outputFolderPath: String,
     configuration: RenderConfiguration = RenderConfiguration(),
   ): List<PreviewScreenshotResult> {
-    // If the screenshot is non-Compose or its preview and method parameters have already been resolved/specified,
+    // If the screenshot is non-Compose, explicitly disables discovery, or already specifies preview/method parameters,
     // bypass bytecode preview discovery and render it directly.
-    if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {
+    if (
+      screenshot !is ComposeScreenshot ||
+        !screenshot.discoverPreviews ||
+        screenshot.previewParams.isNotEmpty() ||
+        screenshot.methodParams.isNotEmpty()
+    ) {
       return renderResolvedScreenshot(
         screenshot,
         outputFolderPath,
@@ -351,13 +358,18 @@ class Renderer(
     }
 
     val packagePath = sanitizePackagePath(screenshot.methodFQN)
-    val baseResultId = sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
-    var imageCounter = 0
+    // A method that can't be previewed has no preview id of its own, so its errors keep the requested one.
+    val methodBaseResultId = sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
+    // Track indices per base result id so each distinct preview starts at 0, while overloaded methods sharing a base result id
+    // (for example, a bare @Preview alongside an invalid or default-parameter overload) don't collide on _0.png.
+    val nextImageIndexByBaseId = mutableMapOf<String, Int>()
+    fun nextImageIndex(baseId: String): Int = nextImageIndexByBaseId.merge(baseId, 1, Int::plus)!! - 1
 
-    return discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).flatMap { method ->
+    return discoveryEngine.discoverAllPreviews(screenshot.methodFQN).flatMap { method ->
       if (method.methodValidationResult.hasErrors) {
-        val index = imageCounter++
-        val defaultRelativeImagePath = if (configuration.renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
+        val index = nextImageIndex(methodBaseResultId)
+        val defaultRelativeImagePath =
+          if (configuration.renderImage) packagePath + File.separator + "${methodBaseResultId}_$index.png" else ""
         listOf(
           PreviewScreenshotResult(
             screenshot.previewId,
@@ -368,9 +380,11 @@ class Renderer(
         )
       } else {
         method.previews.flatMap { currentScreenshot ->
+          // Each discovered preview has its own id, so its images are numbered from 0, like those of a resolved screenshot.
+          val baseResultId = sanitizeBaseResultId(currentScreenshot.previewId, currentScreenshot.methodFQN)
           val validationResult = previewValidator.validate(currentScreenshot)
           if (validationResult.hasErrors) {
-            val index = imageCounter++
+            val index = nextImageIndex(baseResultId)
             val defaultRelativeImagePath =
               if (configuration.renderImage) packagePath + File.separator + "${baseResultId}_$index.png" else ""
             listOf(
@@ -393,7 +407,7 @@ class Renderer(
               baseResultId,
               configuration,
             ) {
-              imageCounter++
+              nextImageIndex(baseResultId)
             }
           }
         }

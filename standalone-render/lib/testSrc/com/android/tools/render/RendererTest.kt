@@ -39,6 +39,7 @@ import com.android.tools.render.common.UnsupportedResourceScreenshot
 import com.android.tools.render.common.readComponentTreeFromJson
 import com.android.tools.render.common.toScreenshotError
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.discovery.OverloadedCollidingPreviewTarget
 import com.android.tools.render.discovery.SamplePreviewTarget
 import com.android.tools.render.drawable.DrawableScreenshot
 import com.android.tools.render.layout.LayoutScreenshot
@@ -329,8 +330,10 @@ class RendererTest {
 
     assertEquals(1, results.size)
     val result = results[0]
-    assertEquals("preview_auto_discover", result.previewId)
-    assertEquals("${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview", result.methodFQN)
+    val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview"
+    // A discovered preview is reported with its own id, not the requested one.
+    assertTrue(result.previewId, result.previewId.startsWith("${methodFQN}_"))
+    assertEquals(methodFQN, result.methodFQN)
   }
 
   @Test
@@ -388,8 +391,141 @@ class RendererTest {
     val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
 
     assertEquals(2, results.size)
-    assertEquals("multi_preview", results[0].previewId)
-    assertEquals("multi_preview", results[1].previewId)
+    val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewMethod"
+    assertTrue(results[0].previewId, results[0].previewId.startsWith("${methodFQN}_Light Mode_"))
+    assertTrue(results[1].previewId, results[1].previewId.startsWith("${methodFQN}_Dark Mode_"))
+  }
+
+  @Test
+  fun testRenderComposeScreenshotWithDiscoverPreviewsFalseSkipsDiscovery() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_screenshots_no_discover").absolutePath
+    val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewMethod"
+    val screenshot =
+      ComposeScreenshot(
+        previewId = methodFQN,
+        methodFQN = methodFQN,
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+        discoverPreviews = false,
+      )
+
+    // Default value is true only when both previewParams and methodParams are empty.
+    assertThat(ComposeScreenshot(methodFQN, emptyList(), emptyMap(), methodFQN).discoverPreviews).isTrue()
+    assertThat(ComposeScreenshot(methodFQN, emptyList(), mapOf("name" to "Dark"), methodFQN).discoverPreviews).isFalse()
+    assertThat(ComposeScreenshot(methodFQN, listOf(mapOf("provider" to "P")), emptyMap(), methodFQN).discoverPreviews).isFalse()
+
+    // Verify discoverPreviews = false survives Java serialization across isolated classloaders.
+    val serialized =
+      ByteArrayOutputStream().use { out ->
+        ObjectOutputStream(out).use { it.writeObject(screenshot) }
+        out.toByteArray()
+      }
+    val deserialized = ObjectInputStream(ByteArrayInputStream(serialized)).use { it.readObject() as ComposeScreenshot }
+    assertThat(deserialized.discoverPreviews).isFalse()
+
+    bootstrapper.bootstrap().use { renderer ->
+      val results = renderer.render(deserialized, outputDir)
+      assertThat(results).hasSize(1)
+      assertThat(results[0].previewId).isEqualTo(methodFQN)
+      assertThat(results[0].methodFQN).isEqualTo(methodFQN)
+      assertThat(results[0].imagePath).endsWith("SampleMultiPreviewMethod_0.png")
+
+      val animationResults = renderer.renderAnimations(deserialized, outputDir)
+      assertThat(animationResults).hasSize(1)
+      assertThat(animationResults[0].previewId).isEqualTo(methodFQN)
+      assertThat(animationResults[0].methodFQN).isEqualTo(methodFQN)
+    }
+  }
+
+  @Test
+  fun testRenderOverloadedMethodsWithCollidingBaseIdDoNotOverwriteEachOther() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val adapterDir = compileMinimalComposeViewAdapter()
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = listOf(adapterDir.absolutePath),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_screenshots_colliding_overloads").absolutePath
+    val methodFQN = "${OverloadedCollidingPreviewTarget::class.java.name}.CollidingPreview"
+    val screenshot =
+      ComposeScreenshot(
+        previewId = methodFQN,
+        methodFQN = methodFQN,
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+
+    bootstrapper.bootstrap().use { renderer ->
+      val results = renderer.render(screenshot, outputDir)
+      assertThat(results).hasSize(3)
+      val fileNames = results.map { File(it.imagePath).name }
+      assertThat(fileNames).containsExactly("CollidingPreview_0.png", "CollidingPreview_1.png", "CollidingPreview_2.png")
+      assertThat(results[0].error?.status).isEqualTo("VALIDATION_ERROR")
+      assertThat(results.count { it.error?.status == "VALIDATION_ERROR" }).isEqualTo(1)
+
+      val animationResults = renderer.renderAnimations(screenshot, outputDir)
+      assertThat(animationResults).hasSize(3)
+      assertThat(animationResults.map { it.previewId }).containsExactly(methodFQN, methodFQN, methodFQN)
+      assertThat(animationResults[0].error?.status).isEqualTo("VALIDATION_ERROR")
+      assertThat(animationResults.count { it.error?.status == "VALIDATION_ERROR" }).isEqualTo(1)
+      assertThat(animationResults.map { it.manifestPath }.filter { it.isNotEmpty() }.map { File(it).name })
+        .containsExactly("CollidingPreview_1.animation.json", "CollidingPreview_2.animation.json")
+    }
+  }
+
+  @Test
+  fun testRenderAnimationsDiscoversEachPreviewWithItsOwnId() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val adapterDir = compileMinimalComposeViewAdapter()
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = listOf(adapterDir.absolutePath),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_animations_multi_preview").absolutePath
+    val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewMethod"
+    val screenshot =
+      ComposeScreenshot(
+        previewId = "multi_preview",
+        methodFQN = methodFQN,
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+
+    bootstrapper.bootstrap().use { renderer ->
+      val results = renderer.renderAnimations(screenshot, outputDir)
+      assertThat(results).hasSize(2)
+      assertThat(results[0].previewId).startsWith("${methodFQN}_Light Mode_")
+      assertThat(results[1].previewId).startsWith("${methodFQN}_Dark Mode_")
+      assertThat(results[0].manifestPath)
+        .endsWith("SampleMultiPreviewMethod_Light Mode_${results[0].previewId.takeLast(8)}_0.animation.json")
+      assertThat(results[1].manifestPath)
+        .endsWith("SampleMultiPreviewMethod_Dark Mode_${results[1].previewId.takeLast(8)}_0.animation.json")
+      assertThat(results.map { it.methodFQN }).containsExactly(methodFQN, methodFQN)
+      assertThat(results.none { it.error?.status == "VALIDATION_ERROR" }).isTrue()
+    }
   }
 
   @Test
@@ -419,13 +555,16 @@ class RendererTest {
     assertEquals(2, results.size)
 
     // First preview is valid: should render through layoutlib without validation error
+    val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMixedMultiPreviewMethod"
     val validResult = results[0]
-    assertEquals("mixed_preview", validResult.previewId)
+    assertTrue(validResult.previewId, validResult.previewId.startsWith("${methodFQN}_Valid Preview_"))
     assertNotEquals("VALIDATION_ERROR", validResult.error?.status)
 
     // Second preview is invalid: should have VALIDATION_ERROR
     val invalidResult = results[1]
-    assertEquals("mixed_preview", invalidResult.previewId)
+    assertTrue(invalidResult.previewId, invalidResult.previewId.startsWith("${methodFQN}_Invalid Dimension Preview_"))
+    // An invalid preview reports the image path it would have had, from its own id.
+    assertTrue(invalidResult.imagePath.endsWith("${Renderer.sanitizeBaseResultId(invalidResult.previewId, methodFQN)}_0.png"))
     assertNotNull("Invalid preview should produce a validation error", invalidResult.error)
     assertEquals("VALIDATION_ERROR", invalidResult.error?.status)
     assertTrue(invalidResult.error?.message?.contains("widthDp") == true)
@@ -456,10 +595,18 @@ class RendererTest {
     val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
 
     assertEquals(2, results.size)
-    assertEquals("multipreview_class", results[0].previewId)
-    assertEquals("multipreview_class", results[1].previewId)
-    assertTrue(results[0].imagePath.endsWith("multipreview_class_0.png"))
-    assertTrue(results[1].imagePath.endsWith("multipreview_class_1.png"))
+    val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewAnnotatedMethod"
+    assertTrue(results[0].previewId, results[0].previewId.startsWith("${methodFQN}_Phone Light_"))
+    assertTrue(results[1].previewId, results[1].previewId.startsWith("${methodFQN}_Phone Dark_"))
+    // Each preview has its own id, so the images of each are numbered from 0, in the directory of the class, without the class prefix.
+    assertTrue(
+      results[0].imagePath,
+      results[0].imagePath.endsWith("SampleMultiPreviewAnnotatedMethod_Phone Light_${results[0].previewId.takeLast(8)}_0.png"),
+    )
+    assertTrue(
+      results[1].imagePath,
+      results[1].imagePath.endsWith("SampleMultiPreviewAnnotatedMethod_Phone Dark_${results[1].previewId.takeLast(8)}_0.png"),
+    )
   }
 
   @Test
@@ -1962,6 +2109,26 @@ class RendererTest {
    * state (`AtomicLong`, `CountDownLatch`, etc.) through `System.getProperties()` keys and clean them up in `finally`. `JarTestSuite` runs
    * tests sequentially in a single JVM because layoutlib has a single render thread.
    */
+  private fun compileMinimalComposeViewAdapter(): File =
+    compileCustomView(
+      "androidx.compose.ui.tooling",
+      "ComposeViewAdapter",
+      """
+      package androidx.compose.ui.tooling;
+      import android.content.Context;
+      import android.util.AttributeSet;
+      import android.widget.TextView;
+      public class ComposeViewAdapter extends TextView {
+        public ComposeViewAdapter(Context context, AttributeSet attrs) {
+          super(context, attrs);
+          setText("Preview");
+        }
+        public void dispose() {}
+      }
+      """
+        .trimIndent(),
+    )
+
   private fun compileCustomView(pkg: String, className: String, javaSource: String): File =
     compileCustomClasses(Triple(pkg, className, javaSource))
 
