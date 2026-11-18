@@ -44,7 +44,6 @@ import org.jetbrains.kotlin.platform.jvm.JvmPlatform
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.platform.konan.NativePlatforms
 import org.jetbrains.kotlin.platform.wasm.WasmPlatforms
-import org.jetbrains.kotlin.util.Logger
 import org.jetbrains.uast.UastFacade
 
 /**
@@ -188,17 +187,6 @@ interface UastEnvironment {
     }
 
     @JvmStatic fun CompilerConfiguration.getKlibPaths(): List<String> = get(JVMConfigurationKeys.KLIB_PATHS) ?: listOf()
-
-    private val logger =
-      object : Logger {
-        override fun error(message: String) = kotlin.error(message)
-
-        override fun fatal(message: String) = kotlin.error(message)
-
-        override fun log(message: String) {}
-
-        override fun warning(message: String) {}
-      }
   }
 
   /** Analyzes the given files so that PSI/UAST resolve works correctly. */

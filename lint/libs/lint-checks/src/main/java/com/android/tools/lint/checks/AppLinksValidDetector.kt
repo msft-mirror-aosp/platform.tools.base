@@ -1711,22 +1711,6 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_HOSTS = "SPLIT_TO_WEB_AND_CUSTOM_HOSTS"
     const val KEY_SHOW_APP_LINKS_ASSISTANT = "SHOW_APP_LINKS_ASSISTANT"
 
-    // Path matchers use the order used in
-    // https://developer.android.com/guide/topics/manifest/data-element
-    // <scheme>://<host>:<port>[<path>|<pathPrefix>|<pathPattern>|<pathSuffix>|<pathAdvancedPattern>]
-    private val INTENT_FILTER_DATA_SORT_REFERENCE =
-      listOf(
-        ATTR_SCHEME,
-        ATTR_HOST,
-        ATTR_PORT,
-        ATTR_PATH,
-        ATTR_PATH_PREFIX,
-        ATTR_PATH_PATTERN,
-        ATTR_PATH_SUFFIX,
-        ATTR_PATH_ADVANCED_PATTERN,
-        ATTR_MIME_TYPE,
-      )
-
     private fun isSubstituted(expression: String): Boolean {
       return isDataBindingExpression(expression) || isManifestPlaceHolderExpression(expression)
     }

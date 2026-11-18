@@ -101,9 +101,6 @@ class CredentialManagerSignInWithGoogleDetector : Detector(), SourceCodeScanner 
   }
 
   companion object {
-    // intentional missing backtick
-    private const val MESSAGE_PREFIX = "Use of `:googleid` classes without use of `GoogleIdTokenCredential"
-
     private const val KEY_OPTION_REFS = "OPTION_REFS"
     private const val KEY_SAW_CREATE_FROM = "SAW_CREATE_FROM"
     private const val GOOGLE_ID_PACKAGE_DOT = "com.google.android.libraries.identity.googleid."
