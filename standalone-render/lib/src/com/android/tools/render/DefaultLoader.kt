@@ -30,36 +30,24 @@ import com.android.tools.rendering.classloading.loaders.AsmTransformingLoader
 import com.android.tools.rendering.classloading.loaders.ClassBinaryCacheLoader
 import com.android.tools.rendering.classloading.loaders.ClassLoaderLoader
 import com.android.tools.rendering.classloading.loaders.DelegatingClassLoader
-import com.android.tools.rendering.classloading.loaders.ListeningLoader
 import com.android.tools.rendering.classloading.loaders.MultiLoaderWithAffinity
 import com.android.tools.rendering.classloading.loaders.NameRemapperLoader
 import com.android.tools.rendering.classloading.toClassTransform
-import com.android.tools.res.ids.ResourceIdManager
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.lang.UrlClassLoader
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStreamWriter
-import java.lang.ref.WeakReference
 import java.net.URL
 import java.net.URLConnection
 import java.net.URLStreamHandler
-import java.nio.file.FileVisitResult
-import java.nio.file.Files
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.attribute.BasicFileAttributes
 import java.util.Collections
 import java.util.Enumeration
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.zip.ZipFile
 import kotlin.io.path.Path
-import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 
 /**
@@ -353,8 +341,7 @@ internal class DefaultLoader : DelegatingClassLoader.Loader, AutoCloseable {
     if (warmDepsParent != null) {
       // Non-excluded library & R classes were already loaded by `warmDepsParent` via parent delegation;
       // here we only load user `projectClassPath` classes and excluded preview-tooling adapter classes.
-      return projectLoader.loadClass(fqcn)
-        ?: if (isPreviewToolingAdapterClass(fqcn)) depsLoader.loadClass(fqcn) else null
+      return projectLoader.loadClass(fqcn) ?: if (isPreviewToolingAdapterClass(fqcn)) depsLoader.loadClass(fqcn) else null
     }
     if (isResourceClass(fqcn)) {
       return projectLoader.loadClass(fqcn) ?: depsLoader.loadClass(fqcn)
