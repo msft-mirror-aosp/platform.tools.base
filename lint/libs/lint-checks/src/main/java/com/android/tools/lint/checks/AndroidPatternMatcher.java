@@ -72,8 +72,6 @@ public class AndroidPatternMatcher {
     // Return for no match
     private static final int NO_MATCH = -1;
 
-    private static final String TAG = "PatternMatcher";
-
     // Parsed placeholders for advanced patterns
     private static final int PARSED_TOKEN_CHAR_SET_START = -1;
     private static final int PARSED_TOKEN_CHAR_SET_INVERSE_START = -2;

@@ -506,8 +506,6 @@ public class ApiDatabase {
         }
     }
 
-    private static boolean warnedInvalidData = false;
-
     protected static int get4ByteInt(@NonNull byte[] data, int offset) {
         byte b1 = data[offset++];
         byte b2 = data[offset++];
