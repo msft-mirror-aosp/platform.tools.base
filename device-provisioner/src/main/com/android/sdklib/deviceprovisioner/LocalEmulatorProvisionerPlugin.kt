@@ -19,6 +19,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.DevicePropertyNames
+import com.android.adblib.DeviceState as AdblibDeviceState
 import com.android.adblib.deviceProperties
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
@@ -54,6 +55,7 @@ import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -70,6 +72,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -280,14 +283,57 @@ class LocalEmulatorDeviceHandle(
     var emulatorConsole: EmulatorConsole? = null
     var emulatorConsolePort: Int? = null
     var connectedDeviceJobScope: CoroutineScope? = null
-    var connectedDeviceState: com.android.adblib.DeviceState? = null
+    var connectedDeviceState: AdblibDeviceState? = null
     var pendingTransition: TransitionRequest? = null
+    var activeActivationRequest: TransitionRequest? = null
+    var activeProcess: Process? = null
+    var processJob: Job? = null
     var bootStatus = false
     var properties = initialDeviceProperties
 
     fun logName(): String {
       val port = emulatorConsolePort?.let { " ($it)" } ?: ""
       return "[${properties.title}$port]"
+    }
+
+    /** Clears state associated with the Process for this AVD's emulator. */
+    fun clearProcess() {
+      processJob?.cancel()
+      processJob = null
+      activeProcess = null
+    }
+
+    fun disconnect() {
+      logger.debug { "${logName()} Device closed; disconnecting from console" }
+      connectedDeviceJobScope?.cancel()
+      connectedDeviceJobScope = null
+      clearProcess()
+      emulatorConsole?.close()
+      emulatorConsole = null
+      emulatorConsolePort = null
+      connectedDevice = null
+      connectedDeviceState = null
+      activeActivationRequest = null
+
+      if (pendingTransition?.transitionType == TransitionType.DEACTIVATION) {
+        pendingTransition?.completion?.complete(Unit)
+        pendingTransition = null
+      }
+      bootStatus = false
+      pendingAvdInfo?.let {
+        activeAvdInfo = it
+        pendingAvdInfo = null
+      }
+      properties = context.disconnectedDeviceProperties(activeAvdInfo)
+    }
+
+    fun watchProcess(process: Process) {
+      processJob?.cancel()
+      activeProcess = process
+      processJob = scope.launch {
+        val exitCode = process.onExit().await().exitValue()
+        messageChannel.send(ProcessTerminated(process, exitCode))
+      }
     }
 
     for (message in messageChannel) {
@@ -319,60 +365,46 @@ class LocalEmulatorDeviceHandle(
           emulatorConsole = message.emulatorConsole
           emulatorConsolePort = message.emulatorConsolePort
           if (pendingTransition?.transitionType == TransitionType.ACTIVATION) {
-            pendingTransition.completion.complete(Unit)
+            pendingTransition?.completion?.complete(Unit)
             pendingTransition = null
           }
           // Spawn jobs to track boot status and device status
+          val jobScope = scope.createChildScope(isSupervisor = true)
           connectedDeviceJobScope?.cancel()
-          connectedDeviceJobScope = scope.createChildScope(isSupervisor = true)
-          connectedDeviceJobScope.launch {
+          connectedDeviceJobScope = jobScope
+          jobScope.launch {
             message.connectedDevice
               .bootStatusFlow()
               .catch { e -> logger.warn(e, "${logName()} Failed to read boot status") }
               .collect { messageChannel.send(BootStatusUpdate(it)) }
           }
-          connectedDeviceJobScope.launch {
+          jobScope.launch {
             message.connectedDevice.deviceInfoFlow
               .onEach { messageChannel.send(ConnectedDeviceStateUpdate(it.deviceState)) }
-              .takeWhile { it.deviceState != com.android.adblib.DeviceState.DISCONNECTED }
+              .takeWhile { it.deviceState != AdblibDeviceState.DISCONNECTED }
               .collect()
           }
         }
         is ConnectedDeviceStateUpdate -> {
           connectedDeviceState = message.deviceState
-          if (connectedDeviceState == com.android.adblib.DeviceState.DISCONNECTED) {
-            logger.debug { "${logName()} Device closed; disconnecting from console" }
-            emulatorConsole?.close()
-            emulatorConsole = null
-            connectedDevice = null
-
-            if (pendingTransition?.transitionType == TransitionType.DEACTIVATION) {
-              pendingTransition.completion.complete(Unit)
-              pendingTransition = null
-            }
-            bootStatus = false
-            if (pendingAvdInfo != null) {
-              activeAvdInfo = pendingAvdInfo
-              pendingAvdInfo = null
-            }
-            properties = context.disconnectedDeviceProperties(activeAvdInfo)
+          if (connectedDeviceState == AdblibDeviceState.DISCONNECTED) {
+            disconnect()
           }
         }
         is BootStatusUpdate -> {
           // On a transition from not booted to booted, read the properties from the device.
           // bootStatus is always reset when connectedDevice becomes null, so
-          // connectedDevice
-          // is guaranteed to become non-null before bootStatus becomes true
-          val connectedDevice = connectedDevice
-          if (connectedDevice != null && !bootStatus && message.bootStatus.isBooted) {
-            // Spawn a job to do I/O with the device. Run on device scope so that if the
+          // connectedDevice is guaranteed to become non-null before bootStatus becomes true
+          val currentDevice = connectedDevice
+          if (currentDevice != null && !bootStatus && message.bootStatus.isBooted) {
+            // Spawn a job to do I/O with the device. Run on connectedDeviceJobScope so that if the
             // device disconnects, the job is cancelled.
-            connectedDevice.scope.launch {
+            connectedDeviceJobScope?.launch {
               messageChannel.send(
                 DevicePropertiesUpdate(
-                  connectedDevice,
-                  runCatching { connectedDevice.deviceProperties().all().asMap() },
-                  if (activeAvdInfo.isDisplayless) null else Resolution.readFromDevice(connectedDevice),
+                  currentDevice,
+                  runCatching { currentDevice.deviceProperties().all().asMap() },
+                  if (activeAvdInfo.isDisplayless) null else Resolution.readFromDevice(currentDevice),
                 )
               )
             }
@@ -389,7 +421,7 @@ class LocalEmulatorDeviceHandle(
               properties =
                 LocalEmulatorProperties.build(activeAvdInfo) {
                   readCommonProperties(newProperties)
-                  populateDeviceInfoProto(PLUGIN_ID, connectedDevice.serialNumber, newProperties, randomConnectionId())
+                  populateDeviceInfoProto(PLUGIN_ID, message.connectedDevice.serialNumber, newProperties, randomConnectionId())
                   deviceType = activeAvdInfo.deviceType()
                   if (isDisplayless != true) {
                     density = newProperties[DevicePropertyNames.QEMU_SF_LCD_DENSITY]?.toIntOrNull()
@@ -403,15 +435,20 @@ class LocalEmulatorDeviceHandle(
           }
         }
         is TransitionRequest -> {
-          if (pendingTransition == null) {
+          val currentTransition = pendingTransition
+          if (currentTransition == null) {
             val transitionNecessary =
               when (message.transitionType) {
                 TransitionType.ACTIVATION -> connectedDevice == null
                 TransitionType.DEACTIVATION -> connectedDevice != null
               }
             if (transitionNecessary) {
+              if (message.transitionType == TransitionType.ACTIVATION) {
+                clearProcess()
+                activeActivationRequest = message
+              }
               pendingTransition = message
-              scope.launch { messageChannel.send(TransitionResult(runCatching { message.action() })) }
+              scope.launch { messageChannel.send(TransitionResult(message, runCatching { message.action() })) }
               scheduleTimeoutCheck(message.timeout)
             } else {
               // We are already in the desired state; this is a no-op
@@ -421,7 +458,7 @@ class LocalEmulatorDeviceHandle(
             message.completion.completeExceptionally(
               DeviceActionDisabledException(
                 "Device is already " +
-                  when (pendingTransition.transitionType) {
+                  when (currentTransition.transitionType) {
                     TransitionType.ACTIVATION -> "activating"
                     TransitionType.DEACTIVATION -> "deactivating"
                   }
@@ -430,35 +467,66 @@ class LocalEmulatorDeviceHandle(
           }
         }
         is TransitionResult -> {
-          // Closure-based approaches (e.g. onFailure) inhibit smart-cast on
-          // pendingTransition
           val e = message.result.exceptionOrNull()
-          if (e != null) {
-            // Note that we only complete on exception; if it succeeded we still wait for
-            // the
-            // state to change before we signal completion
-            pendingTransition?.completion?.completeExceptionally(e)
-            pendingTransition = null
+          if (pendingTransition == message.request) {
+            if (e != null) {
+              // Note that we only complete on exception; if it succeeded we still wait for
+              // the
+              // state to change before we signal completion
+              pendingTransition?.completion?.completeExceptionally(e)
+              pendingTransition = null
+              if (message.request == activeActivationRequest) {
+                activeActivationRequest = null
+              }
+            } else if (message.request == activeActivationRequest) {
+              (message.result.getOrNull() as? Process)?.let(::watchProcess)
+            }
+          } else if (e == null && message.request == activeActivationRequest) {
+            // ConnectedDeviceUpdate arrived and completed the activation before action() returned.
+            (message.result.getOrNull() as? Process)?.let(::watchProcess)
+          }
+        }
+        is ProcessTerminated -> {
+          if (message.process == activeProcess) {
+            clearProcess()
+            activeActivationRequest = null
+            if (pendingTransition?.transitionType == TransitionType.ACTIVATION) {
+              val e =
+                if (message.exitCode == 0) {
+                  DeviceActionCanceledException("The emulator process for AVD ${properties.title} was closed.")
+                } else {
+                  DeviceActionException("The emulator process for AVD ${properties.title} has terminated.")
+                }
+              pendingTransition?.completion?.completeExceptionally(e)
+              pendingTransition = null
+            } else if (connectedDevice != null) {
+              disconnect()
+            }
           }
         }
         is CheckTimeout -> {
-          if (pendingTransition != null && pendingTransition.timeout <= clock.now()) {
+          val currentTransition = pendingTransition
+          if (currentTransition != null && currentTransition.timeout <= clock.now()) {
             val action =
-              when (pendingTransition.transitionType) {
+              when (currentTransition.transitionType) {
                 TransitionType.ACTIVATION -> "connect"
                 TransitionType.DEACTIVATION -> "disconnect"
               }
-            pendingTransition.completion.completeExceptionally(
+            currentTransition.completion.completeExceptionally(
               DeviceActionException("Emulator failed to $action within $CONNECTION_TIMEOUT_MINUTES minutes")
             )
             pendingTransition = null
+            if (currentTransition.transitionType == TransitionType.ACTIVATION) {
+              activeActivationRequest = null
+            }
           }
         }
       }
 
+      val currentDevice = connectedDevice
       emit(
         InternalState(
-          if (connectedDevice == null) {
+          if (currentDevice == null) {
             Disconnected(
               properties,
               isTransitioning = pendingTransition != null,
@@ -469,14 +537,14 @@ class LocalEmulatorDeviceHandle(
             Connected(
               properties,
               isTransitioning = !bootStatus || pendingTransition != null,
-              isReady = bootStatus && connectedDeviceState == com.android.adblib.DeviceState.ONLINE,
+              isReady = bootStatus && connectedDeviceState == AdblibDeviceState.ONLINE,
               status =
                 when {
                   pendingTransition != null -> "Shutting down"
                   !bootStatus -> "Booting"
                   else -> "Connected"
                 },
-              connectedDevice,
+              currentDevice,
               error = activeAvdInfo.deviceError ?: pendingAvdInfo?.let { AvdChangedError },
             )
           },
@@ -538,7 +606,7 @@ class LocalEmulatorDeviceHandle(
    *
    * @throws DeviceActionException if this does not occur within [CONNECTION_TIMEOUT]
    */
-  suspend fun activate(action: suspend () -> Unit) {
+  suspend fun activate(action: suspend () -> Process) {
     val request = TransitionRequest(TransitionType.ACTIVATION, clock.now() + CONNECTION_TIMEOUT, action)
     messageChannel.send(request)
     // Use the Deferred to receive exceptions from the actor.
@@ -559,6 +627,12 @@ class LocalEmulatorDeviceHandle(
     messageChannel.send(request)
     request.completion.await()
     stateFlow.first { it is Disconnected }
+  }
+
+  override suspend fun awaitRelease(device: ConnectedDevice) {
+    // Once claimed, a ConnectedDevice belongs to this handle until it disconnects from ADB,
+    // even if we transition to Disconnected early upon observing process termination.
+    device.deviceInfoFlow.takeWhile { it.deviceState != AdblibDeviceState.DISCONNECTED }.collect()
   }
 
   /** Sets the phone that is paired to this device; if null, clears the paired phone. */
@@ -778,7 +852,7 @@ private data class ConnectedDeviceUpdate(
   val emulatorConsolePort: Int,
 ) : LocalEmulatorMessage
 
-private data class ConnectedDeviceStateUpdate(val deviceState: com.android.adblib.DeviceState) : LocalEmulatorMessage
+private data class ConnectedDeviceStateUpdate(val deviceState: AdblibDeviceState) : LocalEmulatorMessage
 
 private data class BootStatusUpdate(val bootStatus: BootStatus) : LocalEmulatorMessage
 
@@ -791,7 +865,7 @@ private data class DevicePropertiesUpdate(
 private data class TransitionRequest(
   val transitionType: TransitionType,
   val timeout: Instant,
-  val action: suspend () -> Unit,
+  val action: suspend () -> Any,
   val completion: CompletableDeferred<Unit> = CompletableDeferred(),
 ) : LocalEmulatorMessage
 
@@ -800,7 +874,9 @@ enum class TransitionType {
   DEACTIVATION,
 }
 
-private data class TransitionResult(val result: Result<Any>) : LocalEmulatorMessage
+private data class TransitionResult(val request: TransitionRequest, val result: Result<Any>) : LocalEmulatorMessage
+
+private data class ProcessTerminated(val process: Process, val exitCode: Int) : LocalEmulatorMessage
 
 private object CheckTimeout : LocalEmulatorMessage
 

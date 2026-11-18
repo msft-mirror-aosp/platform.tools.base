@@ -23,28 +23,38 @@ import com.android.adblib.utils.createChildScope
 import com.android.sdklib.deviceprovisioner.testing.SdkFixture
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdManager
+import com.android.sdklib.internal.avd.ColdBoot
+import com.android.sdklib.internal.avd.QuickBoot
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
+import java.io.InputStream
+import java.io.OutputStream
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class LocalEmulatorDeviceHandleTest {
+
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
@@ -61,7 +71,7 @@ class LocalEmulatorDeviceHandleTest {
         initialAvdInfo = makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
       )
 
-    val activateJob = async(SupervisorJob()) { handle.activate { delay(Long.MAX_VALUE) } }
+    val activateJob = async(SupervisorJob()) { handle.activate { FakeProcess() } }
 
     handle.stateFlow.takeWhile { !it.isTransitioning }.collect()
 
@@ -73,6 +83,196 @@ class LocalEmulatorDeviceHandleTest {
 
     handleScope.cancel()
   }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun activationProcessCrash() = runTest {
+    val context = testContext(this)
+
+    val handleScope = this.createChildScope()
+    val handle =
+      LocalEmulatorDeviceHandle(
+        context = context,
+        avdScanner = NullAvdScanner(handleScope),
+        scope = handleScope,
+        extensions = emptyList(),
+        initialAvdInfo = makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
+      )
+
+    val process = FakeProcess()
+    val activateJob = async(SupervisorJob()) { handle.activate { process } }
+
+    handle.stateFlow.takeWhile { !it.isTransitioning }.collect()
+
+    process.terminate(1)
+
+    handle.stateFlow.takeWhile { it.isTransitioning }.collect()
+
+    val exception = activateJob.getCompletionExceptionOrNull()
+    assertThat(exception).isInstanceOf(DeviceActionException::class.java)
+    assertThat(exception).isNotInstanceOf(DeviceActionCanceledException::class.java)
+    assertThat(exception?.message).isEqualTo("The emulator process for AVD Fake Device 1 has terminated.")
+
+    handleScope.cancel()
+  }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun activationProcessClosedByUser() = runTest {
+    val context = testContext(this)
+
+    val handleScope = this.createChildScope()
+    val handle =
+      LocalEmulatorDeviceHandle(
+        context = context,
+        avdScanner = NullAvdScanner(handleScope),
+        scope = handleScope,
+        extensions = emptyList(),
+        initialAvdInfo = makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
+      )
+
+    val process = FakeProcess()
+    val activateJob = async(SupervisorJob()) { handle.activate { process } }
+
+    handle.stateFlow.takeWhile { !it.isTransitioning }.collect()
+
+    process.terminate(0)
+
+    handle.stateFlow.takeWhile { it.isTransitioning }.collect()
+
+    val exception = activateJob.getCompletionExceptionOrNull()
+    assertThat(exception).isInstanceOf(DeviceActionCanceledException::class.java)
+    assertThat(exception?.message).isEqualTo("The emulator process for AVD Fake Device 1 was closed.")
+
+    handleScope.cancel()
+  }
+
+  @Test
+  fun processTerminatedWhileConnected(): Unit =
+    runBlockingWithTimeout(Duration.ofSeconds(5)) {
+      val session = FakeAdbSession()
+      val avdManager = FakeAvdManager(session, temporaryFolder.newFolder("avds").toPath())
+      try {
+        val plugin =
+          LocalEmulatorProvisionerPlugin(
+            scope = session.scope,
+            adbSession = session,
+            avdScanner = FakeAvdScanner(avdManager, session.scope),
+            deviceIcons = emptyDeviceIcons,
+          )
+        val defaultPlugin = DefaultProvisionerPlugin(session.scope, emptyDeviceIcons)
+        val provisioner = DeviceProvisioner.create(session.scope, session, listOf(plugin, defaultPlugin))
+
+        avdManager.createAvd()
+        yieldUntil { provisioner.devices.value.size == 1 }
+        val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+
+        val process = FakeProcess()
+        handle.activate {
+          avdManager.startAvd(handle.avdInfo, QuickBoot)
+          process
+        }
+        handle.awaitReady()
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        assertThat(handle.state.isTransitioning).isFalse()
+
+        // Terminate the process without stopping the fake ADB device, simulating ADB lagging behind OS process exit.
+        process.terminate(0)
+
+        handle.stateFlow.first { it is DeviceState.Disconnected }
+        assertThat(handle.state.isTransitioning).isFalse()
+        assertThat(handle.state.connectedDevice).isNull()
+        // DefaultProvisionerPlugin should not claim the dying ADB connection while ADB still considers it online.
+        assertThat(provisioner.devices.value).containsExactly(handle)
+      } finally {
+        avdManager.close()
+        session.close()
+      }
+    }
+
+  @Test
+  fun processTerminatedWhileBooting(): Unit =
+    runBlockingWithTimeout(Duration.ofSeconds(5)) {
+      val session = FakeAdbSession()
+      val avdManager = FakeAvdManager(session, temporaryFolder.newFolder("avds").toPath())
+      try {
+        val plugin =
+          LocalEmulatorProvisionerPlugin(
+            scope = session.scope,
+            adbSession = session,
+            avdScanner = FakeAvdScanner(avdManager, session.scope),
+            deviceIcons = emptyDeviceIcons,
+          )
+        val provisioner = DeviceProvisioner.create(session.scope, session, listOf(plugin))
+
+        avdManager.createAvd()
+        yieldUntil { provisioner.devices.value.size == 1 }
+        val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+
+        val process = FakeProcess()
+        handle.activate {
+          avdManager.startAvd(handle.avdInfo, ColdBoot)
+          process
+        }
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        assertThat(handle.state.isReady).isFalse()
+        assertThat(handle.state.isTransitioning).isTrue()
+
+        val awaitReadyJob = session.scope.async(start = CoroutineStart.UNDISPATCHED) { handle.awaitReady() }
+
+        // Crash the process while still booting before ADB notices disconnection.
+        process.terminate(1)
+
+        handle.stateFlow.first { it is DeviceState.Disconnected }
+        assertThat(handle.state.isTransitioning).isFalse()
+        try {
+          awaitReadyJob.await()
+          throw AssertionError("Expected DeviceActionException")
+        } catch (expected: DeviceActionException) {
+          assertThat(expected.message).isEqualTo("Device did not come online")
+        }
+      } finally {
+        avdManager.close()
+        session.close()
+      }
+    }
+
+  @Test
+  fun processTerminatedDuringDeactivation(): Unit =
+    runBlockingWithTimeout(Duration.ofSeconds(5)) {
+      val session = FakeAdbSession()
+      val avdManager = FakeAvdManager(session, temporaryFolder.newFolder("avds").toPath())
+      try {
+        val plugin =
+          LocalEmulatorProvisionerPlugin(
+            scope = session.scope,
+            adbSession = session,
+            avdScanner = FakeAvdScanner(avdManager, session.scope),
+            deviceIcons = emptyDeviceIcons,
+          )
+        val provisioner = DeviceProvisioner.create(session.scope, session, listOf(plugin))
+
+        avdManager.createAvd()
+        yieldUntil { provisioner.devices.value.size == 1 }
+        val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+
+        val process = FakeProcess()
+        handle.activate {
+          avdManager.startAvd(handle.avdInfo, QuickBoot)
+          process
+        }
+        handle.awaitReady()
+
+        // Deactivate by terminating the process without updating ADB's device list yet.
+        handle.deactivate { process.terminate(0) }
+
+        assertThat(handle.state).isInstanceOf(DeviceState.Disconnected::class.java)
+        assertThat(handle.state.isTransitioning).isFalse()
+      } finally {
+        avdManager.close()
+        session.close()
+      }
+    }
 
   /** updatePaired{Glasses/Phone} should result in properties.paired{Glasses/Phone}Id being updated. */
   @Test
@@ -146,6 +346,32 @@ private class NullAvdScanner(coroutineScope: CoroutineScope) : AbstractAvdScanne
   override fun scanAvds(): List<AvdInfo> = emptyList()
 
   override fun logError(message: String, exception: Throwable) = throw exception
+}
+
+private class FakeProcess : Process() {
+  private val onExitFuture = CompletableFuture<Process>()
+  @Volatile private var exitCode: Int? = null
+
+  fun terminate(code: Int) {
+    exitCode = code
+    onExitFuture.complete(this)
+  }
+
+  override fun onExit(): CompletableFuture<Process> = onExitFuture
+
+  override fun exitValue(): Int = exitCode ?: throw IllegalThreadStateException("Process has not exited")
+
+  override fun waitFor(): Int = onExitFuture.get().exitValue()
+
+  override fun destroy() {
+    terminate(0)
+  }
+
+  override fun getOutputStream(): OutputStream = OutputStream.nullOutputStream()
+
+  override fun getInputStream(): InputStream = InputStream.nullInputStream()
+
+  override fun getErrorStream(): InputStream = InputStream.nullInputStream()
 }
 
 private class AvdScannerImpl(coroutineScope: CoroutineScope, val avdManager: AvdManager) : AbstractAvdScanner(coroutineScope) {
