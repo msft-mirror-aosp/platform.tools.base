@@ -1405,11 +1405,6 @@ public class IconDetector extends Detector implements XmlScanner, SourceCodeScan
                     result.add(s);
                 }
             }
-            for (String s : b) {
-                if (names1.contains(Lint.getBaseName(s))) {
-                    result.add(s);
-                }
-            }
 
             return result;
         }
