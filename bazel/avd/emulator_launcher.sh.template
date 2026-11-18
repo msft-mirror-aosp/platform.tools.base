@@ -246,17 +246,63 @@ print_kill_diagnostics() {
   echo "Current user: $(with_timeout 10 $adb -s "$device_serial" shell am get-current-user 2>&1)"
   echo "Users: $(with_timeout 10 $adb -s "$device_serial" shell pm list users 2>&1)"
   echo "sys.boot_completed: $(with_timeout 10 $adb -s "$device_serial" shell getprop sys.boot_completed 2>&1)"
+  save_emulator_logs
+  echo "--- End of diagnostics ---"
+}
+
+# Copies a file or a directory to the test outputs, so that it is kept after the
+# test finishes. Prints the name of the copy. Returns 1 if there are no test
+# outputs (e.g. outside of tests) or if the source doesn't exist.
+save_to_test_outputs() {
+  local source="$1"
+  local prefix="$2"
+  if [ -z "$TEST_UNDECLARED_OUTPUTS_DIR" ] || [ ! -d "$TEST_UNDECLARED_OUTPUTS_DIR" ]; then
+    return 1
+  fi
+  local destination
+  if [ -d "$source" ]; then
+    destination="$(mktemp -d "$TEST_UNDECLARED_OUTPUTS_DIR/${prefix}-XXXXXX")" || return 1
+    cp -R "$source/." "$destination" || return 1
+  elif [ -f "$source" ]; then
+    destination="$(mktemp "$TEST_UNDECLARED_OUTPUTS_DIR/${prefix}-XXXXXX")" || return 1
+    cp "$source" "$destination" || return 1
+  else
+    return 1
+  fi
+  basename "$destination"
+}
+
+# Prints the path of the emulator's crash report database. The emulator prints
+# it at startup, e.g. "Storing crashdata in: /tmp/android-user/emu-crash.db,
+# detection is enabled for process: 123".
+emulator_crash_db_path() {
+  sed -n 's/.*Storing crashdata in: \(.*\), detection is enabled.*/\1/p' "$emu_log_file" 2>/dev/null | tail -n 1
+}
+
+# Keeps the emulator's log and crash reports in the test outputs, and prints the
+# end of the log. The log is written to HOME, which is deleted after the test,
+# so this is needed to find out why the emulator failed. Does nothing if it was
+# already called, so that the kill command doesn't save the same files twice.
+emulator_logs_saved=false
+save_emulator_logs() {
+  if [ "$emulator_logs_saved" = true ]; then
+    return
+  fi
+  emulator_logs_saved=true
+  local saved
+  if saved="$(save_to_test_outputs "$emu_log_file" "emulator-log-${port}")"; then
+    echo "The full emulator log is saved as $saved in the test outputs."
+  fi
+  local crash_db
+  crash_db="$(emulator_crash_db_path)"
+  if [ -n "$crash_db" ] && saved="$(save_to_test_outputs "$crash_db" "emulator-crash-db-${port}")"; then
+    echo "The emulator crash reports in $crash_db are saved as $saved in the test outputs."
+  fi
   if [ -f "$emu_log_file" ]; then
-    if [ -n "$TEST_UNDECLARED_OUTPUTS_DIR" ] && [ -d "$TEST_UNDECLARED_OUTPUTS_DIR" ]; then
-      local saved_log_file
-      saved_log_file="$(mktemp "$TEST_UNDECLARED_OUTPUTS_DIR/emulator-log-${port}-XXXXXX")"
-      cp "$emu_log_file" "$saved_log_file"
-      echo "The full emulator log is saved as $(basename "$saved_log_file") in the test outputs."
-    fi
     echo "--- Last 100 lines of the emulator log ---"
     tail -n 100 "$emu_log_file"
+    echo "--- End of the emulator log ---"
   fi
-  echo "--- End of diagnostics ---"
 }
 
 # Stops the given emulator process and its child processes. Sends SIGTERM
@@ -287,6 +333,17 @@ force_kill_emulator() {
 if [ "$mode" = "kill" ]; then
   echo "Killing emulator on port $port ($device_serial)..."
   emu_pid="$(recorded_emulator_pid)"
+
+  # The emulator should still be running when it is killed. If it isn't, it
+  # stopped while the tests were running (e.g. it crashed, or the OOM killer
+  # killed it), which makes the tests fail with errors like "No connected
+  # devices!". Keep the emulator's log, which ends with the emulator's exit
+  # code, and its crash reports to find out why.
+  if [ -f "$emu_pid_file" ] && [ -z "$emu_pid" ]; then
+    echo "Warning: The emulator on port $port (PID $(cat "$emu_pid_file" 2>/dev/null)) stopped before it was killed." >&2
+    save_emulator_logs
+  fi
+
   kill_output="$(with_timeout 30 $adb -s "$device_serial" emu kill 2>&1)"
   kill_exit_code=$?
   echo "'adb emu kill' exited with code $kill_exit_code: $kill_output"
@@ -555,19 +612,64 @@ for i in "${retry_attempts[@]}"; do
   start_time=$SECONDS
   # Launch the emulator in the background, redirecting its output to the log file.
   # Common flags are used for headless CI environments.
-  $emulator \
-    -avd "$avd_name_to_launch" \
-    -port "$port" \
-    -delay-adb \
-    -no-window \
-    -gpu swiftshader_indirect \
-    -feature -ModemSimulator \
-    -feature -MultiDisplay \
-    "${additional_emulator_args[@]}" \
-    "${user_extra_args[@]}" \
-    >> "$emu_log_file" 2>&1 &
-  emu_pid=$!
-  echo "$emu_pid" > "$emu_pid_file"
+  #
+  # The emulator is started by a background subshell that waits for it and
+  # appends its exit code to the log file. This script detaches from the
+  # emulator after the boot, so this is the only way to find out how the
+  # emulator stopped if it stops while the tests are running, e.g. 137 if the
+  # OOM killer killed it with SIGKILL, or 139 if it crashed with SIGSEGV. The
+  # subshell's output goes to the log file, so that the caller of this script
+  # doesn't wait for the subshell to close stdout.
+  rm -f "$emu_pid_file"
+  (
+    $emulator \
+      -avd "$avd_name_to_launch" \
+      -port "$port" \
+      -delay-adb \
+      -no-window \
+      -gpu swiftshader_indirect \
+      -feature -ModemSimulator \
+      -feature -MultiDisplay \
+      "${additional_emulator_args[@]}" \
+      "${user_extra_args[@]}" &
+    child_pid=$!
+    if ! echo "$child_pid" > "$emu_pid_file"; then
+      # The launch fails if the PID isn't recorded (see below), so don't keep
+      # the emulator running.
+      kill -9 "$child_pid" 2>/dev/null
+    fi
+    wait "$child_pid"
+    exit_code=$?
+    exit_reason=""
+    if [ "$exit_code" -gt 128 ]; then
+      # Exit codes above 128 usually mean that the emulator was stopped by a
+      # signal, but the emulator can also exit with such a code itself (e.g.
+      # 255 for exit(-1)), so only print the signal if there is one.
+      signal_name="$(kill -l $((exit_code - 128)) 2>/dev/null)"
+      if [ -n "$signal_name" ]; then
+        exit_reason=" (signal $((exit_code - 128)): $signal_name)"
+      fi
+    fi
+    echo "Emulator process $child_pid exited with code ${exit_code}${exit_reason} at $(date)."
+  ) >> "$emu_log_file" 2>&1 &
+  emu_watcher_pid=$!
+
+  # Wait for the subshell to record the emulator's PID.
+  for _ in $(seq 1 100); do
+    if [ -s "$emu_pid_file" ]; then
+      break
+    fi
+    sleep 0.1
+  done
+  emu_pid="$(cat "$emu_pid_file" 2>/dev/null)"
+  if ! [[ "$emu_pid" =~ ^[0-9]+$ ]]; then
+    echo "Error: The emulator's PID was not recorded in $emu_pid_file." >&2
+    # Stop the emulator before the subshell, because the emulator can't be found
+    # with `pkill -P` once the subshell exits and the emulator is reparented.
+    pkill -KILL -P "$emu_watcher_pid" 2>/dev/null
+    kill "$emu_watcher_pid" 2>/dev/null
+    exit 1
+  fi
   echo "Emulator process started with PID $emu_pid (Attempt $i)."
 
   # Wait for the emulator to finish booting.
@@ -583,6 +685,11 @@ for i in "${retry_attempts[@]}"; do
     if [[ $output == *"unauthorized"* ]]; then
       echo "Error: Emulator requires ADB authorization." >&2
       kill -9 $emu_pid
+      # Wait for the subshell to log the emulator's exit code, and give `tail -f`
+      # time to show it before the EXIT trap stops it (like the `sleep 2` before
+      # a retry below).
+      wait "$emu_watcher_pid" 2>/dev/null
+      sleep 2
       exit 1
     fi
 
@@ -606,6 +713,9 @@ for i in "${retry_attempts[@]}"; do
 
   echo "$device_serial failed to come online. Killing PID $emu_pid and retrying..."
   kill -9 $emu_pid 2>/dev/null
+  # Wait until the emulator has exited, so that the next attempt doesn't start
+  # while the previous emulator still holds the port or writes to the log.
+  wait "$emu_watcher_pid" 2>/dev/null
   sleep 2
 done
 
@@ -633,7 +743,9 @@ if [ "$boot_complete" = true ]; then
       sleep 1
     done
 
-    wait $emu_pid
+    # The emulator isn't a child of this script, so wait for the subshell that
+    # started it instead.
+    wait "$emu_watcher_pid"
     echo "Emulator process finished. Finalizing snapshot..."
 
     # For portability, copy the .ini file into the .avd directory.
