@@ -2107,6 +2107,13 @@ public class Extractor {
 
             // For example, binary expressions like 3 + 4
             Object literalValue = ConstantEvaluator.evaluate(null, expression);
+            if (literalValue == null) {
+                // A value of an annotation in a class file has no UAST expression
+                PsiElement psi = expression.getSourcePsi();
+                if (psi != null) {
+                    literalValue = ConstantEvaluator.evaluate(null, psi);
+                }
+            }
             if (literalValue != null) {
                 if (appendLiteralValue(sb, literalValue)) {
                     return true;

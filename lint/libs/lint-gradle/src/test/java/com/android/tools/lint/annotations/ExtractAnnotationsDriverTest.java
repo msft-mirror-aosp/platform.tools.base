@@ -673,6 +673,56 @@ public class ExtractAnnotationsDriverTest {
     }
 
     @Test
+    public void testAnnotatedAnnotationFromClasspath() throws Exception {
+        Path androidJar = TestUtils.resolvePlatformPath("android.jar");
+
+        // @IntRange has class retention, so the class file of @Percent still has it.
+        File project =
+                createProject(
+                        rangeUser,
+                        TestFiles.binaryStub(
+                                "libs/library.jar",
+                                java.util.Collections.singletonList(rangeAnnotation),
+                                java.util.Collections.singletonList(androidxIntRangeStub),
+                                true));
+        File libraryJar = new File(project, "libs/library.jar");
+
+        File output = temporaryFolder.newFile("annotations.zip");
+
+        List<String> list =
+                java.util.Arrays.asList(
+                        "--sources",
+                        new File(project, "src").getPath(),
+                        "--classpath",
+                        androidJar + pathSeparator + libraryJar,
+                        "--quiet",
+                        "--output",
+                        output.getPath());
+        String[] args = list.toArray(new String[0]);
+        assertNotNull(args);
+
+        assertEquals(0, new ExtractAnnotationsDriver().run(args));
+
+        checkPackageXml(
+                "test.pkg",
+                output,
+                ""
+                        + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                        + "<root>\n"
+                        + "  <item name=\"test.pkg.RangeUser void setPercent(int) 0\">\n"
+                        + "    <annotation name=\"androidx.annotation.IntRange\">\n"
+                        + "      <val name=\"from\" val=\"0\" />\n"
+                        + "      <val name=\"to\" val=\"100\" />\n"
+                        + "    </annotation>\n"
+                        + "  </item>\n"
+                        + "</root>\n"
+                        + "\n");
+
+        UastEnvironment.disposeApplicationEnvironment();
+        PathUtils.deleteRecursivelyIfExists(project.toPath());
+    }
+
+    @Test
     public void testHelp() throws Exception {
 
         String[] args = new String[] {"--help"};
@@ -976,6 +1026,46 @@ public class ExtractAnnotationsDriverTest {
                             + "        fun isNull(value: String?): Boolean\n"
                             + "    }\n"
                             + "}");
+
+    private final TestFile androidxIntRangeStub =
+            TestFiles.java(
+                    ""
+                            + "package androidx.annotation;\n"
+                            + "\n"
+                            + "import static java.lang.annotation.ElementType.ANNOTATION_TYPE;\n"
+                            + "import static java.lang.annotation.ElementType.PARAMETER;\n"
+                            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+                            + "\n"
+                            + "import java.lang.annotation.Retention;\n"
+                            + "import java.lang.annotation.Target;\n"
+                            + "\n"
+                            + "@Retention(CLASS)\n"
+                            + "@Target({PARAMETER, ANNOTATION_TYPE})\n"
+                            + "public @interface IntRange {\n"
+                            + "    long from() default Long.MIN_VALUE;\n"
+                            + "    long to() default Long.MAX_VALUE;\n"
+                            + "}\n");
+
+    private final TestFile rangeAnnotation =
+            TestFiles.java(
+                    ""
+                            + "package test.lib;\n"
+                            + "\n"
+                            + "import androidx.annotation.IntRange;\n"
+                            + "\n"
+                            + "@IntRange(from = 0, to = 100)\n"
+                            + "public @interface Percent {}\n");
+
+    private final TestFile rangeUser =
+            TestFiles.java(
+                    ""
+                            + "package test.pkg;\n"
+                            + "\n"
+                            + "import test.lib.Percent;\n"
+                            + "\n"
+                            + "public class RangeUser {\n"
+                            + "    public void setPercent(@Percent int percent) {}\n"
+                            + "}\n");
 
     private final TestFile permissionsTest =
             TestFiles.java(
