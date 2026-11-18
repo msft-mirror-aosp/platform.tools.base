@@ -23,6 +23,7 @@ import com.android.tools.uicheck.snapshot.UiCheckSourceLocation
 import com.android.tools.visuallint.VisualLintErrorType
 import java.awt.image.BufferedImage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -79,6 +80,23 @@ class UiCheckAnalyzerTest {
       UiCheckSourceLocation(DASHBOARD_FILE, 25, "Button"),
       snapshot.issues.first { it.errorType == VisualLintErrorType.BUTTON_SIZE }.sourceLocation,
     )
+  }
+
+  /**
+   * Verifies that a phone/tablet preview with a `[Wear Preview]` display name still runs the adaptive checks when `isWearDevice` is false.
+   */
+  @Test
+  fun ignoresWearInDisplayName() {
+    val snapshot =
+      UiCheckAnalyzer.analyze(
+        DASHBOARD_PREVIEW,
+        "Medium Tablet [Wear Preview]",
+        dashboard.copy(deviceId = "Custom"),
+        renderedImage = null,
+        userCode = userCode,
+      )
+
+    assertTrue(snapshot.issues.any { it.errorType == VisualLintErrorType.BUTTON_SIZE })
   }
 
   /** Verifies that a finding on a library component points at the closest enclosing user call site. */
@@ -200,6 +218,118 @@ class UiCheckAnalyzerTest {
       assertEquals("${tree.densityDpi}", DEFAULT_DENSITY_DPI, snapshot.densityDpi)
       assertEquals("${tree.fontScale}", DEFAULT_FONT_SCALE, snapshot.fontScale)
     }
+  }
+
+  /** Verifies that Wear OS devices suppress phone/tablet adaptive checks even when a button exceeds 320dp. */
+  @Test
+  fun skipsPhoneAndTabletAdaptiveChecksOnWear() {
+    val wideButtonComponents =
+      listOf(
+        node(
+          "Box",
+          bounds(0, 0, 400, 400),
+          children =
+            listOf(
+              node(
+                "Button",
+                bounds(0, 90, 400, 120),
+                semantics = mapOf("text" to "A 400dp wide button"),
+              )
+            ),
+        )
+      )
+    val nonWearTree =
+      tree(
+        methodFqn = "com.example.AppKt.PhonePreview",
+        width = 400,
+        height = 400,
+        densityDpi = 160,
+        deviceId = "phone",
+        components = wideButtonComponents,
+      )
+    val wearTree = nonWearTree.copy(methodFqn = "com.example.WearAppKt.WatchPreview", deviceId = "wearos_small_round", isWearDevice = true)
+    val customWearTree = nonWearTree.copy(methodFqn = "com.example.WearAppKt.WatchPreview", deviceId = "Custom", isWearDevice = true)
+
+    val nonWearTypes =
+      UiCheckAnalyzer.analyze("com.example.AppKt.PhonePreview", "Medium Phone", nonWearTree, renderedImage = null, userCode = userCode)
+        .issues
+        .map { it.errorType }
+    assertTrue("$nonWearTypes", VisualLintErrorType.BUTTON_SIZE in nonWearTypes)
+    assertFalse("$nonWearTypes", VisualLintErrorType.WEAR_MARGIN in nonWearTypes)
+    val wearTypes =
+      UiCheckAnalyzer.analyze(
+          "com.example.WearAppKt.WatchPreview",
+          "Wear OS Small Round",
+          wearTree,
+          renderedImage = null,
+          userCode = userCode,
+        )
+        .issues
+        .map { it.errorType }
+    assertFalse("$wearTypes", VisualLintErrorType.BUTTON_SIZE in wearTypes)
+    assertTrue("$wearTypes", VisualLintErrorType.WEAR_MARGIN in wearTypes)
+
+    val customWearTypes =
+      UiCheckAnalyzer.analyze(
+          "com.example.WearAppKt.WatchPreview",
+          "Font scale 124%",
+          customWearTree,
+          renderedImage = null,
+          userCode = userCode,
+        )
+        .issues
+        .map { it.errorType }
+    assertFalse("$customWearTypes", VisualLintErrorType.BUTTON_SIZE in customWearTypes)
+    assertTrue("$customWearTypes", VisualLintErrorType.WEAR_MARGIN in customWearTypes)
+  }
+
+  /** Verifies that `isWearDevice` and `isScreenRound` select the 5.2% round vs 2.5% rectangular Wear OS margin thresholds. */
+  @Test
+  fun distinguishesRoundAndSquareWearMargins() {
+    val watchTree =
+      tree(
+        methodFqn = "com.example.WearAppKt.WatchPreview",
+        width = 227,
+        height = 227,
+        densityDpi = 160,
+        deviceId = "Custom",
+        components =
+          listOf(
+            node(
+              "Box",
+              bounds(0, 0, 227, 227),
+              children =
+                listOf(
+                  // left=8 is >= 5.7px (2.5% square margin) and < 11.8px (5.2% round margin).
+                  node("Button", bounds(8, 4, 219, 52), semantics = mapOf("text" to "Watch CTA"))
+                ),
+            )
+          ),
+      )
+
+    val roundTypes =
+      UiCheckAnalyzer.analyze(
+          "com.example.WearAppKt.WatchPreview",
+          "Font scale 124%",
+          watchTree.copy(isWearDevice = true, isScreenRound = true),
+          renderedImage = null,
+          userCode = userCode,
+        )
+        .issues
+        .map { it.errorType }
+    assertTrue("$roundTypes", VisualLintErrorType.WEAR_MARGIN in roundTypes)
+
+    val squareTypes =
+      UiCheckAnalyzer.analyze(
+          "com.example.WearAppKt.WatchPreview",
+          "Font scale 124%",
+          watchTree.copy(isWearDevice = true, isScreenRound = false),
+          renderedImage = null,
+          userCode = userCode,
+        )
+        .issues
+        .map { it.errorType }
+    assertFalse("$squareTypes", VisualLintErrorType.WEAR_MARGIN in squareTypes)
   }
 
   private companion object {

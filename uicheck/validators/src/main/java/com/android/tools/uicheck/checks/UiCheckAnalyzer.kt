@@ -24,7 +24,8 @@ import java.awt.image.BufferedImage
 
 /** Runs the component tree checks on one rendered preview configuration and collects their findings into a snapshot. */
 object UiCheckAnalyzer {
-  private val CHECKS: List<ComponentTreeCheck> =
+  /** Checks for phones, foldables, tablets and desktops, which don't apply to Wear OS. */
+  private val ADAPTIVE_CHECKS: List<ComponentTreeCheck> =
     listOf(
       ButtonSizeCheck,
       TextFieldSizeCheck,
@@ -32,6 +33,9 @@ object UiCheckAnalyzer {
       BottomAppBarCheck,
       LongTextCheck,
     )
+
+  /** Checks for Wear OS watches. */
+  private val WEAR_CHECKS: List<ComponentTreeCheck> = listOf(WearMarginCheck)
 
   /**
    * Checks [componentTree], the rendered configuration [configDescription] of [previewName].
@@ -54,9 +58,11 @@ object UiCheckAnalyzer {
         screenHeightPx = renderedImage?.height ?: componentTree.height,
         densityDpi = componentTree.densityDpi?.takeIf { it > 0 } ?: DEFAULT_DENSITY_DPI,
         fontScale = componentTree.fontScale?.takeIf { it.isFinite() && it > 0f } ?: DEFAULT_FONT_SCALE,
+        isRoundDevice = componentTree.isScreenRound,
         renderedImage = renderedImage,
         sourceLocations = SourceLocations.resolve(componentTree.components, userCode),
       )
+    val checks = if (componentTree.isWearDevice) WEAR_CHECKS else ADAPTIVE_CHECKS
 
     return UiCheckSnapshot(
       name = previewName,
@@ -65,7 +71,7 @@ object UiCheckAnalyzer {
       screenHeightPx = context.screenHeightPx,
       densityDpi = context.densityDpi,
       fontScale = context.fontScale,
-      issues = CHECKS.flatMap { it.check(context) },
+      issues = checks.flatMap { it.check(context) },
       previewId = componentTree.previewId,
     )
   }
