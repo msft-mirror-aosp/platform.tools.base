@@ -400,14 +400,9 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     val end = location.end
     if (start != null && end != null) {
       val fileText = client.getSourceText(file)
-      val segment =
-        if (fileText.isNotEmpty()) {
-          fileText.substring(start.offset, end.offset)
-        } else {
-          null
-        }
-
-      val context = computeContext(file, fileText, start, end)
+      // Positions may be stale, e.g. from cached partial results analyzed against another version of the file
+      val context = if (fileText.containsRange(start.offset, end.offset)) computeContext(file, fileText, start, end) else null
+      val segment = if (context != null) fileText.substring(start.offset, end.offset) else null
 
       writer.indent(indent++).write("\"region\": {\n")
       writer.indent(indent).write("\"startLine\": ${start.line + 1},\n")
@@ -443,10 +438,6 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
         }
       } else {
         writer.write("\n")
-
-        if (segment != null && !incidentSnippets.containsKey(incident)) {
-          incidentSnippets[incident] = segment
-        }
       }
     } else {
       // No locations: usually used for binary files, but in some cases also
@@ -523,7 +514,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
    *
    * This method computes two locations: the location of the start of this snippet, a few lines above, and the location of the end of this
    * snippet, at the end of the line a few lines below. (When the error message is near the beginning of the file or the end of the file the
-   * locations are of course clamped to the beginning or end of the file).
+   * locations are of course clamped to the beginning or end of the file). Returns null if the lines are outside [fileText].
    */
   private fun computeContext(file: File, fileText: CharSequence, lineStart: Position, lineEnd: Position): Pair<Position, Position>? {
     if (fileText.isEmpty()) {
@@ -531,6 +522,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     }
 
     val offsets = getLineOffsets(file, fileText)
+    if (lineEnd.line !in offsets.indices || lineStart.line !in 0..lineEnd.line) return null
     val size = 2 // size of window: number of additional lines on each side
 
     val beginLine = (lineStart.line - size).coerceAtLeast(0)
@@ -580,12 +572,21 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     // in lint that just communicate data to the IDE to act on or for example to
     // perform a navigation/selection to take you to the right place but cannot
     // actually figure out what to change
-    val fixableEdits = edits.filter { (_, files) -> files.isNotEmpty() && files.any { it.edits.isNotEmpty() } }
+    // Skip fixes with edits beyond the file text, rather than writing them partially
+    val fixableEdits = edits.filter { (_, files) -> files.any { it.edits.isNotEmpty() } && files.all { it.editsFit(performer) } }
     fixableEdits.forEachIndexed { index, (fix, files) ->
       writeQuickFix(performer, incident, fix, files, index == fixableEdits.size - 1, indent)
     }
     writer.indent(--indent).write("],\n")
   }
+
+  /** Whether [writeArtifactChange] can locate all edits in the current file text. */
+  private fun LintFixPerformer.PendingEditFile.editsFit(performer: LintCliFixPerformer): Boolean {
+    val text = performer.getSourceText(file)
+    return edits.all { text.containsRange(it.startOffset, it.endOffset) }
+  }
+
+  private fun CharSequence.containsRange(start: Int, end: Int): Boolean = start in 0..end && end <= length
 
   private fun writeQuickFix(
     performer: LintCliFixPerformer,
@@ -624,7 +625,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
 
   /** Returns a 1-based column number for the character [offset] in the given [source] */
   private fun getColumn(source: CharSequence, offset: Int): Int {
-    assert(offset in source.indices)
+    assert(offset in 0..source.length)
     val prevNewline = source.subSequence(0, offset).lastIndexOf('\n')
     return offset - prevNewline
   }

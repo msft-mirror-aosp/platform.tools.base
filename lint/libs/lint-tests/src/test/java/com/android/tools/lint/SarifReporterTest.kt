@@ -19,6 +19,7 @@ package com.android.tools.lint
 import com.android.testutils.TestUtils
 import com.android.tools.lint.checks.AppCompatResourceDetector
 import com.android.tools.lint.checks.AutofillDetector
+import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.checks.CommentDetector
 import com.android.tools.lint.checks.DuplicateResourceDetector
 import com.android.tools.lint.checks.HardcodedValuesDetector
@@ -31,21 +32,30 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestFiles.manifest
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Category
+import com.android.tools.lint.detector.api.DefaultPosition
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.TextFormat
+import com.google.common.truth.Truth.assertThat
+import com.google.gson.JsonParser
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class SarifReporterTest {
+  @get:Rule val temporaryFolder = TemporaryFolder()
+
   private val sampleManifest =
     manifest(
         """
@@ -991,6 +1001,29 @@ class SarifReporterTest {
 
   private fun lint(): TestLintTask {
     return TestLintTask.lint().sdkHome(TestUtils.getSdk().toFile())
+  }
+
+  @Test
+  fun `stale positions beyond the file are reported without snippets`() {
+    // E.g. positions from cached partial results, analyzed against another version of the file
+    val file = temporaryFolder.newFile("libs.versions.toml").apply { writeText("[versions]\na = \"1.0\"\n") }
+    val stalePositions =
+      listOf(
+        DefaultPosition(10, 0, 128) to DefaultPosition(10, 7, 135), // offsets beyond the end
+        DefaultPosition(167, 0, 5) to DefaultPosition(167, 3, 8), // lines beyond the end
+        DefaultPosition(0, 0, 0) to DefaultPosition(167, 3, 8), // end line beyond the end
+      )
+    for ((start, end) in stalePositions) {
+      val incident = Incident(ReplaceMethodCallDetector.ISSUE, "message", Location.create(file, start, end))
+      val output = temporaryFolder.newFile()
+      SarifReporter(LintCliClient(LintClient.CLIENT_UNIT_TESTS), output)
+        .write(LintStats.create(warningCount = 1), listOf(incident), BuiltinIssueRegistry())
+
+      val sarif = output.readText()
+      assertThat(JsonParser.parseString(sarif).isJsonObject).isTrue()
+      assertThat(sarif).contains("\"startLine\": ${start.line + 1}")
+      assertThat(sarif).doesNotContain("snippet")
+    }
   }
 
   @Test
