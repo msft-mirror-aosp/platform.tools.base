@@ -59,12 +59,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -93,6 +96,7 @@ internal constructor(
   private val scope: CoroutineScope,
   private val adbSession: AdbSession,
   private val avdScanner: AvdScanner,
+  private val runningAvdsFlow: Flow<Map<Path, RunningAvd>>,
   pluginExtensions: List<ExtensionProvider<LocalEmulatorProvisionerPlugin, *>> = emptyList(),
   private val handleExtensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
 ) : DeviceProvisionerPlugin {
@@ -102,6 +106,7 @@ internal constructor(
     adbSession: AdbSession,
     avdScanner: AvdScanner,
     deviceIcons: DeviceIcons,
+    runningAvdsFlow: Flow<Map<Path, RunningAvd>>,
     pluginExtensions: List<ExtensionProvider<LocalEmulatorProvisionerPlugin, *>> = emptyList(),
     handleExtensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
   ) : this(
@@ -114,6 +119,7 @@ internal constructor(
     scope = scope,
     adbSession = adbSession,
     avdScanner = avdScanner,
+    runningAvdsFlow = runningAvdsFlow,
     pluginExtensions = pluginExtensions,
     handleExtensions = handleExtensions,
   )
@@ -173,6 +179,7 @@ internal constructor(
                   scope = scope.createChildScope(isSupervisor = true),
                   extensions = handleExtensions,
                   initialAvdInfo = avdInfo,
+                  runningAvdFlow = runningAvdsFlow.map { it[path] }.distinctUntilChanged(),
                 )
             else -> handle.updateAvdInfo(avdInfo)
           }
@@ -260,6 +267,7 @@ class LocalEmulatorDeviceHandle(
   extensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
   initialAvdInfo: AvdInfo,
   initialDeviceProperties: LocalEmulatorProperties = context.disconnectedDeviceProperties(initialAvdInfo),
+  runningAvdFlow: Flow<RunningAvd?> = emptyFlow(),
 ) : DeviceHandle, GlassesPairableDeviceHandle {
   private val logger by context::logger
   private val clock by context::clock
@@ -288,6 +296,8 @@ class LocalEmulatorDeviceHandle(
     var activeActivationRequest: TransitionRequest? = null
     var activeProcess: Process? = null
     var processJob: Job? = null
+    var hasRunningAvd = false
+    var isShuttingDown = false
     var bootStatus = false
     var properties = initialDeviceProperties
 
@@ -303,6 +313,16 @@ class LocalEmulatorDeviceHandle(
       activeProcess = null
     }
 
+    /** Clears state associated with the RunningAvd; called when we receive a null RunningAvd or the process terminates. */
+    fun clearRunningAvd() {
+      hasRunningAvd = false
+      isShuttingDown = false
+      if (connectedDevice == null && pendingTransition?.transitionType == TransitionType.DEACTIVATION) {
+        pendingTransition?.completion?.complete(Unit)
+        pendingTransition = null
+      }
+    }
+
     fun disconnect() {
       logger.debug { "${logName()} Device closed; disconnecting from console" }
       connectedDeviceJobScope?.cancel()
@@ -315,7 +335,7 @@ class LocalEmulatorDeviceHandle(
       connectedDeviceState = null
       activeActivationRequest = null
 
-      if (pendingTransition?.transitionType == TransitionType.DEACTIVATION) {
+      if (pendingTransition?.transitionType == TransitionType.DEACTIVATION && !isShuttingDown) {
         pendingTransition?.completion?.complete(Unit)
         pendingTransition = null
       }
@@ -436,11 +456,11 @@ class LocalEmulatorDeviceHandle(
         }
         is TransitionRequest -> {
           val currentTransition = pendingTransition
-          if (currentTransition == null) {
+          if (currentTransition == null && !(isShuttingDown && message.transitionType == TransitionType.ACTIVATION)) {
             val transitionNecessary =
               when (message.transitionType) {
                 TransitionType.ACTIVATION -> connectedDevice == null
-                TransitionType.DEACTIVATION -> connectedDevice != null
+                TransitionType.DEACTIVATION -> connectedDevice != null || isShuttingDown
               }
             if (transitionNecessary) {
               if (message.transitionType == TransitionType.ACTIVATION) {
@@ -458,9 +478,9 @@ class LocalEmulatorDeviceHandle(
             message.completion.completeExceptionally(
               DeviceActionDisabledException(
                 "Device is already " +
-                  when (currentTransition.transitionType) {
-                    TransitionType.ACTIVATION -> "activating"
-                    TransitionType.DEACTIVATION -> "deactivating"
+                  when {
+                    currentTransition?.transitionType == TransitionType.ACTIVATION -> "activating"
+                    else -> "deactivating"
                   }
               )
             )
@@ -486,13 +506,35 @@ class LocalEmulatorDeviceHandle(
             (message.result.getOrNull() as? Process)?.let(::watchProcess)
           }
         }
+        is RunningAvdUpdate -> {
+          val runningAvd = message.runningAvd
+          if (runningAvd?.isShuttingDown == true && pendingTransition?.transitionType == TransitionType.ACTIVATION) {
+            pendingTransition
+              ?.completion
+              ?.completeExceptionally(DeviceActionCanceledException("The emulator process for AVD ${properties.title} was closed."))
+            pendingTransition = null
+            activeActivationRequest = null
+          }
+          if (runningAvd == null || !runningAvd.processHandle.isAlive) {
+            val wasTrackingRunningAvd = hasRunningAvd || runningAvd != null
+            clearRunningAvd()
+            if (wasTrackingRunningAvd && connectedDevice != null) {
+              disconnect()
+            }
+          } else {
+            hasRunningAvd = true
+            isShuttingDown = runningAvd.isShuttingDown
+          }
+        }
         is ProcessTerminated -> {
           if (message.process == activeProcess) {
+            val wasShuttingDown = isShuttingDown
             clearProcess()
+            clearRunningAvd()
             activeActivationRequest = null
             if (pendingTransition?.transitionType == TransitionType.ACTIVATION) {
               val e =
-                if (message.exitCode == 0) {
+                if (message.exitCode == 0 || wasShuttingDown) {
                   DeviceActionCanceledException("The emulator process for AVD ${properties.title} was closed.")
                 } else {
                   DeviceActionException("The emulator process for AVD ${properties.title} has terminated.")
@@ -518,6 +560,8 @@ class LocalEmulatorDeviceHandle(
             pendingTransition = null
             if (currentTransition.transitionType == TransitionType.ACTIVATION) {
               activeActivationRequest = null
+            } else {
+              isShuttingDown = false
             }
           }
         }
@@ -529,18 +573,24 @@ class LocalEmulatorDeviceHandle(
           if (currentDevice == null) {
             Disconnected(
               properties,
-              isTransitioning = pendingTransition != null,
-              status = if (pendingTransition != null) "Starting up" else "Offline",
+              isTransitioning = pendingTransition != null || isShuttingDown,
+              status =
+                when {
+                  isShuttingDown || pendingTransition?.transitionType == TransitionType.DEACTIVATION -> "Shutting down"
+                  pendingTransition != null -> "Starting up"
+                  else -> "Offline"
+                },
               error = activeAvdInfo.deviceError,
             )
           } else {
+            val shuttingDown = pendingTransition?.transitionType == TransitionType.DEACTIVATION || isShuttingDown
             Connected(
               properties,
-              isTransitioning = !bootStatus || pendingTransition != null,
-              isReady = bootStatus && connectedDeviceState == AdblibDeviceState.ONLINE,
+              isTransitioning = !bootStatus || pendingTransition != null || isShuttingDown,
+              isReady = bootStatus && !shuttingDown && connectedDeviceState == AdblibDeviceState.ONLINE,
               status =
                 when {
-                  pendingTransition != null -> "Shutting down"
+                  shuttingDown -> "Shutting down"
                   !bootStatus -> "Booting"
                   else -> "Connected"
                 },
@@ -564,6 +614,10 @@ class LocalEmulatorDeviceHandle(
 
   override val stateFlow =
     internalStateFlow.map { it.deviceState }.stateIn(scope, SharingStarted.Eagerly, Disconnected(initialDeviceProperties))
+
+  init {
+    scope.launch { runningAvdFlow.collect { messageChannel.send(RunningAvdUpdate(it)) } }
+  }
 
   /** The currently active AvdInfo for the device. */
   val avdInfo: AvdInfo
@@ -626,7 +680,7 @@ class LocalEmulatorDeviceHandle(
     val request = TransitionRequest(TransitionType.DEACTIVATION, clock.now() + DISCONNECTION_TIMEOUT, action)
     messageChannel.send(request)
     request.completion.await()
-    stateFlow.first { it is Disconnected }
+    stateFlow.first { it is Disconnected && !it.isTransitioning }
   }
 
   override suspend fun awaitRelease(device: ConnectedDevice) {
@@ -875,6 +929,9 @@ enum class TransitionType {
 }
 
 private data class TransitionResult(val request: TransitionRequest, val result: Result<Any>) : LocalEmulatorMessage
+
+/** Indicates that the [RunningAvd] for this DeviceHandle has changed. If null, the associated process has terminated. */
+private data class RunningAvdUpdate(val runningAvd: RunningAvd?) : LocalEmulatorMessage
 
 private data class ProcessTerminated(val process: Process, val exitCode: Int) : LocalEmulatorMessage
 

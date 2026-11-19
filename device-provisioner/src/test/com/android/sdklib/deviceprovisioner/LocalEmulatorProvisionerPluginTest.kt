@@ -40,10 +40,12 @@ import com.google.wireless.android.sdk.stats.DeviceInfo.ApplicationBinaryInterfa
 import com.google.wireless.android.sdk.stats.DeviceInfo.MdnsConnectionType
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.collections.emptyMap
 import kotlin.io.path.name
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
@@ -76,8 +78,9 @@ class LocalEmulatorProvisionerPluginTest {
       LocalEmulatorProvisionerPlugin(
         scope = session.scope,
         adbSession = session,
-        deviceIcons = emptyDeviceIcons,
         avdScanner = FakeAvdScanner(avdManager, session.scope),
+        deviceIcons = emptyDeviceIcons,
+        runningAvdsFlow = MutableStateFlow(emptyMap()),
         pluginExtensions = listOf(TestExtension::class providedBy { LocalEmulatorTestExtension() }),
         handleExtensions = listOf(TestExtension::class providedBy { LocalEmulatorTestExtension() }),
       )

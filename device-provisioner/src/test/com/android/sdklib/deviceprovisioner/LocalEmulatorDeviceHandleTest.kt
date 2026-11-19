@@ -25,25 +25,28 @@ import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdManager
 import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.QuickBoot
+import com.android.testutils.FakeProcessHandle
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.currentTime
@@ -159,6 +162,7 @@ class LocalEmulatorDeviceHandleTest {
             adbSession = session,
             avdScanner = FakeAvdScanner(avdManager, session.scope),
             deviceIcons = emptyDeviceIcons,
+            runningAvdsFlow = MutableStateFlow(emptyMap()),
           )
         val defaultPlugin = DefaultProvisionerPlugin(session.scope, emptyDeviceIcons)
         val provisioner = DeviceProvisioner.create(session.scope, session, listOf(plugin, defaultPlugin))
@@ -202,6 +206,7 @@ class LocalEmulatorDeviceHandleTest {
             adbSession = session,
             avdScanner = FakeAvdScanner(avdManager, session.scope),
             deviceIcons = emptyDeviceIcons,
+            runningAvdsFlow = MutableStateFlow(emptyMap()),
           )
         val provisioner = DeviceProvisioner.create(session.scope, session, listOf(plugin))
 
@@ -249,6 +254,7 @@ class LocalEmulatorDeviceHandleTest {
             adbSession = session,
             avdScanner = FakeAvdScanner(avdManager, session.scope),
             deviceIcons = emptyDeviceIcons,
+            runningAvdsFlow = MutableStateFlow(emptyMap()),
           )
         val provisioner = DeviceProvisioner.create(session.scope, session, listOf(plugin))
 
@@ -274,6 +280,186 @@ class LocalEmulatorDeviceHandleTest {
       }
     }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun runningAvdShuttingDownDuringActivation() = runTest {
+    val context = testContext(this)
+    val handleScope = this.createChildScope()
+    val avdInfo = makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1)
+    val runningAvdFlow = MutableStateFlow<RunningAvd?>(null)
+    val handle =
+      LocalEmulatorDeviceHandle(
+        context = context,
+        avdScanner = NullAvdScanner(handleScope),
+        scope = handleScope,
+        extensions = emptyList(),
+        initialAvdInfo = avdInfo,
+        runningAvdFlow = runningAvdFlow,
+      )
+
+    val process = FakeProcess()
+    val processHandle = FakeProcessHandle(101)
+    val activateJob =
+      async(SupervisorJob()) {
+        handle.activate {
+          runningAvdFlow.value =
+            RunningAvd(avdInfo.dataFolderPath, processHandle, RunningAvd.RunType.EMBEDDED, isLaunchedByThisProcess = true)
+          process
+        }
+      }
+
+    handle.stateFlow.first { it.isTransitioning && it.status == "Starting up" }
+
+    // Simulate Running Devices sending shutdown via gRPC and notifying RunningAvdTracker.
+    runningAvdFlow.value = runningAvdFlow.value?.copy(isShuttingDown = true)
+
+    val exception = runCatching { activateJob.await() }.exceptionOrNull()
+    assertThat(exception).isInstanceOf(DeviceActionCanceledException::class.java)
+    assertThat(exception?.message).isEqualTo("The emulator process for AVD Fake Device 1 was closed.")
+
+    // While the emulator process is still shutting down, the handle remains transitioning with "Shutting down" status.
+    handle.stateFlow.first { it is DeviceState.Disconnected && it.isTransitioning && it.status == "Shutting down" }
+    val retryException = runCatching { handle.activate { FakeProcess() } }.exceptionOrNull()
+    assertThat(retryException).isInstanceOf(DeviceActionDisabledException::class.java)
+
+    // Even if QEMU exits with a non-zero exit code during gRPC shutdown, activation was already canceled cleanly,
+    // and once the process handle exits the handle returns to Offline.
+    process.terminate(1)
+    processHandle.destroy()
+    runningAvdFlow.value = null
+
+    handle.stateFlow.first { it is DeviceState.Disconnected && !it.isTransitioning && it.status == "Offline" }
+
+    handleScope.cancel()
+  }
+
+  @Test
+  fun runningAvdShuttingDownAndTerminatedWhileConnected(): Unit =
+    runBlockingWithTimeout(Duration.ofSeconds(5)) {
+      val session = FakeAdbSession()
+      val avdManager = FakeAvdManager(session, temporaryFolder.newFolder("avds").toPath())
+      val runningAvdsFlow = MutableStateFlow<Map<Path, RunningAvd>>(emptyMap())
+      try {
+        val plugin =
+          LocalEmulatorProvisionerPlugin(
+            scope = session.scope,
+            adbSession = session,
+            avdScanner = FakeAvdScanner(avdManager, session.scope),
+            deviceIcons = emptyDeviceIcons,
+            runningAvdsFlow = runningAvdsFlow,
+          )
+        val provisioner = DeviceProvisioner.create(session.scope, session, listOf(plugin))
+
+        avdManager.createAvd()
+        yieldUntil { provisioner.devices.value.size == 1 }
+        val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+        val avdPath = handle.avdInfo.dataFolderPath
+
+        // Start AVD without going through handle.activate() (e.g. already running or launched externally).
+        val processHandle = FakeProcessHandle(202)
+        avdManager.startAvd(handle.avdInfo, QuickBoot)
+        runningAvdsFlow.track(RunningAvd(avdPath, processHandle, RunningAvd.RunType.EMBEDDED, isLaunchedByThisProcess = false))
+
+        handle.awaitReady()
+        assertThat(handle.state.status).isEqualTo("Connected")
+        assertThat(handle.state.isReady).isTrue()
+        assertThat(handle.state.isTransitioning).isFalse()
+
+        // Running Devices initiates shutdown via RunningAvdTracker.
+        runningAvdsFlow.value = mapOf(avdPath to runningAvdsFlow.value.getValue(avdPath).copy(isShuttingDown = true))
+
+        val shuttingDownState = handle.stateFlow.first { it.status == "Shutting down" }
+        assertThat(shuttingDownState).isInstanceOf(DeviceState.Connected::class.java)
+        assertThat(shuttingDownState.isTransitioning).isTrue()
+        assertThat(shuttingDownState.isReady).isFalse()
+
+        // Process exits before ADB notices disconnection; RunningAvdTracker removes the entry on exit.
+        processHandle.destroy()
+
+        val disconnectedState = handle.stateFlow.first { it is DeviceState.Disconnected }
+        assertThat(disconnectedState.isTransitioning).isFalse()
+        assertThat(disconnectedState.status).isEqualTo("Offline")
+        assertThat(disconnectedState.connectedDevice).isNull()
+      } finally {
+        avdManager.close()
+        session.close()
+      }
+    }
+
+  @Test
+  fun runningAvdTerminatedWithoutShuttingDownWhileConnected(): Unit =
+    runBlockingWithTimeout(Duration.ofSeconds(5)) {
+      val session = FakeAdbSession()
+      val avdManager = FakeAvdManager(session, temporaryFolder.newFolder("avds").toPath())
+      val runningAvdsFlow = MutableStateFlow<Map<Path, RunningAvd>>(emptyMap())
+      try {
+        val plugin =
+          LocalEmulatorProvisionerPlugin(
+            scope = session.scope,
+            adbSession = session,
+            avdScanner = FakeAvdScanner(avdManager, session.scope),
+            deviceIcons = emptyDeviceIcons,
+            runningAvdsFlow = runningAvdsFlow,
+          )
+        val provisioner = DeviceProvisioner.create(session.scope, session, listOf(plugin))
+
+        avdManager.createAvd()
+        yieldUntil { provisioner.devices.value.size == 1 }
+        val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+        val avdPath = handle.avdInfo.dataFolderPath
+
+        val processHandle = FakeProcessHandle(303)
+        avdManager.startAvd(handle.avdInfo, QuickBoot)
+        runningAvdsFlow.track(RunningAvd(avdPath, processHandle, RunningAvd.RunType.STANDALONE, isLaunchedByThisProcess = false))
+        handle.awaitReady()
+
+        // Process exits unexpectedly before ADB notices disconnection.
+        processHandle.destroy()
+
+        val disconnectedState = handle.stateFlow.first { it is DeviceState.Disconnected }
+        assertThat(disconnectedState.isTransitioning).isFalse()
+        assertThat(disconnectedState.status).isEqualTo("Offline")
+      } finally {
+        avdManager.close()
+        session.close()
+      }
+    }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @Test
+  fun deactivateWhileShuttingDownTimeout() = runTest {
+    val context = testContext(this)
+    val handleScope = this.createChildScope()
+    val avdInfo = makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1)
+    val runningAvdFlow = MutableStateFlow<RunningAvd?>(null)
+    val handle =
+      LocalEmulatorDeviceHandle(
+        context = context,
+        avdScanner = NullAvdScanner(handleScope),
+        scope = handleScope,
+        extensions = emptyList(),
+        initialAvdInfo = avdInfo,
+        runningAvdFlow = runningAvdFlow,
+      )
+
+    val processHandle = FakeProcessHandle(404)
+    runningAvdFlow.value =
+      RunningAvd(avdInfo.dataFolderPath, processHandle, RunningAvd.RunType.EMBEDDED, isLaunchedByThisProcess = true, isShuttingDown = true)
+
+    handle.stateFlow.first { it is DeviceState.Disconnected && it.isTransitioning && it.status == "Shutting down" }
+
+    val actionInvoked = CompletableDeferred<Unit>()
+    val deactivateResult = async { runCatching { handle.deactivate { actionInvoked.complete(Unit) } } }
+
+    actionInvoked.await()
+    advanceTimeBy(2.minutes)
+
+    handle.stateFlow.first { it is DeviceState.Disconnected && !it.isTransitioning && it.status == "Offline" }
+    assertThat(deactivateResult.await().exceptionOrNull()).isInstanceOf(DeviceActionException::class.java)
+
+    handleScope.cancel()
+  }
+
   /** updatePaired{Glasses/Phone} should result in properties.paired{Glasses/Phone}Id being updated. */
   @Test
   fun updatePairedDevices(): Unit =
@@ -296,6 +482,7 @@ class LocalEmulatorDeviceHandleTest {
             adbSession = session,
             avdScanner = AvdScannerImpl(session.scope, avdManager),
             deviceIcons = emptyDeviceIcons,
+            runningAvdsFlow = MutableStateFlow(emptyMap()),
           )
 
         yieldUntil { plugin.devices.value.size == 2 }
@@ -394,3 +581,8 @@ fun testContext(testScope: TestScope) =
         override fun now() = Instant.fromEpochMilliseconds(testScope.currentTime)
       },
   )
+
+private fun MutableStateFlow<Map<Path, RunningAvd>>.track(runningAvd: RunningAvd) {
+  value = value + (runningAvd.avdDataFolder to runningAvd)
+  runningAvd.processHandle.onExit().thenRun { value = value.filterKeys { it != runningAvd.avdDataFolder } }
+}
