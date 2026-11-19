@@ -33,6 +33,7 @@ import com.android.tools.render.extractTimeoutBudgetMs
 import com.android.tools.render.findTimeoutException
 import com.android.tools.rendering.RenderLogger
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.io.StringReader
 import java.io.StringWriter
 import java.util.IdentityHashMap
@@ -325,6 +326,291 @@ class AnimationPreviewRunnerTest {
     assertThat(AnimationPreviewRunner.shouldRunSizeDependentMeasurePass(visibility)).isTrue()
   }
 
+  private enum class TestChipState {
+    UNSELECTED,
+    SELECTED,
+  }
+
+  @Test
+  fun defaultTransitionEndpoints_stepsForwardFromFalseAndOrdinalZeroEnum() {
+    assertThat(AnimationPreviewRunner.defaultTransitionEndpoints(false, listOf(true, false))).isEqualTo(false to true)
+    assertThat(AnimationPreviewRunner.defaultTransitionEndpoints(true, listOf(false, true))).isEqualTo(false to true)
+    assertThat(
+        AnimationPreviewRunner.defaultTransitionEndpoints(
+          TestChipState.UNSELECTED,
+          listOf(TestChipState.UNSELECTED, TestChipState.SELECTED),
+        )
+      )
+      .isEqualTo(TestChipState.UNSELECTED to TestChipState.SELECTED)
+    assertThat(
+        AnimationPreviewRunner.defaultTransitionEndpoints(
+          TestChipState.SELECTED,
+          listOf(TestChipState.UNSELECTED, TestChipState.SELECTED),
+        )
+      )
+      .isEqualTo(TestChipState.UNSELECTED to TestChipState.SELECTED)
+    assertThat(AnimationPreviewRunner.defaultTransitionEndpoints(TestChipState.UNSELECTED, listOf(TestChipState.UNSELECTED)))
+      .isEqualTo(TestChipState.UNSELECTED to TestChipState.UNSELECTED)
+  }
+
+  @Test
+  fun parseColorComponentsForClock_parsesHexAndRgbaAndRejectsInvalidValues() {
+    val hexRgb = AnimationPreviewRunner.parseColorComponentsForClock("#6750A4")!!
+    assertThat(hexRgb).hasSize(4)
+    assertThat(hexRgb[0]).isWithin(0.01f).of(0x67 / 255f)
+    assertThat(hexRgb[1]).isWithin(0.01f).of(0x50 / 255f)
+    assertThat(hexRgb[2]).isWithin(0.01f).of(0xA4 / 255f)
+    assertThat(hexRgb[3]).isWithin(0.001f).of(1.0f)
+
+    val hexArgb = AnimationPreviewRunner.parseColorComponentsForClock(" #80ff0080 ")!!
+    assertThat(hexArgb[0]).isWithin(0.01f).of(1.0f)
+    assertThat(hexArgb[1]).isWithin(0.01f).of(0.0f)
+    assertThat(hexArgb[2]).isWithin(0.01f).of(0x80 / 255f)
+    assertThat(hexArgb[3]).isWithin(0.01f).of(0x80 / 255f)
+
+    val cssRgb = AnimationPreviewRunner.parseColorComponentsForClock("rgb(200, 100, 50)")!!
+    assertThat(cssRgb[0]).isWithin(0.01f).of(200 / 255f)
+    assertThat(cssRgb[3]).isWithin(0.001f).of(1.0f)
+
+    val cssRgba = AnimationPreviewRunner.parseColorComponentsForClock("RGBA(200, 100, 50, .80)")!!
+    assertThat(cssRgba[0]).isWithin(0.01f).of(200 / 255f)
+    assertThat(cssRgba[3]).isWithin(0.01f).of(0.8f)
+
+    val invalidColors =
+      listOf(
+        "#1234",
+        "#-12345",
+        "#12345G",
+        "rgba(256, 0, 0, 1)",
+        "rgba(10, 20, 30, 1.5)",
+        "rgba(10, 20, 30, -0.2)",
+        "rgba(10, 20, 30, .)",
+        "not-a-color",
+      )
+    for (invalid in invalidColors) {
+      assertWithMessage(invalid).that(AnimationPreviewRunner.parseColorComponentsForClock(invalid)).isNull()
+    }
+  }
+
+  @Test
+  fun defaultAnimateXEndpoints_handlesScaleAndContrastColorSynthesis() {
+    assertThat(AnimationPreviewRunner.defaultAnimateXEndpoints(1.0f, emptyList(), "BookmarkScale")).isEqualTo(1.0f to 1.2f)
+    assertThat(AnimationPreviewRunner.defaultAnimateXEndpoints(1.0f, emptyList(), "scaleX")).isEqualTo(1.0f to 1.2f)
+    assertThat(AnimationPreviewRunner.defaultAnimateXEndpoints(1.0f, emptyList(), "cardPop")).isEqualTo(1.0f to 1.2f)
+    assertThat(AnimationPreviewRunner.defaultAnimateXEndpoints(1.0f, emptyList(), "popIn")).isEqualTo(1.0f to 1.2f)
+    for (clampedLabel in
+      listOf(
+        "contentAlpha",
+        "popupAlpha",
+        "popupOpacity",
+        "popupFade",
+        "popupProgress",
+        "popoverOpacity",
+        "grayscale",
+        "scaleAlpha",
+        "scaleOpacity",
+        "popProgress",
+        "scaleFraction",
+      )) {
+      assertWithMessage(clampedLabel)
+        .that(AnimationPreviewRunner.defaultAnimateXEndpoints(1.0f, emptyList(), clampedLabel))
+        .isEqualTo(0.0f to 1.0f)
+    }
+    assertThat(AnimationPreviewRunner.defaultAnimateXEndpoints(0.0f, emptyList(), "scale")).isEqualTo(0.0f to 1.0f)
+
+    // Boolean `false` and ordinal-0 enums step forward, consistent with `defaultTransitionEndpoints`.
+    assertThat(AnimationPreviewRunner.defaultAnimateXEndpoints(false, listOf(true, false), "enabled")).isEqualTo(false to true)
+    assertThat(
+        AnimationPreviewRunner.defaultAnimateXEndpoints(
+          TestChipState.UNSELECTED,
+          listOf(TestChipState.UNSELECTED, TestChipState.SELECTED),
+          "chip",
+        )
+      )
+      .isEqualTo(TestChipState.UNSELECTED to TestChipState.SELECTED)
+
+    val light = AnimationPreviewRunner.synthesizeContrastColorEndpoints(listOf(0.95, 0.92, 0.90, 1.0))!!
+    assertThat(light.first).isNotEqualTo(light.second)
+    assertThat(light.second[0]).isLessThan(light.first[0])
+
+    val dark = AnimationPreviewRunner.synthesizeContrastColorEndpoints(listOf(0.10, 0.12, 0.15, 1.0))!!
+    assertThat(dark.first).isNotEqualTo(dark.second)
+    assertThat(dark.second[0]).isGreaterThan(dark.first[0])
+
+    val mid = AnimationPreviewRunner.synthesizeContrastColorEndpoints(listOf(0.50, 0.50, 0.50, 1.0))!!
+    assertThat(mid.first).isNotEqualTo(mid.second)
+
+    val translucent = AnimationPreviewRunner.synthesizeContrastColorEndpoints(listOf(0.20, 0.40, 0.60, 0.0))!!
+    assertThat(translucent.first[3]).isEqualTo(0.0f)
+    assertThat(translucent.second[3]).isEqualTo(1.0f)
+
+    assertThat(AnimationPreviewRunner.synthesizeContrastColorEndpoints(listOf(Double.NaN, 0.0, 0.0, 1.0))).isNull()
+    assertThat(AnimationPreviewRunner.synthesizeContrastColorEndpoints(listOf(0.5, 0.5))).isNull()
+  }
+
+  private enum class BodyChipState {
+    UNSELECTED {
+      override fun toString() = "Chip: Unselected"
+    },
+    SHADOWED_BY_TO_STRING {
+      override fun toString() = "SELECTED"
+    },
+    SELECTED,
+  }
+
+  @Test
+  fun configureStates_stepsEnumTransitionsIncludingConstantsWithBodies() {
+    assertThat(BodyChipState.UNSELECTED.javaClass).isNotEqualTo(BodyChipState.SELECTED.javaClass)
+    val plainAnim =
+      FakeComposeAnimation(label = "chip", type = ComposeAnimationType.TRANSITION_ANIMATION, states = setOf(TestChipState.UNSELECTED))
+    val bodyAnim =
+      FakeComposeAnimation(label = "bodyChip", type = ComposeAnimationType.TRANSITION_ANIMATION, states = setOf(BodyChipState.UNSELECTED))
+    val animateXBodyAnim =
+      FakeComposeAnimation(
+        label = "animateXBodyChip",
+        type = ComposeAnimationType.ANIMATE_X_AS_STATE,
+        states = setOf(BodyChipState.UNSELECTED),
+      )
+    val plainClock = FakeSubClock(state = FakeStatePair(TestChipState.UNSELECTED, TestChipState.UNSELECTED))
+    val bodyClock = FakeSubClock(state = FakeStatePair(BodyChipState.UNSELECTED, BodyChipState.UNSELECTED))
+    val animateXBodyClock = FakeSubClock(state = FakeStatePair(BodyChipState.UNSELECTED, BodyChipState.UNSELECTED))
+    val clock = UnifiedMapPreviewClock(linkedMapOf(plainAnim to plainClock, bodyAnim to bodyClock, animateXBodyAnim to animateXBodyClock))
+
+    // At rest, all step forward; the clock ignores cross-class body enum endpoints, so `forceEnumTransitionState` sets their state
+    // directly.
+    assertThat(AnimationPreviewRunner.configureStates(clock = clock, options = AnimationRenderOptions())).isTrue()
+    assertThat(clock.updatedFromTo)
+      .containsExactly(
+        Triple(plainAnim, TestChipState.UNSELECTED, TestChipState.SELECTED),
+        Triple(bodyAnim, BodyChipState.UNSELECTED, BodyChipState.SHADOWED_BY_TO_STRING),
+        Triple(animateXBodyAnim, BodyChipState.UNSELECTED, BodyChipState.SHADOWED_BY_TO_STRING),
+      )
+      .inOrder()
+    assertThat(plainClock.statePair()).isEqualTo(TestChipState.UNSELECTED to TestChipState.SELECTED)
+    assertThat(bodyClock.statePair()).isEqualTo(BodyChipState.UNSELECTED to BodyChipState.SHADOWED_BY_TO_STRING)
+    assertThat(animateXBodyClock.statePair()).isEqualTo(BodyChipState.UNSELECTED to BodyChipState.SHADOWED_BY_TO_STRING)
+
+    // Explicit states prioritize exact enum `name` over an earlier constant's overridden `toString()`.
+    val explicitClock = FakeSubClock(state = FakeStatePair(BodyChipState.UNSELECTED, BodyChipState.UNSELECTED))
+    AnimationPreviewRunner.configureStates(
+      clock = UnifiedMapPreviewClock(mapOf(bodyAnim to explicitClock)),
+      options = AnimationRenderOptions(animationLabel = "bodyChip", fromState = "UNSELECTED", toState = "selected"),
+    )
+    assertThat(explicitClock.statePair()).isEqualTo(BodyChipState.UNSELECTED to BodyChipState.SELECTED)
+
+    // ANIMATE_X_AS_STATE explicit enum override across different anonymous subclasses also sets clock state directly.
+    val animateXExplicitClock = FakeSubClock(state = FakeStatePair(BodyChipState.UNSELECTED, BodyChipState.UNSELECTED))
+    AnimationPreviewRunner.configureStates(
+      clock = UnifiedMapPreviewClock(mapOf(animateXBodyAnim to animateXExplicitClock)),
+      options = AnimationRenderOptions(animationLabel = "animateXBodyChip", fromState = "UNSELECTED", toState = "selected"),
+    )
+    assertThat(animateXExplicitClock.statePair()).isEqualTo(BodyChipState.UNSELECTED to BodyChipState.SELECTED)
+  }
+
+  @Test
+  fun parseAnimateXValue_parsesColorComponentsOnlyForColorSamples() {
+    val color = FakeComposeColorClassLoader.newColor("Color(0.2, 0.4, 0.6, 1.0, sRGB IEC61966-2.1)")
+    assertThat(AnimationPreviewRunner.parseAnimateXValue("#FF0000", color, emptyList())).isEqualTo(listOf(1f, 0f, 0f, 1f))
+    assertThat(AnimationPreviewRunner.parseAnimateXValue("1.0", color, emptyList())).isNull()
+    assertThat(AnimationPreviewRunner.parseAnimateXValue("not-a-color", color, emptyList())).isNull()
+    assertThat(AnimationPreviewRunner.parseAnimateXValue("12dp", 0f, emptyList())).isEqualTo(12f)
+  }
+
+  @Test
+  fun configureStates_alignsColorEndpointClassesForSingleOverridesAndRestingDefaults() {
+    val color = FakeComposeColorClassLoader.newColor("Color(0.2, 0.4, 0.6, 1.0, sRGB IEC61966-2.1)")
+    val colorComponents = listOf(0.2f, 0.4f, 0.6f, 1f)
+    val anim = FakeComposeAnimation(label = "tint", type = ComposeAnimationType.ANIMATE_X_AS_STATE)
+
+    fun configure(options: AnimationRenderOptions, initialColor: Any = color): Pair<Any?, Any?> {
+      val subClock = FakeSubClock(state = FakeStatePair(initialColor, initialColor))
+      val clock = UnifiedMapPreviewClock(mapOf(anim to subClock))
+      assertThat(AnimationPreviewRunner.configureStates(clock = clock, options = options)).isTrue()
+      val (_, from, to) = clock.updatedFromTo.single()
+      // ui-tooling's `parseParametersToValue` drops endpoints whose classes differ.
+      assertThat(from!!.javaClass).isEqualTo(to!!.javaClass)
+      assertThat(subClock.statePair()).isEqualTo(from to to)
+      return from to to
+    }
+
+    assertThat(configure(AnimationRenderOptions(animationLabel = "tint", toState = "#FF0000")))
+      .isEqualTo(colorComponents to listOf(1f, 0f, 0f, 1f))
+    assertThat(configure(AnimationRenderOptions(animationLabel = "tint", fromState = "rgb(0, 0, 255)")))
+      .isEqualTo(listOf(0f, 0f, 1f, 1f) to colorComponents)
+    assertThat(configure(AnimationRenderOptions(animationLabel = "tint", fromState = "#00FF00", toState = "rgba(0, 0, 255, 0.5)")))
+      .isEqualTo(listOf(0f, 1f, 0f, 1f) to listOf(0f, 0f, 1f, 0.5f))
+    val (restingFrom, restingTo) = configure(AnimationRenderOptions())
+    assertThat(restingFrom).isEqualTo(colorComponents)
+    assertThat(restingTo).isNotEqualTo(colorComponents)
+
+    // An unparseable override keeps both endpoints as the original `Color`, so nothing is sent to the clock.
+    val unchangedSubClock = FakeSubClock(state = FakeStatePair(color, color))
+    val unchangedClock = UnifiedMapPreviewClock(mapOf(anim to unchangedSubClock))
+    AnimationPreviewRunner.configureStates(
+      clock = unchangedClock,
+      options = AnimationRenderOptions(animationLabel = "tint", toState = "bogus"),
+    )
+    assertThat(unchangedClock.updatedFromTo).isEmpty()
+    assertThat(unchangedSubClock.statePair()).isEqualTo(color to color)
+
+    // Out-of-range (e.g. wide-gamut) components are clamped to the `0f..1f` range ui-tooling's `Color(r, g, b, a)` accepts.
+    val wideGamut = FakeComposeColorClassLoader.newColor("Color(1.2, -0.1, 0.5, 1.0, Display P3)")
+    assertThat(configure(AnimationRenderOptions(animationLabel = "tint", toState = "#000000"), initialColor = wideGamut))
+      .isEqualTo(listOf(1f, 0f, 0.5f, 1f) to listOf(0f, 0f, 0f, 1f))
+
+    // Scientific notation in `Color.toString()` (e.g. `1 / 1023f == 9.775171E-4f`) is parsed with its exponent intact.
+    val scientificColor = FakeComposeColorClassLoader.newColor("Color(1.0E-5, 0.5, 0.5, 9.775171E-4, Display P3)")
+    val (sciFormatted, sciKind, sciComponents) = AnimationPreviewRunner.formatAnimatedValue(scientificColor)
+    assertThat(sciKind).isEqualTo("Color")
+    assertThat(sciFormatted).isEqualTo("rgba(0, 128, 128, 0.00)")
+    assertThat(sciComponents!![0]).isWithin(1e-7).of(1.0e-5)
+    assertThat(sciComponents[3]).isWithin(1e-7).of(9.775171e-4)
+    val (sciFrom, sciTo) = configure(AnimationRenderOptions(), initialColor = scientificColor)
+    @Suppress("UNCHECKED_CAST") val sciFromList = sciFrom as List<Float>
+    @Suppress("UNCHECKED_CAST") val sciToList = sciTo as List<Float>
+    assertThat(sciFromList[0]).isWithin(1e-6f).of(1.0e-5f)
+    assertThat(sciFromList[3]).isWithin(1e-6f).of(9.775171e-4f)
+    assertThat(sciToList[3]).isEqualTo(1.0f)
+  }
+
+  /** Defines a stand-in `androidx.compose.ui.graphics.Color` whose `toString()` returns the given `Color(r, g, b, a, space)` text. */
+  private object FakeComposeColorClassLoader : ClassLoader(AnimationPreviewRunnerTest::class.java.classLoader) {
+    private const val COLOR_INTERNAL = "androidx/compose/ui/graphics/Color"
+    private val colorClass: Class<*> by lazy {
+      val bytes = generateColor()
+      defineClass(COLOR_INTERNAL.replace('/', '.'), bytes, 0, bytes.size)
+    }
+
+    fun newColor(text: String): Any = colorClass.getConstructor(String::class.java).newInstance(text)
+
+    private fun generateColor(): ByteArray {
+      val cw = ClassWriter(ClassWriter.COMPUTE_MAXS)
+      cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC or Opcodes.ACC_FINAL, COLOR_INTERNAL, null, "java/lang/Object", null)
+      cw.visitField(Opcodes.ACC_PRIVATE or Opcodes.ACC_FINAL, "text", "Ljava/lang/String;", null, null).visitEnd()
+      cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(Ljava/lang/String;)V", null, null).apply {
+        visitCode()
+        visitVarInsn(Opcodes.ALOAD, 0)
+        visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+        visitVarInsn(Opcodes.ALOAD, 0)
+        visitVarInsn(Opcodes.ALOAD, 1)
+        visitFieldInsn(Opcodes.PUTFIELD, COLOR_INTERNAL, "text", "Ljava/lang/String;")
+        visitInsn(Opcodes.RETURN)
+        visitMaxs(0, 0)
+        visitEnd()
+      }
+      cw.visitMethod(Opcodes.ACC_PUBLIC, "toString", "()Ljava/lang/String;", null, null).apply {
+        visitCode()
+        visitVarInsn(Opcodes.ALOAD, 0)
+        visitFieldInsn(Opcodes.GETFIELD, COLOR_INTERNAL, "text", "Ljava/lang/String;")
+        visitInsn(Opcodes.ARETURN)
+        visitMaxs(0, 0)
+        visitEnd()
+      }
+      cw.visitEnd()
+      return cw.toByteArray()
+    }
+  }
+
   @Test
   fun explicitAtMillis_parsesNormalizesValidatesAndPreservesAdaptiveFallback() {
     assertThat(parseAnimationAtMillis("300, 0, 150, 150")).containsExactly(0L, 150L, 300L).inOrder()
@@ -405,8 +691,7 @@ class AnimationPreviewRunnerTest {
         animations = listOf(sampleAnim),
       )
     assertThat(adaptiveDur).isEqualTo(400L)
-    assertThat(adaptiveTimestamps)
-      .isEqualTo(AnimationFrameSampler.sampleTimestampsForAnimations(400L, 8, listOf(sampleAnim)))
+    assertThat(adaptiveTimestamps).isEqualTo(AnimationFrameSampler.sampleTimestampsForAnimations(400L, 8, listOf(sampleAnim)))
   }
 
   @Test
@@ -527,8 +812,10 @@ class AnimationPreviewRunnerTest {
 
   private class FakeStatePair(val initial: Any?, val target: Any?)
 
-  private class FakeSubClock(val state: Any?, private val maxDuration: Long = 350L) {
+  private class FakeSubClock(var state: Any?, private val maxDuration: Long = 350L) {
     fun getMaxDuration(): Long = maxDuration
+
+    fun statePair(): Pair<Any?, Any?> = (state as FakeStatePair).let { it.initial to it.target }
   }
 
   private class KeyframesConfig(val durationMillis: Int = 450, val delayMillis: Int = 25)
@@ -559,7 +846,21 @@ class AnimationPreviewRunnerTest {
 
     fun updateFromAndToStates(composeAnimation: ComposeAnimation, fromState: Any?, toState: Any?) {
       updatedFromTo.add(Triple(composeAnimation, fromState, toState))
+      // Like ui-tooling's `parseParametersToValue`, accepts matching-class endpoints or two 4-Float `0f..1f` RGBA lists for `Color`.
+      val subClock = unified[composeAnimation] as? FakeSubClock ?: return
+      val initial = (subClock.state as? FakeStatePair)?.initial ?: return
+      if (fromState == null || toState == null || fromState.javaClass != toState.javaClass) return
+      val isColorComponentPair =
+        initial.javaClass.name == "androidx.compose.ui.graphics.Color" &&
+          isValidColorComponentList(fromState) &&
+          isValidColorComponentList(toState)
+      if (initial.javaClass == fromState.javaClass || isColorComponentPair) {
+        subClock.state = FakeStatePair(fromState, toState)
+      }
     }
+
+    private fun isValidColorComponentList(value: Any): Boolean =
+      value is List<*> && value.size == 4 && value.all { it is Float && it in 0f..1f }
 
     fun updateAnimatedVisibilityState(composeAnimation: ComposeAnimation, state: Any?) {
       updatedVisibility.add(composeAnimation to state)

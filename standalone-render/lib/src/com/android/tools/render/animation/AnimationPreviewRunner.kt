@@ -87,9 +87,46 @@ object AnimationPreviewRunner {
 
   private const val TOOLS_NAMESPACE_DECL = """xmlns:tools="http://schemas.android.com/tools""""
   private const val COMPOSE_ADAPTER_TAG = "<androidx.compose.ui.tooling.ComposeViewAdapter"
+  /** Matches an existing `tools:animationClockStartTime="..."` attribute, so [injectAnimationClockStartTime] replaces it in place. */
   private val EXISTING_CLOCK_ATTR_REGEX = Regex("""\btools:animationClockStartTime\s*=\s*"[^"]*"""")
+  /**
+   * A single float channel of `Color.toString()` (e.g. `0.5`, `.5`, `-0.25`), including the scientific notation `Float.toString()` uses for
+   * small fp16 or wide-gamut channels (e.g. `1.0E-4`).
+   */
+  private const val COLOR_TO_STRING_COMPONENT = """[+-]?\d*\.?\d+(?:[eE][+-]?\d+)?"""
+  /**
+   * Captures the `r, g, b, a` channels of `Color.toString()` (e.g. `Color(1.0, 0.5, 0.0, 1.0, sRGB IEC61966-2.1)`), used as a fallback when
+   * the `getRed`/`getGreen`/`getBlue`/`getAlpha` accessors can't be invoked. The alpha channel may be followed either by `,` (before the
+   * color space name) or `)`.
+   */
   private val COLOR_TO_STRING_REGEX =
-    Regex("""Color\(\s*([+-]?\d*\.?\d+)\s*,\s*([+-]?\d*\.?\d+)\s*,\s*([+-]?\d*\.?\d+)\s*,\s*([+-]?\d*\.?\d+)""")
+    Regex(
+      """Color\(\s*($COLOR_TO_STRING_COMPONENT)\s*,\s*($COLOR_TO_STRING_COMPONENT)\s*,\s*($COLOR_TO_STRING_COMPONENT)\s*,\s*($COLOR_TO_STRING_COMPONENT)\s*[),]"""
+    )
+  /**
+   * Matches user-provided `rgb(r, g, b)` or `rgba(r, g, b, a)` clock states (case-insensitive), with integer `r`/`g`/`b` channels and an
+   * optional decimal alpha (e.g. `rgba(255, 0, 0, 0.5)`). Channel ranges are validated by [parseColorComponentsForClock].
+   */
+  private val RGBA_CLOCK_REGEX =
+    Regex("""rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*(\d+\.?\d*|\.\d+))?\s*\)""", RegexOption.IGNORE_CASE)
+  /**
+   * Splits a camelCase/PascalCase animation label into words, treating acronyms as one word and other characters as separators (e.g.
+   * `BookmarkScale` -> `Bookmark`, `Scale`; `UIScale` -> `UI`, `Scale`; `scale_x` -> `scale`, `x`), so label tokens match whole words.
+   */
+  private val LABEL_TOKEN_REGEX = Regex("""[A-Z]?[a-z]+|[A-Z]+(?![a-z])""")
+  /** Lowercase label words identifying a scale-like `animateFloatAsState` (e.g. `cardScale`, `popIn`, but not `popupAlpha`). */
+  private val SCALE_LABEL_TOKENS = setOf("scale", "pop")
+  /** Lowercase label words identifying a `Float` clamped to `0f..1f`, which must never step past `1f` even if also scale-like. */
+  private val CLAMPED_FLOAT_LABEL_TOKENS = setOf("alpha", "opacity", "fade", "progress", "fraction")
+  /**
+   * Target of the default trajectory for scale-like `animateFloatAsState` animations sampled at rest at `1f`.
+   *
+   * Stepping `0f -> 1f` would start the composable invisible at `0x`, whereas stepping `1f -> 1.2f` (+20%) keeps it visible at `1x` and
+   * produces clear frame-to-frame motion without overflowing typical preview bounds.
+   */
+  private const val DEFAULT_RESTING_SCALE_TARGET = 1.2f
+  /** Class name of `androidx.compose.ui.graphics.Color`, compared by name since it's loaded by the user project's classloader. */
+  private const val COMPOSE_COLOR_CLASS = "androidx.compose.ui.graphics.Color"
 
   /** The prefix of the labels of the animations `AnimatedVisibility` and `AnimatedContent` create (e.g. "Built-in alpha"). */
   private const val BUILT_IN_PREFIX = "Built-in "
@@ -908,20 +945,14 @@ object AnimationPreviewRunner {
                 val resolvedTo = options.toState?.let { parseStateValue(it, curTarget ?: curInitial, expandedStates) } ?: curTarget
                 resolvedFrom to resolvedTo
               } else if (curInitial != null && curInitial == curTarget) {
-                // Auto-pick a distinct state so Transition has a non-zero animation trajectory.
-                // When starting from Boolean `false` (e.g. `isExpanded = false`), animate forward `false -> true`.
-                val altState = expandedStates.firstOrNull { it != curTarget }
-                if (altState != null) {
-                  if (curInitial == false) curInitial to altState else altState to curTarget
-                } else {
-                  curInitial to curTarget
-                }
+                defaultTransitionEndpoints(curInitial, expandedStates)
               } else {
                 curInitial to curTarget
               }
 
             if (newFrom != null && newTo != null && (newFrom != curInitial || newTo != curTarget)) {
               runCatching { updateFromAndTo.invoke(clock, anim, newFrom, newTo) }
+              forceEnumTransitionState(entry, newFrom, newTo)
               statesChanged = true
             }
           }
@@ -935,15 +966,16 @@ object AnimationPreviewRunner {
               if (matchesTarget && (!options.fromState.isNullOrBlank() || !options.toState.isNullOrBlank())) {
                 val resolvedFrom = options.fromState?.let { parseAnimateXValue(it, sample, expandedStates) } ?: curInitial
                 val resolvedTo = options.toState?.let { parseAnimateXValue(it, sample, expandedStates) } ?: curTarget
-                resolvedFrom to resolvedTo
+                alignColorEndpoints(resolvedFrom, resolvedTo)
               } else if (sample != null && curInitial == curTarget) {
-                defaultAnimateXEndpoints(sample, expandedStates)
+                defaultAnimateXEndpoints(sample, expandedStates, label)
               } else {
                 curInitial to curTarget
               }
 
             if (newFrom != null && newTo != null && (newFrom != curInitial || newTo != curTarget)) {
               runCatching { updateFromAndTo.invoke(clock, anim, newFrom, newTo) }
+              forceEnumTransitionState(entry, newFrom, newTo)
               statesChanged = true
             }
           }
@@ -958,11 +990,34 @@ object AnimationPreviewRunner {
     return needsClockSync
   }
 
+  /**
+   * ui-tooling's `parseParametersToValue` requires the endpoints and the current state to share a runtime class, so it ignores transitions
+   * between enum constants when one of them declares a body (an anonymous subclass). Sets the clock's `TargetState` directly in that case,
+   * which is what `setStateParameters` does when the classes match.
+   */
+  private fun forceEnumTransitionState(entry: ClockEntry, from: Any, to: Any) {
+    if (from !is Enum<*> || to !is Enum<*> || from.declaringJavaClass != to.declaringJavaClass) return
+    if (readInitialAndTarget(entry) == (from to to)) return
+    val subClock = entry.animationClock
+    val stateObj = invokeGetter(subClock, "state") ?: return
+    val stateConstructor = stateObj.javaClass.constructors.firstOrNull { it.parameterCount == 2 } ?: return
+    val setState =
+      subClock.javaClass.methods.firstOrNull {
+        it.name == "setState" && it.parameterCount == 1 && it.parameterTypes[0].isInstance(stateObj)
+      } ?: return
+    runCatching {
+      stateConstructor.isAccessible = true
+      setState.isAccessible = true
+      setState.invoke(subClock, stateConstructor.newInstance(from, to))
+    }
+  }
+
   private fun expandCandidateStates(sample: Any?, rawStates: List<Any>): List<Any> {
     if (rawStates.size >= 2) return rawStates
     return when (sample) {
       is Boolean -> listOf(!sample, sample)
-      is Enum<*> -> sample.javaClass.enumConstants?.filterIsInstance<Any>().orEmpty().ifEmpty { rawStates }
+      // `declaringJavaClass`, not `javaClass`: constants with a body are anonymous subclasses whose `enumConstants` is `null`.
+      is Enum<*> -> sample.declaringJavaClass.enumConstants?.filterIsInstance<Any>().orEmpty().ifEmpty { rawStates }
       is Int -> if (sample == 0) listOf(0, 1) else listOf(0, sample)
       else -> rawStates
     }
@@ -970,8 +1025,10 @@ object AnimationPreviewRunner {
 
   private fun parseStateValue(text: String, sample: Any?, candidates: List<Any>): Any? {
     val trimmed = text.trim()
-    candidates
-      .firstOrNull { it.toString().equals(trimmed, ignoreCase = true) }
+    // Enum states are reported by `name` (see `formatAnimatedValue`), which differs from `toString()` when it is overridden, so exact
+    // `name` matches take priority before falling back to `toString()`.
+    (candidates.firstOrNull { it is Enum<*> && it.name.equals(trimmed, ignoreCase = true) }
+        ?: candidates.firstOrNull { it.toString().equals(trimmed, ignoreCase = true) })
       ?.let {
         return it
       }
@@ -999,25 +1056,140 @@ object AnimationPreviewRunner {
     }
   }
 
-  private fun parseAnimateXValue(text: String, sample: Any?, candidates: List<Any>): Any? {
+  /**
+   * Auto-picks distinct transition endpoints when a transition starts at rest (`initial == target`). Animates forward when starting from
+   * Boolean `false` or the first `Enum` constant (ordinal `0`, e.g. `Collapsed`/`Unselected`).
+   */
+  @VisibleForTesting
+  internal fun defaultTransitionEndpoints(currentState: Any, candidates: List<Any>): Pair<Any, Any> {
+    val altState = candidates.firstOrNull { it != currentState } ?: return currentState to currentState
+    val forwardFromInitial = currentState == false || (currentState is Enum<*> && currentState.ordinal == 0)
+    return if (forwardFromInitial) currentState to altState else altState to currentState
+  }
+
+  @VisibleForTesting
+  internal fun parseAnimateXValue(text: String, sample: Any?, candidates: List<Any>): Any? {
     parseStateValue(text, sample, candidates)?.let {
       return it
     }
+    if (sample?.javaClass?.name == COMPOSE_COLOR_CLASS) return parseColorComponentsForClock(text)
     val trimmed = text.trim().removeSuffix(".dp").removeSuffix("dp").removeSuffix("f")
     return trimmed.toFloatOrNull()
   }
 
-  private fun defaultAnimateXEndpoints(sample: Any, candidates: List<Any>): Pair<Any?, Any?> {
+  /**
+   * Parses `#RRGGBB`, `#AARRGGBB`, `rgb(r, g, b)`, or `rgba(r, g, b, a)` into a 4-Float `[r, g, b, a]` list (`0f..1f`) accepted by
+   * `AnimateXAsStateClock.setStateParameters` (`Utils_androidKt.parseParametersToValue` for `Color`).
+   */
+  @VisibleForTesting
+  internal fun parseColorComponentsForClock(text: String): List<Float>? {
+    val trimmed = text.trim()
+    if (trimmed.startsWith("#")) {
+      val hex = trimmed.removePrefix("#")
+      if (hex.length != 6 && hex.length != 8) return null
+      if (!hex.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null
+      val value = hex.toLongOrNull(16) ?: return null
+      return if (hex.length == 6) {
+        listOf(
+          ((value shr 16) and 0xFF) / 255f,
+          ((value shr 8) and 0xFF) / 255f,
+          (value and 0xFF) / 255f,
+          1f,
+        )
+      } else {
+        listOf(
+          ((value shr 16) and 0xFF) / 255f,
+          ((value shr 8) and 0xFF) / 255f,
+          (value and 0xFF) / 255f,
+          ((value shr 24) and 0xFF) / 255f,
+        )
+      }
+    }
+    val rgbaMatch = RGBA_CLOCK_REGEX.matchEntire(trimmed) ?: return null
+    val r = rgbaMatch.groupValues[1].toIntOrNull()?.takeIf { it in 0..255 } ?: return null
+    val g = rgbaMatch.groupValues[2].toIntOrNull()?.takeIf { it in 0..255 } ?: return null
+    val b = rgbaMatch.groupValues[3].toIntOrNull()?.takeIf { it in 0..255 } ?: return null
+    val alphaRaw = rgbaMatch.groupValues[4]
+    val a =
+      if (alphaRaw.isEmpty()) {
+        1f
+      } else {
+        alphaRaw.toFloatOrNull()?.takeIf { it in 0f..1f } ?: return null
+      }
+    return listOf(r / 255f, g / 255f, b / 255f, a)
+  }
+
+  /**
+   * Makes both `Color` endpoints share a class, since `parseParametersToValue` in ui-tooling ignores endpoints of different classes.
+   *
+   * When only one endpoint was parsed into a component list, converts the other (`Color` fallback) endpoint into the same 4-Float
+   * `listOf(...)` shape, or into `null` when its components can't be read.
+   */
+  @VisibleForTesting
+  internal fun alignColorEndpoints(from: Any?, to: Any?): Pair<Any?, Any?> {
+    if (from !is List<*> && to !is List<*>) return from to to
+    return colorToClockComponents(from) to colorToClockComponents(to)
+  }
+
+  private fun colorToClockComponents(value: Any?): Any? {
+    if (value?.javaClass?.name != COMPOSE_COLOR_CLASS) return value
+    val c = formatAnimatedValue(value).third?.takeIf { it.size >= 4 && it.take(4).all(Double::isFinite) } ?: return null
+    // `Color(r, g, b, a)` in ui-tooling only accepts sRGB components in `0f..1f`, e.g. not those of wide-gamut colors.
+    return listOf(c[0].toComponent(), c[1].toComponent(), c[2].toComponent(), c[3].toComponent())
+  }
+
+  private fun Double.toComponent(): Float = toFloat().coerceIn(0f, 1f)
+
+  /**
+   * Synthesizes a visibly distinct `(fromRgba, toRgba)` pair of `[r, g, b, a]` floats (`0f..1f`) for an `animateColorAsState` sampled at
+   * rest. Translucent colors fade in to opaque; opaque colors shift luminance/hue so the transition always moves.
+   */
+  @VisibleForTesting
+  internal fun synthesizeContrastColorEndpoints(rgba: List<Double>): Pair<List<Float>, List<Float>>? {
+    if (rgba.size < 4 || rgba.take(4).any { !it.isFinite() }) return null
+    val r = rgba[0].toFloat().coerceIn(0f, 1f)
+    val g = rgba[1].toFloat().coerceIn(0f, 1f)
+    val b = rgba[2].toFloat().coerceIn(0f, 1f)
+    val a = rgba[3].toFloat().coerceIn(0f, 1f)
+    val fromRgba = listOf(r, g, b, a)
+    if (a < 0.5f) {
+      return fromRgba to listOf(r, g, b, 1f)
+    }
+    val luminance = 0.2126f * r + 0.7152f * g + 0.0722f * b
+    val toRgba =
+      when {
+        luminance > 0.65f -> listOf(r * 0.55f, g * 0.55f, b * 0.75f, a)
+        luminance < 0.35f -> listOf((r + 0.45f).coerceAtMost(1f), (g + 0.45f).coerceAtMost(1f), (b + 0.55f).coerceAtMost(1f), a)
+        else -> listOf((r + 0.32f).coerceAtMost(1f), g * 0.62f, (b + 0.32f).coerceAtMost(1f), a)
+      }
+    return fromRgba to toRgba
+  }
+
+  @VisibleForTesting
+  internal fun defaultAnimateXEndpoints(sample: Any, candidates: List<Any>, animLabel: String): Pair<Any?, Any?> {
     if (candidates.size >= 2) {
-      val alt = candidates.firstOrNull { it != sample }
-      if (alt != null) return alt to sample
+      val endpoints = defaultTransitionEndpoints(sample, candidates)
+      if (endpoints.first != endpoints.second) return endpoints
     }
     return when {
-      sample is Float -> if (sample == 0f) (0f to 1f) else (0f to sample)
+      sample is Float -> {
+        // Clamped 0f..1f properties (opacity/fade/progress/fraction) and non-scale "pop*" words like "popup*" must keep stepping 0f -> 1f
+        // rather than overshooting past 1f.
+        val tokens = LABEL_TOKEN_REGEX.findAll(animLabel).map { it.value.lowercase(Locale.ROOT) }.toList()
+        val isScaleLike = tokens.any { it in SCALE_LABEL_TOKENS } && tokens.none { it in CLAMPED_FLOAT_LABEL_TOKENS }
+        when {
+          sample == 0f -> 0f to 1f
+          sample == 1f && isScaleLike -> 1f to DEFAULT_RESTING_SCALE_TARGET
+          else -> 0f to sample
+        }
+      }
       sample is Int -> if (sample == 0) (0 to 100) else (0 to sample)
       sample.javaClass.name == "androidx.compose.ui.unit.Dp" -> {
         val v = (invokeGetter(sample, "value") as? Number)?.toFloat() ?: 0f
         if (v == 0f) (0f to 24f) else (0f to v)
+      }
+      sample.javaClass.name == COMPOSE_COLOR_CLASS -> {
+        formatAnimatedValue(sample).third?.let(::synthesizeContrastColorEndpoints) ?: (sample to sample)
       }
       else -> sample to sample
     }
