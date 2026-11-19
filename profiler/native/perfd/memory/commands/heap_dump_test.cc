@@ -153,8 +153,9 @@ TEST_F(HeapDumpTest, CommandsGeneratesEvents) {
 }
 
 // Test that we receive the start and end events for a successful heap dump
-// under the Task-Based UX.
-TEST_F(HeapDumpTest, CommandsGeneratesEventsInTaskBasedUX) {
+// and that the session ends when should_end_session is set.
+TEST_F(HeapDumpTest,
+       CommandsGeneratesEventsAndEndsSessionIfExplicitlySpecified) {
   // Start session so that there is a session to end on heap dump termination.
   auto* manager = SessionsManager::Instance();
   proto::BeginSession begin_session;

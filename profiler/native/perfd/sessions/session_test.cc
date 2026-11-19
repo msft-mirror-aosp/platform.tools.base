@@ -49,7 +49,7 @@ class MockSampler final : public Sampler {
 };
 }  // namespace
 
-TEST(Session, SamplersAddedInTaskBasedUx) {
+TEST(Session, SamplersAdded) {
   FakeClock clock;
   EventBuffer event_buffer(&clock);
   FileCache file_cache(std::unique_ptr<FileSystem>(new MemoryFileSystem()),
@@ -81,9 +81,15 @@ TEST(Session, SamplersAddedInTaskBasedUx) {
   // requires only the CPU usage sampler.
   DaemonConfig config4(daemon_config);
   Daemon daemon4(&clock, &config4, &file_cache, &event_buffer);
-  Session session4(0, 0, 0, &daemon3,
+  Session session4(0, 0, 0, &daemon4,
                    ProfilerTaskType::JAVA_KOTLIN_METHOD_RECORDING);
   EXPECT_EQ(session4.samplers().size(), 1);
+
+  // System Trace task does not require any samplers.
+  DaemonConfig config5(daemon_config);
+  Daemon daemon5(&clock, &config5, &file_cache, &event_buffer);
+  Session session5(0, 0, 0, &daemon5, ProfilerTaskType::SYSTEM_TRACE);
+  EXPECT_EQ(session5.samplers().size(), 0);
 }
 
 TEST(Session, SamplerDeallocatedWhenSessionDies) {

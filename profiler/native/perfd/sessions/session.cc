@@ -63,7 +63,7 @@ bool Session::End(int64_t timestamp) {
 
 void Session::PopulateSamplers(Daemon* daemon,
                                proto::ProfilerTaskType task_type) {
-  // In the Task-Based UX, samplers are invoked only if the task requires it.
+  // Samplers are invoked only if the task requires them.
   if (task_type == proto::ProfilerTaskType::CALLSTACK_SAMPLE ||
       task_type == proto::ProfilerTaskType::JAVA_KOTLIN_METHOD_RECORDING ||
       task_type == proto::ProfilerTaskType::LIVE_VIEW) {

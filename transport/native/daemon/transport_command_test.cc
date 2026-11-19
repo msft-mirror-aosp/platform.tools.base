@@ -115,7 +115,6 @@ TEST_F(TransportServiceCommandTest, TestBeginSessionCommand) {
   command->set_stream_id(100);
   command->set_type(proto::Command::BEGIN_SESSION);
   command->set_pid(1000);
-  command->mutable_begin_session();
   // Using LIVE_VIEW to test both CPU_USAGE and MEMORY_USAGE events at once
   command->mutable_begin_session()->set_task_type(
       proto::ProfilerTaskType::LIVE_VIEW);

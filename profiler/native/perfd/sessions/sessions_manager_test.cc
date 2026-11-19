@@ -111,8 +111,7 @@ TEST_F(SessionsManagerTest, BeginSessionSendsQueuedEvents) {
   read_thread.join();
 }
 
-TEST_F(SessionsManagerTest,
-       BeginLiveViewSessionInTaskBasedUx_SendsLiveViewStatusEvent) {
+TEST_F(SessionsManagerTest, BeginLiveViewSession_SendsLiveViewStatusEvent) {
   FakeClock clock;
   proto::DaemonConfig daemon_config;
   DaemonConfig config(daemon_config);

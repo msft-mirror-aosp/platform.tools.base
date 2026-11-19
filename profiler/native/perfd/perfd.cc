@@ -76,9 +76,8 @@ int Perfd::Initialize(Daemon* daemon) {
       new GraphicsProfilerComponent(daemon->clock())));
 
   // Register Commands.
-  daemon->RegisterCommandHandler(
-      proto::Command::BEGIN_SESSION,
-      [](proto::Command command) { return BeginSession::Create(command); });
+  daemon->RegisterCommandHandler(proto::Command::BEGIN_SESSION,
+                                 &BeginSession::Create);
   daemon->RegisterCommandHandler(proto::Command::END_SESSION,
                                  &EndSession::Create);
   daemon->RegisterCommandHandler(
