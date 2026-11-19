@@ -131,7 +131,8 @@ class ComponentTreeCheckTest {
   /** Verifies simple component name extraction for Compose semantics nodes, qualified View classes, and blank names. */
   @Test
   fun extractsSimpleComponentName() {
-    assertEquals("Composable", node("android.view.View", bounds(0, 0, 10, 10), semantics = emptyMap()).simpleComponentName())
+    assertEquals("Composable", node("View", bounds(0, 0, 10, 10), semantics = emptyMap()).simpleComponentName())
+    assertEquals("View", node("android.view.View", bounds(0, 0, 10, 10), semantics = emptyMap()).simpleComponentName())
     assertEquals("View", node("android.view.View", bounds(0, 0, 10, 10)).simpleComponentName())
     assertEquals("MaterialButton", node("com.google.android.material.button.MaterialButton", bounds(0, 0, 10, 10)).simpleComponentName())
     assertEquals("View", node("", bounds(0, 0, 10, 10)).simpleComponentName())

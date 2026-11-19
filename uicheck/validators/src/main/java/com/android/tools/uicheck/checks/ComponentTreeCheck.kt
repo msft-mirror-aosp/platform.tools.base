@@ -52,8 +52,11 @@ interface ComponentTreeCheck {
 /** Converts this [ComponentBounds] into a serializable [UiCheckBounds]. */
 internal fun ComponentBounds.toRectData(): UiCheckBounds = UiCheckBounds(left = left, top = top, right = right, bottom = bottom)
 
-/** Extracts the simple unqualified name for [ComponentTreeNode.name], mapping generic View to Composable when semantics are present. */
+/**
+ * Extracts the simple unqualified name for [ComponentTreeNode.name], mapping an unqualified Compose `View` node with semantics to
+ * `Composable`. Classic `android.view.View` nodes keep `View`, since they always have semantics.
+ */
 internal fun ComponentTreeNode.simpleComponentName(): String {
   val raw = name.substringAfterLast('.')
-  return if (raw == "View" && semantics != null) "Composable" else raw.ifBlank { "View" }
+  return if (!isViewNode() && raw == "View" && semantics != null) "Composable" else raw.ifBlank { "View" }
 }

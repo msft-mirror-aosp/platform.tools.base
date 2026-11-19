@@ -613,6 +613,14 @@ object ComponentTreeExtractor {
     return cached.takeIf { it !== noMethodSentinel }
   }
 
+  /** Returns the public [methodName] on [clazz] that takes one [parameterType] argument, or null if missing. */
+  internal fun findOneArgMethod(clazz: Class<*>, methodName: String, parameterType: Class<*>): Method? =
+    try {
+      clazz.getMethod(methodName, parameterType).apply { isAccessible = true }
+    } catch (_: NoSuchMethodException) {
+      null
+    }
+
   internal fun findField(clazz: Class<*>, fieldName: String): Field? {
     val cached =
       fieldCache.get(clazz).computeIfAbsent(fieldName) { name ->

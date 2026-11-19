@@ -16,6 +16,7 @@
 
 package com.android.tools.render.common
 
+import com.android.tools.render.common.ComponentTreeExtractor.findOneArgMethod
 import com.android.tools.render.common.ComponentTreeExtractor.findZeroArgMethod
 import com.android.tools.render.common.ComponentTreeExtractor.invokeGetter
 import java.lang.reflect.Method
@@ -48,6 +49,24 @@ internal object ComposeSemanticsExtractor {
   private val semanticsMethodCache =
     object : ClassValue<Method?>() {
       override fun computeValue(cls: Class<*>): Method? = resolveSemanticsConfigMethod(cls)
+    }
+
+  private const val VIEW_GROUP_CLASS_NAME = "android.view.ViewGroup"
+
+  /** `AccessibilityNodeInfo` boolean getters copied into semantics, mapped to their semantics key. */
+  private val NODE_INFO_FLAGS =
+    listOf(
+      "isClickable" to "clickable",
+      "isEditable" to "editable",
+      "isCheckable" to "checkable",
+      "isChecked" to "checked",
+      "isScrollable" to "scrollable",
+    )
+
+  private val isViewGroupCache =
+    object : ClassValue<Boolean>() {
+      /** Returns true if [type] extends `android.view.ViewGroup`, checked by name so Layoutlib is not needed at compile time. */
+      override fun computeValue(type: Class<*>): Boolean = generateSequence(type) { it.superclass }.any { it.name == VIEW_GROUP_CLASS_NAME }
     }
 
   fun extractSemantics(layoutNode: Any?): Map<String, String>? {
@@ -257,6 +276,10 @@ internal object ComposeSemanticsExtractor {
     }
   }
 
+  /**
+   * Extracts text, ID, visibility, and accessibility metadata from a classic Android `View`: the accessibility class name, whether it is a
+   * container, `importantForAccessibility`, clickable/editable/checkable/checked/scrollable flags, and the scroll axis.
+   */
   fun extractViewSemantics(view: Any?): Map<String, String>? {
     if (view == null) return null
     return try {
@@ -290,9 +313,6 @@ internal object ComposeSemanticsExtractor {
           }
       }
 
-      val clickable = invokeGetter(view, "clickable") as? Boolean
-      if (clickable == true) map["clickable"] = "true"
-
       val enabled = invokeGetter(view, "enabled") as? Boolean
       if (enabled == false) map["enabled"] = "false"
 
@@ -302,17 +322,80 @@ internal object ComposeSemanticsExtractor {
       val elevation = (invokeGetter(view, "elevation") as? Number)?.toFloat()
       if (elevation != null && elevation != 0f) map["elevation"] = elevation.toString()
 
+      val isViewGroup = isViewGroupCache.get(view.javaClass)
+      if (isViewGroup) map["isViewGroup"] = "true"
+      viewImportantForAccessibility(view)?.let { map["importantForAccessibility"] = it }
+      putAccessibilityNodeInfo(view, map)
+      // Only accessibility-scrollable views get an axis: a TextView with clipped text also reports canScrollVertically().
+      if (map["scrollable"] == "true") {
+        viewScrollAxis(view)?.let { map["scrollAxis"] = it }
+      }
+
       map.ifEmpty { null }
     } catch (e: Exception) {
       logger.log(Level.FINE, "Failed to extract View semantics", e)
       null
+    } catch (e: LinkageError) {
+      logger.log(Level.FINE, "Linkage error extracting View semantics", e)
+      null
     }
   }
 
+  /** Maps `View.getImportantForAccessibility()` to its XML value, or null for the default `auto`. */
+  private fun viewImportantForAccessibility(view: Any): String? =
+    // Uses the full method name: the short name could match the boolean isImportantForAccessibility() instead.
+    when (invokeGetter(view, "getImportantForAccessibility")) {
+      1 -> "yes"
+      2 -> "no"
+      4 -> "noHideDescendants"
+      else -> null
+    }
+
+  /**
+   * Copies the class name and flags from `View.createAccessibilityNodeInfo()`. Widgets like `SwitchCompat` and `MaterialCardView` only set
+   * their class name there, and a selectable `TextView` clears its clickable flag there. `createAccessibilityNodeInfo()` can fail outside
+   * the render session, for example on a focused `EditText`. Then the flags fall back to plain `View` getters. The class name also falls
+   * back when the node info has none.
+   */
+  private fun putAccessibilityNodeInfo(view: Any, map: MutableMap<String, String>) {
+    val info = invokeGetter(view, "createAccessibilityNodeInfo")
+    if (info == null) {
+      if (invokeGetter(view, "isClickable") == true) map["clickable"] = "true"
+      if (invokeGetter(view, "onCheckIsTextEditor") == true) map["editable"] = "true"
+    } else {
+      NODE_INFO_FLAGS.forEach { (getter, key) -> if (invokeGetter(info, getter) == true) map[key] = "true" }
+    }
+    val infoClassName = info?.let { invokeGetter(it, "getClassName") }?.toString()
+    val className = infoClassName?.takeIf { it.isNotBlank() } ?: invokeGetter(view, "getAccessibilityClassName")?.toString()
+    if (!className.isNullOrBlank()) map["accessibilityClassName"] = className
+  }
+
+  /** Returns the scroll axis from `View.canScrollVertically()` and `canScrollHorizontally()`, or null if the view can't scroll. */
+  private fun viewScrollAxis(view: Any): String? =
+    scrollAxis(vertical = canScroll(view, "canScrollVertically"), horizontal = canScroll(view, "canScrollHorizontally"))
+
+  /** Returns true if [view] can scroll in either direction using the `canScroll*(int)` method [methodName]. */
+  private fun canScroll(view: Any, methodName: String): Boolean {
+    val method = findOneArgMethod(view.javaClass, methodName, Int::class.javaPrimitiveType!!) ?: return false
+    return try {
+      method.invoke(view, 1) == true || method.invoke(view, -1) == true
+    } catch (_: ReflectiveOperationException) {
+      false
+    }
+  }
+
+  /** Formats scroll directions as `vertical`, `horizontal`, `both`, or null when neither applies. */
+  private fun scrollAxis(vertical: Boolean, horizontal: Boolean): String? =
+    when {
+      vertical && horizontal -> "both"
+      vertical -> "vertical"
+      horizontal -> "horizontal"
+      else -> null
+    }
+
   private class ColorKtMethods(val isSpecified: Method?, val toArgb: Method?)
 
-  private val missingColorKtLoaders =
-    Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>()))
+  private val missingColorKtLoaders = Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<ClassLoader, Boolean>()))
   private val colorKtMethodsByClass =
     object : ClassValue<ColorKtMethods>() {
       override fun computeValue(cls: Class<*>): ColorKtMethods {

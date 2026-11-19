@@ -2163,6 +2163,93 @@ class RendererTest {
     }
   }
 
+  /** Verifies the component tree records accessibility metadata read from real Layoutlib views. */
+  @Test
+  fun testComponentTreeRecordsViewAccessibilityMetadata() {
+    val customDir =
+      compileCustomClasses(
+        Triple(
+          "com.example.custom",
+          "CustomButton",
+          """
+          package com.example.custom;
+          public class CustomButton extends android.widget.Button {
+            public CustomButton(android.content.Context c, android.util.AttributeSet a) { super(c, a); }
+          }
+          """
+            .trimIndent(),
+        ),
+        Triple(
+          "com.example.custom",
+          "CardLikeLayout",
+          """
+          package com.example.custom;
+          import android.view.accessibility.AccessibilityNodeInfo;
+          public class CardLikeLayout extends android.widget.FrameLayout {
+            public CardLikeLayout(android.content.Context c, android.util.AttributeSet a) { super(c, a); }
+            @Override public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
+              super.onInitializeAccessibilityNodeInfo(info);
+              info.setClassName("androidx.cardview.widget.CardView");
+            }
+          }
+          """
+            .trimIndent(),
+        ),
+      )
+    // language=xml
+    val xmlLayout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="200dp"
+          android:layout_height="600dp"
+          android:orientation="vertical">
+          <EditText android:layout_width="160dp" android:layout_height="wrap_content" android:text="Input" />
+          <CheckBox android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" />
+          <ScrollView android:layout_width="120dp" android:layout_height="40dp">
+              <View android:layout_width="120dp" android:layout_height="200dp" android:minHeight="200dp" />
+          </ScrollView>
+          <TextView android:layout_width="40dp" android:layout_height="12dp" android:text="Line 1\nLine 2\nLine 3" />
+          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Copy"
+              android:textIsSelectable="true" />
+          <View android:layout_width="10dp" android:layout_height="10dp" android:importantForAccessibility="noHideDescendants" />
+          <com.example.custom.CustomButton android:layout_width="wrap_content" android:layout_height="wrap_content" />
+          <com.example.custom.CardLikeLayout android:layout_width="80dp" android:layout_height="40dp" />
+      </LinearLayout>
+      """
+        .trimIndent()
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example.custom",
+        classPath = emptyList(),
+        projectClassPath = listOf(customDir.absolutePath),
+        layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib").absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_view_a11y")
+
+    bootstrapper.bootstrap().use { renderer ->
+      val preview = xmlPreviewScreenshot("com.example.A11yPreviewKt.Views", xmlLayout)
+      val result = renderer.render(preview, outputDir.absolutePath, RenderConfiguration(includeComponentTree = true)).single()
+      assertNull(result.error)
+      val root = readComponentTree(outputDir, result).components.single()
+      assertThat(root.semantics).containsAtLeast("isViewGroup", "true", "accessibilityClassName", "android.widget.LinearLayout")
+      val children = root.children!!.map { it.semantics.orEmpty() }
+
+      assertThat(children[0]).containsAtLeast("accessibilityClassName", "android.widget.EditText", "editable", "true")
+      assertThat(children[1]).containsAtLeast("checkable", "true", "checked", "true")
+      assertThat(children[2]).containsAtLeast("isViewGroup", "true", "scrollable", "true", "scrollAxis", "vertical")
+      // Clipped text can scroll internally, but it is not a scroll container.
+      assertThat(children[3]).doesNotContainKey("scrollAxis")
+      // A selectable TextView is clickable as a View, but its accessibility node info says it is not.
+      assertThat(children[4]).doesNotContainKey("clickable")
+      assertThat(children[5]).containsEntry("importantForAccessibility", "noHideDescendants")
+      assertThat(children[6]).containsAtLeast("accessibilityClassName", "android.widget.Button", "clickable", "true")
+      assertThat(children[7]).containsEntry("accessibilityClassName", "androidx.cardview.widget.CardView")
+    }
+  }
+
   private fun xmlPreviewScreenshot(
     fqn: String,
     xmlLayout: String,

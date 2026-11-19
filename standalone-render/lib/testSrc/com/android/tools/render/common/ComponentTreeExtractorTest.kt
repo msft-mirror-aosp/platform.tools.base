@@ -32,6 +32,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 
 class ComponentTreeExtractorTest {
@@ -1094,6 +1095,124 @@ class ComponentTreeExtractorTest {
     assertNull(flatSemantics)
   }
 
+  /** Fake `AccessibilityNodeInfo` with the getters read by `extractViewSemantics`. */
+  private class FakeNodeInfo(
+    private val className: String?,
+    private val clickable: Boolean = false,
+    private val editable: Boolean = false,
+    private val checkable: Boolean = false,
+    private val checked: Boolean = false,
+    private val scrollable: Boolean = false,
+  ) {
+    fun getClassName(): CharSequence? = className
+
+    fun isClickable(): Boolean = clickable
+
+    fun isEditable(): Boolean = editable
+
+    fun isCheckable(): Boolean = checkable
+
+    fun isChecked(): Boolean = checked
+
+    fun isScrollable(): Boolean = scrollable
+  }
+
+  /** Fake `View` with the accessibility getters read by `extractViewSemantics`. */
+  private class FakeA11yView(
+    private val info: FakeNodeInfo?,
+    private val importantMode: Int = 0,
+    private val clickable: Boolean = false,
+    private val scrollsVertically: Boolean = false,
+    private val scrollsHorizontally: Boolean = false,
+    private val textEditor: Boolean = false,
+    private val backwardOnly: Boolean = false,
+  ) {
+    fun createAccessibilityNodeInfo(): FakeNodeInfo? = info
+
+    fun getAccessibilityClassName(): CharSequence = "android.widget.Button"
+
+    fun getImportantForAccessibility(): Int = importantMode
+
+    fun isImportantForAccessibility(): Boolean = false
+
+    fun isClickable(): Boolean = clickable
+
+    fun onCheckIsTextEditor(): Boolean = textEditor
+
+    fun canScrollVertically(direction: Int): Boolean = scrollsVertically
+
+    fun canScrollHorizontally(direction: Int): Boolean = scrollsHorizontally && (!backwardOnly || direction < 0)
+  }
+
+  /** Reads the class name and flags from the node info, which wins over plain `View` getters. */
+  @Test
+  fun testExtractViewSemanticsReadsAccessibilityNodeInfo() {
+    val info = FakeNodeInfo("android.widget.Switch", clickable = true, editable = true, checkable = true, scrollable = true)
+    val semantics = ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(info, importantMode = 4, scrollsVertically = true))
+
+    // Checkable but not checked, so the two flags can't be mixed up.
+    assertEquals(
+      mapOf(
+        "accessibilityClassName" to "android.widget.Switch",
+        "importantForAccessibility" to "noHideDescendants",
+        "clickable" to "true",
+        "editable" to "true",
+        "checkable" to "true",
+        "scrollable" to "true",
+        "scrollAxis" to "vertical",
+      ),
+      semantics,
+    )
+    val checkedInfo = FakeNodeInfo("android.widget.CheckBox", checkable = true, checked = true)
+    assertEquals("true", ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(checkedInfo))?.get("checked"))
+
+    // A selectable TextView: the node info clears clickable, and clipped text can scroll but is not a scroll container.
+    val textInfo = FakeNodeInfo("android.widget.TextView")
+    val textSemantics = ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(textInfo, clickable = true, scrollsVertically = true))
+    assertEquals(mapOf("accessibilityClassName" to "android.widget.TextView"), textSemantics)
+  }
+
+  /** Reports the scroll axis as `horizontal` or `both`, including for a view that can only scroll backward. */
+  @Test
+  fun testExtractViewSemanticsReadsScrollAxis() {
+    val info = FakeNodeInfo("android.widget.HorizontalScrollView", scrollable = true)
+    val horizontal = ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(info, scrollsHorizontally = true))
+    assertEquals("horizontal", horizontal?.get("scrollAxis"))
+
+    val both = ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(info, scrollsVertically = true, scrollsHorizontally = true))
+    assertEquals("both", both?.get("scrollAxis"))
+
+    // A view that opens at its scroll end, like an RTL HorizontalScrollView, can only scroll backward.
+    val backward = ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(info, scrollsHorizontally = true, backwardOnly = true))
+    assertEquals("horizontal", backward?.get("scrollAxis"))
+  }
+
+  /** Falls back to `View` getters when the node info is missing, and for the class name when the node info has none. */
+  @Test
+  fun testExtractViewSemanticsFallsBackWithoutNodeInfo() {
+    val expected = mapOf("accessibilityClassName" to "android.widget.Button", "importantForAccessibility" to "no", "clickable" to "true")
+    assertEquals(expected, ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(null, importantMode = 2, clickable = true)))
+
+    // Node info without a class name: only the class name falls back, and the node info flags are kept.
+    val noClassNameInfo = FakeNodeInfo(className = null, editable = true)
+    val semantics = ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(noClassNameInfo, clickable = true))
+    assertEquals(mapOf("accessibilityClassName" to "android.widget.Button", "editable" to "true"), semantics)
+
+    val editorSemantics = ComposeSemanticsExtractor.extractViewSemantics(FakeA11yView(null, importantMode = 1, textEditor = true))
+    assertEquals("yes", editorSemantics?.get("importantForAccessibility"))
+    assertEquals("true", editorSemantics?.get("editable"))
+  }
+
+  /** Adds a public method [name] with [descriptor] to this class, emitting its body with [body]. */
+  private fun ClassWriter.addMethod(name: String, descriptor: String, body: MethodVisitor.() -> Unit) {
+    visitMethod(Opcodes.ACC_PUBLIC, name, descriptor, null, null).apply {
+      visitCode()
+      body()
+      visitMaxs(0, 0)
+      visitEnd()
+    }
+  }
+
   private fun generateDynamicNodeClassBytes(internalName: String): ByteArray {
     val cw = ClassWriter(ClassWriter.COMPUTE_FRAMES)
     cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, internalName, null, "java/lang/Object", null)
@@ -1125,6 +1244,24 @@ class ComponentTreeExtractorTest {
     semMv.visitInsn(Opcodes.ARETURN)
     semMv.visitMaxs(1, 1)
     semMv.visitEnd()
+
+    // View accessibility getters, so extractViewSemantics() caches Method handles from this class.
+    cw.addMethod("createAccessibilityNodeInfo", "()Ljava/lang/Object;") {
+      visitVarInsn(Opcodes.ALOAD, 0)
+      visitInsn(Opcodes.ARETURN)
+    }
+    cw.addMethod("getClassName", "()Ljava/lang/CharSequence;") {
+      visitLdcInsn("DynamicView")
+      visitInsn(Opcodes.ARETURN)
+    }
+    cw.addMethod("isScrollable", "()Z") {
+      visitInsn(Opcodes.ICONST_1)
+      visitInsn(Opcodes.IRETURN)
+    }
+    cw.addMethod("canScrollVertically", "(I)Z") {
+      visitInsn(Opcodes.ICONST_1)
+      visitInsn(Opcodes.IRETURN)
+    }
 
     cw.visitEnd()
     return cw.toByteArray()
@@ -1174,6 +1311,7 @@ class ComponentTreeExtractorTest {
     val (weakLoader, weakClass) =
       exerciseClassInThrowawayLoader("com.example.test.DynamicSemanticsNode") { _, instance ->
         assertNull(ComposeSemanticsExtractor.extractSemantics(instance))
+        assertEquals("vertical", ComposeSemanticsExtractor.extractViewSemantics(instance)?.get("scrollAxis"))
       }
     assertClassLoaderCollected(weakLoader, weakClass)
   }
