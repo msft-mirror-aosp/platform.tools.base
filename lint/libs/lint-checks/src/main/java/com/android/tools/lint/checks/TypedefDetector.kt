@@ -736,7 +736,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       return
     }
 
-    val values = listAllowedValues(node, allowedValues)
+    val values = listAllowedValues(allowedValues)
     var message =
       if (flag) {
         "Must be one or more of: $values"
@@ -767,15 +767,15 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     if (unmatched != null && unmatched.isNotEmpty()) {
-      message += ", but could be " + listAllowedValues(node, unmatched)
+      message += ", but could be " + listAllowedValues(unmatched)
     }
 
     val locationNode = errorNode ?: node
-    val fix: LintFix? = createQuickFix(locationNode, allowedValues, node)
+    val fix: LintFix? = createQuickFix(locationNode, allowedValues)
     checkDuplicateAndReport(context, TYPE_DEF, locationNode, context.getLocation(locationNode), message, fix)
   }
 
-  private fun createQuickFix(node: UElement, values: List<UExpression>, context: UElement): LintFix? {
+  private fun createQuickFix(node: UElement, values: List<UExpression>): LintFix? {
     var currentValue: Any? = null
     if (node is ULiteralExpression) {
       currentValue = node.value
@@ -816,7 +816,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     return null
   }
 
-  private fun listAllowedValues(context: UElement, allowedValues: List<Any>): String {
+  private fun listAllowedValues(allowedValues: List<Any>): String {
     val sb = StringBuilder()
     for (allowedValue in allowedValues) {
       var s: String? = null

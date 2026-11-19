@@ -16,7 +16,6 @@
 
 package com.android.tools.lint.checks
 
-import com.android.sdklib.IAndroidTarget
 import com.android.tools.lint.checks.ApiDatabase.CacheCreator
 import com.android.tools.lint.client.api.LintClient
 import com.google.common.annotations.VisibleForTesting
@@ -179,52 +178,47 @@ class PrivateApiLookup private constructor(client: LintClient, binaryFile: File,
      * Returns an instance of the private API database
      *
      * @param client the client to associate with this database - used only for logging
-     * @param target the associated Android target, if known
      * @return a (possibly shared) instance of the API database, or null if its data can't be found
      */
-    private fun get(client: LintClient, target: IAndroidTarget?): PrivateApiLookup? {
-      val stream = PrivateApiLookup::class.java.classLoader.getResource(API_FILE_PATH)
-      if (stream == null) {
-        client.log(null, "The API database file $API_FILE_PATH could not be found")
-        return null
-      }
-
-      // The first line contains the build number for the API data, to be used in the name of
-      // the binary file.
-      val version = stream.openStream().use { it.bufferedReader(Charsets.UTF_8).readLine() }
-      // TODO: Check that we don't end up locking Lint's jar file on Windows
-
-      val cacheDir = client.getCacheDir(null, true)
-      if (cacheDir == null) {
-        client.log(null, "Can't create cache dir")
-        return null
-      }
-
-      val binaryData = File(cacheDir, getCacheFileName(API_FILE_PATH, version))
-      val cache = cacheCreator(stream)
-
-      if (DEBUG_FORCE_REGENERATE_BINARY) {
-        System.err.println("\nTemporarily regenerating binary data unconditionally \n" + "from $stream\nto $binaryData")
-        if (!cache.create(client, binaryData)) {
-          return null
-        }
-      } else if ((!binaryData.exists() || binaryData.length() == 0L)) {
-        if (!cache.create(client, binaryData)) {
-          return null
-        }
-      }
-
-      if (!binaryData.exists()) {
-        client.log(null, "The API database file %1\$s does not exist", binaryData)
-        return null
-      }
-
-      return PrivateApiLookup(client, binaryData, cache)
-    }
-
     fun get(client: LintClient): PrivateApiLookup? {
       synchronized(PrivateApiLookup::class.java) {
-        return get(client, null)
+        val stream = PrivateApiLookup::class.java.classLoader.getResource(API_FILE_PATH)
+        if (stream == null) {
+          client.log(null, "The API database file $API_FILE_PATH could not be found")
+          return null
+        }
+
+        // The first line contains the build number for the API data, to be used in the name of
+        // the binary file.
+        val version = stream.openStream().use { it.bufferedReader(Charsets.UTF_8).readLine() }
+        // TODO: Check that we don't end up locking Lint's jar file on Windows
+
+        val cacheDir = client.getCacheDir(null, true)
+        if (cacheDir == null) {
+          client.log(null, "Can't create cache dir")
+          return null
+        }
+
+        val binaryData = File(cacheDir, getCacheFileName(API_FILE_PATH, version))
+        val cache = cacheCreator(stream)
+
+        if (DEBUG_FORCE_REGENERATE_BINARY) {
+          System.err.println("\nTemporarily regenerating binary data unconditionally \n" + "from $stream\nto $binaryData")
+          if (!cache.create(client, binaryData)) {
+            return null
+          }
+        } else if ((!binaryData.exists() || binaryData.length() == 0L)) {
+          if (!cache.create(client, binaryData)) {
+            return null
+          }
+        }
+
+        if (!binaryData.exists()) {
+          client.log(null, "The API database file %1\$s does not exist", binaryData)
+          return null
+        }
+
+        return PrivateApiLookup(client, binaryData, cache)
       }
     }
   }

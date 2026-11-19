@@ -984,7 +984,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     val newArgs: Array<KtExpression?>
     if (call != null) {
       arguments = getArgumentsInParameterOrder(call) ?: return false
-      val argumentInfo = computeArgumentMapping(call, arguments, defaultArguments, argumentMapping) ?: return false
+      val argumentInfo = computeArgumentMapping(arguments, defaultArguments, argumentMapping) ?: return false
       newArgs = argumentInfo.extensionArgs
       receiver = argumentInfo.receiver
     } else {
@@ -1018,7 +1018,6 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
 
     val replacement =
       generateCallReplacement(
-        extensionPackage,
         extensionClass,
         extensionMethod,
         descriptor,
@@ -1117,7 +1116,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
   )
 
   /**
-   * Compute mapping from the current method [call] [arguments], to the new extension functions arguments (and receiver).
+   * Compute mapping from the current method call [arguments], to the new extension functions arguments (and receiver).
    *
    * We need to rewrite the arguments to this call according to the argument map. The argument mapping is a string corresponding to the
    * positions of the arguments in the call. For example, consider
@@ -1135,7 +1134,6 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
    * * 1: the fifth argument in the current call should be the second argument in the extension call
    */
   private fun computeArgumentMapping(
-    call: KtCallExpression,
     arguments: List<KtExpression?>,
     defaultArguments: List<String>?,
     argumentMapping: String?,
@@ -1195,7 +1193,6 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   @Suppress("LintImplPsiEquals")
   private fun generateCallReplacement(
-    extensionPackage: String,
     extensionClass: String,
     extensionMethod: String,
     descriptor: String,

@@ -194,7 +194,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   ) {
     val visibility = getVisibilityNotForTesting(annotation, getVisibility(member))
     if (visibility == VISIBILITY_NONE) { // not the default
-      checkRestrictTo(context, node, member, annotation, usageInfo, RESTRICT_TO_TESTS)
+      checkRestrictTo(context, node, member, usageInfo, RESTRICT_TO_TESTS)
     } else {
       // Check that the target method is available
       // (1) private is available in the same compilation unit
@@ -304,7 +304,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   ) {
     val scope = getRestrictionScope(annotation)
     if (scope != 0) {
-      checkRestrictTo(context, node, method, annotation, usageInfo, scope, applyClassAnnotationsToMembers)
+      checkRestrictTo(context, node, method, usageInfo, scope, applyClassAnnotationsToMembers)
     }
   }
 
@@ -312,7 +312,6 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     context: JavaContext,
     node: UElement,
     member: PsiMember?,
-    annotation: UAnnotation,
     usageInfo: AnnotationUsageInfo,
     scope: Int,
     applyClassAnnotationsToMembers: Boolean = true,
