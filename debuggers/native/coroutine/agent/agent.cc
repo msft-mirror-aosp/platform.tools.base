@@ -777,8 +777,7 @@ static std::vector<std::string_view> parseArgs(std::string_view str) {
   return args;
 }
 
-extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
-                                                 void* reserved) {
+static jint InitializeAgent(JavaVM* vm, char* options) {
   // This will attach the current thread to the vm, otherwise CreateJvmtiEnv(vm)
   // below will return JNI_EDETACHED error code.
   profiler::GetThreadLocalJNI(vm);
@@ -821,4 +820,18 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
                                  JVMTI_EVENT_CLASS_FILE_LOAD_HOOK);
 
   return JNI_OK;
+}
+
+// Called when the agent is attached to a running VM, e.g. via
+// `am start --attach-agent`.
+extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
+                                                 void* reserved) {
+  return InitializeAgent(vm, options);
+}
+
+// Called when the agent is loaded at VM startup, e.g. via `-agentpath`. This is
+// used when running the agent on a host ART VM.
+extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options,
+                                               void* reserved) {
+  return InitializeAgent(vm, options);
 }
