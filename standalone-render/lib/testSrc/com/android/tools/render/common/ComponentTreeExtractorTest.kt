@@ -415,8 +415,14 @@ class ComponentTreeExtractorTest {
     override val value: Any?,
   ) : Map.Entry<FakeSemanticsKey, Any?>
 
-  private class FakeSemanticsConfiguration(private val entries: List<FakeSemanticsEntry>) : Iterable<FakeSemanticsEntry> {
+  private class FakeSemanticsConfiguration(
+    private val entries: List<FakeSemanticsEntry>,
+    private val mergesDescendants: Boolean = false,
+  ) : Iterable<FakeSemanticsEntry> {
     override fun iterator(): Iterator<FakeSemanticsEntry> = entries.iterator()
+
+    /** Fakes `SemanticsConfiguration.isMergingSemanticsOfDescendants()`. */
+    fun isMergingSemanticsOfDescendants(): Boolean = mergesDescendants
   }
 
   private class FakeLayoutNode(
@@ -489,6 +495,94 @@ class ComponentTreeExtractorTest {
     fun getId(): Int = id
 
     fun isClickable(): Boolean = isClickable
+  }
+
+  /** Fake `ZIndexElement`, the modifier created by `Modifier.zIndex()`. */
+  private class FakeZIndexElement(val zIndex: Float)
+
+  /** Fake Compose `ScrollAxisRange`, with a non-`Function0` callable to match Layoutlib's repackaged lambdas. */
+  private class FakeScrollRange(max: Float) {
+    val maxValue: Any =
+      object {
+        @Suppress("unused") fun invoke(): Float = max
+      }
+  }
+
+  /** Builds a `LayoutNode` fake whose semantics hold [entries], keyed by semantics property name. */
+  private fun layoutNodeWith(vararg entries: Pair<String, Any>, mergesDescendants: Boolean = false) =
+    FakeLayoutNode(FakeSemanticsConfiguration(entries.map { FakeSemanticsEntry(FakeSemanticsKey(it.first), it.second) }, mergesDescendants))
+
+  /** Reads the Compose accessibility flags: editable, scroll axis, hidden from accessibility, and merged descendants. */
+  @Test
+  fun testExtractSemanticsReadsComposeAccessibilityFlags() {
+    val textField =
+      layoutNodeWith(
+        "EditableText" to "Hi",
+        "IsEditable" to true,
+        "VerticalScrollAxisRange" to FakeScrollRange(100f),
+        "ScrollBy" to Unit,
+        "HideFromAccessibility" to Unit,
+        mergesDescendants = true,
+      )
+    assertEquals(
+      mapOf(
+        "text" to "Hi",
+        "actions" to "ScrollBy",
+        "editable" to "true",
+        "scrollAxis" to "vertical",
+        "importantForAccessibility" to "no",
+        "mergingSemantics" to "true",
+      ),
+      ComposeSemanticsExtractor.extractSemantics(textField),
+    )
+
+    // A read-only or disabled 1.7+ text field sets IsEditable = false, which wins over the SetText action.
+    val readOnly = layoutNodeWith("EditableText" to "Hi", "IsEditable" to false, "SetText" to Unit)
+    assertNull(ComposeSemanticsExtractor.extractSemantics(readOnly)?.get("editable"))
+
+    // Compose 1.6 and older have no IsEditable: every text field has the SetText action.
+    val legacyTextField = layoutNodeWith("EditableText" to "Hi", "SetText" to Unit)
+    assertEquals("true", ComposeSemanticsExtractor.extractSemantics(legacyTextField)?.get("editable"))
+    val plainText = layoutNodeWith("Text" to "Hi")
+    assertNull(ComposeSemanticsExtractor.extractSemantics(plainText)?.get("editable"))
+
+    // A horizontal range with nothing to scroll does not count.
+    val legacyHidden =
+      layoutNodeWith(
+        "InvisibleToUser" to Unit,
+        "HorizontalScrollAxisRange" to FakeScrollRange(0f),
+        "VerticalScrollAxisRange" to FakeScrollRange(10f),
+        "ScrollBy" to Unit,
+      )
+    assertEquals(
+      mapOf("actions" to "ScrollBy", "importantForAccessibility" to "no", "scrollAxis" to "vertical"),
+      ComposeSemanticsExtractor.extractSemantics(legacyHidden),
+    )
+
+    val horizontal = layoutNodeWith("HorizontalScrollAxisRange" to FakeScrollRange(50f), "ScrollBy" to Unit)
+    assertEquals("horizontal", ComposeSemanticsExtractor.extractSemantics(horizontal)?.get("scrollAxis"))
+
+    // Disabled scroll containers keep a ScrollAxisRange but omit ScrollBy.
+    val disabledScroll = layoutNodeWith("VerticalScrollAxisRange" to FakeScrollRange(100f))
+    assertNull(ComposeSemanticsExtractor.extractSemantics(disabledScroll)?.get("scrollAxis"))
+  }
+
+  /** Adds up all finite `Modifier.zIndex()` values on a node, like Compose does, and skips a zero total. */
+  @Test
+  fun testExtractModifiersSumsZIndex() {
+    val stacked =
+      FakeLayoutNode(
+        modifiers =
+          listOf(
+            FakeModifierInfo(FakeZIndexElement(1.5f)),
+            FakeModifierInfo(FakeZIndexElement(Float.NaN)),
+            FakeModifierInfo(FakeZIndexElement(2f)),
+          )
+      )
+    assertEquals("3.5", ComposeSemanticsExtractor.extractModifiers(stacked, null)?.get("zIndex"))
+
+    val cancelled = FakeLayoutNode(modifiers = listOf(FakeModifierInfo(FakeZIndexElement(2f)), FakeModifierInfo(FakeZIndexElement(-2f))))
+    assertNull(ComposeSemanticsExtractor.extractModifiers(cancelled, null))
   }
 
   @Test

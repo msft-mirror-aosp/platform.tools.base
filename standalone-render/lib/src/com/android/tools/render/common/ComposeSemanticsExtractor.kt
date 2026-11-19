@@ -69,6 +69,10 @@ internal object ComposeSemanticsExtractor {
       override fun computeValue(type: Class<*>): Boolean = generateSequence(type) { it.superclass }.any { it.name == VIEW_GROUP_CLASS_NAME }
     }
 
+  /**
+   * Extracts semantics from a Compose `LayoutNode`: text, role, state, actions, and the accessibility flags `editable`, `scrollAxis`,
+   * `importantForAccessibility`, and `mergingSemantics`.
+   */
   fun extractSemantics(layoutNode: Any?): Map<String, String>? {
     if (layoutNode == null) return null
     return try {
@@ -78,6 +82,9 @@ internal object ComposeSemanticsExtractor {
 
       val map = mutableMapOf<String, String>()
       val actions = mutableListOf<String>()
+      var isEditable: Boolean? = null
+      var scrollsVertically = false
+      var scrollsHorizontally = false
 
       while (iterator.hasNext()) {
         val entry = iterator.next() as? Map.Entry<*, *> ?: continue
@@ -96,6 +103,7 @@ internal object ComposeSemanticsExtractor {
             val combined = textList.filter { it.isNotBlank() }.joinToString("\n")
             if (combined.isNotBlank()) map["text"] = combined
           }
+          "IsEditable" -> isEditable = value as? Boolean
           "ContentDescription" -> {
             val cdList =
               when (value) {
@@ -122,6 +130,12 @@ internal object ComposeSemanticsExtractor {
           "Disabled" -> map["disabled"] = "true"
           "Heading" -> map["heading"] = "true"
           "Error" -> map["error"] = value.toString()
+          // HideFromAccessibility replaced InvisibleToUser in Compose 1.8.
+          "HideFromAccessibility",
+          "InvisibleToUser" -> map["importantForAccessibility"] = "no"
+          // Like View.canScrollVertically(), only count axes that can scroll now: every scroll container sets a range.
+          "VerticalScrollAxisRange" -> scrollsVertically = hasScrollRoom(value)
+          "HorizontalScrollAxisRange" -> scrollsHorizontally = hasScrollRoom(value)
           "OnClick",
           "OnLongClick",
           "SetText",
@@ -137,6 +151,14 @@ internal object ComposeSemanticsExtractor {
       if (actions.isNotEmpty()) {
         map["actions"] = actions.distinct().joinToString(", ")
       }
+      // Matches Compose's accessibility delegate: IsEditable (1.7+, read by value as in 1.11+; 1.7–1.10 only checked presence), or SetText
+      // (1.6 and older).
+      if (isEditable ?: ("SetText" in actions)) map["editable"] = "true"
+      // Compose only reports a scrollable node when it also has ScrollBy, which disabled scroll containers omit.
+      if ("ScrollBy" in actions) {
+        scrollAxis(vertical = scrollsVertically, horizontal = scrollsHorizontally)?.let { map["scrollAxis"] = it }
+      }
+      if (invokeGetter(config, "isMergingSemanticsOfDescendants") == true) map["mergingSemantics"] = "true"
       map.ifEmpty { null }
     } catch (e: Exception) {
       logger.log(Level.FINE, "Failed to extract Compose semantics", e)
@@ -173,6 +195,7 @@ internal object ComposeSemanticsExtractor {
       val modifierInfos = (getModifierInfo.invoke(layoutNode) as? List<*>) ?: return null
 
       val map = mutableMapOf<String, String>()
+      var totalZIndex = 0f
 
       for (info in modifierInfos.filterNotNull()) {
         val mod = invokeGetter(info, "modifier") ?: continue
@@ -242,6 +265,10 @@ internal object ComposeSemanticsExtractor {
           map["clickable"] = "enabled=$enabled${if (role != null) ", role=$role" else ""}"
         } else if (simpleName.contains("Scroll")) {
           map["scroll"] = "true"
+        } else if (simpleName.contains("ZIndex")) {
+          // Compose adds up all zIndex modifiers on a node when ordering siblings.
+          val zIndex = (invokeGetter(mod, "zIndex") as? Number)?.toFloat()
+          if (zIndex != null && zIndex.isFinite()) totalZIndex += zIndex
         }
 
         // Also inspect LayoutWeightElement directly on the modifier if present.
@@ -266,6 +293,7 @@ internal object ComposeSemanticsExtractor {
           }
         }
       }
+      if (totalZIndex != 0f) map["zIndex"] = totalZIndex.toString()
       map.ifEmpty { null }
     } catch (e: Exception) {
       logger.log(Level.FINE, "Failed to extract Compose modifiers", e)
@@ -368,6 +396,13 @@ internal object ComposeSemanticsExtractor {
     val infoClassName = info?.let { invokeGetter(it, "getClassName") }?.toString()
     val className = infoClassName?.takeIf { it.isNotBlank() } ?: invokeGetter(view, "getAccessibilityClassName")?.toString()
     if (!className.isNullOrBlank()) map["accessibilityClassName"] = className
+  }
+
+  /** Returns true if a Compose `ScrollAxisRange` has room to scroll, meaning its `maxValue` is above zero. */
+  private fun hasScrollRoom(scrollAxisRange: Any): Boolean {
+    // Call invoke() by reflection: Layoutlib repackages kotlin.jvm.functions.Function0.
+    val maxValue = invokeGetter(scrollAxisRange, "maxValue") ?: return false
+    return ((invokeGetter(maxValue, "invoke") as? Number)?.toFloat() ?: 0f) > 0f
   }
 
   /** Returns the scroll axis from `View.canScrollVertically()` and `canScrollHorizontally()`, or null if the view can't scroll. */
