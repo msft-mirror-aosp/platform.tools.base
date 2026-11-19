@@ -98,7 +98,12 @@ public class PackageChunk extends ChunkWithChunks {
         }
         // NB: this is currently unused except for the above assertion that there's <=1 chunk.
         libraryChunk = Optional.of((LibraryChunk) chunk);
-      } else if (!(chunk instanceof StringPoolChunk) && !(chunk instanceof UnknownChunk)) {
+      } else if (chunk instanceof FlaggedChunk
+          || chunk instanceof FlagListChunk
+          || chunk instanceof StringPoolChunk
+          || chunk instanceof UnknownChunk) {
+        // These are currently not indexed, but they are valid in a package chunk.
+      } else {
         throw new IllegalStateException(
             String.format("PackageChunk contains an unexpected chunk: %s", chunk.getClass()));
       }
@@ -237,6 +242,12 @@ public class PackageChunk extends ChunkWithChunks {
    * TypeChunks, and remove empty TypeChunks. Returns number of TypeChunks deleted.
    */
   public int deleteKeyStrings(SortedSet<Integer> keyIndexesToDelete) {
+    for (Chunk chunk : getChunks().values()) {
+      Preconditions.checkState(
+          chunk.getType() != Type.TABLE_BY_NAME_MAP,
+          "Cannot delete key strings while PackageChunk contains TABLE_BY_NAME_MAP; strip or"
+              + " update it first.");
+    }
     int[] remappedIndexes = getKeyStringPool().deleteStrings(keyIndexesToDelete);
     Collection<TypeChunk> typeChunksToDelete = new ArrayList<>();
     for (TypeChunk typeChunk : getTypeChunks()) {

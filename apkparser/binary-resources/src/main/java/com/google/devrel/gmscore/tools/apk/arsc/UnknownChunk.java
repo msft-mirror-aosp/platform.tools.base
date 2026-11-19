@@ -1,9 +1,10 @@
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import javax.annotation.Nullable;
+import com.google.common.base.Preconditions;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import javax.annotation.Nullable;
 
 /**
  * A chunk whose contents are unknown. This is a placeholder until we add a proper chunk for the
@@ -18,9 +19,13 @@ public final class UnknownChunk extends Chunk {
   private final byte[] payload;
 
   protected UnknownChunk(ByteBuffer buffer, @Nullable Chunk parent) {
+    this(buffer, parent, Type.fromCode(buffer.getShort(buffer.position() - 2)));
+  }
+
+  protected UnknownChunk(ByteBuffer buffer, @Nullable Chunk parent, Type type) {
     super(buffer, parent);
 
-    type = Type.fromCode(buffer.getShort(offset));
+    this.type = Preconditions.checkNotNull(type);
     header = new byte[headerSize - Chunk.METADATA_SIZE];
     payload = new byte[chunkSize - headerSize];
     buffer.get(header);

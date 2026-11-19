@@ -39,7 +39,10 @@ public abstract class Chunk implements SerializableResource {
     TABLE_LIBRARY(0x0203),
     TABLE_OVERLAYABLE(0x204),
     TABLE_OVERLAYABLE_POLICY(0x205),
-    TABLE_STAGED_ALIAS(0x206);
+    TABLE_STAGED_ALIAS(0x206),
+    TABLE_FLAGGED(0x207),
+    TABLE_FLAG_LIST(0x208),
+    TABLE_BY_NAME_MAP(0x0209);
 
     private final short code;
 
@@ -275,6 +278,8 @@ public abstract class Chunk implements SerializableResource {
           case TABLE_TYPE -> new TypeChunk(buffer, parent);
           case TABLE_TYPE_SPEC -> new TypeSpecChunk(buffer, parent);
           case TABLE_LIBRARY -> new LibraryChunk(buffer, parent);
+          case TABLE_FLAGGED -> new FlaggedChunk(buffer, parent);
+          case TABLE_FLAG_LIST -> new FlagListChunk(buffer, parent);
           default -> new UnknownChunk(buffer, parent);
         };
     result.init(buffer);
