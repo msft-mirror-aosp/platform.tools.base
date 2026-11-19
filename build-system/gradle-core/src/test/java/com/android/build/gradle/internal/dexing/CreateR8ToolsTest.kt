@@ -31,6 +31,7 @@ import com.android.builder.dexing.ProguardConfig
 import com.android.builder.dexing.R8OutputType
 import com.android.builder.dexing.R8Tools
 import com.android.builder.dexing.R8ToolsImpl
+import com.android.builder.dexing.R8Version
 import com.android.builder.dexing.ToolConfig
 import com.android.builder.multidex.D8MainDexList
 import com.android.ide.common.blame.Message
@@ -66,6 +67,15 @@ class CreateR8ToolsTest {
       assertThat(r8Tools.javaClass.classLoader).isSameInstanceAs(isolatedLoader)
       // ...and it's a different class from AGP's own R8ToolsImpl, even though the name is the same.
       assertThat(r8Tools.javaClass).isNotSameInstanceAs(R8ToolsImpl::class.java)
+    }
+  }
+
+  @Test
+  fun getVersionString_throughIsolatedClassLoader() {
+    R8ClassloaderBuildService.createClassLoader(setOf(testR8Jar)).use { isolatedLoader ->
+      val r8Tools = createR8Tools(isolatedLoader)
+
+      assertThat(r8Tools.getVersionString()).contains(R8Version.VERSION_AGP_WAS_SHIPPED_WITH)
     }
   }
 

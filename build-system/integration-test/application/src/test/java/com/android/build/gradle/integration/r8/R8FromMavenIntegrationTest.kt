@@ -168,6 +168,7 @@ class R8FromMavenIntegrationTest {
     val result = build.executor.run(":app:minifyReleaseWithR8")
 
     assertThat(result.didWorkTasks).contains(":app:minifyReleaseWithR8")
+    result.assertOutputContains("Running R8 ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}")
     val mappingFile = build.androidApplication().buildDir.resolve("outputs/mapping/release/mapping.txt")
     assertThat(mappingFile).exists()
     assertThat(mappingFile.toFile().readText()).contains("# compiler_version: ${R8Version.VERSION_AGP_WAS_SHIPPED_WITH}")

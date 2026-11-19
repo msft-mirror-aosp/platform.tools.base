@@ -60,6 +60,7 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.services.ServiceReference
@@ -423,6 +424,7 @@ internal fun invokeRunR8(
 ) {
   val r8Tools = createR8Tools(r8ClassLoader)
   wrapIsolatedR8Failures {
+    logger.info("Running R8 ${r8Tools.getVersionString()}")
     r8Tools.runR8(
       inputClasses,
       output,
@@ -449,5 +451,7 @@ internal fun invokeRunR8(
     )
   }
 }
+
+private val logger = Logging.getLogger(BaseR8Task::class.java)
 
 internal const val R8_SYSTEM_PROPERTIES_PREFIX = "com.android.tools.r8."

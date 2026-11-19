@@ -19,6 +19,7 @@ package com.android.builder.dexing
 import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.android.builder.multidex.D8MainDexList
 import com.android.ide.common.blame.MessageReceiver
+import com.android.tools.r8.Version
 import java.io.Closeable
 import java.io.File
 import java.nio.file.Path
@@ -31,6 +32,8 @@ import java.util.concurrent.ExecutorService
  * reflectively by name, so it needs a public no-arg constructor.
  */
 class R8ToolsImpl : R8Tools {
+  override fun getVersionString(): String = Version.getVersionString()
+
   override fun runR8(
     inputClasses: Collection<Path>,
     output: Path?,

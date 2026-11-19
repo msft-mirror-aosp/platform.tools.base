@@ -30,6 +30,9 @@ import java.util.concurrent.ExecutorService
  * [MessageReceiver], and the R8-free config types such as [ToolConfig]. It must not reference `com.android.tools.r8.*`.
  */
 interface R8Tools {
+  /** Returns the version string (`com.android.tools.r8.Version.getVersionString()`) of the isolated R8. */
+  fun getVersionString(): String
+
   /** The parameters are a 1:1 copy of runR8 in r8Tool.kt, same names and order, so the implementation just forwards them. */
   fun runR8(
     inputClasses: Collection<Path>,
