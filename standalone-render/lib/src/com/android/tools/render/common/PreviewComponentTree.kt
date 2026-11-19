@@ -42,7 +42,12 @@ data class PreviewComponentTree(
   val components: List<ComponentTreeNode>,
 )
 
-/** A single node within the preview component tree. */
+/**
+ * A single node within the preview component tree.
+ *
+ * @property touchBounds The area that responds to taps (clipped to the Compose root), when Compose expands it beyond [bounds] (for example,
+ *   a 24dp icon button that responds over 48dp). Null otherwise.
+ */
 data class ComponentTreeNode(
   val name: String,
   val bounds: ComponentBounds,
@@ -51,6 +56,7 @@ data class ComponentTreeNode(
   val semantics: Map<String, String>? = null,
   val parameters: Map<String, String>? = null,
   val modifiers: Map<String, String>? = null,
+  val touchBounds: ComponentBounds? = null,
 )
 
 /**
@@ -76,7 +82,7 @@ data class ComponentSourceLocation(
 
 private val gson = GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create()
 
-/** Returns this tree with every node's bounds moved left by [offsetX] and up by [offsetY]. */
+/** Returns this tree with every node's bounds and touch bounds moved left by [offsetX] and up by [offsetY]. */
 internal fun PreviewComponentTree.offsetBy(offsetX: Int, offsetY: Int): PreviewComponentTree =
   if (offsetX == 0 && offsetY == 0) this else copy(components = components.map { it.offsetBy(offsetX, offsetY) })
 
@@ -84,6 +90,7 @@ internal fun PreviewComponentTree.offsetBy(offsetX: Int, offsetY: Int): PreviewC
 private fun ComponentTreeNode.offsetBy(offsetX: Int, offsetY: Int): ComponentTreeNode =
   copy(
     bounds = bounds.offsetBy(offsetX, offsetY),
+    touchBounds = touchBounds?.offsetBy(offsetX, offsetY),
     children = children?.map { it.offsetBy(offsetX, offsetY) },
   )
 

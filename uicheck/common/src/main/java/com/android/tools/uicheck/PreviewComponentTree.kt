@@ -39,7 +39,12 @@ data class PreviewComponentTree(
   val components: List<ComponentTreeNode>,
 )
 
-/** A node within a [PreviewComponentTree]. */
+/**
+ * A node within a [PreviewComponentTree].
+ *
+ * @property touchBounds The area that responds to taps (clipped to the Compose root), when Compose expands it beyond [bounds] (for example,
+ *   a 24dp icon button that responds over 48dp). Null otherwise.
+ */
 data class ComponentTreeNode(
   val name: String,
   val bounds: ComponentBounds,
@@ -48,6 +53,7 @@ data class ComponentTreeNode(
   val semantics: Map<String, String>? = null,
   val parameters: Map<String, String>? = null,
   val modifiers: Map<String, String>? = null,
+  val touchBounds: ComponentBounds? = null,
 )
 
 /** Pixel bounds of a rendered component relative to the top-left `(0, 0)` origin of the preview root. */

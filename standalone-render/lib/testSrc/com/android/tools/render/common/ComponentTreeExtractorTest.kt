@@ -219,6 +219,7 @@ class ComponentTreeExtractorTest {
                     name = "androidx.compose.material3.Text",
                     bounds = ComponentBounds(32, 64, 400, 120),
                     sourceLocation = ComponentSourceLocation("MyScreen.kt", 18, packageHash = 42),
+                    touchBounds = ComponentBounds(32, 52, 400, 132),
                   )
                 ),
             )
@@ -241,6 +242,20 @@ class ComponentTreeExtractorTest {
     val wearTree = originalTree.copy(showSystemUi = true, isWearDevice = true, isScreenRound = true)
     val wearJson = StringWriter().also { writeComponentTreeToJson(it, wearTree) }.toString()
     assertEquals(wearTree, readComponentTreeFromJson(StringReader(wearJson)))
+  }
+
+  /** Moves the bounds and touch bounds of every node, and keeps a null touch area null. */
+  @Test
+  fun testOffsetByMovesTouchBounds() {
+    val icon = ComponentTreeNode("IconButton", ComponentBounds(22, 32, 46, 56), touchBounds = ComponentBounds(10, 20, 58, 68))
+    val row = ComponentTreeNode("Row", ComponentBounds(10, 20, 100, 80), children = listOf(icon))
+    val tree = PreviewComponentTree(previewId = "p", methodFQN = "com.example.P", width = 100, height = 100, components = listOf(row))
+
+    val movedRow = tree.offsetBy(10, 20).components.single()
+    assertEquals(ComponentBounds(0, 0, 90, 60), movedRow.bounds)
+    assertNull(movedRow.touchBounds)
+    assertEquals(ComponentBounds(12, 12, 36, 36), movedRow.children!!.single().bounds)
+    assertEquals(ComponentBounds(0, 0, 48, 48), movedRow.children!!.single().touchBounds)
   }
 
   @Test
@@ -583,6 +598,334 @@ class ComponentTreeExtractorTest {
 
     val cancelled = FakeLayoutNode(modifiers = listOf(FakeModifierInfo(FakeZIndexElement(2f)), FakeModifierInfo(FakeZIndexElement(-2f))))
     assertNull(ComposeSemanticsExtractor.extractModifiers(cancelled, null))
+  }
+
+  /** Fake Compose `Rect`. */
+  private class FakeRect(val left: Float, val top: Float, val right: Float, val bottom: Float)
+
+  /** Fake Compose `SemanticsNode`. */
+  private class FakeSemanticsNode(
+    private val layoutNode: Any?,
+    private val touchBounds: FakeRect,
+    private val bounds: FakeRect,
+    private val children: List<Any> = emptyList(),
+  ) {
+    fun getLayoutInfo(): Any? = layoutNode
+
+    fun getTouchBoundsInRoot(): FakeRect = touchBounds
+
+    fun getBoundsInRoot(): FakeRect = bounds
+
+    fun getChildren(): List<Any> = children
+  }
+
+  /** Fake `AndroidComposeView` at ([x], [y]) in the window. It also acts as its own `SemanticsOwner`. */
+  private class FakeComposeView(private val root: Any, private val x: Int, private val y: Int) {
+    fun getSemanticsOwner(): Any = this
+
+    fun getUnmergedRootSemanticsNode(): Any = root
+
+    fun getLocationInWindow(location: IntArray) {
+      location[0] = x
+      location[1] = y
+    }
+  }
+
+  /** Fake `ComposeViewAdapter` with view infos and one child view. */
+  private class FakeAdapterWithChild(private val infos: List<Any>, private val child: Any) {
+    fun getViewInfos(): List<Any> = infos
+
+    fun getChildCount(): Int = 1
+
+    fun getChildAt(index: Int): Any = child
+  }
+
+  /** Fake `LayoutNode` whose semantics getter throws, to check that one broken node does not drop the others' touch areas. */
+  private class ThrowingLayoutNode {
+    /** Always throws, like a reflection failure on a single node. */
+    fun getSemanticsConfiguration(): Any? = throw IllegalStateException("broken node")
+  }
+
+  /** Returns a fake `LayoutNode` with an `OnClick` action, so its touch area is recorded. */
+  private fun clickableLayoutNode() =
+    FakeLayoutNode(semantics = FakeSemanticsConfiguration(listOf(FakeSemanticsEntry(FakeSemanticsKey("OnClick"), Unit))))
+
+  /**
+   * Records expanded touch areas of clickable nodes clipped to the Compose root in window coordinates, drops 1px rounding shifts and
+   * scroll-clipped areas smaller than drawn bounds, keeps touch areas off wrappers with other bounds, and ignores non-clickable nodes.
+   */
+  @Test
+  fun testExtractFromComposeAdapterRecordsTouchBounds() {
+    val iconLayoutNode = clickableLayoutNode()
+    val edgeIconLayoutNode = clickableLayoutNode()
+    val bottomRightEdgeLayoutNode = clickableLayoutNode()
+    val tallOnlyLayoutNode = clickableLayoutNode()
+    val wideOnlyLayoutNode = clickableLayoutNode()
+    val roundedLayoutNode = clickableLayoutNode()
+    val scrollClippedLayoutNode = clickableLayoutNode()
+    val partialOffscreenLayoutNode = clickableLayoutNode()
+    val offscreenLayoutNode = clickableLayoutNode()
+    val nonFiniteLayoutNode = clickableLayoutNode()
+    val buttonLayoutNode = clickableLayoutNode()
+    val decorativeLayoutNode = FakeLayoutNode()
+    val buttonBounds = FakeRect(0f, 100f, 200f, 160f)
+    val semanticsRoot =
+      FakeSemanticsNode(
+        layoutNode = null,
+        touchBounds = FakeRect(0f, 0f, 300f, 300f),
+        bounds = FakeRect(0f, 0f, 300f, 300f),
+        children =
+          listOf(
+            // Centered 24px icon expanded to 48x48px.
+            FakeSemanticsNode(iconLayoutNode, touchBounds = FakeRect(0f, 0f, 48f, 48f), bounds = FakeRect(12f, 12f, 36f, 36f)),
+            // Top-left edge-aligned 24px icon: raw touch area extends to -12px and must be clipped to the root (0, 0).
+            FakeSemanticsNode(edgeIconLayoutNode, touchBounds = FakeRect(-12f, -12f, 36f, 36f), bounds = FakeRect(0f, 0f, 24f, 24f)),
+            // Bottom-right edge-aligned 24px icon: raw touch area extends to 312px and must be clipped to the root (300, 300).
+            FakeSemanticsNode(
+              bottomRightEdgeLayoutNode,
+              touchBounds = FakeRect(264f, 264f, 312f, 312f),
+              bounds = FakeRect(276f, 276f, 300f, 300f),
+            ),
+            // Height-only expansion (200x40 -> 200x48).
+            FakeSemanticsNode(tallOnlyLayoutNode, touchBounds = FakeRect(0f, 46f, 200f, 94f), bounds = FakeRect(0f, 50f, 200f, 90f)),
+            // Width-only expansion (24x48 -> 48x48).
+            FakeSemanticsNode(wideOnlyLayoutNode, touchBounds = FakeRect(200f, 50f, 248f, 98f), bounds = FakeRect(212f, 50f, 236f, 98f)),
+            // 420dpi odd-pixel centering: 1px wider after rounding (0..127 vs 0..126) must still be ignored.
+            FakeSemanticsNode(
+              roundedLayoutNode,
+              touchBounds = FakeRect(0.4f, 170f, 126.5f, 296f),
+              bounds = FakeRect(0f, 170f, 126f, 296f),
+            ),
+            // Scroll-clipped 120x40 card (visible 0..60 x 4..44): touch shrinks horizontally (26..60) while expanding vertically (0..48),
+            // so containment must reject it even though height grew by 8px.
+            FakeSemanticsNode(
+              scrollClippedLayoutNode,
+              touchBounds = FakeRect(26f, 0f, 60f, 48f),
+              bounds = FakeRect(50f, 4f, 60f, 44f),
+            ),
+            // Partially off-screen 24px icon (-12..12): its visible 0..12 slice is expanded to 0..24.
+            FakeSemanticsNode(
+              partialOffscreenLayoutNode,
+              touchBounds = FakeRect(-24f, 0f, 24f, 48f),
+              bounds = FakeRect(-12f, 12f, 12f, 36f),
+            ),
+            // Fully off-screen icon outside the root must not produce a touch area.
+            FakeSemanticsNode(offscreenLayoutNode, touchBounds = FakeRect(308f, 0f, 356f, 48f), bounds = FakeRect(320f, 12f, 344f, 36f)),
+            // Non-finite Rect coordinates must be ignored without throwing.
+            FakeSemanticsNode(nonFiniteLayoutNode, touchBounds = FakeRect(Float.NaN, 0f, 48f, 48f), bounds = FakeRect(12f, 12f, 36f, 36f)),
+            // Unchanged touch area.
+            FakeSemanticsNode(buttonLayoutNode, touchBounds = buttonBounds, bounds = buttonBounds),
+            // Non-clickable icon whose touch area Compose 1.13 still grows (decorative semantics only) must not record touchBounds.
+            FakeSemanticsNode(decorativeLayoutNode, touchBounds = FakeRect(100f, 0f, 148f, 48f), bounds = FakeRect(112f, 12f, 136f, 36f)),
+          ),
+      )
+    // The Compose view is 210px down the window, for example below the status bar.
+    val iconLayout = FakeComposeViewInfo("Layout", FakeIntRect(12, 222, 36, 246), "IconButton.kt", 1, layoutInfo = iconLayoutNode)
+    val iconButton = FakeComposeViewInfo("IconButton", FakeIntRect(12, 222, 36, 246), "Screen.kt", 10, children = listOf(iconLayout))
+    val biggerWrapper = FakeComposeViewInfo("Card", FakeIntRect(0, 210, 300, 300), "Screen.kt", 15, children = listOf(iconLayout))
+    val edgeIcon = FakeComposeViewInfo("IconButton", FakeIntRect(0, 210, 24, 234), "Screen.kt", 16, layoutInfo = edgeIconLayoutNode)
+    val bottomRightEdge =
+      FakeComposeViewInfo("IconButton", FakeIntRect(276, 486, 300, 510), "Screen.kt", 17, layoutInfo = bottomRightEdgeLayoutNode)
+    val tallOnly = FakeComposeViewInfo("Button", FakeIntRect(0, 260, 200, 300), "Screen.kt", 18, layoutInfo = tallOnlyLayoutNode)
+    val wideOnly = FakeComposeViewInfo("IconButton", FakeIntRect(212, 260, 236, 308), "Screen.kt", 19, layoutInfo = wideOnlyLayoutNode)
+    val rounded = FakeComposeViewInfo("IconButton", FakeIntRect(0, 380, 126, 506), "Screen.kt", 20, layoutInfo = roundedLayoutNode)
+    val scrollClipped = FakeComposeViewInfo("Card", FakeIntRect(-60, 214, 60, 254), "Screen.kt", 21, layoutInfo = scrollClippedLayoutNode)
+    val partialOffscreen =
+      FakeComposeViewInfo("IconButton", FakeIntRect(-12, 222, 12, 246), "Screen.kt", 22, layoutInfo = partialOffscreenLayoutNode)
+    val offscreen = FakeComposeViewInfo("IconButton", FakeIntRect(320, 222, 344, 246), "Screen.kt", 23, layoutInfo = offscreenLayoutNode)
+    val nonFinite = FakeComposeViewInfo("IconButton", FakeIntRect(12, 222, 36, 246), "Screen.kt", 24, layoutInfo = nonFiniteLayoutNode)
+    val button = FakeComposeViewInfo("Button", FakeIntRect(0, 310, 200, 370), "Screen.kt", 25, layoutInfo = buttonLayoutNode)
+    val decorative = FakeComposeViewInfo("Icon", FakeIntRect(112, 222, 136, 246), "Screen.kt", 26, layoutInfo = decorativeLayoutNode)
+    val column =
+      FakeComposeViewInfo(
+        "Column",
+        FakeIntRect(0, 210, 300, 510),
+        "Screen.kt",
+        5,
+        children =
+          listOf(
+            iconButton,
+            biggerWrapper,
+            edgeIcon,
+            bottomRightEdge,
+            tallOnly,
+            wideOnly,
+            rounded,
+            scrollClipped,
+            partialOffscreen,
+            offscreen,
+            nonFinite,
+            button,
+            decorative,
+          ),
+      )
+    val adapter = FakeAdapterWithChild(listOf(column), FakeComposeView(semanticsRoot, x = 0, y = 210))
+
+    val nodes = ComponentTreeExtractor.extractFromComposeAdapter(adapter).single().children!!
+    assertEquals(ComponentBounds(0, 210, 48, 258), nodes[0].touchBounds)
+    assertNull(nodes[1].touchBounds)
+    assertEquals(ComponentBounds(0, 210, 36, 246), nodes[2].touchBounds)
+    assertEquals(ComponentBounds(264, 474, 300, 510), nodes[3].touchBounds)
+    assertEquals(ComponentBounds(0, 256, 200, 304), nodes[4].touchBounds)
+    assertEquals(ComponentBounds(200, 260, 248, 308), nodes[5].touchBounds)
+    assertNull(nodes[6].touchBounds)
+    assertNull(nodes[7].touchBounds)
+    assertEquals(ComponentBounds(0, 210, 24, 258), nodes[8].touchBounds)
+    assertNull(nodes[9].touchBounds)
+    assertNull(nodes[10].touchBounds)
+    assertNull(nodes[11].touchBounds)
+    assertNull(nodes[12].touchBounds)
+  }
+
+  /** Records no touch areas when the Compose root has zero size: clipping to the empty root drops every touch area. */
+  @Test
+  fun testExtractFromComposeAdapterIgnoresTouchBoundsForEmptyRoot() {
+    val iconLayoutNode = clickableLayoutNode()
+    val semanticsRoot =
+      FakeSemanticsNode(
+        layoutNode = null,
+        touchBounds = FakeRect(0f, 0f, 0f, 0f),
+        bounds = FakeRect(0f, 0f, 0f, 0f),
+        children =
+          listOf(FakeSemanticsNode(iconLayoutNode, touchBounds = FakeRect(0f, 0f, 48f, 48f), bounds = FakeRect(12f, 12f, 36f, 36f))),
+      )
+    val icon = FakeComposeViewInfo("IconButton", FakeIntRect(12, 12, 36, 36), "Screen.kt", 10, layoutInfo = iconLayoutNode)
+    val adapter = FakeAdapterWithChild(listOf(icon), FakeComposeView(semanticsRoot, x = 0, y = 0))
+
+    assertNull(ComponentTreeExtractor.extractFromComposeAdapter(adapter).single().touchBounds)
+  }
+
+  /**
+   * Hoists touch areas from a leaf `NodeGroup` that got a name but shares its parent's `LayoutNode`, and keeps touch areas of padded
+   * clickables (non-null `OnClick` / `OnLongClick`) whose semantics bounds already match their touch area. Non-clickable padded nodes and
+   * nodes whose `OnClick` value is null get none, and a node whose semantics cannot be read does not drop the others.
+   */
+  @Test
+  fun testExtractFromComposeAdapterHoistsRenamedNodeGroupAndKeepsPaddedClickables() {
+    val clickableRowSemantics =
+      FakeSemanticsConfiguration(
+        listOf(FakeSemanticsEntry(FakeSemanticsKey("Role"), "Button"), FakeSemanticsEntry(FakeSemanticsKey("OnClick"), Unit))
+      )
+    val onClickSemantics = FakeSemanticsConfiguration(listOf(FakeSemanticsEntry(FakeSemanticsKey("OnClick"), Unit)))
+    val onLongClickSemantics = FakeSemanticsConfiguration(listOf(FakeSemanticsEntry(FakeSemanticsKey("OnLongClick"), Unit)))
+    val nonClickableSemantics = FakeSemanticsConfiguration(listOf(FakeSemanticsEntry(FakeSemanticsKey("TestTag"), "padded_box")))
+
+    val rowLayoutNode = FakeLayoutNode(semantics = clickableRowSemantics)
+    val paddedClickLayoutNode = FakeLayoutNode(semantics = onClickSemantics)
+    val paddedLongClickLayoutNode = FakeLayoutNode(semantics = onLongClickSemantics)
+    val paddedBoxLayoutNode = FakeLayoutNode(semantics = nonClickableSemantics)
+    val nullClickLayoutNode =
+      FakeLayoutNode(semantics = FakeSemanticsConfiguration(listOf(FakeSemanticsEntry(FakeSemanticsKey("OnClick"), null))))
+
+    val semanticsRoot =
+      FakeSemanticsNode(
+        layoutNode = null,
+        touchBounds = FakeRect(0f, 0f, 300f, 300f),
+        bounds = FakeRect(0f, 0f, 300f, 300f),
+        children =
+          listOf(
+            // A node whose semantics getter throws must not drop the touch areas of the nodes after it.
+            FakeSemanticsNode(ThrowingLayoutNode(), touchBounds = FakeRect(0f, 250f, 48f, 298f), bounds = FakeRect(12f, 262f, 36f, 286f)),
+            // Multi-child 100x32 clickable Row expanded to 100x48 (shifted +210 -> 202..250).
+            FakeSemanticsNode(rowLayoutNode, touchBounds = FakeRect(0f, 2f, 100f, 50f), bounds = FakeRect(0f, 10f, 100f, 42f)),
+            // Padded clickable (e.g. Modifier.clickable {}.padding(12.dp).size(24.dp) or RadioButton): semantics bounds == touchBounds
+            // (48x48), while ComponentTreeNode.bounds (innerCoordinator) is 24x24.
+            FakeSemanticsNode(paddedClickLayoutNode, touchBounds = FakeRect(0f, 100f, 48f, 148f), bounds = FakeRect(0f, 100f, 48f, 148f)),
+            // Same for OnLongClick.
+            FakeSemanticsNode(
+              paddedLongClickLayoutNode,
+              touchBounds = FakeRect(200f, 100f, 248f, 148f),
+              bounds = FakeRect(200f, 100f, 248f, 148f),
+            ),
+            // Non-clickable padded container: semantics bounds == touchBounds (56x56) > inner 24x24, must NOT record touchBounds.
+            FakeSemanticsNode(
+              paddedBoxLayoutNode,
+              touchBounds = FakeRect(100f, 100f, 156f, 156f),
+              bounds = FakeRect(100f, 100f, 156f, 156f),
+            ),
+            // Padded node whose OnClick value is null is not clickable, so it must NOT record touchBounds.
+            FakeSemanticsNode(nullClickLayoutNode, touchBounds = FakeRect(0f, 200f, 48f, 248f), bounds = FakeRect(0f, 200f, 48f, 248f)),
+          ),
+      )
+
+    // Real ComposeViewAdapter shape: Row -> Layout -> ReusableComposeNode -> NodeGroup(name = "", layoutInfo = rowLayoutNode).
+    // inferNameFromLayoutNode names the NodeGroup "Button", so hoisting must match shared layoutNode as well as internal names.
+    val rowChild1 = FakeComposeViewInfo("Icon", FakeIntRect(0, 220, 24, 244), "Screen.kt", 12)
+    val rowChild2 = FakeComposeViewInfo("Text", FakeIntRect(30, 220, 80, 244), "Screen.kt", 13)
+    val rowNodeGroup =
+      FakeComposeViewInfo(
+        "",
+        FakeIntRect(0, 220, 100, 252),
+        "Row.kt",
+        1,
+        children = listOf(rowChild1, rowChild2),
+        layoutInfo = rowLayoutNode,
+      )
+    val rowReusable =
+      FakeComposeViewInfo("ReusableComposeNode", FakeIntRect(0, 220, 100, 252), "Row.kt", 1, children = listOf(rowNodeGroup))
+    val rowLayout = FakeComposeViewInfo("Layout", FakeIntRect(0, 220, 100, 252), "Row.kt", 1, children = listOf(rowReusable))
+    val row = FakeComposeViewInfo("Row", FakeIntRect(0, 220, 100, 252), "Screen.kt", 10, children = listOf(rowLayout))
+
+    val paddedClick = FakeComposeViewInfo("RadioButton", FakeIntRect(12, 322, 36, 346), "Screen.kt", 20, layoutInfo = paddedClickLayoutNode)
+    val paddedLongClick =
+      FakeComposeViewInfo("Icon", FakeIntRect(212, 322, 236, 346), "Screen.kt", 21, layoutInfo = paddedLongClickLayoutNode)
+    val paddedBox = FakeComposeViewInfo("Box", FakeIntRect(116, 326, 140, 350), "Screen.kt", 22, layoutInfo = paddedBoxLayoutNode)
+    val nullClick = FakeComposeViewInfo("Icon", FakeIntRect(12, 422, 36, 446), "Screen.kt", 23, layoutInfo = nullClickLayoutNode)
+
+    val column =
+      FakeComposeViewInfo(
+        "Column",
+        FakeIntRect(0, 210, 300, 510),
+        "Screen.kt",
+        5,
+        children = listOf(row, paddedClick, paddedLongClick, paddedBox, nullClick),
+      )
+    val adapter = FakeAdapterWithChild(listOf(column), FakeComposeView(semanticsRoot, x = 0, y = 210))
+
+    val nodes = ComponentTreeExtractor.extractFromComposeAdapter(adapter).single().children!!
+    assertEquals(ComponentBounds(0, 212, 100, 260), nodes[0].touchBounds)
+    assertEquals(ComponentBounds(0, 310, 48, 358), nodes[1].touchBounds)
+    assertEquals(ComponentBounds(200, 310, 248, 358), nodes[2].touchBounds)
+    assertNull(nodes[3].touchBounds)
+    assertNull(nodes[4].touchBounds)
+  }
+
+  /**
+   * A wrapper that shares its child's `LayoutNode` does not copy the semantics the child took from its own internal child, so semantics do
+   * not spread up a chain of full-screen wrappers. (Touch areas still move up; see the renamed `NodeGroup` test above.)
+   */
+  @Test
+  fun testExtractFromComposeAdapterDoesNotHoistSemanticsFromChildSharingLayoutNode() {
+    val sharedLayoutNode = FakeLayoutNode()
+    val iconSemantics =
+      FakeSemanticsConfiguration(
+        listOf(
+          FakeSemanticsEntry(FakeSemanticsKey("ContentDescription"), listOf("Close")),
+          FakeSemanticsEntry(FakeSemanticsKey("OnClick"), Unit),
+        )
+      )
+    val iconLayoutNode = FakeLayoutNode(semantics = iconSemantics)
+    val semanticsRoot =
+      FakeSemanticsNode(
+        layoutNode = null,
+        touchBounds = FakeRect(0f, 0f, 300f, 300f),
+        bounds = FakeRect(0f, 0f, 300f, 300f),
+        children =
+          listOf(FakeSemanticsNode(sharedLayoutNode, touchBounds = FakeRect(0f, 0f, 300f, 300f), bounds = FakeRect(0f, 0f, 300f, 300f))),
+      )
+    // Box takes the icon's semantics from its internal Layout child (same bounds); Surface shares Box's LayoutNode.
+    val iconLayout = FakeComposeViewInfo("Layout", FakeIntRect(0, 0, 100, 100), "Icon.kt", 1, layoutInfo = iconLayoutNode)
+    val box =
+      FakeComposeViewInfo("Box", FakeIntRect(0, 0, 100, 100), "Screen.kt", 10, children = listOf(iconLayout), layoutInfo = sharedLayoutNode)
+    val surface =
+      FakeComposeViewInfo("Surface", FakeIntRect(0, 0, 100, 100), "Screen.kt", 5, children = listOf(box), layoutInfo = sharedLayoutNode)
+    val adapter = FakeAdapterWithChild(listOf(surface), FakeComposeView(semanticsRoot, x = 0, y = 0))
+
+    val surfaceNode = ComponentTreeExtractor.extractFromComposeAdapter(adapter).single()
+    val boxNode = surfaceNode.children!!.single()
+    assertEquals("Surface", surfaceNode.name)
+    assertEquals("Close", boxNode.semantics?.get("contentDescription"))
+    assertNull(surfaceNode.semantics)
   }
 
   @Test
@@ -1356,6 +1699,29 @@ class ComponentTreeExtractorTest {
       visitInsn(Opcodes.ICONST_1)
       visitInsn(Opcodes.IRETURN)
     }
+    // Compose view getters, so ComposeTouchBounds.extract() caches Method handles from this class.
+    cw.addMethod("getSemanticsOwner", "()Ljava/lang/Object;") {
+      visitVarInsn(Opcodes.ALOAD, 0)
+      visitInsn(Opcodes.ARETURN)
+    }
+    cw.addMethod("getUnmergedRootSemanticsNode", "()Ljava/lang/Object;") {
+      visitVarInsn(Opcodes.ALOAD, 0)
+      visitInsn(Opcodes.ARETURN)
+    }
+    cw.addMethod("getLocationInWindow", "([I)V") { visitInsn(Opcodes.RETURN) }
+    // Semantics node and Rect getters, so extract() gets past the root bounds and walks the tree.
+    for (getter in listOf("getBoundsInRoot", "getLayoutInfo")) {
+      cw.addMethod(getter, "()Ljava/lang/Object;") {
+        visitVarInsn(Opcodes.ALOAD, 0)
+        visitInsn(Opcodes.ARETURN)
+      }
+    }
+    for (getter in listOf("getLeft", "getTop", "getRight", "getBottom")) {
+      cw.addMethod(getter, "()F") {
+        visitInsn(Opcodes.FCONST_1)
+        visitInsn(Opcodes.FRETURN)
+      }
+    }
 
     cw.visitEnd()
     return cw.toByteArray()
@@ -1406,6 +1772,7 @@ class ComponentTreeExtractorTest {
       exerciseClassInThrowawayLoader("com.example.test.DynamicSemanticsNode") { _, instance ->
         assertNull(ComposeSemanticsExtractor.extractSemantics(instance))
         assertEquals("vertical", ComposeSemanticsExtractor.extractViewSemantics(instance)?.get("scrollAxis"))
+        assertNull(ComposeTouchBounds.extract(instance).findExpandedBounds(instance, ComponentBounds(0, 0, 1, 1)))
       }
     assertClassLoaderCollected(weakLoader, weakClass)
   }

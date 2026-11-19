@@ -51,6 +51,7 @@ class PreviewComponentTreeTest {
               {
                 "name": "Button",
                 "bounds": { "left": 10, "top": 20, "right": 310, "bottom": 140, "width": 300, "height": 120 },
+                "touchBounds": { "left": 10, "top": 8, "right": 310, "bottom": 152 },
                 "sourceLocation": { "fileName": "App.kt", "lineNumber": 42 },
                 "semantics": { "role": "Button", "text": "Submit" },
                 "parameters": { "enabled": "true" }
@@ -85,11 +86,13 @@ class PreviewComponentTreeTest {
     assertEquals(30, root.sourceLocation?.lineNumber)
     assertEquals(12345, root.sourceLocation?.packageHash)
     assertEquals(mapOf("padding" to "16dp"), root.modifiers)
+    assertNull(root.touchBounds)
 
     val child = root.children?.single()!!
     assertEquals("Button", child.name)
     assertEquals(300, child.bounds.width)
     assertEquals(120, child.bounds.height)
+    assertEquals(ComponentBounds(10, 8, 310, 152), child.touchBounds)
     assertEquals("App.kt", child.sourceLocation?.fileName)
     assertEquals(42, child.sourceLocation?.lineNumber)
     assertNull(child.sourceLocation?.packageHash)

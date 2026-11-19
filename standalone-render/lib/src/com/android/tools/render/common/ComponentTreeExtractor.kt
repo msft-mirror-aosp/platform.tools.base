@@ -167,8 +167,12 @@ object ComponentTreeExtractor {
     var semantics: Map<String, String>? = null,
     var parameters: Map<String, String>? = null,
     var modifiers: Map<String, String>? = null,
+    var touchBounds: ComponentBounds? = null,
     val isInferredFromLayoutNode: Boolean = false,
-  )
+  ) {
+    /** Returns true if this node is an unnamed or internal Compose primitive (e.g. `ReusableComposeNode`, `Layout`). */
+    fun isInternalPrimitive(): Boolean = name.isBlank() || name in INTERNAL_COMPOSE_NODE_NAMES
+  }
 
   internal fun extractFromComposeAdapter(
     adapter: Any,
@@ -177,6 +181,7 @@ object ComponentTreeExtractor {
   ): List<ComponentTreeNode> {
     val cl = adapter.javaClass.classLoader
     val paramLookup = ComposeParameterExtractor.extractParametersFromSlotTable(adapter, cl, slotTrees)
+    val touchBounds = ComposeTouchBounds.extract(adapter)
 
     val getViewInfos =
       adapter.javaClass.declaredMethods.firstOrNull { it.name.contains("getViewInfos") && it.parameterCount == 0 }
@@ -198,10 +203,10 @@ object ComponentTreeExtractor {
       if (rawList.isNotEmpty()) {
         rawList.mapIndexed { index, rawNode ->
           val parsedInfo = parsedViewInfos.getOrNull(index).takeIf { rawList.size == parsedViewInfos.size }
-          parseRawComposeViewInfo(rawNode, paramLookup, cl, parsedInfo)
+          parseRawComposeViewInfo(rawNode, paramLookup, cl, parsedInfo, touchBounds)
         }
       } else {
-        parsedViewInfos.map { parseRawComposeViewInfo(it, paramLookup, cl, it) }
+        parsedViewInfos.map { parseRawComposeViewInfo(it, paramLookup, cl, it, touchBounds) }
       }
     return rawNodes.flatMap { pruneRawComposeNode(it, parent = null) }
   }
@@ -214,11 +219,16 @@ object ComponentTreeExtractor {
     return rawNodes.flatMap { pruneRawComposeNode(it, parent = null) }
   }
 
+  /**
+   * Parses [node] and its children into [RawComposeNode]s. [composeTouchBounds] holds the Compose touch areas from
+   * [ComposeTouchBounds.extract].
+   */
   private fun parseRawComposeViewInfo(
     node: Any,
     paramLookup: ParamLookup,
     cl: ClassLoader?,
     parsedInfo: ComposeViewInfo? = node as? ComposeViewInfo,
+    composeTouchBounds: ComposeTouchBounds = ComposeTouchBounds(),
   ): RawComposeNode {
     val bounds =
       if (parsedInfo != null) {
@@ -242,20 +252,20 @@ object ComponentTreeExtractor {
 
     val parsedChildren =
       if (node is ComposeViewInfo) {
-        node.children.map { parseRawComposeViewInfo(it, paramLookup, cl, it) }
+        node.children.map { parseRawComposeViewInfo(it, paramLookup, cl, it, composeTouchBounds) }
       } else {
         val rawChildrenList = (invokeGetter(node, "children") as? List<*>)?.filterNotNull().orEmpty()
         val parsedChildrenInfos = parsedInfo?.children.orEmpty()
         rawChildrenList.mapIndexed { index, child ->
           val childParsedInfo = parsedChildrenInfos.getOrNull(index).takeIf { rawChildrenList.size == parsedChildrenInfos.size }
-          parseRawComposeViewInfo(child, paramLookup, cl, childParsedInfo)
+          parseRawComposeViewInfo(child, paramLookup, cl, childParsedInfo, composeTouchBounds)
         }
       }
 
     var layoutNode = directLayoutNode ?: if (!explicitName.endsWith("Theme")) findInternalLayoutNode(node) else null
     if (layoutNode == null && !explicitName.endsWith("Theme")) {
       for (c in parsedChildren) {
-        if ((c.name.isBlank() || c.name in INTERNAL_COMPOSE_NODE_NAMES) && c.bounds == bounds && c.layoutNode != null) {
+        if (c.isInternalPrimitive() && c.bounds == bounds && c.layoutNode != null) {
           layoutNode = c.layoutNode
           break
         }
@@ -264,6 +274,8 @@ object ComponentTreeExtractor {
 
     var semantics = ComposeSemanticsExtractor.extractSemantics(layoutNode)
     var modifiers = ComposeSemanticsExtractor.extractModifiers(layoutNode, cl)
+    // Only the node's own LayoutNode: a LayoutNode found in a smaller child must not give its touch area to a bigger wrapper.
+    var touchBounds = directLayoutNode?.let { composeTouchBounds.findExpandedBounds(it, bounds) }
     val name =
       if (explicitName.isNotBlank()) {
         explicitName
@@ -275,16 +287,19 @@ object ComponentTreeExtractor {
     val isInferredFromLayoutNode = explicitName.isBlank() && name.isNotBlank()
     var parameters = paramLookup.findParameters(sourceLocation?.fileName, sourceLocation?.lineNumber, name, bounds)
 
-    // Hoist from direct internal primitive children (e.g. ReusableComposeNode / Layout) only when they share this node's bounds
-    // and this node is not a Theme wrapper.
+    // Hoist from direct children with this node's bounds that are internal primitives (e.g. ReusableComposeNode / Layout), unless this
+    // node is a Theme wrapper. The touch area also comes from a child that shares this node's LayoutNode (a leaf NodeGroup that got a
+    // name); its semantics are not copied, since this node already reads that LayoutNode.
     if (!name.endsWith("Theme")) {
       for (c in parsedChildren) {
-        if ((c.name.isBlank() || c.name in INTERNAL_COMPOSE_NODE_NAMES) && c.bounds == bounds) {
-          if (semantics == null && c.semantics != null) semantics = c.semantics
-          if (modifiers == null && c.modifiers != null) modifiers = c.modifiers
-          if (parameters == null && c.parameters != null && areCompatibleParamOwners(name, c.name)) {
-            parameters = c.parameters
-          }
+        if (c.bounds != bounds) continue
+        val sharesLayoutNode = layoutNode != null && c.layoutNode === layoutNode
+        if (touchBounds == null && (c.isInternalPrimitive() || sharesLayoutNode)) touchBounds = c.touchBounds
+        if (!c.isInternalPrimitive()) continue
+        if (semantics == null && c.semantics != null) semantics = c.semantics
+        if (modifiers == null && c.modifiers != null) modifiers = c.modifiers
+        if (parameters == null && c.parameters != null && areCompatibleParamOwners(name, c.name)) {
+          parameters = c.parameters
         }
       }
     }
@@ -298,6 +313,7 @@ object ComponentTreeExtractor {
       semantics = semantics,
       parameters = parameters,
       modifiers = modifiers,
+      touchBounds = touchBounds,
       isInferredFromLayoutNode = isInferredFromLayoutNode,
     )
   }
@@ -384,8 +400,8 @@ object ComponentTreeExtractor {
   /**
    * Bottom-up pruning of [RawComposeNode] hierarchies:
    * 1. Non-meaningful nodes (zero-bounds, nameless, `remember`, `<get-...>`, and [INTERNAL_COMPOSE_NODE_NAMES]) are unwrapped. Their direct
-   *    `layoutNode`/`semantics`/`modifiers` are only hoisted into `parent` when `parent` has identical bounds and is not a `*Theme`
-   *    composable.
+   *    `layoutNode`/`semantics`/`modifiers`/`touchBounds` are only hoisted into `parent` when `parent` has identical bounds and is not a
+   *    `*Theme` composable.
    * 2. Duplicate-bounds nodes (`node.bounds == parent.bounds`) with at most one child are collapsed only when they are:
    *     - Same-name overloads (`node.name == parent.name`),
    *     - `BasicText` inside `Text`,
@@ -404,6 +420,7 @@ object ComponentTreeExtractor {
         parent.layoutNode = parent.layoutNode ?: node.layoutNode
         parent.semantics = mergeMaps(parent.semantics, node.semantics)
         parent.modifiers = mergeMaps(parent.modifiers, node.modifiers)
+        parent.touchBounds = parent.touchBounds ?: node.touchBounds
         if (areCompatibleParamOwners(parent.name, node.name)) {
           parent.parameters = mergeMaps(parent.parameters, node.parameters)
         }
@@ -421,16 +438,19 @@ object ComponentTreeExtractor {
           node.name == "Box" &&
           node.semantics.isNullOrEmpty() &&
           node.parameters.isNullOrEmpty() &&
-          node.modifiers.isNullOrEmpty()
+          node.modifiers.isNullOrEmpty() &&
+          node.touchBounds == null
       val isBarrenLeafPlaceholder =
         prunedChildren.isEmpty() &&
           node.semantics.isNullOrEmpty() &&
           node.parameters.isNullOrEmpty() &&
           node.modifiers.isNullOrEmpty() &&
+          node.touchBounds == null &&
           (node.name == "Box" || (node.sourceLocation?.fileName != null && node.sourceLocation.fileName != parent.sourceLocation?.fileName))
       val isIntermediateThemeWrapper =
         parent.name.endsWith("Theme") &&
           prunedChildren.isNotEmpty() &&
+          node.touchBounds == null &&
           (node.name.endsWith("Theme") ||
             (node.sourceLocation?.fileName?.endsWith("Theme.kt") == true &&
               node.modifiers.isNullOrEmpty() &&
@@ -441,6 +461,7 @@ object ComponentTreeExtractor {
           parent.layoutNode = parent.layoutNode ?: node.layoutNode
           parent.semantics = mergeMaps(parent.semantics, node.semantics)
           parent.modifiers = mergeMaps(parent.modifiers, node.modifiers)
+          parent.touchBounds = parent.touchBounds ?: node.touchBounds
           if (areCompatibleParamOwners(parent.name, node.name)) {
             parent.parameters = mergeMaps(parent.parameters, node.parameters)
           }
@@ -468,6 +489,7 @@ object ComponentTreeExtractor {
         semantics = node.semantics?.ifEmpty { null },
         parameters = node.parameters?.ifEmpty { null },
         modifiers = node.modifiers?.ifEmpty { null },
+        touchBounds = node.touchBounds,
       )
     return listOf(componentNode)
   }
@@ -483,6 +505,7 @@ object ComponentTreeExtractor {
       semantics = semantics,
       parameters = parameters,
       modifiers = modifiers,
+      touchBounds = touchBounds,
     )
 
   internal fun mergeMaps(first: Map<String, String>?, second: Map<String, String>?): Map<String, String>? {

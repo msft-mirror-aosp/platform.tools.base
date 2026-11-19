@@ -69,6 +69,29 @@ internal object ComposeSemanticsExtractor {
       override fun computeValue(type: Class<*>): Boolean = generateSequence(type) { it.superclass }.any { it.name == VIEW_GROUP_CLASS_NAME }
     }
 
+  /** Returns true if [layoutNode]'s semantics configuration exposes a tap action (`OnClick` or `OnLongClick`), or false on any error. */
+  fun hasTapAction(layoutNode: Any): Boolean {
+    return try {
+      val getConfig = findSemanticsConfigMethod(layoutNode.javaClass) ?: return false
+      val config = getConfig.invoke(layoutNode) as? Iterable<*> ?: return false
+      config.any { entry ->
+        val mapEntry = entry as? Map.Entry<*, *> ?: return@any false
+        if (mapEntry.value == null) return@any false
+        val keyName = semanticsKeyName(mapEntry.key ?: return@any false)
+        keyName == "OnClick" || keyName == "OnLongClick"
+      }
+    } catch (e: Exception) {
+      logger.log(Level.FINE, "Failed to read Compose tap actions", e)
+      false
+    } catch (e: LinkageError) {
+      logger.log(Level.FINE, "Linkage error reading Compose tap actions", e)
+      false
+    }
+  }
+
+  /** Returns the name of a Compose `SemanticsPropertyKey`, falling back to `toString()` for unknown key types. */
+  private fun semanticsKeyName(key: Any): String = (invokeGetter(key, "name") as? String) ?: key.toString()
+
   /**
    * Extracts semantics from a Compose `LayoutNode`: text, role, state, actions, and the accessibility flags `editable`, `scrollAxis`,
    * `importantForAccessibility`, and `mergingSemantics`.
@@ -90,7 +113,7 @@ internal object ComposeSemanticsExtractor {
         val entry = iterator.next() as? Map.Entry<*, *> ?: continue
         val key = entry.key ?: continue
         val value = entry.value ?: continue
-        val keyName = (invokeGetter(key, "name") as? String) ?: key.toString()
+        val keyName = semanticsKeyName(key)
 
         when (keyName) {
           "Text",
