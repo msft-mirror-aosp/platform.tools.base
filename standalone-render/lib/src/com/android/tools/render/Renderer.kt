@@ -29,14 +29,12 @@ import com.android.tools.preview.config.ExpandAxis
 import com.android.tools.preview.config.ExpandSettings
 import com.android.tools.render.animation.AnimationRenderOptions
 import com.android.tools.render.animation.PreviewAnimationResult
-import com.android.tools.render.common.ComponentBounds
 import com.android.tools.render.common.ComponentTreeExtractor
-import com.android.tools.render.common.ComponentTreeNode
-import com.android.tools.render.common.PreviewComponentTree
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.render.common.ResolvedScreenshotLayout
 import com.android.tools.render.common.ResourceTarget
+import com.android.tools.render.common.offsetBy
 import com.android.tools.render.common.toScreenshotError
 import com.android.tools.render.common.writeComponentTreeToJson
 import com.android.tools.render.compose.ComposeScreenshot
@@ -1001,25 +999,6 @@ class Renderer(
     val minTop = renderResult.rootViews.minOfOrNull { it.top }?.coerceAtLeast(0) ?: 0
     return minLeft to minTop
   }
-
-  private fun PreviewComponentTree.offsetBy(offsetX: Int, offsetY: Int): PreviewComponentTree =
-    if (offsetX == 0 && offsetY == 0) {
-      this
-    } else {
-      copy(components = components.map { it.offsetBy(offsetX, offsetY) })
-    }
-
-  private fun ComponentTreeNode.offsetBy(offsetX: Int, offsetY: Int): ComponentTreeNode =
-    copy(
-      bounds =
-        ComponentBounds(
-          left = bounds.left - offsetX,
-          top = bounds.top - offsetY,
-          right = bounds.right - offsetX,
-          bottom = bounds.bottom - offsetY,
-        ),
-      children = children?.map { it.offsetBy(offsetX, offsetY) },
-    )
 
   /**
    * Layoutlib's [SessionParams.RenderingMode.FULL_EXPAND] grows the canvas past the device screen without shrinking axes whose root view is

@@ -76,6 +76,21 @@ data class ComponentSourceLocation(
 
 private val gson = GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create()
 
+/** Returns this tree with every node's bounds moved left by [offsetX] and up by [offsetY]. */
+internal fun PreviewComponentTree.offsetBy(offsetX: Int, offsetY: Int): PreviewComponentTree =
+  if (offsetX == 0 && offsetY == 0) this else copy(components = components.map { it.offsetBy(offsetX, offsetY) })
+
+/** Returns this node and its children moved left by [offsetX] and up by [offsetY]. */
+private fun ComponentTreeNode.offsetBy(offsetX: Int, offsetY: Int): ComponentTreeNode =
+  copy(
+    bounds = bounds.offsetBy(offsetX, offsetY),
+    children = children?.map { it.offsetBy(offsetX, offsetY) },
+  )
+
+/** Returns these bounds moved left by [offsetX] and up by [offsetY]. */
+private fun ComponentBounds.offsetBy(offsetX: Int, offsetY: Int): ComponentBounds =
+  ComponentBounds(left = left - offsetX, top = top - offsetY, right = right - offsetX, bottom = bottom - offsetY)
+
 /** Serializes [PreviewComponentTree] to JSON with standard 2-space indentation. */
 fun writeComponentTreeToJson(writer: Writer, tree: PreviewComponentTree) {
   gson.toJson(tree, writer)
