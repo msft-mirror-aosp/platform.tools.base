@@ -17,11 +17,14 @@
 package com.android.build.gradle.internal.lint
 
 import com.android.build.api.dsl.Lint
+import com.android.build.api.variant.impl.AndroidVersionImpl
+import com.android.build.gradle.internal.component.KmpCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.plugins.BasePlugin
 import com.android.build.gradle.internal.services.createDslServices
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.options.ProjectOptions
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -561,5 +564,45 @@ class AndroidLintInputsTest {
     val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_17)
     val exception = assertThrows(GradleException::class.java) { launcherProvider.get() }
     assertThat(exception.message).contains("must specify a 'languageVersion'")
+  }
+
+  @Test
+  fun `resolveTargetSdkVersion for KMP respects lint targetSdk and targetSdkPreview with minSdk fallback`() {
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    val globalConfig = mock<GlobalTaskCreationConfig>()
+    whenever(globalConfig.lintOptions).thenReturn(lintOptions)
+    val kmpVariant = mock<KmpCreationConfig>()
+    whenever(kmpVariant.global).thenReturn(globalConfig)
+    whenever(kmpVariant.minSdk).thenReturn(AndroidVersionImpl(22))
+
+    // Default: falls back to minSdk when neither lint.targetSdk nor lint.targetSdkPreview is set.
+    val defaultTarget = resolveTargetSdkVersion(kmpVariant)
+    assertThat(defaultTarget?.apiLevel).isEqualTo(22)
+    assertThat(defaultTarget?.codename).isNull()
+
+    // Explicit lint.targetSdk
+    lintOptions.targetSdk = 34
+    val explicitRelease = resolveTargetSdkVersion(kmpVariant)
+    assertThat(explicitRelease?.apiLevel).isEqualTo(34)
+    assertThat(explicitRelease?.codename).isNull()
+
+    // Explicit lint.targetSdk { version = release(...) }
+    lintOptions.targetSdk { version = release(35) }
+    val specRelease = resolveTargetSdkVersion(kmpVariant)
+    assertThat(specRelease?.apiLevel).isEqualTo(35)
+    assertThat(specRelease?.codename).isNull()
+
+    // Explicit lint.targetSdkPreview
+    lintOptions.targetSdkPreview = "Tiramisu"
+    val explicitPreview = resolveTargetSdkVersion(kmpVariant)
+    assertThat(explicitPreview?.apiLevel).isEqualTo(32)
+    assertThat(explicitPreview?.codename).isEqualTo("Tiramisu")
+
+    // Explicit lint.targetSdk { version = preview(...) }
+    lintOptions.targetSdk { version = preview("UPSIDE_DOWN_CAKE") }
+    val specPreview = resolveTargetSdkVersion(kmpVariant)
+    assertThat(specPreview?.apiLevel).isEqualTo(33)
+    assertThat(specPreview?.codename).isEqualTo("UPSIDE_DOWN_CAKE")
   }
 }

@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.build.gradle.options.StringOption.LINT_RESERVED_MEMORY_PER_TASK
+import com.android.sdklib.SdkVersionInfo
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -823,6 +824,110 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
     getExecutor().run(":kmpJvmOnly:clean", ":kmpJvmOnly:lint")
   }
 
+  @Test
+  fun `test lint targetSdk falls back to minSdk when unset`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    addCustomSplashScreenToKmpFirstLib()
+
+    getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lintAndroidMain")
+
+    val lintModelFile =
+      File(project.getSubproject("kmpFirstLib").buildDir, "intermediates/incremental/lintAnalyzeAndroidMain/androidMain.xml")
+    PathSubject.assertThat(lintModelFile).exists()
+    PathSubject.assertThat(lintModelFile).contains("""targetSdkVersion="22"""")
+
+    val reportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results-androidMain.txt")
+    PathSubject.assertThat(reportFile).exists()
+    PathSubject.assertThat(reportFile).doesNotContain("CustomSplashScreen")
+  }
+
+  @Test
+  fun `test lint respects explicit lint targetSdk`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          android {
+              lint {
+                  targetSdk = 31
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    addCustomSplashScreenToKmpFirstLib()
+
+    getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lintAndroidMain")
+
+    val lintModelFile =
+      File(project.getSubproject("kmpFirstLib").buildDir, "intermediates/incremental/lintAnalyzeAndroidMain/androidMain.xml")
+    PathSubject.assertThat(lintModelFile).exists()
+    PathSubject.assertThat(lintModelFile).contains("""targetSdkVersion="31"""")
+
+    val reportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results-androidMain.txt")
+    PathSubject.assertThat(reportFile).exists()
+    PathSubject.assertThat(reportFile).contains("Warning: The application should not provide its own launch screen [CustomSplashScreen]")
+  }
+
+  @Test
+  fun `test lint respects explicit lint targetSdkPreview`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    val previewCodename = SdkVersionInfo.getBuildCode(SdkVersionInfo.HIGHEST_KNOWN_API) ?: "CINNAMON_BUN"
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          android {
+              lint {
+                  targetSdkPreview = "$previewCodename"
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    addCustomSplashScreenToKmpFirstLib()
+
+    getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lintAndroidMain")
+
+    val lintModelFile =
+      File(project.getSubproject("kmpFirstLib").buildDir, "intermediates/incremental/lintAnalyzeAndroidMain/androidMain.xml")
+    PathSubject.assertThat(lintModelFile).exists()
+    PathSubject.assertThat(lintModelFile).contains("""targetSdkVersion="$previewCodename"""")
+
+    val reportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results-androidMain.txt")
+    PathSubject.assertThat(reportFile).exists()
+    PathSubject.assertThat(reportFile).contains("Warning: The application should not provide its own launch screen [CustomSplashScreen]")
+  }
+
+  private fun addCustomSplashScreenToKmpFirstLib() {
+    val splashActivityFile =
+      FileUtils.join(
+        project.getSubproject("kmpFirstLib").projectDir,
+        "src",
+        "androidMain",
+        "kotlin",
+        "com",
+        "example",
+        "kmpfirstlib",
+        "MySplashActivity.kt",
+      )
+    TestFileUtils.appendToFile(
+      splashActivityFile,
+      // language=kotlin
+      """
+      package com.example.kmpfirstlib
+
+      import android.app.Activity
+
+      class MySplashActivity : Activity()
+      """
+        .trimIndent(),
+    )
+  }
+
   private fun addNewApiIssuesToKmpFirstLib(
     addCommonMainIssues: Boolean = false,
     addAndroidMainIssues: Boolean = false,
@@ -894,9 +999,6 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
 
   private fun getExecutor(): GradleTaskExecutor {
     // Set LINT_RESERVED_MEMORY_PER_TASK to "256M" to reduce time required to run the tests
-    return project
-      .executor()
-      .with(LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent)
-      .with(LINT_RESERVED_MEMORY_PER_TASK, "256M")
+    return project.executor().with(LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent).with(LINT_RESERVED_MEMORY_PER_TASK, "256M")
   }
 }

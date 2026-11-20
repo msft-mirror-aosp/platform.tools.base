@@ -1048,15 +1048,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
 
     minSdkVersion.initialize(variantCreationConfig.minSdk)
 
-    val lintOptions = variantCreationConfig.global.lintOptions
-    when (variantCreationConfig) {
-      is ApkCreationConfig -> targetSdkVersion.initialize(variantCreationConfig.targetSdk)
-      is LibraryCreationConfig ->
-        targetSdkVersion.initialize(
-          createTargetSdkVersion(lintOptions.targetSdk, lintOptions.targetSdkPreview) ?: variantCreationConfig.targetSdk
-        )
-      is KmpComponentCreationConfig -> targetSdkVersion.initialize(variantCreationConfig.minSdk)
-    }
+    resolveTargetSdkVersion(variantCreationConfig)?.let { targetSdkVersion.initialize(it) }
 
     resValues.setDisallowChanges(variantCreationConfig.resValuesCreationConfig?.resValues, handleNullable = { empty() })
 
@@ -1432,6 +1424,18 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
       partialResultsDir = partialResultsDir,
       desugaredMethodsFiles = desugaredMethodsFiles,
     )
+  }
+}
+
+internal fun resolveTargetSdkVersion(variantCreationConfig: VariantCreationConfig): com.android.build.api.variant.AndroidVersion? {
+  val lintOptions = variantCreationConfig.global.lintOptions
+  return when (variantCreationConfig) {
+    is ApkCreationConfig -> variantCreationConfig.targetSdk
+    is LibraryCreationConfig ->
+      createTargetSdkVersion(lintOptions.targetSdk, lintOptions.targetSdkPreview) ?: variantCreationConfig.targetSdk
+    is KmpComponentCreationConfig ->
+      createTargetSdkVersion(lintOptions.targetSdk, lintOptions.targetSdkPreview) ?: variantCreationConfig.minSdk
+    else -> null
   }
 }
 

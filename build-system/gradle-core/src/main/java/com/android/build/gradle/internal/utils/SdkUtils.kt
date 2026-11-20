@@ -100,8 +100,7 @@ fun validatePreviewTargetValue(value: String): String? =
 
 internal fun createTargetSdkVersion(targetSdk: Int?, targetSdkPreview: String?) =
   if (targetSdk != null || targetSdkPreview != null) {
-    val apiVersion = targetSdk?.let { DefaultApiVersion(it) } ?: DefaultApiVersion(targetSdkPreview!!)
-    apiVersion.run { AndroidVersionImpl(apiLevel, codename) }
+    DefaultApiVersion(targetSdk, targetSdkPreview).run { AndroidVersionImpl(apiLevel, codename) }
   } else null
 
 /** This function makes calling sdk block without doing `version = xx` has not effects */

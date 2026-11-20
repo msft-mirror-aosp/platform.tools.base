@@ -265,4 +265,22 @@ internal class SdkUtilsKtTest {
     Truth.assertThat(CompileSdkVersionImpl(36, betaVersion = 1).toHash()).isEqualTo("android-36.0-beta1")
     Truth.assertThat(CompileSdkVersionImpl(36, minorApiLevel = 2, betaVersion = 3).toHash()).isEqualTo("android-36.2-beta3")
   }
+
+  @Test
+  fun `createTargetSdkVersion handles release and preview`() {
+    Truth.assertThat(createTargetSdkVersion(null, null)).isNull()
+
+    val release = createTargetSdkVersion(34, null)
+    Truth.assertThat(release?.apiLevel).isEqualTo(34)
+    Truth.assertThat(release?.codename).isNull()
+
+    val previewOnly = createTargetSdkVersion(null, "Tiramisu")
+    Truth.assertThat(previewOnly?.apiLevel).isEqualTo(32)
+    Truth.assertThat(previewOnly?.codename).isEqualTo("Tiramisu")
+
+    // Preview DSL populates both apiLevel and codename; codename must be preserved.
+    val previewWithApi = createTargetSdkVersion(32, "Tiramisu")
+    Truth.assertThat(previewWithApi?.apiLevel).isEqualTo(32)
+    Truth.assertThat(previewWithApi?.codename).isEqualTo("Tiramisu")
+  }
 }
