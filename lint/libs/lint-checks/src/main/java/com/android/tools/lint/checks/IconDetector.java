@@ -1538,7 +1538,7 @@ public class IconDetector extends Detector implements XmlScanner, SourceCodeScan
 
                 if (isDrawableFile(name) && !endsWith(name, DOT_XML) && !endsWith(name, DOT_9PNG)) {
                     String baseName = getBaseName(name);
-                    boolean isActionBarIcon = isActionBarIcon(context, folderName, baseName, file);
+                    boolean isActionBarIcon = isActionBarIcon(folderName, baseName, file);
                     if (isActionBarIcon || isNotificationIcon(baseName)) {
                         Dimension size = checkColor(context, file, isActionBarIcon);
 
@@ -2479,7 +2479,7 @@ public class IconDetector extends Detector implements XmlScanner, SourceCodeScan
         return false;
     }
 
-    private boolean isActionBarIcon(Context context, String folderName, String name, File file) {
+    private boolean isActionBarIcon(String folderName, String name, File file) {
         if (isActionBarIcon(folderName, name)) {
             return true;
         }

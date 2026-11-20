@@ -273,13 +273,10 @@ class ResourceCycleDetector : ResourceXmlDetector() {
         val index = name.lastIndexOf('.')
         if (index > 0) {
           val parent = name.substring(0, index)
-          if (mReferences != null) {
-            if (mLocations != null) {
-              val node = element.getAttributeNode(ATTR_NAME)
-              recordLocation(context, node, ResourceType.STYLE, name)
-            } else {
-              recordReference(ResourceType.STYLE, name, parent)
-            }
+          if (mLocations != null) {
+            recordLocation(context, nameNode, ResourceType.STYLE, name)
+          } else {
+            recordReference(ResourceType.STYLE, name, parent)
           }
         }
       }

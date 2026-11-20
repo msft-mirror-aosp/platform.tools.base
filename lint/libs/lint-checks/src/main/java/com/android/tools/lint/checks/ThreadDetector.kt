@@ -276,8 +276,7 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
     // Similarly to the anonymous class call, this might be a lambda call, check for annotated
     // formal parameters that will give us the thread context
-    val lambdaCall =
-      methodCall.getParentOfType(ULambdaExpression::class.java, true, UAnonymousClass::class.java, ULambdaExpression::class.java)
+    val lambdaCall = methodCall.getParentOfType(ULambdaExpression::class.java, true, UAnonymousClass::class.java)
 
     return getThreadsFromExpressionContext(context, lambdaCall)
   }

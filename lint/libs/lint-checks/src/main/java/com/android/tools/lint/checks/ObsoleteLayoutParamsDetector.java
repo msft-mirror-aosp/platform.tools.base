@@ -317,9 +317,9 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                     return;
                 }
 
-                if (!isValidParamForParent(context, name, parent, parentTag)) {
+                if (!isValidParamForParent(context, parent, parentTag)) {
                     if (name.equals(ATTR_LAYOUT_COLUMN)
-                            && isValidParamForParent(context, name, TABLE_ROW, parentTag)) {
+                            && isValidParamForParent(context, TABLE_ROW, parentTag)) {
                         return;
                     }
                     context.report(
@@ -398,12 +398,12 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
             boolean isValid = false;
             for (Pair<File, String> include : includes) {
                 String parentTag = include.getSecond();
-                if (isValidParamForParent(context, name, parent, parentTag)) {
+                if (isValidParamForParent(context, parent, parentTag)) {
                     isValid = true;
                     break;
                 } else if (!isValid
                         && name.equals(ATTR_LAYOUT_COLUMN)
-                        && isValidParamForParent(context, name, TABLE_ROW, parentTag)) {
+                        && isValidParamForParent(context, TABLE_ROW, parentTag)) {
                     isValid = true;
                     break;
                 }
@@ -439,11 +439,10 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
     }
 
     /**
-     * Checks whether the given layout parameter name is valid for the given parent tag assuming it
-     * has the given current parent tag
+     * Checks whether a layout parameter for the given {@code parent} tag is valid assuming it has
+     * the given current {@code parentTag}
      */
-    private static boolean isValidParamForParent(
-            Context context, String name, String parent, String parentTag) {
+    private static boolean isValidParamForParent(Context context, String parent, String parentTag) {
         if (parentTag.indexOf('.') != -1 || parentTag.equals(VIEW_TAG)) {
             // Custom tag: We don't know whether it extends one of the builtin
             // types where the layout param is valid, so don't complain

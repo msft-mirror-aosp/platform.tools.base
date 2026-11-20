@@ -283,7 +283,7 @@ class XmlReader(private val client: LintCliClient, private val registry: IssueRe
         ATTR_FAMILY -> familyName = value
         ATTR_ROBOT -> robot = true
         ATTR_INDEPENDENT -> independent = true
-        else -> error("Unexpected note attribute: $name")
+        else -> error("Unexpected fix attribute: $name")
       }
     }
     // Not using a builder because we want to mutate the
@@ -291,7 +291,6 @@ class XmlReader(private val client: LintCliClient, private val registry: IssueRe
     val fixList = ArrayList<LintFix>()
     val type = if (tag == TAG_FIX_ALTERNATIVES) LintFix.GroupType.ALTERNATIVES else LintFix.GroupType.COMPOSITE
     val newFix = LintFix.LintFixGroup(displayName, familyName, type, fixList, robot, independent)
-    newFix.autoFix(robot, independent)
     addFix(newFix)
     fixLists.addLast(fixList)
   }
@@ -362,7 +361,7 @@ class XmlReader(private val client: LintCliClient, private val registry: IssueRe
         ATTR_FAMILY -> familyName = value
         ATTR_INDEPENDENT -> independent = true
         ATTR_ROBOT -> robot = true
-        else -> error("Unexpected note attribute: $name")
+        else -> error("Unexpected fix attribute: $name")
       }
     }
     attributeName!!
@@ -403,7 +402,7 @@ class XmlReader(private val client: LintCliClient, private val registry: IssueRe
         ATTR_FAMILY -> familyName = value
         ATTR_INDEPENDENT -> independent = true
         ATTR_ROBOT -> robot = true
-        else -> error("Unexpected note attribute: $name")
+        else -> error("Unexpected fix attribute: $name")
       }
     }
     // Note: not setting a range here; it's a child of this tag
@@ -431,7 +430,7 @@ class XmlReader(private val client: LintCliClient, private val registry: IssueRe
         ATTR_URL -> url = value
         ATTR_DESCRIPTION -> displayName = value
         ATTR_FAMILY -> familyName = value
-        else -> error("Unexpected note attribute: $name")
+        else -> error("Unexpected fix attribute: $name")
       }
     }
     return LintFix.create().name(displayName).sharedName(familyName).url(url!!).build()
@@ -492,7 +491,7 @@ class XmlReader(private val client: LintCliClient, private val registry: IssueRe
         ATTR_ROBOT -> robot = true
         ATTR_PRIORITY -> sortPriority = value.toInt()
         // TODO
-        else -> error("Unexpected note attribute: $name")
+        else -> error("Unexpected fix attribute: $name")
       }
     }
 

@@ -141,8 +141,7 @@ public class InvalidPackageDetector extends Detector implements ClassScanner {
                 if (args != -1 && signature.charAt(args + 1) == 'L') {
                     String type = signature.substring(args + 2, signature.length() - 1);
                     if (isInvalidPackage(type)) {
-                        AbstractInsnNode first = nodes.size() > 0 ? nodes.get(0) : null;
-                        record(context, method, first, type);
+                        record(context, type);
                     }
                 }
             }
@@ -161,13 +160,13 @@ public class InvalidPackageDetector extends Detector implements ClassScanner {
                     }
 
                     if (isInvalidPackage(owner)) {
-                        record(context, method, instruction, owner);
+                        record(context, owner);
                     }
                 } else if (type == AbstractInsnNode.FIELD_INSN) {
                     FieldInsnNode node = (FieldInsnNode) instruction;
                     String owner = node.owner;
                     if (isInvalidPackage(owner)) {
-                        record(context, method, instruction, owner);
+                        record(context, owner);
                     }
                 } else if (type == AbstractInsnNode.LDC_INSN) {
                     LdcInsnNode node = (LdcInsnNode) instruction;
@@ -175,7 +174,7 @@ public class InvalidPackageDetector extends Detector implements ClassScanner {
                         Type t = (Type) node.cst;
                         String className = t.getInternalName();
                         if (isInvalidPackage(className)) {
-                            record(context, method, instruction, className);
+                            record(context, className);
                         }
                     }
                 }
@@ -211,8 +210,7 @@ public class InvalidPackageDetector extends Detector implements ClassScanner {
         return packageLength;
     }
 
-    private void record(
-            ClassContext context, MethodNode method, AbstractInsnNode instruction, String owner) {
+    private void record(ClassContext context, String owner) {
         if (owner.indexOf('$') != -1) {
             // Don't report inner classes too; there will pretty much always be an outer class
             // reference as well
