@@ -16,10 +16,9 @@
 
 package com.android.build.gradle.integration.lint
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
@@ -761,33 +760,50 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
   @Test
   fun `test no lint tasks if lint plugin not applied`() {
     Assume.assumeTrue(lintAnalysisPerComponent)
-    getExecutor().run("kmpFirstLib:tasks").stdout.use {
-      assertThat(it).contains("lint -")
-      assertThat(it).contains("lintAndroidMain")
-      assertThat(it).contains("lintFix")
-      assertThat(it).contains("lintJvm")
-    }
+    val lintTasksWithPlugin = extractLintTaskNames(getExecutor().run("kmpFirstLib:tasks"))
+    Truth.assertThat(lintTasksWithPlugin).containsExactly("lint", "lintAndroidMain", "lintFix", "lintVital", "updateLintBaseline")
+
     TestFileUtils.searchAndReplace(project.getSubproject("kmpFirstLib").ktsBuildFile, "id(\"com.android.lint\")", "")
-    getExecutor().run("kmpFirstLib:tasks").stdout.use { scanner ->
-      scanner.forEachLine {
-        Truth.assertThat(it).doesNotContain("lint -")
-        Truth.assertThat(it).doesNotContain("lintAndroidMain")
-        Truth.assertThat(it).doesNotContain("lintFix")
-        Truth.assertThat(it).doesNotContain("lintJvm")
-      }
-    }
+    val lintTasksWithoutPlugin = extractLintTaskNames(getExecutor().run("kmpFirstLib:tasks"))
+    Truth.assertThat(lintTasksWithoutPlugin).isEmpty()
   }
 
   @Test
   fun `test lint on KMP project with android target but no jvm target`() {
     Assume.assumeTrue(lintAnalysisPerComponent)
+    addNewApiIssuesToKmpFirstLib(addAndroidMainIssues = true)
 
-    getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lint")
+    val result = getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lint")
+    result.assertTask(":kmpFirstLib:lintAndroidMain").didWork()
 
-    val reportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results.txt")
+    val jvmReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results.txt")
+    PathSubject.assertThat(jvmReportFile).doesNotExist()
 
-    PathSubject.assertThat(reportFile).exists()
-    PathSubject.assertThat(reportFile).contains("No issues found.")
+    val androidReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results-androidMain.txt")
+    PathSubject.assertThat(androidReportFile).exists()
+    PathSubject.assertThat(androidReportFile)
+      .contains("Error: Call requires API level 26, or core library desugaring (current min is 22): java.time.LocalDate#now [NewApi]")
+
+    // Verify lifecycle tasks (updateLintBaseline, lintFix, lintVital) work cleanly without creating
+    // phantom JVM baselines or executing JVM lint tasks.
+    val baselineResult = getExecutor().with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run(":kmpFirstLib:updateLintBaseline")
+    baselineResult.assertTask(":kmpFirstLib:updateLintBaselineAndroidMain").didWork()
+    val androidBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline-android.xml")
+    val jvmBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline-jvm.xml")
+    PathSubject.assertThat(androidBaselineFile).exists()
+    PathSubject.assertThat(androidBaselineFile).contains("NewApi")
+    PathSubject.assertThat(jvmBaselineFile).doesNotExist()
+
+    val fixAndVitalResult = getExecutor().run(":kmpFirstLib:lintFix", ":kmpFirstLib:lintVital")
+    fixAndVitalResult.assertTask(":kmpFirstLib:lintFixAndroidMain").didWork()
+
+    // Verify check task still depends on lint -> lintAndroidMain.
+    val dryRunTasks = extractDryRunTasks(getExecutor().withArgument("--dry-run").run(":kmpFirstLib:check"))
+    Truth.assertThat(dryRunTasks).containsAtLeast(":kmpFirstLib:lint", ":kmpFirstLib:lintAndroidMain")
+
+    val allLintTasks = extractLintTaskNames(getExecutor().run(":kmpFirstLib:tasks", "--all"))
+    Truth.assertThat(allLintTasks).containsAtLeast("lint", "lintAndroidMain", "lintFix", "updateLintBaseline", "lintVital")
+    Truth.assertThat(allLintTasks.filter { it.contains("Jvm", ignoreCase = true) }).isEmpty()
   }
 
   @Test
@@ -795,12 +811,26 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
     Assume.assumeTrue(lintAnalysisPerComponent)
     TestFileUtils.searchAndReplace(project.getSubproject("kmpJvmOnly").ktsBuildFile, "jvm()", "js()")
 
-    getExecutor().run(":kmpJvmOnly:clean", ":kmpJvmOnly:lint")
+    val result = getExecutor().run(":kmpJvmOnly:clean", ":kmpJvmOnly:lint")
+    Truth.assertThat(result.tasks).contains(":kmpJvmOnly:lint")
 
     val reportFile = File(project.getSubproject("kmpJvmOnly").buildDir, "reports/lint-results.txt")
+    PathSubject.assertThat(reportFile).doesNotExist()
 
-    PathSubject.assertThat(reportFile).exists()
-    PathSubject.assertThat(reportFile).contains("No issues found.")
+    val lifecycleResult =
+      getExecutor()
+        .with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true)
+        .run(":kmpJvmOnly:updateLintBaseline", ":kmpJvmOnly:lintFix", ":kmpJvmOnly:lintVital")
+    Truth.assertThat(lifecycleResult.tasks)
+      .containsAtLeast(":kmpJvmOnly:updateLintBaseline", ":kmpJvmOnly:lintFix", ":kmpJvmOnly:lintVital")
+    val jvmBaselineFile = File(project.getSubproject("kmpJvmOnly").projectDir, "lint-baseline-jvm.xml")
+    PathSubject.assertThat(jvmBaselineFile).doesNotExist()
+
+    val dryRunTasks = extractDryRunTasks(getExecutor().withArgument("--dry-run").run(":kmpJvmOnly:check"))
+    Truth.assertThat(dryRunTasks).contains(":kmpJvmOnly:lint")
+
+    val allLintTasks = extractLintTaskNames(getExecutor().run(":kmpJvmOnly:tasks", "--all"))
+    Truth.assertThat(allLintTasks).containsExactly("lint", "lintFix", "lintVital", "updateLintBaseline")
   }
 
   /** Regression test for b/330911660 */
@@ -994,6 +1024,24 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
         """
           .trimIndent(),
       )
+    }
+  }
+
+  private fun extractLintTaskNames(result: GradleBuildResult): Set<String> {
+    val taskLinePattern = Regex("^([a-zA-Z][a-zA-Z0-9]*)(?: - .*)?$")
+    return buildSet {
+      result.processOutput { line ->
+        taskLinePattern.matchEntire(line.trim())?.groupValues?.get(1)?.takeIf { it.startsWith("lint") || it.contains("Lint") }?.let(::add)
+      }
+    }
+  }
+
+  private fun extractDryRunTasks(result: GradleBuildResult): List<String> = buildList {
+    result.processOutput { line ->
+      val trimmed = line.trim()
+      if (trimmed.startsWith(":") && trimmed.endsWith(" SKIPPED")) {
+        add(trimmed.removeSuffix(" SKIPPED"))
+      }
     }
   }
 

@@ -192,13 +192,7 @@ abstract class LintPlugin : Plugin<Project> {
         } catch (ignored: ClassNotFoundException) {
           null
         }
-      val lintTextOutputTask =
-        project.tasks.register("lintJvm", AndroidLintTextOutputTask::class.java) { task ->
-          task.configureForStandalone(taskCreationServices, artifacts, lintOptions!!)
-        }
-      lintTask.dependsOn(lintTextOutputTask)
       val isKmp = kotlinExtensionWrapper != null
-      val isPerComponentLintAnalysis = isKmp || taskCreationServices.projectOptions.get(LINT_ANALYSIS_PER_COMPONENT)
       val kmpJvmTargetNames: List<String>? =
         kotlinExtensionWrapper
           ?.kotlinExtension
@@ -206,6 +200,19 @@ abstract class LintPlugin : Plugin<Project> {
           ?.filter { it.platformType == KotlinPlatformType.jvm && it.name != KotlinMultiplatformAndroidPlugin.ANDROID_TARGET_NAME }
           ?.map { it.name }
           ?.sorted()
+      if (isKmp && kmpJvmTargetNames.isNullOrEmpty()) {
+        // Don't register JVM-specific lint tasks if this KMP project has no JVM targets (e.g.,
+        // Android-only or JS/Native-only). Top-level lifecycle tasks (`lint`, `lintFix`,
+        // `updateLintBaseline`, `lintVital`) remain registered so KmpTaskManager can hook Android
+        // lint tasks into them and lifecycle invocations remain clean no-ops otherwise.
+        return@afterEvaluate
+      }
+      val isPerComponentLintAnalysis = isKmp || taskCreationServices.projectOptions.get(LINT_ANALYSIS_PER_COMPONENT)
+      val lintTextOutputTask =
+        project.tasks.register("lintJvm", AndroidLintTextOutputTask::class.java) { task ->
+          task.configureForStandalone(taskCreationServices, artifacts, lintOptions!!)
+        }
+      lintTask.dependsOn(lintTextOutputTask)
       // uastReferenceKotlinCompileTaskName is the name of KotlinCompile task used as a
       // reference when deciding whether to use K2 UAST.
       // There can be multiple "main" kotlin compile tasks if it's a KMP project. If
