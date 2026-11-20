@@ -255,6 +255,26 @@ class AvdBuilderTest {
   }
 
   @Test
+  fun createAvdWith360VideoBackground() {
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val android33ext4 = testSystemImages.api33ext4.image
+
+    val device = deviceManager.getDevice("ai_glasses_device", "Google")!!
+    val avdBuilder = avdManager.createAvdBuilder(device)
+    avdBuilder.systemImage = android33ext4
+    val backgroundFile = root.resolve("tmp").resolve("city-360.mp4")
+    backgroundFile.recordExistingFile(contents = "abcd")
+    avdBuilder.environment = Environment(backgroundFile, SceneMode.VIDEO_360)
+
+    val avdInfo = avdManager.createAvd(avdBuilder)
+
+    val environmentIni = avdInfo.dataFolderPath.resolve(AvdManager.ENVIRONMENT_INI)
+    assertThat(environmentIni.exists()).isTrue()
+    val envProps = AvdManager.parseIniFile(PathFileWrapper(environmentIni), null)
+    assertThat(envProps).containsExactly(EnvironmentKey.SCENE_MODE, "video360:${PathUtils.toSystemIndependentPath(backgroundFile)}")
+  }
+
+  @Test
   fun createCanaryAvd() {
     val testSystemImages = TestSystemImages(sdkHandler)
     val androidCanary = testSystemImages.apiCanary20261007.image

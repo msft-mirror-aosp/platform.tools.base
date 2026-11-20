@@ -22,6 +22,7 @@ enum class SceneMode(val value: String) {
   IMAGE_FILE("imagefile"),
   IMAGE_360("image360"),
   VIDEO_FILE("videofile"),
+  VIDEO_360("video360"),
   MESH_3D("mesh3d"),
 }
 
