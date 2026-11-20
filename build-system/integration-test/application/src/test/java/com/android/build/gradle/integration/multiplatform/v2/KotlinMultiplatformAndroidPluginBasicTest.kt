@@ -21,9 +21,12 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuil
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.builder.model.v2.models.kmp.KotlinMultiplatformAndroidDependencySelection
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import java.nio.file.Files
+import org.gradle.tooling.BuildAction
+import org.gradle.tooling.BuildController
 import org.junit.Rule
 import org.junit.Test
 
@@ -197,5 +200,39 @@ class KotlinMultiplatformAndroidPluginBasicTest {
     ScannerSubject.assertThat(result.stdout).contains("androidDeviceTest")
   }
 
+  @Test
+  fun testDependencySelectionToolingModel() {
+    val models = project.modelV2().buildModelV2(GetKotlinMultiplatformAndroidDependencySelectionAction()).first
+
+    // Only projects applying com.android.kotlin.multiplatform.library expose this model (not :app, :androidLib, :kmpJvmOnly).
+    Truth.assertThat(models.keys).containsExactly(":kmpFirstLib", ":kmpHostTestOnlyLib", ":kmpLibraryPlugin", ":kmpSecondLib")
+
+    val kmpFirstLib = models.getValue(":kmpFirstLib")
+    Truth.assertThat(kmpFirstLib.selectBuildTypeFrom).containsExactly("release").inOrder()
+    Truth.assertThat(kmpFirstLib.productFlavorSelection).containsExactly("type", listOf("typeone"), "mode", listOf("modetwo"))
+
+    val kmpSecondLib = models.getValue(":kmpSecondLib")
+    Truth.assertThat(kmpSecondLib.selectBuildTypeFrom).containsExactly("release", "debug").inOrder()
+    Truth.assertThat(kmpSecondLib.productFlavorSelection).isEmpty()
+
+    val kmpLibraryPlugin = models.getValue(":kmpLibraryPlugin")
+    Truth.assertThat(kmpLibraryPlugin.selectBuildTypeFrom).containsExactly("release").inOrder()
+    Truth.assertThat(kmpLibraryPlugin.productFlavorSelection).isEmpty()
+  }
+
   private fun executor() = project.executor()
+
+  private class GetKotlinMultiplatformAndroidDependencySelectionAction :
+    BuildAction<Map<String, KotlinMultiplatformAndroidDependencySelection>> {
+    override fun execute(controller: BuildController): Map<String, KotlinMultiplatformAndroidDependencySelection> {
+      val result = LinkedHashMap<String, KotlinMultiplatformAndroidDependencySelection>()
+      for (project in controller.buildModel.projects) {
+        val model = controller.findModel(project, KotlinMultiplatformAndroidDependencySelection::class.java)
+        if (model != null) {
+          result[project.path] = model
+        }
+      }
+      return result
+    }
+  }
 }

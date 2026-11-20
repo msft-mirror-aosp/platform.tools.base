@@ -75,6 +75,7 @@ import com.android.build.gradle.internal.dsl.SdkComponentsImpl
 import com.android.build.gradle.internal.getManagedDeviceAvdFolder
 import com.android.build.gradle.internal.ide.dependencies.LibraryDependencyCacheBuildService
 import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
+import com.android.build.gradle.internal.ide.kmp.KotlinMultiplatformAndroidDependencySelectionModelBuilder
 import com.android.build.gradle.internal.ide.v2.GlobalSyncService
 import com.android.build.gradle.internal.lint.LintFixBuildService
 import com.android.build.gradle.internal.lint.maybeCreateLintChecksClasspath
@@ -129,6 +130,7 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.provider.Provider
 import org.gradle.build.event.BuildEventsListenerRegistry
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.publishSources
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
@@ -136,8 +138,11 @@ import org.jetbrains.kotlin.gradle.testing.internal.KotlinTestsRegistry
 
 class KotlinMultiplatformAndroidPlugin
 @Inject
-constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeatures: BuildFeatures) :
-  AndroidPluginBaseServices(listenerRegistry, buildFeatures), Plugin<Project> {
+constructor(
+  private val registry: ToolingModelBuilderRegistry,
+  listenerRegistry: BuildEventsListenerRegistry,
+  private val buildFeatures: BuildFeatures,
+) : AndroidPluginBaseServices(listenerRegistry, buildFeatures), Plugin<Project> {
 
   private lateinit var global: GlobalTaskCreationConfig
   private lateinit var androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl
@@ -254,6 +259,10 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
 
     kotlinMultiplatformAndroidComponentsExtension =
       createComponentExtension(project, dslServices, kmpVariantApiOperationsRegistrar, bootClasspathConfig)
+
+    // KotlinMultiplatformAndroidPlugin does not register a ToolingModelBuilder. Register this lightweight builder directly so the
+    // IDE can read localDependencySelection early in sync without triggering dependency resolution.
+    registry.register(KotlinMultiplatformAndroidDependencySelectionModelBuilder(androidExtension))
   }
 
   override fun createTasks(project: Project) {

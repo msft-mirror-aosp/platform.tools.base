@@ -175,7 +175,7 @@ internal constructor(
    *
    * @param action the build action to gather the model
    */
-  private fun <T> buildModelV2(action: BuildAction<T>): Pair<T, GradleBuildResult> {
+  fun <T> buildModelV2(action: BuildAction<T>): Pair<T, GradleBuildResult> {
     val executor = projectConnection.action(action)
     return buildModel(executor)
   }

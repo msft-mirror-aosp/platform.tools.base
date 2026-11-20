@@ -537,6 +537,7 @@ com/android/tools/build/builder-model
   com/android/builder/model/v2/dsl/
   com/android/builder/model/v2/ide/
   com/android/builder/model/v2/models/
+  com/android/builder/model/v2/models/kmp/
   com/android/builder/model/v2/models/ndk/
   com/android/builder/model/version.properties
 
