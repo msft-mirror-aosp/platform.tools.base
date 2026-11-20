@@ -27,14 +27,11 @@ import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.coverage.JacocoReportTask
 import com.android.build.gradle.internal.coverage.getUnitTestJacocoVersion
-import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
-import com.android.build.gradle.internal.lint.LintModelWriterTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.tasks.PackageForHostTest
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.GenerateTestConfig
 import com.android.build.gradle.tasks.factory.AndroidUnitTest
 import com.google.common.collect.ImmutableSet
@@ -73,8 +70,7 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     if (hostTestCreationConfig.codeCoverageEnabled) {
       if (!project.plugins.hasPlugin(JacocoPlugin::class.java)) {
         project.pluginManager.apply(JacocoPlugin::class.java)
-        project.extensions.findByType(JacocoPluginExtension::class.java)?.toolVersion =
-          JacocoOptions.DEFAULT_VERSION
+        project.extensions.findByType(JacocoPluginExtension::class.java)?.toolVersion = JacocoOptions.DEFAULT_VERSION
       }
     }
     val runTestsTask =
@@ -196,21 +192,6 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
   }
 
   protected fun setupLintTasks(hostTestCreationConfig: HostTestCreationConfig) {
-    if (
-      globalConfig.avoidTaskRegistration.not() &&
-        hostTestCreationConfig.services.projectOptions.get(BooleanOption.LINT_ANALYSIS_PER_COMPONENT) &&
-        globalConfig.lintOptions.ignoreTestSources.not() &&
-        hostTestCreationConfig.mainVariant.enableLint
-    ) {
-      taskFactory.register(AndroidLintAnalysisTask.PerComponentCreationAction(hostTestCreationConfig, fatalOnly = false))
-      taskFactory.register(
-        LintModelWriterTask.PerComponentCreationAction(
-          hostTestCreationConfig,
-          useModuleDependencyLintModels = false,
-          fatalOnly = false,
-          isMainModelForLocalReportTask = false,
-        )
-      )
-    }
+    createPerComponentTestLintTasks(hostTestCreationConfig)
   }
 }

@@ -24,9 +24,6 @@ import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoReportTask
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
-import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
-import com.android.build.gradle.internal.lint.LintModelWriterTask
-import com.android.build.gradle.internal.plugins.LINT_PLUGIN_ID
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -53,7 +50,6 @@ import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.test.TestDataImpl
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.build.gradle.tasks.CompileNavigationXmlTask
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.builder.core.BuilderConstants.FD_MANAGED_DEVICE_SETUP_RESULTS
@@ -195,28 +191,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
       assembleTest.dependsOn(androidTestProperties.taskContainer.assembleTask.name)
     }
 
-    // Create lint tasks for a KMP component only if the lint standalone plugin is applied (to
-    // avoid Android-specific behavior)
-    val isKmpPerComponentLintAnalysis = androidTestProperties is KmpComponentCreationConfig && project.plugins.hasPlugin(LINT_PLUGIN_ID)
-    val isNonKmpPerComponentLintAnalysis =
-      androidTestProperties !is KmpComponentCreationConfig && androidTestProperties.services.projectOptions.get(LINT_ANALYSIS_PER_COMPONENT)
-    val isPerComponentLintAnalysis = isKmpPerComponentLintAnalysis || isNonKmpPerComponentLintAnalysis
-    if (
-      globalConfig.avoidTaskRegistration.not() &&
-        isPerComponentLintAnalysis &&
-        globalConfig.lintOptions.ignoreTestSources.not() &&
-        androidTestProperties.mainVariant.enableLint
-    ) {
-      taskFactory.register(AndroidLintAnalysisTask.PerComponentCreationAction(androidTestProperties, fatalOnly = false))
-      taskFactory.register(
-        LintModelWriterTask.PerComponentCreationAction(
-          androidTestProperties,
-          useModuleDependencyLintModels = false,
-          fatalOnly = false,
-          isMainModelForLocalReportTask = false,
-        )
-      )
-    }
+    createPerComponentTestLintTasks(androidTestProperties)
 
     createConnectedTestForVariant(androidTestProperties)
   }

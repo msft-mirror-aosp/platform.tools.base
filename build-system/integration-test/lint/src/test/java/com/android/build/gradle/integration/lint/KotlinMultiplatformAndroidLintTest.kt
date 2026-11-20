@@ -108,7 +108,6 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
 
   @Test
   fun `test lint reports error when calling desugared apis in android unitTest sourceset`() {
-    Assume.assumeTrue(lintAnalysisPerComponent)
     TestFileUtils.appendToFile(
       project.getSubproject("kmpFirstLib").ktsBuildFile,
       """
@@ -125,7 +124,9 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
 
     addNewApiIssuesToKmpFirstLib(addAndroidTestOnJvmIssues = true)
 
-    getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lintAndroidMain")
+    val result = getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lintAndroidMain")
+    result.assertTask(":kmpFirstLib:lintAnalyzeAndroidHostTest").didWork()
+    result.assertTask(":kmpFirstLib:generateAndroidHostTestLintModel").didWork()
 
     val reportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results-androidMain.txt")
 
@@ -766,6 +767,39 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
     TestFileUtils.searchAndReplace(project.getSubproject("kmpFirstLib").ktsBuildFile, "id(\"com.android.lint\")", "")
     val lintTasksWithoutPlugin = extractLintTaskNames(getExecutor().run("kmpFirstLib:tasks"))
     Truth.assertThat(lintTasksWithoutPlugin).isEmpty()
+  }
+
+  @Test
+  fun `test kmp test lint tasks only registered when lint plugin applied`() {
+    Truth.assertThat(getKmpTestLintTaskNames())
+      .containsExactly(
+        "generateAndroidDeviceTestLintModel",
+        "generateAndroidHostTestLintModel",
+        "lintAnalyzeAndroidDeviceTest",
+        "lintAnalyzeAndroidHostTest",
+      )
+
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      "id(\"com.android.lint\")",
+      "",
+    )
+    Truth.assertThat(getKmpTestLintTaskNames()).isEmpty()
+  }
+
+  private fun getKmpTestLintTaskNames(): List<String> {
+    val taskNames = mutableListOf<String>()
+    getExecutor().run(":kmpFirstLib:tasks", "--all").stdout.use { scanner ->
+      scanner.forEachLine { line ->
+        val taskName = line.trim().substringBefore(" ")
+        if (
+          taskName.contains("lint", ignoreCase = true) && (taskName.contains("AndroidHostTest") || taskName.contains("AndroidDeviceTest"))
+        ) {
+          taskNames.add(taskName)
+        }
+      }
+    }
+    return taskNames
   }
 
   @Test

@@ -56,8 +56,11 @@ import com.android.build.gradle.internal.coverage.JacocoReportTask
 import com.android.build.gradle.internal.dependency.AndroidAttributes
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
+import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
+import com.android.build.gradle.internal.lint.LintModelWriterTask
 import com.android.build.gradle.internal.lint.LintTaskManager
 import com.android.build.gradle.internal.packaging.getDefaultDebugKeystoreLocation
+import com.android.build.gradle.internal.plugins.LINT_PLUGIN_ID
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
@@ -1979,6 +1982,31 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
             RecalculateStackFramesTask::classesOutputDir,
           )
       }
+    }
+  }
+
+  protected fun createPerComponentTestLintTasks(testComponent: TestComponentCreationConfig) {
+    // Create lint tasks for a KMP component only if the lint standalone plugin is applied (to
+    // avoid Android-specific behavior)
+    val isKmpPerComponentLintAnalysis = testComponent is KmpComponentCreationConfig && project.plugins.hasPlugin(LINT_PLUGIN_ID)
+    val isNonKmpPerComponentLintAnalysis =
+      testComponent !is KmpComponentCreationConfig && testComponent.services.projectOptions.get(BooleanOption.LINT_ANALYSIS_PER_COMPONENT)
+    val isPerComponentLintAnalysis = isKmpPerComponentLintAnalysis || isNonKmpPerComponentLintAnalysis
+    if (
+      globalConfig.avoidTaskRegistration.not() &&
+        isPerComponentLintAnalysis &&
+        globalConfig.lintOptions.ignoreTestSources.not() &&
+        testComponent.mainVariant.enableLint
+    ) {
+      taskFactory.register(AndroidLintAnalysisTask.PerComponentCreationAction(testComponent, fatalOnly = false))
+      taskFactory.register(
+        LintModelWriterTask.PerComponentCreationAction(
+          testComponent,
+          useModuleDependencyLintModels = false,
+          fatalOnly = false,
+          isMainModelForLocalReportTask = false,
+        )
+      )
     }
   }
 
