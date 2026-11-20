@@ -26,10 +26,12 @@ import com.android.tools.render.animation.PreviewAnimationResult
 import com.android.tools.render.animation.normalizeExplicitAtMillis
 import com.android.tools.render.animation.parseAnimationAtMillis
 import com.android.tools.render.framework.IJFramework
+import com.android.tools.render.validation.ValidationResult
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Disposer
 import java.io.Closeable
 import java.io.File
+import java.io.PrintStream
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
@@ -955,15 +957,41 @@ private fun printUsage() {
   )
 }
 
-private fun reportScreenshotError(previewId: String, error: ScreenshotError) {
-  System.err.println("Error rendering $previewId: ${error.message}")
+internal fun reportScreenshotError(
+  methodFQN: String,
+  previewId: String,
+  error: ScreenshotError,
+  err: PrintStream = System.err,
+) {
+  if (error.status == ValidationResult.VALIDATION_ERROR_STATUS) {
+    val headerTarget =
+      when {
+        methodFQN.isEmpty() -> previewId
+        previewId.isEmpty() || previewId == methodFQN -> methodFQN
+        else -> "$methodFQN ($previewId)"
+      }
+    err.println("Validation error in $headerTarget:")
+    if (error.problems.isNotEmpty()) {
+      error.problems.forEach { problem ->
+        err.println("  ${problem.html}")
+        if (!problem.stackTrace.isNullOrEmpty()) {
+          err.println(problem.stackTrace)
+        }
+      }
+    } else if (error.message.isNotEmpty()) {
+      err.println("  ${error.message}")
+    }
+    return
+  }
+
+  err.println("Error rendering $previewId: ${error.message}")
   if (error.stackTrace.isNotEmpty()) {
-    System.err.println(error.stackTrace)
+    err.println(error.stackTrace)
   }
   error.problems.forEach { problem ->
-    System.err.println("  Problem: ${problem.html}")
+    err.println("  Problem: ${problem.html}")
     if (problem.stackTrace != null) {
-      System.err.println(problem.stackTrace)
+      err.println(problem.stackTrace)
     }
   }
 }
@@ -1018,7 +1046,7 @@ private fun renderPreview(cliArgs: CliArguments) {
     animationResult.animationResults.forEach { result ->
       val error = result.error
       if (error != null) {
-        reportScreenshotError(result.previewId, error)
+        reportScreenshotError(result.methodFQN, result.previewId, error)
         hasErrors = true
       } else {
         if (result.manifestPath.isNotEmpty()) {
@@ -1045,7 +1073,7 @@ private fun renderPreview(cliArgs: CliArguments) {
   previewRenderingResult.screenshotResults.forEach { result ->
     val error = result.error
     if (error != null) {
-      reportScreenshotError(result.previewId, error)
+      reportScreenshotError(result.methodFQN, result.previewId, error)
       hasErrors = true
     } else {
       val absolutePath = File(outputFolder, result.imagePath).absolutePath

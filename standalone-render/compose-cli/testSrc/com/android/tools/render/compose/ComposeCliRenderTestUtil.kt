@@ -39,18 +39,11 @@ private val ALLOWED_ERRORS =
     "Tracing Skia with Perfetto is not supported in this environment (host build?)",
   )
 
-/**
- * Runs the CLI with [args] and returns its stdout.
- *
- * When [expectRenderErrors] is `false`, fails if the CLI exits with an error or writes anything to stderr other than [ALLOWED_ERRORS]. When
- * it is `true`, fails unless the CLI reports that rendering failed with errors (exit code 1), which it does when any screenshot has an
- * error. The caller is then expected to check the results file.
- */
-fun runComposeCliRender(
-  args: List<String>,
-  expectRenderErrors: Boolean = false,
-  jvmArgs: List<String> = emptyList(),
-): String {
+/** Result of invoking the `compose-preview-renderer` CLI subprocess, with [ALLOWED_ERRORS] filtered from [stderr]. */
+data class ComposeCliResult(val exitCode: Int, val stdout: String, val stderr: String)
+
+/** Runs the CLI with [args] and returns its raw [ComposeCliResult] without asserting on exit code or stderr. */
+fun executeComposeCliRender(args: List<String>, jvmArgs: List<String> = emptyList()): ComposeCliResult {
   val javaHome = System.getProperty("java.home")
   val composeCliRenderFolder = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli")
   val deployJar = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli/compose-preview-renderer-cli_deploy.jar")
@@ -63,9 +56,6 @@ fun runComposeCliRender(
   // Redirect stdout and stderr to temp files so a full OS pipe buffer cannot deadlock the CLI process.
   val stdoutFile = Files.createTempFile("compose-cli-stdout", ".log")
   val stderrFile = Files.createTempFile("compose-cli-stderr", ".log")
-  val stdout: String
-  val error: String
-  val exitCode: Int
   try {
     val procBuilder =
       ProcessBuilder(command)
@@ -81,13 +71,30 @@ fun runComposeCliRender(
       val partialStderr = runCatching { Files.readString(stderrFile) }.getOrDefault("")
       throw AssertionError("CLI command timed out after 5 minutes: \"$commandStr\"\nPartial stderr:\n$partialStderr")
     }
-    stdout = Files.readString(stdoutFile)
-    error = Files.readAllLines(stderrFile).filter { line -> ALLOWED_ERRORS.none { line.trim().startsWith(it) } }.joinToString("\n")
-    exitCode = proc.exitValue()
+    val stdout = Files.readString(stdoutFile)
+    val stderr = Files.readAllLines(stderrFile).filter { line -> ALLOWED_ERRORS.none { line.trim().startsWith(it) } }.joinToString("\n")
+    return ComposeCliResult(exitCode = proc.exitValue(), stdout = stdout, stderr = stderr)
   } finally {
     Files.deleteIfExists(stdoutFile)
     Files.deleteIfExists(stderrFile)
   }
+}
+
+/**
+ * Runs the CLI with [args] and returns its stdout.
+ *
+ * When [expectRenderErrors] is `false`, fails if the CLI exits with an error or writes anything to stderr other than [ALLOWED_ERRORS]. When
+ * it is `true`, fails unless the CLI reports that rendering failed with errors (exit code 1), which it does when any screenshot has an
+ * error. The caller is then expected to check the results file.
+ */
+fun runComposeCliRender(
+  args: List<String>,
+  expectRenderErrors: Boolean = false,
+  jvmArgs: List<String> = emptyList(),
+): String {
+  val result = executeComposeCliRender(args, jvmArgs)
+  val error = result.stderr
+  val exitCode = result.exitCode
   val failureReason =
     if (expectRenderErrors) {
       // When expectRenderErrors is true, the CLI writes "Error: Rendering failed with errors" to stderr (so stderr is non-empty),
@@ -109,9 +116,9 @@ fun runComposeCliRender(
       }
     }
   if (failureReason != null) {
-    throw AssertionError("Error while executing CLI command \"$commandStr\" ($failureReason, exit code $exitCode):\n$error")
+    throw AssertionError("Error while executing CLI command with args $args ($failureReason, exit code $exitCode):\n$error")
   }
-  return stdout
+  return result.stdout
 }
 
 fun runComposeCliRender(

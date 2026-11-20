@@ -56,7 +56,27 @@ data class ValidationIssue(
   val category: ValidationCategory = ValidationCategory.PARAMETER,
   val target: String? = null,
   val value: String? = null,
-)
+) {
+  /**
+   * Formats this issue as a single structured line preserving its [category], optional [target], and optional [value]:
+   * - `[CATEGORY] target='value': message` when both [target] and [value] are present
+   * - `[CATEGORY] target: message` when only [target] is present
+   * - `[CATEGORY] 'value': message` when only [value] is present
+   * - `[CATEGORY] message` when neither is present
+   */
+  fun formatProblem(): String = buildString {
+    append('[').append(category.name).append(']')
+    val hasTarget = !target.isNullOrBlank()
+    val hasValue = value != null
+    when {
+      hasTarget && hasValue -> append(' ').append(target).append("='").append(value).append("': ")
+      hasTarget -> append(' ').append(target).append(": ")
+      hasValue -> append(" '").append(value).append("': ")
+      else -> append(' ')
+    }
+    append(message)
+  }
+}
 
 /** Aggregated result of a validation pass. */
 data class ValidationResult(val issues: List<ValidationIssue> = emptyList()) {
@@ -86,18 +106,28 @@ data class ValidationResult(val issues: List<ValidationIssue> = emptyList()) {
   /** Combines this validation result with [other]. */
   operator fun plus(other: ValidationResult): ValidationResult = ValidationResult(this.issues + other.issues)
 
-  /** Converts this validation result into a [ScreenshotError] with status `VALIDATION_ERROR`. */
-  fun toScreenshotError(): ScreenshotError =
-    ScreenshotError(
-      status = "VALIDATION_ERROR",
-      message = errors.joinToString("; ") { it.message },
+  /** Converts this validation result into a [ScreenshotError] with status [VALIDATION_ERROR_STATUS]. */
+  fun toScreenshotError(): ScreenshotError {
+    val errorIssues = errors
+    val summaryMessage =
+      when (errorIssues.size) {
+        0 -> ""
+        1 -> errorIssues.single().message
+        else -> "${errorIssues.size} validation errors: ${errorIssues.first().message} (+${errorIssues.size - 1} more)"
+      }
+    return ScreenshotError(
+      status = VALIDATION_ERROR_STATUS,
+      message = summaryMessage,
       stackTrace = "",
-      problems = errors.map { RenderProblem(it.message, null) },
+      problems = errorIssues.map { RenderProblem(it.formatProblem(), null) },
       brokenClasses = emptyList(),
       missingClasses = emptyList(),
     )
+  }
 
   companion object {
+    const val VALIDATION_ERROR_STATUS = "VALIDATION_ERROR"
+
     val OK = ValidationResult(emptyList())
 
     fun error(message: String, category: ValidationCategory = ValidationCategory.PARAMETER, target: String? = null, value: String? = null) =
