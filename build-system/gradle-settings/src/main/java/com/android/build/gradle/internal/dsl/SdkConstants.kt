@@ -19,4 +19,5 @@ package com.android.build.gradle.internal.dsl
 object SdkConstants {
   const val NDK_VERSION = "28.2.13676358"
   const val BUILD_TOOLS_VERSION = "37.0.0"
+  const val MINIMUM_KOTLIN_GRADLE_PLUGIN_VERSION = "2.2.10"
 }

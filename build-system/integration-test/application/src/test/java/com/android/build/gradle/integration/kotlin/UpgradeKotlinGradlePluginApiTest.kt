@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.kotlin
 
+import com.android.Version
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -149,12 +150,14 @@ class UpgradeKotlinGradlePluginApiTest {
     val build = rule.build { rootProject { buildscript { classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22") } } }
 
     val result = build.executor.expectFailure().run(":app:assembleDebug")
-    result.assertErrorContains("AGP requires Kotlin Gradle plugin $MINIMUM_BUILT_IN_KOTLIN_VERSION or newer.")
     result.assertErrorContains(
-      "Check the other 'Dependency path' and 'Constraint path' lines in this error to find what requests an older version, " +
-        "then upgrade it or declare a newer Kotlin Gradle plugin version."
+      """
+      Cannot find a version of 'org.jetbrains.kotlin:kotlin-gradle-plugin' that satisfies the version constraints:
+          Dependency path: root (classpath) --> 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22'
+          Constraint path: root (classpath) --> org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22 (gradle82RuntimeElements) --> org.jetbrains.kotlin:kotlin-gradle-plugins-bom:1.9.22 (runtimeElements) --> 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22'
+          Dependency path: root (classpath) --> com.android.application:com.android.application.gradle.plugin:${Version.ANDROID_GRADLE_PLUGIN_VERSION} (runtime) --> com.android.tools.build:gradle:${Version.ANDROID_GRADLE_PLUGIN_VERSION} (runtimeElements) --> 'org.jetbrains.kotlin:kotlin-gradle-plugin:{prefer $BUILT_IN_KOTLIN_VERSION; reject (,$MINIMUM_BUILT_IN_KOTLIN_VERSION)}' because of the following reason: AGP requires Kotlin Gradle plugin $MINIMUM_BUILT_IN_KOTLIN_VERSION or newer. Check the other 'Dependency path' and 'Constraint path' lines in this error to find what requests an older version, then upgrade it or declare a newer Kotlin Gradle plugin version.
+      """
+        .trimIndent()
     )
-    result.assertErrorContains("Dependency path:")
-    result.assertErrorContains("Constraint path:")
   }
 }

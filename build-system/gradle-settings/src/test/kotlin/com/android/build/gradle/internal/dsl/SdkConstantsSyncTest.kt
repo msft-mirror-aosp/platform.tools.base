@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.testutils.TestUtils
 import com.google.common.truth.Truth
 import org.junit.Test
 
@@ -28,5 +29,10 @@ class SdkConstantsSyncTest {
   @Test
   fun checkNdkVersion() {
     Truth.assertThat(SdkConstants.NDK_VERSION).isEqualTo(com.android.SdkConstants.NDK_DEFAULT_VERSION)
+  }
+
+  @Test
+  fun checkMinimumKotlinGradlePluginVersion() {
+    Truth.assertThat(SdkConstants.MINIMUM_KOTLIN_GRADLE_PLUGIN_VERSION).isEqualTo(TestUtils.MINIMUM_BUILT_IN_KOTLIN_VERSION)
   }
 }

@@ -28,6 +28,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public Integer? getCompileSdkExtension();
     method @InaccessibleFromKotlin public String? getCompileSdkPreview();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.Execution getExecution();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getKotlinGradlePluginVersion();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.Lint getLint();
     method @InaccessibleFromKotlin public Integer? getMinSdk();
     method @InaccessibleFromKotlin public String? getMinSdkPreview();
@@ -41,6 +42,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public void setCompileSdk(Integer?);
     method @InaccessibleFromKotlin public void setCompileSdkExtension(Integer?);
     method @InaccessibleFromKotlin public void setCompileSdkPreview(String?);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setKotlinGradlePluginVersion(String?);
     method @InaccessibleFromKotlin public void setMinSdk(Integer?);
     method @InaccessibleFromKotlin public void setMinSdkPreview(String?);
     method @InaccessibleFromKotlin public void setNdkPath(String?);
@@ -56,6 +58,7 @@ package com.android.build.api.dsl {
     property public abstract Integer? compileSdkExtension;
     property public abstract String? compileSdkPreview;
     property public abstract com.android.build.api.dsl.Execution execution;
+    property @org.gradle.api.Incubating public abstract String? kotlinGradlePluginVersion;
     property public abstract com.android.build.api.dsl.Lint lint;
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;

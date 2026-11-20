@@ -48,6 +48,7 @@ dependencies {
 
     testImplementation libs.com.android.tools.sdkCommon
     testImplementation libs.com.android.tools.common
+    testImplementation libs.com.android.tools.testutils
     testImplementation libs.junit
     testImplementation libs.truth
     testImplementation libs.kotlin.test

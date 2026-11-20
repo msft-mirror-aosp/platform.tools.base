@@ -27,6 +27,7 @@ import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
 import javax.inject.Inject
 import org.gradle.api.Action
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.model.ObjectFactory
 
 internal open class SettingsExtensionImpl @Inject constructor(private val objectFactory: ObjectFactory) : SettingsExtension {
@@ -194,6 +195,28 @@ internal open class SettingsExtensionImpl @Inject constructor(private val object
   override var ndkPath: String? = null
   override var buildToolsVersion: String = SdkConstants.BUILD_TOOLS_VERSION
 
+  private var kotlinGradlePluginVersionLocked = false
+
+  override var kotlinGradlePluginVersion: String? = null
+    set(value) {
+      check(!kotlinGradlePluginVersionLocked) { "android.kotlinGradlePluginVersion cannot be changed after settings have been evaluated." }
+      if (value != null) {
+        val version = KotlinGradlePluginVersion.parse(value)
+        if (version == null || version < MINIMUM_KOTLIN_GRADLE_PLUGIN_VERSION) {
+          throw InvalidUserDataException(
+            "android.kotlinGradlePluginVersion must be a Kotlin Gradle plugin version " +
+              "${SdkConstants.MINIMUM_KOTLIN_GRADLE_PLUGIN_VERSION} or newer, but was '$value'."
+          )
+        }
+      }
+      field = value
+    }
+
+  /** Makes [kotlinGradlePluginVersion] read-only, so that all projects get the same version. */
+  internal fun lockKotlinGradlePluginVersion() {
+    kotlinGradlePluginVersionLocked = true
+  }
+
   private fun createMinSdkSpec(): SettingsMinSdkSpecImpl {
     return objectFactory.newInstance(SettingsMinSdkSpecImpl::class.java).also { it.version = _minSdk }
   }
@@ -210,6 +233,31 @@ internal open class SettingsExtensionImpl @Inject constructor(private val object
   fun <T> updateIfChanged(oldValue: T?, newValue: T?, setter: (T?) -> Unit) {
     if (oldValue != newValue) {
       setter(newValue)
+    }
+  }
+}
+
+private val MINIMUM_KOTLIN_GRADLE_PLUGIN_VERSION = KotlinGradlePluginVersion.parse(SdkConstants.MINIMUM_KOTLIN_GRADLE_PLUGIN_VERSION)!!
+
+/**
+ * A Kotlin Gradle plugin version such as `2.3.10` or `2.5.0-Beta2`.
+ *
+ * A pre-release is older than its release, and pre-releases of the same release are not ordered.
+ */
+internal data class KotlinGradlePluginVersion(val release: KotlinVersion, val isPreRelease: Boolean) :
+  Comparable<KotlinGradlePluginVersion> {
+
+  override fun compareTo(other: KotlinGradlePluginVersion) = compareValuesBy(this, other, { it.release }, { !it.isPreRelease })
+
+  companion object {
+    private val REGEX = Regex("""(\d{1,3})\.(\d{1,3})\.(\d{1,3})(-[A-Za-z0-9.-]+)?""")
+
+    /** Returns `null` if [version] is not a single version, for example if it is a version range. */
+    fun parse(version: String): KotlinGradlePluginVersion? {
+      val (major, minor, patch, preRelease) = REGEX.matchEntire(version)?.destructured ?: return null
+      val components = listOf(major.toInt(), minor.toInt(), patch.toInt())
+      if (components.any { it > KotlinVersion.MAX_COMPONENT_VALUE }) return null
+      return KotlinGradlePluginVersion(KotlinVersion(components[0], components[1], components[2]), preRelease.isNotEmpty())
     }
   }
 }

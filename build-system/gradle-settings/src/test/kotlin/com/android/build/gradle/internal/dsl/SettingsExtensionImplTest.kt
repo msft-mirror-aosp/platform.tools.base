@@ -20,6 +20,7 @@ import com.android.build.api.dsl.CompileSdkVersion
 import com.google.common.truth.ComparableSubject
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Assert.assertThrows
@@ -48,6 +49,7 @@ internal class SettingsExtensionImplTest {
   fun testDefaults() {
     testCompileValues()
     testMinSdkValues()
+    assertThat(settings.kotlinGradlePluginVersion).isNull()
   }
 
   @Test
@@ -323,6 +325,46 @@ internal class SettingsExtensionImplTest {
     settings.lint.checkTestSources = true
     assertThat(settings.lint.checkTestSources).isTrue()
     assertThat(settings.lint.ignoreTestSources).isFalse()
+  }
+
+  @Test
+  fun kotlinGradlePluginVersion() {
+    for (version in listOf("2.2.10", "2.4.20", "2.5.0-Beta2", "2.5.20-dev-3466", "2.5.255-SNAPSHOT", null)) {
+      settings.kotlinGradlePluginVersion = version
+      assertThat(settings.kotlinGradlePluginVersion).isEqualTo(version)
+    }
+
+    for (version in listOf("2.2.9", "2.2.10-RC", "1.9.22", "2.4", "2.4.+", "[2.2.10,)", "2.5.256", "9999999999.0.0", "")) {
+      val exception = assertThrows(InvalidUserDataException::class.java) { settings.kotlinGradlePluginVersion = version }
+      assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo("android.kotlinGradlePluginVersion must be a Kotlin Gradle plugin version 2.2.10 or newer, but was '$version'.")
+    }
+
+    settings.lockKotlinGradlePluginVersion()
+    val exception = assertThrows(IllegalStateException::class.java) { settings.kotlinGradlePluginVersion = "2.4.20" }
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo("android.kotlinGradlePluginVersion cannot be changed after settings have been evaluated.")
+  }
+
+  @Test
+  fun kotlinGradlePluginVersionOrder() {
+    fun version(version: String) = KotlinGradlePluginVersion.parse(version)!!
+
+    assertThat(version("2.3.10")).isGreaterThan(version("2.3.9"))
+    assertThat(version("2.3.100")).isGreaterThan(version("2.3.10"))
+    assertThat(version("2.5.0-Beta2")).isGreaterThan(version("2.4.20"))
+    assertThat(version("2.5.0-Beta2")).isLessThan(version("2.5.0"))
+    assertThat(version("2.5.0-Beta2")).isEquivalentAccordingToCompareTo(version("2.5.0-RC"))
+    assertThat(version("2.5.0-Beta2")).isEqualTo(version("2.5.0-RC"))
+
+    val versions = listOf("2.3.9", "2.3.10", "2.3.100", "2.4.20", "2.5.0-Beta2", "2.5.0-RC", "2.5.0").map(::version)
+    for (first in versions) {
+      for (second in versions) {
+        assertThat(first.compareTo(second) == 0).isEqualTo(first == second)
+      }
+    }
   }
 
   private fun testCompileValues(

@@ -570,6 +570,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
       getKotlinAndroidPluginVersion(project)?.let { projectBuilder.kotlinPluginVersion = it }
     }
     AnalyticsUtil.recordFirebasePerformancePluginVersion(project)
+    checkKotlinGradlePluginVersionFromSettings(project)
 
     // create the build feature object that will be re-used everywhere
     val buildFeatureValues = variantFactory.createBuildFeatureValues(extension.buildFeatures, projectServices)
@@ -703,6 +704,22 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
   /** If overridden in a subclass to return "true," the package Configuration will be named "publish" instead of "apk" */
   protected open fun isPackagePublished(): Boolean {
     return false
+  }
+
+  /**
+   * Warns if this project does not use the Kotlin Gradle plugin version set in settings, which happens when another version is already on a
+   * classpath that settings cannot change, such as the one of buildSrc.
+   */
+  private fun checkKotlinGradlePluginVersionFromSettings(project: Project) {
+    val settingsVersion = settingsExtension?.kotlinGradlePluginVersion ?: return
+    val usedVersion = getKotlinAndroidPluginVersion(project) ?: return
+    if (usedVersion != settingsVersion) {
+      dslServices.issueReporter.reportWarning(
+        Type.GENERIC,
+        "Kotlin Gradle plugin $usedVersion is used instead of $settingsVersion set by android.kotlinGradlePluginVersion in settings, " +
+          "because it is already on the build classpath (for example as a dependency of buildSrc).",
+      )
+    }
   }
 
   // Initialize the android extension with values from the android settings extension

@@ -148,4 +148,25 @@ interface SettingsExtension {
 
   /** Set Lint options. */
   fun lint(action: Lint.() -> Unit)
+
+  /**
+   * The version of the Kotlin Gradle plugin (KGP) to use in all projects of this build, or `null` (the default) to not manage it.
+   *
+   * ```kotlin
+   * // settings.gradle.kts
+   * android {
+   *   kotlinGradlePluginVersion = "2.3.10"
+   * }
+   * ```
+   *
+   * When a version is set:
+   * - Kotlin Gradle plugins applied in `plugins {}` blocks use this version, so they no longer need one.
+   * - KGP dependencies on `buildscript` classpaths, including the one that AGP has for built-in Kotlin, are aligned to this version with
+   *   `org.jetbrains.kotlin:kotlin-gradle-plugins-bom`, which must be available in the plugin repositories.
+   * - A warning is logged if this overrides a different version in a `plugins {}` block, or a newer version on a `buildscript` classpath.
+   *
+   * The version must be `2.2.10` (the minimum that AGP supports) or newer. It does not apply to `buildSrc` and included builds, and AGP
+   * logs a warning if a project ends up using another version, for example because `buildSrc` depends on it.
+   */
+  @get:Incubating @set:Incubating var kotlinGradlePluginVersion: String?
 }

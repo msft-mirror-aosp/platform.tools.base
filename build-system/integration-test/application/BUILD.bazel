@@ -506,6 +506,7 @@ KOTLIN_TESTS_SRCS = glob(
         "src/test/java/com/android/build/gradle/integration/kotlin/*.kt",
     ],
     exclude = [
+        "src/test/java/com/android/build/gradle/integration/kotlin/SettingsKotlinGradlePluginVersionTest.kt",
         "src/test/java/com/android/build/gradle/integration/kotlin/UpgradeKotlinGradlePluginApiTest.kt",
     ],
 )
@@ -573,6 +574,7 @@ single_gradle_integration_test_per_source(
 gradle_integration_test(
     name = "built-in-kotlin-support-with-latest-kotlin-tests",
     srcs = [
+        "src/test/java/com/android/build/gradle/integration/kotlin/SettingsKotlinGradlePluginVersionTest.kt",
         "src/test/java/com/android/build/gradle/integration/kotlin/UpgradeKotlinGradlePluginApiTest.kt",
     ],
     data = TEST_DATA,
