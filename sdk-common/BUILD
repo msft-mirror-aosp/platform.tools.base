@@ -111,7 +111,6 @@ maven_library(
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
         "@maven//:org.bouncycastle.bcprov-jdk18on",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],
 )

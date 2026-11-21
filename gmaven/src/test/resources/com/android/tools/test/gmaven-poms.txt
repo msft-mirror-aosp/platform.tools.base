@@ -211,7 +211,6 @@ com.android.tools:sdk-common:$BASE_VERSION
     org.bouncycastle:bcpkix-jdk18on:1.86 (runtime)
     org.bouncycastle:bcprov-jdk18on:1.86 (runtime)
     org.glassfish.jaxb:jaxb-runtime:2.3.9 (runtime)
-    org.jetbrains.kotlin:kotlin-reflect:2.2.10 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.10 (runtime)
 
 com.android.tools:sdklib:$BASE_VERSION
