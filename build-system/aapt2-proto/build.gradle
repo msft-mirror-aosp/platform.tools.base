@@ -31,6 +31,10 @@ protobuf {
     }
 }
 
+tasks.compileJava {
+    options.compilerArgs += ['-g:none']
+}
+
 sourceSets {
     main.proto.srcDir rootProject.file('../prebuilts/tools/common/aapt/protos')
 }

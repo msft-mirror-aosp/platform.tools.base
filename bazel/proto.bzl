@@ -28,6 +28,7 @@ PROTO_DISABLE_CHECKS_JAVACOPTS = [
     "-XepDisableAllChecks",
     "-Xlint:none",
     "-nowarn",
+    "-g:none",
 ]
 
 # Minimal gRPC dependencies needed to compile protoc-gen-grpc-java generated stubs (no transport).
