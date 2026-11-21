@@ -84,7 +84,6 @@ maven_library(
         "src/main/java/**/*.kt",
     ]),
     bundled_deps = [
-        "//tools/base/sdk-common/aia-manifest-jar-generator:tools.proto",
         "//tools/base/sdk-common/gradle:tools.sdk-common.gradle.lib",
     ],
     coordinates = "com.android.tools:sdk-common",

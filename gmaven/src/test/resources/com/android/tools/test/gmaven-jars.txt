@@ -3484,7 +3484,6 @@ com/android/tools/sdk-common
   com/android/ide/common/workers/
   com/android/ide/common/xml/
   com/android/projectmodel/
-  manifest.proto
   versions-offline/
   versions-offline/android/
   versions-offline/android/arch/
@@ -4034,10 +4033,6 @@ com/android/tools/sdk-common
   versions-offline/tools/base/build-system/debug/group-index.xml
   versions-offline/zipflinger/
   versions-offline/zipflinger/group-index.xml
-  wireless/
-  wireless/android/
-  wireless/android/instantapps/
-  wireless/android/instantapps/sdk/
 
 com/android/tools/sdklib
   META-INF/
