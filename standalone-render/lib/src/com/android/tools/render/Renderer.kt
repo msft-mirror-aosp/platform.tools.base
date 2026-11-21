@@ -52,6 +52,7 @@ import com.android.tools.rendering.compose.supportsExpand
 import com.android.tools.rendering.compose.unsupportedComposePreviewDeviceSpecWarning
 import com.android.tools.rendering.expandedScreenShape
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
+import com.google.common.annotations.VisibleForTesting
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -93,13 +94,33 @@ import kotlin.math.roundToInt
  *
  * Note: A [Renderer] instance is intended to be used from a single caller thread at a time (matching layoutlib's single render thread).
  */
-class Renderer(
+class Renderer
+@VisibleForTesting
+internal constructor(
   val project: Project,
   val module: StandaloneRenderModelModule,
   internal val renderService: RenderService,
   val baseConfiguration: Configuration,
   internal val moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
+  @param:VisibleForTesting private val inflateTask: (RenderTask) -> CompletableFuture<RenderResult?> = RenderTask::inflate,
+  @param:VisibleForTesting private val renderTaskAction: (RenderTask) -> CompletableFuture<RenderResult> = RenderTask::render,
 ) : Closeable {
+  constructor(
+    project: Project,
+    module: StandaloneRenderModelModule,
+    renderService: RenderService,
+    baseConfiguration: Configuration,
+    moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
+  ) : this(
+    project = project,
+    module = module,
+    renderService = renderService,
+    baseConfiguration = baseConfiguration,
+    moduleClassLoaderManager = moduleClassLoaderManager,
+    inflateTask = RenderTask::inflate,
+    renderTaskAction = RenderTask::render,
+  )
+
   private val logger = Logger.getLogger(Renderer::class.java.name)
   internal val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
   // The renderer resolves `device` references in the device catalog of the base configuration, so validate them against the same catalog.
@@ -273,12 +294,32 @@ class Renderer(
   }
 
   /**
-   * Reason why Layoutlib's single render thread is still blocked by the timed-out work of a previous request, or `null` if it is available
-   * or recovered in place. This only reports what the first preview of the current request observed when it probed the render thread (see
-   * [StaticPreviewCallbackRunner.unrecoveredRenderThreadReason]); it does not probe or block.
+   * Reason why Layoutlib's single render thread is still blocked by timed-out work, or `null` if it is available or recovered in place.
+   *
+   * Unlike [checkRenderThreadPoisoned], reading this property does not probe or block; it reflects what [ensureRenderThreadAvailable] or an
+   * earlier [checkRenderThreadPoisoned] call observed (see [StaticPreviewCallbackRunner.unrecoveredRenderThreadReason]).
    */
   val renderThreadPoisonedReason: String?
     get() = callbackRunner.unrecoveredRenderThreadReason
+
+  /**
+   * Probes Layoutlib's single render thread after a request finishes if any timed-out or poisoned work is recorded, returning the poisoned
+   * reason if it remains blocked after [recoveryTimeoutMs] (defaulting to [StaticPreviewCallbackRunner.postRequestRecoveryTimeoutMs]) or
+   * `null` if it is available.
+   */
+  fun checkRenderThreadPoisoned(recoveryTimeoutMs: Long? = null): String? =
+    callbackRunner.checkRenderThreadAfterRequest(recoveryTimeoutMs = recoveryTimeoutMs ?: callbackRunner.postRequestRecoveryTimeoutMs) {
+      action ->
+      RenderService.getRenderAsyncActionExecutor().runAsyncAction(action)
+    }
+
+  internal fun recordRenderTimeout(previewName: String?, throwable: Throwable?) {
+    val timeout = throwable.findTimeoutException() ?: return
+    callbackRunner.recordTimeout(
+      previewName ?: "preview",
+      extractTimeoutBudgetMs(timeout, TimeUnit.SECONDS.toMillis(RENDER_TIMEOUT_SECONDS)),
+    )
+  }
 
   /**
    * The `spec:` device string parameter names supported by the project's `androidx.compose.ui:ui-tooling`, see
@@ -782,6 +823,7 @@ class Renderer(
     warning?.let { logger.warning(null, it, null, null) }
     val composeViewAdapters: MutableSet<Any> = ConcurrentHashMap.newKeySet()
     val recordAdapters: (RenderResult) -> Unit = { composeViewAdapters.addAll(findComposeViewAdapters(it.rootViews)) }
+    val handlesDirectTimeout = !renderImage || !executeCallbacks
     return try {
       var poisonedError: Throwable? = null
       if (
@@ -843,11 +885,16 @@ class Renderer(
               recordAdapters,
             )
           } else {
-            renderTask.render().get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS).also(recordAdapters)
+            renderTaskAction(renderTask).get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS).also(recordAdapters)
           }
         } else {
-          (renderTask.inflate().get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS) ?: createRenderTaskErrorResult(logger)).also(recordAdapters)
+          (inflateTask(renderTask).get(RENDER_TIMEOUT_SECONDS, TimeUnit.SECONDS) ?: createRenderTaskErrorResult(logger)).also(
+            recordAdapters
+          )
         }
+      if (handlesDirectTimeout && !result.renderResult.isSuccess) {
+        recordRenderTimeout(previewName, result.renderResult.exception)
+      }
       Disposer.register(result, disposable)
       try {
         result.rethrowIfFatalVirtualMachineError()
@@ -857,6 +904,9 @@ class Renderer(
       }
       result
     } catch (t: Throwable) {
+      if (handlesDirectTimeout) {
+        recordRenderTimeout(previewName, t)
+      }
       Disposer.dispose(disposable)
       rethrowIfFatalOrCancelled(t)
       createRenderTaskErrorResult(logger, t)
@@ -1113,7 +1163,7 @@ private const val MAX_CAUSE_CHAIN_DEPTH = 16
  * `CompletionException`) wrap fatal JVM errors such as [OutOfMemoryError], so walking the cause chain ensures they are not mistaken for
  * recoverable per-preview errors.
  */
-private fun Throwable?.findFatalVirtualMachineError(): VirtualMachineError? {
+internal fun Throwable?.findFatalVirtualMachineError(): VirtualMachineError? {
   var current = this
   var depth = 0
   while (current != null && depth < MAX_CAUSE_CHAIN_DEPTH) {

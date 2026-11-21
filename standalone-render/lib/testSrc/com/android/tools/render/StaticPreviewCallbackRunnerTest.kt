@@ -20,7 +20,9 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.logging.Handler
@@ -1348,5 +1350,337 @@ class StaticPreviewCallbackRunnerTest {
     } finally {
       executor.shutdownNow()
     }
+  }
+
+  @Test
+  fun checkRenderThreadAfterRequestReturnsNullWithoutProbingWhenHealthy() {
+    val isolatedState = RenderThreadTimeoutState()
+    val runner = StaticPreviewCallbackRunner(postRequestRecoveryTimeoutMs = 20L, timeoutState = isolatedState)
+    var probeCalls = 0
+
+    val reason = runner.checkRenderThreadAfterRequest {
+      probeCalls++
+      CompletableFuture.completedFuture(null)
+    }
+
+    assertNull(reason)
+    assertEquals(0, probeCalls)
+    assertNull(runner.unrecoveredRenderThreadReason)
+  }
+
+  @Test
+  fun checkRenderThreadAfterRequestSingleTimeoutFailsWithoutMutatingSharedStateAndRecoversWhenGraceSucceeds() {
+    val isolatedState = RenderThreadTimeoutState()
+    val runner =
+      StaticPreviewCallbackRunner(
+        callbacksTimeoutMs = 50L,
+        renderThreadRecoveryTimeoutMs = 5_000L,
+        postRequestRecoveryTimeoutMs = 20L,
+        nanoTime = { 0L },
+        timeoutState = isolatedState,
+      )
+    val timedOutSession = FakePreviewRenderSession(onInflate = { throw TimeoutException("Timed out waiting 100000ms for render action") })
+    assertThrows(TimeoutException::class.java) {
+      runner.renderExecutingCallbacks(timedOutSession, "com.example.AppKt.SingleTimeoutPreview") {}
+    }
+
+    // Still blocked past postRequestRecoveryTimeoutMs -> returns poisoned reason, cancels the temporary probe, and leaves shared
+    // timeoutState as NeedsProbe so another runner keeps its full renderThreadRecoveryTimeoutMs window.
+    val hungProbe = CompletableFuture<Void?>()
+    var probeCalls = 0
+    val poisonedReason = runner.checkRenderThreadAfterRequest {
+      probeCalls++
+      hungProbe
+    }
+    assertThat(poisonedReason).contains("com.example.AppKt.SingleTimeoutPreview")
+    assertThat(poisonedReason).contains("100000ms")
+    assertEquals(poisonedReason, runner.unrecoveredRenderThreadReason)
+    assertEquals(1, probeCalls)
+    assertTrue(hungProbe.isCancelled)
+    val nextDecision = isolatedState.evaluateBeforeRender()
+    assertThat(nextDecision).isInstanceOf(ProbeDecision.NeedsProbe::class.java)
+
+    // When the stuck work unwinds within postRequestRecoveryTimeoutMs, checkRenderThreadAfterRequest returns null and clears state.
+    runner.postRequestRecoveryTimeoutMs = 5_000L
+    val executor = Executors.newSingleThreadExecutor()
+    val probeStarted = CountDownLatch(1)
+    val releaseProbe = CountDownLatch(1)
+    val releaser = Thread {
+      if (probeStarted.await(5, TimeUnit.SECONDS)) {
+        releaseProbe.countDown()
+      }
+    }
+      .apply { start() }
+    try {
+      val recoveredReason = runner.checkRenderThreadAfterRequest { action ->
+        CompletableFuture.supplyAsync(
+          {
+            probeStarted.countDown()
+            assertTrue(releaseProbe.await(5, TimeUnit.SECONDS))
+            action.run()
+            null
+          },
+          executor,
+        )
+      }
+      assertNull(recoveredReason)
+      assertNull(runner.unrecoveredRenderThreadReason)
+      assertEquals(ProbeDecision.Ready, isolatedState.evaluateBeforeRender())
+    } finally {
+      releaseProbe.countDown()
+      releaser.join(5_000L)
+      executor.shutdownNow()
+    }
+  }
+
+  @Test
+  fun checkRenderThreadAfterRequestAwaitsExistingPendingProbeWithoutEnqueueingSecondProbe() {
+    val isolatedState = RenderThreadTimeoutState()
+    val runner =
+      StaticPreviewCallbackRunner(
+        callbacksTimeoutMs = 50L,
+        renderThreadRecoveryTimeoutMs = 10L,
+        postRequestRecoveryTimeoutMs = 15L,
+        nanoTime = { 0L },
+        timeoutState = isolatedState,
+      )
+    val timedOutSession = FakePreviewRenderSession(onInflate = { throw TimeoutException("Timed out waiting 100000ms for render action") })
+    assertThrows(TimeoutException::class.java) {
+      runner.renderExecutingCallbacks(timedOutSession, "com.example.AppKt.PoisonedPendingProbePreview") {}
+    }
+    val pendingProbe = CompletableFuture<Void?>()
+    assertFalse(runner.ensureRenderThreadAvailable(runAsyncOnRenderThread = { pendingProbe }, reportError = { _, _ -> }))
+
+    // Still blocked after postRequestRecoveryTimeoutMs: awaits existing pendingProbe without enqueueing or cancelling it.
+    var secondProbeCalls = 0
+    val blockedReason = runner.checkRenderThreadAfterRequest {
+      secondProbeCalls++
+      CompletableFuture()
+    }
+    assertThat(blockedReason).contains("com.example.AppKt.PoisonedPendingProbePreview")
+    assertEquals(blockedReason, runner.unrecoveredRenderThreadReason)
+    assertEquals(0, secondProbeCalls)
+    assertFalse("Existing pendingProbe must not be cancelled on post-request timeout", pendingProbe.isCancelled)
+    assertThat(isolatedState.evaluateBeforeRender()).isInstanceOf(ProbeDecision.Poisoned::class.java)
+
+    // When existing pendingProbe completes within postRequestRecoveryTimeoutMs, returns null and clears state without a second probe.
+    runner.postRequestRecoveryTimeoutMs = 5_000L
+    val executor = Executors.newSingleThreadScheduledExecutor()
+    try {
+      executor.schedule({ pendingProbe.complete(null) }, 50L, TimeUnit.MILLISECONDS)
+      val recoveredReason = runner.checkRenderThreadAfterRequest {
+        secondProbeCalls++
+        CompletableFuture()
+      }
+      assertNull(recoveredReason)
+      assertNull(runner.unrecoveredRenderThreadReason)
+      assertEquals(0, secondProbeCalls)
+      assertEquals(ProbeDecision.Ready, isolatedState.evaluateBeforeRender())
+    } finally {
+      executor.shutdownNow()
+    }
+  }
+
+  @Test
+  fun checkRenderThreadAfterRequestSubmitsTemporaryProbeWhenPendingProbeWasEvicted() {
+    val isolatedState = RenderThreadTimeoutState()
+    val runner =
+      StaticPreviewCallbackRunner(
+        callbacksTimeoutMs = 50L,
+        renderThreadRecoveryTimeoutMs = 10L,
+        postRequestRecoveryTimeoutMs = 15L,
+        nanoTime = { 0L },
+        timeoutState = isolatedState,
+      )
+    val timedOutSession = FakePreviewRenderSession(onInflate = { throw TimeoutException("Timed out waiting 100000ms for render action") })
+    assertThrows(TimeoutException::class.java) {
+      runner.renderExecutingCallbacks(timedOutSession, "com.example.AppKt.EvictedProbePreview") {}
+    }
+    // Simulate queue eviction (CancellationException) so timeoutState is Poisoned with pendingProbe == null.
+    val evictedProbe = CompletableFuture<Void?>().apply { cancel(false) }
+    assertFalse(runner.ensureRenderThreadAvailable(runAsyncOnRenderThread = { evictedProbe }, reportError = { _, _ -> }))
+    assertThat(isolatedState.evaluateBeforeRender()).isInstanceOf(ProbeDecision.Poisoned::class.java)
+
+    var probeCalls = 0
+    val temporaryProbe = CompletableFuture<Void?>()
+    val poisonedReason = runner.checkRenderThreadAfterRequest {
+      probeCalls++
+      temporaryProbe
+    }
+
+    assertThat(poisonedReason).contains("com.example.AppKt.EvictedProbePreview")
+    assertEquals(poisonedReason, runner.unrecoveredRenderThreadReason)
+    assertEquals(1, probeCalls)
+    assertTrue(temporaryProbe.isCancelled)
+    assertThat(isolatedState.evaluateBeforeRender()).isInstanceOf(ProbeDecision.Poisoned::class.java)
+  }
+
+  @Test
+  fun checkRenderThreadAfterRequestFailsClosedOnInterruptedExceptionAndRejectedExecution() {
+    val isolatedState = RenderThreadTimeoutState()
+    val runner =
+      StaticPreviewCallbackRunner(
+        callbacksTimeoutMs = 50L,
+        renderThreadRecoveryTimeoutMs = 10L,
+        postRequestRecoveryTimeoutMs = 5_000L,
+        nanoTime = { 0L },
+        timeoutState = isolatedState,
+      )
+    val timedOutSession = FakePreviewRenderSession(onInflate = { throw TimeoutException("Timed out waiting 100000ms for render action") })
+    assertThrows(TimeoutException::class.java) {
+      runner.renderExecutingCallbacks(timedOutSession, "com.example.AppKt.InterruptedProbePreview") {}
+    }
+
+    // 1. CancellationException (including subclasses) is rethrown directly on probe submission, whereas RejectedExecutionException fails
+    // closed and sets unrecoveredRenderThreadReason.
+    class CustomCancellationException : CancellationException("caller cancelled")
+    assertThrows(CancellationException::class.java) {
+      runner.checkRenderThreadAfterRequest { throw CancellationException("caller cancelled") }
+    }
+    assertThrows(CustomCancellationException::class.java) {
+      runner.checkRenderThreadAfterRequest { throw CustomCancellationException() }
+    }
+    val rejectedReason = runner.checkRenderThreadAfterRequest { throw RejectedExecutionException("executor shut down") }
+    assertThat(rejectedReason).contains("com.example.AppKt.InterruptedProbePreview")
+    assertEquals(rejectedReason, runner.unrecoveredRenderThreadReason)
+
+    // 2. InterruptedException awaiting a temporary probe cancels it, restores interrupt flag, and fails closed.
+    val interruptingTempProbe =
+      object : CompletableFuture<Void?>() {
+        override fun get(timeout: Long, unit: TimeUnit): Void? {
+          throw InterruptedException("caller interrupted")
+        }
+      }
+    try {
+      val interruptedTempReason = runner.checkRenderThreadAfterRequest { interruptingTempProbe }
+      assertTrue("Thread interrupt status must be restored", Thread.interrupted())
+      assertTrue("Temporary probe must be cancelled on InterruptedException", interruptingTempProbe.isCancelled)
+      assertThat(interruptedTempReason).contains("com.example.AppKt.InterruptedProbePreview")
+      assertEquals(interruptedTempReason, runner.unrecoveredRenderThreadReason)
+    } finally {
+      Thread.interrupted()
+    }
+
+    // 3. InterruptedException awaiting an existing pendingProbe does NOT cancel it, restores interrupt flag, and fails closed.
+    var getCalls = 0
+    val interruptingPendingProbe =
+      object : CompletableFuture<Void?>() {
+        override fun get(timeout: Long, unit: TimeUnit): Void? {
+          getCalls++
+          if (getCalls == 1) {
+            throw TimeoutException("initial probe timed out")
+          }
+          throw InterruptedException("caller interrupted")
+        }
+      }
+    assertFalse(runner.ensureRenderThreadAvailable(runAsyncOnRenderThread = { interruptingPendingProbe }, reportError = { _, _ -> }))
+    try {
+      val interruptedExistingReason = runner.checkRenderThreadAfterRequest {
+        throw AssertionError("Must reuse existing pendingProbe rather than submitting a second")
+      }
+      assertEquals(2, getCalls)
+      assertTrue("Thread interrupt status must be restored", Thread.interrupted())
+      assertFalse("Existing pendingProbe must NOT be cancelled on InterruptedException", interruptingPendingProbe.isCancelled)
+      assertThat(interruptedExistingReason).contains("com.example.AppKt.InterruptedProbePreview")
+      assertEquals(interruptedExistingReason, runner.unrecoveredRenderThreadReason)
+    } finally {
+      Thread.interrupted()
+    }
+  }
+
+  @Test
+  fun checkRenderThreadAfterRequestDefaultsTo5sAndDoesNotClearNewerGenerationOnSuccess() {
+    assertEquals(5_000L, StaticPreviewCallbackRunner().postRequestRecoveryTimeoutMs)
+
+    val isolatedState = RenderThreadTimeoutState()
+    val runner = StaticPreviewCallbackRunner(postRequestRecoveryTimeoutMs = 20L, timeoutState = isolatedState)
+    isolatedState.recordTimeout("pkg.PreviewKt.FirstTimeout", 100L)
+
+    // Probe succeeds after a concurrent/newer timeout bumped the state generation: returns null, keeps unrecoveredRenderThreadReason
+    // null, and preserves the newer generation's timeout record.
+    val reason = runner.checkRenderThreadAfterRequest {
+      isolatedState.recordTimeout("pkg.PreviewKt.NewerTimeout", 200L)
+      CompletableFuture.completedFuture(null)
+    }
+    assertNull(reason)
+    assertNull(runner.unrecoveredRenderThreadReason)
+
+    val nextPlan = isolatedState.evaluateAfterRequest()
+    assertThat(nextPlan).isInstanceOf(RenderThreadTimeoutState.PostRequestProbePlan.NeedsProbe::class.java)
+    val needsProbe = nextPlan as RenderThreadTimeoutState.PostRequestProbePlan.NeedsProbe
+    assertEquals("pkg.PreviewKt.NewerTimeout", needsProbe.culprit)
+    assertEquals(200L, needsProbe.budgetMs)
+
+    val hungSecondProbe = CompletableFuture<Void?>()
+    val subsequentReason = runner.checkRenderThreadAfterRequest { hungSecondProbe }
+    assertThat(subsequentReason).contains("pkg.PreviewKt.NewerTimeout")
+    assertThat(subsequentReason).contains("200ms")
+    assertTrue(hungSecondProbe.isCancelled)
+  }
+
+  @Test
+  fun probeRethrowsFatalVirtualMachineErrorWrappedInExecutionException() {
+    val isolatedState = RenderThreadTimeoutState()
+    val runner =
+      StaticPreviewCallbackRunner(renderThreadRecoveryTimeoutMs = 50L, postRequestRecoveryTimeoutMs = 50L, timeoutState = isolatedState)
+    isolatedState.recordTimeout("pkg.PreviewKt.OomProbePreview", 100L)
+
+    // Fatal VirtualMachineError (OutOfMemoryError) wrapped in ExecutionException propagates from checkRenderThreadAfterRequest.
+    val oomFuture = CompletableFuture<Void?>().apply { completeExceptionally(RuntimeException(OutOfMemoryError("heap exhausted"))) }
+    assertThrows(OutOfMemoryError::class.java) { runner.checkRenderThreadAfterRequest { oomFuture } }
+
+    // StackOverflowError wrapped in ExecutionException is recoverable and fails closed as poisoned.
+    val soeFuture = CompletableFuture<Void?>().apply { completeExceptionally(StackOverflowError("deep recursion")) }
+    val soeReason = runner.checkRenderThreadAfterRequest { soeFuture }
+    assertThat(soeReason).contains("pkg.PreviewKt.OomProbePreview")
+    assertEquals(soeReason, runner.unrecoveredRenderThreadReason)
+
+    // Fatal VirtualMachineError wrapped in ExecutionException also propagates from probeRenderThread via ensureRenderThreadAvailable.
+    assertThrows(OutOfMemoryError::class.java) {
+      runner.ensureRenderThreadAvailable(runAsyncOnRenderThread = { oomFuture }, reportError = { _, _ -> })
+    }
+  }
+
+  @Test
+  fun ensureRenderThreadAvailableClearsUnrecoveredRenderThreadReasonOnRecovery() {
+    // 1. After checkRenderThreadAfterRequest fails (setting unrecoveredRenderThreadReason while leaving state in NeedsProbe), a
+    // subsequent ensureRenderThreadAvailable probe that succeeds without onRefreshClassPath() must clear unrecoveredRenderThreadReason.
+    val stateAfterPostProbe = RenderThreadTimeoutState()
+    val runnerAfterPostProbe =
+      StaticPreviewCallbackRunner(
+        renderThreadRecoveryTimeoutMs = 50L,
+        postRequestRecoveryTimeoutMs = 10L,
+        timeoutState = stateAfterPostProbe,
+      )
+    stateAfterPostProbe.recordTimeout("pkg.PreviewKt.RecoveredWithoutRefresh", 100L)
+    val postReason = runnerAfterPostProbe.checkRenderThreadAfterRequest { CompletableFuture() }
+    assertThat(postReason).contains("pkg.PreviewKt.RecoveredWithoutRefresh")
+    assertEquals(postReason, runnerAfterPostProbe.unrecoveredRenderThreadReason)
+
+    assertTrue(
+      runnerAfterPostProbe.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { CompletableFuture.completedFuture(null) },
+        reportError = { msg, _ -> fail("Unexpected error: $msg") },
+      )
+    )
+    assertNull(runnerAfterPostProbe.unrecoveredRenderThreadReason)
+
+    // 2. Within a single warm batch (no onRefreshClassPath() between previews), if preview 1 fails its probe and pendingProbe completes
+    // before preview 2, ensureRenderThreadAvailable returns true via ProbeDecision.Ready and clears unrecoveredRenderThreadReason.
+    val inBatchState = RenderThreadTimeoutState()
+    val inBatchRunner = StaticPreviewCallbackRunner(renderThreadRecoveryTimeoutMs = 10L, timeoutState = inBatchState)
+    inBatchState.recordTimeout("pkg.PreviewKt.RecoveredMidBatch", 100L)
+    val pendingProbe = CompletableFuture<Void?>()
+    assertFalse(inBatchRunner.ensureRenderThreadAvailable(runAsyncOnRenderThread = { pendingProbe }, reportError = { _, _ -> }))
+    assertThat(inBatchRunner.unrecoveredRenderThreadReason).contains("pkg.PreviewKt.RecoveredMidBatch")
+
+    pendingProbe.complete(null)
+    assertTrue(
+      inBatchRunner.ensureRenderThreadAvailable(
+        runAsyncOnRenderThread = { error("Must recover via completed pendingProbe without submitting a second probe") },
+        reportError = { msg, _ -> fail("Unexpected error: $msg") },
+      )
+    )
+    assertNull(inBatchRunner.unrecoveredRenderThreadReason)
   }
 }

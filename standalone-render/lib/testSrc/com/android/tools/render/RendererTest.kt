@@ -68,11 +68,13 @@ import java.nio.file.Paths
 import java.util.Base64
 import java.util.UUID
 import java.util.concurrent.Callable
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -4603,6 +4605,286 @@ class RendererTest {
       }
       assertThat(toolsImg.getRGB(100, 100)).isEqualTo(toolsImg.getRGB(100, 350))
       assertThat(toolsImg.getRGB(100, 100)).isNotEqualTo(toolsImg.getRGB(100, 10))
+    }
+  }
+
+  @Test
+  fun testRecordRenderTimeoutExtractsBudgetAndTriggersPostRequestCheck() {
+    StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    try {
+      bootstrapper.bootstrap().use { renderer ->
+        renderer.callbackRunner.renderThreadRecoveryTimeoutMs = 10L
+        renderer.callbackRunner.postRequestRecoveryTimeoutMs = 10L
+
+        // Non-timeout throwables must not record a timeout.
+        renderer.recordRenderTimeout("pkg.PreviewKt.NotATimeout", IllegalStateException("other failure"))
+        assertThat(StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.evaluateAfterRequest())
+          .isEqualTo(RenderThreadTimeoutState.PostRequestProbePlan.Ready)
+        assertNull(renderer.checkRenderThreadPoisoned())
+
+        // Wrapped RenderExecutor TimeoutException extracts its budget (12345ms) and triggers recovery probing.
+        renderer.recordRenderTimeout(
+          "pkg.PreviewKt.NoImageTimeout",
+          ExecutionException(TimeoutException("The render action was too slow to execute (12345ms)")),
+        )
+        val errors = mutableListOf<String>()
+        val available =
+          renderer.callbackRunner.ensureRenderThreadAvailable(
+            runAsyncOnRenderThread = { CompletableFuture() },
+            reportError = { msg, _ -> errors.add(msg) },
+          )
+        assertThat(available).isFalse()
+        assertThat(errors.single()).contains("pkg.PreviewKt.NoImageTimeout")
+        assertThat(errors.single()).contains("12345ms")
+
+        // Plain TimeoutException without an embedded budget falls back to RENDER_TIMEOUT_SECONDS (100000ms) and null previewName defaults
+        // to "preview".
+        StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+        renderer.recordRenderTimeout(null, TimeoutException("Plain timeout"))
+        val fallbackErrors = mutableListOf<String>()
+        val availableFallback =
+          renderer.callbackRunner.ensureRenderThreadAvailable(
+            runAsyncOnRenderThread = { CompletableFuture() },
+            reportError = { msg, _ -> fallbackErrors.add(msg) },
+          )
+        assertThat(availableFallback).isFalse()
+        assertThat(fallbackErrors.single()).contains("(preview)")
+        assertThat(fallbackErrors.single()).contains("100000ms")
+
+        // Healthy render thread recovers when checkRenderThreadPoisoned() probes it after a recorded timeout.
+        StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+        renderer.callbackRunner.postRequestRecoveryTimeoutMs = 5_000L
+        renderer.recordRenderTimeout("pkg.PreviewKt.Recovered", TimeoutException("Plain timeout"))
+        assertNull(renderer.checkRenderThreadPoisoned())
+      }
+    } finally {
+      StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+    }
+  }
+
+  @Test
+  fun testNoImageRenderTimeoutRecordsTimeoutAndFailsPostRequestCheckWhenRenderThreadBlocked() {
+    StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val outputDir = tmpFolder.newFolder("output_no_image_timeout").absolutePath
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val blockLatch = CountDownLatch(1)
+    try {
+      // Case 1: inflateTask future fails with TimeoutException during Renderer.render(..., renderImage = false).
+      bootstrapper.bootstrap().use { throwingBootstrapped ->
+        Renderer(
+            project = throwingBootstrapped.project,
+            module = throwingBootstrapped.module,
+            renderService = throwingBootstrapped.renderService,
+            baseConfiguration = throwingBootstrapped.baseConfiguration,
+            moduleClassLoaderManager = throwingBootstrapped.moduleClassLoaderManager,
+            inflateTask = {
+              CompletableFuture.failedFuture(TimeoutException("The render action was too slow to execute (12345ms)"))
+            },
+          )
+          .use { throwingInflateRenderer ->
+            throwingInflateRenderer.callbackRunner.postRequestRecoveryTimeoutMs = 20L
+            val noImageConfig = RenderConfiguration(includeComponentTree = true, renderImage = false)
+            val throwingResults =
+              throwingInflateRenderer.render(
+                xmlPreviewScreenshot("com.example.PreviewKt.ThrowingNoImage", "<LinearLayout/>"),
+                outputDir,
+                noImageConfig,
+              )
+            assertThat(throwingResults).hasSize(1)
+            assertThat(throwingResults.single().error).isNotNull()
+
+            // Hold the render thread while checkRenderThreadPoisoned() probes so it times out and returns the recorded culprit + budget.
+            val blockerStarted = CountDownLatch(1)
+            RenderService.getRenderAsyncActionExecutor().runAsyncAction {
+              blockerStarted.countDown()
+              blockLatch.await(10, TimeUnit.SECONDS)
+            }
+            assertTrue(blockerStarted.await(5, TimeUnit.SECONDS))
+            try {
+              val throwingPoisoned = throwingInflateRenderer.checkRenderThreadPoisoned()
+              assertThat(throwingPoisoned).contains("com.example.PreviewKt.ThrowingNoImage")
+              assertThat(throwingPoisoned).contains("12345ms")
+            } finally {
+              blockLatch.countDown()
+              RenderService.getRenderAsyncActionExecutor().runAsyncAction {}.get(10, TimeUnit.SECONDS)
+            }
+          }
+      }
+
+      // Case 2: inflateTask returns an unsuccessful RenderResult carrying a TimeoutException (e.g. 100000ms).
+      StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+      val resultTimeoutLatch = CountDownLatch(1)
+      bootstrapper.bootstrap().use { resultBootstrapped ->
+        Renderer(
+            project = resultBootstrapped.project,
+            module = resultBootstrapped.module,
+            renderService = resultBootstrapped.renderService,
+            baseConfiguration = resultBootstrapped.baseConfiguration,
+            moduleClassLoaderManager = resultBootstrapped.moduleClassLoaderManager,
+            inflateTask = {
+              val resultLogger = resultBootstrapped.renderService.createLogger(resultBootstrapped.project)
+              CompletableFuture.completedFuture(
+                resultBootstrapped.createRenderTaskErrorResult(
+                  resultLogger,
+                  TimeoutException("The render action was too slow to execute (100000ms)"),
+                )
+              )
+            },
+          )
+          .use { resultInflateRenderer ->
+            resultInflateRenderer.callbackRunner.postRequestRecoveryTimeoutMs = 20L
+            val noImageConfig = RenderConfiguration(includeComponentTree = true, renderImage = false)
+            val errorResults =
+              resultInflateRenderer.render(
+                xmlPreviewScreenshot("com.example.PreviewKt.ResultNoImage", "<LinearLayout/>"),
+                outputDir,
+                noImageConfig,
+              )
+            assertThat(errorResults).hasSize(1)
+            assertThat(errorResults.single().error).isNotNull()
+
+            val blocker2Started = CountDownLatch(1)
+            RenderService.getRenderAsyncActionExecutor().runAsyncAction {
+              blocker2Started.countDown()
+              resultTimeoutLatch.await(10, TimeUnit.SECONDS)
+            }
+            assertTrue(blocker2Started.await(5, TimeUnit.SECONDS))
+            try {
+              val resultPoisoned = resultInflateRenderer.checkRenderThreadPoisoned()
+              assertThat(resultPoisoned).contains("com.example.PreviewKt.ResultNoImage")
+              assertThat(resultPoisoned).contains("100000ms")
+            } finally {
+              resultTimeoutLatch.countDown()
+              RenderService.getRenderAsyncActionExecutor().runAsyncAction {}.get(10, TimeUnit.SECONDS)
+            }
+          }
+      }
+    } finally {
+      blockLatch.countDown()
+      runCatching { RenderService.getRenderAsyncActionExecutor().runAsyncAction {}.get(10, TimeUnit.SECONDS) }
+      StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+    }
+  }
+
+  @Test
+  fun testDirectRenderTimeoutRecordsTimeoutAndFailsPostRequestCheckWhenRenderThreadBlocked() {
+    StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "com.example",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val xmlRequest = RenderRequest({}, { sequenceOf("<LinearLayout/>") })
+    try {
+      // Case 1: renderImage = true, executeCallbacks = false fails with TimeoutException from renderTaskAction.
+      bootstrapper.bootstrap().use { throwingBootstrapped ->
+        Renderer(
+            project = throwingBootstrapped.project,
+            module = throwingBootstrapped.module,
+            renderService = throwingBootstrapped.renderService,
+            baseConfiguration = throwingBootstrapped.baseConfiguration,
+            moduleClassLoaderManager = throwingBootstrapped.moduleClassLoaderManager,
+            renderTaskAction = {
+              CompletableFuture.failedFuture(TimeoutException("The render action was too slow to execute (12345ms)"))
+            },
+          )
+          .use { throwingRenderer ->
+            throwingRenderer.callbackRunner.postRequestRecoveryTimeoutMs = 20L
+            val (_, throwingResult) = throwingRenderer.render(xmlRequest, renderImage = true).single()
+            try {
+              assertThat(throwingResult.renderResult.isSuccess).isFalse()
+            } finally {
+              Disposer.dispose(throwingResult)
+            }
+
+            val blockLatch = CountDownLatch(1)
+            val blockerStarted = CountDownLatch(1)
+            RenderService.getRenderAsyncActionExecutor().runAsyncAction {
+              blockerStarted.countDown()
+              blockLatch.await(10, TimeUnit.SECONDS)
+            }
+            assertTrue(blockerStarted.await(5, TimeUnit.SECONDS))
+            try {
+              val poisoned = throwingRenderer.checkRenderThreadPoisoned()
+              assertThat(poisoned).contains("12345ms")
+            } finally {
+              blockLatch.countDown()
+              RenderService.getRenderAsyncActionExecutor().runAsyncAction {}.get(10, TimeUnit.SECONDS)
+            }
+          }
+      }
+
+      // Case 2: renderImage = true, executeCallbacks = false returns an unsuccessful RenderResult carrying TimeoutException.
+      StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
+      bootstrapper.bootstrap().use { resultBootstrapped ->
+        Renderer(
+            project = resultBootstrapped.project,
+            module = resultBootstrapped.module,
+            renderService = resultBootstrapped.renderService,
+            baseConfiguration = resultBootstrapped.baseConfiguration,
+            moduleClassLoaderManager = resultBootstrapped.moduleClassLoaderManager,
+            renderTaskAction = {
+              val resultLogger = resultBootstrapped.renderService.createLogger(resultBootstrapped.project)
+              CompletableFuture.completedFuture(
+                resultBootstrapped.createRenderTaskErrorResult(
+                  resultLogger,
+                  TimeoutException("The render action was too slow to execute (100000ms)"),
+                )
+              )
+            },
+          )
+          .use { resultRenderer ->
+            resultRenderer.callbackRunner.postRequestRecoveryTimeoutMs = 20L
+            val (_, errorResult) = resultRenderer.render(xmlRequest, renderImage = true).single()
+            try {
+              assertThat(errorResult.renderResult.isSuccess).isFalse()
+            } finally {
+              Disposer.dispose(errorResult)
+            }
+
+            val blockLatch = CountDownLatch(1)
+            val blockerStarted = CountDownLatch(1)
+            RenderService.getRenderAsyncActionExecutor().runAsyncAction {
+              blockerStarted.countDown()
+              blockLatch.await(10, TimeUnit.SECONDS)
+            }
+            assertTrue(blockerStarted.await(5, TimeUnit.SECONDS))
+            try {
+              val poisoned = resultRenderer.checkRenderThreadPoisoned()
+              assertThat(poisoned).contains("100000ms")
+            } finally {
+              blockLatch.countDown()
+              RenderService.getRenderAsyncActionExecutor().runAsyncAction {}.get(10, TimeUnit.SECONDS)
+            }
+          }
+      }
+    } finally {
+      runCatching { RenderService.getRenderAsyncActionExecutor().runAsyncAction {}.get(10, TimeUnit.SECONDS) }
+      StaticPreviewCallbackRunner.globalRenderThreadTimeoutState.reset()
     }
   }
 }

@@ -16,13 +16,17 @@
 
 package com.android.tools.render.common
 
+import com.android.testutils.TestUtils
 import com.android.tools.render.RenderConfiguration
+import com.android.tools.render.RenderEnvironmentBootstrapper
 import com.android.tools.render.animation.AnimationRenderOptions
 import com.android.tools.render.animation.PreviewAnimationResult
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.layout.LayoutScreenshot
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
+import java.nio.file.Paths
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -30,6 +34,8 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import javax.tools.ToolProvider
+import kotlin.io.path.absolutePathString
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -80,14 +86,23 @@ class StandalonePreviewRendererCacheTest {
     val closeCalls = AtomicInteger(0)
     val activeRenderers = AtomicInteger(0)
     val maxConcurrentRenders = AtomicInteger(0)
+    val checkPoisonedCalls = AtomicInteger(0)
+    val events = CopyOnWriteArrayList<String>()
     val recordedConfigurations = CopyOnWriteArrayList<RenderConfiguration>()
     var poisonedReason: String? = null
+    var checkPoisonedResult: String? = null
 
     override val isDisposed: Boolean
       get() = disposed
 
     override val renderThreadPoisonedReason: String?
       get() = poisonedReason
+
+    override fun checkRenderThreadPoisoned(): String? {
+      checkPoisonedCalls.incrementAndGet()
+      events.add("checkRenderThreadPoisoned")
+      return checkPoisonedResult ?: poisonedReason
+    }
 
     override fun refreshClassPath(newClassPath: List<String>, newProjectClassPath: List<String>) {
       refreshCalls.incrementAndGet()
@@ -100,6 +115,7 @@ class StandalonePreviewRendererCacheTest {
       configuration: RenderConfiguration,
     ): List<PreviewScreenshotResult> {
       recordedConfigurations.add(configuration)
+      events.add("render")
       val current = activeRenderers.incrementAndGet()
       maxConcurrentRenders.updateAndGet { prev -> maxOf(prev, current) }
       try {
@@ -111,13 +127,17 @@ class StandalonePreviewRendererCacheTest {
 
     override fun disposeCompletedRenders() {
       disposeCompletedRendersCalls.incrementAndGet()
+      events.add("disposeCompletedRenders")
     }
 
     override fun renderAnimations(
       screenshot: PreviewScreenshot,
       outputFolderPath: String,
       options: AnimationRenderOptions,
-    ): List<PreviewAnimationResult> = onRenderAnimations(screenshot, options)
+    ): List<PreviewAnimationResult> {
+      events.add("renderAnimations")
+      return onRenderAnimations(screenshot, options)
+    }
 
     override fun close() {
       closeCalls.incrementAndGet()
@@ -690,6 +710,58 @@ class StandalonePreviewRendererCacheTest {
   }
 
   @Test
+  fun probeRenderThreadAfterBatchOnlyRunsWhenOptedInAndBeforeDisposeCompletedRenders() {
+    val resApk = tempFolder.newFile("res-post-probe.apk").apply { writeText("apk") }
+    val outDir = tempFolder.newFolder("out_post_probe").absolutePath
+    val screenshot = ComposeScreenshot("com.example.PreviewKt.SlowLastPreview", emptyList(), emptyMap(), "p1")
+    val createdRenderers = mutableListOf<FakeManagedRenderer>()
+    val factory: (RendererBootstrapRequest) -> ManagedRenderer = { FakeManagedRenderer().also { createdRenderers.add(it) } }
+    val optInReason = "The layoutlib render thread is still blocked by a previous preview (SlowLastPreview)."
+
+    // Default probeRenderThreadAfterBatch = false must NOT call checkRenderThreadPoisoned().
+    val defaultRender = newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir)
+    val defaultAnim = newFakeRenderer(resApk, factory).renderAnimations(listOf(screenshot), outDir)
+    assertThat(defaultRender.renderThreadPoisonedReason).isNull()
+    assertThat(defaultAnim.renderThreadPoisonedReason).isNull()
+    val warmManaged = createdRenderers.single()
+    assertThat(warmManaged.checkPoisonedCalls.get()).isEqualTo(0)
+
+    // Opt-in probeRenderThreadAfterBatch = true calls checkRenderThreadPoisoned() BEFORE disposeCompletedRenders() for warm render,
+    // boolean-overload render, and warm renderAnimations.
+    warmManaged.checkPoisonedResult = optInReason
+    warmManaged.events.clear()
+    val optInRender =
+      newFakeRenderer(resApk, factory).render(listOf(screenshot), outDir, RenderConfiguration(), probeRenderThreadAfterBatch = true)
+    assertThat(optInRender.renderThreadPoisonedReason).isEqualTo(optInReason)
+    assertThat(warmManaged.events).containsExactly("render", "checkRenderThreadPoisoned", "disposeCompletedRenders").inOrder()
+
+    warmManaged.events.clear()
+    val optInBooleanRender =
+      newFakeRenderer(resApk, factory)
+        .render(listOf(screenshot), outDir, includeComponentTree = true, renderImage = false, probeRenderThreadAfterBatch = true)
+    assertThat(optInBooleanRender.renderThreadPoisonedReason).isEqualTo(optInReason)
+    assertThat(warmManaged.events).containsExactly("render", "checkRenderThreadPoisoned", "disposeCompletedRenders").inOrder()
+
+    warmManaged.events.clear()
+    val optInAnim = newFakeRenderer(resApk, factory).renderAnimations(listOf(screenshot), outDir, probeRenderThreadAfterBatch = true)
+    assertThat(optInAnim.renderThreadPoisonedReason).isEqualTo(optInReason)
+    assertThat(warmManaged.events).containsExactly("renderAnimations", "checkRenderThreadPoisoned", "disposeCompletedRenders").inOrder()
+    assertThat(warmManaged.checkPoisonedCalls.get()).isEqualTo(3)
+
+    // One-shot (reuseEnvironment = false) still returns null and does not call checkRenderThreadPoisoned() even when opted in.
+    val oneShotRender =
+      newFakeRenderer(resApk, factory)
+        .render(listOf(screenshot), outDir, RenderConfiguration(), reuseEnvironment = false, probeRenderThreadAfterBatch = true)
+    val oneShotAnim =
+      newFakeRenderer(resApk, factory)
+        .renderAnimations(listOf(screenshot), outDir, reuseEnvironment = false, probeRenderThreadAfterBatch = true)
+    assertThat(oneShotRender.renderThreadPoisonedReason).isNull()
+    assertThat(oneShotAnim.renderThreadPoisonedReason).isNull()
+    assertThat(createdRenderers[1].checkPoisonedCalls.get()).isEqualTo(0)
+    assertThat(createdRenderers[2].checkPoisonedCalls.get()).isEqualTo(0)
+  }
+
+  @Test
   fun renderAnimationsFlagsFatalVirtualMachineErrorsAndEvictsWarmRenderer() {
     val resApk = tempFolder.newFile("res-anim.apk").apply { writeText("apk") }
     var animError: Error? = null
@@ -786,6 +858,133 @@ class StandalonePreviewRendererCacheTest {
       newFakeRenderer(resApk, factory).renderAnimations(listOf(anim), outDir, AnimationRenderOptions(atMillis = listOf(-5L, 100L)))
     assertThat(negativeResult.globalError).contains("non-negative")
     assertThat(negativeResult.isFatalJvmError).isFalse()
+  }
+
+  @Test
+  fun realManagedRendererCheckRenderThreadPoisonedProbesBeyondRenderThreadPoisonedReason() {
+    val blockLatch = CountDownLatch(1)
+    val startedLatch = CountDownLatch(1)
+    val finishedLatch = CountDownLatch(1)
+    val blockKey = "com.android.tools.render.common.test.blockLatch"
+    val startedKey = "com.android.tools.render.common.test.startedLatch"
+    val finishedKey = "com.android.tools.render.common.test.finishedLatch"
+    System.getProperties()[blockKey] = blockLatch
+    System.getProperties()[startedKey] = startedLatch
+    System.getProperties()[finishedKey] = finishedLatch
+
+    try {
+      val srcDir = tempFolder.newFolder("blocking_view_src")
+      val outClassesDir = tempFolder.newFolder("blocking_view_classes")
+      val pkgDir = File(srcDir, "com/example").apply { mkdirs() }
+      val javaFile =
+        File(pkgDir, "BlockingCallbackTextView.java").apply {
+          writeText(
+            """
+            package com.example;
+            import android.content.Context;
+            import android.util.AttributeSet;
+            import android.widget.TextView;
+            import java.util.concurrent.CountDownLatch;
+            import java.util.concurrent.TimeUnit;
+            public class BlockingCallbackTextView extends TextView {
+              public BlockingCallbackTextView(Context context, AttributeSet attrs) {
+                super(context, attrs);
+                setText("Blocking");
+              }
+              @Override
+              protected void onAttachedToWindow() {
+                super.onAttachedToWindow();
+                post(() -> {
+                  CountDownLatch started = (CountDownLatch) System.getProperties().get("$startedKey");
+                  CountDownLatch latch = (CountDownLatch) System.getProperties().get("$blockKey");
+                  CountDownLatch finished = (CountDownLatch) System.getProperties().get("$finishedKey");
+                  started.countDown();
+                  long deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(40);
+                  while (latch.getCount() > 0 && System.nanoTime() < deadlineNanos) {
+                    try {
+                      latch.await(50, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException ignored) {
+                      // Ignore RenderTask's per-step interruption so the callback stays wedged past the batch timeout.
+                    }
+                  }
+                  finished.countDown();
+                });
+              }
+            }
+            """
+              .trimIndent()
+          )
+        }
+      val compiler = ToolProvider.getSystemJavaCompiler()
+      assertThat(compiler).isNotNull()
+      val layoutlibJar = Paths.get(Class.forName("android.view.View").protectionDomain.codeSource.location.toURI()).toString()
+      val classpath = layoutlibJar + File.pathSeparator + System.getProperty("java.class.path")
+      assertThat(compiler!!.run(null, null, null, "-cp", classpath, "-d", outClassesDir.absolutePath, javaFile.absolutePath)).isEqualTo(0)
+
+      val resDir = tempFolder.newFolder("blocking_res")
+      File(resDir, "layout")
+        .apply { mkdirs() }
+        .resolve("blocking.xml")
+        .writeText(
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical" >
+              <com.example.BlockingCallbackTextView
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content" />
+          </LinearLayout>
+          """
+            .trimIndent()
+        )
+
+      val outDir = tempFolder.newFolder("blocking_out").absolutePath
+      val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+      val renderer =
+        RenderEnvironmentBootstrapper(
+            fontsPath = null,
+            resourceApkPath = null,
+            namespace = "com.example",
+            classPath = emptyList(),
+            projectClassPath = listOf(outClassesDir.absolutePath),
+            layoutlibPath = layoutlibPath.absolutePathString(),
+            resourceDirs = listOf(resDir.absolutePath),
+          )
+          .bootstrap()
+      val managed: ManagedRenderer = RealManagedRenderer(renderer, postRequestRecoveryTimeoutMs = 250L)
+      var testCompleted = false
+      try {
+        val results = managed.render(LayoutScreenshot(methodFQN = "R.layout.blocking", previewId = "blocking"), outDir)
+        assertThat(results).hasSize(1)
+        assertThat(startedLatch.await(5, TimeUnit.SECONDS)).isTrue()
+        // Before post-request probing runs, renderThreadPoisonedReason is still null even though the render timed out.
+        assertThat(managed.renderThreadPoisonedReason).isNull()
+
+        // Must probe via Renderer.checkRenderThreadPoisoned() rather than falling back to ManagedRenderer's non-probing default.
+        val poisoned = managed.checkRenderThreadPoisoned()
+        assertThat(poisoned).contains("R.layout.blocking")
+        assertThat(managed.renderThreadPoisonedReason).isEqualTo(poisoned)
+
+        blockLatch.countDown()
+        assertThat(finishedLatch.await(15, TimeUnit.SECONDS)).isTrue()
+        assertThat(renderer.checkRenderThreadPoisoned(30_000L)).isNull()
+        testCompleted = true
+      } finally {
+        blockLatch.countDown()
+        if (!testCompleted) {
+          runCatching { finishedLatch.await(15, TimeUnit.SECONDS) }
+          runCatching { renderer.checkRenderThreadPoisoned(30_000L) }
+        }
+        managed.close()
+      }
+    } finally {
+      blockLatch.countDown()
+      System.getProperties().remove(blockKey)
+      System.getProperties().remove(startedKey)
+      System.getProperties().remove(finishedKey)
+    }
   }
 
   private fun newFakeRenderer(resApk: File, factory: (RendererBootstrapRequest) -> ManagedRenderer) =

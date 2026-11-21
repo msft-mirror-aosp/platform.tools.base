@@ -36,6 +36,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.system.exitProcess
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * Snapshot of the environment inputs that require a full [Renderer] re-bootstrap when changed.
@@ -109,11 +110,23 @@ internal interface ManagedRenderer : Closeable {
   val renderThreadPoisonedReason: String?
     get() = null
 
+  /**
+   * Probes Layoutlib's single render thread after a batch if any timed-out or poisoned work is recorded, returning the poisoned reason if
+   * it remains blocked or `null` if available. Defaults to [renderThreadPoisonedReason] for test doubles that do not implement probing.
+   */
+  fun checkRenderThreadPoisoned(): String? = renderThreadPoisonedReason
+
   /** Disposes completed [RenderTask]s from the finished batch so sessions and view trees are not retained while idle. */
   fun disposeCompletedRenders() {}
 }
 
-private class RealManagedRenderer(private val delegate: Renderer) : ManagedRenderer {
+@VisibleForTesting
+internal class RealManagedRenderer
+@VisibleForTesting
+internal constructor(
+  private val delegate: Renderer,
+  private val postRequestRecoveryTimeoutMs: Long? = null,
+) : ManagedRenderer {
   override val isDisposed: Boolean
     get() = delegate.project.isDisposed || delegate.module.isDisposed
 
@@ -137,6 +150,8 @@ private class RealManagedRenderer(private val delegate: Renderer) : ManagedRende
 
   override val renderThreadPoisonedReason: String?
     get() = delegate.renderThreadPoisonedReason
+
+  override fun checkRenderThreadPoisoned(): String? = delegate.checkRenderThreadPoisoned(postRequestRecoveryTimeoutMs)
 
   /** Drains and disposes completed [RenderTask]s from the finished batch. */
   override fun disposeCompletedRenders() {
@@ -252,6 +267,8 @@ internal constructor(
    *   animation detection.
    * @param reuseEnvironment When `true`, acquires and reuses the process-wide warm [Renderer] via [acquireWarmRenderer] instead of
    *   bootstrapping and tearing down the environment on every call.
+   * @param probeRenderThreadAfterBatch When `true` and [reuseEnvironment] is `true`, probes the render thread after the batch if a timeout
+   *   or poison was recorded so long-lived hosts can retire eagerly even when the culprit was the last preview in the batch.
    * @return the per-screenshot results, or a [PreviewRenderingResult.globalError] when the batch could not be rendered.
    */
   @JvmOverloads
@@ -260,6 +277,7 @@ internal constructor(
     outputFolder: String,
     configuration: RenderConfiguration,
     reuseEnvironment: Boolean = true,
+    probeRenderThreadAfterBatch: Boolean = false,
   ): PreviewRenderingResult {
     return try {
       // Some callers supply R.jar files inside the general `classPath` rather than via `rClassJars`.
@@ -300,7 +318,9 @@ internal constructor(
             try {
               acquired.handle.renderBatch(fullClassPath, projectClassPath, acquired.freshlyBootstrapped) { managedRenderer ->
                 val screenshotResults = renderAll(managedRenderer, screenshots, outputFolder, configuration)
-                val poisonedReason = managedRenderer.renderThreadPoisonedReason
+                val poisonedReason =
+                  if (probeRenderThreadAfterBatch) managedRenderer.checkRenderThreadPoisoned()
+                  else managedRenderer.renderThreadPoisonedReason
                 screenshotResults to poisonedReason
               }
             } finally {
@@ -357,6 +377,7 @@ internal constructor(
     reuseEnvironment: Boolean = true,
     allowShowDecorations: Boolean = false,
     detectAnimations: Boolean = false,
+    probeRenderThreadAfterBatch: Boolean = false,
   ): PreviewRenderingResult =
     render(
       screenshots = screenshots,
@@ -369,6 +390,7 @@ internal constructor(
           detectAnimations = detectAnimations,
         ),
       reuseEnvironment = reuseEnvironment,
+      probeRenderThreadAfterBatch = probeRenderThreadAfterBatch,
     )
 
   /** Renders every screenshot in [screenshots] using [renderer], capturing non-fatal exceptions as per-screenshot errors. */
@@ -412,6 +434,7 @@ internal constructor(
     outputFolder: String,
     options: AnimationRenderOptions = AnimationRenderOptions(),
     reuseEnvironment: Boolean = true,
+    probeRenderThreadAfterBatch: Boolean = false,
   ): PreviewAnimationRenderingResult {
     return try {
       val normalizedOptions = options.copy(atMillis = normalizeExplicitAtMillis(options.atMillis))
@@ -454,7 +477,9 @@ internal constructor(
             try {
               acquired.handle.renderBatch(fullClassPath, projectClassPath, acquired.freshlyBootstrapped) { managedRenderer ->
                 val animationResults = renderAllAnimations(managedRenderer, screenshots, outputFolder, normalizedOptions, animComparator)
-                val poisonedReason = managedRenderer.renderThreadPoisonedReason
+                val poisonedReason =
+                  if (probeRenderThreadAfterBatch) managedRenderer.checkRenderThreadPoisoned()
+                  else managedRenderer.renderThreadPoisonedReason
                 animationResults to poisonedReason
               }
             } finally {
@@ -607,6 +632,10 @@ internal constructor(
       /**
        * Executes [block] under [renderLock], refreshing `projectClassPath` before each warm batch (except the first batch run by the caller
        * that freshly bootstrapped this handle with the same `projectClassPath`).
+       *
+       * Any [CancellationException] (including [ProcessCanceledException]) thrown by [block] (including during an opt-in post-batch
+       * render-thread probe submission) propagates out of [renderBatch] so the caller fails the batch rather than treating cancellation as
+       * a poisoned render thread.
        *
        * @return the result of [block], or `null` if this handle was disposed or corrupted while waiting on [renderLock] so the caller can
        *   release this handle and acquire a fresh one.

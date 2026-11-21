@@ -73,6 +73,13 @@ internal fun readConfiguredCallbacksTimeoutMs(rawValue: Long? = java.lang.Long.g
  */
 internal const val DEFAULT_RENDER_THREAD_RECOVERY_TIMEOUT_MS = 30_000L
 
+/**
+ * Default wall-time timeout (in milliseconds) for the opt-in post-request render-thread probe run by long-lived hosts (such as a preview
+ * daemon) when a render batch ends with a timed-out or poisoned render thread. Intentionally shorter than the 30s in-request
+ * [DEFAULT_RENDER_THREAD_RECOVERY_TIMEOUT_MS] to bound culprit-request tail latency before retiring the daemon.
+ */
+internal const val DEFAULT_POST_REQUEST_RECOVERY_TIMEOUT_MS = 5_000L
+
 /** Maximum number of times callbacks are executed before each render. */
 internal const val CALLBACK_EXECUTIONS_PER_ROUND = 10
 
@@ -173,11 +180,30 @@ private fun CompletableFuture<*>.completedNormally(): Boolean = isDone && !isCom
  * blocking for [RENDER_TIMEOUT_SECONDS].
  *
  * This class is thread-safe: every method is atomic, and it may be used concurrently by several [Renderer]s (for example, concurrent
- * renders in daemon mode). The probe sequence in [StaticPreviewCallbackRunner.ensureRenderThreadAvailable] ([evaluateBeforeRender], waiting
- * on the probe, then [onProbeSucceeded] or [markPoisoned]) is not atomic as a whole. A [generation] counter, bumped whenever a timeout is
- * recorded or the thread is marked poisoned, lets [onProbeSucceeded] skip clearing state that changed while the probe was in flight.
+ * renders in daemon mode). The probe sequences in [StaticPreviewCallbackRunner.ensureRenderThreadAvailable] ([evaluateBeforeRender],
+ * waiting on the probe, then [onProbeSucceeded] or [markPoisoned]) and [StaticPreviewCallbackRunner.checkRenderThreadAfterRequest]
+ * ([evaluateAfterRequest], waiting on the probe, then [onProbeSucceeded]) are not atomic as a whole. A [generation] counter, bumped
+ * whenever a timeout is recorded or the thread is marked poisoned, lets [onProbeSucceeded] skip clearing state that changed while the probe
+ * was in flight.
  */
 internal class RenderThreadTimeoutState {
+  /** Plan returned by [evaluateAfterRequest] describing whether a post-request probe is needed before retiring a long-lived host. */
+  internal sealed interface PostRequestProbePlan {
+    /** No timed-out or poisoned work is blocking the render thread. */
+    data object Ready : PostRequestProbePlan
+
+    /** An existing [pendingProbe] is already queued on the render thread and can be awaited without submitting a second probe. */
+    data class AwaitExistingProbe(
+      val culprit: String,
+      val budgetMs: Long,
+      val generation: Long,
+      val pendingProbe: CompletableFuture<Void?>,
+    ) : PostRequestProbePlan
+
+    /** No uncompleted probe is queued on the render thread; submit a temporary probe and cancel it if it times out. */
+    data class NeedsProbe(val culprit: String, val budgetMs: Long, val generation: Long) : PostRequestProbePlan
+  }
+
   /**
    * Name of the preview whose main-thread work most recently timed out and may still be running on the single layoutlib render thread, or
    * `null` if the render thread is known to be idle.
@@ -243,15 +269,50 @@ internal class RenderThreadTimeoutState {
   }
 
   /**
-   * Clears the timeout record after the probe of [decision] completed, unless a timeout was recorded or the thread was marked poisoned
-   * since [decision] was made (in which case that newer work may still be running and the next preview must probe again).
+   * Returns a [PostRequestProbePlan] for probing the render thread after a request finishes without mutating the shared timeout or poison
+   * state (unless an existing [pendingProbe] has already completed normally, in which case the state is cleared).
+   */
+  @Synchronized
+  fun evaluateAfterRequest(): PostRequestProbePlan {
+    val poisoned = poisonedByPreview
+    if (poisoned != null) {
+      if (pendingProbe?.completedNormally() == true) {
+        clearLocked()
+        return PostRequestProbePlan.Ready
+      }
+      val existing = pendingProbe
+      return if (existing != null && !existing.isDone) {
+        PostRequestProbePlan.AwaitExistingProbe(poisoned, timedOutBudgetMs, generation, existing)
+      } else {
+        PostRequestProbePlan.NeedsProbe(poisoned, timedOutBudgetMs, generation)
+      }
+    }
+    val culprit = timedOutPreview
+    if (culprit != null) {
+      return PostRequestProbePlan.NeedsProbe(culprit, timedOutBudgetMs, generation)
+    }
+    return PostRequestProbePlan.Ready
+  }
+
+  /**
+   * Clears the timeout record after a probe at [expectedGeneration] completed, unless a timeout was recorded or the thread was marked
+   * poisoned since [expectedGeneration] was observed (in which case that newer work may still be running and the next preview must probe
+   * again).
    *
    * This is deliberately conservative: if another runner marked the thread poisoned without a pending probe while this probe was in flight,
    * the thread stays poisoned (and previews fail fast) until a runner probes again after [StaticPreviewCallbackRunner.onRefreshClassPath].
    */
   @Synchronized
+  fun onProbeSucceeded(expectedGeneration: Long) {
+    // If generation changed while the probe succeeded, returning null without clearing state is safe for serialized daemons and preserves
+    // the newer timeout record for subsequent checks.
+    if (generation == expectedGeneration) clearLocked()
+  }
+
+  /** Clears the timeout record after the probe of [decision] completed; see [onProbeSucceeded]. */
+  @Synchronized
   fun onProbeSucceeded(decision: ProbeDecision.NeedsProbe) {
-    if (generation == decision.generation) clearLocked()
+    onProbeSucceeded(decision.generation)
   }
 
   /**
@@ -308,6 +369,8 @@ internal class StaticPreviewCallbackRunner(
   @set:VisibleForTesting var callbacksTimeoutMs: Long = CONFIGURED_CALLBACKS_TIMEOUT_MS,
   /** Per-timeout wall-time budget for the render-thread recovery probe before the next preview, overridable by unit tests. */
   @set:VisibleForTesting var renderThreadRecoveryTimeoutMs: Long = DEFAULT_RENDER_THREAD_RECOVERY_TIMEOUT_MS,
+  /** Post-request wall-time budget for probing a timed-out or poisoned render thread before retiring a long-lived host. */
+  @set:VisibleForTesting var postRequestRecoveryTimeoutMs: Long = DEFAULT_POST_REQUEST_RECOVERY_TIMEOUT_MS,
   /** Monotonic wall-clock source in nanoseconds, overridable by unit tests. */
   @set:VisibleForTesting var nanoTime: () -> Long = System::nanoTime,
   /** Shared render-thread timeout and poison state; defaults to [globalRenderThreadTimeoutState]. */
@@ -366,12 +429,13 @@ internal class StaticPreviewCallbackRunner(
   }
 
   /**
-   * Reason why the render thread did not recover from a previous request's timed-out work, or `null` if it is available.
+   * Reason why the render thread did not recover from timed-out work, or `null` if it is available.
    *
-   * Set when the first [ensureRenderThreadAvailable] call of a request (after [onRefreshClassPath], or of a freshly bootstrapped runner)
-   * probes the render thread and the probe does not complete within [renderThreadRecoveryTimeoutMs]. A probe that fails within the same
-   * request that timed out does not set it, so the stuck work still has until the next request (plus the probe window) to finish, in which
-   * case the render thread recovers in place. Reset by [onRefreshClassPath].
+   * Set either when the first [ensureRenderThreadAvailable] call of a request (after [onRefreshClassPath], or of a freshly bootstrapped
+   * runner) probes the render thread and the probe does not complete within [renderThreadRecoveryTimeoutMs], or when an opt-in
+   * [checkRenderThreadAfterRequest] call at the end of a request observes that the render thread is still blocked after
+   * [postRequestRecoveryTimeoutMs]. Reset by [onRefreshClassPath], or when [ensureRenderThreadAvailable] or [checkRenderThreadAfterRequest]
+   * observes recovery.
    */
   @Volatile
   var unrecoveredRenderThreadReason: String? = null
@@ -405,14 +469,21 @@ internal class StaticPreviewCallbackRunner(
     // Errors are reported outside of the timeoutState monitor so that no logger callback runs while holding it.
     val needsProbe =
       when (decision) {
-        ProbeDecision.Ready -> return true
+        ProbeDecision.Ready -> {
+          unrecoveredRenderThreadReason = null
+          return true
+        }
         is ProbeDecision.Poisoned -> {
           reportPoisonedRenderThread(decision.culprit, decision.budgetMs, reportError)
           return false
         }
         is ProbeDecision.NeedsProbe -> decision
       }
-    val poisonedMessage = probeRenderThread(needsProbe, runAsyncOnRenderThread) ?: return true
+    val poisonedMessage = probeRenderThread(needsProbe, runAsyncOnRenderThread)
+    if (poisonedMessage == null) {
+      unrecoveredRenderThreadReason = null
+      return true
+    }
     if (firstCheckOfRequest) {
       // The timed-out work of a previous request is still running after the whole recovery window of this request's probe.
       unrecoveredRenderThreadReason = poisonedMessage
@@ -447,11 +518,83 @@ internal class StaticPreviewCallbackRunner(
       // A no-op Runnable never throws when executed; CancellationException (e.g. RenderExecutor EvictedException when the pending queue is
       // full) means the render thread is still blocked.
       markPoisoned(keepPendingProbe = false)
-    } catch (_: ExecutionException) {
+    } catch (e: ExecutionException) {
+      e.cause?.findFatalVirtualMachineError()?.let { throw it }
       // A no-op Runnable never throws when executed; ExecutionException (e.g. RenderExecutor queue timeout while waiting for the blocked
       // render thread) means the probe could not run on the render thread.
       markPoisoned(keepPendingProbe = false)
     }
+  }
+
+  private data class PostRequestProbeAttempt(
+    val culprit: String,
+    val budgetMs: Long,
+    val generation: Long,
+    val probe: CompletableFuture<Void?>,
+    val cancelOnFailure: Boolean,
+  )
+
+  /**
+   * Checks whether Layoutlib's single render thread is still blocked after a request finishes, giving stuck work up to [recoveryTimeoutMs]
+   * (defaults to [postRequestRecoveryTimeoutMs], 5s by default, intentionally shorter than [DEFAULT_RENDER_THREAD_RECOVERY_TIMEOUT_MS] to
+   * bound culprit-request tail latency) to unwind before returning a poisoned-thread message so a long-lived host can retire eagerly.
+   *
+   * Fails closed on probe submission [RuntimeException]s (such as `RejectedExecutionException`), [InterruptedException], or probe failure
+   * so completed `screenshotResults` are preserved while the host still retires. By contrast, a [CancellationException] (including
+   * `ProcessCanceledException` subclasses) thrown when submitting the probe via [runAsyncOnRenderThread] propagates directly (failing the
+   * batch rather than retiring the daemon), matching standard cancellation semantics. Unlike [ensureRenderThreadAvailable], this never
+   * transitions [timeoutState] to poisoned or replaces an existing pending probe, so non-retiring callers keep their full
+   * [renderThreadRecoveryTimeoutMs] recovery window.
+   */
+  fun checkRenderThreadAfterRequest(
+    recoveryTimeoutMs: Long = postRequestRecoveryTimeoutMs,
+    runAsyncOnRenderThread: (Runnable) -> CompletableFuture<Void?>,
+  ): String? {
+    val attempt =
+      when (val plan = timeoutState.evaluateAfterRequest()) {
+        RenderThreadTimeoutState.PostRequestProbePlan.Ready -> {
+          unrecoveredRenderThreadReason = null
+          return null
+        }
+        is RenderThreadTimeoutState.PostRequestProbePlan.AwaitExistingProbe ->
+          PostRequestProbeAttempt(plan.culprit, plan.budgetMs, plan.generation, plan.pendingProbe, cancelOnFailure = false)
+        is RenderThreadTimeoutState.PostRequestProbePlan.NeedsProbe -> {
+          val probe =
+            try {
+              runAsyncOnRenderThread(Runnable {})
+            } catch (e: CancellationException) {
+              throw e
+            } catch (_: RuntimeException) {
+              // RejectedExecutionException or other synchronous submission failures from RenderExecutor intentionally fail closed here
+              // (matching probeRenderThread). ProcessCanceledException subclasses CancellationException and propagates above.
+              return formatPoisonedRenderThreadMessage(plan.culprit, plan.budgetMs).also { unrecoveredRenderThreadReason = it }
+            }
+          PostRequestProbeAttempt(plan.culprit, plan.budgetMs, plan.generation, probe, cancelOnFailure = true)
+        }
+      }
+    return try {
+      attempt.probe.get(maxOf(recoveryTimeoutMs, 0L), TimeUnit.MILLISECONDS)
+      timeoutState.onProbeSucceeded(attempt.generation)
+      unrecoveredRenderThreadReason = null
+      null
+    } catch (_: InterruptedException) {
+      Thread.currentThread().interrupt()
+      failPostRequestProbe(attempt)
+    } catch (_: TimeoutException) {
+      failPostRequestProbe(attempt)
+    } catch (_: CancellationException) {
+      failPostRequestProbe(attempt)
+    } catch (e: ExecutionException) {
+      e.cause?.findFatalVirtualMachineError()?.let { throw it }
+      failPostRequestProbe(attempt)
+    }
+  }
+
+  private fun failPostRequestProbe(attempt: PostRequestProbeAttempt): String {
+    if (attempt.cancelOnFailure) {
+      attempt.probe.cancel(false)
+    }
+    return formatPoisonedRenderThreadMessage(attempt.culprit, attempt.budgetMs).also { unrecoveredRenderThreadReason = it }
   }
 
   private fun formatPoisonedRenderThreadMessage(culpritPreview: String, budgetMs: Long): String {
