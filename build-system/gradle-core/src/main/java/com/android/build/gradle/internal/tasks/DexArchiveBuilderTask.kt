@@ -107,8 +107,12 @@ abstract class DexArchiveBuilderTask : NewIncrementalTask(), IsolatedR8TaskInput
   @get:LocalState abstract val inputJarHashesFile: RegularFileProperty
 
   /**
-   * This property is annotated with [Internal] in order to allow cache hits across build that use different number of buckets. Changing
-   * this property will not re-run the task, but that is fine. See [canRunIncrementally] for details how this impacts incremental builds.
+   * Number of buckets used to parallelize dexing of directory inputs. JAR inputs always use a fixed bucket count
+   * ([DexArchiveBuilderTaskDelegate.NUMBER_OF_BUCKETS_FOR_JARS]) because JAR outputs are partitioned and named per bucket.
+   *
+   * This property is annotated with [Internal] in order to allow cache hits across builds that use different numbers of buckets, since
+   * directory outputs (`DexFilePerClassFile`) do not depend on the bucket count. Changing this property will not re-run the task, which is
+   * fine. See [canRunIncrementally] for details on how this impacts incremental builds.
    */
   @get:Internal abstract val numberOfBuckets: Property<Int>
 

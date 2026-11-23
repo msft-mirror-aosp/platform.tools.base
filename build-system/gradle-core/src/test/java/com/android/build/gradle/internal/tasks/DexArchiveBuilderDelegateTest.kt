@@ -35,6 +35,7 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Iterables
+import com.google.common.hash.Hashing
 import com.google.common.io.ByteStreams
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -263,28 +264,109 @@ class DexArchiveBuilderDelegateTest {
     assertThat(out.toFile().list()).isEqualTo(outputNames)
   }
 
-  /** Check bucket number is based on package name for jar input. */
+  /** Check bucket number is based on package name for jar input and uses the fixed JAR bucket count. */
   @Test
   fun testBucketingStrategy() {
-    val numberOfBuckets = 3
-
     val jarInput1 = tmpDir.root.toPath().resolve("input1.jar")
     jarWithEmptyClasses(jarInput1, ImmutableList.of("$PACKAGE/Dog"))
 
-    getDelegate(projectClasses = setOf(jarInput1.toFile()), projectOutput = out.toFile(), numberOfBuckets = numberOfBuckets).doProcess()
+    getDelegate(projectClasses = setOf(jarInput1.toFile()), projectOutput = out.toFile()).doProcess()
 
-    val jarBucket = findOutputBucketForJarInput(numberOfBuckets)
+    val jarBucket = findOutputBucketForJarInput()
 
     FileUtils.cleanOutputDir(out.toFile())
 
     val jarInput2 = tmpDir.root.toPath().resolve("input2.jar")
     jarWithEmptyClasses(jarInput2, ImmutableList.of("$PACKAGE/Cat"))
 
-    getDelegate(projectClasses = setOf(jarInput2.toFile()), projectOutput = out.toFile(), numberOfBuckets = numberOfBuckets).doProcess()
+    getDelegate(projectClasses = setOf(jarInput2.toFile()), projectOutput = out.toFile()).doProcess()
 
     // Check that jar bucket location does not change as the package names of the input classes
     // are the same.
     assertThat(FileUtils.find(out.toFile(), Pattern.compile(".*_$jarBucket\\.jar"))).hasSize(1)
+  }
+
+  @Test
+  fun testJarOutputsIndependentOfNumberOfBuckets() {
+    val jarInput = tmpDir.root.toPath().resolve("multi_pkg.jar")
+    val jarClasses = (0 until 8).map { "com/example/pkg$it/A" }
+    jarWithEmptyClasses(jarInput, jarClasses)
+
+    val dirInput = tmpDir.root.toPath().resolve("dir_input")
+    dirWithEmptyClasses(dirInput, ImmutableList.of("$PACKAGE/DirA", "$PACKAGE/DirB"))
+
+    val outWith1Bucket = tmpDir.newFolder("out_1")
+    val outWith5Buckets = tmpDir.newFolder("out_5")
+
+    getDelegate(
+        projectClasses = setOf(jarInput.toFile(), dirInput.toFile()),
+        projectOutput = outWith1Bucket,
+        numberOfBuckets = 1,
+        inputJarHashesFile = tmpDir.newFile("hashes_1"),
+      )
+      .doProcess()
+
+    getDelegate(
+        projectClasses = setOf(jarInput.toFile(), dirInput.toFile()),
+        projectOutput = outWith5Buckets,
+        numberOfBuckets = 5,
+        inputJarHashesFile = tmpDir.newFile("hashes_5"),
+      )
+      .doProcess()
+
+    val snapshot1 = snapshotDir(outWith1Bucket)
+    val snapshot5 = snapshotDir(outWith5Buckets)
+
+    assertThat(snapshot1.keys.count { it.endsWith(".jar") }).isGreaterThan(1)
+    assertThat(snapshot5).isEqualTo(snapshot1)
+  }
+
+  @Test
+  fun testAllClassesFromMultiPackageJarAreDexedWhenDirectoryBucketsIsOne() {
+    val jarInput = tmpDir.root.toPath().resolve("many_pkgs.jar")
+    val jarClasses = (0 until 20).map { "com/example/pkg$it/C$it" }
+    jarWithEmptyClasses(jarInput, jarClasses)
+
+    getDelegate(projectClasses = setOf(jarInput.toFile()), projectOutput = out.toFile(), numberOfBuckets = 1).doProcess()
+
+    val expectedDescriptors = jarClasses.map { "L$it;" }
+    assertThat(readAllDexClassesInJars(out.toFile())).containsExactlyElementsIn(expectedDescriptors)
+  }
+
+  @Test
+  fun testIncrementalModifiedMultiPackageJarRemovesAllPreviousBucketOutputs() {
+    val jarInput = tmpDir.root.toPath().resolve("modifiable.jar")
+    val initialClasses = (0 until 10).map { "com/example/pkg$it/Old$it" }
+    jarWithEmptyClasses(jarInput, initialClasses)
+
+    val inputJarHashes = tmpDir.newFile()
+    getDelegate(
+        projectClasses = setOf(jarInput.toFile()),
+        projectOutput = out.toFile(),
+        numberOfBuckets = 1,
+        inputJarHashesFile = inputJarHashes,
+      )
+      .doProcess()
+
+    val initialOutputJars = FileUtils.find(out.toFile(), Pattern.compile(".*\\.jar")).map { it.name }
+    assertThat(initialOutputJars.size).isGreaterThan(1)
+
+    val updatedClasses = (0 until 10).map { "com/example/pkg$it/New$it" }
+    jarWithEmptyClasses(jarInput, updatedClasses)
+
+    getDelegate(
+        isIncremental = true,
+        projectClasses = setOf(jarInput.toFile()),
+        projectChanges = setOf(FakeFileChange(jarInput.toFile(), ChangeType.MODIFIED, FileType.FILE, "")),
+        projectOutput = out.toFile(),
+        numberOfBuckets = 1,
+        inputJarHashesFile = inputJarHashes,
+      )
+      .doProcess()
+
+    val updatedOutputJars = FileUtils.find(out.toFile(), Pattern.compile(".*\\.jar")).map { it.name }
+    assertThat(updatedOutputJars).containsNoneIn(initialOutputJars)
+    assertThat(readAllDexClassesInJars(out.toFile())).containsExactlyElementsIn(updatedClasses.map { "L$it;" })
   }
 
   @Test
@@ -356,11 +438,33 @@ class DexArchiveBuilderDelegateTest {
       .find { FileUtils.find(out.resolve(it.toString()).toFile(), Pattern.compile(".*\\.dex")).size == 1 }
       ?.toString() ?: fail("Failed to find a folder with dex output")
 
-  private fun findOutputBucketForJarInput(numberOfBuckets: Int): String {
+  private fun findOutputBucketForJarInput(): String {
     val file = FileUtils.find(out.toFile(), Pattern.compile(".*\\.jar")).first() ?: fail("Failed to find a jar dex output")
     val name = file.name
     return name.substring(name.lastIndexOf("_") + 1, name.lastIndexOf("."))
   }
+
+  private fun snapshotDir(dir: File): Map<String, String> =
+    dir
+      .walkTopDown()
+      .filter { it.isFile }
+      .associate { file ->
+        file.relativeTo(dir).invariantSeparatorsPath to Hashing.sha256().hashBytes(file.readBytes()).toString()
+      }
+
+  private fun readAllDexClassesInJars(dir: File): List<String> =
+    FileUtils.find(dir, Pattern.compile(".*\\.jar")).flatMap { jarFile ->
+      ZipFile(jarFile).use { zip ->
+        zip
+          .entries()
+          .asSequence()
+          .flatMap { entry ->
+            val bytes = ByteStreams.toByteArray(zip.getInputStream(entry))
+            Dex(bytes, entry.name).classes.keys.asSequence()
+          }
+          .toList()
+      }
+    }
 
   private fun getDelegate(
     isIncremental: Boolean = false,

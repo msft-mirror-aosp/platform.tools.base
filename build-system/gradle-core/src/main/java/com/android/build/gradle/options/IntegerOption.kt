@@ -50,7 +50,7 @@ enum class IntegerOption(override val propertyName: String, stage: ApiStage, ove
   DEXING_READ_BUFFER_SIZE("android.dexingReadBuffer.size", ApiStage.Experimental),
   DEXING_WRITE_BUFFER_SIZE("android.dexingWriteBuffer.size", ApiStage.Experimental),
 
-  /** Number of buckets used by `DexArchiveBuilderTask` and `DexMergingTask`. */
+  /** Number of buckets used by `DexArchiveBuilderTask` (for directory inputs) and `DexMergingTask`. */
   DEXING_NUMBER_OF_BUCKETS("android.dexingNumberOfBuckets", ApiStage.Experimental),
 
   /** Maximum number of dynamic features that can be allocated before Oreo platforms. */

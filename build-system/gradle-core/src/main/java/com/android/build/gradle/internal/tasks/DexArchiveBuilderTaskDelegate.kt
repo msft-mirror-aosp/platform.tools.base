@@ -35,6 +35,7 @@ import com.android.builder.dexing.DexFilePerClassFile
 import com.android.builder.dexing.DirectoryBucketGroup
 import com.android.builder.dexing.JarBucketGroup
 import com.android.utils.FileUtils
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.base.Throwables
 import com.google.common.collect.Lists
 import com.google.common.hash.Hashing
@@ -138,6 +139,16 @@ class DexArchiveBuilderTaskDelegate(
   companion object {
     // Shared state used by worker actions.
     internal val sharedState = WorkerActionServiceRegistry()
+
+    /**
+     * Fixed bucket count for JAR inputs ([JarBucketGroup]).
+     *
+     * Unlike directory inputs (which output per-class `.dex` files into a shared directory), JAR inputs are compiled in dex-indexed mode
+     * into `<hash>_<bucketId>.jar` files (and corresponding global synthetics directories) partitioned by package hash modulo the bucket
+     * count. Using a constant keeps JAR outputs deterministic across machines with different processor counts so downstream tasks like
+     * [DexMergingTask] get remote build cache hits.
+     */
+    @VisibleForTesting internal const val NUMBER_OF_BUCKETS_FOR_JARS = 16
 
     // Ids for the ClasspathServiceKeys registered in sharedState. They come from this AGP-side counter rather than from
     // ClassFileProviderFactory's own ids: each isolated R8 ClassLoader has its own copy of ClassFileProviderFactory and of its id counter,
@@ -337,7 +348,7 @@ class DexArchiveBuilderTaskDelegate(
   ) {
     if (dexParams.withDesugaring) {
       convertToDexArchive(
-        inputs = JarBucketGroup(jarInput, numberOfBuckets),
+        inputs = JarBucketGroup(jarInput, NUMBER_OF_BUCKETS_FOR_JARS),
         outputDir = outputDir,
         isIncremental = isIncremental,
         bootClasspath = bootclasspath,
@@ -352,7 +363,7 @@ class DexArchiveBuilderTaskDelegate(
       }
 
       convertToDexArchive(
-        inputs = JarBucketGroup(jarInput, numberOfBuckets),
+        inputs = JarBucketGroup(jarInput, NUMBER_OF_BUCKETS_FOR_JARS),
         outputDir = outputDir,
         isIncremental = false,
         bootClasspath = bootclasspath,
@@ -381,7 +392,7 @@ class DexArchiveBuilderTaskDelegate(
   ) {
     inputs.getRoots().forEach { loggerWrapper.verbose("Dexing ${it.absolutePath}") }
 
-    for (bucketId in 0 until numberOfBuckets) {
+    for (bucketId in 0 until inputs.numOfBuckets) {
 
       fun computeOutputPath(outputDir: File, dexOutput: Boolean): File {
         return when (inputs) {
@@ -538,9 +549,9 @@ class DexArchiveBuilderTaskDelegate(
     fun getPreviousOutputsForJar(input: File, outputDir: File): List<File> {
       val hash = previousFileHashes.getValue(input)
 
-      return Lists.newArrayListWithCapacity<File>(numberOfBuckets + 1).also {
+      return Lists.newArrayListWithCapacity<File>(NUMBER_OF_BUCKETS_FOR_JARS + 1).also {
         it.add(computeOutputPath(outputDir, hash, null))
-        (0 until numberOfBuckets).forEach { bucketId -> it.add(computeOutputPath(outputDir, hash, bucketId)) }
+        (0 until NUMBER_OF_BUCKETS_FOR_JARS).forEach { bucketId -> it.add(computeOutputPath(outputDir, hash, bucketId)) }
       }
     }
 

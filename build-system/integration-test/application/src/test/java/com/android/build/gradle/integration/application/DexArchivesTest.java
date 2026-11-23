@@ -37,6 +37,7 @@ import com.android.utils.FileUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import com.google.common.hash.Hashing;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -50,6 +51,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -241,12 +244,45 @@ public class DexArchivesTest {
             long initialBuildTimestamp =
                     FileUtils.find(builderDir(), "BuildConfig.dex").get().lastModified();
             addNewClass();
+            TestUtils.waitForFileSystemTick();
             executor.with(IntegerOption.DEXING_NUMBER_OF_BUCKETS, 2).run("assembleDebug");
             assertThat(FileUtils.find(builderDir(), "BuildConfig.dex").get().lastModified())
                     .isGreaterThan(initialBuildTimestamp);
             assertThat(FileUtils.find(builderDir(), "NewClass.dex").get().lastModified())
                     .isGreaterThan(initialBuildTimestamp);
         }
+    }
+
+    @Test
+    public void testDexArchiveOutputsIndependentOfNumberOfBuckets()
+            throws IOException, InterruptedException {
+        project.executor().with(IntegerOption.DEXING_NUMBER_OF_BUCKETS, 1).run("assembleDebug");
+        Map<String, String> outputsWith1Bucket = snapshotDirectory(builderDir());
+        assertThat(outputsWith1Bucket.keySet().stream().anyMatch(p -> p.endsWith(".jar"))).isTrue();
+
+        project.executor().run("clean");
+
+        project.executor().with(IntegerOption.DEXING_NUMBER_OF_BUCKETS, 3).run("assembleDebug");
+        Map<String, String> outputsWith3Buckets = snapshotDirectory(builderDir());
+
+        assertThat(outputsWith3Buckets).isEqualTo(outputsWith1Bucket);
+    }
+
+    @Test
+    public void testMergeDexCacheHitAcrossDifferentBucketCounts()
+            throws IOException, InterruptedException {
+        GradleTaskExecutor executor = project.executor().withArgument("--build-cache");
+
+        executor.with(IntegerOption.DEXING_NUMBER_OF_BUCKETS, 1).run("assembleDebug");
+        executor.run("clean");
+
+        // Force :dexBuilderDebug to re-execute with a different directory bucket count; its JAR
+        // outputs must remain identical so downstream :mergeDexDebug still hits the build cache.
+        GradleBuildResult result =
+                executor.with(IntegerOption.DEXING_NUMBER_OF_BUCKETS, 3)
+                        .run(":dexBuilderDebug", "--rerun", "assembleDebug");
+        result.assertTask(":dexBuilderDebug").didWork();
+        result.assertTask(":mergeDexDebug").wasFromCache();
     }
 
     @Test
@@ -260,6 +296,7 @@ public class DexArchivesTest {
             long initialBuildTimestamp =
                     FileUtils.find(builderDir(), "BuildConfig.dex").get().lastModified();
 
+            TestUtils.waitForFileSystemTick();
             project.executor().with(IntegerOption.DEXING_NUMBER_OF_BUCKETS, 2).run("assembleDebug");
             assertThat(FileUtils.find(builderDir(), "BuildConfig.dex").get().lastModified())
                     .isGreaterThan(initialBuildTimestamp);
@@ -369,5 +406,20 @@ public class DexArchivesTest {
         Files.write(
                 project.getMainSrcDir().toPath().resolve("com/example/helloworld/NewClass.java"),
                 newClass.getBytes(Charsets.UTF_8));
+    }
+
+    @NonNull
+    private static Map<String, String> snapshotDirectory(@NonNull File dir) throws IOException {
+        Map<String, String> snapshot = new TreeMap<>();
+        Path root = dir.toPath();
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path path : files.filter(Files::isRegularFile).collect(Collectors.toList())) {
+                String relativePath =
+                        FileUtils.toSystemIndependentPath(root.relativize(path).toString());
+                String hash = Hashing.sha256().hashBytes(Files.readAllBytes(path)).toString();
+                snapshot.put(relativePath, hash);
+            }
+        }
+        return snapshot;
     }
 }
