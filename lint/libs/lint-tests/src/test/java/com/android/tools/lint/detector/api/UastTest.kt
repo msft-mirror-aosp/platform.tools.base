@@ -7828,4 +7828,114 @@ public object ProtoObjectKt {
     }
     assertEquals(2, prefixCount)
   }
+
+  @Test
+  fun testReifiedInlineReturnTypeErrorType() {
+    // Regression test for b/507871503 (KTIJ-41135):
+    // Resolving a call to a compiled binary `inline fun <reified T : Any>` (like
+    // `org.mockito.kotlin.MatchersKt#any`) produces a `UastFakeDeserializedSymbolLightMethod`
+    // whose `returnType` substitutes `T` using the call-site type argument mapping.
+    // When the surrounding call cannot infer `T` (unresolved outer method, ambiguous overload,
+    // or missing parameter type on classpath), the mapped type argument is a `KaErrorType`,
+    // and `resolved.returnType` should fall back to `T` instead of becoming `UastErrorType`.
+    val testFiles =
+      arrayOf(
+        kotlin(
+            """
+            import pkg.Foo
+            import test.mock
+
+            fun test(foo: Foo) {
+              foo.takeA(mock())
+              foo.unresolvedMethod(mock())
+              foo.overloaded(mock())
+              foo.takeMissing(mock())
+              val unconstrained = mock()
+            }
+          """
+          )
+          .indented(),
+        bytecode(
+          "libs/lib1.jar",
+          kotlin(
+              "src/test/mock.kt",
+              """
+              package test
+
+              inline fun <reified T : Any> mock(): T = TODO()
+            """,
+            )
+            .indented(),
+          0xd975c9,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuNiEBJyLi0uyc/1yU9Pz8xLdyzI
+                9C7h4uNiKUktLhFi881PzvYuUWLQYgAA/KsI7EAAAAA=
+                """,
+          """
+                test/MockKt.class:
+                H4sIAAAAAAAA/2VSXWsTQRQ9M5vmY5PatFZtUj9rhMQHtxVBMKUgrdLFpAUT
+                ApKnyWYaJtmdldnZ4GOe/CH+CUFBQx/9UeLdWEH0Ye6ce8+5hzuX+fHzyzcA
+                z/CIoWxlYr1uHMze2AIYQ3Uq5sILhZ5456OpDKjqMOQiUjBsN1udf/k2w+5h
+                /8X/9aNmq98ntj6Lbai0dxZbP3ofykhqK8evjIlNAUWG/KHSyh4xnDT/MulZ
+                o/Sk7XeuuqfzyFPUaLQIvRN5IdLQHsc6sSYNbGy6wsykabcGFbgouyihwlBq
+                qMZF4/fozGfY/GPWlVaMhRU0HY/mDi2DZaGUBZB2lgFO5AeVoX1C4wMGb7lw
+                XV7kLq8SWi7qdbrr/JTtucXlosp22GO+z08vPxYvP+V51cnanpJdn2WuhWyQ
+                JzNL2zyOx5Jho6O0PEujkTR9MQqpstWJAxEOhFFZflUs9dREC5sawm4vTk0g
+                X6uMqL1NtVWRHKhEkfKl1rEVVtFScACOHFavqdawhjzl9yh7TpiGwbrT/orS
+                O5Zjn7H+PXss7lPME8nh4AHhygqXcQ0blO2tNAU6D1foLhorO/owZLk5hONj
+                y8d1H9u44eMmbvnYQW0IlqCO3SFyCdYS3E5wJ0H+FzyMFPyCAgAA
+                """,
+        ),
+        java(
+            """
+            package pkg;
+
+            public class Foo {
+              public static class A {}
+              public static class B {}
+
+              public void takeA(A a) {}
+              public void overloaded(A a) {}
+              public void overloaded(B b) {}
+              public void takeMissing(MissingType m) {}
+            }
+          """
+          )
+          .indented(),
+      )
+
+    val observed = mutableListOf<Pair<String, PsiType?>>()
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            if (node.methodName == "mock") {
+              val resolved = node.resolve()
+              assertNotNull(resolved)
+              assertEquals("mock", resolved!!.name)
+              val parentCall = (node.uastParent as? UCallExpression)?.methodIdentifier?.name ?: "unconstrained"
+              observed.add(parentCall to resolved.returnType)
+            }
+            return super.visitCallExpression(node)
+          }
+        }
+      )
+    }
+
+    assertEquals(5, observed.size)
+    // Resolved outer call: T is inferred as pkg.Foo.A
+    assertEquals("takeA", observed[0].first)
+    assertEquals("pkg.Foo.A", observed[0].second?.canonicalText)
+    // Outer call cannot infer T -> falls back to type parameter T instead of UastErrorType
+    assertEquals("unresolvedMethod", observed[1].first)
+    assertEquals("T", observed[1].second?.canonicalText)
+    assertEquals("overloaded", observed[2].first)
+    assertEquals("T", observed[2].second?.canonicalText)
+    assertEquals("takeMissing", observed[3].first)
+    assertEquals("T", observed[3].second?.canonicalText)
+    // Unconstrained call has empty typeArgumentMapping -> falls back to type parameter T
+    assertEquals("unconstrained", observed[4].first)
+    assertEquals("T", observed[4].second?.canonicalText)
+  }
 }
