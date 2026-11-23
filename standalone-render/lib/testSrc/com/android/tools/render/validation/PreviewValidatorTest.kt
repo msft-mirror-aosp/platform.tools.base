@@ -390,7 +390,7 @@ class PreviewValidatorTest {
         "?colorPrimary",
         "?android:colorBackground",
       )) {
-      val result = validator.validateParams(mapOf("backgroundColor" to color), usesStringBasedBackgroundColor = true)
+      val result = validator.validateParams(mapOf("backgroundColor" to color), isResourcePreview = true)
       assertTrue("String-based color '$color' should be valid but got: ${result.issues}", result.issues.isEmpty())
     }
   }
@@ -419,6 +419,8 @@ class PreviewValidatorTest {
         "@null",
         "@color/",
         "?attr/",
+        "?/colorPrimary",
+        "?android:/colorPrimary",
         "@:color/white",
         "?:attr/colorAccent",
         "?:colorAccent",
@@ -445,7 +447,7 @@ class PreviewValidatorTest {
         "@color/foo bar",
         "@color/a/b",
       )) {
-      val result = validator.validateParams(mapOf("backgroundColor" to invalid), usesStringBasedBackgroundColor = true)
+      val result = validator.validateParams(mapOf("backgroundColor" to invalid), isResourcePreview = true)
       assertFalse("String-based color '$invalid' should be invalid", result.isValid)
       val error = result.errors.single()
       assertEquals(ValidationSeverity.ERROR, error.severity)
@@ -496,11 +498,10 @@ class PreviewValidatorTest {
       listOf(
         "",
         "   ",
-        " , ",
         "pressed",
         "disabled",
         "pressed,checked",
-        " pressed , \n checked , ",
+        " pressed , \n checked ",
         ParameterValidators.DRAWABLE_STATES.joinToString(","),
       )) {
       val result = validator.validateParams(mapOf("state" to state))
@@ -519,10 +520,98 @@ class PreviewValidatorTest {
       assertTrue(error.message.contains("expected one of:"))
     }
 
+    for (emptySegment in listOf(",", " , ", "pressed,", ",pressed", "pressed,,checked")) {
+      val result = validator.validateParams(mapOf("state" to emptySegment))
+      assertFalse("state '$emptySegment' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals("state", error.target)
+      assertEquals(emptySegment, error.value)
+      assertTrue(error.message.contains("empty state"))
+    }
+
+    for (duplicate in listOf("pressed,pressed", "pressed, checked, pressed", "pressed,pressed,pressed")) {
+      val result = validator.validateParams(mapOf("state" to duplicate))
+      assertFalse("state '$duplicate' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals("state", error.target)
+      assertEquals(duplicate, error.value)
+      assertTrue(error.message.contains("duplicate state 'pressed'"))
+    }
+
     val multiInvalid = validator.validateParams(mapOf("state" to "foo,pressed,bar"))
     assertEquals(2, multiInvalid.errors.size)
     assertTrue(multiInvalid.errors[0].message.contains("'foo'"))
     assertTrue(multiInvalid.errors[1].message.contains("'bar'"))
+
+    val repeatedInvalid = validator.validateParams(mapOf("state" to "foo,foo"))
+    assertEquals(1, repeatedInvalid.errors.size)
+    assertTrue(repeatedInvalid.errors.single().message.contains("'foo'"))
+  }
+
+  @Test
+  fun testResourceScaleTypeShowBackgroundAndThemeValidation() {
+    for (scaleType in ParameterValidators.SCALE_TYPES) {
+      val drawable =
+        DrawableScreenshot(methodFQN = "R.drawable.ic_logo", previewParams = mapOf("scaleType" to " $scaleType "), previewId = "id")
+      assertTrue("scaleType '$scaleType' should be valid", validator.validate(drawable).issues.isEmpty())
+    }
+    assertTrue(ParameterValidators.validateScaleType("  fitCenter  ").isEmpty())
+    assertTrue(ParameterValidators.validateScaleType("   ").isEmpty())
+    for (invalidScaleType in listOf("stretch", "FitXY")) {
+      val drawable =
+        DrawableScreenshot(methodFQN = "R.drawable.ic_logo", previewParams = mapOf("scaleType" to invalidScaleType), previewId = "id")
+      val result = validator.validate(drawable)
+      assertFalse("scaleType '$invalidScaleType' should be invalid", result.isValid)
+      val error = result.errors.single()
+      assertEquals("scaleType", error.target)
+      assertEquals(invalidScaleType, error.value)
+      assertTrue(error.message.contains("expected one of"))
+    }
+
+    for (showBackground in listOf("", "true", "false", "TRUE", "False", " true ")) {
+      val layout =
+        LayoutScreenshot(methodFQN = "R.layout.main", previewParams = mapOf("showBackground" to showBackground), previewId = "id")
+      assertTrue("showBackground '$showBackground' should be valid", validator.validate(layout).issues.isEmpty())
+    }
+    assertTrue(ParameterValidators.validateShowBackground(" true ").isEmpty())
+    assertTrue(ParameterValidators.validateShowBackground("   ").isEmpty())
+    val invalidShowBg = LayoutScreenshot(methodFQN = "R.layout.main", previewParams = mapOf("showBackground" to "yes"), previewId = "id")
+    val showBgResult = validator.validate(invalidShowBg)
+    assertFalse(showBgResult.isValid)
+    assertEquals("showBackground", showBgResult.errors.single().target)
+    assertTrue(showBgResult.errors.single().message.contains("expected true or false"))
+
+    for (validTheme in listOf("", " ", "Theme.Material", "@style/Theme.App", "@null", "?attr/myTheme", "android:Theme.Material")) {
+      val layout = LayoutScreenshot(methodFQN = "R.layout.main", previewParams = mapOf("theme" to validTheme), previewId = "id")
+      assertTrue("theme '$validTheme' should be valid", validator.validate(layout).issues.isEmpty())
+    }
+    assertTrue(ParameterValidators.validateTheme("   ").isEmpty())
+    assertTrue(ParameterValidators.validateTheme(" Theme.Material ").isEmpty())
+    for (invalidTheme in
+      listOf(
+        "@color/accent",
+        "@style/",
+        "@*android:style/Theme.Material",
+        "Theme MyApp",
+        "#FF0000",
+        "?[foo]",
+        "?/myTheme",
+        "?android:/myTheme",
+      )) {
+      val layout = LayoutScreenshot(methodFQN = "R.layout.main", previewParams = mapOf("theme" to invalidTheme), previewId = "id")
+      val result = validator.validate(layout)
+      assertFalse("theme '$invalidTheme' should be invalid", result.isValid)
+      assertEquals("theme", result.errors.single().target)
+      assertTrue(result.errors.single().message.contains("Invalid theme"))
+    }
+
+    val paramsScaleTypeError = validator.validateParams(mapOf("scaleType" to "stretch")).errors.single()
+    assertEquals("scaleType", paramsScaleTypeError.target)
+    assertTrue(paramsScaleTypeError.message.contains("expected one of"))
+
+    val paramsThemeError = validator.validateParams(mapOf("theme" to "@color/accent")).errors.single()
+    assertEquals("theme", paramsThemeError.target)
+    assertTrue(paramsThemeError.message.contains("Invalid theme"))
   }
 
   @Test

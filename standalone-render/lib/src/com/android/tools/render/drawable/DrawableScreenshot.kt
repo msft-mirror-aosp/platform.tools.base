@@ -45,13 +45,11 @@ import com.android.tools.render.common.ScreenshotPreviewElement
 import com.android.tools.render.common.toThemeReference
 import com.android.tools.render.validation.PARAMETER_LEVEL
 import com.android.tools.render.validation.PARAMETER_STATE
+import com.android.tools.render.validation.ParameterValidators
 import com.android.utils.XmlUtils.toXmlAttributeValue
 
 /** Resource types that can be previewed as a drawable. */
 val DRAWABLE_RESOURCE_TYPES = setOf(ResourceType.DRAWABLE, ResourceType.MIPMAP)
-
-/** Values of `android:scaleType`, which `scaleType` takes. */
-private val SCALE_TYPES = setOf("matrix", "fitXY", "fitStart", "fitCenter", "fitEnd", "center", "centerCrop", "centerInside")
 
 /**
  * Information required to render a screenshot of a drawable or mipmap resource, for example `R.drawable.ic_logo`.
@@ -99,8 +97,8 @@ data class DrawableScreenshot(
     val level = intParam(PARAMETER_LEVEL)
     val states = param(PARAMETER_STATE)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
     val scaleType = param(ATTR_SCALE_TYPE)
-    require(scaleType == null || scaleType in SCALE_TYPES) {
-      "Invalid $ATTR_SCALE_TYPE '$scaleType': expected one of ${SCALE_TYPES.joinToString()}"
+    require(scaleType == null || scaleType in ParameterValidators.SCALE_TYPES) {
+      "Invalid $ATTR_SCALE_TYPE '$scaleType': expected one of ${ParameterValidators.SCALE_TYPES.joinToString()}"
     }
 
     val configuration =

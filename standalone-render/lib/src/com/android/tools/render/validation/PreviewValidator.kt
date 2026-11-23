@@ -16,10 +16,11 @@
 
 package com.android.tools.render.validation
 
+import com.android.SdkConstants.ATTR_SCALE_TYPE
+import com.android.SdkConstants.ATTR_THEME
 import com.android.ide.common.resources.configuration.LocaleQualifier
 import com.android.ide.common.resources.parseColor
 import com.android.resources.ResourceType
-import com.android.resources.ResourceUrl
 import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.devices.Device
 import com.android.tools.configurations.UiModeState
@@ -28,7 +29,11 @@ import com.android.tools.preview.MAX_DIMENSION_DP
 import com.android.tools.preview.MAX_FONT_SCALE
 import com.android.tools.preview.UNDEFINED_API_LEVEL
 import com.android.tools.preview.UNDEFINED_DIMENSION
+import com.android.tools.preview.config.PARAMETER_SHOW_BACKGROUND
 import com.android.tools.render.common.PreviewScreenshot
+import com.android.tools.render.common.invalidThemeMessage
+import com.android.tools.render.common.isValidResourceOrThemeReference
+import com.android.tools.render.common.isValidThemeSyntax
 import com.android.tools.render.drawable.DrawablePreviewView
 import com.android.tools.render.drawable.DrawableScreenshot
 import com.android.tools.render.layout.LayoutScreenshot
@@ -71,6 +76,9 @@ object ParameterValidators {
 
   /** Drawable states accepted by the `state` parameter, see [DrawablePreviewView.States]. */
   val DRAWABLE_STATES: Set<String> = DrawablePreviewView.States.ATTRS.keys + DrawablePreviewView.States.DISABLED
+
+  /** Values of `android:scaleType` accepted by the `scaleType` parameter on drawable previews. */
+  val SCALE_TYPES: Set<String> = setOf("matrix", "fitXY", "fitStart", "fitCenter", "fitEnd", "center", "centerCrop", "centerInside")
 
   private const val UI_MODE_TYPE_MASK = UiModeState.UI_MODE_TYPE_MASK
   /** Highest defined `Configuration.UI_MODE_TYPE_*` value (`UI_MODE_TYPE_VR_HEADSET`). */
@@ -372,22 +380,106 @@ object ParameterValidators {
 
   /**
    * Validates the comma-separated `state` parameter for drawable previews (`pressed`, `focused`, `selected`, `checked`, `checkable`,
-   * `activated`, `hovered`, or `disabled`).
+   * `activated`, `hovered`, or `disabled`), rejecting empty segments and duplicate states.
    */
   fun validateState(value: String?): List<ValidationIssue> {
-    if (value.isNullOrEmpty()) return emptyList()
-    val invalidStates = value.split(',').map { it.trim() }.filter { it.isNotEmpty() && it !in DRAWABLE_STATES }.distinct()
-    if (invalidStates.isEmpty()) return emptyList()
+    if (value.isNullOrBlank()) return emptyList()
     val allowed = DRAWABLE_STATES.joinToString()
-    return invalidStates.map { state ->
+    val issues = mutableListOf<ValidationIssue>()
+    val seen = mutableSetOf<String>()
+    val reportedInvalid = mutableSetOf<String>()
+    val reportedDuplicates = mutableSetOf<String>()
+    var reportedEmpty = false
+    for (raw in value.split(',')) {
+      val state = raw.trim()
+      when {
+        state.isEmpty() -> {
+          if (!reportedEmpty) {
+            reportedEmpty = true
+            issues +=
+              ValidationIssue(
+                message = "Parameter '$PARAMETER_STATE' has an empty state; expected comma-separated states among: $allowed",
+                severity = ValidationSeverity.ERROR,
+                category = ValidationCategory.PARAMETER,
+                target = PARAMETER_STATE,
+                value = value,
+              )
+          }
+        }
+        state !in DRAWABLE_STATES -> {
+          if (reportedInvalid.add(state)) {
+            issues +=
+              ValidationIssue(
+                message = "Parameter '$PARAMETER_STATE' has invalid state '$state'; expected one of: $allowed",
+                severity = ValidationSeverity.ERROR,
+                category = ValidationCategory.PARAMETER,
+                target = PARAMETER_STATE,
+                value = value,
+              )
+          }
+        }
+        !seen.add(state) -> {
+          if (reportedDuplicates.add(state)) {
+            issues +=
+              ValidationIssue(
+                message = "Parameter '$PARAMETER_STATE' has duplicate state '$state'",
+                severity = ValidationSeverity.ERROR,
+                category = ValidationCategory.PARAMETER,
+                target = PARAMETER_STATE,
+                value = value,
+              )
+          }
+        }
+      }
+    }
+    return issues
+  }
+
+  /** Validates the `scaleType` parameter for drawable previews (`android:scaleType`). */
+  fun validateScaleType(value: String?): List<ValidationIssue> {
+    val trimmed = value?.trim()
+    if (trimmed.isNullOrEmpty() || trimmed in SCALE_TYPES) return emptyList()
+    return listOf(
       ValidationIssue(
-        message = "Parameter '$PARAMETER_STATE' has invalid state '$state'; expected one of: $allowed",
+        message = "Invalid $ATTR_SCALE_TYPE '$trimmed': expected one of ${SCALE_TYPES.joinToString()}",
         severity = ValidationSeverity.ERROR,
         category = ValidationCategory.PARAMETER,
-        target = PARAMETER_STATE,
+        target = ATTR_SCALE_TYPE,
         value = value,
       )
+    )
+  }
+
+  /** Validates the `showBackground` parameter for resource previews (`true` or `false`, case-insensitive). */
+  fun validateShowBackground(value: String?): List<ValidationIssue> {
+    val trimmed = value?.trim()
+    if (trimmed.isNullOrEmpty() || trimmed.equals("true", ignoreCase = true) || trimmed.equals("false", ignoreCase = true)) {
+      return emptyList()
     }
+    return listOf(
+      ValidationIssue(
+        message = "Invalid $PARAMETER_SHOW_BACKGROUND '$trimmed': expected true or false",
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.PARAMETER,
+        target = PARAMETER_SHOW_BACKGROUND,
+        value = value,
+      )
+    )
+  }
+
+  /** Validates the syntax of the `theme` parameter for resource previews. */
+  fun validateTheme(value: String?): List<ValidationIssue> {
+    val trimmed = value?.trim()
+    if (trimmed.isNullOrEmpty() || isValidThemeSyntax(trimmed)) return emptyList()
+    return listOf(
+      ValidationIssue(
+        message = invalidThemeMessage(trimmed),
+        severity = ValidationSeverity.ERROR,
+        category = ValidationCategory.PARAMETER,
+        target = ATTR_THEME,
+        value = value,
+      )
+    )
   }
 
   /**
@@ -420,27 +512,7 @@ object ParameterValidators {
   private fun isValidHexColor(value: String): Boolean =
     value.startsWith('#') && value.drop(1).all { HexFormat.isHexDigit(it.code) } && parseColor(value) != null
 
-  private fun isValidColorReference(value: String): Boolean {
-    val colon = value.indexOf(':')
-    val slash = value.indexOf('/')
-    if (colon >= 0 && slash in 0 until colon) return false
-    val url = ResourceUrl.parse(value) ?: return false
-    if (url.isPrivateAccessOverride || !url.hasValidName()) return false
-    val namespace = url.namespace
-    if (namespace != null && !isValidPackageName(namespace)) return false
-    return when (url.urlType) {
-      ResourceUrl.UrlType.NORMAL -> url.type == ResourceType.COLOR
-      ResourceUrl.UrlType.THEME -> url.type == ResourceType.ATTR
-      else -> false
-    }
-  }
-
-  private fun isValidPackageName(value: String): Boolean =
-    value.split('.').all { segment ->
-      segment.isNotEmpty() &&
-        Character.isJavaIdentifierStart(segment[0]) &&
-        (1 until segment.length).all { Character.isJavaIdentifierPart(segment[it]) }
-    }
+  private fun isValidColorReference(value: String): Boolean = isValidResourceOrThemeReference(value, ResourceType.COLOR)
 }
 
 /**
@@ -455,24 +527,21 @@ class PreviewValidator(devices: Collection<Device>? = null) : Validator<PreviewS
 
   /**
    * Validates a [PreviewScreenshot]. Resource-based previews ([DrawableScreenshot] and [LayoutScreenshot]) use string-based
-   * `backgroundColor` values (`#RRGGBB`, `@color/name`, `?attr/name`) and trim their parameter values, whereas annotation-based previews
-   * take `backgroundColor` as the decimal ARGB `Long` value of `@Preview`.
+   * `backgroundColor` values (`#RRGGBB`, `@color/name`, `?attr/name`), require boolean `showBackground` values, and trim their parameter
+   * values, whereas annotation-based previews take `backgroundColor` as the decimal ARGB `Long` value of `@Preview`.
    */
   override fun validate(target: PreviewScreenshot): ValidationResult {
     if (target is DrawableScreenshot || target is LayoutScreenshot) {
-      return validateParams(
-        target.previewParams.mapValues { it.value.trim() },
-        usesStringBasedBackgroundColor = true,
-      )
+      return validateParams(target.previewParams.mapValues { it.value.trim() }, isResourcePreview = true)
     }
     return validateParams(target.previewParams)
   }
 
   /**
-   * Validates raw preview parameters map. When [usesStringBasedBackgroundColor] is `true`, `backgroundColor` is validated as a string-based
-   * color or color/attribute reference rather than a `@Preview` decimal ARGB `Long`.
+   * Validates raw preview parameters map. When [isResourcePreview] is `true`, `backgroundColor` is validated as a string-based color or
+   * color/attribute reference (rather than a `@Preview` decimal ARGB `Long`) and `showBackground` is strictly validated as `true`/`false`.
    */
-  fun validateParams(previewParams: Map<String, String>, usesStringBasedBackgroundColor: Boolean = false): ValidationResult {
+  fun validateParams(previewParams: Map<String, String>, isResourcePreview: Boolean = false): ValidationResult {
     val issues = mutableListOf<ValidationIssue>()
 
     issues.addAll(ParameterValidators.validateDimension("widthDp", previewParams["widthDp"]))
@@ -484,13 +553,18 @@ class PreviewValidator(devices: Collection<Device>? = null) : Validator<PreviewS
     issues.addAll(
       ParameterValidators.validateBackgroundColor(
         previewParams["backgroundColor"],
-        previewParams["showBackground"],
-        usesStringBasedBackgroundColor = usesStringBasedBackgroundColor,
+        previewParams[PARAMETER_SHOW_BACKGROUND],
+        usesStringBasedBackgroundColor = isResourcePreview,
       )
     )
     issues.addAll(ParameterValidators.validateWallpaper(previewParams["wallpaper"]))
     issues.addAll(ParameterValidators.validateLevel(previewParams[PARAMETER_LEVEL]))
     issues.addAll(ParameterValidators.validateState(previewParams[PARAMETER_STATE]))
+    issues.addAll(ParameterValidators.validateScaleType(previewParams[ATTR_SCALE_TYPE]))
+    issues.addAll(ParameterValidators.validateTheme(previewParams[ATTR_THEME]))
+    if (isResourcePreview) {
+      issues.addAll(ParameterValidators.validateShowBackground(previewParams[PARAMETER_SHOW_BACKGROUND]))
+    }
     issues.addAll(ParameterValidators.validateDevice(previewParams["device"], deviceCatalog))
 
     return ValidationResult(issues)

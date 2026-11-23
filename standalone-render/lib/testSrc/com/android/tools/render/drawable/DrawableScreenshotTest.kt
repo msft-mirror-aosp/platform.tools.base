@@ -112,7 +112,7 @@ class DrawableScreenshotTest {
     val undefinedElement =
       DrawableScreenshot(
           methodFQN = "R.drawable.ic_logo",
-          previewParams = mapOf("widthDp" to "-1", "heightDp" to " -1 ", "apiLevel" to "-1", "state" to " , "),
+          previewParams = mapOf("widthDp" to "-1", "heightDp" to " -1 ", "apiLevel" to "-1", "state" to "   "),
           previewId = "ic_logo_undef",
         )
         .toPreviewElement(module)
@@ -127,7 +127,7 @@ class DrawableScreenshotTest {
           methodFQN = "@mipmap/ic_launcher",
           previewParams =
             mapOf(
-              "state" to " pressed , \n checked , ",
+              "state" to " pressed , \n checked ",
               "level" to "5000",
               "scaleType" to "centerInside",
               "theme" to "Theme.App",

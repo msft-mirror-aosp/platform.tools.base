@@ -148,8 +148,8 @@ class LayoutScreenshotTest {
     }
 
     // Attribute values are escaped.
-    assertThat(element(mapOf("theme" to """@style/Theme.A"B'C&D<E>""")).xml())
-      .contains("""android:theme="@style/Theme.A&quot;B&apos;C&amp;D&lt;E>"""")
+    assertThat(element(mapOf("backgroundColor" to """@color/A"B'C&D<E>""")).xml())
+      .contains("""android:background="@color/A&quot;B&apos;C&amp;D&lt;E>"""")
 
     // Framework layouts don't need app resources.
     assertThat(element(methodFQN = "android.R.layout.simple_list_item_1").xml())

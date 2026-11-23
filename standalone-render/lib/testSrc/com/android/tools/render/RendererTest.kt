@@ -3929,6 +3929,34 @@ class RendererTest {
           .single()
       assertEquals("VALIDATION_ERROR", invalidState.error?.status)
       assertTrue(invalidState.error?.message?.contains("Parameter 'state' has invalid state 'clicked'") == true)
+
+      val duplicateState =
+        renderer
+          .render(
+            DrawableScreenshot(
+              methodFQN = "R.drawable.selector",
+              previewParams = mapOf("state" to "pressed,pressed"),
+              previewId = "dup_state",
+            ),
+            outputDir.absolutePath,
+          )
+          .single()
+      assertThat(duplicateState.error?.status).isEqualTo("VALIDATION_ERROR")
+      assertThat(duplicateState.error?.message).contains("duplicate state 'pressed'")
+
+      val invalidScaleType =
+        renderer
+          .render(
+            DrawableScreenshot(
+              methodFQN = "R.drawable.selector",
+              previewParams = mapOf("scaleType" to "stretch"),
+              previewId = "bad_scale_type",
+            ),
+            outputDir.absolutePath,
+          )
+          .single()
+      assertThat(invalidScaleType.error?.status).isEqualTo("VALIDATION_ERROR")
+      assertThat(invalidScaleType.error?.message).contains("Invalid scaleType 'stretch'")
     }
   }
 
@@ -4158,7 +4186,24 @@ class RendererTest {
       assertThat(error(mapOf("uiMode" to "48"))).contains("Parameter 'uiMode' must be a valid Configuration.UI_MODE_* bitmask, got: 48")
       assertThat(error(mapOf("wallpaper" to "red"))).contains("Parameter 'wallpaper' must be an integer, got: 'red'")
       assertThat(error(mapOf("wallpaper" to "4"))).contains("Parameter 'wallpaper' must be -1 (none) or between 0 and 3, got: 4")
-      assertThat(error(mapOf("showBackground" to "yes"))).contains("Invalid showBackground 'yes': expected true or false")
+      val invalidShowBgResult =
+        renderer
+          .render(
+            LayoutScreenshot(methodFQN = "R.layout.empty", previewParams = mapOf("showBackground" to "yes"), previewId = "bad_show_bg"),
+            outputDir.absolutePath,
+          )
+          .single()
+      assertThat(invalidShowBgResult.error?.status).isEqualTo("VALIDATION_ERROR")
+      assertThat(invalidShowBgResult.error?.message).contains("Invalid showBackground 'yes': expected true or false")
+      val invalidThemeResult =
+        renderer
+          .render(
+            LayoutScreenshot(methodFQN = "R.layout.empty", previewParams = mapOf("theme" to "@color/accent"), previewId = "bad_theme"),
+            outputDir.absolutePath,
+          )
+          .single()
+      assertThat(invalidThemeResult.error?.status).isEqualTo("VALIDATION_ERROR")
+      assertThat(invalidThemeResult.error?.message).contains("Invalid theme '@color/accent'")
       assertThat(error(mapOf("backgroundColor" to "red"))).contains("Parameter 'backgroundColor' must be #RGB, #ARGB, #RRGGBB, #AARRGGBB")
       assertThat(error(mapOf("backgroundColor" to "0xFF0000FF")))
         .contains("Parameter 'backgroundColor' must be #RGB, #ARGB, #RRGGBB, #AARRGGBB")

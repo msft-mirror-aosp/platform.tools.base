@@ -38,51 +38,77 @@ import com.android.resources.ResourceUrl
  *
  * @throws IllegalArgumentException if [theme] is blank or is a malformed or non-style reference.
  */
-internal fun toThemeReference(theme: String, appResources: ResourceRepository): String {
-  val name = theme.trim()
-  require(name.isNotEmpty()) { invalidThemeMessage(name) }
-  return when {
-    name.startsWith(PREFIX_RESOURCE_REF) || name.startsWith(PREFIX_THEME_REF) -> {
-      require(isValidThemeReference(name)) { invalidThemeMessage(name) }
-      name
-    }
-    name.startsWith(ANDROID_NS_NAME_PREFIX) -> {
-      val styleName = name.removePrefix(ANDROID_NS_NAME_PREFIX).removePrefix(REFERENCE_STYLE)
-      require(isPlainName(styleName)) { invalidThemeMessage(name) }
-      ANDROID_STYLE_RESOURCE_PREFIX + styleName
-    }
-    name.startsWith(REFERENCE_STYLE) -> {
-      val styleName = name.removePrefix(REFERENCE_STYLE)
-      require(isPlainName(styleName)) { invalidThemeMessage(name) }
-      STYLE_RESOURCE_PREFIX + styleName
-    }
-    else -> {
-      require(isPlainName(name)) { invalidThemeMessage(name) }
-      if (appResources.hasResources(ResourceNamespace.RES_AUTO, ResourceType.STYLE, name)) {
-        STYLE_RESOURCE_PREFIX + name
+internal fun toThemeReference(theme: String, appResources: ResourceRepository): String =
+  when (val parsed = parseTheme(theme)) {
+    is ParsedTheme.Resolved -> parsed.reference
+    is ParsedTheme.Unresolved ->
+      if (appResources.hasResources(ResourceNamespace.RES_AUTO, ResourceType.STYLE, parsed.styleName)) {
+        STYLE_RESOURCE_PREFIX + parsed.styleName
       } else {
-        ANDROID_STYLE_RESOURCE_PREFIX + name
+        ANDROID_STYLE_RESOURCE_PREFIX + parsed.styleName
       }
-    }
+    null -> throw IllegalArgumentException(invalidThemeMessage(theme.trim()))
   }
+
+/**
+ * Returns whether [theme] has valid theme parameter syntax (without checking whether the referenced style exists in resources).
+ *
+ * @see toThemeReference
+ */
+internal fun isValidThemeSyntax(theme: String): Boolean = parseTheme(theme) != null
+
+/** Result of syntactically parsing a `theme` preview parameter before any resource lookup. */
+private sealed interface ParsedTheme {
+  /** A theme already normalized to its final XML `android:theme` reference (e.g. `@null`, `@[package:]style/<name>`, `?attr/<name>`). */
+  data class Resolved(val reference: String) : ParsedTheme
+
+  /** A bare style name (e.g. `Theme.MyApp`) whose namespace (app vs framework) must still be resolved against `appResources`. */
+  data class Unresolved(val styleName: String) : ParsedTheme
 }
 
-private fun isValidThemeReference(reference: String): Boolean {
-  if (reference == NULL_RESOURCE) return true
+private fun parseTheme(theme: String): ParsedTheme? {
+  val name = theme.trim()
+  if (name.isEmpty()) return null
+  if (name.startsWith(PREFIX_RESOURCE_REF) || name.startsWith(PREFIX_THEME_REF)) {
+    return if (isValidThemeReference(name)) ParsedTheme.Resolved(name) else null
+  }
+  val (styleName, prefix) =
+    when {
+      name.startsWith(ANDROID_NS_NAME_PREFIX) ->
+        name.removePrefix(ANDROID_NS_NAME_PREFIX).removePrefix(REFERENCE_STYLE) to ANDROID_STYLE_RESOURCE_PREFIX
+      name.startsWith(REFERENCE_STYLE) -> name.removePrefix(REFERENCE_STYLE) to STYLE_RESOURCE_PREFIX
+      else -> name to null
+    }
+  if (!ResourceUrl.isValidName(styleName, ResourceType.STYLE)) return null
+  return if (prefix != null) ParsedTheme.Resolved(prefix + styleName) else ParsedTheme.Unresolved(styleName)
+}
+
+private fun isValidThemeReference(reference: String): Boolean =
+  reference == NULL_RESOURCE || isValidResourceOrThemeReference(reference, ResourceType.STYLE)
+
+internal fun isValidResourceOrThemeReference(reference: String, expectedType: ResourceType): Boolean {
   val colon = reference.indexOf(':')
   val slash = reference.indexOf('/')
   if (colon >= 0 && slash in 0 until colon) return false
+  val typeStart = if (colon >= 0) colon + 1 else 1
+  if (slash == typeStart) return false
   val url = ResourceUrl.parse(reference) ?: return false
-  if (url.isPrivateAccessOverride) return false
-  if (url.namespace?.let(::isPlainName) == false) return false
+  if (url.isPrivateAccessOverride || !url.hasValidName()) return false
+  val namespace = url.namespace
+  if (namespace != null && !isValidPackageName(namespace)) return false
   return when (url.urlType) {
-    ResourceUrl.UrlType.NORMAL -> url.type == ResourceType.STYLE && isPlainName(url.name)
-    ResourceUrl.UrlType.THEME -> url.type == ResourceType.ATTR && isPlainName(url.name)
+    ResourceUrl.UrlType.NORMAL -> url.type == expectedType
+    ResourceUrl.UrlType.THEME -> url.type == ResourceType.ATTR
     else -> false
   }
 }
 
-private fun isPlainName(name: String): Boolean = name.isNotEmpty() && '/' !in name && ':' !in name && name.none(Char::isWhitespace)
+private fun isValidPackageName(value: String): Boolean =
+  value.split('.').all { segment ->
+    segment.isNotEmpty() &&
+      Character.isJavaIdentifierStart(segment[0]) &&
+      (1 until segment.length).all { Character.isJavaIdentifierPart(segment[it]) }
+  }
 
-private fun invalidThemeMessage(value: String): String =
+internal fun invalidThemeMessage(value: String): String =
   "Invalid theme '$value': expected a style name, @[package:]style/<name>, ?[package:][attr/]<name>, or @null"
