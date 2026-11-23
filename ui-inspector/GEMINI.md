@@ -14,3 +14,9 @@ To test against a real device without user intervention:
 4. **Force stop**: `adb shell am force-stop <pkg>` (mandatory on agent change)
 5. **Start**: `adb shell am start -n <resolved_component_name>`
 6. **Run CLI**: `tools/base/bazel/bazel run //tools/base/ui-inspector/cli:dump-ui -- dump-ui --package=<pkg> --device=<serial>`
+
+## Code Review Invariants
+
+Read and enforce `G1` (host-IDE decoupling and standalone runtime boundary) and
+`G4` (deterministic regression testing, including its real-socket I/O exception)
+in [../standalone-render/AGENTS.md](../standalone-render/AGENTS.md).
