@@ -3090,10 +3090,14 @@ const TestReportApp = {
                   const skipKey = `${v}.skip`;
                   const rateKey = `${v}.rate`;
                   const escV = UIUtils.escapeHTML(v);
-                  return `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${passKey}" aria-sort="${getAriaSort(passKey)}" aria-label="Sort by Pass for ${escV}"><span data-info-key="col.pass">Pass</span> ${sortIndicator(passKey)}</th>` +
-                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${failKey}" aria-sort="${getAriaSort(failKey)}" aria-label="Sort by Fail for ${escV}"><span data-info-key="col.fail">Fail</span> ${sortIndicator(failKey)}</th>` +
-                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${skipKey}" aria-sort="${getAriaSort(skipKey)}" aria-label="Sort by Skip for ${escV}"><span data-info-key="col.skip">Skip</span> ${sortIndicator(skipKey)}</th>` +
-                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${rateKey}" aria-sort="${getAriaSort(rateKey)}" aria-label="Sort by Pass Rate for ${escV}"><span data-info-key="col.passRate">Pass Rate</span> ${sortIndicator(rateKey)}</th>`;
+                  const escPassKey = UIUtils.escapeHTML(passKey);
+                  const escFailKey = UIUtils.escapeHTML(failKey);
+                  const escSkipKey = UIUtils.escapeHTML(skipKey);
+                  const escRateKey = UIUtils.escapeHTML(rateKey);
+                  return `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${escPassKey}" aria-sort="${getAriaSort(passKey)}" aria-label="Sort by Pass for ${escV}"><span data-info-key="col.pass">Pass</span> ${sortIndicator(passKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${escFailKey}" aria-sort="${getAriaSort(failKey)}" aria-label="Sort by Fail for ${escV}"><span data-info-key="col.fail">Fail</span> ${sortIndicator(failKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${escSkipKey}" aria-sort="${getAriaSort(skipKey)}" aria-label="Sort by Skip for ${escV}"><span data-info-key="col.skip">Skip</span> ${sortIndicator(skipKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${escRateKey}" aria-sort="${getAriaSort(rateKey)}" aria-label="Sort by Pass Rate for ${escV}"><span data-info-key="col.passRate">Pass Rate</span> ${sortIndicator(rateKey)}</th>`;
                 }).join('')}
             </tr>`;
   },

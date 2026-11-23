@@ -3337,3 +3337,172 @@ test('single-suite header stats ignore status tab filter and share one pass with
   assert.match(document.getElementById('results-data').textContent, /cloudPass/);
   assert.doesNotMatch(document.getElementById('results-data').textContent, /cloudFail|localPass/);
 });
+
+function resolveCoverageJsDir() {
+  const candidates = [
+    path.resolve(__dirname, '../../main/resources/com/android/build/gradle/internal/coverage/renderer/javascript'),
+    path.resolve(process.cwd(), 'src/main/resources/com/android/build/gradle/internal/coverage/renderer/javascript'),
+    process.env.TEST_SRCDIR
+      ? path.resolve(
+          process.env.TEST_SRCDIR,
+          '_main/tools/base/build-system/gradle-core/src/main/resources/com/android/build/gradle/internal/coverage/renderer/javascript'
+        )
+      : '',
+  ].filter(Boolean);
+
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, 'codecoveragescript.js'))) {
+      return dir;
+    }
+  }
+  throw new Error(`Could not locate coverage renderer JS in: ${candidates.join(', ')}`);
+}
+
+test('test and coverage renderers escape HTML payloads in names, variant sort keys, and error fallbacks', async () => {
+  const xssVariant = 'debug"><img src=x onerror=alert(1)>';
+  const xssModule = ':app<script>alert(1)</script>';
+  const xssPackage = 'com.example.<img src=x onerror=alert(2)>';
+  const xssClass = 'EvilTest" onmouseover="alert(3)';
+  const xssTest = 'test<svg onload=alert(4)>';
+  const xssTarget = 'device<img src=x onerror=alert(5)>';
+
+  const report = {
+    projectName: xssModule,
+    variants: [xssVariant],
+    testSuites: ['unitTest'],
+    targets: [xssTarget],
+    numberOfModules: 1,
+    numberOfPackages: 1,
+    numberOfClasses: 1,
+    suiteDescriptors: {
+      unitTest: { adapterId: 'default', title: 'Unit Test', summaryColumns: [] },
+    },
+    suiteEnvironments: [],
+    modules: [
+      {
+        name: xssModule,
+        testSuiteSummaries: [summary('unitTest', xssVariant, { total: 1, fail: 1, durationMs: 10 })],
+        packages: [
+          {
+            name: xssPackage,
+            testSuiteSummaries: [summary('unitTest', xssVariant, { total: 1, fail: 1, durationMs: 10 })],
+            classes: [
+              {
+                name: xssClass,
+                testSuiteSummaries: [summary('unitTest', xssVariant, { total: 1, fail: 1, durationMs: 10 })],
+                testCases: [
+                  {
+                    name: xssTest,
+                    targets: [
+                      {
+                        name: xssTarget,
+                        testSuiteSummaries: [summary('unitTest', xssVariant, { total: 1, fail: 1, durationMs: 10 })],
+                        testSuiteResults: [
+                          {
+                            testSuiteName: 'unitTest',
+                            variantResults: {
+                              [xssVariant]: { status: 'fail', durationMs: 10, adapterId: 'default' },
+                            },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  const { app, document } = createReportHarness(report);
+
+  const assertNoInjectedDom = (rootEl) => {
+    const walk = (node) => {
+      if (node.nodeType === 1) {
+        const tag = node.tagName.toLowerCase();
+        assert.notEqual(tag, 'img', 'unexpected injected <img> element');
+        assert.notEqual(tag, 'script', 'unexpected injected <script> element');
+        assert.notEqual(tag, 'svg', 'unexpected injected <svg> element');
+        for (const attr of node._attrs.keys()) {
+          assert.ok(!attr.toLowerCase().startsWith('on'), `unexpected event handler attribute: ${attr}`);
+        }
+      }
+      for (const child of node.childNodes || []) {
+        walk(child);
+      }
+    };
+    walk(rootEl);
+  };
+
+  // Classic tree view + table headers (including data-sort-by attributes for variant columns).
+  assertNoInjectedDom(document.getElementById('table-headers'));
+  assertNoInjectedDom(document.getElementById('results-data'));
+  const sortHeaders = document.getElementById('table-headers').querySelectorAll('th[data-sort-by]');
+  const sortKeys = sortHeaders.map((th) => th.getAttribute('data-sort-by'));
+  assert.ok(sortKeys.includes(`${xssVariant}.pass`), 'escaped data-sort-by should decode back to passKey');
+  assert.ok(sortKeys.includes(`${xssVariant}.fail`), 'escaped data-sort-by should decode back to failKey');
+  assert.ok(sortKeys.includes(`${xssVariant}.skip`), 'escaped data-sort-by should decode back to skipKey');
+  assert.ok(sortKeys.includes(`${xssVariant}.rate`), 'escaped data-sort-by should decode back to rateKey');
+
+  // Switch to flat view and drill down into breadcrumbs to exercise flat row + breadcrumb rendering.
+  app.state.viewMode = 'flat';
+  app.state.selectedModule = xssModule;
+  app.state.selectedPackage = xssPackage;
+  app.state.selectedClass = xssClass;
+  app.render();
+  assertNoInjectedDom(document.getElementById('breadcrumbs'));
+  assertNoInjectedDom(document.getElementById('results-data'));
+
+  // Coverage report renderer: verify getColumnStyle sanitizes CSS var names and SourceViewApp error escapes sourceFileName.
+  const coverageJsDir = resolveCoverageJsDir();
+  const covSandbox = {
+    console,
+    setTimeout,
+    clearTimeout,
+    document: {
+      addEventListener() {},
+      getElementById() {
+        return {
+          focus() {},
+          addEventListener() {},
+          querySelector() { return null; },
+          querySelectorAll() { return []; },
+          classList: { add() {}, remove() {}, contains() { return false; } },
+        };
+      },
+      querySelectorAll() { return []; },
+      documentElement: { style: { setProperty() {}, removeProperty() {} } },
+    },
+    window: { addEventListener() {}, location: { hash: '' } },
+    history: { replaceState() {}, pushState() {} },
+  };
+  vm.createContext(covSandbox);
+  vm.runInContext(
+    fs.readFileSync(path.join(coverageJsDir, 'codecoveragescript.js'), 'utf8') +
+      '\nthis.__CoverageReportApp = CoverageReportApp;',
+    covSandbox
+  );
+  const styleAttr = covSandbox.__CoverageReportApp.getColumnStyle(`instruction.${xssVariant}.percent`, 120);
+  assert.ok(!styleAttr.includes('<img'), 'getColumnStyle must not emit raw HTML tags');
+  assert.match(styleAttr, /^style="width: var\(--col-width-[a-zA-Z0-9_-]+, 120px\);/);
+
+  vm.runInContext(
+    fs.readFileSync(path.join(coverageJsDir, 'sourceviewscript.js'), 'utf8') +
+      '\nthis.__SourceViewApp = SourceViewApp;',
+    covSandbox
+  );
+  const sourceView = covSandbox.__SourceViewApp;
+  const container = { innerHTML: '' };
+  sourceView.elements = { sourceViewContainer: container, loadingOverlay: { classList: { add() {}, remove() {} } } };
+  sourceView.state = { isLoading: false };
+  sourceView.fetchSourceFiles = async () => { throw new Error('network error'); };
+  await sourceView.loadAndRender({
+    sourceFileName: '<img src=x onerror=alert(1)>.kt',
+    variantSourceFilePaths: [{ path: 'a.kt' }],
+  });
+  assert.ok(!container.innerHTML.includes('<img'), 'SourceViewApp error fallback must escape sourceFileName');
+  assert.ok(container.innerHTML.includes('&lt;img src=x onerror=alert(1)&gt;.kt'));
+});

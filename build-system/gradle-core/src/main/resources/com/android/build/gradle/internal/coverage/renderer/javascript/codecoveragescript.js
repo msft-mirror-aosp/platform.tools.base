@@ -476,7 +476,7 @@ const Navigation = {
 
         // Re-apply CSS variables for column widths
         for (const [id, width] of Object.entries(CoverageReportApp.state.columnWidths)) {
-            document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+            document.documentElement.style.setProperty(CoverageReportApp.getColumnWidthVarName(id), `${width}px`);
         }
 
         // Restore filter chips visibility
@@ -1303,7 +1303,7 @@ const CoverageReportApp = {
         const headerRow = this.elements.tableHeaders;
 
         const setColumnWidth = (id, width) => {
-            document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+            document.documentElement.style.setProperty(this.getColumnWidthVarName(id), `${width}px`);
             const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
             if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
         };
@@ -1356,7 +1356,7 @@ const CoverageReportApp = {
             if (e.target.classList.contains('resizer')) {
                 const id = e.target.dataset.resizerId;
                 delete this.state.columnWidths[id];
-                document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+                document.documentElement.style.removeProperty(this.getColumnWidthVarName(id));
                 // Update to default width instead of removing
                 const newWidth = e.target.closest('th').getBoundingClientRect().width;
                 e.target.setAttribute('aria-valuenow', Math.round(newWidth));
@@ -1385,7 +1385,7 @@ const CoverageReportApp = {
                 } else if (e.key === 'Enter' || e.key === ' ') {
                     e.stopImmediatePropagation();
                     delete this.state.columnWidths[id];
-                    document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+                    document.documentElement.style.removeProperty(this.getColumnWidthVarName(id));
                     // Update to default width instead of removing
                     const resetWidth = e.target.closest('th').getBoundingClientRect().width;
                     e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
@@ -2147,8 +2147,12 @@ const CoverageReportApp = {
         });
     },
 
+    getColumnWidthVarName(key) {
+        return `--col-width-${String(key).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+    },
+
     getColumnStyle(key, defaultWidth) {
-        const varName = `--col-width-${key.replace(/\./g, '-')}`;
+        const varName = this.getColumnWidthVarName(key);
         const widthVal = defaultWidth ? `${defaultWidth}px` : 'auto';
         const maxVal = defaultWidth ? `${defaultWidth}px` : 'none';
         return `style="width: var(${varName}, ${widthVal}); min-width: var(${varName}, ${widthVal}); max-width: var(${varName}, ${maxVal});"`;

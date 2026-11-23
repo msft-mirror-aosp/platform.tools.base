@@ -287,7 +287,10 @@ filegroup(
 js_test(
     name = "test_report_renderer_js_test",
     size = "small",
-    data = glob(["src/main/resources/com/android/build/gradle/internal/test/report/renderer/**"]),
+    data = glob([
+        "src/main/resources/com/android/build/gradle/internal/test/report/renderer/**",
+        "src/main/resources/com/android/build/gradle/internal/coverage/renderer/javascript/**",
+    ]),
     entry_point = "src/test/js/test_report_renderer_test.js",
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],

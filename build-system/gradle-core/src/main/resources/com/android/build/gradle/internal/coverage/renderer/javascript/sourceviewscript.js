@@ -146,7 +146,7 @@ const SourceViewApp = {
             this.elements.sourceViewContainer.innerHTML = `
                 <div class="p-8 text-center text-red-600" tabindex="-1" id="source-load-error">
                     <h3 class="text-lg font-bold">Error Loading Source</h3>
-                    <p>Could not load coverage data for ${classData.sourceFileName}.</p>
+                    <p>Could not load coverage data for ${this.escapeHTML(classData.sourceFileName)}.</p>
                 </div>`;
             document.getElementById('source-load-error').focus();
         } finally {
