@@ -25,13 +25,7 @@ import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask
 import com.android.ide.common.symbols.SymbolIo;
 import com.android.ide.common.symbols.SymbolTable;
 import com.android.ide.common.xml.AndroidManifestParser;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import javax.xml.parsers.ParserConfigurationException;
+
 import org.gradle.api.artifacts.transform.InputArtifact;
 import org.gradle.api.artifacts.transform.TransformAction;
 import org.gradle.api.artifacts.transform.TransformOutputs;
@@ -40,6 +34,16 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.work.DisableCachingByDefault;
 import org.xml.sax.SAXException;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import javax.lang.model.SourceVersion;
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Transform that extracts the package name from the manifest and combines it with the r.txt symbol
@@ -74,6 +78,13 @@ public abstract class LibrarySymbolTableTransform
             return;
         }
         String packageName = getPackageName(manifest);
+        if (packageName != null && !packageName.isEmpty() && !SourceVersion.isName(packageName)) {
+            throw new IOException(
+                    "Invalid package name '"
+                            + packageName
+                            + "' in manifest "
+                            + manifest.toAbsolutePath());
+        }
         // May not exist in some AARs. e.g. the multidex support library.
         Path rTxt = explodedAar.resolve(FN_RESOURCE_TEXT);
         Path outputFile = transformOutputs.file(packageName + "-r.txt").toPath();
