@@ -346,22 +346,54 @@ internal open class Analysis<FX : Any>(
     initEnv: Env<FX>,
     body: UExpression,
     returns: PersistentList<ReturnRecord<FX>>,
-  ): Result<Type<FX>, R> {
-    val typeParams = initEnv.boundParamNames
-    var env = initEnv
+  ): Result<Type<FX>, R> = EvalSession(this, rec, initEnv, returns).eval(body)
 
-    val target = returns.last()
+  /**
+   * Per-body evaluation state for [eval]. Holding the mutable environment and per-expression cache as fields avoids capturing them in
+   * synthetic local-function parameter lists and keeps [loop] small enough for HotSpot C1 compilation without virtual-register bailout.
+   */
+  private inner class EvalSession<R : EffectResult.Eval<FX>>(
+    private val mode: Mode<FX, R>,
+    private val rec: (Point<FX>) -> Ans<FX>,
+    private val initEnv: Env<FX>,
+    private val returns: PersistentList<ReturnRecord<FX>>,
+  ) : EffectfulComputation<R> by mode {
+    private val typeParams = initEnv.boundParamNames
+    private var env = initEnv
+    private val target = returns.last()
+    private val cache = IdentityHashMap<UExpression, Result<Type<FX>, R>>()
+    private val evalExpr: (UExpression) -> Result<Type<FX>, R> = { loop(it) }
+    private val evalExprCached: (UExpression) -> Result<Type<FX>, R> = { loopCached(it) }
 
-    fun targetName() =
+    fun eval(body: UExpression): Result<Type<FX>, R> =
+      when (body) {
+        is UBlockExpression -> {
+          val fx = forM(evalExpr, body.expressions)
+          val lastStm = body.expressions.lastOrNull()
+          val res =
+            when {
+              (body.uastParent as? UMethod)?.isConstructor == true -> translate((body.uastParent as UMethod).getContainingUClass()!!)
+              body.expressions.any { it is UReturnExpression } -> target.returns
+              // TODO: extract `Nothing` type. Anything else is `Unit`.
+              target.returns == Type.None && (lastStm == null || lastStm !is UThrowExpression) -> Type.Unit
+              else -> target.returns
+            }
+          mode.gc(Result(res, fx))
+        }
+        else -> mode.gc(loop(body))
+      }
+
+    private fun targetName() =
       when (val target = target.target) {
         is UMethod -> target.name
         else -> target.toString()
       }
 
-    fun translate(t: PsiType) = PsiTypeAdapter.translate(typeParams, t)
-    fun translate(c: UClass) = PsiClassAdapter.translate(typeParams, c.javaPsi)
+    private fun translate(t: PsiType) = PsiTypeAdapter.translate(typeParams, t)
 
-    fun getType(e: UExpression): Type<Nothing> =
+    private fun translate(c: UClass) = PsiClassAdapter.translate(typeParams, c.javaPsi)
+
+    private fun getType(e: UExpression): Type<Nothing> =
       when (val t = e.getExpressionType()) {
         null -> Type.None.also { log { "WARNING: Can't get type of ${e.renderAbbrev()}" } }
         else -> translate(t)
@@ -371,12 +403,12 @@ internal open class Analysis<FX : Any>(
      * When there is an expression/feature we don't know, we return the type from [UExpression.getExpressionType], and assume [unsure]
      * effect.
      */
-    fun giveUp(e: UExpression, msg: () -> String): Result<Type<FX>, R> {
+    private fun giveUp(e: UExpression, msg: () -> String): Result<Type<FX>, R> {
       log { "WARNING: ${msg()}" }
       return Result(getType(e), unsure)
     }
 
-    fun UThisExpression.type(): Type<FX> {
+    private fun UThisExpression.type(): Type<FX> {
       val resolved = tryResolve()
       val cl = resolved.toUElement() as? UClass
       return when {
@@ -398,8 +430,7 @@ internal open class Analysis<FX : Any>(
       }
     }
 
-    fun <E : UExpression> E.asName(name: (E) -> String): Result<Type<FX>, R> {
-      val x = name(this)
+    private fun UExpression.asName(x: String): Result<Type<FX>, R> {
       val t = env.varAt(x)
       val fx =
         when (val delegate = env.varDelegateAt(x)) {
@@ -409,257 +440,530 @@ internal open class Analysis<FX : Any>(
               .invokeWildGuess(rec, delegate, "getValue", listOf(Type.Any, Type.KPropertySome)) { instantiationLattice.bottom }
               .effect
         }
-      if (t != null) return Result(t, onInvocationEffect(this, fx))
+      if (t != null) return Result(t, mode.onInvocationEffect(this, fx))
       return giveUp(this) { "Don't know what `$x` means in `${target.target.renderAbbrev()}`" }
     }
 
-    val cache = IdentityHashMap<UExpression, Result<Type<FX>, R>>()
+    /** Analyze local sub-expression that might be shared and reusable */
+    private fun loopCached(e: UExpression) = cache.getOrPut(e) { loop(e) }
 
-    fun loop(e: UExpression): Result<Type<FX>, R> {
+    private fun UExpression.staticContext(): Scope =
+      Scope.Generated(textRange?.startOffset ?: /* slow case for synthetic UAST */ asSourceString().hashCode())
 
-      /** Analyze local sub-expression that might be shared and reusable */
-      fun loopCached(e: UExpression) = cache.getOrPut(e) { loop(e) }
+    /**
+     * Given [argsSuppliedAnalyzed] as the preliminary analysis result of [args], where user-supplied arguments are analyzed, but
+     * [OpaqueConstant]s are left as-is, analyze all [OpaqueConstant.Default]s and revise [argsSuppliedAnalyzed].
+     *
+     * @param site call-site expression for attributing default-argument invocation effects
+     * @param recvs analyzed receivers
+     * @param args syntactic user-supplied arguments as well as analysis-inserted [OpaqueConstant]
+     * @param argsSuppliedAnalyzed analyzed arguments, parallel to [args], where analysis-inserted [OpaqueConstant]s are the conservative
+     *   upper bounds from the parameters' types
+     * @return A [Result] like [argsSuppliedAnalyzed], but types from [OpaqueConstant.Default]s refined, and effects joined with those from
+     *   instantiating defaults
+     */
+    private fun instDefaults(
+      site: UExpression,
+      recvs: List<Result<Type<FX>, R>>,
+      args: List<UExpression>,
+      argsSuppliedAnalyzed: Result<List<Type<FX>>, R>,
+    ): Result<List<Type<FX>>, R> {
+      // common fast path
+      if (args.none { it is OpaqueConstant.Default }) return argsSuppliedAnalyzed
 
-      fun UExpression.staticContext(): Scope =
-        Scope.Generated(textRange?.startOffset ?: /* slow case for synthetic UAST */ asSourceString().hashCode())
-
-      /**
-       * Given [argsSuppliedAnalyzed] as the preliminary analysis result of [args], where user-supplied arguments are analyzed, but
-       * [OpaqueConstant]s are left as-is, analyze all [OpaqueConstant.Default]s and revise [argsSuppliedAnalyzed].
-       *
-       * @param recvs analyzed receivers
-       * @param args syntactic user-supplied arguments as well as analysis-inserted [OpaqueConstant]
-       * @param argsSuppliedAnalyzed analyzed arguments, parallel to [args], where analysis-inserted [OpaqueConstant]s are the conservative
-       *   upper bounds from the parameters' types
-       * @return A [Result] like [argsSuppliedAnalyzed], but types from [OpaqueConstant.Default]s refined, and effects joined with those
-       *   from instantiating defaults
-       */
-      fun instDefaults(
-        recvs: List<Result<Type<FX>, R>>,
-        args: List<UExpression>,
-        argsSuppliedAnalyzed: Result<List<Type<FX>>, R>,
-      ): Result<List<Type<FX>>, R> {
-        // common fast path
-        if (args.none { it is OpaqueConstant.Default }) return argsSuppliedAnalyzed
-
-        // Effects are order-insensitive, so it's ok here to compute default arguments "out of order"
-        // after user-supplied arguments.
-        val (suppliedTypes, suppliedFx) = argsSuppliedAnalyzed
-        val types = suppliedTypes.toMutableList()
-        var fx = suppliedFx
-        var subst = recvs.fold(fx.subst) { subst, recv -> substLattice.joinOf(subst, recv.effect.subst) }!!
-        val recvTypes = recvs.map { it.value }
-        for ((i, arg) in args.withIndex()) {
-          val default = (arg as? OpaqueConstant.Default)?.compute ?: continue
-          val (defaultT, defaultFxInst) = subst.apply(rec, default, recvTypes + types)
-          types[i] = defaultT
-          val defaultFx = onInvocationEffect(e, defaultFxInst)
-          subst = substLattice.joinOf(subst, defaultFx.subst)!!
-          fx = fx join defaultFx
-        }
-        return Result(types, fx)
+      // Effects are order-insensitive, so it's ok here to compute default arguments "out of order"
+      // after user-supplied arguments.
+      val (suppliedTypes, suppliedFx) = argsSuppliedAnalyzed
+      val types = suppliedTypes.toMutableList()
+      var fx = suppliedFx
+      var subst = recvs.fold(fx.subst) { subst, recv -> substLattice.joinOf(subst, recv.effect.subst) }!!
+      val recvTypes = recvs.map { it.value }
+      for ((i, arg) in args.withIndex()) {
+        val default = (arg as? OpaqueConstant.Default)?.compute ?: continue
+        val (defaultT, defaultFxInst) = subst.apply(rec, default, recvTypes + types)
+        types[i] = defaultT
+        val defaultFx = mode.onInvocationEffect(site, defaultFxInst)
+        subst = substLattice.joinOf(subst, defaultFx.subst)!!
+        fx = fx join defaultFx
       }
+      return Result(types, fx)
+    }
 
-      fun callMethod(
-        receiver: UExpression?,
-        method: PsiMethod,
-        args: List<UExpression>,
-        extReceiver: UExpression? = receiver,
-      ): Result<Type<FX>, R> {
-        fun implicitThis() = e.getContainingUClass()?.javaPsi?.let { PsiClassAdapter.translate(typeParams, it) }!!
+    private fun callMethod(
+      site: UExpression,
+      receiver: UExpression?,
+      method: PsiMethod,
+      args: List<UExpression>,
+      extReceiver: UExpression? = receiver,
+    ): Result<Type<FX>, R> {
+      fun implicitThis() = site.getContainingUClass()?.javaPsi?.let { PsiClassAdapter.translate(typeParams, it) }!!
 
-        val virRecvAns: Result<Type<FX>, R>? =
-          when {
-            method.isStatic() -> null
-            method.isConstructor -> null
-            receiver != null -> loopCached(receiver) // TODO nope. See below
-            else -> pure(env.receiver(ClassId.of(method.containingClass!!)) ?: implicitThis())
-          }
+      val virRecvAns: Result<Type<FX>, R>? =
+        when {
+          method.isStatic() -> null
+          method.isConstructor -> null
+          receiver != null -> loopCached(receiver) // TODO nope. See below
+          else -> pure(env.receiver(ClassId.of(method.containingClass!!)) ?: implicitThis())
+        }
 
-        val extRecvAns: Result<Type<FX>, R>? =
-          when {
-            !method.isExtension() -> null
-            extReceiver != null -> loopCached(extReceiver) // TODO nope. See above
-            else -> pure(env.innermostExtensionReceiver() ?: implicitThis())
-          }
+      val extRecvAns: Result<Type<FX>, R>? =
+        when {
+          !method.isExtension() -> null
+          extReceiver != null -> loopCached(extReceiver) // TODO nope. See above
+          else -> pure(env.innermostExtensionReceiver() ?: implicitThis())
+        }
 
-        val (restTypes, restFx) = instDefaults(listOfNotNull(virRecvAns, extRecvAns), args, mapM(::loopCached, args))
+      val (restTypes, restFx) = instDefaults(site, listOfNotNull(virRecvAns, extRecvAns), args, mapM(evalExprCached, args))
 
-        return when {
-          // virtual extension
-          // TODO this isn't general. Will run into problems with multiple implicit `this`s.
-          virRecvAns != null && extRecvAns != null -> {
-            val (virRecvType, virRecvFx) = virRecvAns
-            val (extRecvType, extRecvFx) = extRecvAns
-            val subst = with(substLattice) { virRecvFx.subst join extRecvFx.subst join restFx.subst }!!
-            val (appType, appFx) =
-              when {
-                method.isFinal() -> subst.apply(rec, Type.MethodRef(method), listOf(virRecvType, extRecvType) + restTypes)
-                else ->
-                  invokeVirtual(
-                    rec,
-                    virRecvType to virRecvFx.subst!!,
-                    MethodId(method),
-                    (listOf(extRecvType) + restTypes) to (substLattice.joinOf(extRecvFx.subst, restFx.subst)!!),
-                    Type.Sym.Param("virt*", e.staticContext()),
-                    method.containingClass?.let { Type.MethodRef(method) },
-                  )
-              }
-            Result(appType, virRecvFx join extRecvFx join restFx join onInvocationEffect(e, appFx))
-          }
-          // plain virtual
-          virRecvAns != null -> {
-            val (virRecvType, virRecvFx) = virRecvAns
-            val subst = with(substLattice) { virRecvFx.subst join restFx.subst }!!
-            val (appType, appFx) =
-              when {
-                method.isFinal() -> subst.apply(rec, Type.MethodRef(method), listOf(virRecvType) + restTypes)
-                else ->
-                  invokeVirtual(
-                    rec,
-                    virRecvType to virRecvFx.subst!!,
-                    MethodId(method),
-                    restTypes to restFx.subst!!,
-                    Type.Sym.Param("virt", e.staticContext()),
-                    method.containingClass?.let { Type.MethodRef(method) },
-                  )
-              }
-            Result(appType, virRecvFx join restFx join onInvocationEffect(e, appFx))
-          }
-          // static extension
-          extRecvAns != null -> {
-            val (extRecvType, extRecvFx) = extRecvAns
-            val subst = with(substLattice) { extRecvFx.subst join restFx.subst }!!
-            val (appType, appFx) = subst.apply(rec, Type.MethodRef(method), listOf(extRecvType) + restTypes)
-            Result(appType, extRecvFx join restFx join onInvocationEffect(e, appFx))
-          }
-          // plain static
-          else -> {
-            val (appType, appFx) = restFx.subst!!.apply(rec, Type.MethodRef(method), restTypes)
-            // A default constructor takes no arguments, so the call's own type (with its type arguments) is exact
-            val t = if (method.isDefaultConstructor) getType(e) else appType
-            Result(t, restFx join onInvocationEffect(e, appFx))
-          }
+      return when {
+        // virtual extension
+        // TODO this isn't general. Will run into problems with multiple implicit `this`s.
+        virRecvAns != null && extRecvAns != null -> {
+          val (virRecvType, virRecvFx) = virRecvAns
+          val (extRecvType, extRecvFx) = extRecvAns
+          val subst = with(substLattice) { virRecvFx.subst join extRecvFx.subst join restFx.subst }!!
+          val (appType, appFx) =
+            when {
+              method.isFinal() -> subst.apply(rec, Type.MethodRef(method), listOf(virRecvType, extRecvType) + restTypes)
+              else ->
+                invokeVirtual(
+                  rec,
+                  virRecvType to virRecvFx.subst!!,
+                  MethodId(method),
+                  (listOf(extRecvType) + restTypes) to (substLattice.joinOf(extRecvFx.subst, restFx.subst)!!),
+                  Type.Sym.Param("virt*", site.staticContext()),
+                  method.containingClass?.let { Type.MethodRef(method) },
+                )
+            }
+          Result(appType, virRecvFx join extRecvFx join restFx join mode.onInvocationEffect(site, appFx))
+        }
+        // plain virtual
+        virRecvAns != null -> {
+          val (virRecvType, virRecvFx) = virRecvAns
+          val subst = with(substLattice) { virRecvFx.subst join restFx.subst }!!
+          val (appType, appFx) =
+            when {
+              method.isFinal() -> subst.apply(rec, Type.MethodRef(method), listOf(virRecvType) + restTypes)
+              else ->
+                invokeVirtual(
+                  rec,
+                  virRecvType to virRecvFx.subst!!,
+                  MethodId(method),
+                  restTypes to restFx.subst!!,
+                  Type.Sym.Param("virt", site.staticContext()),
+                  method.containingClass?.let { Type.MethodRef(method) },
+                )
+            }
+          Result(appType, virRecvFx join restFx join mode.onInvocationEffect(site, appFx))
+        }
+        // static extension
+        extRecvAns != null -> {
+          val (extRecvType, extRecvFx) = extRecvAns
+          val subst = with(substLattice) { extRecvFx.subst join restFx.subst }!!
+          val (appType, appFx) = subst.apply(rec, Type.MethodRef(method), listOf(extRecvType) + restTypes)
+          Result(appType, extRecvFx join restFx join mode.onInvocationEffect(site, appFx))
+        }
+        // plain static
+        else -> {
+          val (appType, appFx) = restFx.subst!!.apply(rec, Type.MethodRef(method), restTypes)
+          // A default constructor takes no arguments, so the call's own type (with its type arguments) is exact
+          val t = if (method.isDefaultConstructor) getType(site) else appType
+          Result(t, restFx join mode.onInvocationEffect(site, appFx))
         }
       }
+    }
 
-      fun callLambda(receiver: UExpression?, method: ULambdaExpression, args: List<UExpression>): Result<Type<FX>, R> {
+    private fun callLambda(
+      site: UExpression,
+      receiver: UExpression?,
+      method: ULambdaExpression,
+      args: List<UExpression>,
+    ): Result<Type<FX>, R> {
+      val methodRef =
+        localFunctionRef(method)
+          ?: method.nameFromSource?.let { env.funAt(it) { it.method.isCompatible(args) } }
+          ?: return unsureResult.also { log { "Warning: Don't know what `${method.nameFromSource}` is in `${targetName()}`" } }
 
-        val methodRef =
-          localFunctionRef(method)
-            ?: method.nameFromSource?.let { env.funAt(it) { it.method.isCompatible(args) } }
-            ?: return unsureResult.also { log { "Warning: Don't know what `${method.nameFromSource}` is in `${targetName()}`" } }
+      fun KtNamedFunction.implicitThis(): Result<Type<FX>, R> {
+        val t = KtTypeReferenceAdapter.translate(typeParams, typeReference) as Type.Application
+        return pure(env.receiver(t.constructor)!!)
+      }
 
-        fun KtNamedFunction.implicitThis(): Result<Type<FX>, R> {
-          val t = KtTypeReferenceAdapter.translate(typeParams, typeReference) as Type.Application
-          return pure(env.receiver(t.constructor)!!)
-        }
-
-        val receiver =
-          when (val fn = method.sourcePsi) {
-            is KtNamedFunction ->
-              when {
-                !fn.isExtensionDeclaration() -> null
-                receiver != null -> {
-                  val res = loop(receiver)
-                  when (res.value) {
-                    methodRef -> fn.implicitThis()
-                    else -> res
-                  }
+      val receiver =
+        when (val fn = method.sourcePsi) {
+          is KtNamedFunction ->
+            when {
+              !fn.isExtensionDeclaration() -> null
+              receiver != null -> {
+                val res = loop(receiver)
+                when (res.value) {
+                  methodRef -> fn.implicitThis()
+                  else -> res
                 }
-                else -> fn.implicitThis()
               }
-            else -> null
-          }
+              else -> fn.implicitThis()
+            }
+          else -> null
+        }
 
-        val (argTypes, argsFx) = instDefaults(listOfNotNull(receiver), args, mapM(::loop, args))
+      val (argTypes, argsFx) = instDefaults(site, listOfNotNull(receiver), args, mapM(evalExpr, args))
 
-        return when {
-          receiver == null -> {
-            val (appType, appFx) = argsFx.subst!!.apply(rec, methodRef, argTypes)
-            Result(appType, argsFx join onInvocationEffect(e, appFx))
-          }
-          else -> {
-            val (recvType, recvFx) = receiver
-            val subst = substLattice.joinOf(recvFx.subst, argsFx.subst)!!
-            val (appType, appFx) = subst.apply(rec, methodRef, listOf(recvType) + argTypes)
-            Result(appType, recvFx join argsFx join onInvocationEffect(e, appFx))
-          }
+      return when {
+        receiver == null -> {
+          val (appType, appFx) = argsFx.subst!!.apply(rec, methodRef, argTypes)
+          Result(appType, argsFx join mode.onInvocationEffect(site, appFx))
+        }
+        else -> {
+          val (recvType, recvFx) = receiver
+          val subst = substLattice.joinOf(recvFx.subst, argsFx.subst)!!
+          val (appType, appFx) = subst.apply(rec, methodRef, listOf(recvType) + argTypes)
+          Result(appType, recvFx join argsFx join mode.onInvocationEffect(site, appFx))
         }
       }
+    }
 
-      fun call(call: UCallExpression): Result<Type<FX>, R> {
-        val method = call.resolveToUElement()
-        val samArg = if (method == null) call.samConvertedArgument() else null
-        return when {
-          // Kotlin's `Intf { … }` or `Intf(::f)` is its argument, as far as effects go
-          samArg != null -> loop(samArg)
-          // constructor call, with constructor definition missing
-          call.isConstructorCall() && method == null -> pure(getType(call))
-          method is UMethod -> {
-            val psiMethod = method.javaPsi
-            val extReceiver = if (psiMethod.isExtension() && isJava(call.lang)) call.valueArguments.firstOrNull() else call.callReceiver()
-            val args = completeArguments(typeParams, call, method, Type.MethodRef(psiMethod), UMethod::uastParameters)
-            callMethod(call.callReceiver(), psiMethod, args, extReceiver)
-          }
-          method is ULambdaExpression -> {
-            val args = completeArguments(typeParams, call, method, localFunctionRef(method), ULambdaExpression::valueParameters)
-            callLambda(call.callReceiver(), method, args)
-          }
-          else -> {
-            fun fail() =
-              giveUp(e) {
-                "Handle ${e::class.java.simpleName} ${e.renderAbbrev()} with receiver `${call.receiver?.renderAbbrev()}`, resolved method `$method`"
-              }
+    private fun call(site: UExpression, call: UCallExpression): Result<Type<FX>, R> {
+      val method = call.resolveToUElement()
+      val samArg = if (method == null) call.samConvertedArgument() else null
+      return when {
+        // Kotlin's `Intf { … }` or `Intf(::f)` is its argument, as far as effects go
+        samArg != null -> loop(samArg)
+        // constructor call, with constructor definition missing
+        call.isConstructorCall() && method == null -> pure(getType(call))
+        method is UMethod -> {
+          val psiMethod = method.javaPsi
+          val extReceiver = if (psiMethod.isExtension() && isJava(call.lang)) call.valueArguments.firstOrNull() else call.callReceiver()
+          val args = completeArguments(typeParams, call, method, Type.MethodRef(psiMethod), UMethod::uastParameters)
+          callMethod(site, call.callReceiver(), psiMethod, args, extReceiver)
+        }
+        method is ULambdaExpression -> {
+          val args = completeArguments(typeParams, call, method, localFunctionRef(method), ULambdaExpression::valueParameters)
+          callLambda(site, call.callReceiver(), method, args)
+        }
+        else -> {
+          fun fail() =
+            giveUp(site) {
+              "Handle ${site::class.java.simpleName} ${site.renderAbbrev()} with receiver `${call.receiver?.renderAbbrev()}`, resolved method `$method`"
+            }
 
-            val recv = call.receiver ?: call.callReceiver() ?: return fail()
-            when (val recvDecl = recv.tryResolveUDeclaration()) {
-              is UVariable -> {
-                val rhs = recvDecl.uastInitializer as? ULambdaExpression ?: return fail()
-                callLambda(call.callReceiver(), rhs, completeArguments(typeParams, call, rhs, null, ULambdaExpression::valueParameters))
-              }
-              // TODO shot in the dark below
-              else -> {
-                val methodName = call.methodName ?: call.methodIdentifier?.name
-                val (recvType, recvFx) = loop(recv)
-                val (restTypes, restFx) = mapM(::loop, call.valueArguments)
-                when {
-                  // Applying extension method whose code we don't have?
-                  recvType is Type.Application -> {
-                    val (t, _) = giveUp(e) { "Applying extension method whose code we don't have at ${e.uastParent?.renderAbbrev()}" }
-                    Result(t, recvFx join restFx)
-                  }
-                  else -> {
-                    fun onNotFound(exc: Module.MethodLookupException? = null) =
-                      Result(getType(e), fxInstantiationLattice.unsure).also {
-                        log {
-                          when (exc) {
-                            null,
-                            is Module.MethodLookupException.NotFound ->
-                              "WARNING: Don't know what method `$methodName` is in `${e.uastParent?.renderAbbrev()}` in `${targetName()}`"
+          val recv = call.receiver ?: call.callReceiver() ?: return fail()
+          when (val recvDecl = recv.tryResolveUDeclaration()) {
+            is UVariable -> {
+              val rhs = recvDecl.uastInitializer as? ULambdaExpression ?: return fail()
+              callLambda(site, call.callReceiver(), rhs, completeArguments(typeParams, call, rhs, null, ULambdaExpression::valueParameters))
+            }
+            // TODO shot in the dark below
+            else -> {
+              val methodName = call.methodName ?: call.methodIdentifier?.name
+              val (recvType, recvFx) = loop(recv)
+              val (restTypes, restFx) = mapM(evalExpr, call.valueArguments)
+              when {
+                // Applying extension method whose code we don't have?
+                recvType is Type.Application -> {
+                  val (t, _) = giveUp(site) { "Applying extension method whose code we don't have at ${site.uastParent?.renderAbbrev()}" }
+                  Result(t, recvFx join restFx)
+                }
+                else -> {
+                  fun onNotFound(exc: Module.MethodLookupException? = null) =
+                    Result(getType(site), fxInstantiationLattice.unsure).also {
+                      log {
+                        when (exc) {
+                          null,
+                          is Module.MethodLookupException.NotFound ->
+                            "WARNING: Don't know what method `$methodName` is in `${site.uastParent?.renderAbbrev()}` in `${targetName()}`"
 
-                            is Module.MethodLookupException.Ambiguous -> "ERROR: ${exc.candidates.size} methods found for name ${exc.name}"
-                          }
+                          is Module.MethodLookupException.Ambiguous -> "ERROR: ${exc.candidates.size} methods found for name ${exc.name}"
                         }
                       }
+                    }
 
-                    val subst = substLattice.joinOf(recvFx.subst, restFx.subst)!!
+                  val subst = substLattice.joinOf(recvFx.subst, restFx.subst)!!
 
-                    val (appType, appFx) =
-                      when (methodName) {
-                        null -> onNotFound()
-                        else -> subst.invokeWildGuess(rec, recvType, methodName, restTypes, ::onNotFound)
-                      }
+                  val (appType, appFx) =
+                    when (methodName) {
+                      null -> onNotFound()
+                      else -> subst.invokeWildGuess(rec, recvType, methodName, restTypes, ::onNotFound)
+                    }
 
-                    Result(appType, recvFx join restFx join onInvocationEffect(e, appFx))
-                  }
+                  Result(appType, recvFx join restFx join mode.onInvocationEffect(site, appFx))
                 }
               }
             }
           }
         }
       }
+    }
 
+    private fun evalQualifiedRef(e: UQualifiedReferenceExpression): Result<Type<FX>, R> {
+      val target = e.resolve()
+      return when {
+        target is PsiField -> Result(module[target] ?: translate(target.type), loop(e.receiver).effect)
+        target is KtLightMethod && target.isAccessor(getter = true) -> callMethod(e, e.receiver, target, listOf())
+        e.selector is UCallExpression -> loop(e.selector)
+        // HACK `getValue` of `Lazy`
+        target is PsiMethod && target.name == "getValue" && e.receiver is USimpleNameReferenceExpression ->
+          when (val t = env.varAt((e.receiver as USimpleNameReferenceExpression).identifier)) {
+            is Type.Lambda -> Result(getType(e.receiver), mode.onInvocationEffect(e, Instantiation(t.body.effect)))
+            else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
+          }
+        // Kotlin property access to a Java getter (`resources.configuration`): apply the getter as a call,
+        // mirroring the `KtLightMethod` accessor branch above
+        target is PsiMethod && !target.isStatic() && target.parameterList.isEmpty -> callMethod(e, e.receiver, target, listOf())
+        else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
+      }
+    }
+
+    private fun evalCallableRef(e: UCallableReferenceExpression): Result<Type<FX>, R> {
+      fun fail() = unsureResult.also { log { "ERROR: Don't know how to parse method reference ${e.renderAbbrev()}" } }
+      return when (val method = e.resolve()) {
+        is PsiMethod -> {
+          val ref = Type.MethodRef(method)
+          val (refType, refFx) =
+            when {
+              method.isConstructor -> pure(ref)
+              (e.qualifierExpression as? UReferenceExpression)?.resolve() is PsiClass &&
+                method.containingClass.toUElement()?.sourcePsi !is KtObjectDeclaration -> pure(ref)
+              !method.isStatic() || method.isExtension() -> {
+                fun fromExplicit() =
+                  e.qualifierExpression?.let { recvExpr ->
+                    val (recvType, recvFx) = loop(recvExpr)
+                    Result(Type.SpecializedMethodRef(recvType, ref), recvFx)
+                  }
+
+                fun fromImplicit(): Result<Type.SpecializedMethodRef<FX>, R>? {
+                  val t = e.qualifierType?.let { translate(it) } as? Type.Application ?: return null
+                  val recvType = env.receiver(t.constructor) ?: return null
+                  return pure(Type.SpecializedMethodRef(recvType, ref))
+                }
+
+                fun default() = pure(Type.SpecializedMethodRef(Type.None, ref)) // TODO
+
+                fromExplicit() ?: fromImplicit() ?: default()
+              }
+
+              // regular static
+              else -> pure(ref)
+            }
+          val errorsAgainstFunIntf: PersistentSet<Error<FX>> = run {
+            val funIntf = resolvePossiblyAnnotatedSuperClass(e) ?: return@run persistentSetOf()
+            val intfMethodStatus = module.getSAMStatus(funIntf)
+            val implStatus = module[ref] ?: return@run persistentSetOf()
+            mode.guardImplAgainstStatus(rec, e, intfMethodStatus, ref, implStatus)
+          }
+          Result(refType, refFx + errorsAgainstFunIntf)
+        }
+        is PsiVariable -> env.funAt(method.name!!)?.let { pure(it) } ?: fail()
+        else -> fail()
+      }
+    }
+
+    private fun evalLambda(e: ULambdaExpression): Result<Type<FX>, R> {
+      // TODO best effort resolving to right super-interface
+      val site = argumentSiteOf(e)
+      val funIntf = resolvePossiblyAnnotatedSuperClass(e, site)
+      val samBases =
+        when (val status = funIntf?.let(module::getSAMStatus)) {
+          is MethodBody.Status.ForChecking -> listOf(status.upperBound)
+          null,
+          is MethodBody.Status.ForInference,
+          is MethodBody.Status.Abstract -> emptyList()
+          is MethodBody.Status.StaticInitializer -> throw IllegalStateException()
+        }
+      // The SAM interface's own annotation is an obligation on the lambda itself, which no callee summary shadows, so the assumed
+      // callee's bounds add to it rather than replace it.
+      val lambdaMode = inferenceMode(EffectAnnotation.Implicit(assumedMethodGuards(site) + samBases))
+      val lambdaParams: List<Pair<String, Type<FX>>> =
+        e.parameters.map {
+          val param = it.javaPsi as PsiParameter
+          val paramType =
+            when (val t = param.type) {
+              // TODO
+              is PsiLambdaParameterType,
+              is PsiIntersectionType -> typeLattice.top
+              else -> translate(t)
+            }
+          param.name to paramType
+        }
+      val (t, fx) = lambdaMode.eval(rec, env.withVars<FX>(lambdaParams), e.body, returns.add(ReturnRecord(e)))
+      val r = Type.Lambda(lambdaParams.map { (_, t) -> t }, Result(t, fx.result), funIntf)
+      val name = Type.Sym.Param("lam", e.staticContext())
+      val subst = fx.subst!!.put(name, r)
+      return Result(name, bottom.binding(substLattice, subst) + fx.errors)
+    }
+
+    private fun evalDeclarations(e: UDeclarationsExpression): Result<Type<FX>, R> =
+      lastM(
+        step@{ dec ->
+          when (dec) {
+            is ULocalVariable -> {
+              val decPsi = dec.javaPsi as PsiLocalVariable
+              val rhs = dec.uastInitializer?.let { loop(it) }
+              val delegateExpr = (dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression
+              val delegate = if (delegateExpr != null) loop(delegateExpr) else null
+              val rhsLam =
+                when (val v = rhs?.value) {
+                  is Type.Lambda -> v
+                  is Type.Sym.Name -> rhs.effect.subst?.get(v) as? Type.Lambda
+                  else -> null
+                }
+              val rhsType =
+                // For immutable local bindings, we bypass even the user-declared type to
+                // use the inferred more precise type.
+                if (rhsLam != null && (dec.isImmutable() || decPsi.isEffectivelyFinal())) rhsLam else translate(decPsi.type)
+              // We update the local environment imperatively instead of accumulating it
+              // functionally, because later declarations need to see updates by earlier
+              // declarations.
+              env = env.withVar(decPsi.name, rhsType)
+              if (delegate != null) env = env.withVarDelegate(decPsi.name, delegate.value)
+              when {
+                rhs != null && delegate != null -> rhs.copy(effect = joinOf(rhs.effect, delegate.effect))
+                rhs != null -> rhs
+                delegate != null -> Result(Type.Unit, delegate.effect)
+                else -> emptyResult
+              }
+            }
+            is UVariable -> unitResult // already added to environment during indexing
+            else -> {
+              log { "TODO: Handle ${dec::class.java.simpleName}: ${dec.asSourceString()}" }
+              unitResult
+            }
+          }
+        },
+        e.declarations,
+      ) ?: unitResult
+
+    private fun evalUnary(e: UUnaryExpression): Result<Type<FX>, R> {
+      fun default() = Result(getType(e), loop(e.operand).effect)
+      return when (e.operator) {
+        UastPrefixOperator.INC,
+        UastPrefixOperator.DEC,
+        UastPostfixOperator.INC,
+        UastPostfixOperator.DEC ->
+          when (e) {
+            is UMultiResolvable -> {
+              val operand = e.operand
+              val fx =
+                e.multiResolve().joinedOver { res ->
+                  val method = res.element as? PsiMethod ?: return@joinedOver bottom
+                  val (receiver, indices) = operand.lhsReceiverAndIndices() ?: return@joinedOver bottom
+                  when {
+                    // TODO
+                    method.name.startsWith("get") -> callMethod(e, receiver, method, indices).effect
+                    // TODO
+                    method.name.startsWith("set") -> callMethod(e, receiver, method, indices + operand).effect
+                    // TODO assuming inc/dec operator
+                    method.parameterList.parametersCount == 0 -> callMethod(e, operand, method, listOf()).effect
+                    else -> throw IllegalStateException("Got method `${method.name}` during ${e.renderAbbrev()}")
+                  }
+                }
+              Result(e.getExpressionType()?.let { translate(it) } ?: Type.Int, fx)
+            }
+            else -> default()
+          }
+        else -> default()
+      }
+    }
+
+    private fun evalPolyadic(e: UPolyadicExpression): Result<Type<FX>, R> {
+      fun defaultUnit() = Result(Type.Unit, forM(evalExpr, e.operands))
+      return when (e.operator) {
+        // Special cases
+        UastBinaryOperator.ASSIGN -> {
+          val (lhs, rhs) = e.operands
+          val target = lhs.tryResolve()
+          when {
+            target is PsiMethod && target.name.startsWith("set") -> {
+              val (receiver, indices) = lhs.lhsReceiverAndIndices() ?: return defaultUnit()
+              callMethod(e, receiver, target, indices + rhs)
+            }
+            else -> defaultUnit()
+          }
+        }
+        UastBinaryOperator.PLUS_ASSIGN,
+        UastBinaryOperator.MINUS_ASSIGN,
+        UastBinaryOperator.MULTIPLY_ASSIGN,
+        UastBinaryOperator.DIVIDE_ASSIGN,
+        UastBinaryOperator.REMAINDER_ASSIGN,
+        UastBinaryOperator.AND_ASSIGN,
+        UastBinaryOperator.OR_ASSIGN,
+        UastBinaryOperator.XOR_ASSIGN,
+        UastBinaryOperator.SHIFT_LEFT_ASSIGN,
+        UastBinaryOperator.SHIFT_RIGHT_ASSIGN,
+        UastBinaryOperator.UNSIGNED_SHIFT_RIGHT_ASSIGN -> {
+          val (lhs, rhs) = e.operands
+          when (e) {
+            is UMultiResolvable -> {
+              val (receiver, indices) = lhs.lhsReceiverAndIndices() ?: return defaultUnit()
+              val fx =
+                e.multiResolve().joinedOver { res ->
+                  val method = res.element as? PsiMethod ?: return@joinedOver bottom
+                  when {
+                    // TODO
+                    method.name.startsWith("get") -> callMethod(e, receiver, method, indices).effect
+                    // TODO
+                    method.name.startsWith("set") -> callMethod(e, receiver, method, indices + rhs).effect
+                    // TODO assuming the arith op
+                    method.parameterList.parametersCount == 2 -> callMethod(e, lhs, method, listOf(rhs)).effect
+                    method.parameterList.parametersCount == 1 -> callMethod(e, lhs, method, listOf(rhs)).effect
+                    else -> throw IllegalStateException("Got method `${method.name}` during ${e.renderAbbrev()}")
+                  }
+                }
+              Result(Type.Unit, fx)
+            }
+            else -> defaultUnit()
+          }
+        }
+        // Call-by-value standard operators
+        else -> {
+          val fx = forM(evalExpr, e.operands)
+          val t =
+            when (e.operator) {
+              is UastBinaryOperator.LogicalOperator,
+              is UastBinaryOperator.ComparisonOperator,
+              is UastBinaryOperator.BitwiseOperator -> Type.Boolean
+              else -> getType(e)
+            }
+          Result(t, fx)
+        }
+      }
+    }
+
+    private fun evalForEach(e: UForEachExpression): Result<Type<FX>, R> {
+      val (t1, fx1) = loop(e.iteratedValue)
+      val bodyEnv =
+        when (val x = e.parameter?.javaPsi as? PsiParameter) {
+          null -> env
+          else ->
+            when {
+              t1 is Type.Application && t1.args.firstOrNull() != null -> env.withVar(x.name, t1.args.first())
+              t1 is Type.Ellipsis -> env.withVar(x.name, t1.element)
+              else -> env // TODO
+            }
+        }
+      val (_, fx2) = mode.eval(rec, bodyEnv, e.body, returns)
+      return Result(Type.Unit, fx1 join fx2)
+    }
+
+    private fun evalObjectLiteral(e: UObjectLiteralExpression): Result<Type<FX>, R> {
+      val typeArgs = typeParams.values.toList()
+      val typeRef = ClassId.of(e.declaration.javaPsi)
+      val type = Type.Application(typeRef, typeArgs)
+      val errorAgainstFunIntf: PersistentSet<Error<FX>> = run {
+        val funIntf = resolvePossiblyAnnotatedSuperClass(e) ?: return@run persistentSetOf()
+        mode.guardImplAgainstIntf(rec, e, funIntf, typeRef)
+      }
+      return Result(type, bottom + errorAgainstFunIntf)
+    }
+
+    private fun evalTry(e: UTryExpression): Result<Type<FX>, R> {
+      val (tryType, tryFx) = loop(e.tryClause)
+      val (catchTypes, catchFx) = mapM({ loop(it.body) }, e.catchClauses)
+      val finalFx = e.finallyClause?.let { loop(it) }?.effect ?: bottom
+      val t = with(typeLattice) { tryType join catchTypes.joinedOver { it } }
+      return Result(t, tryFx join catchFx join finalFx)
+    }
+
+    private fun loop(e: UExpression): Result<Type<FX>, R> {
       ProgressManager.checkCanceled()
       return when (e) {
         is OpaqueConstant -> pure(e.type)
@@ -668,81 +972,22 @@ internal open class Analysis<FX : Any>(
         is USuperExpression -> pure(getType(e))
 
         // TODO: is this just the Java's `yield` in `switch`?
-        is UYieldExpression -> e.expression?.let(::loop) ?: unsureResult
+        is UYieldExpression -> e.expression?.let { loop(it) } ?: unsureResult
         is USimpleNameReferenceExpression ->
           when (val target = e.resolve()) {
             is KtLightMethod ->
               when {
-                target.isAccessor(getter = true) -> callMethod(null, target, listOf())
-                else -> e.asName(USimpleNameReferenceExpression::identifier)
+                target.isAccessor(getter = true) -> callMethod(e, null, target, listOf())
+                else -> e.asName(e.identifier)
               }
-            else -> e.asName(USimpleNameReferenceExpression::identifier)
+            else -> e.asName(e.identifier)
           }
-        is UQualifiedReferenceExpression -> {
-          val target = e.resolve()
-          when {
-            target is PsiField -> Result(module[target] ?: translate(target.type), loop(e.receiver).effect)
-            target is KtLightMethod && target.isAccessor(getter = true) -> callMethod(e.receiver, target, listOf())
-            e.selector is UCallExpression -> loop(e.selector)
-            // HACK `getValue` of `Lazy`
-            target is PsiMethod && target.name == "getValue" && e.receiver is USimpleNameReferenceExpression ->
-              when (val t = env.varAt((e.receiver as USimpleNameReferenceExpression).identifier)) {
-                is Type.Lambda -> Result(getType(e.receiver), onInvocationEffect(e, Instantiation(t.body.effect)))
-                else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
-              }
-            // Kotlin property access to a Java getter (`resources.configuration`): apply the getter as a call,
-            // mirroring the `KtLightMethod` accessor branch above
-            target is PsiMethod && !target.isStatic() && target.parameterList.isEmpty -> callMethod(e.receiver, target, listOf())
-            else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
-          }
-        }
-        is UCallableReferenceExpression -> {
-          fun fail() = unsureResult.also { log { "ERROR: Don't know how to parse method reference ${e.renderAbbrev()}" } }
-          when (val method = e.resolve()) {
-            is PsiMethod -> {
-              val ref = Type.MethodRef(method)
-              val (refType, refFx) =
-                when {
-                  method.isConstructor -> pure(ref)
-                  (e.qualifierExpression as? UReferenceExpression)?.resolve() is PsiClass &&
-                    method.containingClass.toUElement()?.sourcePsi !is KtObjectDeclaration -> pure(ref)
-                  !method.isStatic() || method.isExtension() -> {
-                    fun fromExplicit() =
-                      e.qualifierExpression?.let { recvExpr ->
-                        val (recvType, recvFx) = loop(recvExpr)
-                        Result(Type.SpecializedMethodRef(recvType, ref), recvFx)
-                      }
-
-                    fun fromImplicit(): Result<Type.SpecializedMethodRef<FX>, R>? {
-                      val t = e.qualifierType?.let(::translate) as? Type.Application ?: return null
-                      val recvType = env.receiver(t.constructor) ?: return null
-                      return pure(Type.SpecializedMethodRef(recvType, ref))
-                    }
-
-                    fun default() = pure(Type.SpecializedMethodRef(Type.None, ref)) // TODO
-
-                    fromExplicit() ?: fromImplicit() ?: default()
-                  }
-
-                  // regular static
-                  else -> pure(ref)
-                }
-              val errorsAgainstFunIntf: PersistentSet<Error<FX>> = run {
-                val funIntf = resolvePossiblyAnnotatedSuperClass(e) ?: return@run persistentSetOf()
-                val intfMethodStatus = module.getSAMStatus(funIntf)
-                val implStatus = module[ref] ?: return@run persistentSetOf()
-                guardImplAgainstStatus(rec, e, intfMethodStatus, ref, implStatus)
-              }
-              Result(refType, refFx + errorsAgainstFunIntf)
-            }
-            is PsiVariable -> env.funAt(method.name!!)?.let(::pure) ?: fail()
-            else -> fail()
-          }
-        }
-        is UReferenceExpression -> e.asName { it.resolvedName ?: throw UnresolvedNameException(e) }
-        is UBlockExpression -> lastM(::loop, e.expressions) ?: unitResult
+        is UQualifiedReferenceExpression -> evalQualifiedRef(e)
+        is UCallableReferenceExpression -> evalCallableRef(e)
+        is UReferenceExpression -> e.asName(e.resolvedName ?: throw UnresolvedNameException(e))
+        is UBlockExpression -> lastM(evalExpr, e.expressions) ?: unitResult
         is UExpressionList ->
-          when (val r = lastM(::loop, e.expressions)) {
+          when (val r = lastM(evalExpr, e.expressions)) {
             null ->
               when (e.kind) {
                 UastSpecialExpressionKind.VARARGS -> pure(Type.EmptyArray)
@@ -757,14 +1002,14 @@ internal open class Analysis<FX : Any>(
             }
           }
         is RestArg -> {
-          val (t, fx) = lastM(::loop, e.elems) ?: return pure(Type.EmptyArray)
+          val (t, fx) = lastM(evalExpr, e.elems) ?: return pure(Type.EmptyArray)
           Result(Type.Ellipsis(t), fx)
         }
-        is OverloadBody -> callMethod(null, e.canonical, e.args)
+        is OverloadBody -> callMethod(e, null, e.canonical, e.args)
         is InitializerBody -> {
           // Each initializer runs on its own, outside the constructor's scope
-          val initFx = forM({ eval(rec, initEnv, it, persistentListOf(ReturnRecord(it.uastParent!!))) }, e.initializers)
-          val (t, fx) = eval(rec, initEnv, e.body, returns)
+          val initFx = forM({ mode.eval(rec, initEnv, it, persistentListOf(ReturnRecord(it.uastParent!!))) }, e.initializers)
+          val (t, fx) = mode.eval(rec, initEnv, e.body, returns)
           Result(t, merge(e.body, initFx, fx))
         }
         is UParenthesizedExpression -> loop(e.expression)
@@ -787,173 +1032,10 @@ internal open class Analysis<FX : Any>(
           // `return` clause, as an expression, computes no value
           Result(Type.None, fx)
         }
-        is ULambdaExpression -> {
-          // TODO best effort resolving to right super-interface
-          val site = argumentSiteOf(e)
-          val funIntf = resolvePossiblyAnnotatedSuperClass(e, site)
-          val samBases =
-            when (val status = funIntf?.let(module::getSAMStatus)) {
-              is MethodBody.Status.ForChecking -> listOf(status.upperBound)
-              null,
-              is MethodBody.Status.ForInference,
-              is MethodBody.Status.Abstract -> emptyList()
-              is MethodBody.Status.StaticInitializer -> throw IllegalStateException()
-            }
-          // The SAM interface's own annotation is an obligation on the lambda itself, which no callee summary shadows, so the assumed
-          // callee's bounds add to it rather than replace it.
-          val mode = inferenceMode(EffectAnnotation.Implicit(assumedMethodGuards(site) + samBases))
-          val lambdaParams: List<Pair<String, Type<FX>>> =
-            e.parameters.map {
-              val param = it.javaPsi as PsiParameter
-              val paramType =
-                when (val t = param.type) {
-                  // TODO
-                  is PsiLambdaParameterType,
-                  is PsiIntersectionType -> typeLattice.top
-                  else -> translate(t)
-                }
-              param.name to paramType
-            }
-          val (t, fx) = mode.eval(rec, env.withVars<FX>(lambdaParams), e.body, returns.add(ReturnRecord(e)))
-          val r = Type.Lambda(lambdaParams.map { (_, t) -> t }, Result(t, fx.result), funIntf)
-          val name = Type.Sym.Param("lam", e.staticContext())
-          val subst = fx.subst!!.put(name, r)
-          Result(name, bottom.binding(substLattice, subst) + fx.errors)
-        }
-        is UDeclarationsExpression ->
-          lastM(
-            step@{ dec ->
-              when (dec) {
-                is ULocalVariable -> {
-                  val decPsi = dec.javaPsi as PsiLocalVariable
-                  val rhs = dec.uastInitializer?.let(::loop)
-                  val delegateExpr = (dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression
-                  val delegate = if (delegateExpr != null) loop(delegateExpr) else null
-                  val rhsLam =
-                    when (val v = rhs?.value) {
-                      is Type.Lambda -> v
-                      is Type.Sym.Name -> rhs.effect.subst?.get(v) as? Type.Lambda
-                      else -> null
-                    }
-                  val rhsType =
-                    // For immutable local bindings, we bypass even the user-declared type to
-                    // use the inferred more precise type.
-                    if (rhsLam != null && (dec.isImmutable() || decPsi.isEffectivelyFinal())) rhsLam else translate(decPsi.type)
-                  // We update the local environment imperatively instead of accumulating it
-                  // functionally, because later declarations need to see updates by earlier
-                  // declarations.
-                  env = env.withVar(decPsi.name, rhsType)
-                  if (delegate != null) env = env.withVarDelegate(decPsi.name, delegate.value)
-                  when {
-                    rhs != null && delegate != null -> rhs.copy(effect = joinOf(rhs.effect, delegate.effect))
-                    rhs != null -> rhs
-                    delegate != null -> Result(Type.Unit, delegate.effect)
-                    else -> emptyResult
-                  }
-                }
-                is UVariable -> unitResult // already added to environment during indexing
-                else -> {
-                  log { "TODO: Handle ${dec::class.java.simpleName}: ${dec.asSourceString()}" }
-                  unitResult
-                }
-              }
-            },
-            e.declarations,
-          ) ?: unitResult
-        is UUnaryExpression -> {
-          fun default() = Result(getType(e), loop(e.operand).effect)
-          when (e.operator) {
-            UastPrefixOperator.INC,
-            UastPrefixOperator.DEC,
-            UastPostfixOperator.INC,
-            UastPostfixOperator.DEC ->
-              when (e) {
-                is UMultiResolvable -> {
-                  val operand = e.operand
-                  val fx =
-                    e.multiResolve().joinedOver { res ->
-                      val method = res.element as? PsiMethod ?: return@joinedOver bottom
-                      val (receiver, indices) = operand.lhsReceiverAndIndices() ?: return@joinedOver bottom
-                      when {
-                        // TODO
-                        method.name.startsWith("get") -> callMethod(receiver, method, indices).effect
-                        // TODO
-                        method.name.startsWith("set") -> callMethod(receiver, method, indices + operand).effect
-                        // TODO assuming inc/dec operator
-                        method.parameterList.parametersCount == 0 -> callMethod(operand, method, listOf()).effect
-                        else -> throw IllegalStateException("Got method `${method.name}` during ${e.renderAbbrev()}")
-                      }
-                    }
-                  Result(e.getExpressionType()?.let(::translate) ?: Type.Int, fx)
-                }
-                else -> default()
-              }
-            else -> default()
-          }
-        }
-        is UPolyadicExpression -> {
-          fun defaultUnit() = Result(Type.Unit, forM(::loop, e.operands))
-          when (e.operator) {
-            // Special cases
-            UastBinaryOperator.ASSIGN -> {
-              val (lhs, rhs) = e.operands
-              val target = lhs.tryResolve()
-              when {
-                target is PsiMethod && target.name.startsWith("set") -> {
-                  val (receiver, indices) = lhs.lhsReceiverAndIndices() ?: return defaultUnit()
-                  callMethod(receiver, target, indices + rhs)
-                }
-                else -> defaultUnit()
-              }
-            }
-            UastBinaryOperator.PLUS_ASSIGN,
-            UastBinaryOperator.MINUS_ASSIGN,
-            UastBinaryOperator.MULTIPLY_ASSIGN,
-            UastBinaryOperator.DIVIDE_ASSIGN,
-            UastBinaryOperator.REMAINDER_ASSIGN,
-            UastBinaryOperator.AND_ASSIGN,
-            UastBinaryOperator.OR_ASSIGN,
-            UastBinaryOperator.XOR_ASSIGN,
-            UastBinaryOperator.SHIFT_LEFT_ASSIGN,
-            UastBinaryOperator.SHIFT_RIGHT_ASSIGN,
-            UastBinaryOperator.UNSIGNED_SHIFT_RIGHT_ASSIGN -> {
-              val (lhs, rhs) = e.operands
-              when (e) {
-                is UMultiResolvable -> {
-                  val (receiver, indices) = lhs.lhsReceiverAndIndices() ?: return defaultUnit()
-                  val fx =
-                    e.multiResolve().joinedOver { res ->
-                      val method = res.element as? PsiMethod ?: return@joinedOver bottom
-                      when {
-                        // TODO
-                        method.name.startsWith("get") -> callMethod(receiver, method, indices).effect
-                        // TODO
-                        method.name.startsWith("set") -> callMethod(receiver, method, indices + rhs).effect
-                        // TODO assuming the arith op
-                        method.parameterList.parametersCount == 2 -> callMethod(lhs, method, listOf(rhs)).effect
-                        method.parameterList.parametersCount == 1 -> callMethod(lhs, method, listOf(rhs)).effect
-                        else -> throw IllegalStateException("Got method `${method.name}` during ${e.renderAbbrev()}")
-                      }
-                    }
-                  Result(Type.Unit, fx)
-                }
-                else -> defaultUnit()
-              }
-            }
-            // Call-by-value standard operators
-            else -> {
-              val fx = forM(::loop, e.operands)
-              val t =
-                when (e.operator) {
-                  is UastBinaryOperator.LogicalOperator,
-                  is UastBinaryOperator.ComparisonOperator,
-                  is UastBinaryOperator.BitwiseOperator -> Type.Boolean
-                  else -> getType(e)
-                }
-              Result(t, fx)
-            }
-          }
-        }
+        is ULambdaExpression -> evalLambda(e)
+        is UDeclarationsExpression -> evalDeclarations(e)
+        is UUnaryExpression -> evalUnary(e)
+        is UPolyadicExpression -> evalPolyadic(e)
         is UBinaryExpressionWithType ->
           when (val op = e.operationKind) {
             is UastBinaryExpressionWithTypeKind.InstanceCheck -> Result(Type.Boolean, loop(e.operand).effect)
@@ -962,87 +1044,41 @@ internal open class Analysis<FX : Any>(
           }
         is UIfExpression -> {
           val (_, condFx) = loop(e.condition)
-          val (t, branchesFx) = joinM(::loop, listOfNotNull(e.thenExpression, e.elseExpression))
+          val (t, branchesFx) = mode.joinM(evalExpr, listOfNotNull(e.thenExpression, e.elseExpression))
           Result(t, merge(e.condition, condFx, branchesFx))
         }
         is USwitchExpression -> {
           val condition = e.expression
-          val (_, conditionFx) = condition?.let(::loop) ?: emptyResult
-          val (t, bodyFx) = joinM(::loop, e.body.expressions)
+          val (_, conditionFx) = condition?.let { loop(it) } ?: emptyResult
+          val (t, bodyFx) = mode.joinM(evalExpr, e.body.expressions)
           Result(t, if (condition != null) merge(condition, conditionFx, bodyFx) else conditionFx join bodyFx)
         }
         is USwitchClauseExpressionWithBody -> {
-          val condFx = forM(::loop, e.caseValues + listOfNotNull(e.guard))
-          when (val body = lastM(::loop, e.body.expressions)) {
+          val condFx = forM(evalExpr, e.caseValues + listOfNotNull(e.guard))
+          when (val body = lastM(evalExpr, e.body.expressions)) {
             null -> Result(Type.Unit, condFx)
             else -> Result(body.value, condFx join body.effect)
           }
         }
-        is UWhileExpression -> Result(Type.Unit, forM(::loop, listOf(e.condition, e.body)))
-        is UDoWhileExpression -> Result(Type.Unit, forM(::loop, listOf(e.condition, e.body)))
-        is UForExpression -> Result(Type.Unit, forM(::loop, listOfNotNull(e.declaration, e.condition, e.update, e.body)))
-        is UForEachExpression -> {
-          val (t1, fx1) = loop(e.iteratedValue)
-          val bodyEnv =
-            when (val x = e.parameter?.javaPsi as? PsiParameter) {
-              null -> env
-              else ->
-                when {
-                  t1 is Type.Application && t1.args.firstOrNull() != null -> env.withVar(x.name, t1.args.first())
-                  t1 is Type.Ellipsis -> env.withVar(x.name, t1.element)
-                  else -> env // TODO
-                }
-            }
-          val (_, fx2) = eval(rec, bodyEnv, e.body, returns)
-          Result(Type.Unit, fx1 join fx2)
-        }
-        is UObjectLiteralExpression -> {
-          val typeArgs = typeParams.values.toList()
-          val typeRef = ClassId.of(e.declaration.javaPsi)
-          val type = Type.Application(typeRef, typeArgs)
-          val errorAgainstFunIntf: PersistentSet<Error<FX>> = run {
-            val funIntf = resolvePossiblyAnnotatedSuperClass(e) ?: return@run persistentSetOf()
-            guardImplAgainstIntf(rec, e, funIntf, typeRef)
-          }
-          Result(type, bottom + errorAgainstFunIntf)
-        }
+        is UWhileExpression -> Result(Type.Unit, forM(evalExpr, listOf(e.condition, e.body)))
+        is UDoWhileExpression -> Result(Type.Unit, forM(evalExpr, listOf(e.condition, e.body)))
+        is UForExpression -> Result(Type.Unit, forM(evalExpr, listOfNotNull(e.declaration, e.condition, e.update, e.body)))
+        is UForEachExpression -> evalForEach(e)
+        is UObjectLiteralExpression -> evalObjectLiteral(e)
         is UThrowExpression -> Result(Type.None, loop(e.thrownExpression).effect)
-        is UTryExpression -> {
-          val (tryType, tryFx) = loop(e.tryClause)
-          val (catchTypes, catchFx) = mapM({ loop(it.body) }, e.catchClauses)
-          val finalFx = e.finallyClause?.let(::loop)?.effect ?: bottom
-          val t = with(typeLattice) { tryType join catchTypes.joinedOver { it } }
-          Result(t, tryFx join catchFx join finalFx)
-        }
+        is UTryExpression -> evalTry(e)
         is UArrayAccessExpression ->
           when (val call = e.asCall()) {
             null -> {
               val recFx = loop(e.receiver).effect
-              val indFx = forM(::loop, e.indices)
+              val indFx = forM(evalExpr, e.indices)
               Result(getType(e), recFx join indFx)
             }
-            else -> call(call)
+            else -> call(e, call)
           }
-        is UCallExpression -> call(e)
+        is UCallExpression -> call(e, e)
         else -> giveUp(e) { "Handle ${e::class.java.simpleName}: `${e.asSourceString()}`" }
       }
-    }
-
-    return when (body) {
-      is UBlockExpression -> {
-        val fx = forM(::loop, body.expressions)
-        val lastStm = body.expressions.lastOrNull()
-        val res =
-          when {
-            (body.uastParent as? UMethod)?.isConstructor == true -> translate((body.uastParent as UMethod).getContainingUClass()!!)
-            body.expressions.any { it is UReturnExpression } -> target.returns
-            // TODO: extract `Nothing` type. Anything else is `Unit`.
-            target.returns == Type.None && (lastStm == null || lastStm !is UThrowExpression) -> Type.Unit
-            else -> target.returns
-          }
-        gc(Result(res, fx))
-      }
-      else -> gc(loop(body))
     }
   }
 
