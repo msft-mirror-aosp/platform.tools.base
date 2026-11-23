@@ -48,6 +48,10 @@ base {
     archivesName.set("aapt2-proto")
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.release = 8
+}
+
 jar {
     from rootProject.file('../prebuilts/tools/common/aapt/protos/NOTICE')
 }

@@ -8,6 +8,7 @@ maven_library(
         "//prebuilts/tools/common/aapt/protos",
     ],
     coordinates = "com.android.tools.build:aapt2-proto",
+    jvm_target = "8",
     version = AAPT2_VERSION,
     visibility = ["//visibility:public"],
     deps = [

@@ -108,6 +108,11 @@ public class GmavenZipTest {
     private static final String R8_NAMESPACE = "com/android/tools/r8/";
     private static final String R8_PACKAGE_PREFIX = "com.android.tools.r8";
 
+    private static final int DEFAULT_MAX_CLASS_FILE_VERSION = Opcodes.V17;
+
+    private static final ImmutableMap<String, Integer> MAX_CLASS_FILE_VERSION =
+            ImmutableMap.of("com/android/tools/build/aapt2-proto", Opcodes.V1_8);
+
     private static final Set<String> MISSING_LICENSE =
             ImmutableSet.of(
                     "com/android/signflinger",
@@ -460,10 +465,10 @@ public class GmavenZipTest {
         check("gmaven-modules.txt", describeModules(modules, namedCoordinates));
 
         for (Path jar : jars) {
-            checkClassFileVersion(jar);
+            checkClassFileVersion(jar, repo);
         }
         for (Path aar : aars) {
-            checkClassFileVersion(aar);
+            checkClassFileVersion(aar, repo);
         }
     }
 
@@ -740,21 +745,25 @@ public class GmavenZipTest {
                 .getPath("/");
     }
 
-    private void checkClassFileVersion(Path file) throws IOException {
+    private void checkClassFileVersion(Path file, Path repo) throws IOException {
+        String key = jarRelativePathWithoutVersionWithClassifier(file, repo);
+        int maxVersion = MAX_CLASS_FILE_VERSION.getOrDefault(key, DEFAULT_MAX_CLASS_FILE_VERSION);
         try (BufferedInputStream is = new BufferedInputStream(Files.newInputStream(file))) {
-            checkClassFileVersion(is, file.toString());
+            checkClassFileVersion(is, file.toString(), maxVersion);
         }
     }
 
     private final int parsingOptions =
             ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES;
 
-    private void checkClassFileVersion(InputStream stream, String name) throws IOException {
+    private void checkClassFileVersion(InputStream stream, String name, int maxVersion)
+            throws IOException {
         try (ZipInputStream zipInputStream = new ZipInputStream(stream)) {
             ZipEntry entry;
             while ((entry = zipInputStream.getNextEntry()) != null) {
                 if (entry.getName().endsWith(".class")) {
-                    CheckClassVisitor checkClassVisitor = new CheckClassVisitor(expect);
+                    CheckClassVisitor checkClassVisitor =
+                            new CheckClassVisitor(expect, name, maxVersion);
                     try {
                         new ClassReader(zipInputStream).accept(checkClassVisitor, parsingOptions);
                     } catch (Exception e) {
@@ -764,7 +773,8 @@ public class GmavenZipTest {
                 } else if (entry.getName().endsWith(".jar")) {
                     checkClassFileVersion(
                             new NonClosingInputStream(zipInputStream),
-                            name + ":" + entry.getName());
+                            name + ":" + entry.getName(),
+                            maxVersion);
                 }
             }
         }
@@ -773,10 +783,14 @@ public class GmavenZipTest {
     public static class CheckClassVisitor extends ClassVisitor {
 
         private final Expect expect;
+        private final String jarName;
+        private final int maxVersion;
 
-        protected CheckClassVisitor(Expect expect) {
+        protected CheckClassVisitor(Expect expect, String jarName, int maxVersion) {
             super(Opcodes.ASM9);
             this.expect = expect;
+            this.jarName = jarName;
+            this.maxVersion = maxVersion;
         }
 
         @Override
@@ -787,9 +801,10 @@ public class GmavenZipTest {
                 String signature,
                 String superName,
                 String[] interfaces) {
-            if (version > 61) {
+            if (version > maxVersion) {
                 expect.fail(
-                        "Class %s should have version <= 61, but has version %s", name, version);
+                        "Class %s in %s should have version <= %s, but has version %s",
+                        name, jarName, maxVersion, version);
             }
             super.visit(version, access, name, signature, superName, interfaces);
         }
