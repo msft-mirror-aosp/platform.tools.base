@@ -790,8 +790,8 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
   private fun getKmpTestLintTaskNames(): List<String> {
     val taskNames = mutableListOf<String>()
     getExecutor().run(":kmpFirstLib:tasks", "--all").stdout.use { scanner ->
-      scanner.forEachLine { line ->
-        val taskName = line.trim().substringBefore(" ")
+      while (scanner.hasNextLine()) {
+        val taskName = scanner.nextLine().trim().substringBefore(" ")
         if (
           taskName.contains("lint", ignoreCase = true) && (taskName.contains("AndroidHostTest") || taskName.contains("AndroidDeviceTest"))
         ) {
