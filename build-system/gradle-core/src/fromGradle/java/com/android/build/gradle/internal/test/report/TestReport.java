@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.test.report;
 
 import com.android.utils.XmlUtils;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 
@@ -32,10 +33,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
@@ -218,14 +223,19 @@ public class TestReport {
 
     private void generateFiles(AllTestResults model) {
         try {
+            assignUniqueFilenames(model);
             generatePage(
-                    model, new OverviewPageRenderer(reportType), new File(reportDir, "index.html"));
+                    model, new OverviewPageRenderer(reportType), resolveReportFile("index.html"));
             for (PackageTestResults packageResults : model.getPackages()) {
-                generatePage(packageResults, new PackagePageRenderer(reportType),
-                        new File(reportDir, packageResults.getFilename(reportType) + ".html"));
+                generatePage(
+                        packageResults,
+                        new PackagePageRenderer(reportType),
+                        resolveReportFile(packageResults.getFilename(reportType) + ".html"));
                 for (ClassTestResults classResults : packageResults.getClasses()) {
-                    generatePage(classResults, new ClassPageRenderer(reportType),
-                            new File(reportDir, classResults.getFilename(reportType) + ".html"));
+                    generatePage(
+                            classResults,
+                            new ClassPageRenderer(reportType),
+                            resolveReportFile(classResults.getFilename(reportType) + ".html"));
                 }
             }
         } catch (Exception e) {
@@ -236,14 +246,19 @@ public class TestReport {
 
     private void generateFilesForScreenshotTest(AllTestResults model, boolean isRecordGolden) {
         try {
+            assignUniqueFilenames(model);
             generatePage(
-                    model, new OverviewPageRenderer(reportType), new File(reportDir, "index.html"));
+                    model, new OverviewPageRenderer(reportType), resolveReportFile("index.html"));
             for (PackageTestResults packageResults : model.getPackages()) {
-                generatePage(packageResults, new PackagePageRenderer(reportType),
-                        new File(reportDir, packageResults.getFilename(reportType) + ".html"));
+                generatePage(
+                        packageResults,
+                        new PackagePageRenderer(reportType),
+                        resolveReportFile(packageResults.getFilename(reportType) + ".html"));
                 for (ClassTestResults classResults : packageResults.getClasses()) {
-                    generatePage(classResults, new ScreenshotClassPageRenderer(reportType, isRecordGolden),
-                            new File(reportDir, classResults.getFilename(reportType) + ".html"));
+                    generatePage(
+                            classResults,
+                            new ScreenshotClassPageRenderer(reportType, isRecordGolden),
+                            resolveReportFile(classResults.getFilename(reportType) + ".html"));
                 }
             }
         } catch (Exception e) {
@@ -252,8 +267,58 @@ public class TestReport {
         }
     }
 
-    private <T extends CompositeTestResults> void generatePage(T model, PageRenderer<T> renderer,
-                                                               File outputFile) throws Exception {
+    private static void assignUniqueFilenames(AllTestResults model) {
+        Set<String> usedNames = new HashSet<>();
+        usedNames.add("index");
+        for (PackageTestResults packageResults : model.getPackages()) {
+            packageResults.setFilename(
+                    allocateUniqueFilename(
+                            CompositeTestResults.sanitizeFilename(packageResults.getName()),
+                            usedNames));
+            for (ClassTestResults classResults : packageResults.getClasses()) {
+                classResults.setFilename(
+                        allocateUniqueFilename(
+                                CompositeTestResults.sanitizeFilename(classResults.getName()),
+                                usedNames));
+            }
+        }
+    }
+
+    private static String allocateUniqueFilename(String sanitizedBase, Set<String> usedNames) {
+        String boundedBase =
+                CompositeTestResults.finalizeSanitizedFilename(
+                        sanitizedBase, CompositeTestResults.MAX_FILENAME_UTF8_BYTES);
+        if (usedNames.add(boundedBase.toLowerCase(Locale.ROOT))) {
+            return boundedBase;
+        }
+        int suffix = 2;
+        while (true) {
+            String suffixStr = "_" + suffix;
+            int prefixBudget = CompositeTestResults.MAX_FILENAME_UTF8_BYTES - suffixStr.length();
+            String prefix =
+                    CompositeTestResults.finalizeSanitizedFilename(boundedBase, prefixBudget);
+            String candidate = prefix + suffixStr;
+            if (usedNames.add(candidate.toLowerCase(Locale.ROOT))) {
+                return candidate;
+            }
+            suffix++;
+        }
+    }
+
+    private File resolveReportFile(String fileName) {
+        Path basePath = reportDir.toPath().toAbsolutePath().normalize();
+        Path resolvedPath = basePath.resolve(fileName).normalize();
+        if (!resolvedPath.startsWith(basePath) || !basePath.equals(resolvedPath.getParent())) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Refusing to write test report outside '%s': '%s'",
+                            reportDir, fileName));
+        }
+        return resolvedPath.toFile();
+    }
+
+    private <T extends CompositeTestResults> void generatePage(
+            T model, PageRenderer<T> renderer, File outputFile) throws Exception {
         htmlRenderer.renderer(renderer).writeTo(model, outputFile);
     }
 

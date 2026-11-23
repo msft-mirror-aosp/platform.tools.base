@@ -19,18 +19,27 @@ package com.android.build.gradle.internal.test.report;
 import static org.gradle.api.tasks.testing.TestResult.ResultType;
 
 import com.android.builder.core.BuilderConstants;
+import com.android.utils.FileUtils;
 
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
-/**
- * Custom CompositeTestResults based on Gradle's CompositeTestResults
- */
+/** Custom CompositeTestResults based on Gradle's CompositeTestResults */
 public abstract class CompositeTestResults extends TestResultModel {
+    // Reserve space for the ".html" extension within the 255-byte POSIX NAME_MAX limit
+    // (which also keeps UTF-16 code units <= 255 on Windows).
+    static final int MAX_FILENAME_UTF8_BYTES = 255 - ".html".length();
+
+    private static final Pattern WINDOWS_RESERVED_NAME_PATTERN =
+            Pattern.compile(
+                    "^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\..*)?$", Pattern.CASE_INSENSITIVE);
+
     private final CompositeTestResults parent;
+    private String uniqueFilename;
     private int tests;
     private final Set<TestResult> failures = new TreeSet<>();
     private int skips = 0;
@@ -46,8 +55,74 @@ public abstract class CompositeTestResults extends TestResultModel {
         this.parent = parent;
     }
 
+    void setFilename(String filename) {
+        this.uniqueFilename = filename;
+    }
+
     public String getFilename(ReportType reportType) {
-        return getName().replaceAll("[\\s:]", "-");
+        if (uniqueFilename != null) {
+            return uniqueFilename;
+        }
+        return sanitizeFilename(getName());
+    }
+
+    static String sanitizeFilename(String name) {
+        if (name == null) {
+            return "_";
+        }
+        // name can come from untrusted device-reported test class/package names.
+        // Preserve existing whitespace/colon replacement, then sanitize path separators,
+        // OS-unsafe characters, control/format characters, and URL-reserved '#' / '%'
+        // so generated report files cannot escape the report directory or break href links.
+        String sanitized =
+                FileUtils.sanitizeFileName(name.replaceAll("[\\s:]", "-"))
+                        .replaceAll("[\\p{Cc}\\p{Cf}#%]", "_");
+        return finalizeSanitizedFilename(sanitized, MAX_FILENAME_UTF8_BYTES);
+    }
+
+    static String finalizeSanitizedFilename(String sanitized, int maxUtf8Bytes) {
+        String truncated = truncateUtf8(sanitized, maxUtf8Bytes);
+        if (truncated.isEmpty()) {
+            return "_";
+        }
+        if (truncated.chars().allMatch(c -> c == '.')) {
+            return truncated.replace('.', '_');
+        }
+        if (WINDOWS_RESERVED_NAME_PATTERN.matcher(truncated).matches()) {
+            if (maxUtf8Bytes <= 1) {
+                return "_";
+            }
+            return "_" + truncateUtf8(truncated, maxUtf8Bytes - 1);
+        }
+        return truncated;
+    }
+
+    private static String truncateUtf8(String value, int maxUtf8Bytes) {
+        if (maxUtf8Bytes <= 0) {
+            return "";
+        }
+        int byteCount = 0;
+        int i = 0;
+        while (i < value.length()) {
+            int codePoint = value.codePointAt(i);
+            int charCount = Character.charCount(codePoint);
+            int cpBytes;
+            if (codePoint <= 0x7F) {
+                cpBytes = 1;
+            } else if (codePoint <= 0x7FF) {
+                cpBytes = 2;
+            } else if (codePoint <= 0xFFFF) {
+                cpBytes = 3;
+            } else {
+                cpBytes = 4;
+            }
+            if (byteCount + cpBytes > maxUtf8Bytes) {
+                break;
+            }
+            byteCount += cpBytes;
+            i += charCount;
+        }
+        return value.substring(0, i);
     }
 
     public abstract String getName();
