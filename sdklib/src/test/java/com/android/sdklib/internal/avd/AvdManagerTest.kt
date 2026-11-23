@@ -212,23 +212,6 @@ class AvdManagerTest {
   }
 
   @Test
-  fun createAvdWithUserdata() {
-    avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api21.image)
-    val avdConfigFile = avdFolder.resolve("config.ini")
-    assertTrue("Expected config.ini in $avdFolder", Files.exists(avdConfigFile))
-    val properties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
-    assertFalse(Files.exists(avdFolder.resolve("boot.prop")))
-    assertThat(properties["image.sysdir.1"]).isEqualTo("system-images/android-21/default/x86/".replace('/', File.separatorChar))
-    assertNull(properties["snapshot.present"])
-    assertTrue("Expected " + AvdManager.USERDATA_IMG + " in " + avdFolder, Files.exists(avdFolder.resolve(AvdManager.USERDATA_IMG)))
-    assertFalse(
-      "Expected NO " + AvdManager.USERDATA_QEMU_IMG + " in " + avdFolder,
-      Files.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)),
-    )
-    assertFalse("Expected NO snapshots.img in " + avdFolder, Files.exists(avdFolder.resolve("snapshots.img")))
-  }
-
-  @Test
   fun createAvdWithNullValueUserSettings() {
     val userSettings: MutableMap<String, String> = HashMap()
     avdManager.createAvd(

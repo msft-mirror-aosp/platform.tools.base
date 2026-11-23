@@ -45,7 +45,6 @@ import com.android.sdklib.internal.project.ProjectProperties
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper
 import com.android.sdklib.util.ProcessHandleProvider
-import com.android.utils.FileUtils
 import com.android.utils.GrabProcessOutput
 import com.android.utils.GrabProcessOutput.IProcessOutput
 import com.android.utils.ILogger
@@ -465,8 +464,6 @@ private constructor(
 
       needCleanup = true
 
-      createAvdUserdata(systemImage, avdFolder)
-
       if (sdcard != null) {
         configValues.putAll(sdcard.configEntries())
       }
@@ -565,8 +562,7 @@ private constructor(
       relative == USER_SETTINGS_INI ||
       relative == BOOT_PROP ||
       relative == ENVIRONMENTS_DIR ||
-      relative == ENVIRONMENT_INI ||
-      relative == USERDATA_IMG
+      relative == ENVIRONMENT_INI
   }
 
   /**
@@ -1212,43 +1208,6 @@ private constructor(
       allAvdList.remove(oldAvd)
       allAvdList.add(newAvd!!)
       validAvdList = null
-    }
-  }
-
-  /**
-   * For old system images, copies userdata.img from the system image to the AVD. Does nothing for new system images which contain a "data"
-   * folder.
-   */
-  @Throws(IOException::class, AvdManagerException::class)
-  private fun createAvdUserdata(systemImage: ISystemImage, avdFolder: Path) {
-    if (systemImage is RemoteSystemImage) {
-      return
-    }
-    // Copy userdata.img from system-images to the *.avd directory
-    val imageFolder = systemImage.location
-    val userdataSrc: Path = imageFolder.resolve(USERDATA_IMG)
-
-    if (CancellableFileIo.notExists(userdataSrc)) {
-      if (CancellableFileIo.isDirectory(imageFolder.resolve(DATA_FOLDER))) {
-        // Because this image includes a data folder, a
-        // userdata.img file is not needed. Don't signal
-        // an error.
-        // (The emulator will access the 'data' folder directly;
-        //  we do not need to copy it over.)
-        return
-      }
-
-      throw AvdManagerException("Unable to find a '$USERDATA_IMG' file for ABI ${systemImage.primaryAbiType} to copy into the AVD folder.")
-    }
-
-    val userdataDest: Path = avdFolder.resolve(USERDATA_IMG)
-
-    if (CancellableFileIo.notExists(userdataDest)) {
-      FileUtils.copyFile(userdataSrc, userdataDest)
-
-      if (CancellableFileIo.notExists(userdataDest)) {
-        throw AvdManagerException("Unable to create '$userdataDest' file in the AVD folder.")
-      }
     }
   }
 
