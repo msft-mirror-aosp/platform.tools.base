@@ -55,7 +55,7 @@ public class ArchiveTreeStructureTest {
                         + "/instant-run-truncated.zip\n"
                         + "/instant-run-truncated.zip/ - Error processing entry: java.io.EOFException\n"
                         + "/bar.jar\n"
-                        + "/bar.jar/ - Error processing entry: java.util.zip.ZipError: No valid"
+                        + "/bar.jar/ - Error processing entry: java.util.zip.ZipException: No valid"
                         + " contents inside\n"
                         + "/AndroidManifest.xml";
             assertThat(actual).isEqualTo(expected);
@@ -95,7 +95,7 @@ public class ArchiveTreeStructureTest {
                     + " entry: java.io.EOFException\n"
                     + "9                          /bar.jar\n"
                     + "0          Uncompressed    /bar.jar/ - Error processing entry:"
-                    + " java.util.zip.ZipError: No valid contents inside\n"
+                    + " java.util.zip.ZipException: No valid contents inside\n"
                     + "11         Compressed      /AndroidManifest.xml";
             assertThat(actual).isEqualTo(expected);
         }
@@ -133,7 +133,7 @@ public class ArchiveTreeStructureTest {
                     + "0          /instant-run-truncated.zip/ - Error processing entry:"
                     + " java.io.EOFException\n"
                     + "29         /bar.jar\n"
-                    + "0          /bar.jar/ - Error processing entry: java.util.zip.ZipError: No"
+                    + "0          /bar.jar/ - Error processing entry: java.util.zip.ZipException: No"
                     + " valid contents inside\n"
                     + "29         /AndroidManifest.xml";
             assertThat(actual).isEqualTo(expected);
@@ -285,7 +285,7 @@ public class ArchiveTreeStructureTest {
                     + " java.io.EOFException\n"
                     + "11         /AndroidManifest.xml\n"
                     + "9          /bar.jar\n"
-                    + "0          /bar.jar/ - Error processing entry: java.util.zip.ZipError: No"
+                    + "0          /bar.jar/ - Error processing entry: java.util.zip.ZipException: No"
                     + " valid contents inside\n"
                     + "6          /res/\n"
                     + "6          /res/anim/\n"

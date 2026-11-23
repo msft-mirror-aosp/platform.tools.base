@@ -25,9 +25,7 @@ import com.android.tools.apk.analyzer.ArchiveManager;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.TraceUtils;
-
 import com.google.common.collect.ImmutableList;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,7 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.zip.ZipError;
+import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
 public class ArchiveManagerImpl implements ArchiveManager {
@@ -102,7 +100,7 @@ public class ArchiveManagerImpl implements ArchiveManager {
                     FileUtils.copyFile(childPath, file);
                     try {
                         return openInnerArchiveWorker(file);
-                    } catch (IOException | ZipError e) {
+                    } catch (IOException e) {
                         logger.warning(
                                 String.format(
                                         "Error loading entry from archive \"%s\"\n\"%s\"",
@@ -173,7 +171,8 @@ public class ArchiveManagerImpl implements ArchiveManager {
     }
 
     /**
-     * Ensures the path points to a valid ZIP archive, throws ZipError if the archive is not valid
+     * Ensures the path points to a valid ZIP archive, throws ZipException if the archive is not
+     * valid.
      *
      * @param archive to validate
      */
@@ -184,7 +183,7 @@ public class ArchiveManagerImpl implements ArchiveManager {
             // Check null first, since ZipInputStream#readLOC returns null
             // for some bad zip file cases, say encrypted zip files.
             if (zis.getNextEntry() == null) {
-                throw new ZipError("No valid contents inside");
+                throw new ZipException("No valid contents inside");
             }
             // Go through all entries to make sure the zip file is valid.
             // Invalid entries (e.g. bad crc, unexpected EOF, etc.)

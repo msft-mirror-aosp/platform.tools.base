@@ -30,7 +30,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.zip.ZipError;
 
 import javax.swing.tree.MutableTreeNode;
 
@@ -62,7 +61,7 @@ public class ArchiveTreeStructure {
                     Archive innerArchive;
                     try {
                         innerArchive = archiveManager.openInnerArchive(archive, childPath);
-                    } catch (IOException | ZipError e) {
+                    } catch (IOException e) {
                         node.add(createErrorNode(archive, childPath, pathPrefix, e));
                         continue;
                     }
