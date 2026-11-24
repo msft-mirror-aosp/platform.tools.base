@@ -48,6 +48,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 
+import javax.lang.model.SourceVersion;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -804,5 +805,59 @@ public class AndroidManifestParser {
         } catch (SAXException | ParserConfigurationException e) {
             throw new IOException(e);
         }
+    }
+
+    /**
+     * Validates that {@code packageName} is a valid Java package name ({@link
+     * SourceVersion#isName(CharSequence)}) without control or identifier-ignorable characters when
+     * non-null and non-empty.
+     *
+     * <p>This keeps {@link #parse} permissive for callers inspecting APK/AAB manifests (where
+     * {@code package} is an Android application ID) or manifests without a {@code package}
+     * attribute, while offering a shared check for callers requiring a valid Java package name.
+     * Callers that also disallow {@code null} or empty package names should use {@link
+     * #requireValidPackageName(String)}.
+     *
+     * @return {@code packageName} if valid (including {@code null} or empty)
+     * @throws IllegalArgumentException if {@code packageName} is non-empty and not a valid Java
+     *     package name
+     */
+    @Nullable
+    public static String validatePackageName(@Nullable String packageName) {
+        if (packageName != null
+                && !packageName.isEmpty()
+                && (!SourceVersion.isName(packageName)
+                        || containsControlOrIgnorableChar(packageName))) {
+            throw new IllegalArgumentException(
+                    "Invalid package name '"
+                            + packageName
+                            + "'. Expected a valid Java package name.");
+        }
+        return packageName;
+    }
+
+    private static boolean containsControlOrIgnorableChar(@NonNull String value) {
+        return value.codePoints()
+                .anyMatch(cp -> Character.isISOControl(cp) || Character.isIdentifierIgnorable(cp));
+    }
+
+    /**
+     * Validates that {@code packageName} is non-null, non-empty, and a valid Java package name
+     * ({@link SourceVersion#isName(CharSequence)}).
+     *
+     * @return the validated non-empty package name
+     * @throws IllegalArgumentException if {@code packageName} is {@code null}, empty, or not a
+     *     valid Java package name
+     */
+    @NonNull
+    public static String requireValidPackageName(@Nullable String packageName) {
+        if (packageName == null || packageName.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Invalid package name '"
+                            + packageName
+                            + "'. Expected a non-empty valid Java package name.");
+        }
+        validatePackageName(packageName);
+        return packageName;
     }
 }

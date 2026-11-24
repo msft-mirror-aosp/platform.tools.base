@@ -29,6 +29,7 @@ import java.io.BufferedInputStream
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -48,7 +49,16 @@ abstract class AarResourcesCompilerTransform : TransformAction<AarResourcesCompi
   override fun transform(transformOutputs: TransformOutputs) {
     val inputFile = primaryInput.get().asFile
     val manifest = inputFile.resolve(SdkConstants.FN_ANDROID_MANIFEST_XML)
-    val outputDir = transformOutputs.dir(getPackage(manifest.toPath()))
+    val packageName =
+      try {
+        AndroidManifestParser.requireValidPackageName(getPackage(manifest.toPath()))
+      } catch (e: IllegalArgumentException) {
+        throw InvalidUserDataException(
+          "Invalid package name in manifest ${manifest.absolutePath}: ${e.message}",
+          e,
+        )
+      }
+    val outputDir = transformOutputs.dir(packageName)
     outputDir.mkdirs()
 
     val resourceDir = File(inputFile, FD_RES)
@@ -87,7 +97,7 @@ abstract class AarResourcesCompilerTransform : TransformAction<AarResourcesCompi
     return resourceFolders
   }
 
-  private fun getPackage(manifest: Path): String =
+  private fun getPackage(manifest: Path): String? =
     BufferedInputStream(Files.newInputStream(manifest)).use { AndroidManifestParser.parse(it).`package` }
 }
 

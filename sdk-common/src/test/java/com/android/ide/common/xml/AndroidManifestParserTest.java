@@ -31,9 +31,11 @@ public class AndroidManifestParserTest extends TestCase {
     private ManifestData mManifestTestApp;
     private ManifestData mManifestInstrumentation;
 
-    private static final String INSTRUMENTATION_XML = "/AndroidManifest-instrumentation.xml";  //$NON-NLS-1$
+    private static final String INSTRUMENTATION_XML =
+            "/AndroidManifest-instrumentation.xml"; //$NON-NLS-1$
     private static final String TESTAPP_XML = "/AndroidManifest-testapp.xml";  //$NON-NLS-1$
-    private static final String ACTIVITY_ALIAS_XML = "/AndroidManifest-activityalias.xml";  //$NON-NLS-1$
+    private static final String ACTIVITY_ALIAS_XML =
+            "/AndroidManifest-activityalias.xml"; //$NON-NLS-1$
     private static final String PACKAGE_NAME =  "com.android.testapp"; //$NON-NLS-1$
     private static final Integer VERSION_CODE = 42;
     private static final String VERSION_NAME = "1.42";
@@ -41,7 +43,8 @@ public class AndroidManifestParserTest extends TestCase {
     private static final String LIBRARY_NAME = "android.test.runner"; //$NON-NLS-1$
     private static final String LIBRARY_NAME2 = "android.test.runner2"; //$NON-NLS-1$
     private static final String FEATURE_NAME = "com.foo.feature"; //$NON-NLS-1$
-    private static final String INSTRUMENTATION_NAME = "android.test.InstrumentationTestRunner"; //$NON-NLS-1$
+    private static final String INSTRUMENTATION_NAME =
+            "android.test.InstrumentationTestRunner"; //$NON-NLS-1$
     private static final String INSTRUMENTATION_TARGET = "com.android.AndroidProject"; //$NON-NLS-1$
 
     @Override
@@ -170,5 +173,64 @@ public class AndroidManifestParserTest extends TestCase {
 
         assertEquals(manifest.getLauncherActivity().getName(),
                 "com.android.testapp.AliasActivity"); //$NON-NLS-1$
+    }
+
+    public void testValidatePackageName() {
+        assertNull(AndroidManifestParser.validatePackageName(null));
+        assertEquals("", AndroidManifestParser.validatePackageName(""));
+        assertEquals(
+                "com.example.mylibrary",
+                AndroidManifestParser.validatePackageName("com.example.mylibrary"));
+
+        String[] invalidPackages = {
+            "../../outside/escaped",
+            "..\\..\\outside\\escaped",
+            "..",
+            "/tmp/evil",
+            "a\n-A\n/tmp/evil",
+            "com.example.a\u0000b",
+            "com.example.a\u007Fb",
+            "com.example.a\u0085b",
+            "com.example.a\u200Bb",
+            "com.example.a\u202Eb",
+            "com.example.default",
+            "com.123invalid.pkg",
+        };
+        for (String invalid : invalidPackages) {
+            try {
+                AndroidManifestParser.validatePackageName(invalid);
+                fail("Expected IllegalArgumentException for: " + invalid);
+            } catch (IllegalArgumentException e) {
+                assertTrue(e.getMessage().contains("Invalid package name"));
+            }
+        }
+    }
+
+    public void testRequireValidPackageName() {
+        assertEquals(
+                "com.example.mylibrary",
+                AndroidManifestParser.requireValidPackageName("com.example.mylibrary"));
+
+        String[] invalidPackages = {
+            null,
+            "",
+            "../../outside/escaped",
+            "..\\..\\outside\\escaped",
+            "..",
+            "/tmp/evil",
+            "a\n-A\n/tmp/evil",
+            "com.example.a\u0000b",
+            "com.example.a\u007Fb",
+            "com.example.a\u200Bb",
+            "com.example.default",
+        };
+        for (String invalid : invalidPackages) {
+            try {
+                AndroidManifestParser.requireValidPackageName(invalid);
+                fail("Expected IllegalArgumentException for: " + invalid);
+            } catch (IllegalArgumentException e) {
+                assertTrue(e.getMessage().contains("Invalid package name"));
+            }
+        }
     }
 }
