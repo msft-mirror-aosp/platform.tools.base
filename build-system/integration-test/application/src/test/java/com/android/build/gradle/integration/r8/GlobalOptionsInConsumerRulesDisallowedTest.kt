@@ -28,8 +28,10 @@ import com.android.testutils.generateAarWithContent
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 import org.junit.Assume.assumeFalse
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,6 +40,9 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class GlobalOptionsInConsumerRulesDisallowedTest(val globalOptionsInConsumerRulesDisallowed: Boolean, val keepRulesInSourceSet: Boolean) {
   companion object {
+    /** Relative file name used with `-printmapping` in the AAR consumer rules; R8 would resolve it next to the rule file. */
+    private const val AAR_PRINT_MAPPING_FILE = "out.map"
+
     @JvmStatic
     @Parameterized.Parameters(name = "globalOptionsInConsumerRulesDisallowed={0},keepRulesInSourceSet={1}")
     fun params() = buildList {
@@ -184,6 +189,53 @@ class GlobalOptionsInConsumerRulesDisallowedTest(val globalOptionsInConsumerRule
   fun `app filters out global rules from aar (legacy proguard txt)`() {
     assumeFalse(keepRulesInSourceSet) // source set is not involved in test logic
     validateAppAarGlobalRuleFilter(useLegacyAarPath = true)
+  }
+
+  /**
+   * Regression test for a prebuilt AAR (e.g. built with an older AGP, so no build-time validation happened) whose root `proguard.txt`
+   * contains `-printmapping <file>`.
+   *
+   * AGP hands the AAR's `proguard.txt` to R8 from inside Gradle's immutable transform workspace, and R8 resolves the relative path against
+   * the rule file's directory. If the rule is not filtered out, R8 writes `out.map` into that workspace, and Gradle 9 fails the next build
+   * with "The contents of the immutable workspace ... have been modified".
+   */
+  @Test
+  fun `app does not let aar consumer rules write into the transforms cache`() {
+    assumeFalse(keepRulesInSourceSet) // source set is not involved in test logic
+    assumeTrue(globalOptionsInConsumerRulesDisallowed) // with the opt-out, R8 still writes next to the rule file
+
+    val aarBytes =
+      generateAarWithContent(
+        packageName = "com.example.foo",
+        proguardTxt =
+          """
+          -keep class com.example.foo.** { *; }
+          -printmapping $AAR_PRINT_MAPPING_FILE #comment3
+          """
+            .trimIndent(),
+      )
+    assertAppFiltersGlobalRules(listOf("-printmapping $AAR_PRINT_MAPPING_FILE #comment3")) {
+      implementation(MavenRepoGenerator.Library(mavenCoordinate = "com.example:libfoo:1.0", packaging = "aar", artifact = aarBytes))
+    }
+    assertThat(findFilesInTransformsCache(AAR_PRINT_MAPPING_FILE)).isEmpty()
+
+    // The second build is where a polluted transform workspace surfaces (see b/509646241), so make sure it still succeeds.
+    rule.build.executor.run(":app:clean", ":feature:assemble", ":app:assembleDebug")
+    assertThat(findFilesInTransformsCache(AAR_PRINT_MAPPING_FILE)).isEmpty()
+  }
+
+  /**
+   * Returns all files named [fileName] under Gradle's artifact transforms caches (`<gradle user home>/caches/<version>/transforms`).
+   *
+   * All Gradle versions' caches are inspected (rather than `TestLocation.gradleCacheDir`, which is derived from the Gradle API version on
+   * the test classpath) so that the check cannot pass vacuously when the build runs with a different Gradle version.
+   */
+  private fun findFilesInTransformsCache(fileName: String): List<File> {
+    val cachesDir = rule.build.executor.location.testLocation.gradleUserHome.resolve("caches").toFile()
+    val transformsDirs =
+      cachesDir.listFiles { file -> file.isDirectory }.orEmpty().map { it.resolve("transforms") }.filter { it.isDirectory }
+    assertThat(transformsDirs).isNotEmpty()
+    return transformsDirs.flatMap { transformsDir -> transformsDir.walk().filter { it.isFile && it.name == fileName }.toList() }
   }
 
   private fun validateAppJarGlobalRuleFilter(useLegacyJarPath: Boolean) {
