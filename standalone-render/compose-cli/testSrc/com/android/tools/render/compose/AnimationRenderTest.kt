@@ -45,7 +45,7 @@ class AnimationRenderTest {
     GradleProjectRule(
       tmpFolder,
       "tools/base/standalone-render/compose-cli/testData/compose-application",
-      "tools/external/gradle/gradle-9.5.0-bin.zip",
+      GradleProjectRule.DEFAULT_GRADLE_DISTRIBUTION_PATH,
       "prebuilts/studio/jdk/jbr25/linux",
     )
 

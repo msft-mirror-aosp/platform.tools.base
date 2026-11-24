@@ -16,12 +16,17 @@
 
 package com.android.tools.render.compose
 
+import com.android.SdkConstants
+import com.android.Version
+import com.android.testutils.RepoLinker
 import com.android.testutils.TestUtils
 import com.android.tools.render.common.PreviewRendering
 import com.android.tools.render.common.writePreviewRenderingToJson
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.util.zip.ZipInputStream
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.readLines
 import kotlin.io.path.readText
@@ -137,6 +142,7 @@ class GradleProjectRule(
     projectFolderPath.resolve("gradlew").toFile().setExecutable(true)
 
     injectGradleDistribution()
+    injectAgpVersion()
     injectRepositories()
     injectSdk()
 
@@ -176,15 +182,26 @@ class GradleProjectRule(
     Files.writeString(wrapper, content)
   }
 
+  private fun injectAgpVersion() {
+    val versionsToml = projectFolderPath.resolve("gradle/libs.versions.toml")
+    if (Files.exists(versionsToml)) {
+      val content = Files.readString(versionsToml).replace("agp = \".*\"".toRegex(), "agp = \"${Version.ANDROID_GRADLE_PLUGIN_VERSION}\"")
+      Files.writeString(versionsToml, content)
+    }
+  }
+
   private fun injectRepositories() {
     val settingsGradle = projectFolderPath.resolve("settings.gradle")
     val settingsGradleKts = projectFolderPath.resolve("settings.gradle.kts")
+    val agpRepo = agpOfflineRepo
     val localMavenRepo = TestUtils.getLocalMavenRepoFile("")
     if (Files.exists(settingsGradle)) {
-      val content = Files.readString(settingsGradle).replace("google\\(\\)".toRegex(), "maven { url \"$localMavenRepo\" }")
+      val replacement = "maven { url \"$agpRepo\" }\n        maven { url \"$localMavenRepo\" }"
+      val content = Files.readString(settingsGradle).replace("google\\(\\)".toRegex(), replacement)
       Files.writeString(settingsGradle, content)
     } else if (Files.exists(settingsGradleKts)) {
-      val content = Files.readString(settingsGradleKts).replace("google\\(\\)".toRegex(), "maven { url = uri(\"$localMavenRepo\") }")
+      val replacement = "maven { url = uri(\"$agpRepo\") }\n        maven { url = uri(\"$localMavenRepo\") }"
+      val content = Files.readString(settingsGradleKts).replace("google\\(\\)".toRegex(), replacement)
       Files.writeString(settingsGradleKts, content)
     } else {
       throw AssertionError("Neither settings.gradle nor settings.gradle.kts was found in $projectFolderPath")
@@ -194,5 +211,38 @@ class GradleProjectRule(
   private fun injectSdk() {
     val localProperties = projectFolderPath.resolve("local.properties")
     Files.writeString(localProperties, "sdk.dir=${TestUtils.getSdk()}")
+  }
+
+  companion object {
+    val DEFAULT_GRADLE_DISTRIBUTION_PATH = "tools/external/gradle/gradle-${SdkConstants.GRADLE_LATEST_VERSION}-bin.zip"
+
+    private val agpOfflineRepo: Path by lazy {
+      val repoDir = Files.createTempDirectory("agp-offline-repo")
+      val agpZip = TestUtils.resolveWorkspacePath("tools/base/build-system/android_gradle_plugin.zip")
+      ZipInputStream(Files.newInputStream(agpZip)).use { zis ->
+        var entry = zis.nextEntry
+        while (entry != null) {
+          val target = repoDir.resolve(entry.name)
+          if (entry.isDirectory) {
+            Files.createDirectories(target)
+          } else {
+            Files.createDirectories(target.parent)
+            Files.copy(zis, target, StandardCopyOption.REPLACE_EXISTING)
+          }
+          zis.closeEntry()
+          entry = zis.nextEntry
+        }
+      }
+      val linker = RepoLinker()
+      for (manifest in
+        listOf(
+          "tools/base/build-system/android_gradle_plugin_runtime_dependencies.manifest",
+          "tools/base/build-system/gradle-runtime-maven.manifest",
+        )) {
+        val manifestPath = TestUtils.resolveWorkspacePath(manifest)
+        linker.link(repoDir, Files.readAllLines(manifestPath), TestUtils::resolveWorkspacePathUnchecked)
+      }
+      repoDir
+    }
   }
 }
