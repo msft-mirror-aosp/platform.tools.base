@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
@@ -80,6 +81,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
 import org.gradle.workers.WorkAction
@@ -987,6 +989,9 @@ abstract class AndroidLintTask : NonIncrementalTask() {
   fun configureForStandalone(
     taskCreationServices: TaskCreationServices,
     javaPluginExtension: JavaPluginExtension,
+    kotlinExtensionWrapper: KotlinMultiplatformExtensionWrapper?,
+    jvmTargetNames: List<String>,
+    isPerComponentLintAnalysis: Boolean,
     customLintChecksConfig: FileCollection,
     lintOptions: Lint,
     partialResults: Provider<List<Directory>>,
@@ -997,7 +1002,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     uastReferenceKotlinCompileTaskName: String,
     fatalOnly: Boolean = false,
     autoFix: Boolean = false,
-    isKmp: Boolean = false,
   ) {
     this.initializeOutputTypesConvention()
     initializeGlobalInputs(taskCreationServices, isAndroid = false, lintMode, lintOptions, javaPluginExtension.targetCompatibility)
@@ -1020,7 +1024,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       javaPluginExtension,
       lintOptions,
       lintMode,
-      isKmp = isKmp,
+      isKmp = kotlinExtensionWrapper != null,
     )
     // Workaround for b/193244776 - Ensure the task runs if a baseline file is set and the file
     // doesn't exist, unless missingBaselineIsEmptyBaseline is true or the default baseline convention is used.
@@ -1039,6 +1043,39 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.nestedComponentPartialResults.disallowChanges()
     unitTestLintModel?.let { this.nestedComponentLintModels.from(it) }
     this.nestedComponentLintModels.disallowChanges()
+    this.dynamicFeatureLintModels.disallowChanges()
+    // Wire the lint models and partial results of project dependencies, matching Android variants.
+    val projectOptions = taskCreationServices.projectOptions
+    val dependencyConfigurations =
+      if (kotlinExtensionWrapper == null) {
+        val mainSourceSet = javaPluginExtension.sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
+        listOf(
+          project.configurations.getByName(mainSourceSet.runtimeClasspathConfigurationName),
+          project.configurations.getByName(mainSourceSet.compileClasspathConfigurationName),
+        )
+      } else {
+        kotlinExtensionWrapper.findMainJvmDependencyConfigurations(project, jvmTargetNames)
+      }
+    fun addDependencyArtifacts(lintModelType: ArtifactType, partialResultsType: ArtifactType) {
+      for (configuration in dependencyConfigurations) {
+        mainDependencyLintModels.from(
+          VariantDependencies.getArtifactFileCollection(project, projectOptions, configuration, ArtifactScope.PROJECT, lintModelType)
+        )
+        dependencyPartialResults.from(
+          VariantDependencies.getArtifactFileCollection(project, projectOptions, configuration, ArtifactScope.PROJECT, partialResultsType)
+        )
+      }
+    }
+    if (fatalOnly) {
+      addDependencyArtifacts(ArtifactType.LINT_VITAL_LINT_MODEL, ArtifactType.LINT_VITAL_PARTIAL_RESULTS)
+    } else {
+      addDependencyArtifacts(ArtifactType.LINT_MODEL, ArtifactType.LINT_PARTIAL_RESULTS)
+      if (isPerComponentLintAnalysis) {
+        addDependencyArtifacts(ArtifactType.UNIT_TEST_LINT_MODEL, ArtifactType.UNIT_TEST_LINT_PARTIAL_RESULTS)
+      }
+    }
+    this.mainDependencyLintModels.disallowChanges()
+    this.dependencyPartialResults.disallowChanges()
     when {
       fatalOnly -> {
         // do nothing

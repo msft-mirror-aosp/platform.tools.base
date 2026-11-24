@@ -327,22 +327,7 @@ internal constructor(
     checkComputeArtifactCollectionArguments(configType, scope, artifactType)
 
     val configuration = configurationFactory(getConfiguration(configType))
-    val attributesAction = Action { container: AttributeContainer ->
-      container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
-      artifactType.getAttributes { type, name -> project.objects.named(type, name) }.addAttributesToContainer(container)
-      attributes?.addAttributesToContainer(container)
-    }
-    val filter = getComponentFilter(scope, additionalFilter)
-    val lenientMode = projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY] || projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY_V2]
-
-    return configuration.incoming
-      .artifactView { config: ArtifactView.ViewConfiguration ->
-        config.attributes(attributesAction)
-        filter?.let { config.componentFilter(it) }
-        // TODO somehow read the unresolved dependencies?
-        config.lenient(lenientMode)
-      }
-      .artifacts
+    return getArtifactCollection(project, projectOptions, configuration, scope, artifactType, attributes, additionalFilter)
   }
 
   fun computeLocalFileDependencies(services: VariantServices, filePredicate: Predicate<File>): FileCollection {
@@ -529,6 +514,42 @@ internal constructor(
         isSelfInstrumenting = false,
         sourceSetConfigurationsMap = kmpVariantApiOperationsRegistrar.sourceSetConfigurationsMap.toMap(),
       )
+    }
+
+    internal fun getArtifactFileCollection(
+      project: Project,
+      projectOptions: ProjectOptions,
+      configuration: Configuration,
+      scope: ArtifactScope,
+      artifactType: AndroidArtifacts.ArtifactType,
+      attributes: AndroidAttributes? = null,
+    ): FileCollection = getArtifactCollection(project, projectOptions, configuration, scope, artifactType, attributes).artifactFiles
+
+    internal fun getArtifactCollection(
+      project: Project,
+      projectOptions: ProjectOptions,
+      configuration: Configuration,
+      scope: ArtifactScope,
+      artifactType: AndroidArtifacts.ArtifactType,
+      attributes: AndroidAttributes? = null,
+      additionalFilter: ((ComponentIdentifier) -> Boolean)? = null,
+    ): ArtifactCollection {
+      val attributesAction = Action { container: AttributeContainer ->
+        container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+        artifactType.getAttributes { type, name -> project.objects.named(type, name) }.addAttributesToContainer(container)
+        attributes?.addAttributesToContainer(container)
+      }
+      val filter = getComponentFilter(scope, additionalFilter)
+      val lenientMode = projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY] || projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY_V2]
+
+      return configuration.incoming
+        .artifactView { config: ArtifactView.ViewConfiguration ->
+          config.attributes(attributesAction)
+          filter?.let { config.componentFilter(it) }
+          // TODO somehow read the unresolved dependencies?
+          config.lenient(lenientMode)
+        }
+        .artifacts
     }
 
     private fun isArtifactTypeSubtractedForInstrumentationTests(artifactType: AndroidArtifacts.ArtifactType): Boolean {

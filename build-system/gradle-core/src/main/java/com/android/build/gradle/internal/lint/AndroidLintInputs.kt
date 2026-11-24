@@ -2574,7 +2574,20 @@ internal fun getLintMavenArtifactVersion(
  *
  * When using this class, perform a runtime check that the Kotlin Gradle plugin is applied.
  */
-class KotlinMultiplatformExtensionWrapper(val kotlinExtension: KotlinMultiplatformExtension)
+class KotlinMultiplatformExtensionWrapper(val kotlinExtension: KotlinMultiplatformExtension) {
+
+  /**
+   * Returns the runtime and compile dependency configurations for the main compilations of the JVM targets named in [jvmTargetNames],
+   * skipping targets that don't exist or lack a `main` compilation.
+   */
+  internal fun findMainJvmDependencyConfigurations(project: Project, jvmTargetNames: List<String>): List<Configuration> =
+    jvmTargetNames.flatMap { targetName ->
+      val compilation = kotlinExtension.targets.findByName(targetName)?.compilations?.findByName("main") ?: return@flatMap emptyList()
+      val runtimeConfig = compilation.runtimeDependencyConfigurationName?.let { project.configurations.getByName(it) }
+      val compileConfig = project.configurations.getByName(compilation.compileDependencyConfigurationName)
+      listOfNotNull(runtimeConfig, compileConfig)
+    }
+}
 
 /**
  * A class to wrap [KotlinCompilation]. If there are method parameters with type [KotlinCompilation] in task or task input classes, Gradle

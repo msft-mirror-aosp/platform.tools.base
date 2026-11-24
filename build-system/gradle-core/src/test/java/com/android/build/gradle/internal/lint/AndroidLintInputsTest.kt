@@ -23,19 +23,30 @@ import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.plugins.BasePlugin
+import com.android.build.gradle.internal.profile.NoOpAnalyticsService
+import com.android.build.gradle.internal.services.AndroidLocationsBuildService
+import com.android.build.gradle.internal.services.LintClassLoaderBuildService
 import com.android.build.gradle.internal.services.createDslServices
+import com.android.build.gradle.internal.services.createProjectServices
+import com.android.build.gradle.internal.services.createTaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.options.ProjectOptions
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
+import org.gradle.api.NamedDomainObjectCollection
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainSpec
 import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.gradle.testfixtures.ProjectBuilder
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.junit.Assert.assertThrows
 import org.junit.Assume
 import org.junit.Rule
@@ -604,5 +615,82 @@ class AndroidLintInputsTest {
     val specPreview = resolveTargetSdkVersion(kmpVariant)
     assertThat(specPreview?.apiLevel).isEqualTo(33)
     assertThat(specPreview?.codename).isEqualTo("UPSIDE_DOWN_CAKE")
+  }
+
+  @Test
+  fun `findMainJvmDependencyConfigurations returns runtime and compile configs for multiple JVM targets`() {
+    val desktopCompile = project.configurations.create("desktopCompileClasspath")
+    val desktopRuntime = project.configurations.create("desktopRuntimeClasspath")
+    val serverCompile = project.configurations.create("serverCompileClasspath")
+
+    val desktopMain = mock<KotlinCompilation<Any>>()
+    whenever(desktopMain.compileDependencyConfigurationName).thenReturn(desktopCompile.name)
+    whenever(desktopMain.runtimeDependencyConfigurationName).thenReturn(desktopRuntime.name)
+    val desktopCompilations = mock<NamedDomainObjectContainer<KotlinCompilation<Any>>>()
+    whenever(desktopCompilations.findByName("main")).thenReturn(desktopMain)
+    val desktopTarget = mock<KotlinTarget>()
+    whenever(desktopTarget.compilations).thenReturn(desktopCompilations)
+
+    val serverMain = mock<KotlinCompilation<Any>>()
+    whenever(serverMain.compileDependencyConfigurationName).thenReturn(serverCompile.name)
+    whenever(serverMain.runtimeDependencyConfigurationName).thenReturn(null)
+    val serverCompilations = mock<NamedDomainObjectContainer<KotlinCompilation<Any>>>()
+    whenever(serverCompilations.findByName("main")).thenReturn(serverMain)
+    val serverTarget = mock<KotlinTarget>()
+    whenever(serverTarget.compilations).thenReturn(serverCompilations)
+
+    val noMainCompilations = mock<NamedDomainObjectContainer<KotlinCompilation<Any>>>()
+    whenever(noMainCompilations.findByName("main")).thenReturn(null)
+    val noMainTarget = mock<KotlinTarget>()
+    whenever(noMainTarget.compilations).thenReturn(noMainCompilations)
+
+    val targets = mock<NamedDomainObjectCollection<KotlinTarget>>()
+    whenever(targets.findByName("desktop")).thenReturn(desktopTarget)
+    whenever(targets.findByName("server")).thenReturn(serverTarget)
+    whenever(targets.findByName("noMain")).thenReturn(noMainTarget)
+    whenever(targets.findByName("missing")).thenReturn(null)
+
+    val kotlinExtension = mock<KotlinMultiplatformExtension>()
+    whenever(kotlinExtension.targets).thenReturn(targets)
+
+    val configs =
+      KotlinMultiplatformExtensionWrapper(kotlinExtension)
+        .findMainJvmDependencyConfigurations(project, listOf("desktop", "server", "noMain", "missing"))
+    assertThat(configs).containsExactly(desktopRuntime, desktopCompile, serverCompile).inOrder()
+  }
+
+  @Test
+  fun `configureForStandalone wires dependency lint inputs without creating lintChecksClasspath`() {
+    project.pluginManager.apply("java-library")
+    NoOpAnalyticsService.RegistrationAction(project).execute()
+    AndroidLocationsBuildService.RegistrationAction(project).execute()
+    LintClassLoaderBuildService.RegistrationAction(project).execute()
+    val javaExtension = project.extensions.getByType(JavaPluginExtension::class.java)
+    val projectServices = createProjectServices(project = project)
+    val taskCreationServices = createTaskCreationServices(projectServices = projectServices)
+    val dslServices = createDslServices(projectServices = projectServices)
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+
+    val task = project.tasks.register("lintReportJvm", AndroidLintTask::class.java).get()
+    task.configureForStandalone(
+      taskCreationServices = taskCreationServices,
+      javaPluginExtension = javaExtension,
+      kotlinExtensionWrapper = null,
+      jvmTargetNames = listOf("jvm"),
+      isPerComponentLintAnalysis = true,
+      customLintChecksConfig = project.files(),
+      lintOptions = lintOptions,
+      partialResults = project.provider { emptyList() },
+      lintModels = project.provider { emptyList() },
+      unitTestPartialResults = null,
+      unitTestLintModel = null,
+      lintMode = LintMode.REPORTING,
+      uastReferenceKotlinCompileTaskName = "compileKotlin",
+    )
+
+    assertThat(project.configurations.names.filter { it.endsWith("LintChecksClasspath") }).isEmpty()
+    assertThrows(IllegalStateException::class.java) { task.mainDependencyLintModels.from(project.files()) }
+    assertThrows(IllegalStateException::class.java) { task.dependencyPartialResults.from(project.files()) }
+    assertThrows(IllegalStateException::class.java) { task.dynamicFeatureLintModels.from(project.files()) }
   }
 }

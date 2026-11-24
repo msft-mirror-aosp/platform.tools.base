@@ -388,6 +388,238 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
       )
   }
 
+  /**
+   * Regression test for b/559621195: standalone JVM lint report on a KMP project with both jvm and android targets must include project
+   * dependency lint models and partial results when checkDependencies is true, and exclude dependency issues when checkDependencies is
+   * false.
+   */
+  @Test
+  fun `test checkDependencies on project with jvm and android targets`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          jvm()
+          sourceSets.getByName("jvmMain") {
+              dependencies {
+                  implementation(project(":kmpJvmOnly"))
+              }
+          }
+      }
+      lint {
+          checkDependencies = false
+          enable += "ByteOrderMark"
+          textReport = true
+          abortOnError = false
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpJvmOnly").ktsBuildFile,
+      """
+      lint {
+          enable += "ByteOrderMark"
+      }
+      """
+        .trimIndent(),
+    )
+
+    val kmpJvmOnlyFile =
+      FileUtils.join(
+        project.getSubproject("kmpJvmOnly").projectDir,
+        "src",
+        "jvmMain",
+        "kotlin",
+        "com",
+        "example",
+        "kmpjvmonly",
+        "KmpJvmOnlyLibClass.kt",
+      )
+    TestFileUtils.addMethod(
+      kmpJvmOnlyFile,
+      // language=kotlin
+      """
+                fun getByteOrderMark(): String {
+                    return "$byteOrderMark"
+                }
+            """
+        .trimIndent(),
+    )
+
+    // With checkDependencies = false, dependency analysis runs for partial results, but dependency issues are not reported.
+    getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lintJvm").apply {
+      assertTask(":kmpJvmOnly:lintAnalyzeJvmMain").didWork()
+    }
+    val jvmReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results.txt")
+    PathSubject.assertThat(jvmReportFile).contentWithUnixLineSeparatorsIsExactly("No issues found.")
+
+    // With checkDependencies = true, dependency issues from :kmpJvmOnly are reported and configuration cache is reused.
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      "checkDependencies = false",
+      "checkDependencies = true",
+    )
+    getExecutor().run(":kmpFirstLib:lintJvm")
+    getExecutor().run(":kmpFirstLib:lintJvm").assertConfigurationCacheHit()
+
+    PathSubject.assertThat(jvmReportFile)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        ${kmpJvmOnlyFile.absolutePath}:9: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]
+            return "$byteOrderMark"
+                    ~
+
+           Explanation for issues of type "ByteOrderMark":
+           Lint will flag any byte-order-mark (BOM) characters it finds in the middle
+           of a file. Since we expect files to be encoded with UTF-8 (see the
+           EnforceUTF8 issue), the BOM characters are not necessary, and they are not
+           handled correctly by all tools. For example, if you have a BOM as part of a
+           resource name in one particular translation, that name will not be
+           considered identical to the base resource's name and the translation will
+           not be used.
+
+           https://en.wikipedia.org/wiki/Byte_order_mark
+
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun `test checkDependencies on KMP project with custom jvm target name`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          jvm("desktop")
+          sourceSets.getByName("desktopMain") {
+              dependencies {
+                  implementation(project(":kmpJvmOnly"))
+                  implementation(project(":kmpSecondLib"))
+              }
+          }
+      }
+      lint {
+          checkDependencies = true
+          enable += "ByteOrderMark"
+          textReport = true
+          abortOnError = false
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpJvmOnly").ktsBuildFile,
+      """
+      lint {
+          enable += "ByteOrderMark"
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("kmpSecondLib").ktsBuildFile,
+      "id(\"com.android.kotlin.multiplatform.library\")",
+      """
+      id("com.android.kotlin.multiplatform.library")
+      id("com.android.lint")
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpSecondLib").ktsBuildFile,
+      """
+      lint {
+          enable += "ByteOrderMark"
+      }
+      """
+        .trimIndent(),
+    )
+
+    val kmpJvmOnlyFile =
+      FileUtils.join(
+        project.getSubproject("kmpJvmOnly").projectDir,
+        "src",
+        "jvmMain",
+        "kotlin",
+        "com",
+        "example",
+        "kmpjvmonly",
+        "KmpJvmOnlyLibClass.kt",
+      )
+    TestFileUtils.addMethod(
+      kmpJvmOnlyFile,
+      // language=kotlin
+      """
+                fun getByteOrderMark(): String {
+                    return "$byteOrderMark"
+                }
+            """
+        .trimIndent(),
+    )
+
+    val kmpSecondLibJvmFile =
+      FileUtils.join(
+        project.getSubproject("kmpSecondLib").projectDir,
+        "src",
+        "jvmMain",
+        "kotlin",
+        "com",
+        "example",
+        "kmpsecondlib",
+        "KmpSecondLibJvmBom.kt",
+      )
+    kmpSecondLibJvmFile.parentFile.mkdirs()
+    kmpSecondLibJvmFile.writeText(
+      // language=kotlin
+      """
+      package com.example.kmpsecondlib
+
+      fun getSecondLibJvmByteOrderMark(): String {
+          return "$byteOrderMark"
+      }
+      """
+        .trimIndent()
+    )
+
+    getExecutor().run(":kmpFirstLib:clean", ":kmpFirstLib:lintJvm").apply {
+      assertTask(":kmpFirstLib:lintAnalyzeDesktopMain").didWork()
+      assertTask(":kmpJvmOnly:lintAnalyzeJvmMain").didWork()
+      assertTask(":kmpSecondLib:lintAnalyzeJvmMain").didWork()
+    }
+
+    val jvmReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results.txt")
+    PathSubject.assertThat(jvmReportFile)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        ${kmpJvmOnlyFile.absolutePath}:9: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]
+            return "$byteOrderMark"
+                    ~
+        ${kmpSecondLibJvmFile.absolutePath}:4: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]
+            return "$byteOrderMark"
+                    ~
+
+           Explanation for issues of type "ByteOrderMark":
+           Lint will flag any byte-order-mark (BOM) characters it finds in the middle
+           of a file. Since we expect files to be encoded with UTF-8 (see the
+           EnforceUTF8 issue), the BOM characters are not necessary, and they are not
+           handled correctly by all tools. For example, if you have a BOM as part of a
+           resource name in one particular translation, that name will not be
+           considered identical to the base resource's name and the translation will
+           not be used.
+
+           https://en.wikipedia.org/wiki/Byte_order_mark
+
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   @Test
   fun `test updating lint baselines on project with jvm and android targets`() {
     Assume.assumeTrue(lintAnalysisPerComponent)
