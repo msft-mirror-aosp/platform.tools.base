@@ -15,6 +15,8 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS
+import com.android.tools.lint.MainTest
 import com.android.tools.lint.checks.InferredThreadDetector.Thread
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestLintTask
@@ -3836,6 +3838,43 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
           .trimIndent(),
         testMode = TestMode.PARTIAL,
       )
+  }
+
+  fun `test partial analysis without partial-results-dir`() {
+    val dir =
+      getProjectDir(
+        null,
+        java("src/Test.java", "class Test {}"),
+        xml(
+          "project.xml",
+          """
+          <project>
+            <module name="app" android="true">
+              <src file="src/Test.java"/>
+              <dep module="lib"/>
+            </module>
+            <module name="lib" library="true"/>
+          </project>
+          """,
+        ),
+      )
+    val projectXml = File(dir, "project.xml").path
+    MainTest.checkDriver(
+      "",
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--check", "ThreadConstraint", "--analyze-only", "--project", projectXml),
+      null,
+      null,
+    )
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--check", "ThreadConstraint,LintError", "--report-only", "--project", projectXml),
+      null,
+      null,
+    )
   }
 
   /* Old tests from [ThreadDetectorTest] */

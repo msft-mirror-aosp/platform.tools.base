@@ -481,12 +481,9 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {}
 
   private fun getPartialResultDir(project: Project, createIfAbsent: Boolean): File? {
-    val path =
-      when {
-        // Workaround for unit tests not having `partialResultsDir` set
-        LintClient.isUnitTest -> Paths.get(project.dir.absolutePath, "build", mainIssue.id, project.name)
-        else -> Paths.get(project.partialResultsDir!!.absolutePath, mainIssue.id, project.name)
-      }
+    // Like lint's own partial results, default to the project's build directory
+    val baseDir = project.partialResultsDir ?: File(project.dir, "build")
+    val path = Paths.get(baseDir.absolutePath, mainIssue.id, project.name)
     return when {
       path.exists() -> path.toFile()
       createIfAbsent -> path.toFile().apply { mkdirs() }
