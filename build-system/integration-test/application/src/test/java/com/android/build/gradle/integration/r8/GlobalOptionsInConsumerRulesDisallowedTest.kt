@@ -20,7 +20,11 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.DependenciesBuilder
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.MavenRepoGenerator
+import com.android.testutils.ZipContents
+import com.android.testutils.generateAarWithContent
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
@@ -161,43 +165,83 @@ class GlobalOptionsInConsumerRulesDisallowedTest(val globalOptionsInConsumerRule
   @Test
   fun `app filters out global rules from jar`() {
     assumeFalse(keepRulesInSourceSet) // source set is not involved in test logic
-    validateAppGlobalRuleFilter(useLegacyJarPath = false)
+    validateAppJarGlobalRuleFilter(useLegacyJarPath = false)
   }
 
   @Test
   fun `app filters out global rules from jar (legacy dir)`() {
     assumeFalse(keepRulesInSourceSet) // source set is not involved in test logic
-    validateAppGlobalRuleFilter(useLegacyJarPath = true)
+    validateAppJarGlobalRuleFilter(useLegacyJarPath = true)
   }
 
-  private fun validateAppGlobalRuleFilter(useLegacyJarPath: Boolean) {
-    rule.build {
-      androidApplication {
-        dependencies {
-          implementation(
-            localJar("libfoo.jar") {
-              // we test both paths to be thorough
-              val proguardPath =
-                if (useLegacyJarPath) {
-                  "META-INF/proguard"
-                } else {
-                  "META-INF/com.android.tools/r8-from-2.0.0"
-                }
+  @Test
+  fun `app filters out global rules from aar`() {
+    assumeFalse(keepRulesInSourceSet) // source set is not involved in test logic
+    validateAppAarGlobalRuleFilter(useLegacyAarPath = false)
+  }
 
-              addTextFile("$proguardPath/rules1.txt", "-dontobfuscate #comment1")
-              addTextFile("$proguardPath/rules2.pro", "-repackageclasses #comment2")
+  @Test
+  fun `app filters out global rules from aar (legacy proguard txt)`() {
+    assumeFalse(keepRulesInSourceSet) // source set is not involved in test logic
+    validateAppAarGlobalRuleFilter(useLegacyAarPath = true)
+  }
+
+  private fun validateAppJarGlobalRuleFilter(useLegacyJarPath: Boolean) {
+    assertAppFiltersGlobalRules(listOf("-dontobfuscate #comment1", "-repackageclasses #comment2")) {
+      implementation(
+        localJar("libfoo.jar") {
+          // we test both paths to be thorough
+          val proguardPath =
+            if (useLegacyJarPath) {
+              "META-INF/proguard"
+            } else {
+              "META-INF/com.android.tools/r8-from-2.0.0"
             }
-          )
+
+          addTextFile("$proguardPath/rules1.txt", "-dontobfuscate #comment1")
+          addTextFile("$proguardPath/rules2.pro", "-repackageclasses #comment2")
         }
-      }
+      )
     }
+  }
+
+  private fun validateAppAarGlobalRuleFilter(useLegacyAarPath: Boolean) {
+    val aarBytes =
+      if (useLegacyAarPath) {
+        generateAarWithContent(
+          packageName = "com.example.foo",
+          proguardTxt =
+            """
+            -dontoptimize #comment1
+            -repackageclasses #comment2
+            """
+              .trimIndent(),
+        )
+      } else {
+        val classesJar =
+          ZipContents(
+              mapOf(
+                "META-INF/com.android.tools/r8-from-2.0.0/rules1.txt" to "-dontoptimize #comment1".toByteArray(),
+                "META-INF/com.android.tools/r8-from-2.0.0/rules2.pro" to "-repackageclasses #comment2".toByteArray(),
+              )
+            )
+            .toByteArray()
+        generateAarWithContent(packageName = "com.example.foo", mainJar = classesJar)
+      }
+
+    assertAppFiltersGlobalRules(listOf("-dontoptimize #comment1", "-repackageclasses #comment2")) {
+      implementation(MavenRepoGenerator.Library(mavenCoordinate = "com.example:libfoo:1.0", packaging = "aar", artifact = aarBytes))
+    }
+  }
+
+  private fun assertAppFiltersGlobalRules(expectedRules: List<String>, configureDependency: DependenciesBuilder.() -> Unit) {
+    rule.build { androidApplication { dependencies { configureDependency() } } }
 
     rule.build.executor.run(":feature:assemble", ":app:assembleDebug")
 
     val prefix = if (globalOptionsInConsumerRulesDisallowed) "# REMOVED CONSUMER RULE: " else ""
     getConfigurationTxt().apply {
-      assertThat(this).containsExactlyOnce("$prefix-dontobfuscate #comment1")
-      assertThat(this).containsExactlyOnce("$prefix-repackageclasses #comment2")
+      expectedRules.forEach { expectedRule -> assertThat(this).containsExactlyOnce("$prefix$expectedRule") }
     }
   }
 
