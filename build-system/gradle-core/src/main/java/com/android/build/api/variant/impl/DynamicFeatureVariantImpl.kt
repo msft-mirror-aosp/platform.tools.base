@@ -242,9 +242,25 @@ constructor(
         AndroidArtifacts.ArtifactType.BASE_MODULE_METADATA,
       )
 
+    // Only capture Strings in the lambda below.
+    val featurePath = internalServices.projectInfo.path
+    val variantName = name
+
     // Have to wrap the return of artifact.elements.map because we cannot call
     // finalizeValueOnRead directly on Provider
-    return internalServices.providerOf(ModuleMetadata::class.java, artifact.elements.map { ModuleMetadata.load(it.single().asFile) })
+    return internalServices.providerOf(
+      ModuleMetadata::class.java,
+      artifact.elements.map { elements ->
+        ModuleMetadata.load(
+          requireSingleBaseModuleArtifact(
+            elements.map { it.asFile },
+            featurePath,
+            variantName,
+            "base module metadata (application ID, version, debuggable)",
+          )
+        )
+      },
+    )
   }
 
   private fun instantiateFeatureSetMetadata(variantDependencies: VariantDependencies): Provider<FeatureSetMetadata> {
@@ -255,11 +271,24 @@ constructor(
         AndroidArtifacts.ArtifactType.FEATURE_SET_METADATA,
       )
 
+    // Only capture Strings in the lambda below.
+    val featurePath = internalServices.projectInfo.path
+    val variantName = name
+
     // Have to wrap the return of artifact.elements.map because we cannot call
     // finalizeValueOnRead directly on Provider
     return internalServices.providerOf(
       FeatureSetMetadata::class.java,
-      artifact.elements.map { FeatureSetMetadata.load(it.single().asFile) },
+      artifact.elements.map { elements ->
+        FeatureSetMetadata.load(
+          requireSingleBaseModuleArtifact(
+            elements.map { it.asFile },
+            featurePath,
+            variantName,
+            "feature set metadata (feature name, resource offset)",
+          )
+        )
+      },
     )
   }
 
