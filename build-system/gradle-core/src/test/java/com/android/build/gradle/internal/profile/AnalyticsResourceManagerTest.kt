@@ -24,8 +24,13 @@ import com.google.wireless.android.sdk.stats.GradleBuildProfile
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.function.Consumer
 import java.util.stream.Collectors
 import java.util.stream.Stream
@@ -259,6 +264,52 @@ class AnalyticsResourceManagerTest {
     Truth.assertThat(spans.size).isEqualTo(400)
     val spanIds = spans.map { it.id }.toList()
     Truth.assertThat(spanIds).containsNoDuplicates()
+  }
+
+  @Test
+  fun testConcurrentVariantBuildersAndProjectDataSerialization() {
+    val failures = ConcurrentLinkedQueue<Throwable>()
+    val taskRecords = ConcurrentLinkedQueue<TaskProfilingRecord>()
+    val variantRunnable = Runnable {
+      try {
+        for (i in 0..49) {
+          resourceManager.getVariantBuilder(projectPath, "variant_$i")
+          resourceManager.recordBlockAtConfiguration(
+            GradleBuildProfileSpan.ExecutionType.SOME_RANDOM_PROCESSING,
+            projectPath,
+            null,
+            Recorder.VoidBlock {},
+          )
+          taskRecords.add(checkNotNull(resourceManager.getTaskRecord(taskPath)))
+        }
+      } catch (t: Throwable) {
+        failures.add(t)
+      }
+    }
+    val threads = Stream.generate { Thread(variantRunnable) }.limit(10).collect(Collectors.toList())
+    threads.forEach(Consumer { obj: Thread -> obj.start() })
+    for (thread in threads) {
+      thread.join()
+    }
+    Truth.assertThat(failures).isEmpty()
+    Truth.assertThat(resourceManager.configurationSpans).hasSize(500)
+    val taskRecord = resourceManager.getTaskRecord(taskPath)
+    Truth.assertThat(taskRecord).isNotNull()
+    Truth.assertThat(taskRecords).hasSize(500)
+    Truth.assertThat(taskRecords.toSet()).containsExactly(taskRecord)
+
+    val projectData = ProjectData(GradleBuildProject.newBuilder().setId(projectId))
+    for (i in 0..9) {
+      projectData.variantBuilders["variant_$i"] = GradleBuildVariant.newBuilder().setId(i.toLong())
+    }
+    val bytes =
+      ByteArrayOutputStream().use { baos ->
+        ObjectOutputStream(baos).use { oos -> oos.writeObject(projectData) }
+        baos.toByteArray()
+      }
+    val deserialized = ObjectInputStream(ByteArrayInputStream(bytes)).use { ois -> ois.readObject() as ProjectData }
+    Truth.assertThat(deserialized.variantBuilders).isInstanceOf(ConcurrentHashMap::class.java)
+    Truth.assertThat(deserialized.variantBuilders).hasSize(10)
   }
 
   private fun getProjects(): ConcurrentHashMap<String, ProjectData> {

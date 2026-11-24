@@ -125,7 +125,8 @@ constructor(
 
   /** Get [TaskProfilingRecord] at execution phase */
   fun getTaskRecord(taskPath: String): TaskProfilingRecord? {
-    if (!taskRecords.containsKey(taskPath)) {
+    val projectPath = getProjectPath(taskPath) ?: return null
+    return taskRecords.computeIfAbsent(taskPath) {
       val builder =
         GradleBuildProfileSpan.newBuilder().apply {
           type = GradleBuildProfileSpan.ExecutionType.TASK_EXECUTION
@@ -133,12 +134,8 @@ constructor(
           threadId = Thread.currentThread().id
         }
 
-      val projectPath = getProjectPath(taskPath) ?: return null
-      val variantName = getVariantName(taskPath)
-
-      taskRecords[taskPath] = TaskProfilingRecord(this, builder, taskPath, projectPath, variantName)
+      TaskProfilingRecord(this, builder, taskPath, projectPath, getVariantName(taskPath))
     }
-    return taskRecords[taskPath]
   }
 
   /** Create and write a task execution span when receiving a task finish event from Gradle */
@@ -312,7 +309,7 @@ constructor(
   }
 
   private fun getVariantId(projectPath: String, variantName: String?): Long {
-    val variantId = projects[projectPath]?.variantBuilders?.get(variantName)?.id
+    val variantId = variantName?.let { projects[projectPath]?.variantBuilders?.get(it)?.id }
     if (variantId != null) {
       return variantId
     }
@@ -344,13 +341,15 @@ constructor(
   }
 
   private fun maybeGetJarName(pluginClass: Class<*>): String? =
-    pluginJarNamesMap.getOrPut(pluginClass.name) {
-      // the plugin could be instrumented into a dynamic class, try to get the enclosing class
-      // if possible
-      val entryUrl = pluginClass.simpleName.substringBefore('$', pluginClass.simpleName).let { pluginClass.getResource("$it.class") }
+    pluginJarNamesMap
+      .computeIfAbsent(pluginClass.name) {
+        // the plugin could be instrumented into a dynamic class, try to get the enclosing class
+        // if possible
+        val entryUrl = pluginClass.simpleName.substringBefore('$', pluginClass.simpleName).let { pluginClass.getResource("$it.class") }
 
-      entryUrl?.let { it.path.substringBefore(".jar!", "").substringAfterLast('/', "").ifEmpty { null } }
-    }
+        entryUrl?.let { it.path.substringBefore(".jar!", "").substringAfterLast('/', "") } ?: ""
+      }
+      .ifEmpty { null }
 
   fun recordTaskNames(graph: TaskExecutionGraph) {
     for (task in graph.allTasks) {
@@ -443,7 +442,7 @@ constructor(
  */
 class ProjectData(var projectBuilder: GradleBuildProject.Builder) : Serializable {
 
-  var variantBuilders: MutableMap<String, GradleBuildVariant.Builder> = mutableMapOf()
+  var variantBuilders: ConcurrentHashMap<String, GradleBuildVariant.Builder> = ConcurrentHashMap()
 
   private fun writeObject(objectOutputStream: ObjectOutputStream) {
     objectOutputStream.writeObject(Base64.getEncoder().encodeToString(projectBuilder.build().toByteArray()))
@@ -456,7 +455,9 @@ class ProjectData(var projectBuilder: GradleBuildProject.Builder) : Serializable
     projectBuilder = GradleBuildProject.parseFrom(Base64.getDecoder().decode(projectBuilderSerialized)).toBuilder()
     val variantBuildersSerialized = objectInputStream.readObject() as Map<String, String>
     variantBuilders =
-      variantBuildersSerialized.mapValues { GradleBuildVariant.parseFrom(Base64.getDecoder().decode(it.value)).toBuilder() }.toMutableMap()
+      ConcurrentHashMap(
+        variantBuildersSerialized.mapValues { GradleBuildVariant.parseFrom(Base64.getDecoder().decode(it.value)).toBuilder() }
+      )
   }
 }
 
@@ -488,4 +489,4 @@ const val NO_VARIANT_SPECIFIED = 0L
 const val PROFILE_DIRECTORY = "android-profile"
 const val PROPERTY_VARIANT_NAME_KEY = "AGP_VARIANT_NAME"
 
-private val pluginJarNamesMap = mutableMapOf<String, String?>()
+private val pluginJarNamesMap = ConcurrentHashMap<String, String>()
