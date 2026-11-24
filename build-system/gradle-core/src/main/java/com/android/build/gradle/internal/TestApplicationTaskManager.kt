@@ -96,7 +96,9 @@ class TestApplicationTaskManager(
     // create the test connected check task.
     val instrumentTestTask =
       if (testVariantProperties.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
-        taskFactory.register(TestSuiteTestTask.ConnectedTestSuiteCreationAction(testVariantProperties, testData, connectedCheckSerials))
+        taskFactory
+          .register(TestSuiteTestTask.ConnectedTestSuiteCreationAction(testVariantProperties, testData, connectedCheckSerials))
+          .also { TestSuiteTestTask.configureJacocoAgent(project, it, collectsHostCoverage = false) }
       } else {
         taskFactory.register<DeviceProviderInstrumentTestTask>(
           object : DeviceProviderInstrumentTestTask.CreationAction(testVariantProperties, testData) {

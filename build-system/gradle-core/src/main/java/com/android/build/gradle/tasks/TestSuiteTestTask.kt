@@ -101,6 +101,7 @@ import kotlin.collections.asIterable
 import kotlin.collections.joinToString
 import kotlin.collections.plus
 import org.gradle.api.JavaVersion
+import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.DirectoryProperty
@@ -1810,6 +1811,20 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
      */
     internal fun coverageReportPath(testSuiteName: String, variantName: String, testSuiteTarget: String): String =
       "reports/coverage/testSuites/$testSuiteName/$variantName/$testSuiteTarget"
+
+    /**
+     * Keeps the agent of Gradle's JaCoCo plugin on the [taskProvider] task only if it collects host coverage ([collectsHostCoverage]).
+     *
+     * Once applied, by AGP for a host test suite or the unit tests with code coverage, or by the build, the plugin attaches its agent to
+     * every [Test] task of the project, test suite tasks included. The task is configured through [taskProvider] once the plugin is
+     * applied, which runs after the plugin configured the task, whether the plugin is applied before or after the task is registered or
+     * created.
+     */
+    internal fun configureJacocoAgent(project: Project, taskProvider: TaskProvider<out TestSuiteTestTask>, collectsHostCoverage: Boolean) {
+      project.pluginManager.withPlugin("jacoco") {
+        taskProvider.configure { task -> task.extensions.getByType(JacocoTaskExtension::class.java).isEnabled = collectsHostCoverage }
+      }
+    }
 
     fun configureCoverageAndMetadata(
       task: TestSuiteTestTask,

@@ -258,7 +258,9 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
       taskFactory.named(globalConfig.taskNames.connectedCheck).flatMap { test -> (test as DeviceSerialTestTask).serialValues }
     val connectedTask =
       if (androidTestProperties.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
-        taskFactory.register(TestSuiteTestTask.ConnectedTestSuiteCreationAction(androidTestProperties, testData, connectedCheckSerials))
+        taskFactory
+          .register(TestSuiteTestTask.ConnectedTestSuiteCreationAction(androidTestProperties, testData, connectedCheckSerials))
+          .also { TestSuiteTestTask.configureJacocoAgent(project, it, collectsHostCoverage = false) }
       } else {
         taskFactory.register(DeviceProviderInstrumentTestTask.CreationAction(androidTestProperties, testData, connectedCheckSerials))
       }

@@ -212,11 +212,11 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
 
   fun createTasks(creationConfig: TestSuiteCreationConfig) {
     val isHostSuite = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }
-    if (isHostSuite && creationConfig.codeCoverageEnabled) {
+    val collectsHostCoverage = isHostSuite && creationConfig.codeCoverageEnabled
+    if (collectsHostCoverage) {
       if (!project.plugins.hasPlugin(JacocoPlugin::class.java)) {
         project.pluginManager.apply(JacocoPlugin::class.java)
-        project.extensions.findByType(JacocoPluginExtension::class.java)?.toolVersion =
-          JacocoOptions.DEFAULT_VERSION
+        project.extensions.findByType(JacocoPluginExtension::class.java)?.toolVersion = JacocoOptions.DEFAULT_VERSION
       }
     }
 
@@ -253,6 +253,8 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
           taskFactory.register(
             TestSuiteTestTask.CreationAction(creationConfig, target, taskName, targetManagedDevices, connectedCheckSerials, isUpdate)
           )
+        // Only the test tasks of a host suite with code coverage run with the JaCoCo agent: the update tasks collect no coverage.
+        TestSuiteTestTask.configureJacocoAgent(project, testSuiteTestTask, collectsHostCoverage = collectsHostCoverage && !isUpdate)
         val context =
           object : TestTaskContext {
             override val targetName: String

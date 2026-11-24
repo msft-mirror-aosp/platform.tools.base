@@ -453,6 +453,73 @@ class TestSuitesTestReportTest {
   }
 
   @Test
+  fun testJacocoAgentOnlyRunsInHostSuitesWithCodeCoverage() {
+    val build = rule.build {
+      androidApplication {
+        // hostNoCoverageSuite comes before hostWithCoverageSuite, both by name and in the DSL, so its task is registered before the
+        // coverage suite applies Gradle's JaCoCo plugin.
+        addHostJarTestSuite("hostNoCoverageSuite", codeCoverage = false)
+        addHostJarTestSuite("hostWithCoverageSuite", codeCoverage = true)
+        files { add("src/main/java/com/example/dummy/Dummy.java", "package com.example.dummy; public class Dummy {}") }
+      }
+    }
+
+    val result = build.executor.run(":app:testDebugHostNoCoverageSuiteT1TestSuite", ":app:testDebugHostWithCoverageSuiteT1TestSuite")
+
+    assertThat(result.didWorkTasks)
+      .containsAtLeast(":app:testDebugHostNoCoverageSuiteT1TestSuite", ":app:testDebugHostWithCoverageSuiteT1TestSuite")
+    // The tests of the suite with code coverage run with the JaCoCo agent, which writes their execution data on exit.
+    assertThat(build.jacocoExecutionDataFiles("testDebugHostWithCoverageSuiteT1TestSuite")).hasSize(1)
+    // The tests of the suite without code coverage run without it.
+    assertThat(build.jacocoExecutionDataFiles("testDebugHostNoCoverageSuiteT1TestSuite")).isEmpty()
+  }
+
+  @Test
+  fun testUnitTestCoverageDoesNotRunJacocoAgentInHostTestSuites() {
+    val build = rule.build {
+      androidApplication {
+        // Unit test coverage applies Gradle's JaCoCo plugin, after the tasks of the test suites are registered.
+        android { buildTypes { named("debug") { it.enableUnitTestCoverage = true } } }
+        addHostJarTestSuite("hostNoCoverageSuite", codeCoverage = false)
+      }
+    }
+
+    val result = build.executor.run(":app:testDebugHostNoCoverageSuiteT1TestSuite")
+
+    assertThat(result.didWorkTasks).contains(":app:testDebugHostNoCoverageSuiteT1TestSuite")
+    assertThat(build.jacocoExecutionDataFiles("testDebugHostNoCoverageSuiteT1TestSuite")).isEmpty()
+  }
+
+  @Test
+  fun testUpdateTaskOfCoverageSuiteDoesNotRunJacocoAgent() {
+    val build = rule.build {
+      androidApplication {
+        addHostJarTestSuite("updateCoverageSuite", codeCoverage = true, requiresUpdateTask = true)
+        files { add("src/main/java/com/example/dummy/Dummy.java", "package com.example.dummy; public class Dummy {}") }
+      }
+    }
+
+    build.executor.run(":app:testDebugUpdateCoverageSuiteT1TestSuite")
+
+    assertThat(build.jacocoExecutionDataFiles("testDebugUpdateCoverageSuiteT1TestSuite")).hasSize(1)
+
+    val result = build.executor.run(":app:updateDebugUpdateCoverageSuiteT1TestSuite")
+
+    assertThat(result.didWorkTasks).contains(":app:updateDebugUpdateCoverageSuiteT1TestSuite")
+    // The update task collects no coverage.
+    assertThat(build.jacocoExecutionDataFiles("updateDebugUpdateCoverageSuiteT1TestSuite")).isEmpty()
+  }
+
+  /**
+   * Returns the paths, relative to the build directory of the app, of the JaCoCo execution data files of the tests of [taskName]. Looks for
+   * them anywhere in the build directory, so it doesn't depend on where the task writes them.
+   */
+  private fun GradleBuild.jacocoExecutionDataFiles(taskName: String): List<String> {
+    val buildDir = androidApplication().buildDir.toFile()
+    return buildDir.walk().filter { it.isFile && it.name == "$taskName.exec" }.map { it.relativeTo(buildDir).path }.toList()
+  }
+
+  @Test
   fun testUpdateSuiteCodeCoverage() {
     val build = rule.build {
       androidApplication {
@@ -905,4 +972,30 @@ private fun AndroidProjectDefinition<out CommonExtension>.addListedTestSuite(var
     }
   }
   files { add("src/listed/tests.txt", testClasses.joinToString("\n")) }
+}
+
+/** Adds a test suite [name] with host jar sources on the debug variant, with a single target "t1", whose engine runs a single test. */
+private fun AndroidProjectDefinition<out CommonExtension>.addHostJarTestSuite(
+  name: String,
+  codeCoverage: Boolean,
+  requiresUpdateTask: Boolean = false,
+) {
+  android {
+    testOptions.customSuites.create(name) {
+      it.codeCoverage = codeCoverage
+      it.requiresUpdateTask = requiresUpdateTask
+      it.useJunitEngine.apply {
+        inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+        includeEngines.add("[engine:custom-junit-engine-for-tests]")
+        enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+        enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+        enginesDependencies.add("com.test:custom-junit-engine:1.0")
+        enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+      }
+      it.hostJar {}
+      it.targetVariants.add("debug")
+      it.targets.create("t1") {}
+    }
+  }
+  files { add("src/$name/java/DummyTest.java", "package com.example.dummy; public class DummyTest {}") }
 }

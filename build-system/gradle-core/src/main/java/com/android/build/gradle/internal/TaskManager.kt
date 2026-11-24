@@ -1089,18 +1089,20 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
         when {
           managedDevice is ManagedVirtualDevice ->
             if (creationConfig.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
-              taskFactory.register(
-                TestSuiteTestTask.ManagedDeviceTestSuiteCreationAction(
-                  creationConfig,
-                  managedDevice,
-                  testData,
-                  deviceResults,
-                  deviceReports,
-                  deviceAdditionalOutputs,
-                  deviceCoverage,
-                  testTaskSuffix,
+              taskFactory
+                .register(
+                  TestSuiteTestTask.ManagedDeviceTestSuiteCreationAction(
+                    creationConfig,
+                    managedDevice,
+                    testData,
+                    deviceResults,
+                    deviceReports,
+                    deviceAdditionalOutputs,
+                    deviceCoverage,
+                    testTaskSuffix,
+                  )
                 )
-              )
+                .also { TestSuiteTestTask.configureJacocoAgent(project, it, collectsHostCoverage = false) }
             } else {
               taskFactory.register(
                 ManagedDeviceInstrumentationTestTask.CreationAction(
