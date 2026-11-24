@@ -105,4 +105,44 @@ class AndroidLintTaskTest {
     assertThat(commandLineArguments).contains("--html-v2")
     assertThat(commandLineArguments).doesNotContain("--html")
   }
+
+  @Test
+  fun testGetUpdateBaselineWarningForAndroidProject() {
+    assertThat(AndroidLintTask.getUpdateBaselineWarning(android = true))
+      .isEqualTo(
+        """
+        No baseline file is specified, so no baseline file will be created.
+
+        Please specify a baseline file in the build.gradle file like so:
+
+        ```
+        android {
+            lint {
+                baseline = file("lint-baseline.xml")
+            }
+        }
+        ```
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testGetUpdateBaselineWarningForStandaloneProject() {
+    assertThat(AndroidLintTask.getUpdateBaselineWarning(android = false))
+      .isEqualTo(
+        """
+        No baseline file is specified, so no baseline file will be created.
+
+        Please specify a baseline file in the build.gradle file like so:
+
+        ```
+        lint {
+            baseline = file("lint-baseline.xml")
+        }
+        ```
+        """
+          .trimIndent()
+      )
+  }
 }

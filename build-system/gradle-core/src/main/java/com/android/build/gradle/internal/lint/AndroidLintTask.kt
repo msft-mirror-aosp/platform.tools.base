@@ -201,7 +201,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     if (lintMode.get() == LintMode.UPDATE_BASELINE) {
       // Warn and return early if no baseline file is specified.
       if (baselineFile == null) {
-        logger.warn(getUpdateBaselineWarning())
+        logger.warn(getUpdateBaselineWarning(android.get()))
         return
       }
       if (baselineFile.isFile) {
@@ -285,39 +285,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
           returnValueOutputFile = parameters.returnValueOutputFile.orNull?.asFile,
         )
     }
-  }
-
-  private fun getUpdateBaselineWarning(): String {
-    val example =
-      if (android.get()) {
-        """
-        ```
-        android {
-            lint {
-                baseline = file("lint-baseline.xml")
-            }
-        }
-        ```
-        """
-          .trimIndent()
-      } else {
-        """
-        ```
-        lint {
-            baseline = file("lint-baseline.xml")
-        }
-        ```
-        """
-          .trimIndent()
-      }
-    return """
-            No baseline file is specified, so no baseline file will be created.
-
-            Please specify a baseline file in the build.gradle file like so:
-
-            $example
-        """
-      .trimIndent()
   }
 
   @VisibleForTesting
@@ -1107,6 +1074,40 @@ abstract class AndroidLintTask : NonIncrementalTask() {
 
   companion object {
     private const val LINT_FIX_UP_TO_DATE_MESSAGE = "Lint fix task potentially modifies sources so cannot be up-to-date"
+
+    @VisibleForTesting
+    internal fun getUpdateBaselineWarning(android: Boolean): String {
+      val example =
+        if (android) {
+          """
+          ```
+          android {
+              lint {
+                  baseline = file("lint-baseline.xml")
+              }
+          }
+          ```
+          """
+            .trimIndent()
+        } else {
+          """
+          ```
+          lint {
+              baseline = file("lint-baseline.xml")
+          }
+          ```
+          """
+            .trimIndent()
+        }
+      val header =
+        """
+        No baseline file is specified, so no baseline file will be created.
+
+        Please specify a baseline file in the build.gradle file like so:
+        """
+          .trimIndent()
+      return "$header\n\n$example"
+    }
 
     /**
      * Return whether [newBaselineFile] has different content than [originalBaselineFileLines], ignoring changes to the attributes of the
