@@ -1,5 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("//tools/base/bazel:android.bzl", "ANDROID_COPTS")
+load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "android_cc_binary")
 
 # Shared library between components that want to implement / use the transport library.
 # This library was initially part of the profilers perfd library that manged the services
@@ -39,7 +38,7 @@ cc_library(
         "transport_component.h",
         "transport_service.h",
     ],
-    copts = ANDROID_COPTS + ["-fexceptions"],
+    copts = ANDROID_COPTS,
     include_prefix = "daemon",
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
