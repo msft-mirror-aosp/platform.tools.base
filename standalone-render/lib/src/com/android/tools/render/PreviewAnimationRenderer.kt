@@ -92,9 +92,10 @@ internal class PreviewAnimationRenderer(private val renderer: Renderer) {
 
     // A method that can't be previewed has no preview id of its own, so its errors keep the requested one.
     val methodBaseResultId = Renderer.sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
-    // Track indices per base result id so each distinct preview starts at 0, while colliding overloads keep distinct stems.
-    val nextAnimationIndexByBaseId = mutableMapOf<String, Int>()
-    fun nextAnimationIndex(baseId: String): Int = nextAnimationIndexByBaseId.merge(baseId, 1, Int::plus)!! - 1
+    // Track indices per base result id case-insensitively with Locale.ROOT so each distinct preview starts at 0, while colliding
+    // overloads or case-only collisions keep distinct stems on case-insensitive filesystems.
+    val animationIndexTracker = BaseResultIdIndexTracker()
+    fun nextAnimationIndex(baseId: String): Int = animationIndexTracker.nextIndex(baseId)
 
     return renderer.discoveryEngine.discoverAllPreviews(screenshot.methodFQN).flatMap { method ->
       if (method.methodValidationResult.hasErrors) {

@@ -68,6 +68,7 @@ import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.Locale
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -401,10 +402,10 @@ internal constructor(
     val packagePath = sanitizePackagePath(screenshot.methodFQN)
     // A method that can't be previewed has no preview id of its own, so its errors keep the requested one.
     val methodBaseResultId = sanitizeBaseResultId(screenshot.previewId, screenshot.methodFQN)
-    // Track indices per base result id so each distinct preview starts at 0, while overloaded methods sharing a base result id
-    // (for example, a bare @Preview alongside an invalid or default-parameter overload) don't collide on _0.png.
-    val nextImageIndexByBaseId = mutableMapOf<String, Int>()
-    fun nextImageIndex(baseId: String): Int = nextImageIndexByBaseId.merge(baseId, 1, Int::plus)!! - 1
+    // Track indices per base result id case-insensitively with Locale.ROOT so each distinct preview starts at 0, while overloaded methods
+    // or case-only collisions (for example, a bare @Preview alongside an invalid or default-parameter overload) don't collide on _0.png.
+    val imageIndexTracker = BaseResultIdIndexTracker()
+    fun nextImageIndex(baseId: String): Int = imageIndexTracker.nextIndex(baseId)
 
     return discoveryEngine.discoverAllPreviews(screenshot.methodFQN).flatMap { method ->
       if (method.methodValidationResult.hasErrors) {
@@ -1206,8 +1207,21 @@ internal fun RenderResult.rethrowIfFatalVirtualMachineError() {
 }
 
 /**
+ * Tracks per-base-result-id sequential indices case-insensitively with [Locale.ROOT], so stems differing only by letter case receive
+ * distinct indices instead of overwriting each other on case-insensitive filesystems (macOS and Windows).
+ */
+internal class BaseResultIdIndexTracker {
+  private val nextIndexByKey = mutableMapOf<String, Int>()
+
+  fun nextIndex(baseId: String): Int = nextIndexByKey.merge(baseId.lowercase(Locale.ROOT), 1, Int::plus)!! - 1
+}
+
+/**
  * Disambiguates output file stems (`<baseResultId>_<suffix>`) and diagnostic preview names across the [ResolvedScreenshotLayout]s of a
- * single [PreviewScreenshot] (for example, `@PreviewParameter` elements with duplicate or blank display names).
+ * single [PreviewScreenshot] (for example, `@PreviewParameter` elements with duplicate, case-colliding, or blank display names).
+ *
+ * Duplicate detection and suffix collision checks fold case with [Locale.ROOT] while keeping each stem's original casing, so rendered files
+ * whose display names differ only by letter case don't overwrite each other on case-insensitive filesystems (macOS and Windows).
  */
 internal class LayoutResultIdAllocator(
   screenshot: PreviewScreenshot,
@@ -1221,16 +1235,16 @@ internal class LayoutResultIdAllocator(
       else -> "${screenshot.methodFQN} (${screenshot.previewId})"
     }
 
-  private val duplicateNames: Set<String> = buildSet {
-    val seenNames = mutableSetOf<String>()
+  private val duplicateNameKeys: Set<String> = buildSet {
+    val seenNameKeys = mutableSetOf<String>()
     for (layout in resolvedLayouts) {
-      val name = layout.displayName?.replace(Renderer.invalidCharsRegex, "_")?.trim('_')
-      if (!name.isNullOrBlank() && !seenNames.add(name)) {
-        add(name)
+      val key = sanitizeDisplayName(layout.displayName)?.takeIf { it.isNotBlank() }?.lowercase(Locale.ROOT)
+      if (key != null && !seenNameKeys.add(key)) {
+        add(key)
       }
     }
   }
-  private val usedSuffixes = mutableSetOf<String>()
+  private val usedSuffixKeys = mutableSetOf<String>()
 
   /**
    * Allocates the filesystem-safe `<baseResultId>_<suffix>` stem for [layout] using [nextIndex] on demand (preserving lazy `Sequence`
@@ -1240,26 +1254,29 @@ internal class LayoutResultIdAllocator(
     val index = nextIndex()
     // If a custom display name is provided (e.g. from PreviewParameterProvider.getDisplayName),
     // sanitize it for filesystem paths by replacing whitespace and reserved characters with underscores.
-    // If duplicate, append the preview index to disambiguate. If blank or not provided, fall back to numerical index.
-    val sanitizedDisplayName = layout.displayName?.replace(Renderer.invalidCharsRegex, "_")?.trim('_')
+    // If duplicate (case-insensitively), append the preview index to disambiguate. If blank or not provided, fall back to numerical index.
+    val sanitizedDisplayName = sanitizeDisplayName(layout.displayName)
     val baseSuffix =
       when {
         sanitizedDisplayName.isNullOrBlank() -> index.toString()
-        sanitizedDisplayName in duplicateNames -> "${sanitizedDisplayName}_$index"
+        sanitizedDisplayName.lowercase(Locale.ROOT) in duplicateNameKeys -> "${sanitizedDisplayName}_$index"
         else -> sanitizedDisplayName
       }
-    val suffix =
-      if (usedSuffixes.add(baseSuffix)) {
-        baseSuffix
-      } else {
-        val nameWithIndex = "${baseSuffix}_$index"
-        usedSuffixes.add(nameWithIndex)
-        nameWithIndex
+    var suffix = baseSuffix
+    if (!usedSuffixKeys.add(suffix.lowercase(Locale.ROOT))) {
+      suffix = "${baseSuffix}_$index"
+      var disambiguator = 1
+      while (!usedSuffixKeys.add(suffix.lowercase(Locale.ROOT))) {
+        suffix = "${baseSuffix}_${index}_$disambiguator"
+        disambiguator++
       }
+    }
     return "${baseResultId}_$suffix"
   }
 
   fun previewNameFor(layout: ResolvedScreenshotLayout): String = layout.displayName?.let { "$basePreviewName [$it]" } ?: basePreviewName
+
+  private fun sanitizeDisplayName(displayName: String?): String? = displayName?.replace(Renderer.invalidCharsRegex, "_")?.trim('_')
 }
 
 /** The [RenderingMode] that grows the render area along this axis, to fit the scrollable content of an expanded preview. */
